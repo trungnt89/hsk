@@ -2,27 +2,32 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>HSK1 – 10 Từ / Trang (Fix Shuffle Bug)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSK1 – 10 Từ / Trang</title>
 
 <style>
 body { font-family: Arial, sans-serif; background:#f7f7f7; padding:20px; }
 h1 { text-align:center; }
-button { padding:8px 16px; margin:4px; cursor:pointer; }
+button { padding:8px 14px; margin:4px; cursor:pointer; font-size:15px; }
 .active-btn { background:#4CAF50; color:white; }
 .shuffle-btn { background:#ff9800; color:white; }
 .word {
   background:white; padding:10px; margin:6px 0;
   border-radius:6px; display:flex; justify-content:space-between;
+  align-items:center;
 }
 .highlight { background:#fff3cd !important; border-left:6px solid #ff9800; }
 #list { max-height:65vh; overflow-y:auto; }
 .page-info { text-align:center; font-weight:bold; margin:10px; }
+.unlock { background:#2196F3; color:white; }
 </style>
 </head>
 
 <body>
 
-<h1>📘 HSK1 – 10 Từ / Trang (Ổn định)</h1>
+<h1>📘 HSK1 – Luyện Nghe</h1>
+
+<button class="unlock" onclick="unlockAudio()">🔊 Kích hoạt âm thanh (bấm 1 lần)</button><br><br>
 
 <button id="maleBtn" onclick="setVoice('male')">👨 Nam</button>
 <button id="femaleBtn" onclick="setVoice('female')">👩 Nữ</button>
@@ -64,23 +69,34 @@ let currentPage = 0;
 let currentIndex = 0;
 let isPlaying = false;
 let isShuffle = false;
+let audioUnlocked = false;
 
 let basePageWords = [];
 let playQueue = [];
 
 let voices=[], maleVoice=null, femaleVoice=null, currentVoice=null;
 
+/* ===== AUDIO UNLOCK (MOBILE FIX) ===== */
+function unlockAudio(){
+  const u = new SpeechSynthesisUtterance("你好");
+  u.lang = "zh-CN";
+  u.volume = 0;
+  speechSynthesis.speak(u);
+  audioUnlocked = true;
+  alert("Âm thanh đã được kích hoạt 👍");
+}
+
 /* ===== VOICE ===== */
 speechSynthesis.onvoiceschanged = () => {
   voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith("zh"));
   maleVoice = voices[0];
-  femaleVoice = voices.find(v => /female|ting|hui|mei/i.test(v.name)) || voices[0];
+  femaleVoice = voices.find(v => /female|ting|mei|hui/i.test(v.name)) || voices[0];
   currentVoice = maleVoice;
   maleBtn.classList.add("active-btn");
 };
 
 function setVoice(type){
-  currentVoice = type==="male"?maleVoice:femaleVoice;
+  currentVoice = type==="male" ? maleVoice : femaleVoice;
   maleBtn.classList.toggle("active-btn", type==="male");
   femaleBtn.classList.toggle("active-btn", type==="female");
 }
@@ -132,6 +148,7 @@ function highlight(i){
 
 /* ===== SPEAK ===== */
 function speakSingle(word,i){
+  if(!audioUnlocked){ alert("Bấm 'Kích hoạt âm thanh' trước"); return; }
   speechSynthesis.cancel();
   highlight(i);
   const u=new SpeechSynthesisUtterance(word);
@@ -140,6 +157,7 @@ function speakSingle(word,i){
 }
 
 function startAuto(){
+  if(!audioUnlocked){ alert("Bấm 'Kích hoạt âm thanh' trước"); return; }
   if(isPlaying) return;
   isPlaying=true;
   currentIndex=0;
@@ -150,11 +168,11 @@ function startAuto(){
 }
 
 function speakNext(){
-  if(!isPlaying) return;
+  if(!isPlaying || !audioUnlocked) return;
 
   if(currentIndex>=playQueue.length){
     currentIndex=0;
-    prepareQueue();   // shuffle cho vòng mới
+    prepareQueue(); // shuffle mỗi vòng
     render();
   }
 

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>HSK1 – 10 Từ / Trang (Fix Shuffle Bug)</title>
+
+<style>
+body { font-family: Arial, sans-serif; background:#f7f7f7; padding:20px; }
+h1 { text-align:center; }
+button { padding:8px 16px; margin:4px; cursor:pointer; }
+.active-btn { background:#4CAF50; color:white; }
+.shuffle-btn { background:#ff9800; color:white; }
+.word {
+  background:white; padding:10px; margin:6px 0;
+  border-radius:6px; display:flex; justify-content:space-between;
+}
+.highlight { background:#fff3cd !important; border-left:6px solid #ff9800; }
+#list { max-height:65vh; overflow-y:auto; }
+.page-info { text-align:center; font-weight:bold; margin:10px; }
+</style>
+</head>
+
+<body>
+
+<h1>📘 HSK1 – 10 Từ / Trang (Ổn định)</h1>
+
+<button id="maleBtn" onclick="setVoice('male')">👨 Nam</button>
+<button id="femaleBtn" onclick="setVoice('female')">👩 Nữ</button>
+<button id="shuffleBtn" onclick="toggleShuffle()">🔀 Shuffle</button><br>
+
+<button onclick="startAuto()">▶ Đọc trang</button>
+<button onclick="stopAuto()">⏹ Stop</button><br>
+
+<button onclick="prevPage()">⬅ Trang trước</button>
+<button onclick="nextPage()">➡ Trang sau</button>
+
+<div class="page-info" id="pageInfo"></div>
+<div id="list"></div>
+
+<script>
+/* ===== DATA ===== */
+const words = [
+"爱","八","爸爸","杯子","北京","本","不客气","不","菜","茶",
+"吃","出租车","打电话","大","的","点","电脑","电视","电影","东西",
+"都","读","对不起","多","多少","儿子","二","饭馆","飞机","分钟",
+"高兴","个","工作","狗","汉语","好","喝","和","很","后面",
+"回","会","火车站","几","家","叫","今天","九","开","看",
+"看见","块","来","老师","了","冷","里","零","六","妈妈",
+"吗","买","猫","没","没关系","米饭","明天","名字","哪里","那",
+"呢","能","你","年","女儿","朋友","漂亮","苹果","七","钱",
+"前面","请","去","热","人","认识","日","三","商店","上",
+"上午","少","谁","什么","十","时候","是","书","水","水果",
+"睡觉","说话","四","岁","他","她","太","天气","听","同学",
+"喂","我","我们","五","喜欢","下","下午","下雨","先生","现在",
+"想","小","小姐","些","写","谢谢","星期","学生","学习","学校",
+"一","衣服","医生","医院","椅子","月","在","再见","怎么","怎么样",
+"这","中国","中午","住","桌子","字","昨天","坐","做"
+];
+
+const pageSize = 10;
+
+/* ===== STATE ===== */
+let currentPage = 0;
+let currentIndex = 0;
+let isPlaying = false;
+let isShuffle = false;
+
+let basePageWords = [];
+let playQueue = [];
+
+let voices=[], maleVoice=null, femaleVoice=null, currentVoice=null;
+
+/* ===== VOICE ===== */
+speechSynthesis.onvoiceschanged = () => {
+  voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith("zh"));
+  maleVoice = voices[0];
+  femaleVoice = voices.find(v => /female|ting|hui|mei/i.test(v.name)) || voices[0];
+  currentVoice = maleVoice;
+  maleBtn.classList.add("active-btn");
+};
+
+function setVoice(type){
+  currentVoice = type==="male"?maleVoice:femaleVoice;
+  maleBtn.classList.toggle("active-btn", type==="male");
+  femaleBtn.classList.toggle("active-btn", type==="female");
+}
+
+/* ===== SHUFFLE ===== */
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+
+/* ===== PAGE ===== */
+function loadPage(){
+  const start=currentPage*pageSize;
+  basePageWords = words.slice(start,start+pageSize);
+  prepareQueue();
+  render();
+}
+
+function prepareQueue(){
+  playQueue = [...basePageWords];
+  if(isShuffle) shuffle(playQueue);
+}
+
+/* ===== UI ===== */
+function render(){
+  list.innerHTML="";
+  playQueue.forEach((w,i)=>{
+    const div=document.createElement("div");
+    div.className="word";
+    div.id="word-"+i;
+    div.innerHTML=`<strong style="font-size:22px">${w}</strong>
+      <button onclick="speakSingle('${w}',${i})">▶</button>`;
+    list.appendChild(div);
+  });
+  pageInfo.innerText=`Trang ${currentPage+1}/${Math.ceil(words.length/pageSize)}`
+    +(isShuffle?" (Shuffle mỗi vòng)":"");
+}
+
+function highlight(i){
+  document.querySelectorAll(".word").forEach(e=>e.classList.remove("highlight"));
+  const el=document.getElementById("word-"+i);
+  if(el){
+    el.classList.add("highlight");
+    el.scrollIntoView({behavior:"smooth",block:"center"});
+  }
+}
+
+/* ===== SPEAK ===== */
+function speakSingle(word,i){
+  speechSynthesis.cancel();
+  highlight(i);
+  const u=new SpeechSynthesisUtterance(word);
+  u.lang="zh-CN"; u.voice=currentVoice;
+  speechSynthesis.speak(u);
+}
+
+function startAuto(){
+  if(isPlaying) return;
+  isPlaying=true;
+  currentIndex=0;
+  prepareQueue();
+  render();
+  speechSynthesis.cancel();
+  speakNext();
+}
+
+function speakNext(){
+  if(!isPlaying) return;
+
+  if(currentIndex>=playQueue.length){
+    currentIndex=0;
+    prepareQueue();   // shuffle cho vòng mới
+    render();
+  }
+
+  const word=playQueue[currentIndex];
+  highlight(currentIndex);
+
+  const u=new SpeechSynthesisUtterance(word);
+  u.lang="zh-CN"; u.voice=currentVoice;
+  u.onend=()=>{ currentIndex++; setTimeout(speakNext,800); };
+  speechSynthesis.speak(u);
+}
+
+function stopAuto(){
+  isPlaying=false;
+  speechSynthesis.cancel();
+  document.querySelectorAll(".word").forEach(e=>e.classList.remove("highlight"));
+}
+
+/* ===== CONTROL ===== */
+function toggleShuffle(){
+  isShuffle=!isShuffle;
+  shuffleBtn.classList.toggle("shuffle-btn",isShuffle);
+  stopAuto();
+  loadPage();
+}
+function nextPage(){ if((currentPage+1)*pageSize<words.length){ stopAuto(); currentPage++; loadPage(); } }
+function prevPage(){ if(currentPage>0){ stopAuto(); currentPage--; loadPage(); } }
+
+/* INIT */
+loadPage();
+</script>
+
+</body>
+</html>

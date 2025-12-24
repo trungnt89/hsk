@@ -16,18 +16,18 @@ body {
 
 h1 {
   text-align: center;
-  margin: 6px 0 10px;
+  margin: 8px 0 10px;
 }
 
 .controls {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 button {
-  padding: 6px 10px;
+  padding: 6px 12px;
   font-size: 14px;
   cursor: pointer;
 }
@@ -49,7 +49,7 @@ button.active {
 }
 
 .word-item {
-  background: #ffffff;
+  background: #fff;
   padding: 10px;
   margin-bottom: 6px;
   border-radius: 6px;
@@ -60,7 +60,7 @@ button.active {
 
 .word-item.active {
   background: #fff3cd;
-  border-left: 5px solid #ff9800;
+  border-left: 6px solid #ff9800;
 }
 
 .word-main {
@@ -71,7 +71,7 @@ button.active {
 
 .word-sub {
   font-size: 14px;
-  color: #444;
+  color: #555;
 }
 </style>
 </head>
@@ -83,6 +83,7 @@ button.active {
 <div class="controls">
   <button onclick="unlockAudio()">🔊 Kích hoạt âm thanh</button>
   <button id="browserBtn" class="active" onclick="setTts('browser')">Browser</button>
+  <button id="googleBtn" onclick="setTts('google')">Google TTS</button>
   <button id="shuffleBtn" onclick="toggleShuffle()">🔀 Đảo từ</button>
 </div>
 
@@ -96,6 +97,8 @@ button.active {
 <div id="pageInfo"></div>
 <div id="wordList"></div>
 
+<audio id="googleAudio"></audio>
+
 <script src="data.js"></script>
 
 <script>
@@ -105,18 +108,19 @@ const PAGE_SIZE = 10;
 /* ================= STATE ================= */
 let currentPage = Number(localStorage.getItem("hsk_page")) || 0;
 let isShuffle   = localStorage.getItem("hsk_shuffle") === "1";
+let ttsEngine   = "browser";
 let audioUnlocked = false;
 let isPlaying = false;
 let currentIndex = 0;
+let isSpeaking = false; // 🔑 FIX CHÍNH
 
-/* QUEUE DUY NHẤT – UI + AUDIO DÙNG CHUNG */
 let playQueue = [];
 
 /* ================= DOM ================= */
 const listEl = document.getElementById("wordList");
 const pageInfo = document.getElementById("pageInfo");
+const googleAudio = document.getElementById("googleAudio");
 const shuffleBtn = document.getElementById("shuffleBtn");
-const browserBtn = document.getElementById("browserBtn");
 
 /* ================= UTILS ================= */
 function shuffleArray(arr) {
@@ -167,34 +171,73 @@ function highlight(i) {
 
 /* ================= AUDIO ================= */
 function unlockAudio() {
-  // 🔑 BẮT BUỘC để mobile cho phép phát âm thanh
-  const u = new SpeechSynthesisUtterance("一");
-  u.lang = "zh-CN";
-  speechSynthesis.speak(u);
-
   audioUnlocked = true;
-  alert("Âm thanh đã được kích hoạt");
+  alert("Âm thanh đã kích hoạt");
 }
 
-function speak(text, onEnd) {
-  if (!audioUnlocked) return;
+function setTts(type) {
+  ttsEngine = type;
+  browserBtn.classList.toggle("active", type === "browser");
+  googleBtn.classList.toggle("active", type === "google");
+  stopAuto();
+}
 
-  speechSynthesis.cancel(); // tránh chồng tiếng
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "zh-CN";
-  u.onend = onEnd;
-  speechSynthesis.speak(u);
+/* 🔧 FIX TRỌNG TÂM */
+function speak(text, onEnd) {
+  if (isSpeaking) return;
+  isSpeaking = true;
+
+  if (ttsEngine === "browser") {
+    speechSynthesis.cancel();
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "zh-CN";
+
+    u.onend = () => {
+      isSpeaking = false;
+      onEnd && onEnd();
+    };
+
+    u.onerror = () => {
+      isSpeaking = false;
+      onEnd && onEnd();
+    };
+
+    speechSynthesis.speak(u);
+
+  } else {
+    googleAudio.pause();
+    googleAudio.currentTime = 0;
+
+    const url =
+      "https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=" +
+      encodeURIComponent(text);
+
+    googleAudio.src = url;
+
+    googleAudio.onended = () => {
+      isSpeaking = false;
+      onEnd && onEnd();
+    };
+
+    googleAudio.onerror = () => {
+      isSpeaking = false;
+      onEnd && onEnd();
+    };
+
+    googleAudio.play();
+  }
 }
 
 /* ================= ACTION ================= */
 function speakSingle(i) {
-  if (!audioUnlocked) return alert("Hãy bấm 'Kích hoạt âm thanh' trước");
+  if (!audioUnlocked) return alert("Chưa kích hoạt âm thanh");
   highlight(i);
   speak(playQueue[i].hanzi);
 }
 
 function startAuto() {
-  if (!audioUnlocked) return alert("Hãy bấm 'Kích hoạt âm thanh' trước");
+  if (!audioUnlocked) return alert("Chưa kích hoạt âm thanh");
   isPlaying = true;
   currentIndex = 0;
   speakNext();
@@ -220,7 +263,9 @@ function speakNext() {
 
 function stopAuto() {
   isPlaying = false;
+  isSpeaking = false;
   speechSynthesis.cancel();
+  googleAudio.pause();
 }
 
 /* ================= PAGINATION ================= */

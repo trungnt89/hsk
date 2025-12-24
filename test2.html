@@ -2,15 +2,14 @@
 <html>
 <body>
 
-<button onclick="play()">🔊 你好</button>
-<audio id="a"></audio>
+<button onclick="speak()">🔊 读中文</button>
 
 <script>
-function play() {
-  const audio = document.getElementById("a");
-  audio.src =
-    "https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=你好";
-  audio.play();
+function speak() {
+  const u = new SpeechSynthesisUtterance("你好");
+  u.lang = "zh-CN";
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
 }
 </script>
 

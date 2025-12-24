@@ -66,7 +66,6 @@ button.active {
 .word-main {
   font-size: 22px;
   font-weight: bold;
-  color: #111;
 }
 
 .word-sub {
@@ -104,15 +103,15 @@ button.active {
 <script>
 /* ================= CONFIG ================= */
 const PAGE_SIZE = 10;
+const BASE_DELAY = 1200; // 🔥 FIX: delay tối thiểu ổn định mobile
 
 /* ================= STATE ================= */
 let currentPage = Number(localStorage.getItem("hsk_page")) || 0;
-let isShuffle   = localStorage.getItem("hsk_shuffle") === "1";
-let ttsEngine   = "browser";
+let isShuffle = localStorage.getItem("hsk_shuffle") === "1";
+let ttsEngine = "browser";
 let audioUnlocked = false;
 let isPlaying = false;
 let currentIndex = 0;
-let isSpeaking = false; // 🔑 FIX CHÍNH
 
 let playQueue = [];
 
@@ -144,7 +143,6 @@ function prepareQueue() {
 /* ================= UI ================= */
 function render() {
   listEl.innerHTML = "";
-
   playQueue.forEach((w, i) => {
     const div = document.createElement("div");
     div.className = "word-item";
@@ -182,49 +180,18 @@ function setTts(type) {
   stopAuto();
 }
 
-/* 🔧 FIX TRỌNG TÂM */
-function speak(text, onEnd) {
-  if (isSpeaking) return;
-  isSpeaking = true;
-
+function speak(text) {
   if (ttsEngine === "browser") {
     speechSynthesis.cancel();
-
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "zh-CN";
-
-    u.onend = () => {
-      isSpeaking = false;
-      onEnd && onEnd();
-    };
-
-    u.onerror = () => {
-      isSpeaking = false;
-      onEnd && onEnd();
-    };
-
     speechSynthesis.speak(u);
-
   } else {
     googleAudio.pause();
     googleAudio.currentTime = 0;
-
-    const url =
+    googleAudio.src =
       "https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=" +
       encodeURIComponent(text);
-
-    googleAudio.src = url;
-
-    googleAudio.onended = () => {
-      isSpeaking = false;
-      onEnd && onEnd();
-    };
-
-    googleAudio.onerror = () => {
-      isSpeaking = false;
-      onEnd && onEnd();
-    };
-
     googleAudio.play();
   }
 }
@@ -240,10 +207,10 @@ function startAuto() {
   if (!audioUnlocked) return alert("Chưa kích hoạt âm thanh");
   isPlaying = true;
   currentIndex = 0;
-  speakNext();
+  autoNext();
 }
 
-function speakNext() {
+function autoNext() {
   if (!isPlaying) return;
 
   if (currentIndex >= playQueue.length) {
@@ -255,15 +222,19 @@ function speakNext() {
   }
 
   highlight(currentIndex);
-  speak(playQueue[currentIndex].hanzi, () => {
+  speak(playQueue[currentIndex].hanzi);
+
+  const textLen = playQueue[currentIndex].hanzi.length;
+  const delay = BASE_DELAY + textLen * 300; // 🔥 delay theo độ dài
+
+  setTimeout(() => {
     currentIndex++;
-    setTimeout(speakNext, 700);
-  });
+    autoNext();
+  }, delay);
 }
 
 function stopAuto() {
   isPlaying = false;
-  isSpeaking = false;
   speechSynthesis.cancel();
   googleAudio.pause();
 }

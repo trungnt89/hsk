@@ -6,7 +6,6 @@ const BASE_DELAY = 1200;
 let currentPage = Number(localStorage.getItem("hsk_page")) || 0;
 let isShuffle = localStorage.getItem("hsk_shuffle") === "1";
 let ttsEngine = "browser";
-let audioUnlocked = false;
 let isPlaying = false;
 let currentIndex = 0;
 let playQueue = [];
@@ -28,30 +27,22 @@ const STORE_NAME = "audio";
 let db = null;
 
 function openDB() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const req = indexedDB.open(DB_NAME, 1);
-
     req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
+      req.result.createObjectStore(STORE_NAME);
     };
-
     req.onsuccess = () => {
       db = req.result;
-      resolve(db);
+      resolve();
     };
-
-    req.onerror = () => reject(req.error);
   });
 }
 
 function getAudioFromDB(key) {
   return new Promise((resolve) => {
     const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.get(key);
+    const req = tx.objectStore(STORE_NAME).get(key);
     req.onsuccess = () => resolve(req.result || null);
     req.onerror = () => resolve(null);
   });
@@ -62,7 +53,11 @@ function saveAudioToDB(key, blob) {
   tx.objectStore(STORE_NAME).put(blob, key);
 }
 
-/* ================= UTILS ================= */
+/* ================= DATA ================= */
+function getTotalPages() {
+  return Math.ceil(WORDS.length / PAGE_SIZE);
+}
+
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -70,11 +65,6 @@ function shuffleArray(arr) {
   }
 }
 
-function getTotalPages() {
-  return Math.ceil(WORDS.length / PAGE_SIZE);
-}
-
-/* ================= DATA ================= */
 function prepareQueue() {
   const start = currentPage * PAGE_SIZE;
   playQueue = WORDS.slice(start, start + PAGE_SIZE);
@@ -109,33 +99,20 @@ function highlight(i) {
 }
 
 /* ================= AUDIO ================= */
-function unlockAudio() {
-  audioUnlocked = true;
-  alert("Âm thanh đã kích hoạt");
-}
-
 function setTts(type) {
   ttsEngine = type;
-
   browserBtn.classList.toggle("active", type === "browser");
   googleBtn.classList.toggle("active", type === "google");
   azureBtn.classList.toggle("active", type === "azure");
-
-  stopAuto();
 }
 
 function playBlob(blob) {
   const url = URL.createObjectURL(blob);
-  azureAudio.pause();
-  azureAudio.currentTime = 0;
   azureAudio.src = url;
   azureAudio.play();
 }
 
 async function speak(text) {
-  if (!audioUnlocked) return;
-
-  /* ===== Browser ===== */
   if (ttsEngine === "browser") {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
@@ -144,10 +121,7 @@ async function speak(text) {
     return;
   }
 
-  /* ===== Google ===== */
   if (ttsEngine === "google") {
-    googleAudio.pause();
-    googleAudio.currentTime = 0;
     googleAudio.src =
       "https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=" +
       encodeURIComponent(text);
@@ -155,27 +129,19 @@ async function speak(text) {
     return;
   }
 
-  /* ===== Azure + IndexedDB ===== */
   if (ttsEngine === "azure") {
-    if (!db) return alert("DB chưa sẵn sàng");
-
-    const cacheKey = `zh-CN-XiaoxiaoNeural_${text}`;
-    const cached = await getAudioFromDB(cacheKey);
+    const key = `zh-CN-XiaoxiaoNeural_${text}`;
+    const cached = await getAudioFromDB(key);
 
     if (cached) {
-      console.log("🔊 IndexedDB");
       playBlob(cached);
       return;
     }
 
-    console.log("☁️ Azure fetch");
     const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}`);
-    if (!res.ok) return alert("Azure TTS lỗi");
-
-    const buffer = await res.arrayBuffer();
-    const blob = new Blob([buffer], { type: "audio/mpeg" });
-
-    saveAudioToDB(cacheKey, blob);
+    const buf = await res.arrayBuffer();
+    const blob = new Blob([buf], { type: "audio/mpeg" });
+    saveAudioToDB(key, blob);
     playBlob(blob);
   }
 }
@@ -187,29 +153,26 @@ function speakSingle(i) {
 }
 
 function startAuto() {
-  if (!audioUnlocked) return alert("Chưa kích hoạt âm thanh");
+  if (isPlaying) return;
   isPlaying = true;
-  currentIndex = 0;
   autoNext();
 }
 
 function autoNext() {
   if (!isPlaying) return;
 
-  if (currentIndex >= playQueue.length) {
-    currentIndex = 0;
-    if (isShuffle) {
-      shuffleArray(playQueue);
-      render();
-    }
-  }
-
   highlight(currentIndex);
   speak(playQueue[currentIndex].hanzi);
 
   const delay = BASE_DELAY + playQueue[currentIndex].hanzi.length * 300;
+
   setTimeout(() => {
     currentIndex++;
+    if (currentIndex >= playQueue.length) {
+      currentIndex = 0;
+      if (isShuffle) shuffleArray(playQueue);
+      render();
+    }
     autoNext();
   }, delay);
 }
@@ -226,7 +189,6 @@ function nextPage() {
   if (currentPage < getTotalPages() - 1) {
     currentPage++;
     localStorage.setItem("hsk_page", currentPage);
-    stopAuto();
     prepareQueue();
     render();
   }
@@ -236,7 +198,6 @@ function prevPage() {
   if (currentPage > 0) {
     currentPage--;
     localStorage.setItem("hsk_page", currentPage);
-    stopAuto();
     prepareQueue();
     render();
   }
@@ -245,7 +206,6 @@ function prevPage() {
 function toggleShuffle() {
   isShuffle = !isShuffle;
   localStorage.setItem("hsk_shuffle", isShuffle ? "1" : "0");
-  stopAuto();
   prepareQueue();
   render();
 }
@@ -253,4 +213,4 @@ function toggleShuffle() {
 /* ================= INIT ================= */
 prepareQueue();
 render();
-openDB().then(() => console.log("IndexedDB ready"));
+openDB();

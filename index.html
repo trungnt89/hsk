@@ -1,73 +1,77 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>HSK1 – Luyện Nghe</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>HSK1 – Luyện Nghe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 12px;
-      background: #f4f4f4;
-    }
-    h1 { text-align: center; margin: 8px 0; }
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 12px;
+  background: #f4f4f4;
+}
 
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
+h1 {
+  text-align: center;
+  margin: 8px 0 10px;
+}
 
-    button {
-      padding: 6px 12px;
-      font-size: 14px;
-      cursor: pointer;
-    }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
 
-    button.active {
-      background: #4caf50;
-      color: #fff;
-    }
+button, select {
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
 
-    #pageInfo {
-      text-align: center;
-      font-weight: bold;
-      margin: 6px 0;
-    }
+button.active {
+  background: #4caf50;
+  color: #fff;
+}
 
-    #wordList {
-      max-height: 72vh;
-      overflow-y: auto;
-    }
+#pageInfo {
+  text-align: center;
+  font-weight: bold;
+  margin: 6px 0;
+}
 
-    .word-item {
-      background: #fff;
-      padding: 10px;
-      margin-bottom: 6px;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+#wordList {
+  max-height: 72vh;
+  overflow-y: auto;
+}
 
-    .word-item.active {
-      background: #fff3cd;
-      border-left: 6px solid #ff9800;
-    }
+.word-item {
+  background: #fff;
+  padding: 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    .word-main {
-      font-size: 22px;
-      font-weight: bold;
-    }
+.word-item.active {
+  background: #fff3cd;
+  border-left: 6px solid #ff9800;
+}
 
-    .word-sub {
-      font-size: 14px;
-      color: #555;
-    }
-  </style>
+.word-main {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.word-sub {
+  font-size: 14px;
+  color: #555;
+}
+</style>
 </head>
 
 <body>
@@ -75,10 +79,16 @@
 <h1>📘 HSK1 – Luyện Nghe</h1>
 
 <div class="controls">
-  <button onclick="unlockAudio()">🔊 Kích hoạt âm thanh</button>
   <button id="browserBtn" class="active" onclick="setTts('browser')">Browser</button>
   <button id="googleBtn" onclick="setTts('google')">Google</button>
   <button id="azureBtn" onclick="setTts('azure')">Azure</button>
+
+  <!-- 🔊 CHỌN GIỌNG AZURE -->
+  <select id="azureVoiceSelect" onchange="setAzureVoice(this.value)">
+    <option value="zh-CN-XiaoxiaoNeural">Nữ – Xiaoxiao</option>
+    <option value="zh-CN-YunxiNeural">Nam – Yunxi</option>
+  </select>
+
   <button id="shuffleBtn" onclick="toggleShuffle()">🔀 Đảo từ</button>
 </div>
 
@@ -94,10 +104,7 @@
 
 <audio id="googleAudio"></audio>
 
-<!-- DATA -->
 <script src="data.js"></script>
-
-<!-- APP -->
 <script src="app.js"></script>
 
 </body>

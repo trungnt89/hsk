@@ -79,13 +79,15 @@ button.active {
 <h1>📘 HSK1 – Luyện Nghe</h1>
 
 <div class="controls">
-  <button id="browserBtn" class="active" onclick="setTts('browser')">Browser</button>
+  <!-- ❌ bỏ active ở Browser -->
+  <button id="browserBtn" onclick="setTts('browser')">Browser</button>
   <button id="googleBtn" onclick="setTts('google')">Google</button>
-  <button id="azureBtn" onclick="setTts('azure')">Azure</button>
 
-  <!-- 🔊 CHỌN GIỌNG AZURE -->
+  <!-- ✅ Azure là mặc định -->
+  <button id="azureBtn" class="active" onclick="setTts('azure')">Azure</button>
+
   <select id="azureVoiceSelect" onchange="setAzureVoice(this.value)">
-    <option value="zh-CN-XiaoxiaoNeural">Nữ – Xiaoxiao</option>
+    <option value="zh-CN-XiaoxiaoNeural" selected>Nữ – Xiaoxiao</option>
     <option value="zh-CN-YunxiNeural">Nam – Yunxi</option>
   </select>
 
@@ -106,6 +108,5 @@ button.active {
 
 <script src="data.js"></script>
 <script src="app.js"></script>
-
 </body>
 </html>

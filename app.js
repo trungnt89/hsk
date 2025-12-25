@@ -5,7 +5,9 @@ const BASE_DELAY = 1200;
 /* ================= STATE ================= */
 let currentPage = Number(localStorage.getItem("hsk_page")) || 0;
 let isShuffle = localStorage.getItem("hsk_shuffle") === "1";
-let ttsEngine = "browser";
+let ttsEngine = "azure"; // ✅ Azure mặc định
+let azureVoice = "zh-CN-XiaoxiaoNeural";
+
 let isPlaying = false;
 let currentIndex = 0;
 let playQueue = [];
@@ -27,7 +29,7 @@ const STORE_NAME = "audio";
 let db = null;
 
 function openDB() {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const req = indexedDB.open(DB_NAME, 1);
     req.onupgradeneeded = () => {
       req.result.createObjectStore(STORE_NAME);
@@ -40,7 +42,7 @@ function openDB() {
 }
 
 function getAudioFromDB(key) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const tx = db.transaction(STORE_NAME, "readonly");
     const req = tx.objectStore(STORE_NAME).get(key);
     req.onsuccess = () => resolve(req.result || null);
@@ -91,14 +93,17 @@ function render() {
   shuffleBtn.classList.toggle("active", isShuffle);
 }
 
+/* ✅ FIX LỖI highlight */
 function highlight(i) {
   document.querySelectorAll(".word-item").forEach((el, idx) => {
     el.classList.toggle("active", idx === i);
-    if (idx === i) el.scrollIntoView({ block: "center" });
+    if (idx === i) {
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
   });
 }
 
-/* ================= AUDIO ================= */
+/* ================= TTS ================= */
 function setTts(type) {
   ttsEngine = type;
   browserBtn.classList.toggle("active", type === "browser");
@@ -106,9 +111,12 @@ function setTts(type) {
   azureBtn.classList.toggle("active", type === "azure");
 }
 
+function setAzureVoice(v) {
+  azureVoice = v;
+}
+
 function playBlob(blob) {
-  const url = URL.createObjectURL(blob);
-  azureAudio.src = url;
+  azureAudio.src = URL.createObjectURL(blob);
   azureAudio.play();
 }
 
@@ -129,25 +137,26 @@ async function speak(text) {
     return;
   }
 
-  if (ttsEngine === "azure") {
-    const key = `zh-CN-XiaoxiaoNeural_${text}`;
-    const cached = await getAudioFromDB(key);
-
-    if (cached) {
-      playBlob(cached);
-      return;
-    }
-
-    const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}`);
-    const buf = await res.arrayBuffer();
-    const blob = new Blob([buf], { type: "audio/mpeg" });
-    saveAudioToDB(key, blob);
-    playBlob(blob);
+  // ✅ AZURE
+  const key = `${azureVoice}_${text}`;
+  const cached = await getAudioFromDB(key);
+  if (cached) {
+    playBlob(cached);
+    return;
   }
+
+  const res = await fetch(
+    `/api/tts?text=${encodeURIComponent(text)}&voice=${azureVoice}`
+  );
+  const buf = await res.arrayBuffer();
+  const blob = new Blob([buf], { type: "audio/mpeg" });
+  saveAudioToDB(key, blob);
+  playBlob(blob);
 }
 
-/* ================= ACTION ================= */
+/* ================= AUTO PLAY ================= */
 function speakSingle(i) {
+  currentIndex = i;
   highlight(i);
   speak(playQueue[i].hanzi);
 }
@@ -155,6 +164,7 @@ function speakSingle(i) {
 function startAuto() {
   if (isPlaying) return;
   isPlaying = true;
+  currentIndex = 0;
   autoNext();
 }
 
@@ -169,9 +179,8 @@ function autoNext() {
   setTimeout(() => {
     currentIndex++;
     if (currentIndex >= playQueue.length) {
-      currentIndex = 0;
-      if (isShuffle) shuffleArray(playQueue);
-      render();
+      isPlaying = false;
+      return;
     }
     autoNext();
   }, delay);

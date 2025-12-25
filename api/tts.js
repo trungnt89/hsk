@@ -1,11 +1,8 @@
 export default async function handler(req, res) {
-  const text = req.query.text;
-  if (!text) {
-    return res.status(400).send("Missing text");
-  }
+  const text = req.query.text || '你好';
 
+  const endpoint = process.env.AZURE_TTS_ENDPOINT;
   const key = process.env.AZURE_TTS_KEY;
-  const region = process.env.AZURE_TTS_REGION;
 
   const ssml = `
 <speak version="1.0" xml:lang="zh-CN">
@@ -15,19 +12,24 @@ export default async function handler(req, res) {
 </speak>`;
 
   const response = await fetch(
-    `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`,
+    `${endpoint}/cognitiveservices/v1`,
     {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Ocp-Apim-Subscription-Key": key,
-        "Content-Type": "application/ssml+xml",
-        "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+        'Ocp-Apim-Subscription-Key': key,
+        'Content-Type': 'application/ssml+xml',
+        'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3'
       },
-      body: ssml,
+      body: ssml
     }
   );
 
+  if (!response.ok) {
+    const err = await response.text();
+    return res.status(500).send(err);
+  }
+
   const audio = await response.arrayBuffer();
-  res.setHeader("Content-Type", "audio/mpeg");
+  res.setHeader('Content-Type', 'audio/mpeg');
   res.send(Buffer.from(audio));
 }

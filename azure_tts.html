@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Azure TTS Simple</title>
+</head>
+<body>
+  <h3>Azure Text To Speech</h3>
+
+  <input id="text" value="你好" />
+  <button onclick="play()">▶ Play</button>
+
+  <br /><br />
+  <audio id="audio" controls></audio>
+
+  <script>
+    function play() {
+      const text = document.getElementById("text").value;
+      const audio = document.getElementById("audio");
+      audio.src = "/api/tts?text=" + encodeURIComponent(text);
+      audio.play();
+    }
+  </script>
+</body>
+</html>

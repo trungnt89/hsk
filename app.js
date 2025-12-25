@@ -178,10 +178,12 @@ function autoNext() {
 
   setTimeout(() => {
     currentIndex++;
+
+    // ✅ AUTO LOOP: quay lại đầu khi hết list
     if (currentIndex >= playQueue.length) {
-      isPlaying = false;
-      return;
+      currentIndex = 0;
     }
+
     autoNext();
   }, delay);
 }
@@ -191,6 +193,9 @@ function stopAuto() {
   speechSynthesis.cancel();
   googleAudio.pause();
   azureAudio.pause();
+
+  // bỏ highlight khi dừng
+  document.querySelectorAll(".word-item").forEach(el => el.classList.remove("active"));
 }
 
 /* ================= PAGINATION ================= */

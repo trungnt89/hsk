@@ -3,41 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Final UI</title>
+    <title>HSK Master - Fixed Audio</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --success: #10b981; }
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; background: var(--bg); }
-        
-        /* Top Section */
         .top-section { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding-bottom: 12px; }
         header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         header h3 { margin: 0; font-family: 'Montserrat'; color: var(--primary); font-size: 1.3rem; }
         .settings-panel { padding: 0 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .setting-item label { font-size: 9px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 4px; text-transform: uppercase; }
         select { width: 100%; border: 2px solid #e2e8f0; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 11px; outline: none; background: #fff; }
-
-        /* Content Area */
         .scroll-area { position: absolute; top: 170px; bottom: 110px; left: 0; right: 0; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
         .word-card { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 12px; display: flex; align-items: center; border: 2px solid transparent; transition: 0.3s; box-shadow: 0 3px 6px rgba(0,0,0,0.03); cursor: pointer; }
         .word-card.active { border-color: var(--primary); background: #eff6ff; transform: scale(1.02); }
         .main-text { font-family: 'Noto Sans SC'; font-size: 1.8rem; color: #1e293b; margin: 0; }
         .pinyin { color: var(--primary); font-weight: 800; margin: 4px 0; }
         .meaning { color: #64748b; font-size: 0.95rem; }
-
-        /* Controls Bar */
         .controls-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 110px; background: #fff; display: flex; align-items: center; box-shadow: 0 -5px 25px rgba(0,0,0,0.1); border-radius: 28px 28px 0 0; z-index: 101; padding: 0 5px; }
         .ctrl-group { flex: 1; display: flex; justify-content: space-evenly; align-items: center; }
-        
-        .btn-nav { background: #f8fafc; border: none; color: #64748b; width: 60px; height: 60px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-        .btn-nav i { font-style: normal; font-size: 18px; margin-bottom: 2px; }
+        .btn-nav { background: #f8fafc; border: none; color: #64748b; width: 60px; height: 60px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+        .btn-nav i { font-style: normal; font-size: 18px; }
         .btn-nav small { font-size: 7px; font-weight: 800; text-transform: uppercase; }
-        
         .btn-nav.active-blue { background: var(--primary); color: #fff; }
         .btn-nav.active-green { background: var(--success); color: #fff; }
         .btn-clear { color: var(--danger); background: #fff1f2; }
-
-        .btn-play { width: 75px; height: 75px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; font-size: 28px; cursor: pointer; box-shadow: 0 8px 20px rgba(251, 191, 36, 0.4); display: flex; align-items: center; justify-content: center; transform: translateY(-25px); }
+        .btn-play { width: 75px; height: 75px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; font-size: 28px; cursor: pointer; transform: translateY(-25px); box-shadow: 0 8px 20px rgba(251, 191, 36, 0.4); display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -51,31 +42,22 @@
         </div>
     </header>
     <div class="settings-panel">
-        <div class="setting-item">
-            <label>Giọng đọc</label>
-            <select id="voice-select">
-                <option value="zh-CN-XiaoxiaoNeural" selected>Azure Nữ</option>
-                <option value="zh-CN-YunxiNeural">Azure Nam</option>
-                <option value="google">Google TTS</option>
-                <option value="browser">Trình duyệt</option>
-            </select>
-        </div>
-        <div class="setting-item">
-            <label>Số lượng</label>
-            <select id="limit-select">
-                <option value="10" selected>10 Mục</option>
-                <option value="20">20 Mục</option>
-                <option value="50">50 Mục</option>
-            </select>
-        </div>
-        <div class="setting-item">
-            <label>Tốc độ</label>
-            <select id="delay-select">
-                <option value="1000">1 Giây</option>
-                <option value="2000" selected>2 Giây</option>
-                <option value="3000">3 Giây</option>
-            </select>
-        </div>
+        <div class="setting-item"><label>Giọng đọc</label><select id="voice-select">
+            <option value="zh-CN-XiaoxiaoNeural" selected>Azure Nữ</option>
+            <option value="zh-CN-YunxiNeural">Azure Nam</option>
+            <option value="google">Google TTS</option>
+            <option value="browser">Trình duyệt</option>
+        </select></div>
+        <div class="setting-item"><label>Số lượng</label><select id="limit-select">
+            <option value="10" selected>10 Mục</option>
+            <option value="20">20 Mục</option>
+            <option value="50">50 Mục</option>
+        </select></div>
+        <div class="setting-item"><label>Tốc độ</label><select id="delay-select">
+            <option value="1000">1 Giây</option>
+            <option value="2000" selected>2 Giây</option>
+            <option value="3000">3 Giây</option>
+        </select></div>
     </div>
 </div>
 
@@ -87,12 +69,11 @@
         <button class="btn-nav" id="shuffle-btn"><i>🔁</i><small>Ngẫu nhiên</small></button>
         <button class="btn-nav" id="type-btn"><i>📖</i><small id="type-txt">Từ vựng</small></button>
     </div>
-    
     <button class="btn-play" id="play-btn">▶</button>
-    
     <div class="ctrl-group">
         <button class="btn-nav" id="next-btn"><i>⏭</i><small>Sau</small></button>
-        <button class="btn-nav" style="visibility: hidden; width: 0;"></button> <button class="btn-nav btn-clear" id="clear-db-btn"><i>🗑️</i><small>Xóa Cache</small></button>
+        <button class="btn-nav" style="visibility:hidden; width:0"></button>
+        <button class="btn-nav btn-clear" id="clear-db-btn"><i>🗑️</i><small>Xóa Cache</small></button>
     </div>
 </div>
 
@@ -132,10 +113,16 @@ let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
 let autoTimer = null, currentIndex = -1, currentList = [];
 let currentAudio = null;
 
-/** 3. TTS ENGINE **/
+/** 3. TTS ENGINE (FIXED) **/
 async function speak(text) {
     const voice = document.getElementById("voice-select").value;
-    if (currentAudio) { currentAudio.pause(); }
+    
+    // Ngắt âm thanh cũ triệt để
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.src = "";
+        currentAudio.load();
+    }
     window.speechSynthesis.cancel();
 
     if (voice === "browser") {
@@ -145,26 +132,34 @@ async function speak(text) {
     if (voice === "google") {
         const g = document.getElementById("google-audio");
         g.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
-        g.play(); return;
+        g.play().catch(e => console.log("Google Play blocked"));
+        return;
     }
 
     const key = `${voice}_${text}`;
-    const cached = await getAudioFromDB(key);
-    if (cached) { playBlob(cached); return; }
+    let blob = await getAudioFromDB(key);
 
-    try {
-        const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`);
-        const buf = await res.arrayBuffer();
-        const blob = new Blob([buf], { type: "audio/mpeg" });
-        saveAudioToDB(key, blob);
-        playBlob(blob);
-    } catch (e) { console.log("TTS Error"); }
+    if (!blob) {
+        try {
+            const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`);
+            if (!res.ok) throw new Error("TTS Server error");
+            const buf = await res.arrayBuffer();
+            blob = new Blob([buf], { type: "audio/mpeg" });
+            saveAudioToDB(key, blob);
+        } catch (e) {
+            console.log("Fetch error, skipping...");
+            return;
+        }
+    }
+    
+    if (blob) playBlob(blob);
 }
 
 function playBlob(blob) {
     const url = URL.createObjectURL(blob);
     currentAudio = new Audio(url);
-    currentAudio.play();
+    currentAudio.play().catch(e => console.log("Playback failed"));
+    currentAudio.onended = () => { URL.revokeObjectURL(url); };
 }
 
 /** 4. CORE LOGIC **/
@@ -172,7 +167,6 @@ function render(keep = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     const listEl = document.getElementById('word-list');
     listEl.innerHTML = '';
-    
     let rawItems = hskData.slice((page - 1) * limit, page * limit);
     currentList = isShuffle ? [...rawItems].sort(() => Math.random() - 0.5) : rawItems;
 
@@ -187,43 +181,49 @@ function render(keep = false) {
         </div>`;
         listEl.appendChild(card);
     });
-
     document.getElementById('page-label').innerText = `PAGE ${page}/${Math.ceil(hskData.length/limit)}`;
     if(!keep) currentIndex = -1; else updateUI();
 }
 
-function select(i) {
-    currentIndex = i; updateUI();
+async function select(i) {
+    currentIndex = i; 
+    updateUI();
     const item = currentList[currentIndex];
-    if (item) speak(isSentence ? item.exHz : item.hz);
+    if (item) await speak(isSentence ? item.exHz : item.hz);
 }
 
 function updateUI() {
     document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
     const card = document.getElementById(`card-${currentIndex}`);
-    if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    if (card) { 
+        card.classList.add('active'); 
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+    }
 }
 
 function resetTimer() {
     clearInterval(autoTimer);
     if(!isPlaying) return;
-    autoTimer = setInterval(() => {
+    autoTimer = setInterval(async () => {
         currentIndex++;
-        if (currentIndex >= currentList.length) currentIndex = 0; // LOOP TRONG TRANG
-        select(currentIndex);
+        if (currentIndex >= currentList.length) currentIndex = 0;
+        await select(currentIndex);
     }, parseInt(document.getElementById('delay-select').value));
 }
 
 /** 5. EVENTS **/
 document.getElementById('play-btn').onclick = function() {
     isPlaying = !isPlaying; this.innerText = isPlaying ? '⏹' : '▶';
-    if (isPlaying) { if(currentIndex === -1) currentIndex = 0; select(currentIndex); resetTimer(); } 
-    else clearInterval(autoTimer);
+    if (isPlaying) { 
+        if(currentIndex === -1) currentIndex = 0; 
+        select(currentIndex); 
+        resetTimer(); 
+    } else clearInterval(autoTimer);
 };
 document.getElementById('clear-db-btn').onclick = clearAllAudioData;
 document.getElementById('next-btn').onclick = () => { page++; render(); if(isPlaying) {currentIndex=0; select(0); resetTimer();} };
 document.getElementById('prev-btn').onclick = () => { if(page>1) {page--; render(); if(isPlaying) {currentIndex=0; select(0); resetTimer();}} };
-document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); };
+document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); if(isPlaying) resetTimer();};
 document.getElementById('type-btn').onclick = function() { 
     isSentence = !isSentence; this.classList.toggle('active-green', isSentence); 
     document.getElementById('type-txt').innerText = isSentence ? 'Câu ví dụ' : 'Từ vựng';

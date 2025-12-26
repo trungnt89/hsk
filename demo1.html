@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HSK Master - Mobile Optimized</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; --bg: #f8fafc; --card: #ffffff; --success: #10b981; --text-main: #1e293b; --text-sub: #64748b; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Montserrat', sans-serif; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+        .top-section { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding-bottom: 10px; flex-shrink: 0; z-index: 10; }
+        header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+        header h3 { margin: 0; color: var(--primary); font-size: 1.1rem; }
+        #page-label { font-weight: 800; color: var(--primary); font-size: 10px; background: #eff6ff; padding: 4px 8px; border-radius: 6px; }
+        .settings-panel { padding: 0 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .setting-item label { font-size: 7px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 3px; text-transform: uppercase; }
+        select { width: 100%; border: 1.5px solid #f1f5f9; padding: 8px; border-radius: 10px; font-weight: 700; font-size: 11px; outline: none; background: #fff; color: var(--text-main); }
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 12px; scroll-behavior: smooth; }
+        .word-card { background: var(--card); border-radius: 14px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; border: 2px solid transparent; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; }
+        .word-card.active { border-color: var(--primary); background: #fff; box-shadow: 0 8px 15px rgba(37, 99, 235, 0.1); transform: scale(1.02); }
+        .index-col { width: 30px; flex-shrink: 0; color: #cbd5e1; font-size: 10px; font-weight: 800; }
+        .word-card.active .index-col { color: var(--primary); }
+        .content-col { flex-grow: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; align-items: center; }
+        .hz-column { font-family: 'Noto Sans SC'; font-size: 1.25rem; color: var(--text-main); font-weight: 700; }
+        .info-column { border-left: 1.5px solid #f1f5f9; padding-left: 12px; }
+        .pinyin { color: var(--primary); font-weight: 700; font-size: 0.8rem; }
+        .meaning { color: var(--text-sub); font-size: 0.75rem; margin-top: 2px; }
+        .controls-bar { height: 95px; background: #fff; display: flex; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); border-radius: 24px 24px 0 0; padding: 0 8px; flex-shrink: 0; z-index: 10; }
+        .ctrl-group { flex: 1; display: flex; justify-content: space-evenly; align-items: center; }
+        .btn-nav { background: transparent; border: none; color: #94a3b8; width: 50px; height: 50px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-nav.active-blue { color: var(--primary); background: #eff6ff; }
+        .btn-nav.active-green { color: var(--success); background: #ecfdf5; }
+        .btn-play-container { position: relative; width: 70px; height: 70px; }
+        .btn-play { position: absolute; top: -35px; left: 0; width: 70px; height: 70px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; font-size: 24px; box-shadow: 0 8px 15px rgba(251, 191, 36, 0.3); display: flex; align-items: center; justify-content: center; outline: none; }
+    </style>
+</head>
+<body>
+
+<div class="top-section">
+    <header><h3>HSK MASTER</h3><div id="page-label">PAGE 01/01</div></header>
+    <div class="settings-panel">
+        <div class="setting-item"><label>Giọng</label><select id="voice-select">
+            <option value="zh-CN-XiaoxiaoNeural">Azure Nữ</option>
+            <option value="zh-CN-YunxiNeural">Azure Nam</option>
+            <option value="google">Google TTS</option>
+            <option value="browser">Máy (Local)</option>
+        </select></div>
+        <div class="setting-item"><label>Số lượng</label><select id="limit-select">
+            <option value="10">10</option><option value="20">20</option><option value="50">50</option>
+        </select></div>
+        <div class="setting-item"><label>Nghỉ (ms)</label><select id="delay-select">
+            <option value="500">0.5s</option><option value="1000" selected>1s</option><option value="2000">2s</option><option value="3000">3s</option>
+        </select></div>
+    </div>
+</div>
+
+<div class="scroll-area" id="word-list"></div>
+
+<div class="controls-bar">
+    <div class="ctrl-group">
+        <button class="btn-nav" id="type-btn"><i>📖</i><small id="type-txt">Từ</small></button>
+        <button class="btn-nav" id="shuffle-btn"><i>🔁</i><small>Xáo</small></button>
+        <button class="btn-nav" id="prev-btn"><i>⏮</i></button>
+    </div>
+    <div class="btn-play-container"><button class="btn-play" id="play-btn">▶</button></div>
+    <div class="ctrl-group">
+        <button class="btn-nav" id="next-btn"><i>⏭</i></button>
+        <button class="btn-nav" id="clear-db-btn" style="color:var(--danger)"><i>🗑️</i></button>
+    </div>
+</div>
+
+<script src="demo-data.js"></script>
+
+<script>
+/** 1. MOBILE AUDIO ENGINE (PHẦN QUAN TRỌNG NHẤT) **/
+// Dùng duy nhất 1 đối tượng Audio để tránh bị trình duyệt Mobile chặn
+const globalAudio = new Audio();
+let audioQueue = [];
+let isPlaying = false;
+let currentIndex = -1;
+let currentList = [];
+let page = 1, isShuffle = false, isSentence = false;
+const SAVE_KEY = "HSK_MOBILE_STATE";
+
+async function playAudio(url) {
+    return new Promise((resolve, reject) => {
+        globalAudio.src = url;
+        globalAudio.onended = resolve;
+        globalAudio.onerror = reject;
+        globalAudio.play().catch(e => {
+            console.log("Audio play blocked, needs user interaction");
+            resolve(); // Bỏ qua nếu bị lỗi để không treo app
+        });
+    });
+}
+
+/** 2. TTS & CACHE **/
+async function speak(text) {
+    const voice = document.getElementById("voice-select").value;
+    
+    // Nếu dùng Browser TTS (Máy)
+    if (voice === "browser") {
+        return new Promise(res => {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = "zh-CN";
+            u.onend = res;
+            window.speechSynthesis.speak(u);
+        });
+    }
+
+    let url = "";
+    if (voice === "google") {
+        url = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
+    } else {
+        // Giả lập Azure/API URL
+        url = `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
+    }
+    
+    await playAudio(url);
+}
+
+/** 3. CORE LOGIC **/
+async function autoPlayLoop() {
+    if (!isPlaying) return;
+
+    if (currentIndex >= currentList.length - 1) {
+        currentIndex = 0;
+        if (isShuffle) render(true);
+    } else {
+        currentIndex++;
+    }
+
+    updateUI();
+    const item = currentList[currentIndex];
+    if (item) {
+        await speak(isSentence ? item.exHz : item.hz);
+    }
+
+    // Thời gian nghỉ giữa các từ
+    const delay = parseInt(document.getElementById('delay-select').value);
+    if (isPlaying) {
+        setTimeout(autoPlayLoop, delay);
+    }
+}
+
+function render(keep = false) {
+    const limit = parseInt(document.getElementById('limit-select').value);
+    const listEl = document.getElementById('word-list');
+    let rawItems = hskData.slice((page - 1) * limit, page * limit).map((it, idx) => ({...it, stt: (page - 1) * limit + idx + 1}));
+    
+    currentList = isShuffle ? [...rawItems].sort(() => Math.random() - 0.5) : rawItems;
+    listEl.innerHTML = '';
+    
+    currentList.forEach((item, i) => {
+        const card = document.createElement('div');
+        card.className = 'word-card'; card.id = `card-${i}`;
+        card.onclick = () => { 
+            currentIndex = i; 
+            updateUI();
+            speak(isSentence ? item.exHz : item.hz); 
+        };
+        card.innerHTML = `
+            <div class="index-col">${String(item.stt).padStart(2,'0')}</div>
+            <div class="content-col">
+                <div class="hz-column">${isSentence ? item.exHz : item.hz}</div>
+                <div class="info-column">
+                    <div class="pinyin">${isSentence ? item.exPy : item.py}</div>
+                    <div class="meaning">${isSentence ? item.exVi : item.vi}</div>
+                </div>
+            </div>`;
+        listEl.appendChild(card);
+    });
+    document.getElementById('page-label').innerText = `PAGE ${page}/${Math.ceil(hskData.length/limit)}`;
+    if(!keep) currentIndex = -1;
+    saveState();
+}
+
+function updateUI() {
+    document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
+    const card = document.getElementById(`card-${currentIndex}`);
+    if (card) {
+        card.classList.add('active');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+/** 4. EVENTS **/
+document.getElementById('play-btn').onclick = function() {
+    // Quan trọng: Mồi âm thanh ngay khi người dùng click
+    globalAudio.play().catch(()=>{}); 
+    
+    isPlaying = !isPlaying;
+    this.innerText = isPlaying ? '⏹' : '▶';
+    
+    if (isPlaying) {
+        if (currentIndex === -1) currentIndex = 0;
+        autoPlayLoop();
+    }
+};
+
+document.getElementById('next-btn').onclick = () => { page++; render(); };
+document.getElementById('prev-btn').onclick = () => { if(page>1) {page--; render();} };
+document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); };
+document.getElementById('type-btn').onclick = function() { 
+    isSentence = !isSentence; 
+    this.classList.toggle('active-green', isSentence);
+    document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ';
+    render(true);
+};
+
+function saveState() {
+    const s = { page, isShuffle, isSentence, v: document.getElementById('voice-select').value, l: document.getElementById('limit-select').value, d: document.getElementById('delay-select').value };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(s));
+}
+
+function loadState() {
+    const saved = localStorage.getItem(SAVE_KEY);
+    if (saved) {
+        const s = JSON.parse(saved);
+        page = s.page; isShuffle = s.isShuffle; isSentence = s.isSentence;
+        document.getElementById('voice-select').value = s.v;
+        document.getElementById('limit-select').value = s.l;
+        document.getElementById('delay-select').value = s.d;
+        if(isShuffle) document.getElementById('shuffle-btn').classList.add('active-blue');
+        if(isSentence) {
+            document.getElementById('type-btn').classList.add('active-green');
+            document.getElementById('type-txt').innerText = 'Ví dụ';
+        }
+    }
+}
+
+loadState();
+render();
+</script>
+</body>
+</html>

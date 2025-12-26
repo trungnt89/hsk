@@ -3,54 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Mobile Optimized</title>
+    <title>HSK Master Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; --bg: #f8fafc; --card: #ffffff; --success: #10b981; --text-main: #1e293b; --text-sub: #64748b; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Montserrat', sans-serif; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; }
-        .top-section { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding-bottom: 10px; flex-shrink: 0; z-index: 10; }
-        header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+        :root { 
+            --primary: #2563eb; 
+            --accent: #fbbf24; 
+            --danger: #ef4444; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --success: #10b981; 
+            --text-main: #1e293b; 
+            --text-sub: #64748b; 
+        }
+
+        body, html { 
+            margin: 0; padding: 0; height: 100%; 
+            font-family: 'Montserrat', sans-serif; 
+            background: var(--bg); 
+            display: flex; flex-direction: column; 
+            overflow: hidden; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        /* Top Section */
+        .top-section { 
+            background: #fff; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+            padding-bottom: 12px; 
+            flex-shrink: 0; 
+            z-index: 10; 
+        }
+        header { 
+            padding: 12px 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
         header h3 { margin: 0; color: var(--primary); font-size: 1.1rem; }
-        #page-label { font-weight: 800; color: var(--primary); font-size: 10px; background: #eff6ff; padding: 4px 8px; border-radius: 6px; }
-        .settings-panel { padding: 0 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .setting-item label { font-size: 7px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 3px; text-transform: uppercase; }
-        select { width: 100%; border: 1.5px solid #f1f5f9; padding: 8px; border-radius: 10px; font-weight: 700; font-size: 11px; outline: none; background: #fff; color: var(--text-main); }
-        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 12px; scroll-behavior: smooth; }
-        .word-card { background: var(--card); border-radius: 14px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; border: 2px solid transparent; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; }
-        .word-card.active { border-color: var(--primary); background: #fff; box-shadow: 0 8px 15px rgba(37, 99, 235, 0.1); transform: scale(1.02); }
-        .index-col { width: 30px; flex-shrink: 0; color: #cbd5e1; font-size: 10px; font-weight: 800; }
+        #page-label { 
+            font-weight: 800; 
+            color: var(--primary); 
+            font-size: 10px; 
+            background: #eff6ff; 
+            padding: 4px 10px; 
+            border-radius: 8px; 
+        }
+
+        .settings-panel { 
+            padding: 0 12px; 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; 
+        }
+        .setting-item label { 
+            font-size: 7px; 
+            font-weight: 800; 
+            color: #94a3b8; 
+            display: block; 
+            margin-bottom: 4px; 
+            text-transform: uppercase; 
+        }
+        select { 
+            width: 100%; 
+            border: 1.5px solid #f1f5f9; 
+            padding: 10px 5px; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            font-size: 12px; 
+            outline: none; 
+            background: #fff; 
+            color: var(--text-main); 
+        }
+
+        /* List Area */
+        .scroll-area { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+            scroll-behavior: smooth; 
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .word-card { 
+            background: var(--card); 
+            border-radius: 16px; 
+            padding: 16px 12px; 
+            margin-bottom: 12px; 
+            display: flex; 
+            align-items: center; 
+            border: 2px solid transparent; 
+            transition: all 0.2s ease; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
+            cursor: pointer;
+        }
+        .word-card.active { 
+            border-color: var(--primary); 
+            background: #fff; 
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.1); 
+            transform: scale(1.02); 
+        }
+
+        .index-col { 
+            width: 40px; 
+            flex-shrink: 0; 
+            color: #cbd5e1; 
+            font-size: 12px; 
+            font-weight: 800; 
+        }
         .word-card.active .index-col { color: var(--primary); }
-        .content-col { flex-grow: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; align-items: center; }
-        .hz-column { font-family: 'Noto Sans SC'; font-size: 1.25rem; color: var(--text-main); font-weight: 700; }
-        .info-column { border-left: 1.5px solid #f1f5f9; padding-left: 12px; }
-        .pinyin { color: var(--primary); font-weight: 700; font-size: 0.8rem; }
-        .meaning { color: var(--text-sub); font-size: 0.75rem; margin-top: 2px; }
-        .controls-bar { height: 95px; background: #fff; display: flex; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); border-radius: 24px 24px 0 0; padding: 0 8px; flex-shrink: 0; z-index: 10; }
-        .ctrl-group { flex: 1; display: flex; justify-content: space-evenly; align-items: center; }
-        .btn-nav { background: transparent; border: none; color: #94a3b8; width: 50px; height: 50px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        .content-col { 
+            flex-grow: 1; 
+            display: grid; 
+            grid-template-columns: 1.2fr 1fr; 
+            gap: 15px; 
+            align-items: center; 
+        }
+        .hz-column { 
+            font-family: 'Noto Sans SC'; 
+            font-size: 1.35rem; 
+            color: var(--text-main); 
+            font-weight: 700; 
+        }
+        .info-column { 
+            border-left: 2px solid #f1f5f9; 
+            padding-left: 15px; 
+        }
+        .pinyin { color: var(--primary); font-weight: 700; font-size: 0.95rem; }
+        .meaning { color: var(--text-sub); font-size: 0.85rem; margin-top: 4px; font-family: sans-serif; }
+
+        /* Navigation Bar */
+        .controls-bar { 
+            height: 110px; 
+            background: #fff; 
+            display: flex; 
+            align-items: center; 
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.08); 
+            border-radius: 30px 30px 0 0; 
+            padding: 0 10px; 
+            flex-shrink: 0; 
+            z-index: 10; 
+        }
+        .ctrl-group { flex: 1; display: flex; justify-content: space-around; align-items: center; }
+        
+        .btn-nav { 
+            background: transparent; border: none; color: #94a3b8; 
+            width: 65px; height: 65px; 
+            border-radius: 20px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            transition: 0.2s;
+        }
+        .btn-nav i { font-style: normal; font-size: 24px; margin-bottom: 4px; }
+        .btn-nav small { font-size: 9px; font-weight: 800; text-transform: uppercase; }
+        
         .btn-nav.active-blue { color: var(--primary); background: #eff6ff; }
         .btn-nav.active-green { color: var(--success); background: #ecfdf5; }
-        .btn-play-container { position: relative; width: 70px; height: 70px; }
-        .btn-play { position: absolute; top: -35px; left: 0; width: 70px; height: 70px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; font-size: 24px; box-shadow: 0 8px 15px rgba(251, 191, 36, 0.3); display: flex; align-items: center; justify-content: center; outline: none; }
+        
+        .btn-play-container { position: relative; width: 85px; height: 85px; }
+        .btn-play { 
+            position: absolute; 
+            top: -45px; left: 0; 
+            width: 85px; height: 85px; 
+            background: var(--accent); 
+            border: 7px solid var(--bg); 
+            border-radius: 50%; 
+            font-size: 32px; 
+            box-shadow: 0 12px 24px rgba(251, 191, 36, 0.4); 
+            display: flex; align-items: center; justify-content: center; 
+            outline: none;
+        }
     </style>
 </head>
 <body>
 
 <div class="top-section">
-    <header><h3>HSK MASTER</h3><div id="page-label">PAGE 01/01</div></header>
+    <header>
+        <h3>HSK MASTER</h3>
+        <div id="page-label">PAGE 01/01</div>
+    </header>
     <div class="settings-panel">
-        <div class="setting-item"><label>Giọng</label><select id="voice-select">
-            <option value="zh-CN-XiaoxiaoNeural">Azure Nữ</option>
-            <option value="zh-CN-YunxiNeural">Azure Nam</option>
-            <option value="google">Google TTS</option>
-            <option value="browser">Máy (Local)</option>
-        </select></div>
-        <div class="setting-item"><label>Số lượng</label><select id="limit-select">
-            <option value="10">10</option><option value="20">20</option><option value="50">50</option>
-        </select></div>
-        <div class="setting-item"><label>Nghỉ (ms)</label><select id="delay-select">
-            <option value="500">0.5s</option><option value="1000" selected>1s</option><option value="2000">2s</option><option value="3000">3s</option>
-        </select></div>
+        <div class="setting-item">
+            <label>Giọng đọc</label>
+            <select id="voice-select">
+                <option value="zh-CN-XiaoxiaoNeural">Azure Nữ</option>
+                <option value="zh-CN-YunxiNeural">Azure Nam</option>
+                <option value="google">Google TTS</option>
+                <option value="browser">Máy (Local)</option>
+            </select>
+        </div>
+        <div class="setting-item">
+            <label>Số lượng</label>
+            <select id="limit-select">
+                <option value="10">10 Mục</option>
+                <option value="20">20 Mục</option>
+                <option value="50">50 Mục</option>
+            </select>
+        </div>
+        <div class="setting-item">
+            <label>Nghỉ giữa từ</label>
+            <select id="delay-select">
+                <option value="500">0.5 Giây</option>
+                <option value="1000" selected>1.0 Giây</option>
+                <option value="2000">2.0 Giây</option>
+                <option value="3000">3.0 Giây</option>
+            </select>
+        </div>
     </div>
 </div>
 
@@ -60,108 +218,142 @@
     <div class="ctrl-group">
         <button class="btn-nav" id="type-btn"><i>📖</i><small id="type-txt">Từ</small></button>
         <button class="btn-nav" id="shuffle-btn"><i>🔁</i><small>Xáo</small></button>
-        <button class="btn-nav" id="prev-btn"><i>⏮</i></button>
+        <button class="btn-nav" id="prev-btn"><i>⏮</i><small>Trước</small></button>
     </div>
-    <div class="btn-play-container"><button class="btn-play" id="play-btn">▶</button></div>
+    <div class="btn-play-container">
+        <button class="btn-play" id="play-btn">▶</button>
+    </div>
     <div class="ctrl-group">
-        <button class="btn-nav" id="next-btn"><i>⏭</i></button>
-        <button class="btn-nav" id="clear-db-btn" style="color:var(--danger)"><i>🗑️</i></button>
+        <button class="btn-nav" id="next-btn"><i>⏭</i><small>Sau</small></button>
+        <button class="btn-nav" id="clear-db-btn" style="color:var(--danger)"><i>🗑️</i><small>Xóa</small></button>
     </div>
 </div>
 
 <script src="demo-data.js"></script>
 
 <script>
-/** 1. MOBILE AUDIO ENGINE (PHẦN QUAN TRỌNG NHẤT) **/
-// Dùng duy nhất 1 đối tượng Audio để tránh bị trình duyệt Mobile chặn
-const globalAudio = new Audio();
-let audioQueue = [];
-let isPlaying = false;
-let currentIndex = -1;
-let currentList = [];
-let page = 1, isShuffle = false, isSentence = false;
-const SAVE_KEY = "HSK_MOBILE_STATE";
+/** 1. DATABASE & STORAGE **/
+const dbName = "HSK_Azure_Cache", storeName = "audioStore", SAVE_KEY = "HSK_APP_PRO_STATE";
+const globalAudio = new Audio(); // Dùng 1 đối tượng duy nhất cho Mobile
 
-async function playAudio(url) {
-    return new Promise((resolve, reject) => {
-        globalAudio.src = url;
-        globalAudio.onended = resolve;
-        globalAudio.onerror = reject;
-        globalAudio.play().catch(e => {
-            console.log("Audio play blocked, needs user interaction");
-            resolve(); // Bỏ qua nếu bị lỗi để không treo app
-        });
+async function openDB() {
+    return new Promise(res => {
+        const req = indexedDB.open(dbName, 1);
+        req.onupgradeneeded = e => e.target.result.createObjectStore(storeName);
+        req.onsuccess = e => res(e.target.result);
     });
 }
 
-/** 2. TTS & CACHE **/
+function saveAppState() {
+    const state = {
+        page, isShuffle, isSentence,
+        voice: document.getElementById('voice-select').value,
+        limit: document.getElementById('limit-select').value,
+        delay: document.getElementById('delay-select').value
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+function loadAppState() {
+    const saved = localStorage.getItem(SAVE_KEY);
+    if (saved) {
+        const s = JSON.parse(saved);
+        page = s.page || 1; isShuffle = s.isShuffle || false; isSentence = s.isSentence || false;
+        document.getElementById('voice-select').value = s.voice || "zh-CN-XiaoxiaoNeural";
+        document.getElementById('limit-select').value = s.limit || "10";
+        document.getElementById('delay-select').value = s.delay || "1000";
+        
+        document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle);
+        document.getElementById('type-btn').classList.toggle('active-green', isSentence);
+        document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ';
+    }
+}
+
+/** 2. STATE **/
+let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
+let currentIndex = -1, currentList = [];
+let nextTimer = null;
+
+/** 3. MOBILE AUDIO ENGINE **/
+async function playAudio(url) {
+    return new Promise((resolve) => {
+        globalAudio.src = url;
+        globalAudio.onended = resolve;
+        globalAudio.onerror = resolve;
+        globalAudio.play().catch(() => resolve());
+    });
+}
+
 async function speak(text) {
     const voice = document.getElementById("voice-select").value;
     
-    // Nếu dùng Browser TTS (Máy)
+    // 3.1 Browser TTS
     if (voice === "browser") {
         return new Promise(res => {
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
-            u.lang = "zh-CN";
-            u.onend = res;
+            u.lang = "zh-CN"; u.onend = res; u.onerror = res;
             window.speechSynthesis.speak(u);
         });
     }
 
-    let url = "";
+    // 3.2 Google TTS
     if (voice === "google") {
-        url = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
-    } else {
-        // Giả lập Azure/API URL
-        url = `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
+        await playAudio(url);
+        return;
+    }
+
+    // 3.3 Azure (Giả lập với Cache)
+    const key = `${voice}_${text}`;
+    const db = await openDB();
+    let blob = await new Promise(r => {
+        const req = db.transaction(storeName).objectStore(storeName).get(key);
+        req.onsuccess = () => r(req.result);
+    });
+
+    if (!blob) {
+        try {
+            const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`);
+            const buf = await res.arrayBuffer();
+            blob = new Blob([buf], { type: "audio/mpeg" });
+            db.transaction(storeName, "readwrite").objectStore(storeName).put(blob, key);
+        } catch (e) { }
     }
     
-    await playAudio(url);
-}
-
-/** 3. CORE LOGIC **/
-async function autoPlayLoop() {
-    if (!isPlaying) return;
-
-    if (currentIndex >= currentList.length - 1) {
-        currentIndex = 0;
-        if (isShuffle) render(true);
+    if (blob) {
+        const url = URL.createObjectURL(blob);
+        await playAudio(url);
+        URL.revokeObjectURL(url);
     } else {
-        currentIndex++;
-    }
-
-    updateUI();
-    const item = currentList[currentIndex];
-    if (item) {
-        await speak(isSentence ? item.exHz : item.hz);
-    }
-
-    // Thời gian nghỉ giữa các từ
-    const delay = parseInt(document.getElementById('delay-select').value);
-    if (isPlaying) {
-        setTimeout(autoPlayLoop, delay);
+        await new Promise(r => setTimeout(r, 1000)); // Fallback nếu lỗi mạng
     }
 }
 
+/** 4. RENDER & UI **/
 function render(keep = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     const listEl = document.getElementById('word-list');
-    let rawItems = hskData.slice((page - 1) * limit, page * limit).map((it, idx) => ({...it, stt: (page - 1) * limit + idx + 1}));
+    
+    let rawItems = hskData.slice((page - 1) * limit, page * limit).map((it, idx) => ({
+        ...it, stt: (page - 1) * limit + idx + 1
+    }));
     
     currentList = isShuffle ? [...rawItems].sort(() => Math.random() - 0.5) : rawItems;
     listEl.innerHTML = '';
-    
+
     currentList.forEach((item, i) => {
         const card = document.createElement('div');
         card.className = 'word-card'; card.id = `card-${i}`;
         card.onclick = () => { 
             currentIndex = i; 
-            updateUI();
-            speak(isSentence ? item.exHz : item.hz); 
+            updateUI(); 
+            speak(isSentence ? item.exHz : item.hz);
+            if(isPlaying) stopLoop(); // Dừng tự động nếu người dùng nhấn thủ công
         };
+        
         card.innerHTML = `
-            <div class="index-col">${String(item.stt).padStart(2,'0')}</div>
+            <div class="index-col">${String(item.stt).padStart(2, '0')}</div>
             <div class="content-col">
                 <div class="hz-column">${isSentence ? item.exHz : item.hz}</div>
                 <div class="info-column">
@@ -171,9 +363,10 @@ function render(keep = false) {
             </div>`;
         listEl.appendChild(card);
     });
+
     document.getElementById('page-label').innerText = `PAGE ${page}/${Math.ceil(hskData.length/limit)}`;
     if(!keep) currentIndex = -1;
-    saveState();
+    saveAppState();
 }
 
 function updateUI() {
@@ -185,52 +378,86 @@ function updateUI() {
     }
 }
 
-/** 4. EVENTS **/
-document.getElementById('play-btn').onclick = function() {
-    // Quan trọng: Mồi âm thanh ngay khi người dùng click
-    globalAudio.play().catch(()=>{}); 
-    
-    isPlaying = !isPlaying;
-    this.innerText = isPlaying ? '⏹' : '▶';
-    
+/** 5. AUTO PLAY LOOP **/
+async function startLoop() {
+    if (!isPlaying) return;
+
+    if (currentIndex >= currentList.length - 1) {
+        currentIndex = 0;
+        if (isShuffle) render(true); 
+    } else {
+        currentIndex++;
+    }
+
+    updateUI();
+    const item = currentList[currentIndex];
+    if (item) {
+        await speak(isSentence ? item.exHz : item.hz);
+    }
+
     if (isPlaying) {
-        if (currentIndex === -1) currentIndex = 0;
-        autoPlayLoop();
+        const delay = parseInt(document.getElementById('delay-select').value);
+        nextTimer = setTimeout(startLoop, delay);
+    }
+}
+
+function stopLoop() {
+    isPlaying = false;
+    document.getElementById('play-btn').innerText = '▶';
+    clearTimeout(nextTimer);
+    window.speechSynthesis.cancel();
+}
+
+/** 6. CONTROLS **/
+document.getElementById('play-btn').onclick = function() {
+    if (!isPlaying) {
+        isPlaying = true;
+        this.innerText = '⏹';
+        globalAudio.play().catch(()=>{}); // Mồi audio cho Mobile
+        if (currentIndex === -1) currentIndex = -1; // Sẽ bắt đầu từ 0 trong loop
+        startLoop();
+    } else {
+        stopLoop();
     }
 };
 
-document.getElementById('next-btn').onclick = () => { page++; render(); };
-document.getElementById('prev-btn').onclick = () => { if(page>1) {page--; render();} };
-document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); };
-document.getElementById('type-btn').onclick = function() { 
-    isSentence = !isSentence; 
+document.getElementById('next-btn').onclick = () => {
+    const maxPage = Math.ceil(hskData.length / parseInt(document.getElementById('limit-select').value));
+    if (page < maxPage) { page++; render(); if(isPlaying) { currentIndex = -1; startLoop(); }}
+};
+
+document.getElementById('prev-btn').onclick = () => {
+    if (page > 1) { page--; render(); if(isPlaying) { currentIndex = -1; startLoop(); }}
+};
+
+document.getElementById('shuffle-btn').onclick = function() {
+    isShuffle = !isShuffle;
+    this.classList.toggle('active-blue', isShuffle);
+    render(true);
+};
+
+document.getElementById('type-btn').onclick = function() {
+    isSentence = !isSentence;
     this.classList.toggle('active-green', isSentence);
     document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ';
     render(true);
 };
 
-function saveState() {
-    const s = { page, isShuffle, isSentence, v: document.getElementById('voice-select').value, l: document.getElementById('limit-select').value, d: document.getElementById('delay-select').value };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(s));
-}
-
-function loadState() {
-    const saved = localStorage.getItem(SAVE_KEY);
-    if (saved) {
-        const s = JSON.parse(saved);
-        page = s.page; isShuffle = s.isShuffle; isSentence = s.isSentence;
-        document.getElementById('voice-select').value = s.v;
-        document.getElementById('limit-select').value = s.l;
-        document.getElementById('delay-select').value = s.d;
-        if(isShuffle) document.getElementById('shuffle-btn').classList.add('active-blue');
-        if(isSentence) {
-            document.getElementById('type-btn').classList.add('active-green');
-            document.getElementById('type-txt').innerText = 'Ví dụ';
-        }
+document.getElementById('clear-db-btn').onclick = async () => {
+    if(confirm("Xóa bộ nhớ đệm âm thanh?")) {
+        const db = await openDB();
+        db.transaction(storeName, "readwrite").objectStore(storeName).clear();
+        alert("Đã xóa xong!");
     }
-}
+};
 
-loadState();
+// Auto save when settings change
+document.getElementById('voice-select').onchange = saveAppState;
+document.getElementById('delay-select').onchange = saveAppState;
+document.getElementById('limit-select').onchange = () => { page = 1; render(); };
+
+/** INITIALIZE **/
+loadAppState();
 render();
 </script>
 </body>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Fixed Loop</title>
+    <title>HSK Master - Azure TTS Round Loop</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --success: #10b981; }
@@ -43,8 +43,8 @@
         <div class="setting-item">
             <label>Giọng đọc</label>
             <select id="voice-select">
-                <option value="zh-CN-XiaoxiaoNeural" selected>Azure Nữ (Xiaoxiao)</option>
-                <option value="zh-CN-YunxiNeural">Azure Nam (Yunxi)</option>
+                <option value="zh-CN-XiaoxiaoNeural" selected>Azure Nữ</option>
+                <option value="zh-CN-YunxiNeural">Azure Nam</option>
                 <option value="google">Google TTS</option>
                 <option value="browser">Trình duyệt</option>
             </select>
@@ -60,9 +60,9 @@
         <div class="setting-item">
             <label>Tốc độ</label>
             <select id="delay-select">
-                <option value="5000">Chậm</option>
-                <option value="3500" selected>Vừa</option>
-                <option value="2000">Nhanh</option>
+                <option value="1000" selected>1 Giây</option>
+                <option value="2000">2 Giây</option>
+                <option value="3000">3 Giây</option>
             </select>
         </div>
     </div>
@@ -110,47 +110,45 @@ async function saveAudioToDB(key, blob) {
     db.transaction(storeName, "readwrite").objectStore(storeName).put(blob, key);
 }
 
-/** 2. BIẾN TRẠNG THÁI **/
+/** 2. STATE **/
 let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
 let autoTimer = null, currentIndex = -1, currentList = [];
 let currentAudio = null;
 const googleAudio = document.getElementById("google-audio");
 
-/** 3. HÀM ĐỌC **/
+/** 3. TTS ENGINE **/
 async function speak(text) {
     const voiceSelect = document.getElementById("voice-select");
-    const azureVoice = voiceSelect.value;
-    let ttsEngine = (azureVoice === "google" || azureVoice === "browser") ? azureVoice : "azure";
-
+    const selectedVoice = voiceSelect.value;
+    
     if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
     window.speechSynthesis.cancel();
 
-    if (ttsEngine === "browser") {
+    if (selectedVoice === "browser") {
         const u = new SpeechSynthesisUtterance(text);
         u.lang = "zh-CN";
         window.speechSynthesis.speak(u);
         return;
     }
-    if (ttsEngine === "google") {
-        googleAudio.src = "https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=" + encodeURIComponent(text);
+    if (selectedVoice === "google") {
+        googleAudio.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
         googleAudio.play();
         return;
     }
 
-    const key = `${azureVoice}_${text}`;
+    // Azure Logic
+    const key = `${selectedVoice}_${text}`;
     const cached = await getAudioFromDB(key);
     if (cached) { playBlob(cached); return; }
 
     try {
-        const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${azureVoice}`);
+        const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${selectedVoice}`);
         const buf = await res.arrayBuffer();
         const blob = new Blob([buf], { type: "audio/mpeg" });
         saveAudioToDB(key, blob);
         playBlob(blob);
     } catch (e) {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "zh-CN";
-        window.speechSynthesis.speak(u);
+        console.error("Azure Error");
     }
 }
 
@@ -161,18 +159,17 @@ function playBlob(blob) {
     currentAudio.onended = () => URL.revokeObjectURL(url);
 }
 
-/** 4. RENDER & LOOP LOGIC (FIXED) **/
+/** 4. RENDER & LOGIC **/
 function highlightWord(sentence, word) {
     if (!word || !sentence) return sentence;
     return sentence.split(word).join(`<span class="word-highlight">${word}</span>`);
 }
 
-function render(keepIndex = false) {
+function render(keepCurrent = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     const listEl = document.getElementById('word-list');
     listEl.innerHTML = '';
     
-    // Lấy đúng phần của dữ liệu
     let rawItems = hskData.slice((page - 1) * limit, page * limit);
     currentList = isShuffle ? [...rawItems].sort(() => Math.random() - 0.5) : rawItems;
 
@@ -180,19 +177,14 @@ function render(keepIndex = false) {
         const card = document.createElement('div');
         card.className = 'word-card';
         card.id = `card-${i}`;
-        card.onclick = () => { 
-            currentIndex = i; 
-            select(i); 
-            if(isPlaying) resetTimer(); 
-        };
+        card.onclick = () => { currentIndex = i; select(i); if(isPlaying) resetTimer(); };
         const hzText = isSentence ? highlightWord(item.exHz, item.hz) : item.hz;
         card.innerHTML = `
             <div class="word-content">
                 <div class="main-text">${hzText}</div>
                 <div class="pinyin">${isSentence ? item.exPy : item.py}</div>
                 <div class="meaning">${isSentence ? item.exVi : item.vi}</div>
-            </div>
-            <div style="font-size: 20px; color: #cbd5e1">🔊</div>`;
+            </div>`;
         listEl.appendChild(card);
     });
 
@@ -200,7 +192,7 @@ function render(keepIndex = false) {
     document.getElementById('page-label').innerText = `PAGE ${page.toString().padStart(2, '0')}/${totalPages.toString().padStart(2, '0')}`;
     document.getElementById('progress-text').innerText = `${currentList.length} items`;
     
-    if(!keepIndex) currentIndex = -1;
+    if(!keepCurrent) currentIndex = -1;
     else updateUI();
 }
 
@@ -220,44 +212,28 @@ function updateUI() {
     }
 }
 
+/** 5. VÒNG LẶP (QUAY LẠI ĐẦU TRANG - KHÔNG CHUYỂN TRANG) **/
 function resetTimer() {
     clearInterval(autoTimer);
     if(!isPlaying) return;
     
     const delay = parseInt(document.getElementById('delay-select').value);
     autoTimer = setInterval(() => {
-        const limit = parseInt(document.getElementById('limit-select').value);
-        const totalPages = Math.ceil(hskData.length / limit);
-        
         currentIndex++;
-        
-        // KIỂM TRA HẾT DANH SÁCH CỦA TRANG HIỆN TẠI
+        // Đọc hết list thì quay lại từ 0 (cùng 1 trang)
         if (currentIndex >= currentList.length) {
-            if (page < totalPages) {
-                // Sang trang mới
-                page++;
-                currentIndex = 0;
-                render(true); // render và giữ nguyên currentIndex 0
-                select(currentIndex);
-            } else {
-                // Hết tất cả dữ liệu -> Quay về trang 1
-                page = 1;
-                currentIndex = 0;
-                render(true);
-                select(currentIndex);
-            }
-        } else {
-            select(currentIndex);
+            currentIndex = 0; 
         }
+        select(currentIndex);
     }, delay);
 }
 
-/** 5. EVENTS **/
+/** 6. EVENTS **/
 document.getElementById('play-btn').onclick = function() {
     isPlaying = !isPlaying;
     this.innerText = isPlaying ? '⏹' : '▶';
     if (isPlaying) { 
-        if(currentIndex === -1 || currentIndex >= currentList.length) currentIndex = 0; 
+        if(currentIndex === -1) currentIndex = 0; 
         select(currentIndex); 
         resetTimer(); 
     } else { 
@@ -265,21 +241,27 @@ document.getElementById('play-btn').onclick = function() {
     }
 };
 
+document.getElementById('delay-select').onchange = () => { if(isPlaying) resetTimer(); };
+
 document.getElementById('next-btn').onclick = () => {
     const totalPages = Math.ceil(hskData.length / parseInt(document.getElementById('limit-select').value));
-    if (page < totalPages) { page++; render(); if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } }
+    if (page < totalPages) { 
+        page++; 
+        render(false); 
+        if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } 
+    }
 };
 
-document.getElementById('prev-btn').onclick = () => { if (page > 1) { page--; render(); if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } } };
-
-document.getElementById('limit-select').onchange = () => { page = 1; render(); if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } };
-
-document.getElementById('shuffle-btn').onclick = function() { 
-    isShuffle = !isShuffle; 
-    this.classList.toggle('active-blue', isShuffle); 
-    render(true); // Re-render nhưng giữ index để không mất từ đang chọn
+document.getElementById('prev-btn').onclick = () => { 
+    if (page > 1) { 
+        page--; 
+        render(false); 
+        if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } 
+    } 
 };
 
+document.getElementById('limit-select').onchange = () => { page = 1; render(false); if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } };
+document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); if(isPlaying) resetTimer(); };
 document.getElementById('type-btn').onclick = function() { 
     isSentence = !isSentence; 
     this.classList.toggle('active-green', isSentence); 
@@ -288,6 +270,7 @@ document.getElementById('type-btn').onclick = function() {
     if(currentIndex >= 0) select(currentIndex); 
 };
 
+// Start
 render();
 </script>
 </body>

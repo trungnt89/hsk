@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Full Audio Options</title>
+    <title>HSK Master - Auto Save State</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --success: #10b981; }
@@ -60,7 +60,7 @@
         <div class="setting-item">
             <label>Giọng đọc</label>
             <select id="voice-select">
-                <option value="zh-CN-XiaoxiaoNeural" selected>Azure Nữ</option>
+                <option value="zh-CN-XiaoxiaoNeural">Azure Nữ</option>
                 <option value="zh-CN-YunxiNeural">Azure Nam</option>
                 <option value="google">Google TTS</option>
                 <option value="browser">Máy (Local)</option>
@@ -69,7 +69,7 @@
         <div class="setting-item">
             <label>Số lượng</label>
             <select id="limit-select">
-                <option value="10" selected>10 Mục</option>
+                <option value="10">10 Mục</option>
                 <option value="20">20 Mục</option>
                 <option value="50">50 Mục</option>
             </select>
@@ -78,7 +78,7 @@
             <label>Tốc độ</label>
             <select id="delay-select">
                 <option value="1000">1 Giây</option>
-                <option value="2000" selected>2 Giây</option>
+                <option value="2000">2 Giây</option>
                 <option value="3000">3 Giây</option>
                 <option value="5000">5 Giây</option>
             </select>
@@ -105,8 +105,10 @@
 <script src="demo-data.js"></script>
 
 <script>
-/** 1. DATABASE **/
+/** 1. DATABASE & STORAGE **/
 const dbName = "HSK_Azure_Cache", storeName = "audioStore";
+const SAVE_KEY = "HSK_APP_STATE";
+
 async function openDB() {
     return new Promise(res => {
         const req = indexedDB.open(dbName, 1);
@@ -114,21 +116,37 @@ async function openDB() {
         req.onsuccess = e => res(e.target.result);
     });
 }
-async function clearAllAudioData() {
-    if(!confirm("Xóa cache?")) return;
-    const db = await openDB();
-    db.transaction(storeName, "readwrite").objectStore(storeName).clear().onsuccess = () => alert("Xong!");
+
+function saveAppState() {
+    const state = {
+        page: page,
+        isShuffle: isShuffle,
+        isSentence: isSentence,
+        voice: document.getElementById('voice-select').value,
+        limit: document.getElementById('limit-select').value,
+        delay: document.getElementById('delay-select').value
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
 }
-async function getAudioFromDB(key) {
-    const db = await openDB();
-    return new Promise(res => {
-        const req = db.transaction(storeName).objectStore(storeName).get(key);
-        req.onsuccess = () => res(req.result);
-    });
-}
-async function saveAudioToDB(key, blob) {
-    const db = await openDB();
-    db.transaction(storeName, "readwrite").objectStore(storeName).put(blob, key);
+
+function loadAppState() {
+    const saved = localStorage.getItem(SAVE_KEY);
+    if (saved) {
+        const state = JSON.parse(saved);
+        page = state.page || 1;
+        isShuffle = state.isShuffle || false;
+        isSentence = state.isSentence || false;
+        
+        // Cập nhật giao diện Select
+        document.getElementById('voice-select').value = state.voice || "zh-CN-XiaoxiaoNeural";
+        document.getElementById('limit-select').value = state.limit || "10";
+        document.getElementById('delay-select').value = state.delay || "2000";
+        
+        // Cập nhật trạng thái nút
+        document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle);
+        document.getElementById('type-btn').classList.toggle('active-green', isSentence);
+        document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ';
+    }
 }
 
 /** 2. STATE **/
@@ -136,39 +154,38 @@ let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
 let autoTimer = null, currentIndex = -1, currentList = [];
 let currentAudio = null;
 
-/** 3. TTS ENGINE (PHỤC HỒI CHẾ ĐỘ MÁY ĐỌC) **/
+/** 3. TTS ENGINE **/
 async function speak(text) {
     const voice = document.getElementById("voice-select").value;
     if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; }
     window.speechSynthesis.cancel();
 
-    // CHẾ ĐỘ MÁY ĐỌC (Browser Local TTS)
     if (voice === "browser") {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "zh-CN";
-        window.speechSynthesis.speak(u);
-        return;
+        const u = new SpeechSynthesisUtterance(text); u.lang = "zh-CN";
+        window.speechSynthesis.speak(u); return;
     }
-
-    // CHẾ ĐỘ GOOGLE
     if (voice === "google") {
         const g = document.getElementById("google-audio");
         g.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
-        g.play().catch(() => {});
-        return;
+        g.play().catch(() => {}); return;
     }
 
-    // CHẾ ĐỘ AZURE (Có Cache)
     const key = `${voice}_${text}`;
-    let blob = await getAudioFromDB(key);
+    const db = await openDB();
+    let blob = await new Promise(res => {
+        const req = db.transaction(storeName).objectStore(storeName).get(key);
+        req.onsuccess = () => res(req.result);
+    });
+
     if (!blob) {
         try {
             const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`);
             const buf = await res.arrayBuffer();
             blob = new Blob([buf], { type: "audio/mpeg" });
-            saveAudioToDB(key, blob);
+            db.transaction(storeName, "readwrite").objectStore(storeName).put(blob, key);
         } catch (e) { return; }
     }
+    
     if (blob) {
         const url = URL.createObjectURL(blob);
         currentAudio = new Audio(url);
@@ -177,10 +194,11 @@ async function speak(text) {
     }
 }
 
-/** 4. RENDER & UI **/
+/** 4. RENDER **/
 function render(keep = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     const listEl = document.getElementById('word-list');
+    
     let rawItems = hskData.slice((page - 1) * limit, page * limit);
     currentList = isShuffle ? [...rawItems].sort(() => Math.random() - 0.5) : rawItems;
 
@@ -195,8 +213,10 @@ function render(keep = false) {
         card.innerHTML = `<div class="hz-column">${hzText}</div><div class="info-column"><div class="pinyin">${pyText}</div><div class="meaning">${viText}</div></div>`;
         listEl.appendChild(card);
     });
+
     document.getElementById('page-label').innerText = `PAGE ${page}/${Math.ceil(hskData.length/limit)}`;
     if(keep) updateUI(); else currentIndex = -1;
+    saveAppState(); // Lưu lại mỗi khi chuyển trang hoặc render lại
 }
 
 async function select(i) {
@@ -211,7 +231,7 @@ function updateUI() {
     if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 }
 
-/** 5. TIMER & AUTO SHUFFLE **/
+/** 5. TIMER **/
 function resetTimer() {
     clearInterval(autoTimer);
     if(!isPlaying) return;
@@ -231,24 +251,35 @@ document.getElementById('play-btn').onclick = function() {
     if (isPlaying) { if(currentIndex === -1) currentIndex = 0; select(currentIndex); resetTimer(); } 
     else clearInterval(autoTimer);
 };
+
 document.getElementById('next-btn').onclick = () => { 
     const total = Math.ceil(hskData.length / parseInt(document.getElementById('limit-select').value));
     if(page < total) { page++; render(); if(isPlaying) {currentIndex=0; select(0); resetTimer();} }
 };
+
 document.getElementById('prev-btn').onclick = () => { 
     if(page > 1) { page--; render(); if(isPlaying) {currentIndex=0; select(0); resetTimer();} }
 };
-document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); if(isPlaying) resetTimer();};
+
+document.getElementById('shuffle-btn').onclick = function() { 
+    isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); 
+    render(true); if(isPlaying) resetTimer();
+};
+
 document.getElementById('type-btn').onclick = function() { 
     isSentence = !isSentence; this.classList.toggle('active-green', isSentence); 
     document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ';
     render(true); if(currentIndex >= 0) select(currentIndex);
 };
-document.getElementById('clear-db-btn').onclick = clearAllAudioData;
-document.getElementById('delay-select').onchange = () => { if(isPlaying) resetTimer(); };
+
+// Lưu lại trạng thái khi thay đổi cài đặt
+document.getElementById('voice-select').onchange = saveAppState;
+document.getElementById('delay-select').onchange = () => { saveAppState(); if(isPlaying) resetTimer(); };
 document.getElementById('limit-select').onchange = () => { page = 1; render(); };
 
-render();
+// KHỞI CHẠY
+loadAppState(); // Bước 1: Tải trạng thái cũ
+render();       // Bước 2: Hiển thị dữ liệu
 </script>
 </body>
 </html>

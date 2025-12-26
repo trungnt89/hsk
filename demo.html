@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>HSK1 Pro - Continuous Play</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --primary: #2563eb;
+  --accent: #fbbf24;
+  --danger: #ef4444;
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --success: #10b981;
+}
+
+body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: var(--bg); }
+
+/* --- TOP SECTION --- */
+.top-section { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding-bottom: 10px; }
+header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+header h3 { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--primary); font-size: 1.4rem; }
+.settings-panel { padding: 0 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+select { width: 100%; border: 2px solid #e2e8f0; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 11px; outline: none; background: #fff; }
+
+/* --- LIST AREA --- */
+.scroll-area { position: absolute; top: 160px; bottom: 100px; left: 0; right: 0; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
+.word-card { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 10px; display: flex; align-items: center; border: 2px solid transparent; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.word-card.active { border-color: var(--primary); background: #eff6ff; transform: scale(1.02); box-shadow: 0 5px 15px rgba(37, 99, 235, 0.1); }
+.word-content { flex: 1; }
+.main-text { font-family: 'Noto Sans SC'; font-size: 1.8rem; color: #1e293b; margin: 0; }
+.pinyin { color: var(--primary); font-weight: 800; margin: 2px 0; }
+.meaning { color: #64748b; font-size: 0.9rem; }
+
+/* --- BUTTON BAR --- */
+.controls-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 100px;
+  background: #fff; display: flex; align-items: center; padding: 0 10px;
+  box-shadow: 0 -5px 20px rgba(0,0,0,0.1); border-radius: 25px 25px 0 0; z-index: 101;
+}
+.ctrl-group { flex: 1; display: flex; justify-content: space-around; }
+
+.btn-nav {
+  background: #f8fafc; border: 2px solid #e2e8f0; color: #64748b;
+  width: 75px; height: 65px; border-radius: 18px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-nav i { font-style: normal; font-size: 22px; margin-bottom: 2px; }
+.btn-nav small { font-size: 8px; font-weight: 800; text-transform: uppercase; }
+
+.btn-nav.active-blue { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn-nav.active-green { background: var(--success); color: #fff; border-color: var(--success); }
+.btn-nav:active { transform: scale(0.9); }
+
+.play-wrapper { width: 90px; display: flex; justify-content: center; position: relative; }
+.btn-play {
+  position: absolute; top: -45px; width: 85px; height: 85px;
+  background: var(--accent); border: 8px solid var(--bg); border-radius: 50%;
+  font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.5); transition: 0.3s;
+}
+.btn-play.playing { background: var(--danger); color: white; }
+</style>
+</head>
+
+<body>
+
+<div class="top-section">
+  <header>
+    <h3>HSK1 MASTER</h3>
+    <div style="text-align: right">
+        <div id="page-label" style="font-weight: 800; color: var(--primary)">PAGE 01/15</div>
+        <div id="progress-text" style="font-size: 10px; color: #94a3b8">0/150 words</div>
+    </div>
+  </header>
+  <div class="settings-panel">
+    <div class="setting-item">
+      <select id="voice-select"><option value="">Giọng đọc</option></select>
+    </div>
+    <div class="setting-item">
+      <select id="limit-select">
+        <option value="10" selected>10 Mục</option>
+        <option value="20">20 Mục</option>
+        <option value="50">50 Mục</option>
+      </select>
+    </div>
+    <div class="setting-item">
+      <select id="delay-select">
+        <option value="4500">Chậm</option>
+        <option value="3000" selected>Vừa</option>
+        <option value="2000">Nhanh</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="scroll-area" id="word-list"></div>
+
+<div class="controls-bar">
+  <div class="ctrl-group">
+    <button class="btn-nav" id="prev-btn"><i>⏮</i><small>TRƯỚC</small></button>
+    <button class="btn-nav" id="shuffle-btn"><i>🔁</i><small id="shuffle-txt">LẦN LƯỢT</small></button>
+  </div>
+  
+  <div class="play-wrapper">
+    <button class="btn-play" id="play-btn">▶</button>
+  </div>
+  
+  <div class="ctrl-group">
+    <button class="btn-nav" id="type-btn"><i>📖</i><small id="type-txt">TỪ VỰNG</small></button>
+    <button class="btn-nav" id="next-btn"><i>⏭</i><small>SAU</small></button>
+  </div>
+</div>
+
+<script src="demo-data.js"></script>
+
+<script>
+let page = 1;
+let isShuffle = false;
+let isSentence = false;
+let isPlaying = false;
+let autoTimer = null;
+let currentIndex = -1;
+let currentList = [];
+let voices = [];
+
+// Khởi tạo giọng nói
+function initVoices() {
+    voices = window.speechSynthesis.getVoices();
+    const vs = document.getElementById('voice-select');
+    const selectedBefore = vs.value;
+    vs.innerHTML = '<option value="">Giọng Trung</option>';
+    voices.filter(v => v.lang.includes('zh')).forEach(v => {
+        vs.add(new Option(v.name, v.name));
+    });
+    vs.value = selectedBefore;
+}
+window.speechSynthesis.onvoiceschanged = initVoices;
+
+// Hàm Render (không làm dừng Auto-play)
+function render(resetIndex = true) {
+    const limit = parseInt(document.getElementById('limit-select').value);
+    const listEl = document.getElementById('word-list');
+    listEl.innerHTML = '';
+    
+    let items = hskData.slice((page - 1) * limit, page * limit);
+    if (isShuffle) items = [...items].sort(() => Math.random() - 0.5);
+    currentList = items;
+
+    currentList.forEach((item, i) => {
+        const card = document.createElement('div');
+        card.className = 'word-card';
+        card.id = `card-${i}`;
+        card.onclick = () => { 
+            currentIndex = i; 
+            select(currentIndex); 
+            if(isPlaying) resetTimer(); // Nếu đang chạy thì reset thời gian chờ của từ mới
+        };
+        card.innerHTML = `
+            <div class="word-content">
+                <div class="main-text">${isSentence ? item.exHz : item.hz}</div>
+                <div class="pinyin">${isSentence ? item.exPy : item.py}</div>
+                <div class="meaning">${isSentence ? item.exVi : item.vi}</div>
+            </div>
+            <div style="font-size: 20px; color: #cbd5e1">🔊</div>
+        `;
+        listEl.appendChild(card);
+    });
+    
+    const total = Math.ceil(hskData.length / limit);
+    document.getElementById('page-label').innerText = `PAGE ${page}/${total}`;
+    document.getElementById('progress-text').innerText = `${currentList.length} items`;
+
+    if(resetIndex) currentIndex = -1;
+    else if(currentIndex >= 0) updateCardUI(); // Giữ highlight nếu đang chạy
+}
+
+function select(i) {
+    currentIndex = i;
+    updateCardUI();
+    const item = currentList[currentIndex];
+    if (item) {
+        speak(isSentence ? item.exHz : item.hz);
+    }
+}
+
+function updateCardUI() {
+    document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
+    const card = document.getElementById(`card-${currentIndex}`);
+    if (card) {
+        card.classList.add('active');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function speak(text) {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'zh-CN';
+    const v = voices.find(v => v.name === document.getElementById('voice-select').value);
+    if (v) utter.voice = v;
+    window.speechSynthesis.speak(utter);
+}
+
+// --- LOGIC CHẠY LIÊN TỤC ---
+
+function resetTimer() {
+    if(!isPlaying) return;
+    clearInterval(autoTimer);
+    const delay = parseInt(document.getElementById('delay-select').value);
+    autoTimer = setInterval(() => {
+        currentIndex++;
+        if (currentIndex >= currentList.length) currentIndex = 0;
+        select(currentIndex);
+    }, delay);
+}
+
+function togglePlay() {
+    isPlaying = !isPlaying;
+    const btn = document.getElementById('play-btn');
+    if (isPlaying) {
+        btn.innerText = '⏹';
+        btn.classList.add('playing');
+        if(currentIndex === -1) currentIndex = 0;
+        select(currentIndex);
+        resetTimer();
+    } else {
+        btn.innerText = '▶';
+        btn.classList.remove('playing');
+        clearInterval(autoTimer);
+        window.speechSynthesis.cancel();
+    }
+}
+
+// Các nút bấm không còn gọi stopAuto()
+document.getElementById('play-btn').onclick = togglePlay;
+
+document.getElementById('next-btn').onclick = () => {
+    const total = Math.ceil(hskData.length / parseInt(document.getElementById('limit-select').value));
+    if (page < total) {
+        page++;
+        render(false); // Render nhưng giữ Index để logic auto không bị gãy
+        if(isPlaying) { currentIndex = 0; select(currentIndex); resetTimer(); }
+    }
+};
+
+document.getElementById('prev-btn').onclick = () => {
+    if (page > 1) {
+        page--;
+        render(false);
+        if(isPlaying) { currentIndex = 0; select(currentIndex); resetTimer(); }
+    }
+};
+
+document.getElementById('shuffle-btn').onclick = function() {
+    isShuffle = !isShuffle;
+    this.classList.toggle('active-blue', isShuffle);
+    document.getElementById('shuffle-txt').innerText = isShuffle ? 'NGẪU NHIÊN' : 'LẦN LƯỢT';
+    render(false); 
+    if(isPlaying) { currentIndex = 0; select(currentIndex); resetTimer(); }
+};
+
+document.getElementById('type-btn').onclick = function() {
+    isSentence = !isSentence;
+    this.classList.toggle('active-green', isSentence);
+    document.getElementById('type-txt').innerText = isSentence ? 'CÂU VÍ DỤ' : 'TỪ VỰNG';
+    render(false);
+    if(isPlaying) select(currentIndex); // Đọc lại từ đó nhưng ở chế độ mới
+};
+
+document.getElementById('delay-select').onchange = () => {
+    if(isPlaying) resetTimer(); // Cập nhật tốc độ ngay lập tức nếu đang chạy
+};
+
+document.getElementById('limit-select').onchange = () => {
+    page = 1;
+    render(true);
+    if(isPlaying) togglePlay(); // Riêng đổi số lượng hiển thị thì nên reset lại
+};
+
+// Khởi chạy
+render();
+initVoices();
+</script>
+</body>
+</html>

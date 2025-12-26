@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSK Audio Cache Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .stats { font-size: 14px; color: var(--primary); font-weight: 800; }
+        
+        .btn {
+            padding: 10px 15px; border-radius: 10px; border: none;
+            font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s;
+        }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger:hover { opacity: 0.8; }
+
+        .cache-list { display: grid; gap: 10px; }
+        .cache-item {
+            background: #fff; padding: 15px; border-radius: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .item-info { display: flex; flex-direction: column; gap: 4px; }
+        .item-name { font-weight: 700; color: var(--text); font-size: 16px; }
+        .item-meta { font-size: 10px; color: #94a3b8; text-transform: uppercase; }
+
+        .actions { display: flex; gap: 10px; align-items: center; }
+        .btn-play-small { 
+            background: #f1f5f9; color: var(--primary); width: 40px; height: 40px; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; border: none; cursor: pointer;
+        }
+        
+        .empty-state { text-align: center; padding: 50px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h2 style="margin:0; font-size: 1.2rem;">Quản lý Audio Cache</h2>
+            <div class="stats" id="total-count">Đang tải...</div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="loadCache()">Làm mới</button>
+            <button class="btn btn-danger" onclick="clearAllCache()">Xóa tất cả</button>
+        </div>
+    </div>
+
+    <div id="cache-list" class="cache-list">
+        </div>
+</div>
+
+<script>
+    const dbName = "HSK_Azure_Cache";
+    const storeName = "audioStore";
+
+    async function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(dbName, 1);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject("Không thể mở Database");
+        });
+    }
+
+    async function loadCache() {
+        const listEl = document.getElementById('cache-list');
+        const countEl = document.getElementById('total-count');
+        listEl.innerHTML = '<div class="empty-state">Đang đọc dữ liệu...</div>';
+        
+        try {
+            const db = await openDB();
+            const transaction = db.transaction(storeName, "readonly");
+            const store = transaction.objectStore(storeName);
+            const request = store.getAllKeys();
+            const blobsRequest = store.getAll();
+
+            request.onsuccess = () => {
+                const keys = request.result;
+                const blobs = blobsRequest.result;
+                
+                countEl.innerText = `TỔNG CỘNG: ${keys.length} FILE`;
+                
+                if (keys.length === 0) {
+                    listEl.innerHTML = '<div class="empty-state">Chưa có audio nào được lưu.</div>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                keys.forEach((key, index) => {
+                    // key thường có định dạng: zh-CN-XiaoxiaoNeural_你好
+                    const parts = key.split('_');
+                    const voice = parts[0];
+                    const text = parts[1] || key;
+
+                    const item = document.createElement('div');
+                    item.className = 'cache-item';
+                    item.innerHTML = `
+                        <div class="item-info">
+                            <div class="item-name">${text}</div>
+                            <div class="item-meta">${voice}</div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn-play-small" onclick="playBlob('${key}')">▶</button>
+                            <button class="btn" style="color: var(--danger)" onclick="deleteItem('${key}')">✕</button>
+                        </div>
+                    `;
+                    listEl.appendChild(item);
+                });
+            };
+        } catch (error) {
+            listEl.innerHTML = `<div class="empty-state">Lỗi: ${error}</div>`;
+        }
+    }
+
+    async function playBlob(key) {
+        const db = await openDB();
+        const transaction = db.transaction(storeName, "readonly");
+        const store = transaction.objectStore(storeName);
+        const request = store.get(key);
+
+        request.onsuccess = () => {
+            const blob = request.result;
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.play();
+            audio.onended = () => URL.revokeObjectURL(url);
+        };
+    }
+
+    async function deleteItem(key) {
+        if (!confirm(`Xóa audio của từ "${key.split('_')[1]}"?`)) return;
+        
+        const db = await openDB();
+        const transaction = db.transaction(storeName, "readwrite");
+        transaction.objectStore(storeName).delete(key);
+        transaction.oncomplete = () => loadCache();
+    }
+
+    async function clearAllCache() {
+        if (!confirm("CẢNH BÁO: Bạn có chắc chắn muốn xóa TOÀN BỘ bộ nhớ đệm audio không?")) return;
+        
+        const db = await openDB();
+        const transaction = db.transaction(storeName, "readwrite");
+        transaction.objectStore(storeName).clear();
+        transaction.oncomplete = () => loadCache();
+    }
+
+    // Khởi tạo
+    loadCache();
+</script>
+
+</body>
+</html>

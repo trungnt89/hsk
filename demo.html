@@ -3,25 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Final Professional</title>
+    <title>HSK Master - Full Audio Options</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --success: #10b981; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
         
-        body, html { 
-            margin: 0; padding: 0; height: 100%; 
-            font-family: sans-serif; background: var(--bg);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-        
-        /* Tiêu đề & Cài đặt - Bám sát top */
-        .top-section { 
-            background: #fff; 
-            box-shadow: 0 1px 5px rgba(0,0,0,0.1); 
-            padding-bottom: 8px;
-            flex-shrink: 0;
-            z-index: 10;
-        }
+        .top-section { background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.1); padding-bottom: 8px; flex-shrink: 0; z-index: 10; }
         header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
         header h3 { margin: 0; font-family: 'Montserrat'; color: var(--primary); font-size: 1.1rem; }
         #page-label { font-weight: 800; color: var(--primary); font-size: 11px; }
@@ -30,25 +18,12 @@
         .setting-item label { font-size: 8px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 2px; text-transform: uppercase; }
         select { width: 100%; border: 1.5px solid #e2e8f0; padding: 6px; border-radius: 8px; font-weight: bold; font-size: 10px; outline: none; background: #fff; }
 
-        /* Danh sách từ vựng - Tự động lấp đầy khoảng trống */
-        .scroll-area { 
-            flex-grow: 1; 
-            overflow-y: auto; 
-            padding: 10px; 
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-        }
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 10px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         
-        /* Cấu trúc Card 2 cột tối ưu cho câu ví dụ */
         .word-card { 
-            background: var(--card); border-radius: 12px; 
-            padding: 12px; margin-bottom: 8px; 
-            display: grid; 
-            grid-template-columns: 1.3fr 1fr; 
-            gap: 15px;
-            align-items: center; 
-            border: 2px solid transparent; transition: 0.2s; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;
+            background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 8px; 
+            display: grid; grid-template-columns: 1.3fr 1fr; gap: 15px; align-items: center; 
+            border: 2px solid transparent; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;
         }
         .word-card.active { border-color: var(--primary); background: #eff6ff; transform: scale(1.01); }
         
@@ -57,16 +32,7 @@
         .pinyin { color: var(--primary); font-weight: 700; font-size: 0.8rem; line-height: 1.3; }
         .meaning { color: #64748b; font-size: 0.8rem; line-height: 1.3; margin-top: 4px; font-weight: 500; }
 
-        /* Bottom Bar - Thứ tự: Từ | Xáo | Trước | PLAY | Sau | Xóa */
-        .controls-bar { 
-            height: 90px; background: #fff; 
-            display: flex; align-items: center; 
-            box-shadow: 0 -3px 15px rgba(0,0,0,0.08); 
-            border-radius: 20px 20px 0 0; 
-            padding: 0 5px;
-            flex-shrink: 0;
-            z-index: 10;
-        }
+        .controls-bar { height: 90px; background: #fff; display: flex; align-items: center; box-shadow: 0 -3px 15px rgba(0,0,0,0.08); border-radius: 20px 20px 0 0; padding: 0 5px; flex-shrink: 0; z-index: 10; }
         .ctrl-group { flex: 1; display: flex; justify-content: space-evenly; align-items: center; }
         .btn-nav { background: #f8fafc; border: none; color: #64748b; width: 50px; height: 50px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
         .btn-nav i { font-style: normal; font-size: 16px; }
@@ -77,12 +43,9 @@
         
         .btn-play-container { position: relative; width: 65px; height: 65px; flex-shrink: 0; }
         .btn-play { 
-            position: absolute; top: -35px; left: 0;
-            width: 65px; height: 65px; background: var(--accent); 
-            border: 5px solid var(--bg); border-radius: 50%; 
-            font-size: 24px; cursor: pointer; 
-            box-shadow: 0 5px 15px rgba(251, 191, 36, 0.4); 
-            display: flex; align-items: center; justify-content: center; 
+            position: absolute; top: -35px; left: 0; width: 65px; height: 65px; background: var(--accent); 
+            border: 5px solid var(--bg); border-radius: 50%; font-size: 24px; cursor: pointer; 
+            box-shadow: 0 5px 15px rgba(251, 191, 36, 0.4); display: flex; align-items: center; justify-content: center; 
         }
     </style>
 </head>
@@ -100,6 +63,7 @@
                 <option value="zh-CN-XiaoxiaoNeural" selected>Azure Nữ</option>
                 <option value="zh-CN-YunxiNeural">Azure Nam</option>
                 <option value="google">Google TTS</option>
+                <option value="browser">Máy (Local)</option>
             </select>
         </div>
         <div class="setting-item">
@@ -130,11 +94,7 @@
         <button class="btn-nav" id="shuffle-btn"><i>🔁</i><small>Xáo</small></button>
         <button class="btn-nav" id="prev-btn"><i>⏮</i><small>Trước</small></button>
     </div>
-    
-    <div class="btn-play-container">
-        <button class="btn-play" id="play-btn">▶</button>
-    </div>
-    
+    <div class="btn-play-container"><button class="btn-play" id="play-btn">▶</button></div>
     <div class="ctrl-group">
         <button class="btn-nav" id="next-btn"><i>⏭</i><small>Sau</small></button>
         <button class="btn-nav btn-clear" id="clear-db-btn"><i>🗑️</i><small>Xóa</small></button>
@@ -142,11 +102,10 @@
 </div>
 
 <audio id="google-audio" hidden></audio>
-
 <script src="demo-data.js"></script>
 
 <script>
-/** 1. DATABASE CACHE (INDEXEDDB) **/
+/** 1. DATABASE **/
 const dbName = "HSK_Azure_Cache", storeName = "audioStore";
 async function openDB() {
     return new Promise(res => {
@@ -156,9 +115,9 @@ async function openDB() {
     });
 }
 async function clearAllAudioData() {
-    if(!confirm("Xóa toàn bộ cache âm thanh?")) return;
+    if(!confirm("Xóa cache?")) return;
     const db = await openDB();
-    db.transaction(storeName, "readwrite").objectStore(storeName).clear().onsuccess = () => alert("Đã xóa!");
+    db.transaction(storeName, "readwrite").objectStore(storeName).clear().onsuccess = () => alert("Xong!");
 }
 async function getAudioFromDB(key) {
     const db = await openDB();
@@ -172,26 +131,36 @@ async function saveAudioToDB(key, blob) {
     db.transaction(storeName, "readwrite").objectStore(storeName).put(blob, key);
 }
 
-/** 2. TRẠNG THÁI **/
+/** 2. STATE **/
 let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
 let autoTimer = null, currentIndex = -1, currentList = [];
 let currentAudio = null;
 
-/** 3. PHÁT ÂM (TTS) **/
+/** 3. TTS ENGINE (PHỤC HỒI CHẾ ĐỘ MÁY ĐỌC) **/
 async function speak(text) {
     const voice = document.getElementById("voice-select").value;
     if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; }
     window.speechSynthesis.cancel();
 
+    // CHẾ ĐỘ MÁY ĐỌC (Browser Local TTS)
+    if (voice === "browser") {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "zh-CN";
+        window.speechSynthesis.speak(u);
+        return;
+    }
+
+    // CHẾ ĐỘ GOOGLE
     if (voice === "google") {
         const g = document.getElementById("google-audio");
         g.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
-        g.play().catch(() => {}); return;
+        g.play().catch(() => {});
+        return;
     }
 
+    // CHẾ ĐỘ AZURE (Có Cache)
     const key = `${voice}_${text}`;
     let blob = await getAudioFromDB(key);
-
     if (!blob) {
         try {
             const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`);
@@ -200,7 +169,6 @@ async function speak(text) {
             saveAudioToDB(key, blob);
         } catch (e) { return; }
     }
-    
     if (blob) {
         const url = URL.createObjectURL(blob);
         currentAudio = new Audio(url);
@@ -209,14 +177,11 @@ async function speak(text) {
     }
 }
 
-/** 4. HIỂN THỊ & LOGIC XÁO **/
+/** 4. RENDER & UI **/
 function render(keep = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     const listEl = document.getElementById('word-list');
-    
     let rawItems = hskData.slice((page - 1) * limit, page * limit);
-    
-    // Nếu chế độ Xáo bật, thực hiện xáo trộn danh sách
     currentList = isShuffle ? [...rawItems].sort(() => Math.random() - 0.5) : rawItems;
 
     listEl.innerHTML = '';
@@ -224,20 +189,12 @@ function render(keep = false) {
         const card = document.createElement('div');
         card.className = 'word-card'; card.id = `card-${i}`;
         card.onclick = () => { currentIndex = i; select(i); if(isPlaying) resetTimer(); };
-        
         const hzText = isSentence ? item.exHz : item.hz;
         const pyText = isSentence ? item.exPy : item.py;
         const viText = isSentence ? item.exVi : item.vi;
-
-        card.innerHTML = `
-            <div class="hz-column">${hzText}</div>
-            <div class="info-column">
-                <div class="pinyin">${pyText}</div>
-                <div class="meaning">${viText}</div>
-            </div>`;
+        card.innerHTML = `<div class="hz-column">${hzText}</div><div class="info-column"><div class="pinyin">${pyText}</div><div class="meaning">${viText}</div></div>`;
         listEl.appendChild(card);
     });
-
     document.getElementById('page-label').innerText = `PAGE ${page}/${Math.ceil(hskData.length/limit)}`;
     if(keep) updateUI(); else currentIndex = -1;
 }
@@ -251,72 +208,46 @@ async function select(i) {
 function updateUI() {
     document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
     const card = document.getElementById(`card-${currentIndex}`);
-    if (card) { 
-        card.classList.add('active'); 
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
-    }
+    if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 }
 
-/** 5. TỰ ĐỘNG CHẠY & XÁO LẠI KHI QUAY ĐẦU **/
+/** 5. TIMER & AUTO SHUFFLE **/
 function resetTimer() {
     clearInterval(autoTimer);
     if(!isPlaying) return;
-
     autoTimer = setInterval(async () => {
         currentIndex++;
-        
-        // Nếu đi hết danh sách trang hiện tại
         if (currentIndex >= currentList.length) {
             currentIndex = 0;
-            // Nếu đang bật xáo, thực hiện xáo lại thứ tự cho vòng lặp mới
-            if (isShuffle) {
-                render(true); 
-            }
+            if (isShuffle) render(true); 
         }
-        
         await select(currentIndex);
     }, parseInt(document.getElementById('delay-select').value));
 }
 
-/** 6. SỰ KIỆN NÚT BẤM **/
+/** 6. CONTROLS **/
 document.getElementById('play-btn').onclick = function() {
     isPlaying = !isPlaying; this.innerText = isPlaying ? '⏹' : '▶';
-    if (isPlaying) { 
-        if(currentIndex === -1) currentIndex = 0; 
-        select(currentIndex); resetTimer(); 
-    } else clearInterval(autoTimer);
+    if (isPlaying) { if(currentIndex === -1) currentIndex = 0; select(currentIndex); resetTimer(); } 
+    else clearInterval(autoTimer);
 };
-
-document.getElementById('clear-db-btn').onclick = clearAllAudioData;
-
 document.getElementById('next-btn').onclick = () => { 
     const total = Math.ceil(hskData.length / parseInt(document.getElementById('limit-select').value));
     if(page < total) { page++; render(); if(isPlaying) {currentIndex=0; select(0); resetTimer();} }
 };
-
 document.getElementById('prev-btn').onclick = () => { 
     if(page > 1) { page--; render(); if(isPlaying) {currentIndex=0; select(0); resetTimer();} }
 };
-
-document.getElementById('shuffle-btn').onclick = function() { 
-    isShuffle = !isShuffle; 
-    this.classList.toggle('active-blue', isShuffle); 
-    render(true); 
-    if(isPlaying) resetTimer();
-};
-
+document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); if(isPlaying) resetTimer();};
 document.getElementById('type-btn').onclick = function() { 
-    isSentence = !isSentence; 
-    this.classList.toggle('active-green', isSentence); 
+    isSentence = !isSentence; this.classList.toggle('active-green', isSentence); 
     document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ';
-    render(true); 
-    if(currentIndex >= 0) select(currentIndex);
+    render(true); if(currentIndex >= 0) select(currentIndex);
 };
-
+document.getElementById('clear-db-btn').onclick = clearAllAudioData;
 document.getElementById('delay-select').onchange = () => { if(isPlaying) resetTimer(); };
 document.getElementById('limit-select').onchange = () => { page = 1; render(); };
 
-// Khởi chạy ứng dụng
 render();
 </script>
 </body>

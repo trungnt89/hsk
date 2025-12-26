@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Pro Edition</title>
+    <title>HSK Master - Pagination 10-20-50</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,7 +13,7 @@
 
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: var(--bg); }
 
-        /* TOP SECTION */
+        /* TOPBAR */
         .top-section { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding-bottom: 12px; }
         header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         header h3 { margin: 0; font-family: 'Montserrat'; color: var(--primary); font-size: 1.3rem; }
@@ -22,19 +22,18 @@
         .setting-item label { font-size: 9px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 4px; text-transform: uppercase; }
         select { width: 100%; border: 2px solid #e2e8f0; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 11px; outline: none; background: #fff; }
 
-        /* SCROLL AREA */
+        /* LIST AREA */
         .scroll-area { position: absolute; top: 170px; bottom: 100px; left: 0; right: 0; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
         .word-card { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 12px; display: flex; align-items: center; border: 2px solid transparent; transition: 0.3s; box-shadow: 0 3px 6px rgba(0,0,0,0.03); cursor: pointer; }
-        .word-card.active { border-color: var(--primary); background: #eff6ff; transform: scale(1.03); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.1); }
+        .word-card.active { border-color: var(--primary); background: #eff6ff; transform: scale(1.02); }
         .word-content { flex: 1; }
         .main-text { font-family: 'Noto Sans SC'; font-size: 1.8rem; color: #1e293b; margin: 0; }
         .pinyin { color: var(--primary); font-weight: 800; margin: 4px 0; }
         .meaning { color: #64748b; font-size: 0.95rem; }
 
-        /* HIGHLIGHT KHÔNG GẠCH CHÂN */
         .word-highlight { color: var(--danger); font-weight: 900; background: rgba(239, 68, 68, 0.08); padding: 0 4px; border-radius: 4px; }
 
-        /* CONTROLS BAR */
+        /* BOTTOM BAR */
         .controls-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 100px; background: #fff; display: flex; align-items: center; box-shadow: 0 -5px 25px rgba(0,0,0,0.1); border-radius: 28px 28px 0 0; z-index: 101; }
         .ctrl-group { flex: 1; display: flex; justify-content: space-around; }
         .btn-nav { background: #f8fafc; border: 2px solid #e2e8f0; color: #64748b; width: 75px; height: 65px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
@@ -42,8 +41,8 @@
         .btn-nav.active-green { background: var(--success); color: #fff; border-color: var(--success); }
         
         .play-wrapper { width: 90px; position: relative; display: flex; justify-content: center; }
-        .btn-play { position: absolute; top: -45px; width: 85px; height: 85px; background: var(--accent); border: 8px solid var(--bg); border-radius: 50%; font-size: 32px; cursor: pointer; box-shadow: 0 8px 25px rgba(251, 191, 36, 0.5); display: flex; align-items: center; justify-content: center; z-index: 102; transition: 0.2s; }
-        .btn-play.playing { background: var(--danger); color: white; transform: scale(1.1); }
+        .btn-play { position: absolute; top: -45px; width: 85px; height: 85px; background: var(--accent); border: 8px solid var(--bg); border-radius: 50%; font-size: 32px; cursor: pointer; box-shadow: 0 8px 25px rgba(251, 191, 36, 0.5); display: flex; align-items: center; justify-content: center; }
+        .btn-play.playing { background: var(--danger); color: white; }
     </style>
 </head>
 <body>
@@ -53,27 +52,29 @@
         <h3>HSK MASTER</h3>
         <div style="text-align: right">
             <div id="page-label" style="font-weight: 800; color: var(--primary); font-size: 13px;">PAGE 01/01</div>
-            <div id="progress-text" style="font-size: 10px; color: #94a3b8">demo-data.js</div>
+            <div id="progress-text" style="font-size: 10px; color: #94a3b8">0 items</div>
         </div>
     </header>
     <div class="settings-panel">
         <div class="setting-item">
             <label>Giọng đọc</label>
             <select id="voice-select">
-                <optgroup label="Azure Neural">
-                    <option value="zh-CN-XiaoxiaoNeural">Azure Nữ</option>
-                    <option value="zh-CN-YunxiNeural">Azure Nam</option>
-                </optgroup>
+                <option value="zh-CN-XiaoxiaoNeural">Azure Xiaoxiao</option>
+                <option value="zh-CN-YunxiNeural">Azure Yunxi</option>
                 <option value="google" selected>Google Translate</option>
                 <option value="browser">Trình duyệt</option>
             </select>
         </div>
         <div class="setting-item">
-            <label>Mục/Trang</label>
-            <select id="limit-select"><option value="100">Tất cả</option></select>
+            <label>Số lượng</label>
+            <select id="limit-select">
+                <option value="10" selected>10 Mục</option>
+                <option value="20">20 Mục</option>
+                <option value="50">50 Mục</option>
+            </select>
         </div>
         <div class="setting-item">
-            <label>Tốc độ chờ</label>
+            <label>Tốc độ</label>
             <select id="delay-select">
                 <option value="5000">Chậm</option>
                 <option value="3500" selected>Vừa</option>
@@ -104,72 +105,28 @@
 <script src="demo-data.js"></script>
 
 <script>
-/** 1. DATABASE & CACHE **/
-const dbName = "HSK_Audio_DB", storeName = "cache";
-async function openDB() {
-    return new Promise(res => {
-        const req = indexedDB.open(dbName, 1);
-        req.onupgradeneeded = e => e.target.result.createObjectStore(storeName);
-        req.onsuccess = e => res(e.target.result);
-    });
-}
-async function getCache(key) {
-    const db = await openDB();
-    return new Promise(res => {
-        const req = db.transaction(storeName).objectStore(storeName).get(key);
-        req.onsuccess = () => res(req.result);
-    });
-}
-async function setCache(key, blob) {
-    const db = await openDB();
-    db.transaction(storeName, "readwrite").objectStore(storeName).put(blob, key);
-}
-
-/** 2. BIẾN TOÀN CỤC **/
-let isShuffle = false, isSentence = false, isPlaying = false, autoTimer = null, currentIndex = -1, currentList = [], voices = [];
+/** 1. BIẾN TOÀN CỤC **/
+let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
+let autoTimer = null, currentIndex = -1, currentList = [], voices = [];
 const googleAudio = document.getElementById("google-audio");
 
-// Tải giọng máy
+/** 2. TTS LOGIC **/
 function loadVoices() { voices = window.speechSynthesis.getVoices(); }
 window.speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
-/** 3. LOGIC XỬ LÝ ÂM THANH **/
 async function speak(text) {
     const engine = document.getElementById("voice-select").value;
-    console.log("%c [TTS] Đang dùng: " + engine, "color: #2563eb; font-weight: bold;");
-
+    console.log("DEBUG Engine:", engine);
     if (engine === "google") {
         window.speechSynthesis.cancel();
-        // Cập nhật URL Google không bị chặn
         googleAudio.src = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=zh-CN&client=tw-ob`;
         googleAudio.play().catch(() => speakFallback(text));
-        return;
-    }
-
-    if (engine === "browser") {
-        speakFallback(text);
-        return;
-    }
-
-    // Azure Logic (Có Fallback nếu không có server)
-    const key = `${engine}_${text}`;
-    const cached = await getCache(key);
-    if (cached) {
-        playBlob(cached);
-        return;
-    }
-
-    try {
-        const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${engine}`);
-        if (!res.ok) throw "NoServer";
-        const buf = await res.arrayBuffer();
-        const blob = new Blob([buf], { type: "audio/mpeg" });
-        setCache(key, blob);
-        playBlob(blob);
-    } catch (e) {
-        console.warn("Không có Server Azure, đang giả lập giọng máy...");
+    } else if (engine.includes("Neural")) {
+        // Mock Azure Fetch (Vì không có server, dùng fallback giả lập nam/nữ)
         speakFallback(text, engine.includes("Yunxi") ? "male" : "female");
+    } else {
+        speakFallback(text);
     }
 }
 
@@ -179,39 +136,31 @@ function speakFallback(text, gender = "female") {
     u.lang = "zh-CN";
     const zhVoices = voices.filter(v => v.lang.includes("zh") || v.lang.includes("CN"));
     if (zhVoices.length > 0) {
-        // Giả lập Nam/Nữ nếu máy có nhiều giọng
         u.voice = (gender === "male" && zhVoices.length > 1) ? zhVoices[1] : zhVoices[0];
     }
     window.speechSynthesis.speak(u);
 }
 
-function playBlob(blob) {
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.play();
-    audio.onended = () => URL.revokeObjectURL(url);
-}
-
-/** 4. GIAO DIỆN & RENDER **/
+/** 3. PHÂN TRANG & RENDER **/
 function highlightWord(sentence, word) {
     if (!word || !sentence) return sentence;
     return sentence.split(word).join(`<span class="word-highlight">${word}</span>`);
 }
 
-function render() {
+function render(resetIndex = true) {
+    const limit = parseInt(document.getElementById('limit-select').value);
     const listEl = document.getElementById('word-list');
     listEl.innerHTML = '';
-    currentList = isShuffle ? [...hskData].sort(() => Math.random() - 0.5) : hskData;
+    
+    // Lấy dữ liệu theo trang
+    let rawItems = hskData.slice((page - 1) * limit, page * limit);
+    currentList = isShuffle ? [...rawItems].sort(() => Math.random() - 0.5) : rawItems;
 
     currentList.forEach((item, i) => {
         const card = document.createElement('div');
         card.className = 'word-card';
         card.id = `card-${i}`;
-        card.onclick = () => { 
-            currentIndex = i; 
-            select(currentIndex); 
-            if(isPlaying) resetTimer(); 
-        };
+        card.onclick = () => { currentIndex = i; select(currentIndex); if(isPlaying) resetTimer(); };
         
         const hzText = isSentence ? highlightWord(item.exHz, item.hz) : item.hz;
         card.innerHTML = `
@@ -224,31 +173,52 @@ function render() {
         `;
         listEl.appendChild(card);
     });
+
+    const totalPages = Math.ceil(hskData.length / limit);
+    document.getElementById('page-label').innerText = `PAGE ${page.toString().padStart(2, '0')}/${totalPages.toString().padStart(2, '0')}`;
+    document.getElementById('progress-text').innerText = `${currentList.length} items`;
+
+    if(resetIndex) currentIndex = -1;
+    else if(currentIndex >= 0) updateUI();
 }
 
 function select(i) {
     currentIndex = i;
+    updateUI();
+    const item = currentList[currentIndex];
+    if (item) speak(isSentence ? item.exHz : item.hz);
+}
+
+function updateUI() {
     document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
-    const card = document.getElementById(`card-${i}`);
+    const card = document.getElementById(`card-${currentIndex}`);
     if (card) {
         card.classList.add('active');
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        speak(isSentence ? currentList[i].exHz : currentList[i].hz);
     }
 }
 
 function resetTimer() {
     if(!isPlaying) return;
     clearInterval(autoTimer);
-    const delay = parseInt(document.getElementById('delay-select').value);
     autoTimer = setInterval(() => {
         currentIndex++;
-        if (currentIndex >= currentList.length) currentIndex = 0;
+        if (currentIndex >= currentList.length) {
+            // Tự động qua trang mới nếu đang play
+            const totalPages = Math.ceil(hskData.length / parseInt(document.getElementById('limit-select').value));
+            if (page < totalPages) {
+                page++;
+                render(false);
+                currentIndex = 0;
+            } else {
+                currentIndex = 0; // Quay lại đầu trang 1 hoặc đầu trang hiện tại
+            }
+        }
         select(currentIndex);
-    }, delay);
+    }, document.getElementById('delay-select').value);
 }
 
-/** 5. SỰ KIỆN NÚT BẤM **/
+/** 4. EVENTS **/
 document.getElementById('play-btn').onclick = function() {
     isPlaying = !isPlaying;
     this.innerText = isPlaying ? '⏹' : '▶';
@@ -259,37 +229,42 @@ document.getElementById('play-btn').onclick = function() {
         resetTimer();
     } else {
         clearInterval(autoTimer);
-        window.speechSynthesis.cancel();
     }
+};
+
+document.getElementById('next-btn').onclick = () => {
+    const totalPages = Math.ceil(hskData.length / parseInt(document.getElementById('limit-select').value));
+    if (page < totalPages) { page++; render(true); if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } }
+};
+
+document.getElementById('prev-btn').onclick = () => {
+    if (page > 1) { page--; render(true); if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } }
+};
+
+document.getElementById('limit-select').onchange = () => {
+    page = 1; 
+    render(true);
+    if(isPlaying) { currentIndex = 0; select(0); resetTimer(); }
 };
 
 document.getElementById('shuffle-btn').onclick = function() {
     isShuffle = !isShuffle;
     this.classList.toggle('active-blue', isShuffle);
-    document.getElementById('shuffle-txt').innerText = isShuffle ? 'NGẪU NHIÊN' : 'LẦN LƯỢT';
-    render();
-    if(isPlaying) { currentIndex = 0; select(currentIndex); resetTimer(); }
+    render(false);
+    if(isPlaying) { currentIndex = 0; select(0); resetTimer(); }
 };
 
 document.getElementById('type-btn').onclick = function() {
     isSentence = !isSentence;
     this.classList.toggle('active-green', isSentence);
     document.getElementById('type-txt').innerText = isSentence ? 'CÂU VÍ DỤ' : 'TỪ VỰNG';
-    render();
-    if(currentIndex >= 0) {
-        select(currentIndex); // Đọc lại từ đó ở chế độ mới
-        if(isPlaying) resetTimer();
-    }
+    render(false);
+    if(currentIndex >= 0) select(currentIndex);
 };
-
-document.getElementById('voice-select').onchange = () => {
-    if(currentIndex >= 0) speak(isSentence ? currentList[currentIndex].exHz : currentList[currentIndex].hz);
-};
-
-document.getElementById('delay-select').onchange = resetTimer;
 
 // Khởi chạy
 render();
 </script>
 </body>
+</html>
 </html>

@@ -3,30 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Azure TTS Round Loop</title>
+    <title>HSK Master - Final UI</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --success: #10b981; }
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; background: var(--bg); }
+        
+        /* Top Section */
         .top-section { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding-bottom: 12px; }
         header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         header h3 { margin: 0; font-family: 'Montserrat'; color: var(--primary); font-size: 1.3rem; }
         .settings-panel { padding: 0 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .setting-item label { font-size: 9px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 4px; text-transform: uppercase; }
         select { width: 100%; border: 2px solid #e2e8f0; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 11px; outline: none; background: #fff; }
-        .scroll-area { position: absolute; top: 170px; bottom: 100px; left: 0; right: 0; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
+
+        /* Content Area */
+        .scroll-area { position: absolute; top: 170px; bottom: 110px; left: 0; right: 0; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
         .word-card { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 12px; display: flex; align-items: center; border: 2px solid transparent; transition: 0.3s; box-shadow: 0 3px 6px rgba(0,0,0,0.03); cursor: pointer; }
         .word-card.active { border-color: var(--primary); background: #eff6ff; transform: scale(1.02); }
         .main-text { font-family: 'Noto Sans SC'; font-size: 1.8rem; color: #1e293b; margin: 0; }
         .pinyin { color: var(--primary); font-weight: 800; margin: 4px 0; }
         .meaning { color: #64748b; font-size: 0.95rem; }
-        .word-highlight { color: var(--danger); font-weight: 900; background: rgba(239, 68, 68, 0.08); padding: 0 4px; border-radius: 4px; }
-        .controls-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 100px; background: #fff; display: flex; align-items: center; box-shadow: 0 -5px 25px rgba(0,0,0,0.1); border-radius: 28px 28px 0 0; z-index: 101; }
-        .ctrl-group { flex: 1; display: flex; justify-content: space-around; }
-        .btn-nav { background: #f8fafc; border: 2px solid #e2e8f0; color: #64748b; width: 75px; height: 65px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; border:none; cursor: pointer; }
+
+        /* Controls Bar */
+        .controls-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 110px; background: #fff; display: flex; align-items: center; box-shadow: 0 -5px 25px rgba(0,0,0,0.1); border-radius: 28px 28px 0 0; z-index: 101; padding: 0 5px; }
+        .ctrl-group { flex: 1; display: flex; justify-content: space-evenly; align-items: center; }
+        
+        .btn-nav { background: #f8fafc; border: none; color: #64748b; width: 60px; height: 60px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .btn-nav i { font-style: normal; font-size: 18px; margin-bottom: 2px; }
+        .btn-nav small { font-size: 7px; font-weight: 800; text-transform: uppercase; }
+        
         .btn-nav.active-blue { background: var(--primary); color: #fff; }
         .btn-nav.active-green { background: var(--success); color: #fff; }
-        .btn-play { position: absolute; top: -45px; width: 85px; height: 85px; background: var(--accent); border: 8px solid var(--bg); border-radius: 50%; font-size: 32px; cursor: pointer; box-shadow: 0 8px 25px rgba(251, 191, 36, 0.5); display: flex; align-items: center; justify-content: center; }
+        .btn-clear { color: var(--danger); background: #fff1f2; }
+
+        .btn-play { width: 75px; height: 75px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; font-size: 28px; cursor: pointer; box-shadow: 0 8px 20px rgba(251, 191, 36, 0.4); display: flex; align-items: center; justify-content: center; transform: translateY(-25px); }
     </style>
 </head>
 <body>
@@ -60,8 +71,8 @@
         <div class="setting-item">
             <label>Tốc độ</label>
             <select id="delay-select">
-                <option value="1000" selected>1 Giây</option>
-                <option value="2000">2 Giây</option>
+                <option value="1000">1 Giây</option>
+                <option value="2000" selected>2 Giây</option>
                 <option value="3000">3 Giây</option>
             </select>
         </div>
@@ -72,15 +83,16 @@
 
 <div class="controls-bar">
     <div class="ctrl-group">
-        <button class="btn-nav" id="prev-btn"><i>⏮</i><small>TRƯỚC</small></button>
-        <button class="btn-nav" id="shuffle-btn"><i>🔁</i><small id="shuffle-txt">LẦN LƯỢT</small></button>
+        <button class="btn-nav" id="prev-btn"><i>⏮</i><small>Trước</small></button>
+        <button class="btn-nav" id="shuffle-btn"><i>🔁</i><small>Ngẫu nhiên</small></button>
+        <button class="btn-nav" id="type-btn"><i>📖</i><small id="type-txt">Từ vựng</small></button>
     </div>
-    <div class="play-wrapper" style="width: 90px; position: relative; display: flex; justify-content: center;">
-        <button class="btn-play" id="play-btn">▶</button>
-    </div>
+    
+    <button class="btn-play" id="play-btn">▶</button>
+    
     <div class="ctrl-group">
-        <button class="btn-nav" id="type-btn"><i>📖</i><small id="type-txt">TỪ VỰNG</small></button>
-        <button class="btn-nav" id="next-btn"><i>⏭</i><small>SAU</small></button>
+        <button class="btn-nav" id="next-btn"><i>⏭</i><small>Sau</small></button>
+        <button class="btn-nav" style="visibility: hidden; width: 0;"></button> <button class="btn-nav btn-clear" id="clear-db-btn"><i>🗑️</i><small>Xóa Cache</small></button>
     </div>
 </div>
 
@@ -89,7 +101,7 @@
 <script src="demo-data.js"></script>
 
 <script>
-/** 1. DATABASE LOGIC **/
+/** 1. DATABASE **/
 const dbName = "HSK_Azure_Cache", storeName = "audioStore";
 async function openDB() {
     return new Promise(res => {
@@ -97,6 +109,11 @@ async function openDB() {
         req.onupgradeneeded = e => e.target.result.createObjectStore(storeName);
         req.onsuccess = e => res(e.target.result);
     });
+}
+async function clearAllAudioData() {
+    if(!confirm("Xóa toàn bộ âm thanh đã lưu?")) return;
+    const db = await openDB();
+    db.transaction(storeName, "readwrite").objectStore(storeName).clear().onsuccess = () => alert("Đã xóa xong!");
 }
 async function getAudioFromDB(key) {
     const db = await openDB();
@@ -114,58 +131,44 @@ async function saveAudioToDB(key, blob) {
 let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
 let autoTimer = null, currentIndex = -1, currentList = [];
 let currentAudio = null;
-const googleAudio = document.getElementById("google-audio");
 
 /** 3. TTS ENGINE **/
 async function speak(text) {
-    const voiceSelect = document.getElementById("voice-select");
-    const selectedVoice = voiceSelect.value;
-    
-    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+    const voice = document.getElementById("voice-select").value;
+    if (currentAudio) { currentAudio.pause(); }
     window.speechSynthesis.cancel();
 
-    if (selectedVoice === "browser") {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = "zh-CN";
-        window.speechSynthesis.speak(u);
-        return;
+    if (voice === "browser") {
+        const u = new SpeechSynthesisUtterance(text); u.lang = "zh-CN";
+        window.speechSynthesis.speak(u); return;
     }
-    if (selectedVoice === "google") {
-        googleAudio.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
-        googleAudio.play();
-        return;
+    if (voice === "google") {
+        const g = document.getElementById("google-audio");
+        g.src = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
+        g.play(); return;
     }
 
-    // Azure Logic
-    const key = `${selectedVoice}_${text}`;
+    const key = `${voice}_${text}`;
     const cached = await getAudioFromDB(key);
     if (cached) { playBlob(cached); return; }
 
     try {
-        const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${selectedVoice}`);
+        const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`);
         const buf = await res.arrayBuffer();
         const blob = new Blob([buf], { type: "audio/mpeg" });
         saveAudioToDB(key, blob);
         playBlob(blob);
-    } catch (e) {
-        console.error("Azure Error");
-    }
+    } catch (e) { console.log("TTS Error"); }
 }
 
 function playBlob(blob) {
     const url = URL.createObjectURL(blob);
     currentAudio = new Audio(url);
     currentAudio.play();
-    currentAudio.onended = () => URL.revokeObjectURL(url);
 }
 
-/** 4. RENDER & LOGIC **/
-function highlightWord(sentence, word) {
-    if (!word || !sentence) return sentence;
-    return sentence.split(word).join(`<span class="word-highlight">${word}</span>`);
-}
-
-function render(keepCurrent = false) {
+/** 4. CORE LOGIC **/
+function render(keep = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     const listEl = document.getElementById('word-list');
     listEl.innerHTML = '';
@@ -175,30 +178,22 @@ function render(keepCurrent = false) {
 
     currentList.forEach((item, i) => {
         const card = document.createElement('div');
-        card.className = 'word-card';
-        card.id = `card-${i}`;
+        card.className = 'word-card'; card.id = `card-${i}`;
         card.onclick = () => { currentIndex = i; select(i); if(isPlaying) resetTimer(); };
-        const hzText = isSentence ? highlightWord(item.exHz, item.hz) : item.hz;
-        card.innerHTML = `
-            <div class="word-content">
-                <div class="main-text">${hzText}</div>
-                <div class="pinyin">${isSentence ? item.exPy : item.py}</div>
-                <div class="meaning">${isSentence ? item.exVi : item.vi}</div>
-            </div>`;
+        card.innerHTML = `<div>
+            <div class="main-text">${isSentence ? item.exHz : item.hz}</div>
+            <div class="pinyin">${isSentence ? item.exPy : item.py}</div>
+            <div class="meaning">${isSentence ? item.exVi : item.vi}</div>
+        </div>`;
         listEl.appendChild(card);
     });
 
-    const totalPages = Math.ceil(hskData.length / limit);
-    document.getElementById('page-label').innerText = `PAGE ${page.toString().padStart(2, '0')}/${totalPages.toString().padStart(2, '0')}`;
-    document.getElementById('progress-text').innerText = `${currentList.length} items`;
-    
-    if(!keepCurrent) currentIndex = -1;
-    else updateUI();
+    document.getElementById('page-label').innerText = `PAGE ${page}/${Math.ceil(hskData.length/limit)}`;
+    if(!keep) currentIndex = -1; else updateUI();
 }
 
 function select(i) {
-    currentIndex = i;
-    updateUI();
+    currentIndex = i; updateUI();
     const item = currentList[currentIndex];
     if (item) speak(isSentence ? item.exHz : item.hz);
 }
@@ -206,71 +201,36 @@ function select(i) {
 function updateUI() {
     document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
     const card = document.getElementById(`card-${currentIndex}`);
-    if (card) { 
-        card.classList.add('active'); 
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
-    }
+    if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 }
 
-/** 5. VÒNG LẶP (QUAY LẠI ĐẦU TRANG - KHÔNG CHUYỂN TRANG) **/
 function resetTimer() {
     clearInterval(autoTimer);
     if(!isPlaying) return;
-    
-    const delay = parseInt(document.getElementById('delay-select').value);
     autoTimer = setInterval(() => {
         currentIndex++;
-        // Đọc hết list thì quay lại từ 0 (cùng 1 trang)
-        if (currentIndex >= currentList.length) {
-            currentIndex = 0; 
-        }
+        if (currentIndex >= currentList.length) currentIndex = 0; // LOOP TRONG TRANG
         select(currentIndex);
-    }, delay);
+    }, parseInt(document.getElementById('delay-select').value));
 }
 
-/** 6. EVENTS **/
+/** 5. EVENTS **/
 document.getElementById('play-btn').onclick = function() {
-    isPlaying = !isPlaying;
-    this.innerText = isPlaying ? '⏹' : '▶';
-    if (isPlaying) { 
-        if(currentIndex === -1) currentIndex = 0; 
-        select(currentIndex); 
-        resetTimer(); 
-    } else { 
-        clearInterval(autoTimer); 
-    }
+    isPlaying = !isPlaying; this.innerText = isPlaying ? '⏹' : '▶';
+    if (isPlaying) { if(currentIndex === -1) currentIndex = 0; select(currentIndex); resetTimer(); } 
+    else clearInterval(autoTimer);
 };
-
+document.getElementById('clear-db-btn').onclick = clearAllAudioData;
+document.getElementById('next-btn').onclick = () => { page++; render(); if(isPlaying) {currentIndex=0; select(0); resetTimer();} };
+document.getElementById('prev-btn').onclick = () => { if(page>1) {page--; render(); if(isPlaying) {currentIndex=0; select(0); resetTimer();}} };
+document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); };
+document.getElementById('type-btn').onclick = function() { 
+    isSentence = !isSentence; this.classList.toggle('active-green', isSentence); 
+    document.getElementById('type-txt').innerText = isSentence ? 'Câu ví dụ' : 'Từ vựng';
+    render(true); if(currentIndex >= 0) select(currentIndex);
+};
 document.getElementById('delay-select').onchange = () => { if(isPlaying) resetTimer(); };
 
-document.getElementById('next-btn').onclick = () => {
-    const totalPages = Math.ceil(hskData.length / parseInt(document.getElementById('limit-select').value));
-    if (page < totalPages) { 
-        page++; 
-        render(false); 
-        if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } 
-    }
-};
-
-document.getElementById('prev-btn').onclick = () => { 
-    if (page > 1) { 
-        page--; 
-        render(false); 
-        if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } 
-    } 
-};
-
-document.getElementById('limit-select').onchange = () => { page = 1; render(false); if(isPlaying) { currentIndex = 0; select(0); resetTimer(); } };
-document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); if(isPlaying) resetTimer(); };
-document.getElementById('type-btn').onclick = function() { 
-    isSentence = !isSentence; 
-    this.classList.toggle('active-green', isSentence); 
-    document.getElementById('type-txt').innerText = isSentence ? 'CÂU VÍ DỤ' : 'TỪ VỰNG';
-    render(true); 
-    if(currentIndex >= 0) select(currentIndex); 
-};
-
-// Start
 render();
 </script>
 </body>

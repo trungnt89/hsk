@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HSK Master Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --info: #0ea5e9;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg);
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        /* Header */
+        header {
+            padding: 40px 20px 20px;
+            text-align: center;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        header h1 { 
+            margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--primary); 
+            letter-spacing: -1px;
+        }
+        header p { margin: 5px 0 0; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+
+        /* Dashboard Grid */
+        .dashboard {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: calc(100% - 40px);
+        }
+
+        .nav-card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .nav-card:active {
+            transform: scale(0.97);
+            border-color: var(--primary);
+        }
+
+        .icon-wrapper {
+            width: 56px; height: 56px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; flex-shrink: 0;
+        }
+
+        /* Định nghĩa màu sắc riêng cho từng trang */
+        .bg-learn { background: #eff6ff; color: var(--primary); }
+        .bg-audio { background: #ecfdf5; color: var(--success); }
+        .bg-data { background: #f0f9ff; color: var(--info); }
+
+        .content { flex: 1; }
+        .content b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--text); }
+        .content p { margin: 0; font-size: 12px; color: #64748b; line-height: 1.4; }
+
+        .badge {
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 800;
+            color: #475569;
+            margin-top: 6px;
+            display: inline-block;
+        }
+
+        .chevron { color: #cbd5e1; font-size: 20px; }
+
+        footer {
+            padding: 30px;
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>HSK WORKSPACE</h1>
+        <p>Hệ thống học tập chuyên sâu</p>
+    </header>
+
+    <div class="dashboard">
+        <a href="hsk.html" class="nav-card">
+            <div class="icon-wrapper bg-learn">📖</div>
+            <div class="content">
+                <b>Trang Học Từ Vựng</b>
+                <p>Phát âm Azure, ví dụ ngữ cảnh và bôi đậm từ vựng.</p>
+                <div class="badge">HSK.HTML</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+
+        <a href="audio.html" class="nav-card">
+            <div class="icon-wrapper bg-audio">🔊</div>
+            <div class="content">
+                <b>Quản Lý Audio Cache</b>
+                <p>Kiểm tra, nghe thử và dọn dẹp âm thanh đã tải về máy.</p>
+                <div class="badge">AUDIO.HTML</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+
+        <a href="demo-data.js" class="nav-card">
+            <div class="icon-wrapper bg-data">📋</div>
+            <div class="content">
+                <b>Cấu Trúc Dữ Liệu</b>
+                <p>Xem danh sách JSON chứa từ vựng, pinyin và nghĩa.</p>
+                <div class="badge">DEMO-DATA.JS</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+    </div>
+
+    <footer>
+        PHÁT TRIỂN BỞI AI ASSISTANT • 2025
+    </footer>
+
+    <script>
+        // Hiệu ứng phản hồi haptic giả lập trên mobile
+        document.querySelectorAll('.nav-card').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                card.style.opacity = '0.7';
+            });
+            card.addEventListener('touchend', () => {
+                card.style.opacity = '1';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -3,326 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Học Tập</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
+    <title>HSK Master Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --primary: #2563eb; 
-            --accent: #fbbf24; 
-            --danger: #ef4444; 
-            --bg: #f8fafc; 
-            --card: #ffffff; 
-            --success: #10b981; 
-            --text-main: #1e293b; 
-            --text-sub: #64748b; 
-            --highlight: #f59e0b; 
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --info: #0ea5e9;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
         }
 
-        body, html { 
-            margin: 0; padding: 0; height: 100%; 
-            font-family: 'Montserrat', sans-serif; 
-            background: var(--bg); 
-            display: flex; flex-direction: column; 
-            overflow: hidden; 
-            -webkit-tap-highlight-color: transparent; 
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg);
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            min-height: 100vh;
+            color: var(--text);
         }
 
-        /* Top Section */
-        .top-section { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding-bottom: 12px; flex-shrink: 0; z-index: 10; }
-        header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
-        header h3 { margin: 0; color: var(--primary); font-size: 1.1rem; }
-        
-        .header-right { display: flex; align-items: center; gap: 8px; }
-        #filter-label { font-size: 9px; font-weight: 800; color: #fff; background: var(--primary); padding: 4px 8px; border-radius: 6px; text-transform: uppercase; }
-        #page-label { font-weight: 800; color: var(--primary); font-size: 10px; background: #eff6ff; padding: 4px 10px; border-radius: 8px; }
-
-        .settings-panel { padding: 0 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .setting-item label { font-size: 7px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 4px; text-transform: uppercase; }
-        select { width: 100%; border: 1.5px solid #f1f5f9; padding: 10px 5px; border-radius: 12px; font-weight: 700; font-size: 11px; outline: none; background: #fff; }
-
-        /* List Area */
-        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 15px; scroll-behavior: smooth; }
-        .word-card { 
-            background: var(--card); border-radius: 16px; padding: 16px 12px; margin-bottom: 12px; 
-            display: flex; align-items: center; border: 2px solid transparent; 
-            transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
-            position: relative;
+        /* Header */
+        header {
+            padding: 40px 20px 20px;
+            text-align: center;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .word-card.active { border-color: var(--primary); background: #fff; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.1); transform: scale(1.02); }
-
-        .index-col { width: 30px; flex-shrink: 0; color: #cbd5e1; font-size: 11px; font-weight: 800; }
-        
-        .content-col { flex-grow: 1; display: grid; grid-template-columns: 1.1fr 1fr; gap: 10px; align-items: center; }
-        .hz-column { font-family: 'Noto Sans SC'; font-size: 1.2rem; color: var(--text-main); font-weight: 700; }
-        
-        /* Mastered Status */
-        .master-btn {
-            width: 40px; height: 40px; border-radius: 12px; border: none;
-            background: #f1f5f9; color: #cbd5e1; font-size: 18px; 
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-            transition: 0.2s; margin-left: 10px;
+        header h1 { 
+            margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--primary); 
+            letter-spacing: -1px;
         }
-        .word-card.is-mastered .master-btn { background: #ecfdf5; color: var(--success); }
-        .word-card.is-mastered .hz-column { color: var(--success); }
+        header p { margin: 5px 0 0; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
 
-        .highlight { color: var(--highlight); font-weight: 800; border-bottom: 2px solid var(--highlight); }
-        .info-column { border-left: 2px solid #f1f5f9; padding-left: 12px; }
-        .pinyin { color: var(--primary); font-weight: 700; font-size: 0.85rem; }
-        .meaning { color: var(--text-sub); font-size: 0.75rem; margin-top: 4px; line-height: 1.3; }
+        /* Dashboard Grid */
+        .dashboard {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: calc(100% - 40px);
+        }
 
-        /* Navigation Bar */
-        .controls-bar { 
-            height: 110px; background: #fff; 
+        .nav-card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .nav-card:active {
+            transform: scale(0.97);
+            border-color: var(--primary);
+        }
+
+        .icon-wrapper {
+            width: 56px; height: 56px;
+            border-radius: 16px;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.08); 
-            border-radius: 30px 30px 0 0; 
-            padding: 0 5px; flex-shrink: 0; z-index: 10; 
+            font-size: 24px; flex-shrink: 0;
         }
-        .ctrl-group { flex: 1; display: flex; justify-content: space-evenly; align-items: center; }
-        .btn-nav { 
-            background: transparent; border: none; color: #94a3b8; 
-            width: 50px; height: 55px; border-radius: 15px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+
+        /* Định nghĩa màu sắc riêng cho từng trang */
+        .bg-learn { background: #eff6ff; color: var(--primary); }
+        .bg-audio { background: #ecfdf5; color: var(--success); }
+        .bg-data { background: #f0f9ff; color: var(--info); }
+
+        .content { flex: 1; }
+        .content b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--text); }
+        .content p { margin: 0; font-size: 12px; color: #64748b; line-height: 1.4; }
+
+        .badge {
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 800;
+            color: #475569;
+            margin-top: 6px;
+            display: inline-block;
         }
-        .btn-nav i { font-style: normal; font-size: 18px; margin-bottom: 2px; }
-        .btn-nav small { font-size: 7px; font-weight: 800; text-transform: uppercase; }
-        .btn-nav.active-blue { color: var(--primary); background: #eff6ff; }
-        .btn-nav.active-green { color: var(--success); background: #ecfdf5; }
-        
-        .play-center-wrap { width: 85px; position: relative; display: flex; justify-content: center; }
-        .btn-play { 
-            position: absolute; top: -45px; width: 80px; height: 80px; 
-            background: var(--accent); border: 7px solid var(--bg); border-radius: 50%; 
-            font-size: 30px; box-shadow: 0 10px 20px rgba(251, 191, 36, 0.4); 
-            display: flex; align-items: center; justify-content: center; outline: none;
+
+        .chevron { color: #cbd5e1; font-size: 20px; }
+
+        footer {
+            padding: 30px;
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
 
-<div class="top-section">
     <header>
-        <h3>HSK MASTER</h3>
-        <div class="header-right">
-            <div id="filter-label">TẤT CẢ</div>
-            <div id="page-label">PAGE 01/01</div>
-        </div>
+        <h1>HSK WORKSPACE</h1>
+        <p>Hệ thống học tập chuyên sâu</p>
     </header>
-    <div class="settings-panel">
-        <div class="setting-item"><label>Giọng đọc</label>
-            <select id="voice-select">
-                <option value="zh-CN-XiaoxiaoNeural">Azure Nữ</option>
-                <option value="zh-CN-YunxiNeural">Azure Nam</option>
-                <option value="google">Google TTS</option>
-                <option value="browser">Máy (Local)</option>
-            </select>
-        </div>
-        <div class="setting-item"><label>Số lượng</label>
-            <select id="limit-select"><option value="10">10</option><option value="20">20</option><option value="50" selected>50</option></select>
-        </div>
-        <div class="setting-item"><label>Nghỉ (s)</label>
-            <select id="delay-select"><option value="500">0.5s</option><option value="1000" selected>1s</option><option value="2000">2s</option></select>
-        </div>
-    </div>
-</div>
 
-<div class="scroll-area" id="word-list"></div>
-
-<div class="controls-bar">
-    <div class="ctrl-group">
-        <button class="btn-nav" id="type-btn"><i>📖</i><small id="type-txt">Từ</small></button>
-        <button class="btn-nav" id="shuffle-btn"><i>🔁</i><small>Xáo</small></button>
-        <button class="btn-nav" id="prev-btn"><i>⏮</i><small>Trước</small></button>
-    </div>
-    
-    <div class="play-center-wrap">
-        <button class="btn-play" id="play-btn">▶</button>
-    </div>
-    
-    <div class="ctrl-group">
-        <button class="btn-nav" id="next-btn"><i>⏭</i><small>Sau</small></button>
-        <button class="btn-nav" id="clear-db-btn" style="color:var(--danger)"><i>🗑️</i><small>Xóa</small></button>
-    </div>
-</div>
-
-<script src="demo-data.js"></script>
-
-<script>
-let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
-let currentIndex = -1, currentList = [], nextTimer = null;
-const SAVE_KEY = "HSK_PRO_V4";
-const MASTERED_KEY = "HSK_MASTERED";
-const globalAudio = new Audio();
-
-// Lấy danh sách đã thuộc
-let masteredWords = JSON.parse(localStorage.getItem(MASTERED_KEY) || "[]");
-
-function toggleMaster(hz) {
-    if (masteredWords.includes(hz)) {
-        masteredWords = masteredWords.filter(w => w !== hz);
-    } else {
-        masteredWords.push(hz);
-    }
-    localStorage.setItem(MASTERED_KEY, JSON.stringify(masteredWords));
-    render(true); // Render lại để cập nhật list (nếu đang ở chế độ lọc, từ sẽ biến mất)
-}
-
-function highlightKeyword(sentence, keyword) {
-    if (!sentence || !keyword) return sentence;
-    const regex = new RegExp(keyword, "g");
-    return sentence.replace(regex, `<span class="highlight">${keyword}</span>`);
-}
-
-async function speak(text) {
-    const voice = document.getElementById("voice-select").value;
-    if (voice === "browser") {
-        return new Promise(res => {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = "zh-CN"; u.onend = res;
-            window.speechSynthesis.speak(u);
-        });
-    }
-    const url = voice === "google" 
-        ? `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`
-        : `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
-    
-    return new Promise(res => {
-        globalAudio.src = url;
-        globalAudio.onended = res;
-        globalAudio.onerror = res;
-        globalAudio.play().catch(() => res());
-    });
-}
-
-function render(keep = false) {
-    const limit = parseInt(document.getElementById('limit-select').value);
-    const listEl = document.getElementById('word-list');
-    const filterType = localStorage.getItem('HSK_FILTER') || 'all';
-    
-    // Cập nhật nhãn filter
-    const labelMap = { all: 'TẤT CẢ', todo: 'CHƯA THUỘC', done: 'ĐÃ THUỘC' };
-    document.getElementById('filter-label').innerText = labelMap[filterType];
-
-    // Lọc dữ liệu theo filter từ Dashboard
-    let filteredData = hskData;
-    if (filterType === 'todo') {
-        filteredData = hskData.filter(item => !masteredWords.includes(item.hz));
-    } else if (filterType === 'done') {
-        filteredData = hskData.filter(item => masteredWords.includes(item.hz));
-    }
-
-    const maxPage = Math.ceil(filteredData.length / limit) || 1;
-    if (page > maxPage) page = maxPage;
-
-    let rawItems = filteredData.slice((page - 1) * limit, page * limit).map((it, idx) => ({...it, stt: (page - 1) * limit + idx + 1}));
-    
-    currentList = isShuffle ? [...rawItems].sort(() => Math.random() - 0.5) : rawItems;
-    listEl.innerHTML = '';
-
-    currentList.forEach((item, i) => {
-        const isM = masteredWords.includes(item.hz);
-        const card = document.createElement('div');
-        card.className = `word-card ${isM ? 'is-mastered' : ''}`; 
-        card.id = `card-${i}`;
-        card.onclick = () => { currentIndex = i; updateUI(); speak(isSentence ? item.exHz : item.hz); if(isPlaying) stopLoop(); };
-        
-        const hzDisplay = isSentence ? highlightKeyword(item.exHz, item.hz) : item.hz;
-        const pyDisplay = isSentence ? item.exPy : item.py;
-        const viDisplay = isSentence ? item.exVi : item.vi;
-
-        card.innerHTML = `
-            <div class="index-col">${String(item.stt).padStart(2, '0')}</div>
-            <div class="content-col">
-                <div class="hz-column">${hzDisplay}</div>
-                <div class="info-column">
-                    <div class="pinyin">${pyDisplay}</div>
-                    <div class="meaning">${viDisplay}</div>
-                </div>
+    <div class="dashboard">
+        <a href="hsk.html" class="nav-card">
+            <div class="icon-wrapper bg-learn">📖</div>
+            <div class="content">
+                <b>Trang Học Từ Vựng</b>
+                <p>Phát âm Azure, ví dụ ngữ cảnh và bôi đậm từ vựng.</p>
+                <div class="badge">HSK.HTML</div>
             </div>
-            <button class="master-btn" onclick="event.stopPropagation(); toggleMaster('${item.hz}')">
-                ${isM ? '✓' : '○'}
-            </button>`;
-        listEl.appendChild(card);
-    });
-    
-    document.getElementById('page-label').innerText = `PAGE ${page}/${maxPage}`;
-    if(!keep) currentIndex = -1;
-    saveState();
-}
+            <div class="chevron">›</div>
+        </a>
 
-function updateUI() {
-    document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
-    const card = document.getElementById(`card-${currentIndex}`);
-    if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-}
+        <a href="audio.html" class="nav-card">
+            <div class="icon-wrapper bg-audio">🔊</div>
+            <div class="content">
+                <b>Quản Lý Audio Cache</b>
+                <p>Kiểm tra, nghe thử và dọn dẹp âm thanh đã tải về máy.</p>
+                <div class="badge">AUDIO.HTML</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
 
-async function startLoop() {
-    if (!isPlaying) return;
-    currentIndex = (currentIndex >= currentList.length - 1) ? 0 : currentIndex + 1;
-    if (currentIndex === 0 && isShuffle) render(true);
-    updateUI();
-    const item = currentList[currentIndex];
-    if (item) await speak(isSentence ? item.exHz : item.hz);
-    if (isPlaying) {
-        nextTimer = setTimeout(startLoop, parseInt(document.getElementById('delay-select').value));
-    }
-}
+        <a href="demo-data.js" class="nav-card">
+            <div class="icon-wrapper bg-data">📋</div>
+            <div class="content">
+                <b>Cấu Trúc Dữ Liệu</b>
+                <p>Xem danh sách JSON chứa từ vựng, pinyin và nghĩa.</p>
+                <div class="badge">DEMO-DATA.JS</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+    </div>
 
-function stopLoop() { isPlaying = false; document.getElementById('play-btn').innerText = '▶'; clearTimeout(nextTimer); window.speechSynthesis.cancel(); }
+    <footer>
+        PHÁT TRIỂN BỞI AI ASSISTANT • 2025
+    </footer>
 
-document.getElementById('play-btn').onclick = function() {
-    if(!isPlaying) { isPlaying = true; this.innerText = '⏹'; globalAudio.play().catch(()=>{}); startLoop(); } 
-    else stopLoop();
-};
-
-document.getElementById('next-btn').onclick = () => { 
-    const filterType = localStorage.getItem('HSK_FILTER') || 'all';
-    let filteredData = hskData;
-    if (filterType === 'todo') filteredData = hskData.filter(item => !masteredWords.includes(item.hz));
-    else if (filterType === 'done') filteredData = hskData.filter(item => masteredWords.includes(item.hz));
-    
-    const max = Math.ceil(filteredData.length / parseInt(document.getElementById('limit-select').value));
-    if(page < max) { page++; render(); if(isPlaying) {currentIndex=-1; startLoop();}} 
-};
-
-document.getElementById('prev-btn').onclick = () => { if(page > 1) { page--; render(); if(isPlaying) {currentIndex=-1; startLoop();}} };
-document.getElementById('shuffle-btn').onclick = function() { isShuffle = !isShuffle; this.classList.toggle('active-blue', isShuffle); render(true); };
-document.getElementById('type-btn').onclick = function() { 
-    isSentence = !isSentence; this.classList.toggle('active-green', isSentence); 
-    document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ'; render(true); 
-};
-document.getElementById('clear-db-btn').onclick = async () => {
-    if(confirm("Xóa bộ nhớ đệm âm thanh?")) { 
-        const req = indexedDB.open("HSK_Azure_Cache", 1);
-        req.onsuccess = e => {
-            const db = e.target.result;
-            db.transaction("audioStore", "readwrite").objectStore("audioStore").clear();
-            alert("Đã xóa xong!");
-        };
-    }
-};
-
-function saveState() {
-    const s = { page, isShuffle, isSentence, v: document.getElementById('voice-select').value, l: document.getElementById('limit-select').value, d: document.getElementById('delay-select').value };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(s));
-}
-
-function loadState() {
-    const saved = localStorage.getItem(SAVE_KEY);
-    if (saved) {
-        const s = JSON.parse(saved);
-        page = s.page; isShuffle = s.isShuffle; isSentence = s.isSentence;
-        document.getElementById('voice-select').value = s.v;
-        document.getElementById('limit-select').value = s.l;
-        document.getElementById('delay-select').value = s.d;
-        if(isShuffle) document.getElementById('shuffle-btn').classList.add('active-blue');
-        if(isSentence) { document.getElementById('type-btn').classList.add('active-green'); document.getElementById('type-txt').innerText = 'Ví dụ'; }
-    }
-}
-
-loadState();
-render();
-</script>
+    <script>
+        // Hiệu ứng phản hồi haptic giả lập trên mobile
+        document.querySelectorAll('.nav-card').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                card.style.opacity = '0.7';
+            });
+            card.addEventListener('touchend', () => {
+                card.style.opacity = '1';
+            });
+        });
+    </script>
 </body>
 </html>

@@ -71,7 +71,7 @@
     </div>
     <div class="settings-panel">
         <div class="setting-item"><label>Giọng đọc</label>
-            <select id="voice-select">
+            <select id="voice-select" onchange="saveConfig()">
                 <option value="zh-CN-XiaoxiaoNeural">Azure Nữ</option>
                 <option value="zh-CN-YunxiNeural">Azure Nam</option>
                 <option value="google">Google TTS</option>
@@ -79,14 +79,14 @@
             </select>
         </div>
         <div class="setting-item"><label>Số lượng</label>
-            <select id="limit-select" onchange="page=1; render();">
+            <select id="limit-select" onchange="page=1; saveConfig(); render();">
                 <option value="10">10 Mục</option>
                 <option value="20" selected>20 Mục</option>
                 <option value="50">50 Mục</option>
             </select>
         </div>
         <div class="setting-item"><label>Tốc độ</label>
-            <select id="delay-select">
+            <select id="delay-select" onchange="saveConfig()">
                 <option value="1000">1 Giây</option>
                 <option value="2000" selected>2 Giây</option>
                 <option value="3000">3 Giây</option>
@@ -115,18 +115,56 @@
 // --- CORE LOGIC ---
 let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
 let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
-const MASTER_KEY = "HSK_MASTER_LIST_DB"; // Key duy nhất để không bị lẫn
+const MASTER_KEY = "HSK_MASTER_LIST_DB";
+const CONFIG_KEY = "HSK_MASTER_CONFIG"; // Lưu cấu hình select và button
 const audio = new Audio();
 
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
-// --- XỬ LÝ CHUYỂN TAB (FIX TRIỆT ĐỂ) ---
+// --- LƯU TRẠNG THÁI ---
+function saveConfig() {
+    const config = {
+        voice: document.getElementById('voice-select').value,
+        limit: document.getElementById('limit-select').value,
+        delay: document.getElementById('delay-select').value,
+        isShuffle: isShuffle,
+        isSentence: isSentence,
+        currentTab: currentTab
+    };
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+}
+
+// --- TẢI TRẠNG THÁI ---
+function loadConfig() {
+    const saved = localStorage.getItem(CONFIG_KEY);
+    if (saved) {
+        const config = JSON.parse(saved);
+        document.getElementById('voice-select').value = config.voice;
+        document.getElementById('limit-select').value = config.limit;
+        document.getElementById('delay-select').value = config.delay;
+        
+        isShuffle = config.isShuffle;
+        isSentence = config.isSentence;
+        currentTab = config.currentTab || 'todo';
+
+        // Cập nhật UI nút bấm
+        document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle);
+        document.getElementById('type-btn').classList.toggle('active-green', isSentence);
+        document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ';
+        
+        // Cập nhật UI tab
+        switchTab(currentTab);
+    }
+}
+
+// --- XỬ LÝ CHUYỂN TAB ---
 function switchTab(type) {
     currentTab = type;
     page = 1;
-    currentIndex = -1; // Reset vị trí khi đổi tab
+    currentIndex = -1;
     document.getElementById('tab-todo').className = `tab-btn ${type === 'todo' ? 'active' : ''}`;
     document.getElementById('tab-done').className = `tab-btn ${type === 'done' ? 'active done-mode' : ''}`;
+    saveConfig();
     render();
 }
 
@@ -135,7 +173,6 @@ function toggleMaster(hz, elementIdx) {
     haptic();
     let mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
     
-    // Cập nhật mảng
     if (mastered.includes(hz)) {
         mastered = mastered.filter(item => item !== hz);
     } else {
@@ -143,14 +180,13 @@ function toggleMaster(hz, elementIdx) {
     }
     localStorage.setItem(MASTER_KEY, JSON.stringify(mastered));
 
-    // Hiệu ứng biến mất mượt mà
     const card = document.getElementById(`card-${elementIdx}`);
-    card.style.transform = "scale(0.8) opacity(0)";
-    card.style.opacity = "0";
+    if(card) {
+        card.style.transform = "scale(0.8)";
+        card.style.opacity = "0";
+    }
     
-    setTimeout(() => {
-        render(true); // Render lại nhưng giữ nguyên trạng thái shuffle nếu đang bật
-    }, 250);
+    setTimeout(() => { render(true); }, 250);
 }
 
 // --- RENDER DANH SÁCH ---
@@ -158,31 +194,26 @@ function render(keepShuffle = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     const mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
     
-    // 1. Lọc dữ liệu theo Tab
     let filtered = hskData.filter(item => {
         const isMastered = mastered.includes(item.hz);
         return currentTab === 'todo' ? !isMastered : isMastered;
     });
 
-    // 2. Phân trang
     const totalP = Math.ceil(filtered.length / limit) || 1;
     if (page > totalP) page = totalP;
     let pagedItems = filtered.slice((page - 1) * limit, page * limit);
 
-    // 3. Xử lý Xáo trộn (Nếu bật xáo thì giữ mảng xáo, không thì lấy mảng gốc)
     if (isShuffle && !keepShuffle) {
         currentList = [...pagedItems].sort(() => Math.random() - 0.5);
     } else if (!isShuffle) {
         currentList = pagedItems;
     } else {
-        // Trường hợp keepShuffle (vừa bấm toggleMaster xong), ta lọc bỏ phần tử vừa mất
         currentList = currentList.filter(item => {
             const isMastered = mastered.includes(item.hz);
             return currentTab === 'todo' ? !isMastered : isMastered;
         });
     }
 
-    // 4. Hiển thị lên HTML
     const listEl = document.getElementById('word-list');
     listEl.innerHTML = '';
     
@@ -252,12 +283,28 @@ function togglePlay() {
 }
 
 function stopLoop() { isPlaying = false; document.getElementById('play-btn').innerText = '▶'; clearInterval(autoTimer); }
-function toggleType() { isSentence = !isSentence; document.getElementById('type-btn').classList.toggle('active-green', isSentence); document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ'; render(true); }
-function toggleShuffle() { isShuffle = !isShuffle; document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle); render(); }
+
+function toggleType() { 
+    isSentence = !isSentence; 
+    document.getElementById('type-btn').classList.toggle('active-green', isSentence); 
+    document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ'; 
+    saveConfig();
+    render(true); 
+}
+
+function toggleShuffle() { 
+    isShuffle = !isShuffle; 
+    document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle); 
+    saveConfig();
+    render(); 
+}
+
 function prevPage() { if(page > 1) { page--; render(); } }
 function nextPage() { page++; render(); }
 function clearMastered() { if(confirm("Xóa toàn bộ từ đã thuộc?")) { localStorage.removeItem(MASTER_KEY); render(); } }
 
+// KHỞI CHẠY
+loadConfig();
 render();
 </script>
 </body>

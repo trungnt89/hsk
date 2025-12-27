@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Final Fix</title>
+    <title>HSK Master - Full Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; --bg: #f8fafc; --card: #ffffff; --success: #10b981; --text-main: #1e293b; --text-sub: #64748b; --highlight: #f59e0b; }
@@ -38,18 +38,20 @@
         .index-number { font-size: 10px; font-weight: 800; color: #cbd5e1; }
         .content-col { flex-grow: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; align-items: center; min-width: 0; }
         .hz-column { font-family: 'Noto Sans SC'; font-size: 1.25rem; color: var(--text-main); font-weight: 700; }
-        .info-column { border-left: 1.5px solid #f1f5f9; padding-left: 12px; }
+        
+        /* CSS cho tính năng ẩn hiện nội dung */
+        .info-column { border-left: 1.5px solid #f1f5f9; padding-left: 12px; transition: opacity 0.2s; }
+        .info-column.hide-info { opacity: 0; visibility: hidden; }
+
         .pinyin { color: var(--primary); font-weight: 700; font-size: 0.85rem; }
         .meaning { color: var(--text-sub); font-size: 0.8rem; margin-top: 3px; }
 
         .master-btn { width: 44px; height: 44px; border-radius: 14px; border: none; background: #f1f5f9; color: #cbd5e1; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; margin-left: 8px; }
-        .master-btn:active { transform: scale(0.6); }
         .master-btn.is-mastered { color: var(--success); background: #ecfdf5; }
 
         .controls-bar { height: 95px; background: #fff; display: flex; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); border-radius: 24px 24px 0 0; padding: 0 8px; flex-shrink: 0; position: relative; }
         .ctrl-group { flex: 1; display: flex; justify-content: space-evenly; align-items: center; }
         .btn-nav { background: transparent; border: none; color: #94a3b8; width: 55px; height: 55px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.15s; }
-        .btn-nav:active { transform: scale(0.8); background: #f8fafc; } 
         .btn-nav.active-blue { color: var(--primary); background: #eff6ff; }
         .btn-nav.active-green { color: var(--success); background: #ecfdf5; }
 
@@ -58,7 +60,6 @@
             font-size: 26px; color: white; cursor: pointer; box-shadow: 0 8px 15px rgba(251, 191, 36, 0.3); 
             display: flex; align-items: center; justify-content: center; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); 
         }
-        .btn-play:active { transform: translateX(-50%) scale(0.85); }
     </style>
 </head>
 <body>
@@ -106,112 +107,109 @@
     <button class="btn-play" id="play-btn" onclick="haptic(); togglePlay()">▶</button>
     <div class="ctrl-group">
         <button class="btn-nav" id="next-btn" onclick="haptic(); nextPage()"><i>⏭</i><small>Sau</small></button>
+        <button class="btn-nav" id="info-btn" onclick="haptic(); toggleInfo()"><i>👁️</i><small id="info-txt">Hiện</small></button>
         <button class="btn-nav" onclick="haptic(); clearMastered()" style="color: var(--danger)"><i>🗑️</i><small>Xóa</small></button>
     </div>
 </div>
 
 <script src="demo-data.js"></script>
 <script>
-// --- CORE LOGIC ---
-let page = 1, isShuffle = false, isSentence = false, isPlaying = false;
+// --- CORE VARIABLES ---
+let page = 1, isShuffle = false, isSentence = false, isPlaying = false, showInfo = true;
 let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 const MASTER_KEY = "HSK_MASTER_LIST_DB";
-const CONFIG_KEY = "HSK_MASTER_CONFIG"; // Lưu cấu hình select và button
+const CONFIG_KEY = "HSK_MASTER_CONFIG";
 const audio = new Audio();
 
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
-// --- LƯU TRẠNG THÁI ---
+// --- LƯU & TẢI CẤU HÌNH ---
 function saveConfig() {
     const config = {
         voice: document.getElementById('voice-select').value,
         limit: document.getElementById('limit-select').value,
         delay: document.getElementById('delay-select').value,
-        isShuffle: isShuffle,
-        isSentence: isSentence,
-        currentTab: currentTab
+        isShuffle, isSentence, currentTab, showInfo
     };
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
 }
 
-// --- TẢI TRẠNG THÁI ---
 function loadConfig() {
     const saved = localStorage.getItem(CONFIG_KEY);
     if (saved) {
-        const config = JSON.parse(saved);
-        document.getElementById('voice-select').value = config.voice;
-        document.getElementById('limit-select').value = config.limit;
-        document.getElementById('delay-select').value = config.delay;
+        const c = JSON.parse(saved);
+        document.getElementById('voice-select').value = c.voice;
+        document.getElementById('limit-select').value = c.limit;
+        document.getElementById('delay-select').value = c.delay;
+        isShuffle = c.isShuffle;
+        isSentence = c.isSentence;
+        currentTab = c.currentTab || 'todo';
+        showInfo = c.showInfo !== undefined ? c.showInfo : true;
         
-        isShuffle = config.isShuffle;
-        isSentence = config.isSentence;
-        currentTab = config.currentTab || 'todo';
-
-        // Cập nhật UI nút bấm
+        // Cập nhật giao diện nút
         document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle);
         document.getElementById('type-btn').classList.toggle('active-green', isSentence);
         document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ';
-        
-        // Cập nhật UI tab
+        updateInfoUI();
         switchTab(currentTab);
     }
 }
 
-// --- XỬ LÝ CHUYỂN TAB ---
+// --- LOGIC HIỂN THỊ CỘT 2 ---
+function toggleInfo() {
+    showInfo = !showInfo;
+    updateInfoUI();
+    saveConfig();
+    render(true);
+}
+
+function updateInfoUI() {
+    const btn = document.getElementById('info-btn');
+    const txt = document.getElementById('info-txt');
+    btn.classList.toggle('active-blue', !showInfo);
+    txt.innerText = showInfo ? "Hiện" : "Ẩn";
+    btn.querySelector('i').innerText = showInfo ? "👁️" : "🙈";
+}
+
+// --- LOGIC TAB & MASTER ---
 function switchTab(type) {
     currentTab = type;
-    page = 1;
-    currentIndex = -1;
+    page = 1; currentIndex = -1;
     document.getElementById('tab-todo').className = `tab-btn ${type === 'todo' ? 'active' : ''}`;
     document.getElementById('tab-done').className = `tab-btn ${type === 'done' ? 'active done-mode' : ''}`;
     saveConfig();
     render();
 }
 
-// --- XỬ LÝ THUỘC / CHƯA THUỘC ---
 function toggleMaster(hz, elementIdx) {
     haptic();
     let mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
-    
-    if (mastered.includes(hz)) {
-        mastered = mastered.filter(item => item !== hz);
-    } else {
-        mastered.push(hz);
-    }
+    mastered = mastered.includes(hz) ? mastered.filter(i => i !== hz) : [...mastered, hz];
     localStorage.setItem(MASTER_KEY, JSON.stringify(mastered));
 
     const card = document.getElementById(`card-${elementIdx}`);
-    if(card) {
-        card.style.transform = "scale(0.8)";
-        card.style.opacity = "0";
-    }
-    
-    setTimeout(() => { render(true); }, 250);
+    if(card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
+    setTimeout(() => render(true), 250);
 }
 
-// --- RENDER DANH SÁCH ---
+// --- RENDER ---
 function render(keepShuffle = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     const mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
     
     let filtered = hskData.filter(item => {
-        const isMastered = mastered.includes(item.hz);
-        return currentTab === 'todo' ? !isMastered : isMastered;
+        const isM = mastered.includes(item.hz);
+        return currentTab === 'todo' ? !isM : isM;
     });
 
     const totalP = Math.ceil(filtered.length / limit) || 1;
     if (page > totalP) page = totalP;
-    let pagedItems = filtered.slice((page - 1) * limit, page * limit);
+    let items = filtered.slice((page - 1) * limit, page * limit);
 
     if (isShuffle && !keepShuffle) {
-        currentList = [...pagedItems].sort(() => Math.random() - 0.5);
+        currentList = [...items].sort(() => Math.random() - 0.5);
     } else if (!isShuffle) {
-        currentList = pagedItems;
-    } else {
-        currentList = currentList.filter(item => {
-            const isMastered = mastered.includes(item.hz);
-            return currentTab === 'todo' ? !isMastered : isMastered;
-        });
+        currentList = items;
     }
 
     const listEl = document.getElementById('word-list');
@@ -220,10 +218,9 @@ function render(keepShuffle = false) {
     currentList.forEach((item, i) => {
         const isM = mastered.includes(item.hz);
         const card = document.createElement('div');
-        card.className = 'word-card'; card.id = `card-${i}`;
-        if(i === currentIndex) card.classList.add('active');
-
-        card.onclick = () => { haptic(); select(i); if(isPlaying) stopLoop(); };
+        card.className = `word-card ${i === currentIndex ? 'active' : ''}`;
+        card.id = `card-${i}`;
+        card.onclick = () => { select(i); if(isPlaying) stopLoop(); };
         
         const hzDisplay = isSentence ? item.exHz.replace(new RegExp(item.hz, 'g'), `<span class="highlight">${item.hz}</span>`) : item.hz;
         const globalIdx = hskData.findIndex(x => x.hz === item.hz) + 1;
@@ -232,7 +229,7 @@ function render(keepShuffle = false) {
             <div class="index-col"><span class="index-number">${String(globalIdx).padStart(2, '0')}</span></div>
             <div class="content-col">
                 <div class="hz-column">${hzDisplay}</div>
-                <div class="info-column">
+                <div class="info-column ${!showInfo ? 'hide-info' : ''}">
                     <div class="pinyin">${isSentence ? item.exPy : item.py}</div>
                     <div class="meaning">${isSentence ? item.exVi : item.vi}</div>
                 </div>
@@ -242,17 +239,15 @@ function render(keepShuffle = false) {
             </button>`;
         listEl.appendChild(card);
     });
-
     document.getElementById('page-label').innerText = `PAGE ${page}/${totalP}`;
 }
 
-// --- ĐIỀU KHIỂN ---
+// --- TTS & CONTROL ---
 async function select(i) {
     currentIndex = i;
     document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
     const card = document.getElementById(`card-${i}`);
     if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-    
     const item = currentList[i];
     if (item) await speak(isSentence ? item.exHz : item.hz);
 }
@@ -283,27 +278,13 @@ function togglePlay() {
 }
 
 function stopLoop() { isPlaying = false; document.getElementById('play-btn').innerText = '▶'; clearInterval(autoTimer); }
-
-function toggleType() { 
-    isSentence = !isSentence; 
-    document.getElementById('type-btn').classList.toggle('active-green', isSentence); 
-    document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ'; 
-    saveConfig();
-    render(true); 
-}
-
-function toggleShuffle() { 
-    isShuffle = !isShuffle; 
-    document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle); 
-    saveConfig();
-    render(); 
-}
-
+function toggleType() { isSentence = !isSentence; saveConfig(); loadConfig(); render(true); }
+function toggleShuffle() { isShuffle = !isShuffle; saveConfig(); loadConfig(); render(); }
 function prevPage() { if(page > 1) { page--; render(); } }
 function nextPage() { page++; render(); }
 function clearMastered() { if(confirm("Xóa toàn bộ từ đã thuộc?")) { localStorage.removeItem(MASTER_KEY); render(); } }
 
-// KHỞI CHẠY
+// START
 loadConfig();
 render();
 </script>

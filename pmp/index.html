@@ -3,44 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PMP Master Ultimate - iOS Style</title>
+    <title>PMP Quiz iOS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
             --primary: #007AFF; --easy: #34C759; --medium: #FF9500; --hard: #FF3B30;
             --bg: #F2F2F7; --card: #FFFFFF; --text-main: #000000; --text-sub: #8E8E93;
         }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100vw; font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; }
 
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100vw; 
-            font-family: -apple-system, 'Inter', sans-serif; 
-            background: var(--bg); display: flex; flex-direction: column; 
-            overflow: hidden; -webkit-tap-highlight-color: transparent; 
-        }
-
-        /* Loading & Debug Overlay */
-        #debug-console { 
-            position: fixed; top: 0; left: 0; width: 100%; height: auto; 
-            max-height: 80px; background: rgba(0,0,0,0.8); color: #00ff00; 
-            font-size: 10px; z-index: 9999; overflow-y: auto; display: none; padding: 5px;
-        }
-
-        /* Top Header */
+        /* Header & Tabs */
         .top-section { background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-bottom: 0.5px solid #C6C6C8; flex-shrink: 0; z-index: 100; }
         header { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
         header h3 { margin: 0; font-size: 17px; font-weight: 800; }
-        
         .tab-box { display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 16px; gap: 4px; background: #E3E3E6; margin: 0 16px 10px; border-radius: 10px; }
         .tab-btn { border: none; padding: 8px 2px; border-radius: 8px; font-size: 10px; font-weight: 700; color: #3A3A3C; background: transparent; cursor: pointer; }
         .tab-btn.active { background: white; box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
-
         .settings-panel { padding: 0 16px 10px; }
         select { width: 100%; border: none; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; background: #E3E3E6; outline: none; }
 
-        /* Main Display */
+        /* Main Area */
         .main-display { flex-grow: 1; overflow-y: auto; padding: 12px; padding-bottom: 120px; }
-
-        /* Cụm Selector Cố định (Lớn) */
+        .q-card { background: var(--card); border-radius: 24px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); margin-bottom: 20px; position: relative; }
+        
+        /* Sticky Header inside Card */
         .q-sticky-header {
             position: sticky; top: -12px; z-index: 10;
             background: rgba(255,255,255,0.98); backdrop-filter: blur(10px);
@@ -55,54 +41,35 @@
             font-size: 11px; font-weight: 800; cursor: pointer; background: #F2F2F7; color: #8E8E93;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* Selected States cho mức độ */
         .btn-level-big.active-hard { background: var(--hard); color: white; border-color: #BD2E26; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
         .btn-level-big.active-medium { background: var(--medium); color: white; border-color: #D67D00; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
         .btn-level-big.active-easy { background: var(--easy); color: white; border-color: #289E46; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
-        .btn-level-big:active { transform: scale(0.92); }
 
-        .q-card { background: var(--card); border-radius: 24px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); margin-bottom: 20px; }
-        .q-text { font-size: 17px; font-weight: 600; line-height: 1.5; color: var(--text-main); margin: 15px 0; }
-        
-        /* Đáp án */
+        .q-text { font-size: 17px; font-weight: 600; line-height: 1.5; margin: 15px 0; }
         .options-list { display: flex; flex-direction: column; gap: 10px; }
-        .option-item { 
-            font-size: 15px; padding: 16px; background: #F9F9FB; border-radius: 14px; 
-            border: 2px solid transparent; line-height: 1.4; transition: 0.2s;
-        }
+        .option-item { font-size: 15px; padding: 16px; background: #F9F9FB; border-radius: 14px; border: 2px solid transparent; transition: 0.2s; }
         .option-item.selected { border-color: var(--primary); background: #EBF5FF; font-weight: 600; color: var(--primary); }
         .option-item.is-correct { background: #E8F5E9 !important; border-color: var(--easy) !important; color: #2E7D32 !important; font-weight: 700; }
         .option-item.is-wrong { background: #FFEBEE !important; border-color: var(--hard) !important; color: #C62828 !important; }
 
-        /* Nút Xác nhận */
-        #confirm-btn {
-            width: 100%; margin-top: 20px; padding: 16px; border-radius: 14px;
-            border: none; background: var(--primary); color: white;
-            font-size: 15px; font-weight: 800; display: none;
-            box-shadow: 0 4px 12px rgba(0,122,255,0.3);
-        }
-        #confirm-btn:active { transform: scale(0.97); }
+        #confirm-btn { width: 100%; margin-top: 20px; padding: 16px; border-radius: 14px; border: none; background: var(--primary); color: white; font-size: 15px; font-weight: 800; display: none; }
 
-        .info-panel { border-top: 1px solid #F2F2F7; padding-top: 16px; margin-top: 20px; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .explanation { font-size: 14px; color: #3A3A3C; line-height: 1.5; }
-
-        /* iPhone Bar */
+        /* Bottom Bar */
         .iphone-bar { 
-            height: 84px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);
-            border-top: 0.5px solid rgba(0,0,0,0.1);
+            height: 84px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1);
             display: flex; align-items: flex-start; justify-content: space-around;
             position: fixed; bottom: 0; width: 100%; z-index: 200; padding: 10px 10px 30px; box-sizing: border-box;
         }
-        .tab-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; cursor: pointer; transition: 0.2s; }
-        .tab-item i { font-style: normal; font-size: 24px; margin-bottom: 2px; }
+        .tab-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; cursor: pointer; }
         .tab-item.active-nav { color: var(--primary); font-weight: 700; }
-        .tab-item:active { opacity: 0.5; transform: scale(0.95); }
+        .tab-item i { font-style: normal; font-size: 24px; margin-bottom: 2px; }
     </style>
+
+    <script src="data1.js"></script>
+    <script src="data2.js"></script>
+    <script src="data3.js"></script>
 </head>
 <body>
-
-<div id="debug-console"></div>
 
 <div class="top-section">
     <header><h3>PMP Master</h3><div id="set-label">...</div></header>
@@ -113,10 +80,10 @@
         <button class="tab-btn" data-type="Hard" onclick="switchTab('Hard')">KHÓ</button>
     </div>
     <div class="settings-panel">
-        <select id="set-select" onchange="loadExamData(this.value)">
-            <option value="data1.js">Đề thi số 01</option>
-            <option value="data2.js">Đề thi số 02</option>
-            <option value="data3.js">Đề thi số 03</option>
+        <select id="set-select" onchange="changeExamSet(this.value)">
+            <option value="DATA_SET_1">Đề thi số 01</option>
+            <option value="DATA_SET_2">Đề thi số 02</option>
+            <option value="DATA_SET_3">Đề thi số 03</option>
         </select>
     </div>
 </div>
@@ -132,54 +99,33 @@
 </div>
 
 <script>
-// --- DEBUG SYSTEM ---
-const consoleBox = document.getElementById('debug-console');
-function log(msg) {
-    consoleBox.style.display = 'block';
-    const div = document.createElement('div');
-    div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-    consoleBox.appendChild(div);
-    consoleBox.scrollTop = consoleBox.scrollHeight;
-}
-window.onerror = (m, u, l) => log(`LỖI: ${m} (Dòng ${l})`);
-
-// --- APP LOGIC ---
+// Biến lưu trữ toàn cục
 let pmpData = []; 
 let filteredQuestions = [];
 let currentIndexInSet = 0;
 let currentTab = 'todo';
 let selectedOption = null;
 let isConfirmed = false;
-let currentFileName = "";
-const MASTER_KEY_PREFIX = "PMP_V4_";
+let currentSetName = ""; 
+const STORAGE_PREFIX = "PMP_V5_";
 
-function loadExamData(fileName) {
-    log(`Đang tải: ${fileName}`);
-    currentFileName = fileName;
-    const old = document.getElementById('data-loader');
-    if (old) old.remove();
-    
-    const script = document.createElement('script');
-    script.id = 'data-loader';
-    script.src = fileName + '?v=' + Math.random();
-    
-    script.onload = () => {
-        if (window.EXAM_DATA) {
-            pmpData = window.EXAM_DATA;
-            log(`Thành công: ${pmpData.length} câu hỏi`);
-            document.getElementById('set-label').innerText = fileName.toUpperCase();
-            currentIndexInSet = 0;
-            updateFilteredData();
-        } else {
-            log("Lỗi: Không tìm thấy window.EXAM_DATA trong file script");
-        }
-    };
-    script.onerror = () => log("Lỗi: Không thể tải file JS. Kiểm tra đường dẫn hoặc CORS.");
-    document.body.appendChild(script);
+// Hàm điều khiển khi chọn Select
+function changeExamSet(setVarName) {
+    // setVarName lúc này là chuỗi "DATA_SET_1", "DATA_SET_2"...
+    // window[setVarName] sẽ truy cập vào biến var đã nhúng từ file .js
+    if (window[setVarName]) {
+        pmpData = window[setVarName];
+        currentSetName = setVarName;
+        document.getElementById('set-label').innerText = setVarName.replace('_', ' ');
+        currentIndexInSet = 0;
+        updateFilteredData();
+    } else {
+        alert("Lỗi: Không tìm thấy dữ liệu " + setVarName + ". Hãy kiểm tra file .js đã nhúng đúng chưa.");
+    }
 }
 
 function updateFilteredData() {
-    const stored = JSON.parse(localStorage.getItem(MASTER_KEY_PREFIX + currentFileName) || "{}");
+    const stored = JSON.parse(localStorage.getItem(STORAGE_PREFIX + currentSetName) || "{}");
     filteredQuestions = pmpData.filter(q => {
         const level = stored[q.id];
         return currentTab === 'todo' ? !level : level === currentTab;
@@ -203,19 +149,19 @@ function renderQuestion() {
     const area = document.getElementById('display-area');
     const q = filteredQuestions[currentIndexInSet];
     
-    // Reset Navigation Bar State
+    // Reset Bottom Bar
     document.getElementById('info-btn').classList.remove('active-nav');
     document.getElementById('info-txt').innerText = "Hiện đáp án";
     document.getElementById('eye-icon').innerText = "◎";
 
     if (!q) {
-        area.innerHTML = `<div style="text-align:center; padding:100px 20px; color:#8E8E93;">🎉 Chúc mừng! Danh sách này đã hết.</div>`;
+        area.innerHTML = `<div style="text-align:center; padding:100px 20px; color:#8E8E93;">🎉 Hết câu hỏi trong mục này.</div>`;
         return;
     }
     
     selectedOption = null;
     isConfirmed = false;
-    const stored = JSON.parse(localStorage.getItem(MASTER_KEY_PREFIX + currentFileName) || "{}");
+    const stored = JSON.parse(localStorage.getItem(STORAGE_PREFIX + currentSetName) || "{}");
     const level = stored[q.id];
 
     let opts = '';
@@ -262,7 +208,6 @@ function confirmAnswer() {
         document.getElementById(`opt-${q.answer}`).classList.add('is-correct');
     }
     
-    // UI Selected State cho Navigation Bar
     document.getElementById('info-btn').classList.add('active-nav');
     document.getElementById('info-txt').innerText = "Đang hiện";
     document.getElementById('eye-icon').innerText = "◉";
@@ -274,7 +219,7 @@ function confirmAnswer() {
 }
 
 function setLevel(id, level) {
-    const key = MASTER_KEY_PREFIX + currentFileName;
+    const key = STORAGE_PREFIX + currentSetName;
     const stored = JSON.parse(localStorage.getItem(key) || "{}");
     if (stored[id] === level) delete stored[id]; else stored[id] = level;
     localStorage.setItem(key, JSON.stringify(stored));
@@ -282,21 +227,12 @@ function setLevel(id, level) {
 }
 
 function switchTab(type) { currentTab = type; currentIndexInSet = 0; updateFilteredData(); }
-
-function toggleInfo() { 
-    if (!isConfirmed) {
-        const q = filteredQuestions[currentIndexInSet];
-        if (q) { selectedOption = q.answer; confirmAnswer(); }
-    }
-}
-
+function toggleInfo() { if (!isConfirmed) { const q = filteredQuestions[currentIndexInSet]; if (q) { selectedOption = q.answer; confirmAnswer(); } } }
 function nextQuestion() { if (currentIndexInSet < filteredQuestions.length - 1) { currentIndexInSet++; renderQuestion(); } }
 function prevQuestion() { if (currentIndexInSet > 0) { currentIndexInSet--; renderQuestion(); } }
 
-window.onload = () => {
-    log("Khởi động ứng dụng...");
-    loadExamData(document.getElementById('set-select').value);
-};
+// Tự động load bộ đầu tiên khi mở trang
+window.onload = () => changeExamSet(document.getElementById('set-select').value);
 </script>
 </body>
 </html>

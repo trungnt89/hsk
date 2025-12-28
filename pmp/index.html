@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Fix</title>
+    <title>PMP Premium Interface</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script>
@@ -12,88 +12,138 @@
 
     <style>
         :root { 
-            --primary: #007AFF; --easy: #34C759; --medium: #FF9500; --hard: #FF3B30;
-            --bg: #F2F2F7; --card: #FFFFFF; --text-main: #1C1C1E; --text-sub: #8E8E93;
-            --ios-blur: rgba(255, 255, 255, 0.94);
+            --primary: #007AFF; 
+            --easy: #28CD41; 
+            --medium: #FF9500; 
+            --hard: #FF3B30;
+            --bg: #F2F2F7; 
+            --card: #FFFFFF; 
+            --text-main: #1C1C1E; 
+            --text-sub: #8E8E93;
+            --ios-blur: rgba(255, 255, 255, 0.85);
         }
         
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100vw; 
             font-family: -apple-system, 'Inter', sans-serif; 
-            background: var(--bg); display: flex; flex-direction: column; 
-            overflow: hidden; -webkit-tap-highlight-color: transparent; 
+            background-color: var(--bg); display: flex; flex-direction: column; 
+            overflow: hidden; -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
-        /* HEADER TỐI GIẢN */
+        /* --- NAVIGATION UPPER BAR (ULTRA COMPACT) --- */
         .top-section { 
             background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px); 
             border-bottom: 0.5px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 1000; 
             padding-top: env(safe-area-inset-top);
         }
-        header { padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; }
-        .logo-box h3 { margin: 0; font-size: 15px; font-weight: 800; color: var(--text-main); }
-        .level-selector { display: flex; gap: 4px; }
-        .btn-level { border: none; padding: 5px 8px; border-radius: 6px; font-size: 9px; font-weight: 800; background: #E3E3E6; color: #8E8E93; }
-        .btn-level.active-hard { background: var(--hard); color: white; }
-        .btn-level.active-medium { background: var(--medium); color: white; }
-        .btn-level.active-easy { background: var(--easy); color: white; }
 
-        .sub-header { display: flex; align-items: center; padding: 0 12px 6px; gap: 6px; }
-        .tab-box { display: flex; flex: 1; gap: 2px; background: #E3E3E6; padding: 2px; border-radius: 6px; }
-        .tab-btn { flex: 1; border: none; padding: 4px 0; border-radius: 4px; font-size: 9px; font-weight: 700; color: #3A3A3C; background: transparent; }
-        .tab-btn.active { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .set-mini-select { width: 80px; border: none; padding: 4px; border-radius: 5px; font-size: 9px; font-weight: 700; background: rgba(0,0,0,0.05); color: var(--primary); }
+        /* Dòng 1: Logo & Chọn đề (Cùng hàng) */
+        .main-nav {
+            padding: 8px 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px;
+        }
+        .brand { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; color: var(--text-main); }
+        .brand span { color: var(--primary); }
 
-        /* VÙNG HIỂN THỊ CÂU HỎI TỐI ĐA */
+        .select-wrapper { flex: 1; position: relative; max-width: 180px; }
+        .set-capsule-select {
+            width: 100%; border: none; padding: 8px 12px; border-radius: 12px;
+            font-size: 13px; font-weight: 700; background: rgba(0,0,0,0.05);
+            color: var(--primary); outline: none; -webkit-appearance: none;
+        }
+
+        /* Dòng 2: Status Filter (Mới, Dễ, Vừa, Khó) */
+        .filter-bar {
+            padding: 4px 16px 12px;
+            display: flex; gap: 6px;
+        }
+        .tab-btn {
+            flex: 1; border: none; padding: 8px 0; border-radius: 10px;
+            font-size: 11px; font-weight: 700; background: #E3E3E6; color: #8E8E93;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Style đổ màu riêng biệt cho từng Tab khi Active */
+        .tab-btn[data-type="todo"].active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
+        .tab-btn[data-type="Easy"].active { background: var(--easy); color: white; box-shadow: 0 4px 12px rgba(40,205,65,0.3); }
+        .tab-btn[data-type="Medium"].active { background: var(--medium); color: white; box-shadow: 0 4px 12px rgba(255,149,0,0.3); }
+        .tab-btn[data-type="Hard"].active { background: var(--hard); color: white; box-shadow: 0 4px 12px rgba(255,59,48,0.3); }
+
+        /* --- CONTENT AREA --- */
         .main-display { 
-            flex-grow: 1; overflow-y: auto; padding: 10px; padding-bottom: 70px;
+            flex-grow: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px;
             -webkit-overflow-scrolling: touch; 
         }
-        .q-info { font-size: 10px; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; display: flex; justify-content: space-between; }
-        .q-card { background: var(--card); border-radius: 14px; padding: 14px; box-shadow: 0 1px 5px rgba(0,0,0,0.02); }
-        .q-text { font-size: 15px; font-weight: 700; line-height: 1.4; color: var(--text-main); margin-bottom: 12px; }
-        .options-list { display: flex; flex-direction: column; gap: 6px; }
-        .option-item { font-size: 14px; padding: 10px 12px; background: #F9F9FB; border-radius: 10px; border: 1.5px solid transparent; transition: 0.1s; }
-        .option-item.selected { border-color: var(--primary); background: #F0F7FF; }
-        .option-item.is-correct { background: #E8F5E9 !important; border-color: var(--easy) !important; color: #2E7D32 !important; font-weight: 700; }
-        .option-item.is-wrong { background: #FFEBEE !important; border-color: var(--hard) !important; color: #C62828 !important; }
+        
+        .q-header-meta {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px;
+        }
+        .q-number { font-size: 12px; font-weight: 800; color: var(--text-sub); }
+        
+        /* Level Selector Chips */
+        .level-chips { display: flex; gap: 5px; }
+        .chip {
+            border: none; padding: 6px 12px; border-radius: 20px;
+            font-size: 10px; font-weight: 800; background: #E3E3E6; color: #8E8E93;
+        }
+        .chip.active-hard { background: var(--hard) !important; color: white; }
+        .chip.active-medium { background: var(--medium) !important; color: white; }
+        .chip.active-easy { background: var(--easy) !important; color: white; }
 
-        #confirm-btn { width: 100%; margin-top: 12px; padding: 12px; border-radius: 10px; border: none; background: var(--primary); color: white; font-size: 14px; font-weight: 800; display: none; }
-        .explanation-box { margin-top: 12px; padding: 10px; background: #F2F2F7; border-radius: 10px; font-size: 13px; color: #3A3A3C; border-left: 3px solid var(--primary); }
+        .q-card { 
+            background: var(--card); border-radius: 24px; padding: 20px; 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.04); border: 0.5px solid rgba(0,0,0,0.05);
+        }
+        .q-text { font-size: 17px; font-weight: 700; line-height: 1.5; color: var(--text-main); margin-bottom: 20px; }
+        
+        .option-item { 
+            font-size: 15px; padding: 16px; background: #F9F9FB; border-radius: 16px; 
+            margin-bottom: 10px; border: 2px solid transparent; transition: 0.2s;
+        }
+        .option-item.selected { border-color: var(--primary); background: #F0F7FF; color: var(--primary); }
+        .option-item.is-correct { background: #EFFFF3 !important; border-color: var(--easy) !important; color: #1A8B31 !important; font-weight: 700; }
+        .option-item.is-wrong { background: #FFF2F2 !important; border-color: var(--hard) !important; color: #B71C1C !important; }
 
-        /* THANH ĐIỀU HƯỚNG CỰC NGẮN */
+        #confirm-btn { 
+            width: 100%; margin-top: 10px; padding: 16px; border-radius: 16px; border: none; 
+            background: linear-gradient(135deg, #007AFF, #0051FF); color: white; 
+            font-size: 16px; font-weight: 800; box-shadow: 0 8px 20px rgba(0,122,255,0.3);
+        }
+
+        /* --- BOTTOM TAB BAR --- */
         .iphone-bar { 
-            height: 60px; background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px);
+            height: 70px; background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px);
             border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; align-items: center; 
             position: fixed; bottom: 0; width: 100%; z-index: 1000; 
             padding-bottom: env(safe-area-inset-bottom);
         }
         .tab-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; }
-        .tab-item i { font-style: normal; font-size: 18px; font-weight: bold; }
-        .tab-item small { font-size: 9px; font-weight: 700; }
+        .tab-item i { font-style: normal; font-size: 24px; margin-bottom: 2px; }
+        .tab-item small { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .tab-item.active-nav { color: var(--primary); }
-        .tab-item:disabled { opacity: 0.1; }
     </style>
 </head>
 <body>
 
 <div class="top-section">
-    <header>
-        <div class="logo-box"><h3>PMP</h3> <span id="set-label-mini" style="font-size:9px; color:var(--primary); font-weight:700;"></span></div>
-        <div class="level-selector" id="fixed-level-selector"></div>
-    </header>
-    <div class="sub-header">
-        <div class="tab-box">
-            <button class="tab-btn active" data-type="todo" onclick="switchTab('todo')">MỚI</button>
-            <button class="tab-btn" data-type="Easy" onclick="switchTab('Easy')">DỄ</button>
-            <button class="tab-btn" data-type="Medium" onclick="switchTab('Medium')">VỪA</button>
-            <button class="tab-btn" data-type="Hard" onclick="switchTab('Hard')">KHÓ</button>
+    <div class="main-nav">
+        <div class="brand">PMP<span>MASTER</span></div>
+        <div class="select-wrapper">
+            <select class="set-capsule-select" id="set-select" onchange="changeExamSet(this.value)">
+                <option value="DATA_SET_1">ĐỀ THI SỐ 01</option>
+                <option value="DATA_SET_2">ĐỀ THI SỐ 02</option>
+                <option value="DATA_SET_3">ĐỀ THI SỐ 03</option>
+            </select>
         </div>
-        <select class="set-mini-select" id="set-select" onchange="changeExamSet(this.value)">
-            <option value="DATA_SET_1">Đề 01</option>
-            <option value="DATA_SET_2">Đề 02</option>
-            <option value="DATA_SET_3">Đề 03</option>
-        </select>
+    </div>
+
+    <div class="filter-bar">
+        <button class="tab-btn active" data-type="todo" onclick="switchTab('todo')">MỚI</button>
+        <button class="tab-btn" data-type="Easy" onclick="switchTab('Easy')">DỄ</button>
+        <button class="tab-btn" data-type="Medium" onclick="switchTab('Medium')">VỪA</button>
+        <button class="tab-btn" data-type="Hard" onclick="switchTab('Hard')">KHÓ</button>
     </div>
 </div>
 
@@ -102,84 +152,75 @@
 <div class="iphone-bar">
     <button class="tab-item" id="prev-btn" onclick="prevQuestion()"><i>‹</i><small>Trước</small></button>
     <button class="tab-item" id="info-btn" onclick="toggleInfo()">
-        <i id="eye-icon">◎</i><small id="info-txt">Đáp án</small>
+        <i id="eye-icon">◎</i><small id="info-txt">Giải thích</small>
     </button>
-    <button class="tab-item" id="next-btn" onclick="nextQuestion()"><i>›</i><small>Tiếp</small></button>
+    <button class="tab-item" id="next-btn" onclick="nextQuestion()"><i>›</i><small>Tiếp theo</small></button>
 </div>
 
 <script>
 let pmpData = []; let filteredQuestions = []; let currentIndexInSet = 0; let currentTab = 'todo';
 let selectedOption = null; let isConfirmed = false; let currentSetName = ""; 
-const STORAGE_PREFIX = "PMP_V10_";
+const STORAGE_PREFIX = "PMP_V12_";
+
+// Cử chỉ vuốt
+let touchstartX = 0; let touchendX = 0;
+document.addEventListener('touchstart', e => touchstartX = e.changedTouches[0].screenX );
+document.addEventListener('touchend', e => { touchendX = e.changedTouches[0].screenX; if (touchendX < touchstartX - 80) nextQuestion(); if (touchendX > touchstartX + 80) prevQuestion(); });
 
 function changeExamSet(v) {
     let data = window[v] || (typeof eval !== 'undefined' ? eval(v) : null);
-    if (data) {
-        pmpData = data; currentSetName = v;
-        document.getElementById('set-label-mini').innerText = "[" + v.replace('DATA_SET_', '') + "]";
-        currentIndexInSet = 0; updateFilteredData();
-    } else { setTimeout(() => changeExamSet(v), 500); }
+    if (data) { pmpData = data; currentSetName = v; currentIndexInSet = 0; updateFilteredData(); }
 }
 
 function updateFilteredData() {
     const stored = JSON.parse(localStorage.getItem(STORAGE_PREFIX + currentSetName) || "{}");
     const counts = { todo: 0, Easy: 0, Medium: 0, Hard: 0 };
-    pmpData.forEach(q => {
-        const lv = stored[q.id];
-        if (!lv) counts.todo++; else counts[lv]++;
-    });
+    pmpData.forEach(q => { const lv = stored[q.id]; if (!lv) counts.todo++; else counts[lv]++; });
+    
     document.querySelectorAll('.tab-btn').forEach(btn => {
         const type = btn.getAttribute('data-type');
-        btn.innerText = `${type==='todo'?'MỚI':type.toUpperCase()} ${counts[type]}`;
+        btn.innerText = `${type==='todo'?'MỚI':type.toUpperCase()} (${counts[type]})`;
         btn.classList.toggle('active', type === currentTab);
     });
-    filteredQuestions = pmpData.filter(q => {
-        const lv = stored[q.id];
-        return currentTab === 'todo' ? !lv : lv === currentTab;
-    });
+    
+    filteredQuestions = pmpData.filter(q => { const lv = stored[q.id]; return currentTab === 'todo' ? !lv : lv === currentTab; });
     renderQuestion();
 }
 
 function renderQuestion() {
     const area = document.getElementById('display-area');
     const q = filteredQuestions[currentIndexInSet];
-    document.getElementById('prev-btn').disabled = (currentIndexInSet === 0);
-    document.getElementById('next-btn').disabled = (currentIndexInSet >= filteredQuestions.length - 1);
+    document.getElementById('prev-btn').style.opacity = (currentIndexInSet === 0) ? "0.2" : "1";
+    document.getElementById('next-btn').style.opacity = (currentIndexInSet >= filteredQuestions.length - 1) ? "0.2" : "1";
     
-    renderLevelButtons(q);
     resetInfoBtn();
-
-    if (!q) {
-        area.innerHTML = `<div style="text-align:center; padding:50px 0; color:var(--text-sub); font-size:13px;">HẾT CÂU HỎI</div>`;
-        return;
-    }
+    if (!q) { area.innerHTML = `<div style="text-align:center; padding-top:100px; color:var(--text-sub);">Dữ liệu trống</div>`; return; }
     
     selectedOption = null; isConfirmed = false;
+    const stored = JSON.parse(localStorage.getItem(STORAGE_PREFIX + currentSetName) || "{}");
+    const lv = stored[q.id];
+
     let opts = '';
     for (const [key, val] of Object.entries(q.options)) {
         opts += `<div class="option-item" id="opt-${key}" onclick="selectOption('${key}')"><b>${key}.</b> ${val}</div>`;
     }
 
     area.innerHTML = `
-        <div class="q-info"><span>ID: #${q.id}</span> <span>${currentIndexInSet + 1}/${filteredQuestions.length}</span></div>
+        <div class="q-header-meta">
+            <div class="q-number">CÂU ${currentIndexInSet + 1} / ${filteredQuestions.length}</div>
+            <div class="level-chips">
+                <button class="chip ${lv==='Hard'?'active-hard':''}" onclick="updateLevel(this,'${q.id}','Hard')">KHÓ</button>
+                <button class="chip ${lv==='Medium'?'active-medium':''}" onclick="updateLevel(this,'${q.id}','Medium')">VỪA</button>
+                <button class="chip ${lv==='Easy'?'active-easy':''}" onclick="updateLevel(this,'${q.id}','Easy')">DỄ</button>
+            </div>
+        </div>
         <div class="q-card">
             <div class="q-text">${q.question}</div>
             <div class="options-list">${opts}</div>
-            <button id="confirm-btn" onclick="confirmAnswer()">XÁC NHẬN</button>
+            <button id="confirm-btn" style="display:none" onclick="confirmAnswer()">KIỂM TRA ĐÁP ÁN</button>
             <div id="explanation-area"></div>
         </div>`;
     area.scrollTo(0,0);
-}
-
-function renderLevelButtons(q) {
-    const container = document.getElementById('fixed-level-selector');
-    if (!q) { container.innerHTML = ""; return; }
-    const stored = JSON.parse(localStorage.getItem(STORAGE_PREFIX + currentSetName) || "{}");
-    const lv = stored[q.id];
-    container.innerHTML = `
-        <button class="btn-level ${lv==='Hard'?'active-hard':''}" onclick="updateLevel(this,'${q.id}','Hard')">KHÓ</button>
-        <button class="btn-level ${lv==='Medium'?'active-medium':''}" onclick="updateLevel(this,'${q.id}','Medium')">VỪA</button>
-        <button class="btn-level ${lv==='Easy'?'active-easy':''}" onclick="updateLevel(this,'${q.id}','Easy')">DỄ</button>`;
 }
 
 function updateLevel(btn, id, lv) {
@@ -187,20 +228,21 @@ function updateLevel(btn, id, lv) {
     const stored = JSON.parse(localStorage.getItem(key) || "{}");
     if (stored[id] === lv) delete stored[id]; else stored[id] = lv;
     localStorage.setItem(key, JSON.stringify(stored));
-    renderLevelButtons(filteredQuestions[currentIndexInSet]);
+    
+    const parent = btn.parentElement;
+    parent.querySelectorAll('.chip').forEach(c => c.classList.remove('active-hard','active-medium','active-easy'));
+    if (stored[id]) btn.classList.add('active-' + lv.toLowerCase());
+    
     updateTabCountsOnly();
 }
 
 function updateTabCountsOnly() {
     const stored = JSON.parse(localStorage.getItem(STORAGE_PREFIX + currentSetName) || "{}");
     const counts = { todo: 0, Easy: 0, Medium: 0, Hard: 0 };
-    pmpData.forEach(q => {
-        const lv = stored[q.id];
-        if (!lv) counts.todo++; else counts[lv]++;
-    });
+    pmpData.forEach(q => { const lv = stored[q.id]; if (!lv) counts.todo++; else counts[lv]++; });
     document.querySelectorAll('.tab-btn').forEach(btn => {
         const type = btn.getAttribute('data-type');
-        btn.innerText = `${type==='todo'?'MỚI':type.toUpperCase()} ${counts[type]}`;
+        btn.innerText = `${type==='todo'?'MỚI':type.toUpperCase()} (${counts[type]})`;
     });
 }
 
@@ -212,62 +254,35 @@ function selectOption(k) {
     document.getElementById('confirm-btn').style.display = 'block'; 
 }
 
-function confirmAnswer() { 
-    if(!selectedOption || isConfirmed) return; 
-    showAnswerUI(); 
-}
+function confirmAnswer() { if(!selectedOption || isConfirmed) return; showAnswerUI(); }
 
-// HÀM QUAN TRỌNG: Hiển thị đáp án
 function showAnswerUI() {
     const q = filteredQuestions[currentIndexInSet];
-    if (!q) return;
-
     isConfirmed = true; 
     document.getElementById('confirm-btn').style.display = 'none';
     document.getElementById('info-btn').classList.add('active-nav');
     document.getElementById('eye-icon').innerText = "◉";
-    
-    // Xóa hết các lớp cũ
     document.querySelectorAll('.option-item').forEach(e => e.classList.remove('is-correct','is-wrong','selected'));
     
-    // Nếu người dùng có chọn 1 đáp án
-    if (selectedOption) {
-        if (selectedOption === q.answer) {
-            document.getElementById(`opt-${selectedOption}`).classList.add('is-correct');
-        } else {
-            document.getElementById(`opt-${selectedOption}`).classList.add('is-wrong');
-            document.getElementById(`opt-${q.answer}`).classList.add('is-correct');
-        }
+    if (selectedOption === q.answer) {
+        document.getElementById(`opt-${selectedOption}`).classList.add('is-correct');
     } else {
-        // Nếu người dùng KHÔNG chọn gì mà bấm thẳng vào nút Đáp án
+        if(selectedOption) document.getElementById(`opt-${selectedOption}`).classList.add('is-wrong');
         document.getElementById(`opt-${q.answer}`).classList.add('is-correct');
     }
-    
-    document.getElementById('explanation-area').innerHTML = `<div class="explanation-box"><b>Đáp án đúng: ${q.answer}</b><br>${q.explanation}</div>`;
+    document.getElementById('explanation-area').innerHTML = `<div class="explanation-box"><b>Giải thích:</b><br>${q.explanation}</div>`;
 }
 
 function toggleInfo() {
-    if(!filteredQuestions[currentIndexInSet]) return;
-    if(!isConfirmed) {
-        showAnswerUI();
-    } else {
-        // Tắt đáp án đi (Reset UI về trạng thái ban đầu của câu hỏi đó)
-        isConfirmed = false;
-        resetInfoBtn();
-        document.getElementById('explanation-area').innerHTML = '';
+    if(!isConfirmed) showAnswerUI();
+    else {
+        isConfirmed = false; resetInfoBtn(); document.getElementById('explanation-area').innerHTML = '';
         document.querySelectorAll('.option-item').forEach(e => e.classList.remove('is-correct','is-wrong'));
-        if (selectedOption) {
-            document.getElementById(`opt-${selectedOption}`).classList.add('selected');
-            document.getElementById('confirm-btn').style.display = 'block';
-        }
+        if (selectedOption) document.getElementById(`opt-${selectedOption}`).classList.add('selected');
     }
 }
 
-function resetInfoBtn() { 
-    document.getElementById('info-btn').classList.remove('active-nav'); 
-    document.getElementById('eye-icon').innerText = "◎"; 
-}
-
+function resetInfoBtn() { document.getElementById('info-btn').classList.remove('active-nav'); document.getElementById('eye-icon').innerText = "◎"; }
 function switchTab(t) { currentTab = t; currentIndexInSet = 0; updateFilteredData(); }
 function nextQuestion() { if(currentIndexInSet < filteredQuestions.length-1) { currentIndexInSet++; renderQuestion(); } }
 function prevQuestion() { if(currentIndexInSet > 0) { currentIndexInSet--; renderQuestion(); } }

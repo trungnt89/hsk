@@ -28,7 +28,7 @@
         /* Main Display */
         .main-display { flex-grow: 1; overflow-y: auto; padding: 12px; padding-bottom: 120px; }
 
-        /* Cụm Selector Cố định (Lớn hơn) */
+        /* Cụm Selector Cố định */
         .q-sticky-header {
             position: sticky; top: -12px; z-index: 10;
             background: rgba(255,255,255,0.98); backdrop-filter: blur(10px);
@@ -39,50 +39,41 @@
 
         .level-selector { display: flex; gap: 8px; }
         .btn-level-big { 
-            border: none; padding: 10px 14px; border-radius: 12px; 
+            border: 2px solid transparent; padding: 10px 14px; border-radius: 12px; 
             font-size: 11px; font-weight: 800; cursor: pointer; background: #F2F2F7; color: #8E8E93;
-            transition: all 0.1s active;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* Hiệu ứng phản hồi khi nhấn */
-        .btn-level-big:active { transform: scale(0.9); opacity: 0.7; }
-        .btn-level-big.active-hard { background: var(--hard); color: white; }
-        .btn-level-big.active-medium { background: var(--medium); color: white; }
-        .btn-level-big.active-easy { background: var(--easy); color: white; }
+        .btn-level-big.active-hard { background: var(--hard); color: white; border-color: #BD2E26; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .btn-level-big.active-medium { background: var(--medium); color: white; border-color: #D67D00; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .btn-level-big.active-easy { background: var(--easy); color: white; border-color: #289E46; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .btn-level-big:active { transform: scale(0.92); }
 
         .q-card { background: var(--card); border-radius: 24px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); margin-bottom: 20px; }
         .q-text { font-size: 17px; font-weight: 600; line-height: 1.5; color: var(--text-main); margin: 15px 0; }
         
-        /* Đáp án */
         .options-list { display: flex; flex-direction: column; gap: 10px; }
-        .option-item { 
-            font-size: 15px; padding: 16px; background: #F9F9FB; border-radius: 14px; 
-            border: 2px solid transparent; line-height: 1.4; transition: 0.2s;
-        }
-        .option-item:active { transform: scale(0.98); }
-        .option-item.selected { border-color: var(--primary); background: #EBF5FF; }
-        .option-item.is-correct { background: #E8F5E9; border-color: var(--easy); color: #2E7D32; font-weight: 700; }
-        .option-item.is-wrong { background: #FFEBEE; border-color: var(--hard); color: #C62828; }
+        .option-item { font-size: 15px; padding: 16px; background: #F9F9FB; border-radius: 14px; border: 2px solid transparent; line-height: 1.4; transition: 0.2s; }
+        .option-item.selected { border-color: var(--primary); background: #EBF5FF; font-weight: 600; color: var(--primary); }
+        .option-item.is-correct { background: #E8F5E9 !important; border-color: var(--easy) !important; color: #2E7D32 !important; font-weight: 700; }
+        .option-item.is-wrong { background: #FFEBEE !important; border-color: var(--hard) !important; color: #C62828 !important; }
 
-        /* Nút Xác nhận */
-        #confirm-btn {
-            width: 100%; margin-top: 20px; padding: 16px; border-radius: 14px;
-            border: none; background: var(--primary); color: white;
-            font-size: 15px; font-weight: 800; display: none;
-        }
+        #confirm-btn { width: 100%; margin-top: 20px; padding: 16px; border-radius: 14px; border: none; background: var(--primary); color: white; font-size: 15px; font-weight: 800; display: none; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
 
-        .info-panel { border-top: 1px solid #F2F2F7; padding-top: 16px; margin-top: 20px; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .info-panel { border-top: 1px solid #F2F2F7; padding-top: 16px; margin-top: 20px; }
+        .explanation { font-size: 14px; color: #3A3A3C; line-height: 1.5; }
 
         /* iPhone Bar */
         .iphone-bar { 
-            height: 84px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);
-            border-top: 0.5px solid rgba(0,0,0,0.1);
+            height: 84px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1);
             display: flex; align-items: flex-start; justify-content: space-around;
             position: fixed; bottom: 0; width: 100%; z-index: 200; padding: 10px 10px 30px; box-sizing: border-box;
         }
-        .tab-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; }
-        .tab-item i { font-style: normal; font-size: 24px; }
-        .tab-item.active { color: var(--primary); }
+        .tab-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; cursor: pointer; transition: 0.2s; }
+        .tab-item i { font-style: normal; font-size: 24px; margin-bottom: 2px; }
+        
+        /* Hiệu ứng Selected cho nút Hiện đáp án */
+        .tab-item.active-nav { color: var(--primary); font-weight: 700; }
+        .tab-item:active { opacity: 0.5; transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -107,14 +98,15 @@
 
 <div class="iphone-bar">
     <button class="tab-item" onclick="prevQuestion()"><i>‹</i><small>Trước</small></button>
-    <button class="tab-item" id="info-btn" onclick="toggleInfo()"><i>◎</i><small id="info-txt">Hiện đáp án</small></button>
+    <button class="tab-item" id="info-btn" onclick="toggleInfo()">
+        <i id="eye-icon">◎</i><small id="info-txt">Hiện đáp án</small>
+    </button>
     <button class="tab-item" onclick="nextQuestion()"><i>›</i><small>Tiếp theo</small></button>
 </div>
 
 <script>
 let pmpData = []; 
 let currentIndexInSet = 0;
-let showInfo = false;
 let currentTab = 'todo';
 let selectedOption = null;
 let isConfirmed = false;
@@ -131,7 +123,7 @@ function loadExamData(fileName) {
         if (window.EXAM_DATA) {
             pmpData = window.EXAM_DATA;
             document.getElementById('set-label').innerText = fileName.toUpperCase();
-            currentIndexInSet = 0; showInfo = false; updateFilteredData();
+            currentIndexInSet = 0; updateFilteredData();
         }
     };
     document.body.appendChild(script);
@@ -161,6 +153,12 @@ function updateFilteredData() {
 function renderQuestion() {
     const area = document.getElementById('display-area');
     const q = filteredQuestions[currentIndexInSet];
+    
+    // Reset trạng thái nút hiện đáp án mỗi khi sang câu mới
+    document.getElementById('info-btn').classList.remove('active-nav');
+    document.getElementById('info-txt').innerText = "Hiện đáp án";
+    document.getElementById('eye-icon').innerText = "◎";
+
     if (!q) {
         area.innerHTML = `<div style="text-align:center; padding:100px 20px; color:#8E8E93;">Danh sách trống</div>`;
         return;
@@ -207,7 +205,6 @@ function confirmAnswer() {
     isConfirmed = true;
     const q = filteredQuestions[currentIndexInSet];
     const correctKey = q.answer;
-    
     document.getElementById('confirm-btn').style.display = 'none';
     
     if (selectedOption === correctKey) {
@@ -216,6 +213,11 @@ function confirmAnswer() {
         document.getElementById(`opt-${selectedOption}`).classList.add('is-wrong');
         document.getElementById(`opt-${correctKey}`).classList.add('is-correct');
     }
+    
+    // Khi xác nhận đáp án xong, kích hoạt trạng thái selected cho nút dưới thanh bar
+    document.getElementById('info-btn').classList.add('active-nav');
+    document.getElementById('info-txt').innerText = "Đang hiện";
+    document.getElementById('eye-icon').innerText = "◉";
     
     showExplanation(q.explanation);
 }
@@ -236,15 +238,17 @@ function setLevel(id, level) {
 }
 
 function switchTab(type) { currentTab = type; currentIndexInSet = 0; updateFilteredData(); }
+
 function toggleInfo() { 
     if (!isConfirmed) {
         const q = filteredQuestions[currentIndexInSet];
-        if (q) {
+        if (q) { 
             selectedOption = q.answer; 
-            confirmAnswer();
+            confirmAnswer(); 
         }
     }
 }
+
 function nextQuestion() { if (currentIndexInSet < filteredQuestions.length - 1) { currentIndexInSet++; renderQuestion(); } }
 function prevQuestion() { if (currentIndexInSet > 0) { currentIndexInSet--; renderQuestion(); } }
 

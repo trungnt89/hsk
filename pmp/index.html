@@ -140,15 +140,19 @@ function changeExamSet(setVarName) {
 	*/
 data = DATA_SET_1;
     if (data && Array.isArray(data)) {
+		alert(1);
         pmpData = data;
         currentSetName = setVarName;
         document.getElementById('set-label').innerText = setVarName;
         currentIndexInSet = 0;
+		alert(2);
         updateFilteredData();
+		alert(3);
         log("Thành công: " + data.length + " câu.");
         // Ẩn debug sau khi nạp thành công 2 giây
         setTimeout(() => document.getElementById('debug-log').style.display = 'none', 2000);
     } else {
+		alert(4);
         // Nếu file chưa nạp kịp, thử lại sau mỗi 500ms
         setTimeout(() => changeExamSet(setVarName), 500);
     }

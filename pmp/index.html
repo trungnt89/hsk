@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master - Challenge Mode</title>
+    <title>PMP Master - Quizlet Style</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script>
@@ -13,7 +13,7 @@
     <style>
         :root { 
             --primary: #007AFF; --easy: #28CD41; --medium: #FF9500; --hard: #FF3B30;
-            --bg: #8E8E93; --card: #FFFFFF; --text-main: #1C1C1E; --text-sub: #8E8E93;
+            --bg: #D1D1D6; --card: #FFFFFF; --text-main: #1C1C1E; --text-sub: #8E8E93;
             --ios-blur: rgba(255, 255, 255, 0.9);
         }
         
@@ -42,32 +42,48 @@
         .filter-bar { padding: 4px 16px 12px; display: flex; gap: 6px; }
         .tab-btn {
             flex: 1; border: none; padding: 8px 0; border-radius: 10px; font-size: 10px; font-weight: 700; 
-            background: #D1D1D6; color: #3A3A3C; transition: 0.3s;
+            background: #C7C7CC; color: #3A3A3C; transition: 0.3s;
         }
         .tab-btn.active { background: white; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
         .tab-btn[data-type="Easy"].active { background: var(--easy); color: white; }
         .tab-btn[data-type="Medium"].active { background: var(--medium); color: white; }
         .tab-btn[data-type="Hard"].active { background: var(--hard); color: white; }
 
-        /* --- VIEWPORT 3D --- */
-        .viewport { flex-grow: 1; perspective: 2000px; position: relative; margin: 12px; }
+        /* --- VIEWPORT (HIỆU ỨNG QUIZLET) --- */
+        .viewport { 
+            flex-grow: 1; 
+            perspective: 1200px; 
+            position: relative; 
+            margin: 15px; 
+            overflow: visible; 
+        }
 
         #book-page {
             width: 100%; height: 100%; position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.45, 0.05, 0.55, 0.95);
-            will-change: transform;
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s;
+            will-change: transform, opacity;
         }
 
-        .page-flip-next { transform: rotateY(-100deg); opacity: 0; }
-        .page-flip-prev { transform: rotateY(100deg); opacity: 0; }
+        /* Flashcard bay sang trái và xoay nhẹ */
+        .page-flip-next { 
+            transform: translateX(-120%) rotateZ(-10deg) !important; 
+            opacity: 0; 
+        }
+
+        /* Flashcard bay sang phải và xoay nhẹ */
+        .page-flip-prev { 
+            transform: translateX(120%) rotateZ(10deg) !important; 
+            opacity: 0; 
+        }
 
         .main-display { 
             position: absolute; width: 100%; height: 100%;
-            background: var(--card); border-radius: 20px;
-            padding: 20px; box-sizing: border-box; overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: var(--card); border-radius: 24px;
+            padding: 24px; box-sizing: border-box; overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             backface-visibility: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         /* --- CHIPS --- */
@@ -86,10 +102,7 @@
             font-size: 15px; padding: 15px; background: #F2F2F7; border-radius: 14px; 
             margin-bottom: 8px; border: 2px solid transparent; transition: 0.2s;
         }
-        /* Khi click chọn: Chỉ hiện viền xanh dương */
         .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
-        
-        /* Chỉ hiển thị các màu này khi đã nhấn nút Đáp án */
         .option-item.is-correct { background: #EFFFF3 !important; border-color: var(--easy) !important; color: #1A8B31 !important; }
         .option-item.is-wrong { background: #FFF2F2 !important; border-color: var(--hard) !important; color: #B71C1C !important; }
 
@@ -142,39 +155,37 @@ let pmpData = []; let filteredQuestions = []; let currentIndexInSet = 0; let cur
 let selectedOption = null; let isConfirmed = false; let currentSetName = ""; 
 const STORAGE_PREFIX = "PMP_V16_";
 
-// --- HIỆU ỨNG LẬT TRANG ---
+// --- HIỆU ỨNG CHUYỂN TRANG (QUIZLET SLIDE) ---
 function triggerFlip(direction) {
     const page = document.getElementById('book-page');
     if (direction === 'next' && currentIndexInSet < filteredQuestions.length - 1) {
-        page.style.transformOrigin = "left center";
         page.classList.add('page-flip-next');
         setTimeout(() => {
             nextQuestion();
             page.style.transition = 'none';
-            page.style.transform = 'rotateY(100deg)';
+            page.style.transform = 'translateX(120%) rotateZ(10deg)';
             setTimeout(() => {
-                page.style.transition = 'transform 0.6s cubic-bezier(0.45, 0.05, 0.55, 0.95), opacity 0.4s';
+                page.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s';
                 page.classList.remove('page-flip-next');
-                page.style.transform = 'rotateY(0deg)';
+                page.style.transform = 'translateX(0) rotateZ(0deg)';
             }, 50);
         }, 400);
     } else if (direction === 'prev' && currentIndexInSet > 0) {
-        page.style.transformOrigin = "right center";
         page.classList.add('page-flip-prev');
         setTimeout(() => {
             prevQuestion();
             page.style.transition = 'none';
-            page.style.transform = 'rotateY(-100deg)';
+            page.style.transform = 'translateX(-120%) rotateZ(-10deg)';
             setTimeout(() => {
-                page.style.transition = 'transform 0.6s cubic-bezier(0.45, 0.05, 0.55, 0.95), opacity 0.4s';
+                page.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s';
                 page.classList.remove('page-flip-prev');
-                page.style.transform = 'rotateY(0deg)';
+                page.style.transform = 'translateX(0) rotateZ(0deg)';
             }, 50);
         }, 400);
     }
 }
 
-// Vuốt
+// Cử chỉ vuốt
 let touchstartX = 0;
 document.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, {passive: true});
 document.addEventListener('touchend', e => {
@@ -182,7 +193,7 @@ document.addEventListener('touchend', e => {
     if (Math.abs(diffX) > 80) { if (diffX < 0) triggerFlip('next'); else triggerFlip('prev'); }
 }, {passive: true});
 
-// --- LOGIC CHÍNH ---
+// --- LOGIC DỮ LIỆU ---
 function changeExamSet(v) {
     let data = window[v] || (typeof eval !== 'undefined' ? eval(v) : null);
     if (data) { pmpData = data; currentSetName = v; currentIndexInSet = 0; updateFilteredData(); }
@@ -236,7 +247,6 @@ function renderQuestion() {
     area.scrollTo(0,0);
 }
 
-// Click chọn option: Chỉ đánh dấu, không hiện đúng/sai
 function selectOption(k) { 
     if(isConfirmed) return; 
     selectedOption = k; 
@@ -244,19 +254,14 @@ function selectOption(k) {
     document.getElementById(`opt-${k}`).classList.add('selected'); 
 }
 
-// Chỉ khi bấm nút Đáp án mới chạy hàm này
 function showAnswerUI() {
     const q = filteredQuestions[currentIndexInSet];
     if(!q) return;
-
     isConfirmed = true; 
     document.getElementById('info-btn').classList.add('active-nav');
     document.getElementById('eye-icon').innerText = "◉";
     document.getElementById('info-txt').innerText = "Đã xem";
-
-    // Xóa lớp 'selected' để thay bằng màu kết quả
     document.querySelectorAll('.option-item').forEach(e => e.classList.remove('selected'));
-    
     if (selectedOption === q.answer) {
         document.getElementById(`opt-${selectedOption}`).classList.add('is-correct');
     } else {
@@ -267,12 +272,9 @@ function showAnswerUI() {
 }
 
 function toggleInfo() {
-    if(!isConfirmed) {
-        showAnswerUI();
-    } else {
-        // Tắt đi nếu muốn làm lại hoặc ẩn giải thích
-        isConfirmed = false;
-        resetInfoBtn();
+    if(!isConfirmed) showAnswerUI();
+    else {
+        isConfirmed = false; resetInfoBtn();
         document.getElementById('explanation-area').innerHTML = '';
         document.querySelectorAll('.option-item').forEach(e => e.classList.remove('is-correct', 'is-wrong'));
         if(selectedOption) document.getElementById(`opt-${selectedOption}`).classList.add('selected');

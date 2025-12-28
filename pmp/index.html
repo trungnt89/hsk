@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master - Quizlet Style</title>
+    <title>PMP Master - Carousel Slide</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script>
@@ -13,7 +13,7 @@
     <style>
         :root { 
             --primary: #007AFF; --easy: #28CD41; --medium: #FF9500; --hard: #FF3B30;
-            --bg: #D1D1D6; --card: #FFFFFF; --text-main: #1C1C1E; --text-sub: #8E8E93;
+            --bg: #E5E5EA; --card: #FFFFFF; --text-main: #1C1C1E; --text-sub: #8E8E93;
             --ios-blur: rgba(255, 255, 255, 0.9);
         }
         
@@ -21,10 +21,9 @@
             margin: 0; padding: 0; height: 100%; width: 100vw; 
             font-family: -apple-system, 'Inter', sans-serif; 
             background-color: var(--bg); display: flex; flex-direction: column; 
-            overflow: hidden; touch-action: pan-y;
+            overflow: hidden; touch-action: none;
         }
 
-        /* --- HEADER & NAVIGATION --- */
         .top-section { 
             background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px); 
             border-bottom: 0.5px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 1000; 
@@ -49,59 +48,43 @@
         .tab-btn[data-type="Medium"].active { background: var(--medium); color: white; }
         .tab-btn[data-type="Hard"].active { background: var(--hard); color: white; }
 
-        /* --- VIEWPORT (HIỆU ỨNG QUIZLET) --- */
+        /* --- VIEWPORT CAROUSEL --- */
         .viewport { 
             flex-grow: 1; 
-            perspective: 1200px; 
             position: relative; 
-            margin: 15px; 
-            overflow: visible; 
+            margin: 16px; 
+            overflow: hidden; /* Cắt phần thẻ thừa bên ngoài */
+            border-radius: 20px;
         }
 
         #book-page {
             width: 100%; height: 100%; position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s;
+            /* Hiệu ứng trượt mượt mà */
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s;
             will-change: transform, opacity;
         }
 
-        /* Flashcard bay sang trái và xoay nhẹ */
-        .page-flip-next { 
-            transform: translateX(-120%) rotateZ(-10deg) !important; 
-            opacity: 0; 
-        }
-
-        /* Flashcard bay sang phải và xoay nhẹ */
-        .page-flip-prev { 
-            transform: translateX(120%) rotateZ(10deg) !important; 
-            opacity: 0; 
-        }
+        /* Khi bấm Next: Câu cũ biến mất sang trái */
+        .slide-out-left { transform: translateX(-100%); opacity: 0; }
+        /* Khi bấm Prev: Câu cũ biến mất sang phải */
+        .slide-out-right { transform: translateX(100%); opacity: 0; }
 
         .main-display { 
             position: absolute; width: 100%; height: 100%;
-            background: var(--card); border-radius: 24px;
+            background: var(--card); border-radius: 20px;
             padding: 24px; box-sizing: border-box; overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            backface-visibility: hidden;
-            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
 
-        /* --- CHIPS --- */
+        /* --- UI COMPONENTS --- */
         .chip-group { display: flex; gap: 5px; }
-        .chip { 
-            border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; 
-            background: #E5E5EA; color: #8E8E93;
-        }
+        .chip { border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; background: #E5E5EA; color: #8E8E93;}
         .chip.active-easy { background: var(--easy) !important; color: white; }
         .chip.active-medium { background: var(--medium) !important; color: white; }
         .chip.active-hard { background: var(--hard) !important; color: white; }
 
-        /* --- UI COMPONENTS --- */
         .q-text { font-size: 17px; font-weight: 700; line-height: 1.5; color: var(--text-main); margin: 15px 0; }
-        .option-item { 
-            font-size: 15px; padding: 15px; background: #F2F2F7; border-radius: 14px; 
-            margin-bottom: 8px; border: 2px solid transparent; transition: 0.2s;
-        }
+        .option-item { font-size: 15px; padding: 15px; background: #F2F2F7; border-radius: 14px; margin-bottom: 8px; border: 2px solid transparent; transition: 0.2s;}
         .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
         .option-item.is-correct { background: #EFFFF3 !important; border-color: var(--easy) !important; color: #1A8B31 !important; }
         .option-item.is-wrong { background: #FFF2F2 !important; border-color: var(--hard) !important; color: #B71C1C !important; }
@@ -155,45 +138,57 @@ let pmpData = []; let filteredQuestions = []; let currentIndexInSet = 0; let cur
 let selectedOption = null; let isConfirmed = false; let currentSetName = ""; 
 const STORAGE_PREFIX = "PMP_V16_";
 
-// --- HIỆU ỨNG CHUYỂN TRANG (QUIZLET SLIDE) ---
+// --- HIỆU ỨNG TRƯỢT CAROUSEL ---
 function triggerFlip(direction) {
     const page = document.getElementById('book-page');
+    if (page.classList.contains('slide-out-left') || page.classList.contains('slide-out-right')) return;
+
     if (direction === 'next' && currentIndexInSet < filteredQuestions.length - 1) {
-        page.classList.add('page-flip-next');
+        // 1. Thẻ cũ trượt sang trái
+        page.classList.add('slide-out-left');
+        
         setTimeout(() => {
             nextQuestion();
+            // 2. Đưa thẻ mới ra chuẩn bị bên phải (không hiệu ứng)
             page.style.transition = 'none';
-            page.style.transform = 'translateX(120%) rotateZ(10deg)';
+            page.style.transform = 'translateX(100%)';
+            
             setTimeout(() => {
-                page.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s';
-                page.classList.remove('page-flip-next');
-                page.style.transform = 'translateX(0) rotateZ(0deg)';
+                // 3. Trượt thẻ mới từ phải vào giữa
+                page.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s';
+                page.classList.remove('slide-out-left');
+                page.style.transform = 'translateX(0)';
             }, 50);
         }, 400);
     } else if (direction === 'prev' && currentIndexInSet > 0) {
-        page.classList.add('page-flip-prev');
+        // 1. Thẻ cũ trượt sang phải
+        page.classList.add('slide-out-right');
+        
         setTimeout(() => {
             prevQuestion();
+            // 2. Đưa thẻ mới ra chuẩn bị bên trái (không hiệu ứng)
             page.style.transition = 'none';
-            page.style.transform = 'translateX(-120%) rotateZ(-10deg)';
+            page.style.transform = 'translateX(-100%)';
+            
             setTimeout(() => {
-                page.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s';
-                page.classList.remove('page-flip-prev');
-                page.style.transform = 'translateX(0) rotateZ(0deg)';
+                // 3. Trượt thẻ mới từ trái vào giữa
+                page.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s';
+                page.classList.remove('slide-out-right');
+                page.style.transform = 'translateX(0)';
             }, 50);
         }, 400);
     }
 }
 
-// Cử chỉ vuốt
+// Cảm ứng vuốt
 let touchstartX = 0;
 document.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, {passive: true});
 document.addEventListener('touchend', e => {
     let diffX = e.changedTouches[0].screenX - touchstartX;
-    if (Math.abs(diffX) > 80) { if (diffX < 0) triggerFlip('next'); else triggerFlip('prev'); }
+    if (Math.abs(diffX) > 60) { if (diffX < 0) triggerFlip('next'); else triggerFlip('prev'); }
 }, {passive: true});
 
-// --- LOGIC DỮ LIỆU ---
+// --- LOGIC DỮ LIỆU (Giữ nguyên) ---
 function changeExamSet(v) {
     let data = window[v] || (typeof eval !== 'undefined' ? eval(v) : null);
     if (data) { pmpData = data; currentSetName = v; currentIndexInSet = 0; updateFilteredData(); }
@@ -217,19 +212,15 @@ function renderQuestion() {
     const q = filteredQuestions[currentIndexInSet];
     document.getElementById('prev-btn').style.opacity = (currentIndexInSet === 0) ? "0.1" : "1";
     document.getElementById('next-btn').style.opacity = (currentIndexInSet >= filteredQuestions.length - 1) ? "0.1" : "1";
-    
     resetInfoBtn();
     if (!q) { area.innerHTML = `<div style="text-align:center; padding-top:100px; color:var(--text-sub);">HẾT CÂU HỎI</div>`; return; }
-    
     selectedOption = null; isConfirmed = false;
     const stored = JSON.parse(localStorage.getItem(STORAGE_PREFIX + currentSetName) || "{}");
     const lv = stored[q.id];
-
     let opts = '';
     for (const [key, val] of Object.entries(q.options)) {
         opts += `<div class="option-item" id="opt-${key}" onclick="selectOption('${key}')"><b>${key}.</b> ${val}</div>`;
     }
-
     area.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div style="font-size:12px; font-weight:800; color:var(--text-sub);">ID: #${q.id}</div>

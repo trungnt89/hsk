@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Smooth Pro</title>
+    <title>PMP Master - Book Flip Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script>
@@ -13,92 +13,97 @@
     <style>
         :root { 
             --primary: #007AFF; --easy: #28CD41; --medium: #FF9500; --hard: #FF3B30;
-            --bg: #F2F2F7; --card: #FFFFFF; --text-main: #1C1C1E; --text-sub: #8E8E93;
-            --ios-blur: rgba(255, 255, 255, 0.85);
+            --bg: #8E8E93; --card: #FFFFFF; --text-main: #1C1C1E; --text-sub: #8E8E93;
+            --ios-blur: rgba(255, 255, 255, 0.9);
         }
         
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100vw; 
             font-family: -apple-system, 'Inter', sans-serif; 
             background-color: var(--bg); display: flex; flex-direction: column; 
-            overflow: hidden; touch-action: pan-y; /* Cho phép cuộn dọc tự nhiên */
+            overflow: hidden; touch-action: pan-y;
         }
 
-        /* --- HEADER --- */
+        /* --- HEADER & NAVIGATION --- */
         .top-section { 
             background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px); 
             border-bottom: 0.5px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 1000; 
             padding-top: env(safe-area-inset-top);
         }
         .main-nav { padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-        .brand { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; }
+        .brand { font-size: 18px; font-weight: 900; color: var(--text-main); }
         .brand span { color: var(--primary); }
+        
         .set-capsule-select {
             border: none; padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; 
-            background: rgba(0,0,0,0.05); color: var(--primary); outline: none; -webkit-appearance: none;
+            background: rgba(0,0,0,0.08); color: var(--primary); outline: none; -webkit-appearance: none;
         }
 
+        /* Đồng bộ thứ tự: Mới -> Dễ -> Vừa -> Khó */
         .filter-bar { padding: 4px 16px 12px; display: flex; gap: 6px; }
         .tab-btn {
-            flex: 1; border: none; padding: 8px 0; border-radius: 10px; font-size: 11px; font-weight: 700; 
-            background: #E3E3E6; color: #8E8E93; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1; border: none; padding: 8px 0; border-radius: 10px; font-size: 10px; font-weight: 700; 
+            background: #D1D1D6; color: #3A3A3C; transition: 0.3s;
         }
-        .tab-btn[data-type="todo"].active { background: var(--primary); color: white; }
+        .tab-btn[data-type="todo"].active { background: white; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
         .tab-btn[data-type="Easy"].active { background: var(--easy); color: white; }
         .tab-btn[data-type="Medium"].active { background: var(--medium); color: white; }
         .tab-btn[data-type="Hard"].active { background: var(--hard); color: white; }
 
-        /* --- TRANG CÂU HỎI (SMOOTH TRANSITION) --- */
+        /* --- VIEWPORT 3D --- */
         .viewport {
-            flex-grow: 1; position: relative; overflow: hidden;
+            flex-grow: 1; perspective: 2000px; position: relative;
+            margin: 12px; overflow: visible;
         }
 
-        #slide-container {
-            height: 100%; width: 100%; 
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        #book-page {
+            width: 100%; height: 100%; position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.45, 0.05, 0.55, 0.95);
             will-change: transform;
         }
 
+        /* Hiệu ứng lật trang */
+        .page-flip-next { transform: rotateY(-100deg); opacity: 0; }
+        .page-flip-prev { transform: rotateY(100deg); opacity: 0; }
+
         .main-display { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            padding: 16px; box-sizing: border-box; overflow-y: auto;
-            padding-bottom: 100px;
+            position: absolute; width: 100%; height: 100%;
+            background: var(--card); border-radius: 20px;
+            padding: 20px; box-sizing: border-box; overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backface-visibility: hidden;
         }
 
-        .q-card { 
-            background: var(--card); border-radius: 24px; padding: 20px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 0.5px solid rgba(0,0,0,0.05);
+        /* --- CHIPS ĐỒNG BỘ: DỄ -> VỪA -> KHÓ --- */
+        .chip-group { display: flex; gap: 5px; }
+        .chip { 
+            border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; 
+            background: #E5E5EA; color: #8E8E93; transition: 0.2s;
         }
+        .chip.active-easy { background: var(--easy) !important; color: white; }
+        .chip.active-medium { background: var(--medium) !important; color: white; }
+        .chip.active-hard { background: var(--hard) !important; color: white; }
 
-        /* Hiệu ứng mờ dần khi chuyển câu */
-        .fade-out { opacity: 0; transform: scale(0.95); transition: 0.3s; }
-        .fade-in { opacity: 1; transform: scale(1); transition: 0.3s; }
-
+        /* --- UI COMPONENTS --- */
+        .q-text { font-size: 17px; font-weight: 700; line-height: 1.5; color: var(--text-main); margin: 15px 0; }
         .option-item { 
-            font-size: 15px; padding: 16px; background: #F9F9FB; border-radius: 16px; 
-            margin-bottom: 10px; border: 2px solid transparent; transition: 0.2s;
+            font-size: 15px; padding: 15px; background: #F2F2F7; border-radius: 14px; 
+            margin-bottom: 8px; border: 2px solid transparent; transition: 0.2s;
         }
-        .option-item.selected { border-color: var(--primary); background: #F0F7FF; color: var(--primary); }
+        .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
         .option-item.is-correct { background: #EFFFF3 !important; border-color: var(--easy) !important; color: #1A8B31 !important; }
         .option-item.is-wrong { background: #FFF2F2 !important; border-color: var(--hard) !important; color: #B71C1C !important; }
 
-        /* --- BOTTOM BAR --- */
         .iphone-bar { 
-            height: 70px; background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px);
+            height: 65px; background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px);
             border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; align-items: center; 
             position: fixed; bottom: 0; width: 100%; z-index: 1000; 
             padding-bottom: env(safe-area-inset-bottom);
         }
         .tab-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; }
-        .tab-item i { font-style: normal; font-size: 24px; }
-        .tab-item small { font-size: 10px; font-weight: 700; }
+        .tab-item i { font-style: normal; font-size: 24px; font-weight: bold; }
         .tab-item.active-nav { color: var(--primary); }
-
-        .explanation-box { margin-top: 15px; padding: 15px; background: #F2F2F7; border-radius: 15px; font-size: 14px; border-left: 4px solid var(--primary); }
-        .chip { border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; background: #E3E3E6; color: #8E8E93; }
-        .chip.active-hard { background: var(--hard) !important; color: white; }
-        .chip.active-medium { background: var(--medium) !important; color: white; }
-        .chip.active-easy { background: var(--easy) !important; color: white; }
     </style>
 </head>
 <body>
@@ -121,74 +126,65 @@
 </div>
 
 <div class="viewport">
-    <div id="slide-container">
+    <div id="book-page">
         <div class="main-display" id="display-area"></div>
     </div>
 </div>
 
 <div class="iphone-bar">
-    <button class="tab-item" id="prev-btn" onclick="prevQuestion()"><i>‹</i><small>Trước</small></button>
+    <button class="tab-item" id="prev-btn" onclick="triggerFlip('prev')"><i>‹</i><small>Trước</small></button>
     <button class="tab-item" id="info-btn" onclick="toggleInfo()">
-        <i id="eye-icon">◎</i><small id="info-txt">Giải thích</small>
+        <i id="eye-icon">◎</i><small>Đáp án</small>
     </button>
-    <button class="tab-item" id="next-btn" onclick="nextQuestion()"><i>›</i><small>Tiếp</small></button>
+    <button class="tab-item" id="next-btn" onclick="triggerFlip('next')"><i>›</i><small>Tiếp</small></button>
 </div>
 
 <script>
 let pmpData = []; let filteredQuestions = []; let currentIndexInSet = 0; let currentTab = 'todo';
 let selectedOption = null; let isConfirmed = false; let currentSetName = ""; 
-const STORAGE_PREFIX = "PMP_V13_";
+const STORAGE_PREFIX = "PMP_V15_";
 
-// --- XỬ LÝ VUỐT VỚI HIỆU ỨNG MƯỢT (SWIPE TRANSITION) ---
-let touchstartX = 0;
-let touchstartY = 0;
-const container = document.getElementById('slide-container');
-
-document.addEventListener('touchstart', e => {
-    touchstartX = e.changedTouches[0].screenX;
-    touchstartY = e.changedTouches[0].screenY;
-}, {passive: true});
-
-document.addEventListener('touchend', e => {
-    let touchendX = e.changedTouches[0].screenX;
-    let touchendY = e.changedTouches[0].screenY;
-    
-    let diffX = touchendX - touchstartX;
-    let diffY = touchendY - touchstartY;
-
-    // Chỉ nhận diện vuốt ngang nếu khoảng cách ngang > dọc (tránh nhầm khi cuộn trang)
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 60) {
-        if (diffX < 0) animateTransition('next');
-        else animateTransition('prev');
-    }
-}, {passive: true});
-
-function animateTransition(direction) {
+// --- HIỆU ỨNG LẬT TRANG SÁCH CHUYÊN NGHIỆP ---
+function triggerFlip(direction) {
+    const page = document.getElementById('book-page');
     if (direction === 'next' && currentIndexInSet < filteredQuestions.length - 1) {
-        container.style.transform = 'translateX(-30px)';
-        container.style.opacity = '0';
+        page.style.transformOrigin = "left center";
+        page.classList.add('page-flip-next');
         setTimeout(() => {
             nextQuestion();
-            container.style.transform = 'translateX(30px)';
+            page.style.transition = 'none';
+            page.style.transform = 'rotateY(100deg)';
             setTimeout(() => {
-                container.style.transform = 'translateX(0)';
-                container.style.opacity = '1';
+                page.style.transition = 'transform 0.6s cubic-bezier(0.45, 0.05, 0.55, 0.95), opacity 0.4s';
+                page.classList.remove('page-flip-next');
+                page.style.transform = 'rotateY(0deg)';
             }, 50);
-        }, 200);
+        }, 400);
     } else if (direction === 'prev' && currentIndexInSet > 0) {
-        container.style.transform = 'translateX(30px)';
-        container.style.opacity = '0';
+        page.style.transformOrigin = "right center";
+        page.classList.add('page-flip-prev');
         setTimeout(() => {
             prevQuestion();
-            container.style.transform = 'translateX(-30px)';
+            page.style.transition = 'none';
+            page.style.transform = 'rotateY(-100deg)';
             setTimeout(() => {
-                container.style.transform = 'translateX(0)';
-                container.style.opacity = '1';
+                page.style.transition = 'transform 0.6s cubic-bezier(0.45, 0.05, 0.55, 0.95), opacity 0.4s';
+                page.classList.remove('page-flip-prev');
+                page.style.transform = 'rotateY(0deg)';
             }, 50);
-        }, 200);
+        }, 400);
     }
 }
 
+// Cử chỉ vuốt
+let touchstartX = 0;
+document.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, {passive: true});
+document.addEventListener('touchend', e => {
+    let diffX = e.changedTouches[0].screenX - touchstartX;
+    if (Math.abs(diffX) > 80) { if (diffX < 0) triggerFlip('next'); else triggerFlip('prev'); }
+}, {passive: true});
+
+// --- DỮ LIỆU & RENDER ---
 function changeExamSet(v) {
     let data = window[v] || (typeof eval !== 'undefined' ? eval(v) : null);
     if (data) { pmpData = data; currentSetName = v; currentIndexInSet = 0; updateFilteredData(); }
@@ -225,22 +221,21 @@ function renderQuestion() {
         opts += `<div class="option-item" id="opt-${key}" onclick="selectOption('${key}')"><b>${key}.</b> ${val}</div>`;
     }
 
+    // Giao diện Chip đồng bộ: Dễ -> Vừa -> Khó
     area.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div style="font-size:12px; font-weight:800; color:var(--text-sub);">CÂU ${currentIndexInSet + 1} / ${filteredQuestions.length}</div>
-            <div style="display:flex; gap:5px;">
-                <button class="chip ${lv==='Hard'?'active-hard':''}" onclick="updateLevel(this,'${q.id}','Hard')">KHÓ</button>
-                <button class="chip ${lv==='Medium'?'active-medium':''}" onclick="updateLevel(this,'${q.id}','Medium')">VỪA</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-size:12px; font-weight:800; color:var(--text-sub);">ID: #${q.id}</div>
+            <div class="chip-group">
                 <button class="chip ${lv==='Easy'?'active-easy':''}" onclick="updateLevel(this,'${q.id}','Easy')">DỄ</button>
+                <button class="chip ${lv==='Medium'?'active-medium':''}" onclick="updateLevel(this,'${q.id}','Medium')">VỪA</button>
+                <button class="chip ${lv==='Hard'?'active-hard':''}" onclick="updateLevel(this,'${q.id}','Hard')">KHÓ</button>
             </div>
         </div>
-        <div class="q-card">
-            <div style="font-size:14px; color:var(--text-sub); margin-bottom:8px;">ID: #${q.id}</div>
-            <div class="q-text">${q.question}</div>
-            <div class="options-list">${opts}</div>
-            <button id="confirm-btn" style="display:none" onclick="confirmAnswer()">KIỂM TRA ĐÁP ÁN</button>
-            <div id="explanation-area"></div>
-        </div>`;
+        <div style="font-size:11px; color:var(--primary); font-weight:700;">CÂU ${currentIndexInSet + 1} / ${filteredQuestions.length}</div>
+        <div class="q-text">${q.question}</div>
+        <div class="options-list">${opts}</div>
+        <div id="explanation-area"></div>
+    `;
     area.scrollTo(0,0);
 }
 
@@ -249,14 +244,11 @@ function updateLevel(btn, id, lv) {
     const stored = JSON.parse(localStorage.getItem(key) || "{}");
     if (stored[id] === lv) delete stored[id]; else stored[id] = lv;
     localStorage.setItem(key, JSON.stringify(stored));
-    renderLevelButtons(btn, lv, stored[id]);
-    updateTabCountsOnly();
-}
-
-function renderLevelButtons(btn, lv, isNew) {
+    
     const parent = btn.parentElement;
-    parent.querySelectorAll('.chip').forEach(c => c.classList.remove('active-hard','active-medium','active-easy'));
-    if (isNew) btn.classList.add('active-' + lv.toLowerCase());
+    parent.querySelectorAll('.chip').forEach(c => c.classList.remove('active-easy','active-medium','active-hard'));
+    if (stored[id]) btn.classList.add('active-' + lv.toLowerCase());
+    updateTabCountsOnly();
 }
 
 function updateTabCountsOnly() {
@@ -269,18 +261,26 @@ function updateTabCountsOnly() {
     });
 }
 
-function selectOption(k) { if(isConfirmed) return; selectedOption = k; document.querySelectorAll('.option-item').forEach(e => e.classList.remove('selected')); document.getElementById(`opt-${k}`).classList.add('selected'); document.getElementById('confirm-btn').style.display = 'block'; }
-function confirmAnswer() { if(!selectedOption || isConfirmed) return; showAnswerUI(); }
+function selectOption(k) { 
+    if(isConfirmed) return; 
+    selectedOption = k; 
+    document.querySelectorAll('.option-item').forEach(e => e.classList.remove('selected')); 
+    document.getElementById(`opt-${k}`).classList.add('selected'); 
+    setTimeout(() => { if(!isConfirmed) showAnswerUI(); }, 400); // Tự động hiện đáp án sau khi chọn
+}
+
 function showAnswerUI() {
     const q = filteredQuestions[currentIndexInSet];
     isConfirmed = true; 
-    document.getElementById('confirm-btn').style.display = 'none';
     document.getElementById('info-btn').classList.add('active-nav');
-    document.getElementById('eye-icon').innerText = "◉";
     document.querySelectorAll('.option-item').forEach(e => e.classList.remove('is-correct','is-wrong','selected'));
-    if (selectedOption === q.answer) document.getElementById(`opt-${selectedOption}`).classList.add('is-correct');
-    else { if(selectedOption) document.getElementById(`opt-${selectedOption}`).classList.add('is-wrong'); document.getElementById(`opt-${q.answer}`).classList.add('is-correct'); }
-    document.getElementById('explanation-area').innerHTML = `<div class="explanation-box"><b>Giải thích:</b><br>${q.explanation}</div>`;
+    if (selectedOption === q.answer) {
+        document.getElementById(`opt-${selectedOption}`).classList.add('is-correct');
+    } else {
+        if(selectedOption) document.getElementById(`opt-${selectedOption}`).classList.add('is-wrong');
+        document.getElementById(`opt-${q.answer}`).classList.add('is-correct');
+    }
+    document.getElementById('explanation-area').innerHTML = `<div style="margin-top:15px; padding:15px; background:#F2F2F7; border-radius:15px; font-size:14px; border-left:4px solid var(--primary);"><b>Giải thích:</b><br>${q.explanation}</div>`;
 }
 
 function toggleInfo() {
@@ -288,7 +288,7 @@ function toggleInfo() {
     else { isConfirmed = false; resetInfoBtn(); document.getElementById('explanation-area').innerHTML = ''; document.querySelectorAll('.option-item').forEach(e => e.classList.remove('is-correct','is-wrong')); if (selectedOption) document.getElementById(`opt-${selectedOption}`).classList.add('selected'); }
 }
 
-function resetInfoBtn() { document.getElementById('info-btn').classList.remove('active-nav'); document.getElementById('eye-icon').innerText = "◎"; }
+function resetInfoBtn() { document.getElementById('info-btn').classList.remove('active-nav'); }
 function switchTab(t) { currentTab = t; currentIndexInSet = 0; updateFilteredData(); }
 function nextQuestion() { if(currentIndexInSet < filteredQuestions.length-1) { currentIndexInSet++; renderQuestion(); } }
 function prevQuestion() { if(currentIndexInSet > 0) { currentIndexInSet--; renderQuestion(); } }

@@ -3,305 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PMP Master - Ultimate Toggle</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>PMP Master Ultimate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; 
-            --bg: #f8fafc; --card: #ffffff; --success: #10b981; 
-            --text-main: #1e293b; --text-sub: #64748b;
+            --primary: #007AFF; --easy: #34C759; --medium: #FF9500; --hard: #FF3B30;
+            --bg: #F2F2F7; --card: #FFFFFF; --text-main: #000000; --text-sub: #8E8E93;
         }
+
+        body, html { margin: 0; padding: 0; height: 100%; width: 100vw; font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+
+        /* Top Header */
+        .top-section { background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-bottom: 0.5px solid #C6C6C8; flex-shrink: 0; z-index: 100; }
+        header { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+        header h3 { margin: 0; font-size: 17px; font-weight: 800; }
         
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100vw; 
-            font-family: 'Inter', sans-serif; background: var(--bg); 
-            display: flex; flex-direction: column; overflow: hidden; 
-            -webkit-tap-highlight-color: transparent;
+        .tab-box { display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 16px; gap: 4px; background: #E3E3E6; margin: 0 16px 10px; border-radius: 10px; }
+        .tab-btn { border: none; padding: 8px 2px; border-radius: 8px; font-size: 10px; font-weight: 700; color: #3A3A3C; background: transparent; cursor: pointer; }
+        .tab-btn.active { background: white; box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
+
+        .settings-panel { padding: 0 16px 10px; }
+        select { width: 100%; border: none; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; background: #E3E3E6; outline: none; }
+
+        /* Main Display */
+        .main-display { flex-grow: 1; overflow-y: auto; padding: 12px; padding-bottom: 120px; }
+
+        /* Cụm Selector Cố định (Lớn hơn) */
+        .q-sticky-header {
+            position: sticky; top: -12px; z-index: 10;
+            background: rgba(255,255,255,0.98); backdrop-filter: blur(10px);
+            padding: 12px 16px; margin: -18px -18px 15px -18px;
+            border-bottom: 1px solid #F2F2F7; border-radius: 20px 20px 0 0;
+            display: flex; justify-content: space-between; align-items: center;
         }
 
-        /* Loading Overlay */
-        #loading {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9); display: none;
-            flex-direction: column; align-items: center; justify-content: center;
-            z-index: 1000; font-weight: 800; color: var(--primary);
+        .level-selector { display: flex; gap: 8px; }
+        .btn-level-big { 
+            border: none; padding: 10px 14px; border-radius: 12px; 
+            font-size: 11px; font-weight: 800; cursor: pointer; background: #F2F2F7; color: #8E8E93;
+            transition: all 0.1s active;
         }
+        /* Hiệu ứng phản hồi khi nhấn */
+        .btn-level-big:active { transform: scale(0.9); opacity: 0.7; }
+        .btn-level-big.active-hard { background: var(--hard); color: white; }
+        .btn-level-big.active-medium { background: var(--medium); color: white; }
+        .btn-level-big.active-easy { background: var(--easy); color: white; }
 
-        /* Top Section */
-        .top-section { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-shrink: 0; z-index: 100; padding-bottom: 5px; }
-        header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
-        header h3 { margin: 0; color: var(--primary); font-family: 'Montserrat'; font-size: 1rem; }
-        #set-label { font-weight: 800; color: var(--primary); font-size: 10px; background: #eff6ff; padding: 4px 8px; border-radius: 6px; }
-
-        .progress-container { padding: 0 15px 10px; }
-        .progress-info { display: flex; justify-content: space-between; font-size: 9px; font-weight: 800; color: var(--text-sub); margin-bottom: 4px; }
-        .progress-bar-bg { width: 100%; height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
-        #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--success)); transition: width 0.5s ease; }
-
-        .tab-box { display: flex; padding: 0 12px 10px; gap: 8px; }
-        .tab-btn { 
-            flex: 1; border: none; padding: 10px; border-radius: 12px; 
-            font-size: 10px; font-weight: 800; color: #94a3b8; background: #f1f5f9; 
-            cursor: pointer; transition: 0.1s; font-family: 'Montserrat';
-        }
-        .tab-btn.active { background: var(--primary); color: white; }
-        .tab-btn.active.done-mode { background: var(--success); }
-
-        .settings-panel { padding: 0 12px 10px; }
-        select { width: 100%; border: 1.5px solid #f1f5f9; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12px; outline: none; background: #fff; color: var(--text-main); }
-
-        /* Main Display area */
-        .main-display { flex-grow: 1; display: flex; flex-direction: column; padding: 12px; overflow-y: auto; padding-bottom: 120px; }
+        .q-card { background: var(--card); border-radius: 24px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.04); margin-bottom: 20px; }
+        .q-text { font-size: 17px; font-weight: 600; line-height: 1.5; color: var(--text-main); margin: 15px 0; }
         
-        .q-card { 
-            background: var(--card); border-radius: 16px; padding: 20px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 2px solid transparent;
-            min-height: 250px; animation: slideIn 0.2s ease-out;
+        /* Đáp án */
+        .options-list { display: flex; flex-direction: column; gap: 10px; }
+        .option-item { 
+            font-size: 15px; padding: 16px; background: #F9F9FB; border-radius: 14px; 
+            border: 2px solid transparent; line-height: 1.4; transition: 0.2s;
         }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .option-item:active { transform: scale(0.98); }
+        .option-item.selected { border-color: var(--primary); background: #EBF5FF; }
+        .option-item.is-correct { background: #E8F5E9; border-color: var(--easy); color: #2E7D32; font-weight: 700; }
+        .option-item.is-wrong { background: #FFEBEE; border-color: var(--hard); color: #C62828; }
 
-        .q-id-tag { font-size: 10px; font-weight: 800; color: var(--primary); margin-bottom: 10px; display: block; opacity: 0.6; }
-        .q-text { font-size: 15px; font-weight: 600; line-height: 1.5; color: var(--text-main); margin-bottom: 20px; }
-        
-        .options-list { display: grid; gap: 8px; }
-        .option-item { font-size: 13px; padding: 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9; color: var(--text-main); }
-        .option-item.correct { background: #ecfdf5; border-color: var(--success); color: var(--success); font-weight: 700; }
-
-        .info-panel { border-top: 1.5px dashed #f1f5f9; padding-top: 15px; margin-top: 20px; }
-        .explanation { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
-
-        /* Controls Bar */
-        .controls-bar { 
-            height: 95px; background: #fff; display: flex; align-items: center; 
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.05); border-radius: 24px 24px 0 0; 
-            padding: 0 8px; flex-shrink: 0; position: fixed; bottom: 0; width: 100%;
+        /* Nút Xác nhận */
+        #confirm-btn {
+            width: 100%; margin-top: 20px; padding: 16px; border-radius: 14px;
+            border: none; background: var(--primary); color: white;
+            font-size: 15px; font-weight: 800; display: none;
         }
-        .ctrl-group { flex: 1; display: flex; justify-content: space-evenly; align-items: center; }
-        
-        .btn-nav { 
-            background: transparent; border: none; color: #94a3b8; width: 55px; height: 55px; 
-            border-radius: 16px; display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; cursor: pointer; transition: 0.15s; 
-        }
-        .btn-nav i { font-style: normal; font-size: 18px; margin-bottom: 2px; }
-        .btn-nav small { font-size: 8px; font-weight: 800; text-transform: uppercase; }
-        .btn-nav.active-blue { color: var(--primary); background: #eff6ff; }
-        .btn-nav.status-active { color: var(--success); }
-        .btn-nav:disabled { opacity: 0.2; }
 
-        .btn-master { 
-            width: 70px; height: 70px; background: var(--accent); 
-            border: 6px solid var(--bg); border-radius: 50%; 
-            font-size: 26px; color: white; cursor: pointer; 
-            box-shadow: 0 8px 15px rgba(251, 191, 36, 0.3); 
-            display: flex; align-items: center; justify-content: center; 
-            position: absolute; top: -35px; left: 50%; transform: translateX(-50%); 
-            transition: 0.2s; z-index: 200;
+        .info-panel { border-top: 1px solid #F2F2F7; padding-top: 16px; margin-top: 20px; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* iPhone Bar */
+        .iphone-bar { 
+            height: 84px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px);
+            border-top: 0.5px solid rgba(0,0,0,0.1);
+            display: flex; align-items: flex-start; justify-content: space-around;
+            position: fixed; bottom: 0; width: 100%; z-index: 200; padding: 10px 10px 30px; box-sizing: border-box;
         }
-        .btn-master.is-ok { background: var(--success); box-shadow: 0 8px 15px rgba(16, 185, 129, 0.3); }
+        .tab-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; }
+        .tab-item i { font-style: normal; font-size: 24px; }
+        .tab-item.active { color: var(--primary); }
     </style>
 </head>
 <body>
 
-<div id="loading"><span>ĐANG TẢI DỮ LIỆU...</span></div>
-
 <div class="top-section">
-    <header><h3>PMP MASTER</h3><div id="set-label">SET 01</div></header>
-    
-    <div class="progress-container">
-        <div class="progress-info">
-            <span id="progress-text">TIẾN ĐỘ: 0%</span>
-            <span id="count-text">0/0</span>
-        </div>
-        <div class="progress-bar-bg"><div id="progress-fill"></div></div>
-    </div>
-
+    <header><h3>PMP Master</h3><div id="set-label">...</div></header>
     <div class="tab-box">
-        <button class="tab-btn active" id="tab-todo" onclick="switchTab('todo')">CẦN HỌC (0)</button>
-        <button class="tab-btn" id="tab-done" onclick="switchTab('done')">ĐÃ XONG (0)</button>
+        <button class="tab-btn active" data-type="todo" onclick="switchTab('todo')">MỚI</button>
+        <button class="tab-btn" data-type="Easy" onclick="switchTab('Easy')">DỄ</button>
+        <button class="tab-btn" data-type="Medium" onclick="switchTab('Medium')">VỪA</button>
+        <button class="tab-btn" data-type="Hard" onclick="switchTab('Hard')">KHÓ</button>
     </div>
-
     <div class="settings-panel">
         <select id="set-select" onchange="loadExamData(this.value)">
-            <option value="data1.json">Đề thi số 01</option>
-            <option value="data2.json">Đề thi số 02</option>
-            <option value="data3.json">Đề thi số 03</option>
+            <option value="data1.js">Đề thi số 01</option>
+            <option value="data2.js">Đề thi số 02</option>
         </select>
     </div>
 </div>
 
 <div class="main-display" id="display-area"></div>
 
-<div class="controls-bar">
-    <div class="ctrl-group">
-        <button class="btn-nav" id="prev-btn" onclick="prevQuestion()"><i>⏮</i><small>Trước</small></button>
-        <button class="btn-nav" id="info-btn" onclick="toggleInfo()"><i>👁️</i><small id="info-txt">Hiện</small></button>
-    </div>
-    
-    <button class="btn-master" id="master-btn" onclick="toggleMasterCurrent()">✔️</button>
-    
-    <div class="ctrl-group">
-        <button class="btn-nav" id="next-btn" onclick="nextQuestion()"><i>⏭</i><small>Sau</small></button>
-        <button class="btn-nav" id="status-btn" onclick="toggleMasterCurrent()">
-            <i id="status-icon">⚪</i><small id="status-txt">Trạng thái</small>
-        </button>
-    </div>
+<div class="iphone-bar">
+    <button class="tab-item" onclick="prevQuestion()"><i>‹</i><small>Trước</small></button>
+    <button class="tab-item" id="info-btn" onclick="toggleInfo()"><i>◎</i><small id="info-txt">Hiện đáp án</small></button>
+    <button class="tab-item" onclick="nextQuestion()"><i>›</i><small>Tiếp theo</small></button>
 </div>
 
 <script>
-// --- GLOBAL STATE ---
 let pmpData = []; 
 let currentIndexInSet = 0;
 let showInfo = false;
 let currentTab = 'todo';
-let filteredQuestions = [];
-const MASTER_KEY = "PMP_ULTIMATE_TOGGLE_DB";
+let selectedOption = null;
+let isConfirmed = false;
+let currentFileName = "";
+const MASTER_KEY_PREFIX = "PMP_ULTIMATE_";
 
-// --- CORE FUNCTIONS ---
-
-async function loadExamData(fileName) {
-    const loading = document.getElementById('loading');
-    loading.style.display = 'flex';
-
-    try {
-        const response = await fetch(fileName + '?v=' + new Date().getTime()); // Tránh cache
-        if (!response.ok) throw new Error("Không thể tải tệp " + fileName);
-        
-        pmpData = await response.json();
-        
-        loading.style.display = 'none';
-        document.getElementById('set-label').innerText = document.getElementById('set-select').selectedOptions[0].text.toUpperCase();
-        
-        currentIndexInSet = 0;
-        showInfo = false;
-        const btn = document.getElementById('info-btn');
-        btn.classList.remove('active-blue');
-        document.getElementById('info-txt').innerText = "Hiện";
-        
-        updateFilteredData();
-    } catch (error) {
-        loading.style.display = 'none';
-        alert("Lỗi: " + error.message + "\nLưu ý: Bạn cần chạy bằng Live Server hoặc Hosting.");
-    }
-}
-
-function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
-
-function switchTab(type) {
-    currentTab = type;
-    currentIndexInSet = 0;
-    document.getElementById('tab-todo').className = `tab-btn ${type === 'todo' ? 'active' : ''}`;
-    document.getElementById('tab-done').className = `tab-btn ${type === 'done' ? 'active done-mode' : ''}`;
-    updateFilteredData();
+function loadExamData(fileName) {
+    currentFileName = fileName;
+    const oldScript = document.getElementById('data-loader');
+    if (oldScript) oldScript.remove();
+    const script = document.createElement('script');
+    script.id = 'data-loader'; script.src = fileName + '?v=' + Date.now();
+    script.onload = () => {
+        if (window.EXAM_DATA) {
+            pmpData = window.EXAM_DATA;
+            document.getElementById('set-label').innerText = fileName.toUpperCase();
+            currentIndexInSet = 0; showInfo = false; updateFilteredData();
+        }
+    };
+    document.body.appendChild(script);
 }
 
 function updateFilteredData() {
-    const mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
-    
+    const stored = JSON.parse(localStorage.getItem(MASTER_KEY_PREFIX + currentFileName) || "{}");
     filteredQuestions = pmpData.filter(q => {
-        const isM = mastered.includes(q.id);
-        return currentTab === 'todo' ? !isM : isM;
+        const level = stored[q.id];
+        return currentTab === 'todo' ? !level : level === currentTab;
     });
 
-    const todoTotal = pmpData.filter(q => !mastered.includes(q.id)).length;
-    const doneTotal = pmpData.filter(q => mastered.includes(q.id)).length;
-    const percent = Math.round((doneTotal / pmpData.length) * 100) || 0;
+    const counts = { todo: 0, Easy: 0, Medium: 0, Hard: 0 };
+    pmpData.forEach(q => {
+        const level = stored[q.id];
+        if (!level) counts.todo++; else counts[level]++;
+    });
 
-    document.getElementById('tab-todo').innerText = `CẦN HỌC (${todoTotal})`;
-    document.getElementById('tab-done').innerText = `ĐÃ XONG (${doneTotal})`;
-    document.getElementById('progress-fill').style.width = percent + '%';
-    document.getElementById('progress-text').innerText = `TIẾN ĐỘ: ${percent}%`;
-    document.getElementById('count-text').innerText = `${doneTotal}/${pmpData.length}`;
-
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        const type = btn.getAttribute('data-type');
+        btn.innerText = `${type==='todo'?'MỚI':type.toUpperCase()} (${counts[type]})`;
+        btn.classList.toggle('active', type === currentTab);
+    });
     renderQuestion();
 }
 
 function renderQuestion() {
     const area = document.getElementById('display-area');
     const q = filteredQuestions[currentIndexInSet];
-    const masterBtn = document.getElementById('master-btn');
-    const statusBtn = document.getElementById('status-btn');
-
     if (!q) {
-        area.innerHTML = `<div class="q-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-align:center;">
-            <span style="font-size:40px; margin-bottom:10px;">🎉</span>
-            <span>Mục này hiện đang trống!<br>Hãy chuyển tab hoặc chọn đề khác.</span>
-        </div>`;
-        masterBtn.style.display = "none";
-        statusBtn.style.opacity = "0.2";
-        updateNavButtons();
+        area.innerHTML = `<div style="text-align:center; padding:100px 20px; color:#8E8E93;">Danh sách trống</div>`;
         return;
     }
-
-    masterBtn.style.display = "flex";
-    statusBtn.style.opacity = "1";
     
-    const mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
-    const isM = mastered.includes(q.id);
-    
-    masterBtn.innerHTML = isM ? '✅' : '✔️';
-    masterBtn.className = isM ? 'btn-master is-ok' : 'btn-master';
-
-    document.getElementById('status-icon').innerText = isM ? '🟢' : '⚪';
-    document.getElementById('status-txt').innerText = isM ? 'Đã OK' : 'Chưa OK';
-    statusBtn.className = isM ? 'btn-nav status-active' : 'btn-nav';
+    selectedOption = null;
+    isConfirmed = false;
+    const stored = JSON.parse(localStorage.getItem(MASTER_KEY_PREFIX + currentFileName) || "{}");
+    const level = stored[q.id];
 
     let opts = '';
     for (const [key, val] of Object.entries(q.options)) {
-        const isCorrect = (key === q.answer && showInfo);
-        opts += `<div class="option-item ${isCorrect ? 'correct' : ''}"><strong>${key}.</strong> ${val}</div>`;
+        opts += `<div class="option-item" id="opt-${key}" onclick="selectOption('${key}')"><strong>${key}.</strong> ${val}</div>`;
     }
 
     area.innerHTML = `
         <div class="q-card">
-            <span class="q-id-tag">ID: #${q.id}</span>
+            <div class="q-sticky-header">
+                <span style="font-size:12px; font-weight:700; color:#8E8E93;">ID #${q.id}</span>
+                <div class="level-selector">
+                    <button class="btn-level-big ${level==='Hard'?'active-hard':''}" onclick="setLevel('${q.id}', 'Hard')">KHÓ</button>
+                    <button class="btn-level-big ${level==='Medium'?'active-medium':''}" onclick="setLevel('${q.id}', 'Medium')">VỪA</button>
+                    <button class="btn-level-big ${level==='Easy'?'active-easy':''}" onclick="setLevel('${q.id}', 'Easy')">DỄ</button>
+                </div>
+            </div>
             <div class="q-text">${q.question}</div>
             <div class="options-list">${opts}</div>
-            ${showInfo ? `<div class="info-panel"><div class="explanation"><strong>Giải thích:</strong> ${q.explanation}</div></div>` : ''}
-        </div>
-    `;
-    updateNavButtons();
+            <button id="confirm-btn" onclick="confirmAnswer()">XÁC NHẬN ĐÁP ÁN</button>
+            <div id="explanation-box"></div>
+        </div>`;
+    area.scrollTo(0,0);
 }
 
-function toggleMasterCurrent() {
+function selectOption(key) {
+    if (isConfirmed) return;
+    selectedOption = key;
+    document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+    document.getElementById(`opt-${key}`).classList.add('selected');
+    document.getElementById('confirm-btn').style.display = 'block';
+}
+
+function confirmAnswer() {
+    if (!selectedOption || isConfirmed) return;
+    isConfirmed = true;
     const q = filteredQuestions[currentIndexInSet];
-    if (!q) return;
-    haptic();
-
-    let mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
-    if (mastered.includes(q.id)) {
-        mastered = mastered.filter(i => i !== q.id);
+    const correctKey = q.answer;
+    
+    document.getElementById('confirm-btn').style.display = 'none';
+    
+    if (selectedOption === correctKey) {
+        document.getElementById(`opt-${selectedOption}`).classList.add('is-correct');
     } else {
-        mastered.push(q.id);
+        document.getElementById(`opt-${selectedOption}`).classList.add('is-wrong');
+        document.getElementById(`opt-${correctKey}`).classList.add('is-correct');
     }
-    localStorage.setItem(MASTER_KEY, JSON.stringify(mastered));
+    
+    showExplanation(q.explanation);
+}
 
-    // Logic: Nếu chuyển xong câu cuối, lùi lại 1 index
-    if (currentIndexInSet >= filteredQuestions.length - 1 && currentIndexInSet > 0) {
-        currentIndexInSet--;
-    }
+function showExplanation(text) {
+    document.getElementById('explanation-box').innerHTML = `
+        <div class="info-panel">
+            <div class="explanation"><strong>Giải thích:</strong> ${text}</div>
+        </div>`;
+}
+
+function setLevel(id, level) {
+    const key = MASTER_KEY_PREFIX + currentFileName;
+    const stored = JSON.parse(localStorage.getItem(key) || "{}");
+    if (stored[id] === level) delete stored[id]; else stored[id] = level;
+    localStorage.setItem(key, JSON.stringify(stored));
     updateFilteredData();
 }
 
-function toggleInfo() {
-    showInfo = !showInfo;
-    const btn = document.getElementById('info-btn');
-    btn.classList.toggle('active-blue', showInfo);
-    document.getElementById('info-txt').innerText = showInfo ? "Ẩn" : "Hiện";
-    renderQuestion();
+function switchTab(type) { currentTab = type; currentIndexInSet = 0; updateFilteredData(); }
+function toggleInfo() { 
+    if (!isConfirmed) {
+        const q = filteredQuestions[currentIndexInSet];
+        if (q) {
+            selectedOption = q.answer; 
+            confirmAnswer();
+        }
+    }
 }
+function nextQuestion() { if (currentIndexInSet < filteredQuestions.length - 1) { currentIndexInSet++; renderQuestion(); } }
+function prevQuestion() { if (currentIndexInSet > 0) { currentIndexInSet--; renderQuestion(); } }
 
-function nextQuestion() { if (currentIndexInSet < filteredQuestions.length - 1) { currentIndexInSet++; haptic(); renderQuestion(); } }
-function prevQuestion() { if (currentIndexInSet > 0) { currentIndexInSet--; haptic(); renderQuestion(); } }
-
-function updateNavButtons() {
-    document.getElementById('prev-btn').disabled = (currentIndexInSet === 0 || filteredQuestions.length === 0);
-    document.getElementById('next-btn').disabled = (currentIndexInSet >= filteredQuestions.length - 1 || filteredQuestions.length === 0);
-}
-
-// Khởi chạy
 window.onload = () => loadExamData(document.getElementById('set-select').value);
-
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-[
+var DATA_SET_3 =[
   {
     "id": 1,
     "question": "During the project kick-off meeting, the project manager announces that a hybrid approach will be used to deliver the project. Many of the team members raise a concern because they are used to working on predictive projects.\nWhat should the project manager do?",

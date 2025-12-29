@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - V1.3 Header Format</title>
+    <title>PMP Master Pro - V1.4 Final</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -280,8 +280,9 @@ function toggleAns() {
         el.classList.remove('correct', 'wrong');
         if (isShow) {
             const optKey = el.id.split('-')[1];
-            if (optKey === q.answer) el.classList.add('correct');
-            else if (el.classList.contains('selected') && optKey !== q.answer) el.classList.add('wrong');
+            const isCorrect = Array.isArray(q.answer) ? q.answer.includes(optKey) : optKey === q.answer;
+            if (isCorrect) el.classList.add('correct');
+            else if (el.classList.contains('selected')) el.classList.add('wrong');
         }
     });
 }

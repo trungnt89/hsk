@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - Icon Fixed</title>
+    <title>PMP Master Pro - Final Performance</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -40,29 +40,47 @@
         .tab-pill.active { background: var(--text-main); color: white; }
 
         .content-viewport { flex-grow: 1; position: relative; overflow: hidden; }
+        
         .main-card { 
             position: absolute; inset: 0; background: var(--card); 
             margin: 10px; border-radius: 20px; box-sizing: border-box; 
-            overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; 
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+        }
+
+        /* HEADER CÂU HỎI CỐ ĐỊNH */
+        .q-sticky-header {
+            padding: 12px 16px;
+            background: white;
+            border-bottom: 0.5px solid #F2F2F7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            border-radius: 20px 20px 0 0;
+        }
+
+        /* VÙNG NỘI DUNG CUỘN ĐỘC LẬP */
+        .q-scroll-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px;
             padding-bottom: 120px;
         }
-        .question-body { padding: 16px; position: relative; }
 
-        .diff-status-box { 
-            float: right; display: flex; flex-direction: column; gap: 6px; 
-            position: sticky; top: 0; background: white; padding: 8px; 
-            z-index: 5; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
+        .q-counter { font-size: 12px; font-weight: 800; color: var(--primary); }
+        .diff-status-box { display: flex; gap: 5px; }
         .q-diff-tag { 
-            font-size: 11px; font-weight: 800; padding: 10px 12px; 
-            border-radius: 8px; border: 1.5px solid #EEE; color: #CCC; 
-            cursor: pointer; text-align: center; min-width: 50px;
+            font-size: 10px; font-weight: 800; padding: 6px 10px; 
+            border-radius: 6px; border: 1.5px solid #EEE; color: #CCC; 
+            cursor: pointer; text-align: center;
         }
         .q-diff-tag.active[data-type="Easy"] { background: var(--easy); color: white; border-color: var(--easy); }
         .q-diff-tag.active[data-type="Medium"] { background: var(--medium); color: white; border-color: var(--medium); }
         .q-diff-tag.active[data-type="Hard"] { background: var(--hard); color: white; border-color: var(--hard); }
 
-        .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 10px 0 20px; padding-right: 85px; min-height: 110px; }
+        .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 0 0 20px; }
         .option-item { font-size: 14px; padding: 15px; background: #F2F2F7; border-radius: 14px; margin-bottom: 10px; border: 2.5px solid transparent; }
         .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
 
@@ -132,27 +150,21 @@
 let state = JSON.parse(localStorage.getItem('PMP_PRO_STABLE')) || {
     set: 'DATA_SET_1', tab: 'todo', diffFilter: null, progress: {}, lastIdx: 0
 };
+let currentData = []; let filteredData = []; let idx = 0; let isFirstLoad = true;
 
-let currentData = []; let filteredData = []; let idx = 0;
-let isFirstLoad = true;
-
-function save() { 
-    state.lastIdx = idx;
-    localStorage.setItem('PMP_PRO_STABLE', JSON.stringify(state)); 
-}
-
+function save() { state.lastIdx = idx; localStorage.setItem('PMP_PRO_STABLE', JSON.stringify(state)); }
 function changeExamSet(v) { state.set = v; idx = 0; update(); }
 function switchTab(t) { state.tab = t; state.diffFilter = null; idx = 0; update(); }
 function toggleFilter(f) { state.diffFilter = (state.diffFilter === f) ? null : f; idx = 0; update(); }
 
+// Dịch thuật (Giữ nguyên tuyệt đối)
 document.addEventListener('selectionchange', () => {
     const text = window.getSelection().toString().trim();
     const display = document.getElementById('trans-display');
     if (text.length > 2) {
         clearTimeout(window.transTimer);
         window.transTimer = setTimeout(async () => {
-            display.innerText = "Đang dịch...";
-            display.style.display = 'block';
+            display.innerText = "Đang dịch..."; display.style.display = 'block';
             try {
                 const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
                 const data = await res.json();
@@ -184,10 +196,7 @@ function update() {
         return matchTab && matchDiff;
     });
 
-    if (isFirstLoad) {
-        idx = state.lastIdx < filteredData.length ? state.lastIdx : 0;
-        isFirstLoad = false;
-    }
+    if (isFirstLoad) { idx = (state.lastIdx < filteredData.length) ? state.lastIdx : 0; isFirstLoad = false; }
     if (idx >= filteredData.length && filteredData.length > 0) idx = 0;
     save();
 
@@ -203,14 +212,18 @@ function render() {
     const q = filteredData[idx];
     if (!q) { container.innerHTML = "<center style='padding-top:100px; color:#999'>Trống</center>"; return; }
     const p = state.progress[q.id] || {};
+    
+    // Tách biệt Header và Body cuộn
     container.innerHTML = `
-        <div class="question-body">
+        <div class="q-sticky-header">
+            <div class="q-counter">CÂU ${idx+1}/${filteredData.length}</div>
             <div class="diff-status-box">
                 <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
                 <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
                 <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
             </div>
-            <div style="font-size:11px; font-weight:800; color:var(--primary)">CÂU ${idx+1}/${filteredData.length}</div>
+        </div>
+        <div class="q-scroll-body">
             <div class="q-text">${q.question}</div>
             <div class="options">
                 ${Object.entries(q.options).map(([k,v]) => `
@@ -221,7 +234,6 @@ function render() {
             <textarea class="note-area" placeholder="Ghi chú..." oninput="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
         </div>
     `;
-    container.scrollTop = 0;
 }
 
 function setStatus(qid, level) {

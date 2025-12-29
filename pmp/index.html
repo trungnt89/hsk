@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - V1.7 Zoom Hide</title>
+    <title>PMP Master Pro - V1.7 Slide Effect</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -39,24 +39,23 @@
         }
         .tab-pill.active { background: var(--text-main); color: white; }
 
-        .content-viewport { flex-grow: 1; position: relative; overflow: hidden; }
+        .content-viewport { flex-grow: 1; position: relative; overflow: hidden; perspective: 1000px; }
         
         .main-card { 
             position: absolute; inset: 0; background: var(--card); 
             margin: 10px; border-radius: 20px; box-sizing: border-box; 
             display: flex; flex-direction: column; overflow: hidden;
             box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-            
-            /* HIỆU ỨNG CHUYỂN CẢNH: 1 GIÂY */
-            transition: opacity 1s ease-in-out, transform 1s ease-in-out;
-            opacity: 1;
-            transform: scale(1);
+            /* HIỆU ỨNG TRƯỢT MƯỢT MÀ */
+            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1; transform: translateX(0);
         }
-        /* KHI HIDE: MỜ DẦN VÀ NHỎ DẦN */
-        .main-card.fading { 
-            opacity: 0; 
-            transform: scale(0.3); /* Thu nhỏ còn 30% kích thước */
-        }
+
+        /* Classes hỗ trợ hiệu ứng */
+        .slide-out-left { opacity: 0 !important; transform: translateX(-100%) !important; }
+        .slide-out-right { opacity: 0 !important; transform: translateX(100%) !important; }
+        .slide-in-init-left { opacity: 0 !important; transform: translateX(-100%) !important; transition: none !important; }
+        .slide-in-init-right { opacity: 0 !important; transform: translateX(100%) !important; transition: none !important; }
 
         .q-sticky-header {
             padding: 12px 16px; background: white; border-bottom: 0.5px solid #F2F2F7;
@@ -297,7 +296,7 @@ function toggleAns() {
     });
 }
 
-// CHUYỂN TRANG VỚI HIỆU ỨNG NHỎ DẦN TRONG 1 GIÂY
+// XỬ LÝ CHUYỂN TRANG ĐA HƯỚNG
 let isMoving = false;
 function move(dir) {
     if (isMoving) return;
@@ -306,19 +305,34 @@ function move(dir) {
     if (dir === 'prev' && idx <= 0) return;
 
     isMoving = true;
-    card.classList.add('fading'); // Kích hoạt hiệu ứng nhỏ dần + mờ dần
-    
+
+    // 1. Thẻ hiện tại trượt ra
+    if (dir === 'next') card.classList.add('slide-out-left');
+    else card.classList.add('slide-out-right');
+
     setTimeout(() => {
+        // 2. Thay đổi dữ liệu
         if (dir === 'next') idx++; else if (dir === 'prev') idx--;
-        update(); // Nạp dữ liệu mới
-        card.classList.remove('fading'); // Hiện lại từ nhỏ đến to
-        setTimeout(() => { isMoving = false; }, 500);
-    }, 1000); // Đợi đủ 1 giây cho hiệu ứng ẩn hoàn tất
+        update(); 
+
+        // 3. Chuẩn bị thẻ mới ở vị trí đối diện (không có transition)
+        card.classList.remove('slide-out-left', 'slide-out-right');
+        if (dir === 'next') card.classList.add('slide-in-init-right');
+        else card.classList.add('slide-in-init-left');
+
+        // 4. Kích hoạt trượt vào vị trí trung tâm
+        setTimeout(() => {
+            card.classList.remove('slide-in-init-right', 'slide-in-init-left');
+            setTimeout(() => { isMoving = false; }, 700);
+        }, 50);
+
+    }, 700); // Khớp với transition CSS
 }
 
-// VUỐT (SWIPE)
+// XỬ LÝ VUỐT (SWIPE)
 let touchStartX = 0;
 let touchEndX = 0;
+
 document.getElementById('swipe-area').addEventListener('touchstart', e => {
     touchStartX = e.changedTouches[0].screenX;
 }, {passive: true});

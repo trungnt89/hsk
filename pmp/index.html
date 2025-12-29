@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - Fix Translation Scroll</title>
+    <title>PMP Master Pro - V1.2 Scoped</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -82,7 +82,6 @@
             background: #FAFAFA; resize: none; box-sizing: border-box;
         }
 
-        /* FIX: Cấu trúc bản dịch có thể cuộn */
         #trans-display { 
             display: none; position: fixed; bottom: 85px; left: 10px; right: 10px; 
             background: #1C1C1E; color: white; border-radius: 12px; 
@@ -152,7 +151,7 @@ function changeExamSet(v) { state.set = v; idx = 0; update(); }
 function switchTab(t) { state.tab = t; state.diffFilter = null; idx = 0; update(); }
 function toggleFilter(f) { state.diffFilter = (state.diffFilter === f) ? null : f; idx = 0; update(); }
 
-// Dịch thuật - FIX Scroll và Close
+// Dịch thuật
 document.addEventListener('selectionchange', () => {
     const text = window.getSelection().toString().trim();
     const display = document.getElementById('trans-display');
@@ -174,11 +173,14 @@ function update() {
     document.getElementById('set-select').value = state.set;
     currentData = window[state.set] || [];
     let counts = { todo: 0, done: 0, Easy: 0, Medium: 0, Hard: 0 };
+    
     currentData.forEach(q => {
-        const p = state.progress[q.id];
+        // UNIQUE KEY: Filename + ID
+        const p = state.progress[state.set + q.id];
         if (p && p.ans) counts.done++; else counts.todo++;
         if (p?.diff) counts[p.diff]++;
     });
+
     document.getElementById('top-todo-cnt').innerText = `(${counts.todo})`;
     document.getElementById('top-done-cnt').innerText = `(${counts.done})`;
     document.getElementById('cnt-Easy').innerText = `(${counts.Easy})`;
@@ -186,7 +188,7 @@ function update() {
     document.getElementById('cnt-Hard').innerText = `(${counts.Hard})`;
 
     filteredData = currentData.filter(q => {
-        const p = state.progress[q.id];
+        const p = state.progress[state.set + q.id];
         let matchTab = (state.tab === 'done') ? (p && p.ans) : (!p || !p.ans);
         let matchDiff = state.diffFilter ? (p?.diff === state.diffFilter) : true;
         return matchTab && matchDiff;
@@ -207,7 +209,7 @@ function render() {
     const container = document.getElementById('book-page');
     const q = filteredData[idx];
     if (!q) { container.innerHTML = "<center style='padding-top:100px; color:#999'>Trống</center>"; return; }
-    const p = state.progress[q.id] || {};
+    const p = state.progress[state.set + q.id] || {};
     
     container.innerHTML = `
         <div class="q-sticky-header">
@@ -232,26 +234,33 @@ function render() {
 }
 
 function setStatus(qid, level) {
-    if(!state.progress[qid]) state.progress[qid] = {};
-    state.progress[qid].diff = (state.progress[qid].diff === level) ? null : level;
+    const key = state.set + qid;
+    if(!state.progress[key]) state.progress[key] = {};
+    state.progress[key].diff = (state.progress[key].diff === level) ? null : level;
     save(); updateCountsOnly();
     render();
 }
 
 function setAns(qid, k) {
-    if(!state.progress[qid]) state.progress[qid] = {};
-    state.progress[qid].ans = (state.progress[qid].ans === k) ? null : k;
+    const key = state.set + qid;
+    if(!state.progress[key]) state.progress[key] = {};
+    state.progress[key].ans = (state.progress[key].ans === k) ? null : k;
     save(); updateCountsOnly();
     document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
-    if(state.progress[qid].ans) document.getElementById('opt-'+k).classList.add('selected');
+    if(state.progress[key].ans) document.getElementById('opt-'+k).classList.add('selected');
 }
 
-function saveNote(qid, val) { if(!state.progress[qid]) state.progress[qid] = {}; state.progress[qid].note = val; save(); }
+function saveNote(qid, val) { 
+    const key = state.set + qid; 
+    if(!state.progress[key]) state.progress[key] = {}; 
+    state.progress[key].note = val; 
+    save(); 
+}
 
 function updateCountsOnly() {
     let c = { todo: 0, done: 0, Easy: 0, Medium: 0, Hard: 0 };
     currentData.forEach(q => {
-        const p = state.progress[q.id];
+        const p = state.progress[state.set + q.id];
         if (p && p.ans) c.done++; else c.todo++;
         if (p?.diff) c[p.diff]++;
     });

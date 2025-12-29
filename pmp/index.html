@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - V1.8 Vocab</title>
+    <title>PMP Master Pro - V1.9 Vocab Protected</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -83,14 +83,14 @@
         .nav-btn.active { border-color: var(--primary); color: var(--primary); background: #F0F7FF; }
         .nav-btn i { font-style: normal; font-size: 16px; margin-bottom: 3px; }
 
-        /* NEW: VOCAB PAGE STYLE */
+        /* VOCAB PAGE STYLE */
         #vocab-page { display:none; position:fixed; inset:0; background:var(--bg); z-index:3000; flex-direction:column; padding-top:env(safe-area-inset-top); }
         .vocab-list { flex-grow:1; overflow-y:auto; padding:12px; }
         .vocab-item { background:white; padding:15px; border-radius:15px; margin-bottom:10px; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
         .v-meta { font-size:10px; color:#8E8E93; font-weight:bold; margin-bottom:5px; }
         .v-en { font-size:15px; font-weight:700; color:var(--primary); margin-bottom:4px; }
         .v-vi { font-size:14px; color:var(--text-main); }
-        .v-del { position:absolute; right:15px; top:15px; color:var(--hard); font-weight:900; }
+        .v-del { position:absolute; right:15px; top:15px; color:var(--hard); font-weight:900; padding: 5px; cursor: pointer; }
         .v-ctrl { padding:15px; display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:white; border-top:1px solid #DDD; }
         .btn-v { padding:12px; border-radius:10px; border:none; font-weight:800; font-size:11px; cursor:pointer; background:#E5E5EA; }
         .btn-close { background:var(--text-main); color:white; }
@@ -103,7 +103,7 @@
 <div id="trans-display"></div>
 
 <div id="vocab-page">
-    <div class="system-header"><div class="nav-row"><div class="brand">TỪ VỰNG ĐÃ TRA</div></div></div>
+    <div class="system-header"><div class="nav-row"><div class="brand">DANH SÁCH TỪ VỰNG</div></div></div>
     <div class="vocab-list" id="vocab-list-container"></div>
     <div class="v-ctrl">
         <button class="btn-v btn-exp" onclick="exportVocab()">EXPORT CSV</button>
@@ -156,7 +156,6 @@ function changeExamSet(v) { state.set = v; idx = 0; update(); }
 function switchTab(t) { state.tab = t; state.diffFilter = null; idx = 0; update(); }
 function toggleFilter(f) { state.diffFilter = (state.diffFilter === f) ? null : f; idx = 0; update(); }
 
-// Dịch thuật + Tự động lưu từ vựng
 document.addEventListener('selectionchange', () => {
     const text = window.getSelection().toString().trim();
     const display = document.getElementById('trans-display');
@@ -170,7 +169,7 @@ document.addEventListener('selectionchange', () => {
                 const data = await res.json();
                 const result = data[0].map(s => s[0]).join("");
                 document.getElementById('trans-text').innerText = result;
-                saveToVocab(text, result); // Lưu từ vựng
+                saveToVocab(text, result);
             } catch (e) { document.getElementById('trans-text').innerText = "Lỗi kết nối."; }
         }, 600);
     }
@@ -185,7 +184,7 @@ function saveToVocab(en, vi) {
         vi: vi,
         time: new Date().toLocaleString('vi-VN')
     };
-    state.vocab.unshift(item); // Thêm vào đầu danh sách
+    state.vocab.unshift(item);
     save();
 }
 
@@ -207,9 +206,13 @@ function renderVocabList() {
     `).join('');
 }
 
+// CẬP NHẬT: CẢNH BÁO TRƯỚC KHI XÓA
 function deleteVocab(i) {
-    state.vocab.splice(i, 1);
-    save(); renderVocabList();
+    if (confirm("Bạn có chắc chắn muốn xóa từ vựng này không?")) {
+        state.vocab.splice(i, 1);
+        save(); 
+        renderVocabList();
+    }
 }
 
 function exportVocab() {
@@ -229,20 +232,21 @@ function importVocab(input) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
-        const rows = e.target.result.split('\n').slice(1);
-        rows.forEach(row => {
-            const cols = row.split('","').map(c => c.replace(/"/g, ''));
-            if(cols.length >= 4) {
-                state.vocab.push({ set: cols[0], qid: cols[1], en: cols[2], vi: cols[3], time: cols[4] || '' });
-            }
-        });
-        save(); renderVocabList();
-        alert("Đã import xong!");
+        try {
+            const rows = e.target.result.split('\n').slice(1);
+            rows.forEach(row => {
+                const cols = row.split('","').map(c => c.replace(/"/g, ''));
+                if(cols.length >= 4) {
+                    state.vocab.push({ set: cols[0], qid: cols[1], en: cols[2], vi: cols[3], time: cols[4] || '' });
+                }
+            });
+            save(); renderVocabList();
+            alert("Đã nhập dữ liệu thành công!");
+        } catch(err) { alert("Lỗi định dạng file!"); }
     };
     reader.readAsText(file);
 }
 
-// GIỮ NGUYÊN LOGIC CŨ
 function update() {
     document.getElementById('set-select').value = state.set;
     currentData = window[state.set] || [];

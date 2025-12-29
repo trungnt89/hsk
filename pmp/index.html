@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - V1.2 Scoped</title>
+    <title>PMP Master Pro - V1.3 Header Format</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -175,7 +175,6 @@ function update() {
     let counts = { todo: 0, done: 0, Easy: 0, Medium: 0, Hard: 0 };
     
     currentData.forEach(q => {
-        // UNIQUE KEY: Filename + ID
         const p = state.progress[state.set + q.id];
         if (p && p.ans) counts.done++; else counts.todo++;
         if (p?.diff) counts[p.diff]++;
@@ -213,7 +212,7 @@ function render() {
     
     container.innerHTML = `
         <div class="q-sticky-header">
-            <div class="q-counter">CÂU ${idx+1}/${filteredData.length}</div>
+            <div class="q-counter">#${idx+1} : ${q.id}</div>
             <div class="diff-status-box">
                 <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
                 <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>

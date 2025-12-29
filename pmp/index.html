@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - Full Version</title>
+    <title>PMP Master Pro - Fix Translation Scroll</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -44,8 +44,7 @@
         .main-card { 
             position: absolute; inset: 0; background: var(--card); 
             margin: 10px; border-radius: 20px; box-sizing: border-box; 
-            display: flex; flex-direction: column; 
-            overflow: hidden;
+            display: flex; flex-direction: column; overflow: hidden;
             box-shadow: 0 8px 25px rgba(0,0,0,0.05);
         }
 
@@ -55,9 +54,7 @@
             z-index: 10; border-radius: 20px 20px 0 0;
         }
 
-        .q-scroll-body {
-            flex-grow: 1; overflow-y: auto; padding: 16px; padding-bottom: 120px;
-        }
+        .q-scroll-body { flex-grow: 1; overflow-y: auto; padding: 16px; padding-bottom: 120px; }
 
         .q-counter { font-size: 12px; font-weight: 800; color: var(--primary); }
         .diff-status-box { display: flex; gap: 5px; }
@@ -70,7 +67,6 @@
         .q-diff-tag.active[data-type="Medium"] { background: var(--medium); color: white; border-color: var(--medium); }
         .q-diff-tag.active[data-type="Hard"] { background: var(--hard); color: white; border-color: var(--hard); }
 
-        /* HỖ TRỢ XUỐNG DÒNG \n */
         .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 0 0 20px; white-space: pre-wrap; }
         .option-item { font-size: 14px; padding: 15px; background: #F2F2F7; border-radius: 14px; margin-bottom: 10px; border: 2.5px solid transparent; transition: all 0.2s; white-space: pre-wrap; }
         .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
@@ -78,7 +74,7 @@
         .option-item.correct { background: #D4EDDA !important; border-color: #28CD41 !important; color: #155724; font-weight: 700; }
         .option-item.wrong { background: #F8D7DA !important; border-color: #FF3B30 !important; color: #721C24; }
 
-        #exp-box { margin-top: 15px; padding: 15px; background: #F2F2F7; border-radius: 12px; font-size: 13px; border-left: 4px solid var(--primary); white-space: pre-wrap; }
+        #exp-box { margin-top: 15px; padding: 15px; background: #F2F2F7; border-radius: 12px; font-size: 13px; border-left:4px solid var(--primary); white-space: pre-wrap; }
 
         .note-area { 
             width: 100%; height: 80px; margin-top: 15px; border-radius: 12px; 
@@ -86,12 +82,16 @@
             background: #FAFAFA; resize: none; box-sizing: border-box;
         }
 
+        /* FIX: Cấu trúc bản dịch có thể cuộn */
         #trans-display { 
             display: none; position: fixed; bottom: 85px; left: 10px; right: 10px; 
-            background: #1C1C1E; color: white; padding: 12px; border-radius: 12px; 
-            font-size: 14px; z-index: 2000; box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
-            line-height: 1.4;
+            background: #1C1C1E; color: white; border-radius: 12px; 
+            font-size: 14px; z-index: 2000; box-shadow: 0 -5px 25px rgba(0,0,0,0.4);
+            line-height: 1.5; max-height: 50vh; flex-direction: column; overflow: hidden;
         }
+        .trans-header { padding: 10px 14px; background: #2C2C2E; border-bottom: 0.5px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; color: #AAA; letter-spacing: 1px; }
+        .trans-content { padding: 14px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .trans-close { color: var(--primary); padding-left: 10px; cursor: pointer; }
 
         .bottom-nav { 
             height: 65px; background: white; border-top: 0.5px solid rgba(0,0,0,0.1);
@@ -109,7 +109,7 @@
 </head>
 <body>
 
-<div id="trans-display" onclick="this.style.display='none'"></div>
+<div id="trans-display"></div>
 
 <header class="system-header">
     <div class="nav-row">
@@ -153,19 +153,20 @@ function changeExamSet(v) { state.set = v; idx = 0; update(); }
 function switchTab(t) { state.tab = t; state.diffFilter = null; idx = 0; update(); }
 function toggleFilter(f) { state.diffFilter = (state.diffFilter === f) ? null : f; idx = 0; update(); }
 
-// Dịch thuật
+// Dịch thuật - FIX Scroll và Close
 document.addEventListener('selectionchange', () => {
     const text = window.getSelection().toString().trim();
     const display = document.getElementById('trans-display');
     if (text.length > 2) {
         clearTimeout(window.transTimer);
         window.transTimer = setTimeout(async () => {
-            display.innerText = "Đang dịch..."; display.style.display = 'block';
+            display.innerHTML = '<div class="trans-header">BẢN DỊCH <span class="trans-close" onclick="document.getElementById(\'trans-display\').style.display=\'none\'">ĐÓNG [X]</span></div><div class="trans-content" id="trans-text">Đang dịch...</div>';
+            display.style.display = 'flex';
             try {
                 const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
                 const data = await res.json();
-                display.innerText = data[0].map(s => s[0]).join("");
-            } catch (e) { display.innerText = "Lỗi kết nối."; }
+                document.getElementById('trans-text').innerText = data[0].map(s => s[0]).join("");
+            } catch (e) { document.getElementById('trans-text').innerText = "Lỗi kết nối."; }
         }, 600);
     }
 });
@@ -266,19 +267,14 @@ function toggleAns() {
     const box = document.getElementById('exp-box');
     const isShow = box.style.display === 'none';
     const q = filteredData[idx];
-    
     box.style.display = isShow ? 'block' : 'none';
     document.getElementById('btn-ans').classList.toggle('active', isShow);
-
     document.querySelectorAll('.option-item').forEach(el => {
         el.classList.remove('correct', 'wrong');
         if (isShow) {
             const optKey = el.id.split('-')[1];
-            if (optKey === q.answer) {
-                el.classList.add('correct');
-            } else if (el.classList.contains('selected') && optKey !== q.answer) {
-                el.classList.add('wrong');
-            }
+            if (optKey === q.answer) el.classList.add('correct');
+            else if (el.classList.contains('selected') && optKey !== q.answer) el.classList.add('wrong');
         }
     });
 }

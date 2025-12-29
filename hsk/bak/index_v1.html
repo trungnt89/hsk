@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>HSK1 – Luyện Nghe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 12px;
+  background: #f4f4f4;
+}
+
+h1 {
+  text-align: center;
+  margin: 8px 0 10px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+button, select {
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button.active {
+  background: #4caf50;
+  color: #fff;
+}
+
+#pageInfo {
+  text-align: center;
+  font-weight: bold;
+  margin: 6px 0;
+}
+
+#wordList {
+  max-height: 72vh;
+  overflow-y: auto;
+}
+
+.word-item {
+  background: #fff;
+  padding: 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.word-item.active {
+  background: #fff3cd;
+  border-left: 6px solid #ff9800;
+}
+
+.word-main {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.word-sub {
+  font-size: 14px;
+  color: #555;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📘 HSK1 – Luyện Nghe</h1>
+
+<div class="controls">
+  <!-- ❌ bỏ active ở Browser -->
+  <button id="browserBtn" onclick="setTts('browser')">Browser</button>
+  <button id="googleBtn" onclick="setTts('google')">Google</button>
+
+  <!-- ✅ Azure là mặc định -->
+  <button id="azureBtn" class="active" onclick="setTts('azure')">Azure</button>
+
+  <select id="azureVoiceSelect" onchange="setAzureVoice(this.value)">
+    <option value="zh-CN-XiaoxiaoNeural" selected>Nữ – Xiaoxiao</option>
+    <option value="zh-CN-YunxiNeural">Nam – Yunxi</option>
+  </select>
+
+  <button id="shuffleBtn" onclick="toggleShuffle()">🔀 Đảo từ</button>
+</div>
+
+<div class="controls">
+  <button onclick="startAuto()">▶ Đọc trang</button>
+  <button onclick="stopAuto()">⏹ Stop</button>
+  <button onclick="prevPage()">⬅ Trước</button>
+  <button onclick="nextPage()">➡ Sau</button>
+</div>
+
+<div id="pageInfo"></div>
+<div id="wordList"></div>
+
+<audio id="googleAudio"></audio>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

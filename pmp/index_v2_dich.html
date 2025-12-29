@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PMP Master Pro - Fix Overlay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="data1.js"></script>
+    <script src="data2.js"></script>
+    <script src="data3.js"></script>
+
+    <style>
+        :root { 
+            --primary: #007AFF; --easy: #28CD41; --medium: #FF9500; --hard: #FF3B30;
+            --bg: #F2F2F7; --card: #FFFFFF; --text-main: #1C1C1E; --text-sub: #8E8E93;
+            --ios-blur: rgba(255, 255, 255, 0.96);
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100vw; 
+            font-family: -apple-system, 'Inter', sans-serif; 
+            background-color: var(--bg); display: flex; flex-direction: column; 
+            overflow: hidden; touch-action: pan-y;
+        }
+
+        /* --- HEADER & TABS --- */
+        .system-header { 
+            background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px); 
+            border-bottom: 0.5px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 1000; 
+            padding-top: env(safe-area-inset-top);
+        }
+        .nav-row { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 18px; font-weight: 900; color: var(--text-main); }
+        
+        .filter-grid { 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 12px 12px;
+        }
+
+        .tab-pill {
+            border: none; padding: 10px 4px; border-radius: 10px; 
+            font-size: 11px; font-weight: 700; background: rgba(0,0,0,0.08); 
+            color: #3A3A3C; text-align: center;
+        }
+        .tab-pill.active { background: var(--text-main); color: white; }
+
+        /* --- CONTENT AREA --- */
+        .content-viewport { flex-grow: 1; position: relative; overflow: hidden; }
+        .main-card { 
+            position: absolute; inset: 0; background: var(--card); 
+            margin: 10px; border-radius: 20px; box-sizing: border-box; 
+            overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .question-body { padding: 16px; }
+        .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; color: var(--text-main); margin-bottom: 20px; }
+        .option-item { 
+            font-size: 14px; padding: 14px; background: #F2F2F7; border-radius: 14px; 
+            margin-bottom: 10px; border: 2.5px solid transparent; 
+        }
+        .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
+        .option-item.is-correct { background: #EFFFF3 !important; border-color: var(--easy) !important; color: #1A8B31 !important; }
+
+        /* --- FIXED TRANSLATION PANEL (CỐ ĐỊNH CẠNH DƯỚI) --- */
+        #trans-panel {
+            position: fixed;
+            bottom: 65px; /* Ngay trên thanh Bottom Nav */
+            left: 0; right: 0;
+            background: #1C1C1E; color: white;
+            padding: 15px 20px;
+            z-index: 2000;
+            display: none;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .trans-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 8px; border-bottom: 0.5px solid #333; padding-bottom: 5px;
+        }
+        .trans-label { font-size: 10px; font-weight: 800; color: var(--easy); letter-spacing: 1px; }
+        .close-btn { color: #8E8E93; font-size: 20px; cursor: pointer; padding: 0 5px; }
+
+        /* --- BOTTOM NAV --- */
+        .bottom-nav { 
+            height: 65px; background: var(--ios-blur); backdrop-filter: blur(20px);
+            border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; align-items: center; 
+            position: fixed; bottom: 0; width: 100%; z-index: 1000; padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; }
+    </style>
+</head>
+<body>
+
+<div id="trans-panel">
+    <div class="trans-header">
+        <span class="trans-label">DỊCH NHANH</span>
+        <span class="close-btn" onclick="document.getElementById('trans-panel').style.display='none'">×</span>
+    </div>
+    <div id="trans-content" style="font-size: 15px; line-height: 1.5;"></div>
+</div>
+
+<header class="system-header">
+    <div class="nav-row">
+        <div class="brand">PMP<span>MASTER</span></div>
+        <select id="set-select" onchange="changeExamSet(this.value)" style="border:none; font-weight:700; color:var(--primary); background:transparent;">
+            <option value="DATA_SET_1">ĐỀ THI 01</option>
+            <option value="DATA_SET_2">ĐỀ THI 02</option>
+        </select>
+    </div>
+    <div class="filter-grid" id="tabs"></div>
+</header>
+
+<main class="content-viewport" id="swipe-area">
+    <div id="book-page" class="main-card"></div>
+</main>
+
+<nav class="bottom-nav">
+    <button class="nav-item" onclick="triggerFlip('prev')">‹<small>TRƯỚC</small></button>
+    <button class="nav-item" onclick="toggleInfo()">◎<small>ĐÁP ÁN</small></button>
+    <button class="nav-item" onclick="triggerFlip('next')">›<small>TIẾP</small></button>
+</nav>
+
+<script>
+let pmpData = []; let filteredQuestions = []; let currentIndex = 0; 
+let currentTab = localStorage.getItem('PMP_LAST_TAB') || 'todo';
+let currentSetName = localStorage.getItem('PMP_LAST_SET') || 'DATA_SET_1';
+let selectedOption = null; let isConfirmed = false;
+
+// --- XỬ LÝ DỊCH CỐ ĐỊNH ---
+const transPanel = document.getElementById('trans-panel');
+const transContent = document.getElementById('trans-content');
+
+document.addEventListener('selectionchange', () => {
+    const selection = window.getSelection();
+    const text = selection.toString().trim();
+    
+    if (text && text.length > 1) {
+        transPanel.style.display = 'block';
+        transContent.innerHTML = '<span style="color:#8E8E93; font-style:italic">Đang dịch...</span>';
+        
+        clearTimeout(window.transTimer);
+        window.transTimer = setTimeout(async () => {
+            try {
+                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
+                const data = await res.json();
+                transContent.innerHTML = `<strong>${data[0].map(i => i[0]).join("")}</strong>`;
+            } catch (e) { transContent.innerHTML = "Lỗi dịch."; }
+        }, 500);
+    }
+});
+
+// Chạm vào vùng nội dung thì ẩn panel dịch cho thoáng
+document.getElementById('swipe-area').addEventListener('touchstart', () => {
+    if(!window.getSelection().toString()) transPanel.style.display = 'none';
+}, {passive:true});
+
+// --- CORE LOGIC (GIỮ NGUYÊN TỪ BẢN TRƯỚC) ---
+function changeExamSet(v) { 
+    currentSetName = v; pmpData = window[v] || []; currentIndex = 0; updateFilteredData(); 
+}
+
+function switchTab(t) { 
+    currentTab = t; currentIndex = 0; updateFilteredData(); 
+}
+
+function updateTabCounts() {
+    const tabs = [{id:'todo', n:'MỚI'}, {id:'done', n:'ĐÃ LÀM'}, {id:'not-done', n:'CHƯA'}, {id:'Easy', n:'DỄ'}, {id:'Medium', n:'VỪA'}, {id:'Hard', n:'KHÓ'}];
+    document.getElementById('tabs').innerHTML = tabs.map(t => `<button class="tab-pill ${currentTab===t.id?'active':''}" onclick="switchTab('${t.id}')">${t.n}</button>`).join('');
+}
+
+function updateFilteredData() {
+    updateTabCounts();
+    filteredQuestions = pmpData; // Giả định lấy toàn bộ, bạn có thể thêm logic filter localStorage ở đây
+    renderQuestion();
+}
+
+function renderQuestion() {
+    const card = document.getElementById('book-page');
+    const q = filteredQuestions[currentIndex];
+    if (!q) return;
+    isConfirmed = false;
+    card.innerHTML = `
+        <div class="question-body">
+            <div style="color:var(--primary); font-size:12px; font-weight:800; margin-bottom:10px;">CÂU ${currentIndex + 1} / ${filteredQuestions.length}</div>
+            <div class="q-text">${q.question}</div>
+            <div class="options">
+                ${Object.entries(q.options).map(([k,v]) => `<div class="option-item" id="opt-${k}" onclick="selectOption('${k}')"><b>${k}.</b> ${v}</div>`).join('')}
+            </div>
+            <div id="explain" style="margin-top:20px; font-size:13px; color:#666; display:none;"></div>
+        </div>`;
+}
+
+function selectOption(k) {
+    if(isConfirmed) return;
+    document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+    document.getElementById(`opt-${k}`).classList.add('selected');
+    selectedOption = k;
+}
+
+function toggleInfo() {
+    const q = filteredQuestions[currentIndex];
+    isConfirmed = true;
+    document.getElementById(`opt-${q.answer}`).classList.add('is-correct');
+    const ex = document.getElementById('explain');
+    ex.innerHTML = `<div style="padding:15px; background:#F2F2F7; border-radius:12px; border-left:4px solid var(--primary)">${q.explanation}</div>`;
+    ex.style.display = 'block';
+}
+
+function triggerFlip(dir) {
+    if(dir === 'next' && currentIndex < filteredQuestions.length - 1) currentIndex++;
+    else if(dir === 'prev' && currentIndex > 0) currentIndex--;
+    renderQuestion();
+}
+
+window.onload = () => changeExamSet(currentSetName);
+</script>
+</body>
+</html>

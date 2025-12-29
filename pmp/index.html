@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - V1.5 Swipe</title>
+    <title>PMP Master Pro - V1.5 Swipe & Fade</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -20,7 +20,7 @@
             margin: 0; padding: 0; height: 100%; width: 100vw; 
             font-family: -apple-system, 'Inter', sans-serif; 
             background-color: var(--bg); display: flex; flex-direction: column; 
-            overflow: hidden; touch-action: pan-y; /* Cho phép cuộn dọc nhưng bắt swipe ngang */
+            overflow: hidden;
         }
 
         .system-header { 
@@ -39,22 +39,18 @@
         }
         .tab-pill.active { background: var(--text-main); color: white; }
 
-        .content-viewport { flex-grow: 1; position: relative; overflow: hidden; perspective: 1000px; }
+        .content-viewport { flex-grow: 1; position: relative; overflow: hidden; }
         
-        /* Hiệu ứng Carousel */
         .main-card { 
             position: absolute; inset: 0; background: var(--card); 
             margin: 10px; border-radius: 20px; box-sizing: border-box; 
             display: flex; flex-direction: column; overflow: hidden;
             box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-            transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.3s;
-            will-change: transform, opacity;
+            /* HIỆU ỨNG CHUYỂN CẢNH */
+            transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+            opacity: 1;
         }
-
-        /* Lớp giả lập hiệu ứng trượt */
-        .slide-left { transform: translateX(-100%) rotateY(-10deg); opacity: 0; }
-        .slide-right { transform: translateX(100%) rotateY(10deg); opacity: 0; }
-        .slide-active { transform: translateX(0) rotateY(0); opacity: 1; }
+        .main-card.fading { opacity: 0; transform: scale(0.98); }
 
         .q-sticky-header {
             padding: 12px 16px; background: white; border-bottom: 0.5px solid #F2F2F7;
@@ -63,6 +59,7 @@
         }
 
         .q-scroll-body { flex-grow: 1; overflow-y: auto; padding: 16px; padding-bottom: 120px; }
+
         .q-counter { font-size: 12px; font-weight: 800; color: var(--primary); }
         .diff-status-box { display: flex; gap: 5px; }
         .q-diff-tag { 
@@ -77,19 +74,38 @@
         .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 0 0 20px; white-space: pre-wrap; }
         .option-item { font-size: 14px; padding: 15px; background: #F2F2F7; border-radius: 14px; margin-bottom: 10px; border: 2.5px solid transparent; transition: all 0.2s; white-space: pre-wrap; }
         .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
+        
         .option-item.correct { background: #D4EDDA !important; border-color: #28CD41 !important; color: #155724; font-weight: 700; }
         .option-item.wrong { background: #F8D7DA !important; border-color: #FF3B30 !important; color: #721C24; }
 
         #exp-box { margin-top: 15px; padding: 15px; background: #F2F2F7; border-radius: 12px; font-size: 13px; border-left:4px solid var(--primary); white-space: pre-wrap; }
-        .note-area { width: 100%; height: 80px; margin-top: 15px; border-radius: 12px; border: 1px solid #DDD; padding: 10px; font-family: inherit; font-size: 13px; background: #FAFAFA; resize: none; box-sizing: border-box; }
 
-        #trans-display { display: none; position: fixed; bottom: 85px; left: 10px; right: 10px; background: #1C1C1E; color: white; border-radius: 12px; font-size: 14px; z-index: 2000; box-shadow: 0 -5px 25px rgba(0,0,0,0.4); line-height: 1.5; max-height: 50vh; flex-direction: column; overflow: hidden; }
+        .note-area { 
+            width: 100%; height: 80px; margin-top: 15px; border-radius: 12px; 
+            border: 1px solid #DDD; padding: 10px; font-family: inherit; font-size: 13px; 
+            background: #FAFAFA; resize: none; box-sizing: border-box;
+        }
+
+        #trans-display { 
+            display: none; position: fixed; bottom: 85px; left: 10px; right: 10px; 
+            background: #1C1C1E; color: white; border-radius: 12px; 
+            font-size: 14px; z-index: 2000; box-shadow: 0 -5px 25px rgba(0,0,0,0.4);
+            line-height: 1.5; max-height: 50vh; flex-direction: column; overflow: hidden;
+        }
         .trans-header { padding: 10px 14px; background: #2C2C2E; border-bottom: 0.5px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; color: #AAA; letter-spacing: 1px; }
-        .trans-content { padding: 14px; overflow-y: auto; }
+        .trans-content { padding: 14px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .trans-close { color: var(--primary); padding-left: 10px; cursor: pointer; }
 
-        .bottom-nav { height: 65px; background: white; border-top: 0.5px solid rgba(0,0,0,0.1); display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; padding: 4px 6px env(safe-area-inset-bottom); position: fixed; bottom: 0; width: 100%; box-sizing: border-box; z-index: 100; }
-        .nav-btn { border: 1px solid #E5E5EA; background: white; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #8E8E93; cursor: pointer; font-size: 7.5px; font-weight: 800; line-height: 1.1; }
+        .bottom-nav { 
+            height: 65px; background: white; border-top: 0.5px solid rgba(0,0,0,0.1);
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px;
+            padding: 4px 6px env(safe-area-inset-bottom); position: fixed; bottom: 0; width: 100%; box-sizing: border-box;
+        }
+        .nav-btn {
+            border: 1px solid #E5E5EA; background: white; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #8E8E93; cursor: pointer; font-size: 7.5px; font-weight: 800; line-height: 1.1;
+        }
         .nav-btn.active { border-color: var(--primary); color: var(--primary); background: #F0F7FF; }
         .nav-btn i { font-style: normal; font-size: 16px; margin-bottom: 3px; }
     </style>
@@ -116,7 +132,7 @@
 </header>
 
 <main class="content-viewport" id="swipe-area">
-    <div id="book-page" class="main-card slide-active"></div>
+    <div id="book-page" class="main-card"></div>
 </main>
 
 <nav class="bottom-nav">
@@ -133,26 +149,29 @@ let state = JSON.parse(localStorage.getItem('PMP_PRO_STABLE')) || {
     set: 'DATA_SET_1', tab: 'todo', diffFilter: null, progress: {}, lastIdx: 0
 };
 let currentData = []; let filteredData = []; let idx = 0; let isFirstLoad = true;
-let touchStartX = 0; let touchEndX = 0;
 
 function save() { state.lastIdx = idx; localStorage.setItem('PMP_PRO_STABLE', JSON.stringify(state)); }
 function changeExamSet(v) { state.set = v; idx = 0; update(); }
 function switchTab(t) { state.tab = t; state.diffFilter = null; idx = 0; update(); }
 function toggleFilter(f) { state.diffFilter = (state.diffFilter === f) ? null : f; idx = 0; update(); }
 
-// Xử lý Swipe
-const swipeArea = document.getElementById('swipe-area');
-swipeArea.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
-swipeArea.addEventListener('touchend', e => { 
-    touchEndX = e.changedTouches[0].screenX;
-    handleSwipe();
-}, {passive: true});
-
-function handleSwipe() {
-    const threshold = 50;
-    if (touchStartX - touchEndX > threshold) move('next');
-    if (touchEndX - touchStartX > threshold) move('prev');
-}
+// Dịch thuật
+document.addEventListener('selectionchange', () => {
+    const text = window.getSelection().toString().trim();
+    const display = document.getElementById('trans-display');
+    if (text.length > 2) {
+        clearTimeout(window.transTimer);
+        window.transTimer = setTimeout(async () => {
+            display.innerHTML = '<div class="trans-header">BẢN DỊCH <span class="trans-close" onclick="document.getElementById(\'trans-display\').style.display=\'none\'">ĐÓNG [X]</span></div><div class="trans-content" id="trans-text">Đang dịch...</div>';
+            display.style.display = 'flex';
+            try {
+                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
+                const data = await res.json();
+                document.getElementById('trans-text').innerText = data[0].map(s => s[0]).join("");
+            } catch (e) { document.getElementById('trans-text').innerText = "Lỗi kết nối."; }
+        }, 600);
+    }
+});
 
 function update() {
     document.getElementById('set-select').value = state.set;
@@ -195,9 +214,6 @@ function render() {
     if (!q) { container.innerHTML = "<center style='padding-top:100px; color:#999'>Trống</center>"; return; }
     const p = state.progress[state.set + q.id] || {};
     
-    // Hiệu ứng Fade In nhẹ khi render nội dung mới
-    container.style.opacity = "0.5";
-    
     container.innerHTML = `
         <div class="q-sticky-header">
             <div class="q-counter">#${idx+1} : ${q.id}</div>
@@ -218,8 +234,6 @@ function render() {
             <textarea class="note-area" placeholder="Ghi chú..." oninput="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
         </div>
     `;
-
-    setTimeout(() => { container.style.opacity = "1"; }, 50);
 }
 
 function setStatus(qid, level) {
@@ -277,46 +291,52 @@ function toggleAns() {
     });
 }
 
+// XỬ LÝ CHUYỂN TRANG VỚI HIỆU ỨNG MỜ DẦN (FADE OUT 1000ms)
+let isMoving = false;
 function move(dir) {
+    if (isMoving) return;
     const card = document.getElementById('book-page');
     
-    if(dir === 'next' && idx < filteredData.length - 1) {
-        card.className = 'main-card slide-left'; // Đẩy card cũ sang trái
-        setTimeout(() => {
-            idx++;
-            update();
-            card.className = 'main-card slide-right'; // Card mới xuất hiện từ bên phải
-            setTimeout(() => card.className = 'main-card slide-active', 50);
-        }, 300);
-    } 
-    else if(dir === 'prev' && idx > 0) {
-        card.className = 'main-card slide-right'; // Đẩy card cũ sang phải
-        setTimeout(() => {
-            idx--;
-            update();
-            card.className = 'main-card slide-left'; // Card mới xuất hiện từ bên trái
-            setTimeout(() => card.className = 'main-card slide-active', 50);
-        }, 300);
-    }
+    // Kiểm tra giới hạn
+    if (dir === 'next' && idx >= filteredData.length - 1) return;
+    if (dir === 'prev' && idx <= 0) return;
+
+    isMoving = true;
+    card.classList.add('fading'); // Bắt đầu mờ dần
+
+    setTimeout(() => {
+        if (dir === 'next') idx++;
+        else if (dir === 'prev') idx--;
+        
+        update(); // Cập nhật nội dung mới
+        card.classList.remove('fading'); // Hiện lại dần dần
+        
+        setTimeout(() => { isMoving = false; }, 400); // Đợi hiệu ứng hiện lên xong
+    }, 800); // Thời gian khớp với transition trong CSS
 }
 
-// Dịch thuật giữ nguyên...
-document.addEventListener('selectionchange', () => {
-    const text = window.getSelection().toString().trim();
-    const display = document.getElementById('trans-display');
-    if (text.length > 2) {
-        clearTimeout(window.transTimer);
-        window.transTimer = setTimeout(async () => {
-            display.innerHTML = '<div class="trans-header">BẢN DỊCH <span class="trans-close" onclick="document.getElementById(\'trans-display\').style.display=\'none\'">ĐÓNG [X]</span></div><div class="trans-content" id="trans-text">Đang dịch...</div>';
-            display.style.display = 'flex';
-            try {
-                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
-                const data = await res.json();
-                document.getElementById('trans-text').innerText = data[0].map(s => s[0]).join("");
-            } catch (e) { document.getElementById('trans-text').innerText = "Lỗi kết nối."; }
-        }, 600);
+// XỬ LÝ VUỐT (SWIPE)
+let touchStartX = 0;
+let touchEndX = 0;
+
+document.getElementById('swipe-area').addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+}, false);
+
+document.getElementById('swipe-area').addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+}, false);
+
+function handleSwipe() {
+    const swipeThreshold = 50; // Độ dài tối thiểu của cú vuốt
+    if (touchEndX < touchStartX - swipeThreshold) {
+        move('next'); // Vuốt sang trái -> Câu tiếp theo
     }
-});
+    if (touchEndX > touchStartX + swipeThreshold) {
+        move('prev'); // Vuốt sang phải -> Câu trước đó
+    }
+}
 
 window.onload = update;
 </script>

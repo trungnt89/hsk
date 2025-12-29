@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - Pro Edition</title>
+    <title>PMP Master Pro - Icon Fixed</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -46,15 +46,23 @@
             overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.05);
             padding-bottom: 120px;
         }
-        .question-body { padding: 16px; }
+        .question-body { padding: 16px; position: relative; }
 
-        .diff-status-box { float: right; display: flex; gap: 4px; position: sticky; top: 0; background: white; padding: 4px; z-index: 5; }
-        .q-diff-tag { font-size: 9px; font-weight: 800; padding: 5px 7px; border-radius: 5px; border: 1.5px solid #EEE; color: #CCC; cursor: pointer; }
+        .diff-status-box { 
+            float: right; display: flex; flex-direction: column; gap: 6px; 
+            position: sticky; top: 0; background: white; padding: 8px; 
+            z-index: 5; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .q-diff-tag { 
+            font-size: 11px; font-weight: 800; padding: 10px 12px; 
+            border-radius: 8px; border: 1.5px solid #EEE; color: #CCC; 
+            cursor: pointer; text-align: center; min-width: 50px;
+        }
         .q-diff-tag.active[data-type="Easy"] { background: var(--easy); color: white; border-color: var(--easy); }
         .q-diff-tag.active[data-type="Medium"] { background: var(--medium); color: white; border-color: var(--medium); }
         .q-diff-tag.active[data-type="Hard"] { background: var(--hard); color: white; border-color: var(--hard); }
 
-        .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 35px 0 20px; }
+        .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 10px 0 20px; padding-right: 85px; min-height: 110px; }
         .option-item { font-size: 14px; padding: 15px; background: #F2F2F7; border-radius: 14px; margin-bottom: 10px; border: 2.5px solid transparent; }
         .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
 
@@ -65,24 +73,24 @@
         }
 
         #trans-display { 
-            display: none; position: fixed; bottom: 90px; left: 10px; right: 10px; 
+            display: none; position: fixed; bottom: 85px; left: 10px; right: 10px; 
             background: #1C1C1E; color: white; padding: 12px; border-radius: 12px; 
             font-size: 14px; z-index: 2000; box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
             line-height: 1.4;
         }
 
         .bottom-nav { 
-            height: 80px; background: white; border-top: 0.5px solid rgba(0,0,0,0.1);
-            display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;
-            padding: 6px 8px env(safe-area-inset-bottom); position: fixed; bottom: 0; width: 100%; box-sizing: border-box;
+            height: 65px; background: white; border-top: 0.5px solid rgba(0,0,0,0.1);
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px;
+            padding: 4px 6px env(safe-area-inset-bottom); position: fixed; bottom: 0; width: 100%; box-sizing: border-box;
         }
         .nav-btn {
-            border: 1.5px solid #E5E5EA; background: white; border-radius: 10px;
+            border: 1px solid #E5E5EA; background: white; border-radius: 8px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #8E8E93; cursor: pointer; font-size: 8px; font-weight: 800;
+            color: #8E8E93; cursor: pointer; font-size: 7.5px; font-weight: 800; line-height: 1.1;
         }
         .nav-btn.active { border-color: var(--primary); color: var(--primary); background: #F0F7FF; }
-        .nav-btn i { font-style: normal; font-size: 16px; margin-bottom: 2px; }
+        .nav-btn i { font-style: normal; font-size: 16px; margin-bottom: 3px; }
     </style>
 </head>
 <body>
@@ -112,12 +120,12 @@
 </main>
 
 <nav class="bottom-nav">
-    <div class="nav-btn" onclick="move('prev')"><i>⏮</i>LÙI</div>
-    <div class="nav-btn" id="btn-ans" onclick="toggleAns()"><i>👁</i>ĐÁP ÁN</div>
-    <div class="nav-btn" id="filt-Easy" onclick="toggleFilter('Easy')">LIST DỄ<br><span id="cnt-Easy">(0)</span></div>
-    <div class="nav-btn" id="filt-Medium" onclick="toggleFilter('Medium')">LIST VỪA<br><span id="cnt-Medium">(0)</span></div>
-    <div class="nav-btn" id="filt-Hard" onclick="toggleFilter('Hard')">LIST KHÓ<br><span id="cnt-Hard">(0)</span></div>
-    <div class="nav-btn" onclick="move('next')"><i>⏭</i>TIẾP</div>
+    <div class="nav-btn" onclick="move('prev')"><i>⬅️</i>LÙI</div>
+    <div class="nav-btn" id="btn-ans" onclick="toggleAns()"><i>👁️</i>ĐÁP ÁN</div>
+    <div class="nav-btn" id="filt-Easy" onclick="toggleFilter('Easy')"><i>✅</i>DỄ<br><span id="cnt-Easy">(0)</span></div>
+    <div class="nav-btn" id="filt-Medium" onclick="toggleFilter('Medium')"><i>🟠</i>VỪA<br><span id="cnt-Medium">(0)</span></div>
+    <div class="nav-btn" id="filt-Hard" onclick="toggleFilter('Hard')"><i>⚠️</i>KHÓ<br><span id="cnt-Hard">(0)</span></div>
+    <div class="nav-btn" onclick="move('next')"><i>➡️</i>TIẾP</div>
 </nav>
 
 <script>
@@ -137,7 +145,6 @@ function changeExamSet(v) { state.set = v; idx = 0; update(); }
 function switchTab(t) { state.tab = t; state.diffFilter = null; idx = 0; update(); }
 function toggleFilter(f) { state.diffFilter = (state.diffFilter === f) ? null : f; idx = 0; update(); }
 
-// --- Dịch thuật Mobile Fixed ---
 document.addEventListener('selectionchange', () => {
     const text = window.getSelection().toString().trim();
     const display = document.getElementById('trans-display');
@@ -158,14 +165,12 @@ document.addEventListener('selectionchange', () => {
 function update() {
     document.getElementById('set-select').value = state.set;
     currentData = window[state.set] || [];
-    
     let counts = { todo: 0, done: 0, Easy: 0, Medium: 0, Hard: 0 };
     currentData.forEach(q => {
         const p = state.progress[q.id];
         if (p && p.ans) counts.done++; else counts.todo++;
         if (p?.diff) counts[p.diff]++;
     });
-
     document.getElementById('top-todo-cnt').innerText = `(${counts.todo})`;
     document.getElementById('top-done-cnt').innerText = `(${counts.done})`;
     document.getElementById('cnt-Easy').innerText = `(${counts.Easy})`;
@@ -190,7 +195,6 @@ function update() {
     document.getElementById('tab-done').classList.toggle('active', state.tab === 'done');
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(state.diffFilter) document.getElementById('filt-'+state.diffFilter).classList.add('active');
-
     render();
 }
 
@@ -198,7 +202,6 @@ function render() {
     const container = document.getElementById('book-page');
     const q = filteredData[idx];
     if (!q) { container.innerHTML = "<center style='padding-top:100px; color:#999'>Trống</center>"; return; }
-
     const p = state.progress[q.id] || {};
     container.innerHTML = `
         <div class="question-body">
@@ -214,9 +217,7 @@ function render() {
                     <div class="option-item ${p.ans===k?'selected':''}" id="opt-${k}" onclick="setAns('${q.id}','${k}')"><b>${k}.</b> ${v}</div>
                 `).join('')}
             </div>
-            <div id="exp-box" style="display:none; margin-top:15px; padding:15px; background:#F2F2F7; border-radius:12px; font-size:13px; border-left:4px solid var(--primary);">
-                ${q.explanation}
-            </div>
+            <div id="exp-box" style="display:none; margin-top:15px; padding:15px; background:#F2F2F7; border-radius:12px; font-size:13px; border-left:4px solid var(--primary);">${q.explanation}</div>
             <textarea class="note-area" placeholder="Ghi chú..." oninput="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
         </div>
     `;
@@ -227,7 +228,7 @@ function setStatus(qid, level) {
     if(!state.progress[qid]) state.progress[qid] = {};
     state.progress[qid].diff = (state.progress[qid].diff === level) ? null : level;
     save(); updateCountsOnly();
-    document.querySelectorAll('.q-diff-tag').forEach(t => t.classList.toggle('active', t.innerText === (level === 'Easy' ? 'DỄ' : level === 'Medium' ? 'VỪA' : 'KHÓ') && state.progress[qid].diff === level));
+    render();
 }
 
 function setAns(qid, k) {

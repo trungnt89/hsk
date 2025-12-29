@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - V1.5 Swipe & Fade</title>
+    <title>PMP Master Pro - V1.6 Stable</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -46,11 +46,10 @@
             margin: 10px; border-radius: 20px; box-sizing: border-box; 
             display: flex; flex-direction: column; overflow: hidden;
             box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-            /* HIỆU ỨNG CHUYỂN CẢNH */
-            transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+            transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
             opacity: 1;
         }
-        .main-card.fading { opacity: 0; transform: scale(0.98); }
+        .main-card.fading { opacity: 0; transform: translateY(10px); }
 
         .q-sticky-header {
             padding: 12px 16px; background: white; border-bottom: 0.5px solid #F2F2F7;
@@ -291,51 +290,45 @@ function toggleAns() {
     });
 }
 
-// XỬ LÝ CHUYỂN TRANG VỚI HIỆU ỨNG MỜ DẦN (FADE OUT 1000ms)
+// XỬ LÝ CHUYỂN TRANG
 let isMoving = false;
 function move(dir) {
     if (isMoving) return;
     const card = document.getElementById('book-page');
-    
-    // Kiểm tra giới hạn
     if (dir === 'next' && idx >= filteredData.length - 1) return;
     if (dir === 'prev' && idx <= 0) return;
 
     isMoving = true;
-    card.classList.add('fading'); // Bắt đầu mờ dần
-
+    card.classList.add('fading'); 
     setTimeout(() => {
-        if (dir === 'next') idx++;
-        else if (dir === 'prev') idx--;
-        
-        update(); // Cập nhật nội dung mới
-        card.classList.remove('fading'); // Hiện lại dần dần
-        
-        setTimeout(() => { isMoving = false; }, 400); // Đợi hiệu ứng hiện lên xong
-    }, 800); // Thời gian khớp với transition trong CSS
+        if (dir === 'next') idx++; else if (dir === 'prev') idx--;
+        update();
+        card.classList.remove('fading');
+        setTimeout(() => { isMoving = false; }, 300);
+    }, 600);
 }
 
-// XỬ LÝ VUỐT (SWIPE)
+// XỬ LÝ VUỐT (SWIPE) - ĐÃ FIX LỖI XUNG ĐỘT DỊCH THUẬT
 let touchStartX = 0;
 let touchEndX = 0;
 
 document.getElementById('swipe-area').addEventListener('touchstart', e => {
     touchStartX = e.changedTouches[0].screenX;
-}, false);
+}, {passive: true});
 
 document.getElementById('swipe-area').addEventListener('touchend', e => {
     touchEndX = e.changedTouches[0].screenX;
     handleSwipe();
-}, false);
+}, {passive: true});
 
 function handleSwipe() {
-    const swipeThreshold = 50; // Độ dài tối thiểu của cú vuốt
-    if (touchEndX < touchStartX - swipeThreshold) {
-        move('next'); // Vuốt sang trái -> Câu tiếp theo
-    }
-    if (touchEndX > touchStartX + swipeThreshold) {
-        move('prev'); // Vuốt sang phải -> Câu trước đó
-    }
+    // FIX: Nếu có văn bản đang được chọn (đang tô màu để dịch), hủy lệnh vuốt
+    const selection = window.getSelection().toString().trim();
+    if (selection !== "") return;
+
+    const swipeThreshold = 60; 
+    if (touchEndX < touchStartX - swipeThreshold) move('next');
+    if (touchEndX > touchStartX + swipeThreshold) move('prev');
 }
 
 window.onload = update;

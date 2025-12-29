@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - Fix Overlay</title>
+    <title>PMP Master Pro - Final Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script>
@@ -14,7 +14,7 @@
         :root { 
             --primary: #007AFF; --easy: #28CD41; --medium: #FF9500; --hard: #FF3B30;
             --bg: #F2F2F7; --card: #FFFFFF; --text-main: #1C1C1E; --text-sub: #8E8E93;
-            --ios-blur: rgba(255, 255, 255, 0.96);
+            --ios-blur: rgba(255, 255, 255, 0.94);
         }
         
         body, html { 
@@ -24,7 +24,7 @@
             overflow: hidden; touch-action: pan-y;
         }
 
-        /* --- HEADER & TABS --- */
+        /* --- 2. HEADER 6 BUTTONS (2 DÒNG) --- */
         .system-header { 
             background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px); 
             border-bottom: 0.5px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 1000; 
@@ -32,72 +32,84 @@
         }
         .nav-row { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
         .brand { font-size: 18px; font-weight: 900; color: var(--text-main); }
+        .brand span { color: var(--primary); }
         
         .filter-grid { 
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 12px 12px;
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+            padding: 0 12px 12px;
         }
-
         .tab-pill {
-            border: none; padding: 10px 4px; border-radius: 10px; 
-            font-size: 11px; font-weight: 700; background: rgba(0,0,0,0.08); 
-            color: #3A3A3C; text-align: center;
+            border: none; padding: 10px 2px; border-radius: 10px;
+            font-size: 11px; font-weight: 700; background: rgba(0,0,0,0.06); color: #3A3A3C;
         }
         .tab-pill.active { background: var(--text-main); color: white; }
 
-        /* --- CONTENT AREA --- */
-        .content-viewport { flex-grow: 1; position: relative; overflow: hidden; }
-        .main-card { 
-            position: absolute; inset: 0; background: var(--card); 
-            margin: 10px; border-radius: 20px; box-sizing: border-box; 
-            overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+        /* --- 5. CAROUSEL (BĂNG CHUYỀN) --- */
+        .carousel-viewport { flex-grow: 1; position: relative; overflow: hidden; }
+        .carousel-track {
+            display: flex; height: 100%; width: 100%;
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: transform;
+        }
+        .slide { min-width: 100%; width: 100%; height: 100%; box-sizing: border-box; }
+        .main-card { 
+            background: var(--card); margin: 12px; border-radius: 20px; 
+            height: calc(100% - 24px); overflow-y: auto; box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            position: relative;
         }
 
-        .question-body { padding: 16px; }
-        .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; color: var(--text-main); margin-bottom: 20px; }
+        /* --- 3. ĐỘ KHÓ (CHỐNG SCROLL) --- */
+        .question-header {
+            padding: 16px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 0.5px solid rgba(0,0,0,0.05); 
+            position: sticky; top: 0; background: #fff; z-index: 10;
+        }
+        .difficulty-segment { display: flex; background: #F2F2F7; padding: 2px; border-radius: 10px; }
+        .btn-diff { border: none; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 800; background: transparent; color: #8E8E93; }
+        .btn-diff.active-Easy { background: var(--easy); color: white; }
+        .btn-diff.active-Medium { background: var(--medium); color: white; }
+        .btn-diff.active-Hard { background: var(--hard); color: white; }
+
+        /* --- 1 & 4. LƯU TRẠNG THÁI & TOGGLE ĐÁP ÁN --- */
+        .question-body { padding: 20px; }
         .option-item { 
-            font-size: 14px; padding: 14px; background: #F2F2F7; border-radius: 14px; 
-            margin-bottom: 10px; border: 2.5px solid transparent; 
+            font-size: 15px; padding: 16px; background: #F2F2F7; border-radius: 14px; 
+            margin-bottom: 12px; border: 2.5px solid transparent; transition: all 0.2s;
         }
         .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
         .option-item.is-correct { background: #EFFFF3 !important; border-color: var(--easy) !important; color: #1A8B31 !important; }
 
-        /* --- FIXED TRANSLATION PANEL (CỐ ĐỊNH CẠNH DƯỚI) --- */
-        #trans-panel {
-            position: fixed;
-            bottom: 65px; /* Ngay trên thanh Bottom Nav */
-            left: 0; right: 0;
-            background: #1C1C1E; color: white;
-            padding: 15px 20px;
-            z-index: 2000;
-            display: none;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
-            max-height: 180px;
-            overflow-y: auto;
+        /* --- 6. GHI CHÚ --- */
+        .note-area {
+            width: 100%; min-height: 80px; margin-top: 20px; padding: 12px;
+            background: #F9F9FB; border: 1px dashed #DDD; border-radius: 12px;
+            font-size: 14px; font-family: inherit; box-sizing: border-box; outline: none;
         }
-        .trans-header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 8px; border-bottom: 0.5px solid #333; padding-bottom: 5px;
-        }
-        .trans-label { font-size: 10px; font-weight: 800; color: var(--easy); letter-spacing: 1px; }
-        .close-btn { color: #8E8E93; font-size: 20px; cursor: pointer; padding: 0 5px; }
 
-        /* --- BOTTOM NAV --- */
+        /* --- 7. DỊCH KHÔNG TOOLTIP --- */
+        #trans-panel {
+            position: fixed; bottom: 65px; left: 0; right: 0;
+            background: #1C1C1E; color: white; padding: 16px 20px;
+            z-index: 2000; display: none; border-radius: 18px 18px 0 0;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.3); max-height: 180px; overflow-y: auto;
+        }
+
         .bottom-nav { 
             height: 65px; background: var(--ios-blur); backdrop-filter: blur(20px);
             border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; align-items: center; 
             position: fixed; bottom: 0; width: 100%; z-index: 1000; padding-bottom: env(safe-area-inset-bottom);
         }
-        .nav-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; }
+        .nav-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; font-weight: 600; font-size: 10px; }
     </style>
 </head>
 <body>
 
 <div id="trans-panel">
-    <div class="trans-header">
-        <span class="trans-label">DỊCH NHANH</span>
-        <span class="close-btn" onclick="document.getElementById('trans-panel').style.display='none'">×</span>
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+        <span style="font-size:10px; font-weight:800; color:var(--easy);">GOOGLE TRANSLATION</span>
+        <span onclick="document.getElementById('trans-panel').style.display='none'" style="font-size:22px;">×</span>
     </div>
     <div id="trans-content" style="font-size: 15px; line-height: 1.5;"></div>
 </div>
@@ -105,117 +117,232 @@
 <header class="system-header">
     <div class="nav-row">
         <div class="brand">PMP<span>MASTER</span></div>
-        <select id="set-select" onchange="changeExamSet(this.value)" style="border:none; font-weight:700; color:var(--primary); background:transparent;">
+        <select id="set-select" onchange="changeExamSet(this.value)" style="border:none; font-weight:700; color:var(--primary); background:transparent; outline:none;">
             <option value="DATA_SET_1">ĐỀ THI 01</option>
             <option value="DATA_SET_2">ĐỀ THI 02</option>
+            <option value="DATA_SET_3">ĐỀ THI 03</option>
         </select>
     </div>
-    <div class="filter-grid" id="tabs"></div>
+    <div class="filter-grid" id="tab-bar"></div>
 </header>
 
-<main class="content-viewport" id="swipe-area">
-    <div id="book-page" class="main-card"></div>
+<main class="carousel-viewport" id="swipe-area">
+    <div class="carousel-track" id="carousel-track"></div>
 </main>
 
 <nav class="bottom-nav">
-    <button class="nav-item" onclick="triggerFlip('prev')">‹<small>TRƯỚC</small></button>
-    <button class="nav-item" onclick="toggleInfo()">◎<small>ĐÁP ÁN</small></button>
-    <button class="nav-item" onclick="triggerFlip('next')">›<small>TIẾP</small></button>
+    <button class="nav-item" onclick="triggerFlip('prev')">‹<br>TRƯỚC</button>
+    <button class="nav-item" onclick="toggleInfo()"><span id="eye-icon" style="font-size:18px;">◎</span><br>ĐÁP ÁN</button>
+    <button class="nav-item" onclick="triggerFlip('next')">›<br>TIẾP</button>
 </nav>
 
 <script>
-let pmpData = []; let filteredQuestions = []; let currentIndex = 0; 
+let pmpData = []; 
+let filteredQuestions = []; 
+let currentIndex = 0; 
 let currentTab = localStorage.getItem('PMP_LAST_TAB') || 'todo';
 let currentSetName = localStorage.getItem('PMP_LAST_SET') || 'DATA_SET_1';
-let selectedOption = null; let isConfirmed = false;
 
-// --- XỬ LÝ DỊCH CỐ ĐỊNH ---
-const transPanel = document.getElementById('trans-panel');
-const transContent = document.getElementById('trans-content');
+const STORAGE_LV = "PMP_LV_"; 
+const STORAGE_USER = "PMP_USER_DATA_";
 
-document.addEventListener('selectionchange', () => {
-    const selection = window.getSelection();
-    const text = selection.toString().trim();
-    
-    if (text && text.length > 1) {
-        transPanel.style.display = 'block';
-        transContent.innerHTML = '<span style="color:#8E8E93; font-style:italic">Đang dịch...</span>';
-        
-        clearTimeout(window.transTimer);
-        window.transTimer = setTimeout(async () => {
-            try {
-                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
-                const data = await res.json();
-                transContent.innerHTML = `<strong>${data[0].map(i => i[0]).join("")}</strong>`;
-            } catch (e) { transContent.innerHTML = "Lỗi dịch."; }
-        }, 500);
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    const swipeArea = document.getElementById('swipe-area');
+    const track = document.getElementById('carousel-track');
+
+    // --- 5. VUỐT BĂNG CHUYỀN ---
+    let tStartX = 0; 
+    let tStartTime = 0;
+
+    swipeArea.addEventListener('touchstart', e => {
+        tStartX = e.changedTouches[0].screenX;
+        tStartTime = new Date().getTime();
+    }, {passive: true});
+
+    swipeArea.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].screenX - tStartX;
+        const duration = new Date().getTime() - tStartTime;
+        // Chặn vuốt khi bôi đen text
+        if (!window.getSelection().toString() && Math.abs(dx) > 80 && duration < 300) {
+            if (dx < 0 && currentIndex < filteredQuestions.length - 1) currentIndex++;
+            else if (dx > 0 && currentIndex > 0) currentIndex--;
+            updateCarousel();
+        }
+    }, {passive: true});
+
+    // --- 7. DỊCH KHI BÔI ĐEN ---
+    document.addEventListener('selectionchange', () => {
+        const text = window.getSelection().toString().trim();
+        if (text.length > 1) {
+            document.getElementById('trans-panel').style.display = 'block';
+            document.getElementById('trans-content').innerText = 'Dịch...';
+            clearTimeout(window.transTimer);
+            window.transTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
+                    const data = await res.json();
+                    document.getElementById('trans-content').innerHTML = `<strong>${data[0].map(i => i[0]).join("")}</strong>`;
+                } catch (e) { document.getElementById('trans-content').innerText = "Lỗi dịch."; }
+            }, 500);
+        }
+    });
+
+    changeExamSet(currentSetName);
 });
 
-// Chạm vào vùng nội dung thì ẩn panel dịch cho thoáng
-document.getElementById('swipe-area').addEventListener('touchstart', () => {
-    if(!window.getSelection().toString()) transPanel.style.display = 'none';
-}, {passive:true});
-
-// --- CORE LOGIC (GIỮ NGUYÊN TỪ BẢN TRƯỚC) ---
-function changeExamSet(v) { 
-    currentSetName = v; pmpData = window[v] || []; currentIndex = 0; updateFilteredData(); 
+function changeExamSet(v) {
+    currentSetName = v;
+    localStorage.setItem('PMP_LAST_SET', v);
+    pmpData = window[v] || [];
+    currentIndex = 0;
+    updateFilteredData(true);
 }
 
-function switchTab(t) { 
-    currentTab = t; currentIndex = 0; updateFilteredData(); 
+// --- 2. HEADER 6 BUTTONS & 4. TRẠNG THÁI ---
+function updateFilteredData(reRender) {
+    const lvData = JSON.parse(localStorage.getItem(STORAGE_LV + currentSetName)) || {};
+    const userData = JSON.parse(localStorage.getItem(STORAGE_USER + currentSetName)) || {};
+    
+    const counts = { todo: 0, done: 0, 'not-done': 0, Easy: 0, Medium: 0, Hard: 0 };
+    pmpData.forEach(q => {
+        const lv = lvData[q.id];
+        const hasAns = userData[q.id]?.ans;
+        if (!lv) counts.todo++; else counts[lv]++;
+        if (hasAns) counts.done++; else counts['not-done']++;
+    });
+
+    const labels = { todo: "MỚI", done: "ĐÃ LÀM", 'not-done': "CHƯA", Easy: "DỄ", Medium: "VỪA", Hard: "KHÓ" };
+    document.getElementById('tab-bar').innerHTML = Object.keys(labels).map(k => `
+        <button class="tab-pill ${currentTab===k?'active':''}" onclick="switchTab('${k}')">${labels[k]} (${counts[k]})</button>
+    `).join('');
+
+    filteredQuestions = pmpData.filter(q => {
+        if (currentTab === 'todo') return !lvData[q.id];
+        if (currentTab === 'done') return !!userData[q.id]?.ans;
+        if (currentTab === 'not-done') return !userData[q.id]?.ans;
+        return lvData[q.id] === currentTab;
+    });
+
+    if (reRender) renderCarousel();
 }
 
-function updateTabCounts() {
-    const tabs = [{id:'todo', n:'MỚI'}, {id:'done', n:'ĐÃ LÀM'}, {id:'not-done', n:'CHƯA'}, {id:'Easy', n:'DỄ'}, {id:'Medium', n:'VỪA'}, {id:'Hard', n:'KHÓ'}];
-    document.getElementById('tabs').innerHTML = tabs.map(t => `<button class="tab-pill ${currentTab===t.id?'active':''}" onclick="switchTab('${t.id}')">${t.n}</button>`).join('');
+function switchTab(t) {
+    currentTab = t;
+    localStorage.setItem('PMP_LAST_TAB', t);
+    currentIndex = 0;
+    updateFilteredData(true);
 }
 
-function updateFilteredData() {
-    updateTabCounts();
-    filteredQuestions = pmpData; // Giả định lấy toàn bộ, bạn có thể thêm logic filter localStorage ở đây
-    renderQuestion();
-}
+function renderCarousel() {
+    const track = document.getElementById('carousel-track');
+    const lvData = JSON.parse(localStorage.getItem(STORAGE_LV + currentSetName)) || {};
+    const userData = JSON.parse(localStorage.getItem(STORAGE_USER + currentSetName)) || {};
 
-function renderQuestion() {
-    const card = document.getElementById('book-page');
-    const q = filteredQuestions[currentIndex];
-    if (!q) return;
-    isConfirmed = false;
-    card.innerHTML = `
-        <div class="question-body">
-            <div style="color:var(--primary); font-size:12px; font-weight:800; margin-bottom:10px;">CÂU ${currentIndex + 1} / ${filteredQuestions.length}</div>
-            <div class="q-text">${q.question}</div>
-            <div class="options">
-                ${Object.entries(q.options).map(([k,v]) => `<div class="option-item" id="opt-${k}" onclick="selectOption('${k}')"><b>${k}.</b> ${v}</div>`).join('')}
+    if (filteredQuestions.length === 0) {
+        track.innerHTML = '<div class="slide"><div class="main-card" style="padding:50px; text-align:center; color:#8E8E93;">Danh sách trống.</div></div>';
+        return;
+    }
+
+    track.innerHTML = filteredQuestions.map((q, idx) => {
+        const lv = lvData[q.id];
+        const user = userData[q.id] || {ans:null, note:""};
+        return `
+        <div class="slide">
+            <div class="main-card">
+                <div class="question-header">
+                    <div style="font-weight:800; color:var(--primary);">CÂU ${idx+1}/${filteredQuestions.length}</div>
+                    <div class="difficulty-segment">
+                        <button class="btn-diff ${lv==='Easy'?'active-Easy':''}" onclick="setLv('${q.id}','Easy',this)">DỄ</button>
+                        <button class="btn-diff ${lv==='Medium'?'active-Medium':''}" onclick="setLv('${q.id}','Medium',this)">VỪA</button>
+                        <button class="btn-diff ${lv==='Hard'?'active-Hard':''}" onclick="setLv('${q.id}','Hard',this)">KHÓ</button>
+                    </div>
+                </div>
+                <div class="question-body">
+                    <div class="q-text">${q.question}</div>
+                    <div class="options">
+                        ${Object.entries(q.options).map(([k,v]) => `
+                            <div class="option-item ${user.ans===k?'selected':''}" onclick="selectOption('${q.id}','${k}',this)">
+                                <b>${k}.</b> ${v}
+                            </div>`).join('')}
+                    </div>
+                    <div class="explain-box" style="display:none; margin-top:15px; padding:15px; background:#F2F2F7; border-radius:12px; font-size:14px; border-left:4px solid var(--easy);">
+                        <strong>GIẢI THÍCH:</strong><br>${q.explanation}
+                    </div>
+                    <textarea class="note-area" placeholder="Ghi chú cá nhân..." oninput="saveNote('${q.id}', this.value)">${user.note || ''}</textarea>
+                    <div style="height:80px;"></div>
+                </div>
             </div>
-            <div id="explain" style="margin-top:20px; font-size:13px; color:#666; display:none;"></div>
         </div>`;
+    }).join('');
+    updateCarousel();
 }
 
-function selectOption(k) {
-    if(isConfirmed) return;
-    document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
-    document.getElementById(`opt-${k}`).classList.add('selected');
-    selectedOption = k;
+function updateCarousel() {
+    document.getElementById('carousel-track').style.transform = `translateX(-${currentIndex * 100}%)`;
+    document.getElementById('eye-icon').innerText = "◎";
+}
+
+// --- 4. TOGGLE TRẠNG THÁI ĐÃ TRẢ LỜI / CHƯA TRẢ LỜI ---
+function selectOption(qId, key, el) {
+    const slide = el.closest('.slide');
+    let data = JSON.parse(localStorage.getItem(STORAGE_USER + currentSetName)) || {};
+    if (!data[qId]) data[qId] = {ans:null, note:""};
+
+    if (data[qId].ans === key) {
+        // Nếu click lại cái đã chọn -> Hủy chọn (Về chưa trả lời)
+        data[qId].ans = null;
+        el.classList.remove('selected');
+    } else {
+        // Chọn mới
+        slide.querySelectorAll('.option-item').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        data[qId].ans = key;
+    }
+    
+    localStorage.setItem(STORAGE_USER + currentSetName, JSON.stringify(data));
+    updateFilteredData(false); // Cập nhật số liệu trên TOP ngay lập tức
+}
+
+function setLv(id, lv, btn) {
+    const key = STORAGE_LV + currentSetName;
+    let data = JSON.parse(localStorage.getItem(key)) || {};
+    data[id] = (data[id] === lv) ? null : lv;
+    localStorage.setItem(key, JSON.stringify(data));
+    
+    btn.parentElement.querySelectorAll('button').forEach(b => b.className = 'btn-diff');
+    if (data[id]) btn.classList.add('active-' + lv);
+    updateFilteredData(false);
+}
+
+function saveNote(id, val) {
+    let data = JSON.parse(localStorage.getItem(STORAGE_USER + currentSetName)) || {};
+    if (!data[id]) data[id] = {ans:null, note:""};
+    data[id].note = val;
+    localStorage.setItem(STORAGE_USER + currentSetName, JSON.stringify(data));
 }
 
 function toggleInfo() {
+    const slide = document.getElementById('carousel-track').children[currentIndex];
     const q = filteredQuestions[currentIndex];
-    isConfirmed = true;
-    document.getElementById(`opt-${q.answer}`).classList.add('is-correct');
-    const ex = document.getElementById('explain');
-    ex.innerHTML = `<div style="padding:15px; background:#F2F2F7; border-radius:12px; border-left:4px solid var(--primary)">${q.explanation}</div>`;
-    ex.style.display = 'block';
+    if(!slide || !q) return;
+    const box = slide.querySelector('.explain-box');
+    if (box.style.display === 'none') {
+        box.style.display = 'block';
+        slide.querySelectorAll('.option-item').forEach(opt => {
+            if (opt.innerText.trim().startsWith(q.answer)) opt.classList.add('is-correct');
+        });
+        document.getElementById('eye-icon').innerText = "◉";
+    } else {
+        box.style.display = 'none';
+        document.getElementById('eye-icon').innerText = "◎";
+    }
 }
 
 function triggerFlip(dir) {
-    if(dir === 'next' && currentIndex < filteredQuestions.length - 1) currentIndex++;
-    else if(dir === 'prev' && currentIndex > 0) currentIndex--;
-    renderQuestion();
+    if (dir === 'next' && currentIndex < filteredQuestions.length - 1) currentIndex++;
+    else if (dir === 'prev' && currentIndex > 0) currentIndex--;
+    updateCarousel();
 }
-
-window.onload = () => changeExamSet(currentSetName);
 </script>
 </body>
 </html>

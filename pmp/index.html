@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - V1.6 Stable</title>
+    <title>PMP Master Pro - V1.7 Zoom Hide</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -46,10 +46,17 @@
             margin: 10px; border-radius: 20px; box-sizing: border-box; 
             display: flex; flex-direction: column; overflow: hidden;
             box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-            transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+            
+            /* HIỆU ỨNG CHUYỂN CẢNH: 1 GIÂY */
+            transition: opacity 1s ease-in-out, transform 1s ease-in-out;
             opacity: 1;
+            transform: scale(1);
         }
-        .main-card.fading { opacity: 0; transform: translateY(10px); }
+        /* KHI HIDE: MỜ DẦN VÀ NHỎ DẦN */
+        .main-card.fading { 
+            opacity: 0; 
+            transform: scale(0.3); /* Thu nhỏ còn 30% kích thước */
+        }
 
         .q-sticky-header {
             padding: 12px 16px; background: white; border-bottom: 0.5px solid #F2F2F7;
@@ -290,7 +297,7 @@ function toggleAns() {
     });
 }
 
-// XỬ LÝ CHUYỂN TRANG
+// CHUYỂN TRANG VỚI HIỆU ỨNG NHỎ DẦN TRONG 1 GIÂY
 let isMoving = false;
 function move(dir) {
     if (isMoving) return;
@@ -299,19 +306,19 @@ function move(dir) {
     if (dir === 'prev' && idx <= 0) return;
 
     isMoving = true;
-    card.classList.add('fading'); 
+    card.classList.add('fading'); // Kích hoạt hiệu ứng nhỏ dần + mờ dần
+    
     setTimeout(() => {
         if (dir === 'next') idx++; else if (dir === 'prev') idx--;
-        update();
-        card.classList.remove('fading');
-        setTimeout(() => { isMoving = false; }, 300);
-    }, 600);
+        update(); // Nạp dữ liệu mới
+        card.classList.remove('fading'); // Hiện lại từ nhỏ đến to
+        setTimeout(() => { isMoving = false; }, 500);
+    }, 1000); // Đợi đủ 1 giây cho hiệu ứng ẩn hoàn tất
 }
 
-// XỬ LÝ VUỐT (SWIPE) - ĐÃ FIX LỖI XUNG ĐỘT DỊCH THUẬT
+// VUỐT (SWIPE)
 let touchStartX = 0;
 let touchEndX = 0;
-
 document.getElementById('swipe-area').addEventListener('touchstart', e => {
     touchStartX = e.changedTouches[0].screenX;
 }, {passive: true});
@@ -322,10 +329,7 @@ document.getElementById('swipe-area').addEventListener('touchend', e => {
 }, {passive: true});
 
 function handleSwipe() {
-    // FIX: Nếu có văn bản đang được chọn (đang tô màu để dịch), hủy lệnh vuốt
-    const selection = window.getSelection().toString().trim();
-    if (selection !== "") return;
-
+    if (window.getSelection().toString().trim() !== "") return;
     const swipeThreshold = 60; 
     if (touchEndX < touchStartX - swipeThreshold) move('next');
     if (touchEndX > touchStartX + swipeThreshold) move('prev');

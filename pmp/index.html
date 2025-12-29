@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - Feedback System</title>
+    <title>PMP Master Pro - Full Version</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script><script src="data2.js"></script>
@@ -70,13 +70,15 @@
         .q-diff-tag.active[data-type="Medium"] { background: var(--medium); color: white; border-color: var(--medium); }
         .q-diff-tag.active[data-type="Hard"] { background: var(--hard); color: white; border-color: var(--hard); }
 
-        .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 0 0 20px; }
-        .option-item { font-size: 14px; padding: 15px; background: #F2F2F7; border-radius: 14px; margin-bottom: 10px; border: 2.5px solid transparent; transition: all 0.2s; }
+        /* HỖ TRỢ XUỐNG DÒNG \n */
+        .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 0 0 20px; white-space: pre-wrap; }
+        .option-item { font-size: 14px; padding: 15px; background: #F2F2F7; border-radius: 14px; margin-bottom: 10px; border: 2.5px solid transparent; transition: all 0.2s; white-space: pre-wrap; }
         .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
         
-        /* CSS MÀU SẮC ĐÁP ÁN */
         .option-item.correct { background: #D4EDDA !important; border-color: #28CD41 !important; color: #155724; font-weight: 700; }
         .option-item.wrong { background: #F8D7DA !important; border-color: #FF3B30 !important; color: #721C24; }
+
+        #exp-box { margin-top: 15px; padding: 15px; background: #F2F2F7; border-radius: 12px; font-size: 13px; border-left: 4px solid var(--primary); white-space: pre-wrap; }
 
         .note-area { 
             width: 100%; height: 80px; margin-top: 15px; border-radius: 12px; 
@@ -223,7 +225,7 @@ function render() {
                     <div class="option-item ${p.ans===k?'selected':''}" id="opt-${k}" onclick="setAns('${q.id}','${k}')"><b>${k}.</b> ${v}</div>
                 `).join('')}
             </div>
-            <div id="exp-box" style="display:none; margin-top:15px; padding:15px; background:#F2F2F7; border-radius:12px; font-size:13px; border-left:4px solid var(--primary);">${q.explanation}</div>
+            <div id="exp-box" style="display:none; border-left:4px solid var(--primary);">${q.explanation}</div>
             <textarea class="note-area" placeholder="Ghi chú..." oninput="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
         </div>
     `;
@@ -260,7 +262,6 @@ function updateCountsOnly() {
     document.getElementById('cnt-Hard').innerText = `(${c.Hard})`;
 }
 
-// FIX: Hàm toggleAns có thêm logic đánh dấu màu
 function toggleAns() {
     const box = document.getElementById('exp-box');
     const isShow = box.style.display === 'none';
@@ -269,15 +270,14 @@ function toggleAns() {
     box.style.display = isShow ? 'block' : 'none';
     document.getElementById('btn-ans').classList.toggle('active', isShow);
 
-    // Logic đánh dấu màu sắc
     document.querySelectorAll('.option-item').forEach(el => {
         el.classList.remove('correct', 'wrong');
         if (isShow) {
-            const optKey = el.id.split('-')[1]; // Lấy ký tự A, B, C, D từ id "opt-A"
+            const optKey = el.id.split('-')[1];
             if (optKey === q.answer) {
-                el.classList.add('correct'); // Luôn hiện màu xanh cho đáp án đúng
+                el.classList.add('correct');
             } else if (el.classList.contains('selected') && optKey !== q.answer) {
-                el.classList.add('wrong'); // Hiện màu đỏ nếu người dùng chọn sai
+                el.classList.add('wrong');
             }
         }
     });

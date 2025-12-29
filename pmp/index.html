@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - UI Update</title>
+    <title>PMP Master Pro - Advanced UX</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="data1.js"></script>
@@ -21,10 +21,9 @@
             margin: 0; padding: 0; height: 100%; width: 100vw; 
             font-family: -apple-system, 'Inter', sans-serif; 
             background-color: var(--bg); display: flex; flex-direction: column; 
-            overflow: hidden; touch-action: none;
+            overflow: hidden; touch-action: pan-y;
         }
 
-        /* --- HEADER HỆ THỐNG: GRID LAYOUT --- */
         .system-header { 
             background: var(--ios-blur); backdrop-filter: saturate(180%) blur(20px); 
             border-bottom: 0.5px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 1000; 
@@ -34,7 +33,6 @@
         .brand { font-size: 18px; font-weight: 900; color: var(--text-main); }
         .brand span { color: var(--primary); }
         
-        /* 6 Button hiển thị dạng Grid 2x3 */
         .filter-grid { 
             display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; 
             padding: 0 12px 12px;
@@ -43,11 +41,10 @@
         .tab-pill {
             border: none; padding: 8px 4px; border-radius: 10px; 
             font-size: 10px; font-weight: 700; background: rgba(0,0,0,0.05); 
-            color: #3A3A3C; transition: all 0.2s; text-align: center;
+            color: #3A3A3C; transition: all 0.2s; text-align: center; outline: none;
         }
         .tab-pill.active { background: var(--text-main); color: white; }
 
-        /* --- VIEWPORT --- */
         .content-viewport { flex-grow: 1; position: relative; overflow: hidden; }
 
         .main-card { 
@@ -57,7 +54,6 @@
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s;
         }
 
-        /* --- HEADER TRONG CÂU HỎI --- */
         .question-sticky-header {
             position: sticky; top: 0; background: var(--card);
             padding: 12px 16px; z-index: 100;
@@ -71,13 +67,12 @@
         .difficulty-segment { display: flex; background: #F2F2F7; padding: 2px; border-radius: 10px; }
         .btn-diff { 
             border: none; padding: 6px 10px; border-radius: 8px; 
-            font-size: 9px; font-weight: 800; background: transparent; color: #8E8E93;
+            font-size: 9px; font-weight: 800; background: transparent; color: #8E8E93; outline: none;
         }
         .btn-diff.active-easy { background: var(--easy); color: white; }
         .btn-diff.active-medium { background: var(--medium); color: white; }
         .btn-diff.active-hard { background: var(--hard); color: white; }
 
-        /* --- NỘI DUNG --- */
         .question-body { padding: 16px; }
         .q-text { font-size: 16px; font-weight: 700; line-height: 1.5; color: var(--text-main); margin-bottom: 20px; }
         .option-item { 
@@ -88,14 +83,22 @@
         .option-item.is-correct { background: #EFFFF3 !important; border-color: var(--easy) !important; color: #1A8B31 !important; }
         .option-item.is-wrong { background: #FFF2F2 !important; border-color: var(--hard) !important; color: #B71C1C !important; }
 
-        /* --- BOTTOM NAV --- */
+        .note-section {
+            margin-top: 20px; padding: 12px; background: #F9F9FB; border-radius: 12px;
+        }
+        .note-label { font-size: 10px; font-weight: 800; color: var(--text-sub); margin-bottom: 6px; display: block; }
+        .note-input {
+            width: 100%; border: none; background: transparent; font-size: 13px;
+            color: var(--text-main); resize: none; outline: none; padding: 0; min-height: 60px;
+        }
+
         .bottom-nav { 
             height: 65px; background: var(--ios-blur); backdrop-filter: blur(20px);
             border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; align-items: center; 
             position: fixed; bottom: 0; width: 100%; z-index: 1000; 
             padding-bottom: env(safe-area-inset-bottom);
         }
-        .nav-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; }
+        .nav-item { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; color: #8E8E93; outline: none;}
         .nav-item i { font-style: normal; font-size: 20px; font-weight: bold; }
         .nav-item.active { color: var(--primary); }
 
@@ -108,14 +111,14 @@
 <header class="system-header">
     <div class="nav-row">
         <div class="brand">PMP<span>MASTER</span></div>
-        <select class="select-capsule" id="set-select" onchange="changeExamSet(this.value)" style="border:none; font-weight:700; color:var(--primary); outline:none;">
+        <select class="select-capsule" id="set-select" onchange="changeExamSet(this.value)" style="border:none; font-weight:700; color:var(--primary); outline:none; background: transparent;">
             <option value="DATA_SET_1">ĐỀ THI 01</option>
             <option value="DATA_SET_2">ĐỀ THI 02</option>
             <option value="DATA_SET_3">ĐỀ THI 03</option>
         </select>
     </div>
     <div class="filter-grid">
-        <button class="tab-pill active" data-type="todo" onclick="switchTab('todo')">MỚI (0)</button>
+        <button class="tab-pill" data-type="todo" onclick="switchTab('todo')">MỚI (0)</button>
         <button class="tab-pill" data-type="done" onclick="switchTab('done')">ĐÃ LÀM (0)</button>
         <button class="tab-pill" data-type="not-done" onclick="switchTab('not-done')">CHƯA (0)</button>
         <button class="tab-pill" data-type="Easy" onclick="switchTab('Easy')">DỄ (0)</button>
@@ -124,7 +127,7 @@
     </div>
 </header>
 
-<main class="content-viewport">
+<main class="content-viewport" id="swipe-area">
     <div id="book-page" class="main-card"></div>
 </main>
 
@@ -135,16 +138,44 @@
 </nav>
 
 <script>
-let pmpData = []; let filteredQuestions = []; let currentIndex = 0; let currentTab = 'todo';
-let selectedOption = null; let isConfirmed = false; let currentSetName = ""; 
+let pmpData = []; let filteredQuestions = []; let currentIndex = 0; 
+let currentTab = localStorage.getItem('PMP_LAST_TAB') || 'todo';
+let currentSetName = localStorage.getItem('PMP_LAST_SET') || 'DATA_SET_1';
+let selectedOption = null; let isConfirmed = false;
 
 const STORAGE_LV = "PMP_LV_"; const STORAGE_USER = "PMP_USER_DATA_"; 
+let touchStartX = 0; let touchEndX = 0;
 
 function safeParse(key) { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch(e) { return {}; } }
 
+// 1. CHỨC NĂNG VUỐT (SWIPE)
+const swipeArea = document.getElementById('swipe-area');
+swipeArea.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX, {passive: true});
+swipeArea.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+}, {passive: true});
+
+function handleSwipe() {
+    const threshold = 50;
+    if (touchStartX - touchEndX > threshold) triggerFlip('next');
+    if (touchEndX - touchStartX > threshold) triggerFlip('prev');
+}
+
+// 2. LƯU TRẠNG THÁI UI
 function changeExamSet(v) { 
-    currentSetName = v; pmpData = window[v] || []; 
-    currentIndex = 0; updateFilteredData(); 
+    currentSetName = v; 
+    localStorage.setItem('PMP_LAST_SET', v);
+    pmpData = window[v] || []; 
+    currentIndex = 0; 
+    updateFilteredData(); 
+}
+
+function switchTab(t) { 
+    currentTab = t; 
+    localStorage.setItem('PMP_LAST_TAB', t);
+    currentIndex = 0; 
+    updateFilteredData(); 
 }
 
 function updateTabCounts() {
@@ -221,29 +252,32 @@ function renderQuestion() {
             <div class="q-text">${q.question}</div>
             <div class="options-container">${optionsHtml}</div>
             <div id="explanation-box"></div>
+            
+            <div class="note-section">
+                <label class="note-label">GHI CHÚ RIÊNG</label>
+                <textarea class="note-input" placeholder="Viết ghi chú cho câu hỏi này..." oninput="saveNote('${q.id}', this.value)">${userData.note || ''}</textarea>
+            </div>
             <div style="height:40px;"></div>
         </div>
     `;
     card.scrollTo(0,0);
 }
 
-// Hàm cập nhật độ khó mà không làm mất màn hình
+function saveNote(id, val) {
+    let data = safeParse(STORAGE_USER + currentSetName);
+    if(!data[id]) data[id] = {ans: null, note: ""};
+    data[id].note = val;
+    localStorage.setItem(STORAGE_USER + currentSetName, JSON.stringify(data));
+}
+
 function setLv(btn, id, lv) {
     const key = STORAGE_LV + currentSetName;
     let data = safeParse(key);
-    
-    // Đảo trạng thái (Nếu bấm vào cái đang chọn thì bỏ chọn)
     data[id] = (data[id] === lv) ? null : lv;
     localStorage.setItem(key, JSON.stringify(data));
-    
-    // Chỉ cập nhật UI của các nút độ khó ngay lập tức
     const buttons = btn.parentElement.querySelectorAll('.btn-diff');
     buttons.forEach(b => b.className = 'btn-diff');
-    if (data[id]) {
-        btn.classList.add('active-' + lv.toLowerCase());
-    }
-    
-    // Cập nhật số liệu trên 6 nút lọc phía trên
+    if (data[id]) btn.classList.add('active-' + lv.toLowerCase());
     updateTabCounts();
 }
 
@@ -253,7 +287,7 @@ function selectOption(k) {
     document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
     document.getElementById(`opt-${k}`).classList.add('selected');
     let data = safeParse(STORAGE_USER + currentSetName);
-    if(!data[filteredQuestions[currentIndex].id]) data[filteredQuestions[currentIndex].id] = {ans:null};
+    if(!data[filteredQuestions[currentIndex].id]) data[filteredQuestions[currentIndex].id] = {ans:null, note:""};
     data[filteredQuestions[currentIndex].id].ans = k;
     localStorage.setItem(STORAGE_USER + currentSetName, JSON.stringify(data));
     updateTabCounts();
@@ -288,8 +322,11 @@ function toggleInfo() {
     document.getElementById('explanation-box').innerHTML = `<div style="margin-top:20px; padding:15px; background:#F2F2F7; border-radius:12px; font-size:13px; border-left:4px solid var(--primary);">${q.explanation}</div>`;
 }
 
-function switchTab(t) { currentTab = t; currentIndex = 0; updateFilteredData(); }
-window.addEventListener('DOMContentLoaded', () => changeExamSet(document.getElementById('set-select').value));
+// KHỞI TẠO TỪ BỘ NHỚ
+window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('set-select').value = currentSetName;
+    changeExamSet(currentSetName);
+});
 </script>
 </body>
 </html>

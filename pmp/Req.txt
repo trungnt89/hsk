@@ -19,13 +19,14 @@ git add . ;  git commit -m "SRC change" ; git push;
 NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
 chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn 
 🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1. Full màn hình phần Pomodoro, phần chart và lịch sử chỉ hiện khi click Xem thống kê. click button để chuyển đổi 2 trạng thái hiển thị này. Tại 1 thời điểm chỉ hiển thị 1 màn hình
+1. Trên mobile bị che. hãy sửa để hiển thị 100%. cho background của khối màu trong để nhìn thấy ảnh nền,ảnh nền vẫn phải rõ, chỉ là làm trong suốt hoặc mờ nhẹ div nằm trên ảnh nền
 
 
 
 -------------------
 Src gốc cần sửa:
--------------------<!DOCTYPE html>
+-------------------
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -46,35 +47,34 @@ Src gốc cần sửa:
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center;
+            margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center;
             background-color: #f7f9fb; background-size: cover; background-position: center; transition: 0.5s;
-            min-height: 100vh;
+            min-height: 100vh; overflow-x: hidden;
         }
 
         .app-card, .history-card {
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px);
-            width: 100%; max-width: 650px; padding: 25px; border-radius: 30px;
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
+            /* Thu nhỏ chiều rộng và căn giữa */
+            width: 95%; max-width: 450px; padding: 25px; border-radius: 30px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center;
         }
 
-        /* Full màn hình cho phần Timer */
         .app-card { 
-            min-height: 95vh; 
+            min-height: auto; 
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
         }
 
-        /* Ẩn phần thống kê mặc định */
         .history-card { 
             display: none; 
             overflow-y: auto;
-            max-height: 98vh;
+            max-height: 95vh;
         }
 
-        .timer-display { font-size: 5.5rem; font-weight: 800; color: var(--dark); margin: 10px 0; letter-spacing: -2px; }
+        .timer-display { font-size: 5rem; font-weight: 800; color: var(--dark); margin: 5px 0; letter-spacing: -2px; }
         
-        .main-btn { width: 100%; padding: 18px; font-size: 1.1rem; font-weight: 700; border: none; border-radius: 20px; cursor: pointer; transition: 0.2s; margin-top: 10px; color: white; }
+        .main-btn { width: 100%; padding: 15px; font-size: 1.1rem; font-weight: 700; border: none; border-radius: 20px; cursor: pointer; transition: 0.2s; margin-top: 8px; color: white; }
         #startBtn { background: var(--dark); }
         .btn-reset { background: #27ae60; }
         .btn-stop { background: #e67e22; }
@@ -86,18 +86,18 @@ Src gốc cần sửa:
         .btn-alarm-off { background: var(--work-color); animation: pulse 1s infinite; margin-top: 20px; box-shadow: 0 10px 20px rgba(255,94,87,0.4); }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .input-group { display: flex; flex-direction: column; text-align: left; }
-        .input-group label { font-size: 10px; font-weight: 800; color: var(--gray); margin-bottom: 5px; }
-        select { padding: 12px; border-radius: 12px; border: 2px solid #eee; background: white; font-weight: 600; cursor: pointer; overflow: hidden; text-overflow: ellipsis; }
+        .input-group label { font-size: 9px; font-weight: 800; color: var(--gray); margin-bottom: 3px; }
+        select { padding: 10px; border-radius: 12px; border: 2px solid #eee; background: white; font-weight: 600; cursor: pointer; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
 
-        .stats-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
-        .stat-box { background: #ffffff; padding: 15px; border-radius: 20px; border: 1px solid #eee; }
-        .stat-box small { color: var(--gray); display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; }
-        .stat-box b { color: var(--dark); font-size: 16px; display: block; }
-        .stat-box i { font-style: normal; font-size: 12px; color: #ff5e57; font-weight: bold; }
+        .stats-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .stat-box { background: rgba(255,255,255,0.8); padding: 12px; border-radius: 15px; border: 1px solid #eee; }
+        .stat-box small { color: var(--gray); display: block; font-size: 10px; font-weight: bold; margin-bottom: 3px; }
+        .stat-box b { color: var(--dark); font-size: 14px; display: block; }
+        .stat-box i { font-style: normal; font-size: 11px; color: #ff5e57; font-weight: bold; }
 
-        .chart-container { position: relative; height: 320px; width: 100%; margin-top: 10px; }
+        .chart-container { position: relative; height: 300px; width: 100%; margin-top: 10px; }
         
         body.work-mode { background-image: var(--work-img); }
         body.break-mode { background-image: var(--break-img); }
@@ -117,16 +117,16 @@ Src gốc cần sửa:
 </div>
 
 <div class="app-card">
-    <div id="status" style="font-weight: 800; color: var(--gray); letter-spacing: 2px;">POMODORO PRO</div>
+    <div id="status" style="font-weight: 800; color: var(--gray); letter-spacing: 2px; font-size: 0.9rem;">POMODORO PRO</div>
     <div class="timer-display" id="timer">25:00</div>
 
     <button id="startBtn" class="main-btn" onclick="toggleTimer()">BẮT ĐẦU</button>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <button class="main-btn btn-reset" onclick="resetTimer()">Đặt lại</button>
         <button class="main-btn btn-stop" onclick="stopTimer()">Dừng</button>
     </div>
 
-    <button class="main-btn" style="background: var(--gray); margin-top: 20px;" onclick="toggleView()">📊 XEM THỐNG KÊ</button>
+    <button class="main-btn" style="background: var(--gray); margin-top: 15px;" onclick="toggleView()">📊 XEM THỐNG KÊ</button>
 
     <div class="settings-grid">
         <div class="input-group">
@@ -190,14 +190,14 @@ Src gốc cần sửa:
         <canvas id="pomoChart"></canvas>
     </div>
 
-    <div id="historyLog" style="margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 15px;">
-        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊCH SỬ</small>
-        <table style="width: 100%; font-size: 13px; color: var(--dark); border-collapse: collapse;">
+    <div id="historyLog" style="margin-top: 15px; text-align: left; max-height: 180px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px;">
+        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 8px;">CHI TIẾT LỊCH SỬ</small>
+        <table style="width: 100%; font-size: 12px; color: var(--dark); border-collapse: collapse;">
             <tbody id="historyTableBody"></tbody>
         </table>
     </div>
 
-    <button class="main-btn btn-mock" style="margin-top: 20px;" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
+    <button class="main-btn btn-mock" style="margin-top: 15px;" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
     
     <button class="main-btn" style="background: var(--dark); margin-top: 10px;" onclick="toggleView()">⬅️ QUAY LẠI TIMER</button>
 </div>
@@ -214,7 +214,6 @@ Src gốc cần sửa:
 
     function btnVibrate() { if (navigator.vibrate) navigator.vibrate(50); }
 
-    // Logic chuyển đổi màn hình
     function toggleView() {
         btnVibrate();
         const timerPage = document.querySelector('.app-card');
@@ -226,10 +225,7 @@ Src gốc cần sửa:
         } else {
             timerPage.style.display = 'none';
             statsPage.style.display = 'block';
-            // Cập nhật biểu đồ khi hiển thị
-            const data = getAppData().then(d => {
-                renderChart(d.totalMinutes || {});
-            });
+            getAppData().then(d => renderChart(d.totalMinutes || {}));
         }
     }
 

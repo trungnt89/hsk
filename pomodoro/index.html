@@ -19,21 +19,21 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center;
+            margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;
             background-color: #f7f9fb; background-size: cover; background-position: center; transition: 0.5s;
-            min-height: 100vh; overflow-x: hidden;
+            height: 100vh; width: 100vw; overflow: hidden;
         }
 
         .app-card, .history-card {
             background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
-            /* Sửa theo yêu cầu: rộng 80%, cao 80% */
-            width: 80%; height: 80%; padding: 25px; border-radius: 30px;
+            /* Khắc phục lỗi mobile: rộng 90%, cao 90% */
+            width: 90vw; height: 90vh; padding: 25px; border-radius: 30px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center;
-            max-width: none;
+            max-width: none; overflow-y: auto;
         }
 
         .app-card { 
-            min-height: 80vh; 
+            min-height: 90vh; 
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
@@ -41,8 +41,7 @@
 
         .history-card { 
             display: none; 
-            overflow-y: auto;
-            max-height: 80vh;
+            max-height: 90vh;
         }
 
         .timer-display { font-size: 5rem; font-weight: 800; color: var(--dark); margin: 5px 0; letter-spacing: -2px; }
@@ -179,7 +178,7 @@
 <audio id="alarmAudio"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
 <script>
-    /* Phần Script giữ nguyên không thay đổi */
+    /* Phần Script giữ nguyên hoàn toàn */
     let timer, isRunning = false, isWorkMode = true, timeLeft = 1500;
     let db, myChart, alarmInterval;
     const APP_KEY = "pomodoro_app_data";

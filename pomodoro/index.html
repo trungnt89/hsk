@@ -3,39 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomodoro Pro - Goal 4/Day</title>
+    <title>Pomodoro Dashboard & Decimal Support</title>
     <style>
-        :root { --work: #e74c3c; --break: #27ae60; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 380px; text-align: center; }
+        :root { --work: #e74c3c; --break: #27ae60; --bg: #f4f7f6; --dark: #2c3e50; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; margin-bottom: 20px; }
         
-        .status-label { font-size: 1.2rem; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
-        .timer-display { font-size: 5rem; font-weight: 800; color: #2c3e50; margin: 10px 0; }
+        .status-label { font-size: 1.1rem; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; color: #7f8c8d; }
+        .timer-display { font-size: 5.5rem; font-weight: 800; color: var(--dark); margin: 5px 0; font-variant-numeric: tabular-nums; }
         
-        .controls button { padding: 12px 20px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; border-radius: 8px; margin: 5px; color: white; transition: 0.2s; }
-        #startBtn { background: #3498db; }
-        #stopAlarmBtn { background: #f1c40f; color: #333; display: none; width: 100%; margin-top: 10px; }
-        #resetBtn { background: #95a5a6; }
+        .controls button { padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; border-radius: 12px; margin: 5px; transition: 0.3s; }
+        #startBtn { background: #3498db; color: white; width: 140px; }
+        #resetBtn { background: #eee; color: var(--dark); }
+        #stopAlarmBtn { background: #f1c40f; color: #333; display: none; width: 100%; margin-top: 15px; animation: pulse 1s infinite; }
 
-        .goal-section { margin-top: 25px; padding: 15px; background: #f8f9fa; border-radius: 12px; }
-        .progress-container { background: #eee; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
-        .progress-bar { background: var(--break); height: 100%; width: 0%; transition: 0.5s; }
-        .goal-text { font-size: 13px; color: #666; }
+        .progress-section { margin-top: 25px; text-align: left; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+        .progress-container { background: #eee; height: 12px; border-radius: 6px; overflow: hidden; }
+        .progress-bar { background: var(--break); height: 100%; width: 0%; transition: 1s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        .settings { margin-top: 20px; display: flex; justify-content: space-around; border-top: 1px solid #eee; padding-top: 15px; }
-        .setting-group { display: flex; flex-direction: column; font-size: 12px; }
-        .setting-group input { width: 50px; padding: 5px; text-align: center; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px; }
+        .settings { margin-top: 25px; display: flex; justify-content: space-between; background: #fafafa; padding: 15px; border-radius: 12px; }
+        .setting-group { display: flex; flex-direction: column; align-items: flex-start; }
+        .setting-group label { font-size: 11px; color: #95a5a6; margin-bottom: 4px; text-transform: uppercase; }
+        .setting-group input { width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-weight: bold; outline: none; }
 
-        body.work-mode { background: #fdecea; }
-        body.work-mode .status-label { color: var(--work); }
-        body.break-mode { background: #ebf9f1; }
-        body.break-mode .status-label { color: var(--break); }
+        /* Dashboard Styles */
+        .dashboard { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
+        .dashboard h3 { margin: 0 0 15px 0; font-size: 1.2rem; color: var(--dark); display: flex; align-items: center; gap: 8px; }
+        .history-list { list-style: none; padding: 0; margin: 0; }
+        .history-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .history-item:last-child { border: none; }
+        .history-date { color: #7f8c8d; }
+        .history-count { font-weight: bold; color: var(--break); }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        body.work-mode { background: #fff5f5; }
+        body.break-mode { background: #f0fff4; }
     </style>
 </head>
 <body class="work-mode">
 
 <div class="container">
-    <div id="status" class="status-label">Sẵn sàng</div>
+    <div id="status" class="status-label">Sẵn sàng học tập</div>
     <div class="timer-display" id="timer">25:00</div>
 
     <div class="controls">
@@ -44,23 +53,32 @@
         <button id="stopAlarmBtn" onclick="stopAlarm()">DỪNG CHUÔNG 🔔</button>
     </div>
 
-    <div class="goal-section">
-        <div class="goal-text">Mục tiêu hôm nay: <span id="pomoCount">0</span>/4 Pomodoro</div>
+    <div class="progress-section">
+        <div class="progress-header">
+            <span>Tiến độ ngày</span>
+            <span id="pomoCount">0/4</span>
+        </div>
         <div class="progress-container">
             <div id="progressBar" class="progress-bar"></div>
         </div>
-        <div id="goalMsg" style="font-size: 11px; color: #27ae60; font-weight: bold;"></div>
     </div>
 
     <div class="settings">
         <div class="setting-group">
-            <label>Làm việc</label>
-            <input type="number" id="workInput" value="25" onchange="saveSettings()">
+            <label>Làm việc (phút)</label>
+            <input type="number" id="workInput" value="25" step="0.01" min="0.01" onchange="saveSettings()">
         </div>
         <div class="setting-group">
-            <label>Nghỉ ngơi</label>
-            <input type="number" id="breakInput" value="5" onchange="saveSettings()">
+            <label>Nghỉ ngơi (phút)</label>
+            <input type="number" id="breakInput" value="5" step="0.01" min="0.01" onchange="saveSettings()">
         </div>
+    </div>
+</div>
+
+<div class="dashboard">
+    <h3>📊 Lịch sử Pomodoro</h3>
+    <div id="historyList" class="history-list">
+        <p style="color:#999; font-size:12px">Chưa có dữ liệu lịch sử...</p>
     </div>
 </div>
 
@@ -70,11 +88,11 @@
 
 <script>
     let timer, isRunning = false, isWorkMode = true, timeLeft;
-    let pomoCompleted = 0;
+    let pomoCompletedToday = 0;
     let db;
 
-    // --- KHỞI TẠO INDEXEDDB ---
-    const request = indexedDB.open("PomodoroDB", 1);
+    // --- CẤU HÌNH INDEXEDDB ---
+    const request = indexedDB.open("PomodoroV2", 1);
     request.onupgradeneeded = (e) => {
         db = e.target.result;
         db.createObjectStore("settings", { keyPath: "id" });
@@ -87,9 +105,7 @@
 
     function loadData() {
         // Load Settings
-        const tx = db.transaction("settings", "readonly");
-        const store = tx.objectStore("settings");
-        store.get("config").onsuccess = (e) => {
+        db.transaction("settings").objectStore("settings").get("config").onsuccess = (e) => {
             if(e.target.result) {
                 document.getElementById('workInput').value = e.target.result.work;
                 document.getElementById('breakInput').value = e.target.result.break;
@@ -97,38 +113,55 @@
             }
         };
 
-        // Load History (Hôm nay)
-        const dateStr = new Date().toLocaleDateString();
-        const txH = db.transaction("history", "readonly");
-        txH.objectStore("history").get(dateStr).onsuccess = (e) => {
-            if(e.target.result) {
-                pomoCompleted = e.target.result.count;
+        // Load Dashboard
+        renderDashboard();
+    }
+
+    async function renderDashboard() {
+        const listEl = document.getElementById('historyList');
+        const tx = db.transaction("history", "readonly");
+        const store = tx.objectStore("history");
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+            const data = request.result.sort((a,b) => new Date(b.date) - new Date(a.date));
+            const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD
+            
+            if(data.length > 0) {
+                listEl.innerHTML = data.map(item => `
+                    <div class="history-item">
+                        <span class="history-date">${item.date === todayStr ? 'Hôm nay' : item.date}</span>
+                        <span class="history-count">${item.count} Pomodoro</span>
+                    </div>
+                `).join('');
+                
+                const todayData = data.find(i => i.date === todayStr);
+                pomoCompletedToday = todayData ? todayData.count : 0;
                 updateGoalUI();
             }
         };
     }
 
     function saveSettings() {
-        const config = {
-            id: "config",
-            work: parseInt(document.getElementById('workInput').value),
-            break: parseInt(document.getElementById('breakInput').value)
-        };
+        const work = parseFloat(document.getElementById('workInput').value);
+        const breakTime = parseFloat(document.getElementById('breakInput').value);
+        
         const tx = db.transaction("settings", "readwrite");
-        tx.objectStore("settings").put(config);
+        tx.objectStore("settings").put({ id: "config", work, break: breakTime });
         if(!isRunning) resetTimer();
     }
 
     function saveHistory() {
-        const dateStr = new Date().toLocaleDateString();
+        const dateStr = new Date().toLocaleDateString('sv-SE');
         const tx = db.transaction("history", "readwrite");
-        tx.objectStore("history").put({ date: dateStr, count: pomoCompleted });
+        tx.objectStore("history").put({ date: dateStr, count: pomoCompletedToday });
+        tx.oncomplete = renderDashboard;
     }
 
-    // --- LOGIC TIMER ---
+    // --- LOGIC ĐẾM NGƯỢC ---
     function updateDisplay() {
         const m = Math.floor(timeLeft / 60);
-        const s = timeLeft % 60;
+        const s = Math.floor(timeLeft % 60);
         const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         document.getElementById('timer').textContent = timeStr;
         document.title = `${timeStr} - Pomodoro`;
@@ -153,22 +186,19 @@
     }
 
     function startAlarm() {
-        const alarm = document.getElementById('alarmAudio');
-        alarm.play();
+        document.getElementById('alarmAudio').play();
         document.getElementById('stopAlarmBtn').style.display = 'block';
-        document.getElementById('startBtn').disabled = true;
+        document.getElementById('startBtn').style.display = 'none';
     }
 
     function stopAlarm() {
         const alarm = document.getElementById('alarmAudio');
-        alarm.pause();
-        alarm.currentTime = 0;
+        alarm.pause(); alarm.currentTime = 0;
         document.getElementById('stopAlarmBtn').style.display = 'none';
-        document.getElementById('startBtn').disabled = false;
+        document.getElementById('startBtn').style.display = 'inline-block';
         
         if (isWorkMode) {
-            pomoCompleted++;
-            updateGoalUI();
+            pomoCompletedToday++;
             saveHistory();
         }
         switchMode();
@@ -177,12 +207,12 @@
     function switchMode() {
         isWorkMode = !isWorkMode;
         if (isWorkMode) {
-            timeLeft = document.getElementById('workInput').value * 60;
+            timeLeft = parseFloat(document.getElementById('workInput').value) * 60;
             document.getElementById('status').textContent = "Làm việc!";
             document.body.className = "work-mode";
         } else {
-            timeLeft = document.getElementById('breakInput').value * 60;
-            document.getElementById('status').textContent = "Nghỉ ngơi";
+            timeLeft = parseFloat(document.getElementById('breakInput').value) * 60;
+            document.getElementById('status').textContent = "Giải lao thôi";
             document.body.className = "break-mode";
         }
         updateDisplay();
@@ -191,29 +221,25 @@
     }
 
     function updateGoalUI() {
-        document.getElementById('pomoCount').textContent = pomoCompleted;
-        const progress = Math.min((pomoCompleted / 4) * 100, 100);
+        document.getElementById('pomoCount').textContent = `${pomoCompletedToday}/4`;
+        const progress = Math.min((pomoCompletedToday / 4) * 100, 100);
         document.getElementById('progressBar').style.width = progress + "%";
-        if (pomoCompleted >= 4) {
-            document.getElementById('goalMsg').textContent = "🎉 TUYỆT VỜI! ĐÃ ĐẠT MỤC TIÊU NGÀY.";
-        }
     }
 
     function resetTimer() {
         clearInterval(timer);
         isRunning = false;
         isWorkMode = true;
-        timeLeft = document.getElementById('workInput').value * 60;
-        document.getElementById('status').textContent = "Sẵn sàng";
+        timeLeft = parseFloat(document.getElementById('workInput').value) * 60;
+        document.getElementById('status').textContent = "Sẵn sàng học tập";
         document.getElementById('startBtn').textContent = "BẮT ĐẦU";
         document.body.className = "work-mode";
         updateDisplay();
     }
 
-    // Khởi tạo ban đầu khi chưa có DB
+    // Init
     timeLeft = 25 * 60;
     updateDisplay();
 </script>
-
 </body>
 </html>

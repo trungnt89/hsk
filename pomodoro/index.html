@@ -132,12 +132,12 @@
         <div class="stat-box">
             <small>🏆 CAO NHẤT</small>
             <b id="maxDay">-</b>
-            <i id="maxVal">0h 0p</i>
+            <i id="maxVal">00:00:00</i>
         </div>
         <div class="stat-box">
             <small>📉 THẤP NHẤT</small>
             <b id="minDay">-</b>
-            <i id="minVal">0h 0p</i>
+            <i id="minVal">00:00:00</i>
         </div>
     </div>
     <div class="chart-container">
@@ -167,10 +167,11 @@
     function btnVibrate() { if (navigator.vibrate) navigator.vibrate(50); }
 
     function formatTime(totalMinutes) {
-        if (!totalMinutes || totalMinutes === 0) return "0p";
+        if (!totalMinutes || totalMinutes === 0) return "00:00:00";
         const h = Math.floor(totalMinutes / 60);
-        const m = Math.round(totalMinutes % 60);
-        return h > 0 ? `${h}h ${m}p` : `${m}p`;
+        const m = Math.floor(totalMinutes % 60);
+        const s = Math.round((totalMinutes * 60) % 60);
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
 
     const request = indexedDB.open("PomoUnifiedDB", 1);
@@ -283,7 +284,7 @@
                 document.body.className = 'break-mode';
                 document.getElementById('status').textContent = 'ĐANG NGHỈ NGƠI';
                 resetTimer();
-                toggleTimer(); // Tự động bắt đầu đếm ngược thời gian nghỉ
+                toggleTimer(); 
             } else {
                 isWorkMode = true;
                 document.body.className = 'work-mode';
@@ -347,7 +348,7 @@
         myChart = new Chart(ctx, {
             type: 'line',
             data: { labels, datasets: [{ 
-                label: 'Phút học', 
+                label: 'Thời gian học', 
                 data, 
                 borderColor: '#3498db', 
                 backgroundColor: 'rgba(52, 152, 219, 0.2)',
@@ -362,11 +363,27 @@
                         min: labels[labels.length - 30] || labels[0],
                         max: labels[labels.length - 1]
                     },
-                    y: { beginAtZero: true }
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                const h = Math.floor(value / 60);
+                                const m = Math.floor(value % 60);
+                                return h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
+                            }
+                        }
+                    }
                 },
                 plugins: {
                     zoom: {
                         pan: { enabled: true, mode: 'x', threshold: 10 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Thời gian: ' + formatTime(context.raw);
+                            }
+                        }
                     }
                 }
             }

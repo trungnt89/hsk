@@ -19,14 +19,30 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;
+            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center;
             background-color: #f7f9fb; background-size: cover; background-position: center; transition: 0.5s;
+            min-height: 100vh;
         }
 
         .app-card, .history-card {
             background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px);
             width: 100%; max-width: 650px; padding: 25px; border-radius: 30px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center;
+        }
+
+        /* Full màn hình cho phần Timer */
+        .app-card { 
+            min-height: 95vh; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+        }
+
+        /* Ẩn phần thống kê mặc định */
+        .history-card { 
+            display: none; 
+            overflow-y: auto;
+            max-height: 98vh;
         }
 
         .timer-display { font-size: 5.5rem; font-weight: 800; color: var(--dark); margin: 10px 0; letter-spacing: -2px; }
@@ -83,6 +99,8 @@
         <button class="main-btn btn-stop" onclick="stopTimer()">Dừng</button>
     </div>
 
+    <button class="main-btn" style="background: var(--gray); margin-top: 20px;" onclick="toggleView()">📊 XEM THỐNG KÊ</button>
+
     <div class="settings-grid">
         <div class="input-group">
             <label>THỜI GIAN HỌC (PHÚT)</label>
@@ -128,6 +146,7 @@
 
 <div class="history-card">
     <h3 style="margin:0; color: var(--dark)">📈 XU HƯỚNG HIỆU SUẤT</h3>
+    
     <div class="stats-summary">
         <div class="stat-box">
             <small>🏆 CAO NHẤT</small>
@@ -145,13 +164,15 @@
     </div>
 
     <div id="historyLog" style="margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 15px;">
-        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊST SỬ</small>
+        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊCH SỬ</small>
         <table style="width: 100%; font-size: 13px; color: var(--dark); border-collapse: collapse;">
             <tbody id="historyTableBody"></tbody>
         </table>
     </div>
 
     <button class="main-btn btn-mock" style="margin-top: 20px;" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
+    
+    <button class="main-btn" style="background: var(--dark); margin-top: 10px;" onclick="toggleView()">⬅️ QUAY LẠI TIMER</button>
 </div>
 
 <audio id="bgAudio" loop></audio>
@@ -165,6 +186,25 @@
     let appSettings = { workTime: 25, breakTime: 5, workMusic: 'none', breakMusic: 'none' };
 
     function btnVibrate() { if (navigator.vibrate) navigator.vibrate(50); }
+
+    // Logic chuyển đổi màn hình
+    function toggleView() {
+        btnVibrate();
+        const timerPage = document.querySelector('.app-card');
+        const statsPage = document.querySelector('.history-card');
+        
+        if (timerPage.style.display === 'none') {
+            timerPage.style.display = 'flex';
+            statsPage.style.display = 'none';
+        } else {
+            timerPage.style.display = 'none';
+            statsPage.style.display = 'block';
+            // Cập nhật biểu đồ khi hiển thị
+            const data = getAppData().then(d => {
+                renderChart(d.totalMinutes || {});
+            });
+        }
+    }
 
     function formatTime(totalMinutes) {
         if (!totalMinutes || totalMinutes === 0) return "00:00:00";
@@ -227,7 +267,7 @@
         btnVibrate();
         if (!isRunning) {
             isRunning = true;
-            document.getElementById('alarmAudio').load(); // Kích hoạt quyền audio trên mobile
+            document.getElementById('alarmAudio').load(); 
             playModeMusic();
             document.getElementById('startBtn').textContent = "TẠM DỪNG";
             timer = setInterval(() => {
@@ -341,7 +381,9 @@
     }
 
     function renderChart(minutesObj) {
-        const ctx = document.getElementById('pomoChart').getContext('2d');
+        const canvas = document.getElementById('pomoChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
         const labels = Object.keys(minutesObj).sort();
         const data = labels.map(l => minutesObj[l]);
         

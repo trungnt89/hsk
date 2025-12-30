@@ -160,7 +160,6 @@
                     
                     let valueDisplay = "";
                     
-                    // Kiểm tra định dạng dữ liệu
                     if (value instanceof Blob) {
                         const url = URL.createObjectURL(value);
                         const isAudio = value.type.includes('audio');
@@ -171,7 +170,6 @@
                                 <a href="${url}" download="${key}" class="download-link">💾 Tải về máy</a>
                             </div>`;
                     } else if (typeof value === 'object' && value !== null) {
-                        // HIỂN THỊ JSON ĐẸP
                         const jsonStr = JSON.stringify(value, null, 4);
                         valueDisplay = `<pre class="json-pretty">${jsonStr}</pre>`;
                     } else {
@@ -209,7 +207,7 @@
             try {
                 const data = JSON.parse(ev.target.result);
                 if (!Array.isArray(data)) {
-                    throw new Error("File Import phải là định dạng JSON Array các bản ghi.");
+                    throw new Error("File Import phải là định dạng mảng JSON các bản ghi.");
                 }
                 importToDB(data);
             } catch (err) {
@@ -217,7 +215,7 @@
             }
         };
         reader.readAsText(file);
-        importInput.value = ""; // reset input
+        importInput.value = ""; 
     };
 
     function importToDB(dataList) {
@@ -229,9 +227,13 @@
             
             let successCount = 0;
             dataList.forEach(item => {
-                // Giả định item có cấu trúc phù hợp hoặc tự động bốc tách key nếu store dùng keyPath
-                // Nếu không có keyPath, item phải được xử lý tùy theo logic cụ thể
-                store.put(item); 
+                // SỬA LỖI: Kiểm tra định dạng {key, value} từ file export
+                if (item.hasOwnProperty('key') && item.hasOwnProperty('value')) {
+                    store.put(item.value, item.key);
+                } else {
+                    // Trường hợp store dùng keyPath sẵn trong object
+                    store.put(item);
+                }
                 successCount++;
             });
 
@@ -239,9 +241,9 @@
                 writeLog(`Import thành công ${successCount} bản ghi vào ${currentImportStore}`);
                 alert(`Đã Import xong ${successCount} bản ghi.`);
                 db.close();
-                deepScan(); // Refresh
+                deepScan(); 
             };
-            tx.onerror = () => writeLog("Lỗi khi ghi dữ liệu vào store.");
+            tx.onerror = (err) => writeLog("Lỗi khi ghi dữ liệu: " + err.target.error);
         };
     }
 
@@ -250,23 +252,32 @@
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
             const db = e.target.result;
-            db.transaction(storeName, "readonly").objectStore(storeName).getAll().onsuccess = (ev) => {
-                const result = ev.target.result;
-                // Xử lý các object không thể stringify trực tiếp (như Blob)
-                const processed = result.map(item => {
-                    if (item instanceof Blob) return "[Blob Data - Cannot Export to JSON]";
-                    return item;
-                });
+            const tx = db.transaction(storeName, "readonly");
+            const store = tx.objectStore(storeName);
+            const exportList = [];
 
-                const blob = new Blob([JSON.stringify(processed, null, 2)], {type: 'application/json'});
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = `Export_${dbName}_${storeName}.json`;
-                a.click();
-                writeLog(`Đã xuất dữ liệu ${storeName} ra file JSON.`);
-                db.close();
+            store.openCursor().onsuccess = (ev) => {
+                const cursor = ev.target.result;
+                if (cursor) {
+                    // SỬA LỖI: Export bao gồm cả Key để khi Import có thể ghi đè/chèn đúng chỗ
+                    let val = cursor.value;
+                    if (val instanceof Blob) {
+                        exportList.push({ key: cursor.key, value: "[Blob Data - Cannot Export]" });
+                    } else {
+                        exportList.push({ key: cursor.key, value: val });
+                    }
+                    cursor.continue();
+                } else {
+                    const blob = new Blob([JSON.stringify(exportList, null, 2)], {type: 'application/json'});
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `Export_${dbName}_${storeName}.json`;
+                    a.click();
+                    writeLog(`Đã xuất dữ liệu ${storeName} ra file JSON.`);
+                    db.close();
+                }
             };
-        };
+        }; 
     }
 
     // --- CLEAR DỮ LIỆU ---

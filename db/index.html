@@ -41,7 +41,7 @@
             font-family: 'Consolas', monospace; 
             color: #d63384;
             margin: 0;
-            max-height: 200px;
+            max-height: 300px;
             overflow: auto;
         }
         
@@ -169,6 +169,17 @@
                     } else if (typeof value === 'object' && value !== null) {
                         const jsonStr = JSON.stringify(value, null, 4);
                         valueDisplay = `<pre class="json-pretty">${jsonStr}</pre>`;
+                    } else if (typeof value === 'string') {
+                        try {
+                            const parsed = JSON.parse(value);
+                            if (typeof parsed === 'object' && parsed !== null) {
+                                valueDisplay = `<pre class="json-pretty">${JSON.stringify(parsed, null, 4)}</pre>`;
+                            } else {
+                                valueDisplay = `<span>${value}</span>`;
+                            }
+                        } catch (e) {
+                            valueDisplay = `<span>${value}</span>`;
+                        }
                     } else {
                         valueDisplay = `<span>${value}</span>`;
                     }
@@ -282,12 +293,12 @@
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
             const db = e.target.result;
-            db.close(); // Đóng kết nối bắt buộc để có thể xóa
+            db.close(); 
             
             const delReq = indexedDB.deleteDatabase(dbName);
             delReq.onsuccess = () => {
                 writeLog(`Đã XÓA Database: ${dbName}`);
-                deepScan(); // Cập nhật lại danh sách hiển thị
+                deepScan(); 
             };
             delReq.onerror = (err) => writeLog("Lỗi khi xóa Database: " + err.target.error);
             delReq.onblocked = () => writeLog("Xóa bị chặn: Vui lòng đóng các tab khác đang dùng DB này.");

@@ -24,7 +24,6 @@
         .btn-import { background: var(--import); }
         .btn-clear { background: var(--clear); }
 
-        /* Table Data View */
         .data-viewer { display: none; padding: 10px; background: #fff; max-height: 600px; overflow: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
         th { background: #f1f3f5; position: sticky; top: 0; padding: 10px; border: 1px solid #dee2e6; z-index: 10; }
@@ -33,7 +32,6 @@
         .cell-index { width: 40px; text-align: center; }
         .cell-blob { color: #7f8c8d; font-style: italic; display: block; margin-bottom: 5px; }
         
-        /* JSON Format Style */
         pre.json-pretty { 
             background: #f8f9fa; 
             padding: 8px; 
@@ -47,7 +45,6 @@
             overflow: auto;
         }
         
-        /* Audio Player Mini */
         .audio-ctrl { display: flex; flex-direction: column; gap: 5px; }
         audio { height: 30px; width: 100%; max-width: 250px; }
         .download-link { font-size: 11px; color: var(--primary); text-decoration: none; font-weight: bold; }
@@ -191,7 +188,6 @@
         };
     }
 
-    // --- IMPORT DỮ LIỆU ---
     function triggerImport(dbName, storeName) {
         currentImportDB = dbName;
         currentImportStore = storeName;
@@ -227,11 +223,9 @@
             
             let successCount = 0;
             dataList.forEach(item => {
-                // SỬA LỖI: Kiểm tra định dạng {key, value} từ file export
                 if (item.hasOwnProperty('key') && item.hasOwnProperty('value')) {
                     store.put(item.value, item.key);
                 } else {
-                    // Trường hợp store dùng keyPath sẵn trong object
                     store.put(item);
                 }
                 successCount++;
@@ -247,7 +241,6 @@
         };
     }
 
-    // --- EXPORT DỮ LIỆU ---
     function exportData(dbName, storeName) {
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
@@ -259,7 +252,6 @@
             store.openCursor().onsuccess = (ev) => {
                 const cursor = ev.target.result;
                 if (cursor) {
-                    // SỬA LỖI: Export bao gồm cả Key để khi Import có thể ghi đè/chèn đúng chỗ
                     let val = cursor.value;
                     if (val instanceof Blob) {
                         exportList.push({ key: cursor.key, value: "[Blob Data - Cannot Export]" });
@@ -284,21 +276,23 @@
         }; 
     }
 
-    // --- CLEAR DỮ LIỆU ---
     function clearData(dbName, storeName, safeId) {
-        if (!confirm(`Bạn có chắc chắn muốn xóa TOÀN BỘ dữ liệu trong bảng [${storeName}]?`)) return;
+        if (!confirm(`CẢNH BÁO: Bạn có chắc muốn XÓA VĨNH VIỄN toàn bộ Database [${dbName}]?\n\nHành động này sẽ xóa mọi Store bên trong và không thể hoàn tác.`)) return;
+        
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
             const db = e.target.result;
-            const tx = db.transaction(storeName, "readwrite");
-            tx.objectStore(storeName).clear();
-            tx.oncomplete = () => {
-                writeLog(`Đã xóa sạch dữ liệu bảng ${storeName}`);
-                const viewer = document.getElementById(`view_${safeId}`);
-                if (viewer) viewer.style.display = "none";
-                db.close();
+            db.close(); // Đóng kết nối bắt buộc để có thể xóa
+            
+            const delReq = indexedDB.deleteDatabase(dbName);
+            delReq.onsuccess = () => {
+                writeLog(`Đã XÓA Database: ${dbName}`);
+                deepScan(); // Cập nhật lại danh sách hiển thị
             };
+            delReq.onerror = (err) => writeLog("Lỗi khi xóa Database: " + err.target.error);
+            delReq.onblocked = () => writeLog("Xóa bị chặn: Vui lòng đóng các tab khác đang dùng DB này.");
         };
+        req.onerror = (err) => writeLog("Lỗi mở DB: " + err.target.error);
     }
 </script>
 

@@ -19,20 +19,22 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center;
+            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: stretch;
             background-color: #f7f9fb; background-size: cover; background-position: center; transition: 0.5s;
-            min-height: 100vh;
+            min-height: 100vh; justify-content: center;
         }
 
+        /* Thẻ card trong suốt hơn, không mờ (blur) để nhìn rõ ảnh nền */
         .app-card, .history-card {
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px);
-            width: 100%; max-width: 650px; padding: 25px; border-radius: 30px;
+            background: rgba(255, 255, 255, 0.4); backdrop-filter: none;
+            width: 100%; max-width: 650px; padding: 20px; border-radius: 0;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center;
+            margin-left: auto; margin-right: auto;
         }
 
-        /* Full màn hình cho phần Timer */
+        /* Full màn hình 100% cho phần Timer */
         .app-card { 
-            min-height: 95vh; 
+            min-height: 100vh; 
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
@@ -42,7 +44,8 @@
         .history-card { 
             display: none; 
             overflow-y: auto;
-            max-height: 98vh;
+            max-height: 100vh;
+            min-height: 100vh;
         }
 
         .timer-display { font-size: 5.5rem; font-weight: 800; color: var(--dark); margin: 10px 0; letter-spacing: -2px; }
@@ -61,16 +64,16 @@
 
         .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .input-group { display: flex; flex-direction: column; text-align: left; }
-        .input-group label { font-size: 10px; font-weight: 800; color: var(--gray); margin-bottom: 5px; }
-        select { padding: 12px; border-radius: 12px; border: 2px solid #eee; background: white; font-weight: 600; cursor: pointer; overflow: hidden; text-overflow: ellipsis; }
+        .input-group label { font-size: 10px; font-weight: 800; color: var(--dark); margin-bottom: 5px; }
+        select { padding: 12px; border-radius: 12px; border: 2px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.7); font-weight: 600; cursor: pointer; overflow: hidden; text-overflow: ellipsis; color: var(--dark); }
 
         .stats-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
-        .stat-box { background: #ffffff; padding: 15px; border-radius: 20px; border: 1px solid #eee; }
-        .stat-box small { color: var(--gray); display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; }
+        .stat-box { background: rgba(255, 255, 255, 0.5); padding: 15px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.05); }
+        .stat-box small { color: var(--dark); opacity: 0.7; display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; }
         .stat-box b { color: var(--dark); font-size: 16px; display: block; }
         .stat-box i { font-style: normal; font-size: 12px; color: #ff5e57; font-weight: bold; }
 
-        .chart-container { position: relative; height: 320px; width: 100%; margin-top: 10px; }
+        .chart-container { position: relative; height: 320px; width: 100%; margin-top: 10px; background: rgba(255,255,255,0.3); border-radius: 15px; padding: 10px; }
         
         body.work-mode { background-image: var(--work-img); }
         body.break-mode { background-image: var(--break-img); }
@@ -90,7 +93,7 @@
 </div>
 
 <div class="app-card">
-    <div id="status" style="font-weight: 800; color: var(--gray); letter-spacing: 2px;">POMODORO PRO</div>
+    <div id="status" style="font-weight: 800; color: var(--dark); letter-spacing: 2px;">POMODORO PRO</div>
     <div class="timer-display" id="timer">25:00</div>
 
     <button id="startBtn" class="main-btn" onclick="toggleTimer()">BẮT ĐẦU</button>
@@ -99,7 +102,7 @@
         <button class="main-btn btn-stop" onclick="stopTimer()">Dừng</button>
     </div>
 
-    <button class="main-btn" style="background: var(--gray); margin-top: 20px;" onclick="toggleView()">📊 XEM THỐNG KÊ</button>
+    <button class="main-btn" style="background: rgba(149, 165, 166, 0.8); margin-top: 20px;" onclick="toggleView()">📊 XEM THỐNG KÊ</button>
 
     <div class="settings-grid">
         <div class="input-group">
@@ -163,8 +166,8 @@
         <canvas id="pomoChart"></canvas>
     </div>
 
-    <div id="historyLog" style="margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 15px;">
-        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊCH SỬ</small>
+    <div id="historyLog" style="margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px;">
+        <small style="color: var(--dark); opacity: 0.7; font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊCH SỬ</small>
         <table style="width: 100%; font-size: 13px; color: var(--dark); border-collapse: collapse;">
             <tbody id="historyTableBody"></tbody>
         </table>
@@ -187,7 +190,6 @@
 
     function btnVibrate() { if (navigator.vibrate) navigator.vibrate(50); }
 
-    // Logic chuyển đổi màn hình
     function toggleView() {
         btnVibrate();
         const timerPage = document.querySelector('.app-card');
@@ -199,8 +201,7 @@
         } else {
             timerPage.style.display = 'none';
             statsPage.style.display = 'block';
-            // Cập nhật biểu đồ khi hiển thị
-            const data = getAppData().then(d => {
+            getAppData().then(d => {
                 renderChart(d.totalMinutes || {});
             });
         }
@@ -373,7 +374,7 @@
         const body = document.getElementById('historyTableBody');
         const sortedKeys = Object.keys(minutesObj).sort().reverse();
         body.innerHTML = sortedKeys.map(date => `
-            <tr style="border-bottom: 1px solid #f9f9f9;">
+            <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
                 <td style="padding: 10px 0; font-weight: 600;">📅 ${date}</td>
                 <td style="padding: 10px 0; text-align: right; color: var(--dark); font-weight: 700;">${formatTime(minutesObj[date])}</td>
             </tr>
@@ -393,8 +394,8 @@
             data: { labels, datasets: [{ 
                 label: 'Thời gian học', 
                 data, 
-                borderColor: '#3498db', 
-                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                borderColor: '#1a2a6c', 
+                backgroundColor: 'rgba(26, 42, 108, 0.2)',
                 fill: true, 
                 tension: 0.4 
             }] },

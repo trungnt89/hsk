@@ -19,8 +19,8 @@ git add . ;  git commit -m "SRC change" ; git push;
 NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
 chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn 
 🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1. Nhạc setting không áp dụng khi click vào bắt đầu học,kiểm tra lại lúc học và nghỉ có phát đúng nhạc setting không
-2.Biểu đồ line chuyển màu khác,ko thích màu đen
+1. Trục OY của biểu đồ tính theo giờ:phút
+2.Lịch sử cột thời gian theo giờ:phút:giây
 
 
 -------------------
@@ -87,7 +87,6 @@ Src gốc cần sửa:
         body.work-mode { background-image: var(--work-img); }
         body.break-mode { background-image: var(--break-img); }
 
-        /* Custom scrollbar for history log */
         #historyLog::-webkit-scrollbar { width: 5px; }
         #historyLog::-webkit-scrollbar-thumb { background: #eee; border-radius: 10px; }
     </style>
@@ -161,12 +160,12 @@ Src gốc cần sửa:
         <div class="stat-box">
             <small>🏆 CAO NHẤT</small>
             <b id="maxDay">-</b>
-            <i id="maxVal">0h 0p</i>
+            <i id="maxVal">00:00:00</i>
         </div>
         <div class="stat-box">
             <small>📉 THẤP NHẤT</small>
             <b id="minDay">-</b>
-            <i id="minVal">0h 0p</i>
+            <i id="minVal">00:00:00</i>
         </div>
     </div>
     <div class="chart-container">
@@ -174,7 +173,7 @@ Src gốc cần sửa:
     </div>
 
     <div id="historyLog" style="margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 15px;">
-        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊCH SỬ</small>
+        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊST SỬ</small>
         <table style="width: 100%; font-size: 13px; color: var(--dark); border-collapse: collapse;">
             <tbody id="historyTableBody"></tbody>
         </table>
@@ -196,10 +195,11 @@ Src gốc cần sửa:
     function btnVibrate() { if (navigator.vibrate) navigator.vibrate(50); }
 
     function formatTime(totalMinutes) {
-        if (!totalMinutes || totalMinutes === 0) return "0p";
+        if (!totalMinutes || totalMinutes === 0) return "00:00:00";
         const h = Math.floor(totalMinutes / 60);
-        const m = Math.round(totalMinutes % 60);
-        return h > 0 ? `${h}h ${m}p` : `${m}p`;
+        const m = Math.floor(totalMinutes % 60);
+        const s = Math.round((totalMinutes * 60) % 60);
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
 
     const request = indexedDB.open("PomoUnifiedDB", 1);
@@ -218,6 +218,8 @@ Src gốc cần sửa:
             appSettings = data.settings;
             document.getElementById('workTime').value = appSettings.workTime;
             document.getElementById('breakTime').value = appSettings.breakTime;
+            document.getElementById('workMusic').value = appSettings.workMusic;
+            document.getElementById('breakMusic').value = appSettings.breakMusic;
             timeLeft = Math.round(appSettings.workTime * 60);
             updateDisplay();
         }
@@ -253,6 +255,7 @@ Src gốc cần sửa:
         btnVibrate();
         if (!isRunning) {
             isRunning = true;
+            playModeMusic();
             document.getElementById('startBtn').textContent = "TẠM DỪNG";
             timer = setInterval(() => {
                 timeLeft--;
@@ -262,21 +265,34 @@ Src gốc cần sửa:
         } else { stopTimer(); }
     }
 
+    function playModeMusic() {
+        const musicUrl = isWorkMode ? appSettings.workMusic : appSettings.breakMusic;
+        if (musicUrl && musicUrl !== 'none') {
+            bgAudio.src = musicUrl;
+            bgAudio.play().catch(() => console.log("Interaction required for audio"));
+        } else {
+            bgAudio.pause();
+        }
+    }
+
     function stopTimer() {
         clearInterval(timer);
         isRunning = false;
-        document.getElementById('startBtn').textContent = "TIẾP TỤC";
+        bgAudio.pause();
+        document.getElementById('startBtn').textContent = isWorkMode ? "BẮT ĐẦU" : "TIẾP TỤC";
     }
 
     function resetTimer() {
         btnVibrate();
         clearInterval(timer); isRunning = false;
+        bgAudio.pause();
         timeLeft = Math.round((isWorkMode ? appSettings.workTime : appSettings.breakTime) * 60);
         updateDisplay();
         document.getElementById('startBtn').textContent = "BẮT ĐẦU";
     }
 
     function triggerAlarm() {
+        bgAudio.pause();
         const alarm = document.getElementById('alarmAudio');
         alarm.loop = true;
         alarm.play().catch(() => {});
@@ -289,11 +305,20 @@ Src gốc cần sửa:
             alarm.pause();
             alarm.currentTime = 0;
             document.getElementById('alarmOverlay').style.display = 'none';
-            if (isWorkMode) recordSession();
-            isWorkMode = !isWorkMode;
-            document.body.className = isWorkMode ? 'work-mode' : 'break-mode';
-            document.getElementById('status').textContent = isWorkMode ? 'SẴN SÀNG HỌC' : 'SẴN SÀNG NGHỈ';
-            resetTimer();
+            
+            if (isWorkMode) {
+                recordSession();
+                isWorkMode = false;
+                document.body.className = 'break-mode';
+                document.getElementById('status').textContent = 'ĐANG NGHỈ NGƠI';
+                resetTimer();
+                toggleTimer(); 
+            } else {
+                isWorkMode = true;
+                document.body.className = 'work-mode';
+                document.getElementById('status').textContent = 'SẴN SÀNG HỌC';
+                resetTimer();
+            }
         };
     }
 
@@ -313,7 +338,8 @@ Src gốc cần sửa:
     function previewMusic(url, id) {
         appSettings[id] = url;
         saveAppData({ settings: appSettings });
-        if (url === 'none') bgAudio.pause(); 
+        if (isRunning) playModeMusic();
+        else if (url === 'none') bgAudio.pause(); 
         else { bgAudio.src = url; bgAudio.play().catch(()=>{}); }
     }
 
@@ -327,7 +353,6 @@ Src gốc cần sửa:
         const minSorted = [...entries].sort((a, b) => a[1] - b[1]);
         document.getElementById('minDay').textContent = minSorted[0][0];
         document.getElementById('minVal').textContent = formatTime(minSorted[0][1]);
-
         renderHistoryTable(minutesObj);
     }
 
@@ -350,7 +375,14 @@ Src gốc cần sửa:
         if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'line',
-            data: { labels, datasets: [{ label: 'Phút học', data, borderColor: '#1a2a6c', fill: true, tension: 0.4 }] },
+            data: { labels, datasets: [{ 
+                label: 'Thời gian học', 
+                data, 
+                borderColor: '#3498db', 
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                fill: true, 
+                tension: 0.4 
+            }] },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -359,14 +391,26 @@ Src gốc cần sửa:
                         min: labels[labels.length - 30] || labels[0],
                         max: labels[labels.length - 1]
                     },
-                    y: { beginAtZero: true }
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                const h = Math.floor(value / 60);
+                                const m = Math.floor(value % 60);
+                                return h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
+                            }
+                        }
+                    }
                 },
                 plugins: {
                     zoom: {
-                        pan: {
-                            enabled: true,
-                            mode: 'x',
-                            threshold: 10
+                        pan: { enabled: true, mode: 'x', threshold: 10 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Thời gian: ' + formatTime(context.raw);
+                            }
                         }
                     }
                 }

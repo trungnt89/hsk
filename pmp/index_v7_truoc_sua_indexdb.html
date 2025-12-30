@@ -144,55 +144,14 @@
 </nav>
 
 <script>
-/** * LƯU TRỮ INDEXEDDB 
- * Thay thế cơ chế localStorage để hỗ trợ dữ liệu lớn và bền vững hơn.
- */
-const DB_NAME = 'PMP_PRO_DB';
-const DB_STORE = 'app_state';
-let db;
+let state = JSON.parse(localStorage.getItem('PMP_PRO_STABLE')) || {
+    set: 'DATA_SET_1', tab: 'todo', diffFilter: null, progress: {}, lastIdx: 0, vocab: []
+};
+if(!state.vocab) state.vocab = [];
 
-function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 1);
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains(DB_STORE)) {
-                db.createObjectStore(DB_STORE);
-            }
-        };
-        request.onsuccess = (e) => {
-            db = e.target.result;
-            resolve();
-        };
-        request.onerror = (e) => reject("DB Init Error");
-    });
-}
-
-async function loadState() {
-    return new Promise((resolve) => {
-        const tx = db.transaction(DB_STORE, 'readonly');
-        const store = tx.objectStore(DB_STORE);
-        const request = store.get('current_state');
-        request.onsuccess = () => {
-            const data = request.result;
-            resolve(data || {
-                set: 'DATA_SET_1', tab: 'todo', diffFilter: null, progress: {}, lastIdx: 0, vocab: []
-            });
-        };
-    });
-}
-
-async function save() {
-    state.lastIdx = idx;
-    const tx = db.transaction(DB_STORE, 'readwrite');
-    const store = tx.objectStore(DB_STORE);
-    store.put(state, 'current_state');
-}
-
-// ---------------------------------------------------------
-let state = {};
 let currentData = []; let filteredData = []; let idx = 0; let isFirstLoad = true;
 
+function save() { state.lastIdx = idx; localStorage.setItem('PMP_PRO_STABLE', JSON.stringify(state)); }
 function changeExamSet(v) { state.set = v; idx = 0; update(); }
 function switchTab(t) { state.tab = t; state.diffFilter = null; idx = 0; update(); }
 function toggleFilter(f) { state.diffFilter = (state.diffFilter === f) ? null : f; idx = 0; update(); }
@@ -247,6 +206,7 @@ function renderVocabList() {
     `).join('');
 }
 
+// CẬP NHẬT: CẢNH BÁO TRƯỚC KHI XÓA
 function deleteVocab(i) {
     if (confirm("Bạn có chắc chắn muốn xóa từ vựng này không?")) {
         state.vocab.splice(i, 1);
@@ -426,16 +386,7 @@ function handleSwipe() {
     if (touchEndX > touchStartX + swipeThreshold) move('prev');
 }
 
-/**
- * HÀM KHỞI CHẠY (Thay cho window.onload cũ)
- */
-async function startApp() {
-    await initDB();
-    state = await loadState();
-    update();
-}
-
-startApp();
+window.onload = update;
 </script>
 </body>
 </html>

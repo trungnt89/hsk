@@ -68,8 +68,27 @@
 
     <div class="settings-grid">
         <div class="input-group">
-            <label>ÂM THANH HỌC (DEMO)</label>
-            <select id="workMusic" onchange="previewMusic(this.value)">
+            <label>THỜI GIAN HỌC (PHÚT)</label>
+            <select id="workTime" onchange="updateTimeSetting('work', this.value)">
+                <option value="15">15 phút</option>
+                <option value="25" selected>25 phút</option>
+                <option value="45">45 phút</option>
+                <option value="60">60 phút</option>
+                <option value="90">90 phút</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>THỜI GIAN NGHỈ (PHÚT)</label>
+            <select id="breakTime" onchange="updateTimeSetting('break', this.value)">
+                <option value="5" selected>5 phút</option>
+                <option value="10">10 phút</option>
+                <option value="15">15 phút</option>
+                <option value="20">20 phút</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>ÂM THANH HỌC</label>
+            <select id="workMusic" onchange="previewMusic(this.value, 'workMusic')">
                 <option value="none">Tắt nhạc</option>
                 <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy trong vắt</option>
                 <option value="https://cdn.pixabay.com/download/audio/2023/08/09/audio_7931fcfaa5.mp3?filename=baseline-ambience-music-nearby-a-mountain-stream-161392.mp3">Suối núi yên bình</option>
@@ -77,8 +96,8 @@
             </select>
         </div>
         <div class="input-group">
-            <label>ÂM THANH NGHỈ (DEMO)</label>
-            <select id="breakMusic" onchange="previewMusic(this.value)">
+            <label>ÂM THANH NGHỈ</label>
+            <select id="breakMusic" onchange="previewMusic(this.value, 'breakMusic')">
                 <option value="none">Tắt nhạc</option>
                 <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy trong vắt</option>
                 <option value="https://cdn.pixabay.com/download/audio/2023/08/09/audio_7931fcfaa5.mp3?filename=baseline-ambience-music-nearby-a-mountain-stream-161392.mp3">Suối núi yên bình</option>
@@ -91,7 +110,6 @@
 <div class="history-card">
     <h3 style="margin:0; color: var(--dark)">📈 XU HƯỚNG HIỆU SUẤT</h3>
     <p style="font-size: 11px; color: var(--gray); margin: 5px 0;">Vuốt trái/phải trên biểu đồ để xem 100 ngày</p>
-    
     <div class="stats-summary">
         <div class="stat-box">
             <small>🏆 CAO NHẤT</small>
@@ -104,11 +122,9 @@
             <i id="minVal">0h 0p</i>
         </div>
     </div>
-
     <div class="chart-container">
         <canvas id="pomoChart"></canvas>
     </div>
-    
     <button class="main-btn btn-mock" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
 </div>
 
@@ -120,6 +136,7 @@
     let db, myChart;
     const APP_KEY = "pomodoro_app_data";
     const bgAudio = document.getElementById('bgAudio');
+    let appSettings = { workTime: 25, breakTime: 5, workMusic: 'none', breakMusic: 'none' };
 
     function btnVibrate() { if (navigator.vibrate) navigator.vibrate(50); }
 
@@ -142,6 +159,15 @@
 
     async function loadAndRender() {
         const data = await getAppData();
+        if (data.settings) {
+            appSettings = data.settings;
+            document.getElementById('workTime').value = appSettings.workTime;
+            document.getElementById('breakTime').value = appSettings.breakTime;
+            document.getElementById('workMusic').value = appSettings.workMusic;
+            document.getElementById('breakMusic').value = appSettings.breakMusic;
+            timeLeft = appSettings.workTime * 60;
+            updateDisplay();
+        }
         renderChart(data.totalMinutes || {});
         calculateStats(data.totalMinutes || {});
     }
@@ -151,18 +177,33 @@
             const tx = db.transaction("app_data", "readonly");
             const store = tx.objectStore("app_data");
             const req = store.get(APP_KEY);
-            req.onsuccess = () => res(req.result ? JSON.parse(req.result) : { history:{}, totalMinutes:{} });
+            req.onsuccess = () => res(req.result ? JSON.parse(req.result) : { history:{}, totalMinutes:{}, settings: appSettings });
         });
     }
 
-    function previewMusic(url) {
+    async function saveAppData(newData) {
+        const currentData = await getAppData();
+        const mergedData = { ...currentData, ...newData };
+        const tx = db.transaction("app_data", "readwrite");
+        tx.objectStore("app_data").put(JSON.stringify(mergedData), APP_KEY);
+    }
+
+    function updateTimeSetting(type, val) {
         btnVibrate();
-        if (url === 'none') { 
-            bgAudio.pause(); 
-        } else { 
-            bgAudio.src = url; 
-            bgAudio.play().catch(()=>{}); 
-        }
+        if (type === 'work') appSettings.workTime = parseInt(val);
+        else appSettings.breakTime = parseInt(val);
+        
+        saveAppData({ settings: appSettings });
+        if (!isRunning) resetTimer();
+    }
+
+    function previewMusic(url, id) {
+        btnVibrate();
+        appSettings[id] = url;
+        saveAppData({ settings: appSettings });
+        
+        if (url === 'none') bgAudio.pause(); 
+        else { bgAudio.src = url; bgAudio.play().catch(()=>{}); }
         if (isRunning) stopTimer();
     }
 
@@ -171,11 +212,8 @@
         if (!isRunning) {
             isRunning = true;
             document.getElementById('startBtn').textContent = "TẠM DỪNG";
-            const musicUrl = document.getElementById(isWorkMode ? 'workMusic' : 'breakMusic').value;
-            if (musicUrl !== 'none') { 
-                bgAudio.src = musicUrl; 
-                bgAudio.play().catch(()=>{}); 
-            }
+            const musicUrl = isWorkMode ? appSettings.workMusic : appSettings.breakMusic;
+            if (musicUrl !== 'none') { bgAudio.src = musicUrl; bgAudio.play().catch(()=>{}); }
             timer = setInterval(() => {
                 timeLeft--;
                 updateDisplay();
@@ -199,45 +237,49 @@
     function resetTimer() {
         btnVibrate();
         clearInterval(timer); isRunning = false;
-        timeLeft = 1500; updateDisplay();
+        timeLeft = (isWorkMode ? appSettings.workTime : appSettings.breakTime) * 60;
+        updateDisplay();
         bgAudio.pause();
         document.getElementById('startBtn').textContent = "BẮT ĐẦU";
     }
 
     function calculateStats(minutesObj) {
         const entries = Object.entries(minutesObj);
-        if (entries.length === 0) return;
+        if (entries.length === 0) {
+            document.getElementById('maxDay').textContent = "-";
+            document.getElementById('maxVal').textContent = "0h 0p";
+            document.getElementById('minDay').textContent = "-";
+            document.getElementById('minVal').textContent = "0h 0p";
+            return;
+        }
         const sorted = [...entries].sort((a, b) => b[1] - a[1]);
         document.getElementById('maxDay').textContent = sorted[0][0];
         document.getElementById('maxVal').textContent = formatTime(sorted[0][1]);
         document.getElementById('minDay').textContent = sorted[sorted.length-1][0];
-        document.getElementById('minVal').textContent = formatTime(sorted[sorted.length-1][0]);
+        document.getElementById('minVal').textContent = formatTime(sorted[sorted.length-1][1]);
     }
 
     async function generateMockData() {
         btnVibrate();
-        const data = { history: {}, totalMinutes: {} };
+        const mockMinutes = {};
         const now = new Date();
         for(let i = 0; i < 100; i++) {
             const date = new Date(now);
             date.setDate(now.getDate() - (99 - i));
             const dateStr = date.toLocaleDateString('sv-SE');
             const randomMins = Math.floor(Math.random() * 450) + 10; 
-            data.totalMinutes[dateStr] = randomMins;
-            data.history[dateStr] = Math.floor(randomMins / 25);
+            mockMinutes[dateStr] = randomMins;
         }
-        const tx = db.transaction("app_data", "readwrite");
-        tx.objectStore("app_data").put(JSON.stringify(data), APP_KEY);
-        tx.oncomplete = () => loadAndRender();
+        // Chỉ hiển thị lên biểu đồ và thống kê, KHÔNG gọi saveAppData
+        renderChart(mockMinutes);
+        calculateStats(mockMinutes);
     }
 
     function renderChart(minutesObj) {
         const ctx = document.getElementById('pomoChart').getContext('2d');
         const labels = Object.keys(minutesObj).sort();
         const data = labels.map(l => minutesObj[l]);
-
         if (myChart) myChart.destroy();
-        
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -260,11 +302,7 @@
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => `Học tập: ${formatTime(ctx.parsed.y)}`
-                        }
-                    },
+                    tooltip: { callbacks: { label: (ctx) => `Học tập: ${formatTime(ctx.parsed.y)}` } },
                     zoom: {
                         pan: { enabled: true, mode: 'x', threshold: 5 },
                         zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }
@@ -272,21 +310,11 @@
                 },
                 scales: {
                     x: { grid: { display: false }, ticks: { font: { size: 9 }, maxTicksLimit: 10 } },
-                    y: { 
-                        beginAtZero: true, 
-                        ticks: { 
-                            callback: v => formatTime(v),
-                            stepSize: 60,
-                            font: { size: 10 }
-                        } 
-                    }
+                    y: { beginAtZero: true, ticks: { callback: v => formatTime(v), stepSize: 60, font: { size: 10 } } }
                 }
             }
         });
-        
-        if(labels.length > 0) {
-            myChart.zoomScale('x', {min: labels.length - 14, max: labels.length - 1}, 'original');
-        }
+        if(labels.length > 0) myChart.zoomScale('x', {min: labels.length - 14, max: labels.length - 1}, 'original');
     }
 </script>
 </body>

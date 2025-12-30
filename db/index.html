@@ -2,95 +2,238 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Siêu Quét IndexedDB Tự Động</title>
+    <title>Hệ Thống Quản Trị IndexedDB Toàn Diện</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        .db-card { border: 1px solid #ccc; margin-bottom: 20px; padding: 15px; border-radius: 8px; background: #fff; }
-        .store-name { color: #d35400; font-weight: bold; }
-        .btn-download { background: #27ae60; color: white; padding: 5px 10px; border: none; cursor: pointer; border-radius: 4px; }
-        #log { background: #2c3e50; color: #ecf0f1; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
+        :root { --primary: #3498db; --view: #9b59b6; --export: #27ae60; --import: #f39c12; --clear: #e74c3c; --dark: #2c3e50; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; padding: 20px; color: var(--dark); }
+        .container { max-width: 1200px; margin: auto; }
+        
+        /* Header & Log */
+        .header-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; }
+        #log { background: #1e1e1e; color: #00ff00; padding: 12px; border-radius: 8px; max-height: 100px; overflow-y: auto; font-family: monospace; font-size: 12px; margin-bottom: 20px; border-left: 5px solid var(--primary); text-align: left; }
+        
+        /* Database Card */
+        .db-card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .db-title { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 1.3em; font-weight: bold; color: var(--primary); }
+        
+        /* Store Item */
+        .store-item { border: 1px solid #e1e4e8; border-radius: 8px; margin-bottom: 15px; overflow: hidden; }
+        .store-header { background: #f8f9fa; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; border-bottom: 1px solid #e1e4e8; }
+        .store-name { font-weight: bold; color: #e67e22; font-size: 15px; }
+        .badge { background: #d6eaf8; color: #2980b9; padding: 3px 12px; border-radius: 15px; font-size: 11px; font-weight: bold; margin-left: 10px; }
+        
+        /* Control Buttons */
+        .btn-group { display: flex; gap: 8px; }
+        button { padding: 8px 14px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .btn-scan { background: var(--primary); color: white; width: 100%; justify-content: center; padding: 15px; font-size: 16px; margin-bottom: 20px; }
+        .btn-view { background: var(--view); color: white; }
+        .btn-export { background: var(--export); color: white; }
+        .btn-import { background: var(--import); color: white; }
+        .btn-clear { background: var(--clear); color: white; }
+
+        /* Data Viewer Table */
+        .data-viewer { display: none; padding: 15px; background: #fff; max-height: 400px; overflow: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { background: #f1f3f5; position: sticky; top: 0; z-index: 10; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .cell-data { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; color: #666; }
+        
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
-    <h2>Máy Quét Toàn Bộ IndexedDB</h2>
-    <div id="log">Đang chờ lệnh...</div>
-    <button onclick="deepScan()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Bắt đầu Quét Toàn Bộ Hệ Thống</button>
+<div class="container">
+    <div class="header-box">
+        <h2>🛠️ IndexedDB Universal Manager</h2>
+        <p style="color: #666; font-size: 14px;">Tự động phát hiện và quản lý mọi cơ sở dữ liệu trình duyệt</p>
+    </div>
     
+    <div id="log">Sẵn sàng thực hiện yêu cầu...</div>
+    
+    <button class="btn-scan" onclick="deepScan()">🔄 QUÉT TOÀN BỘ DATABASE</button>
+
     <div id="results"></div>
+</div>
 
-    <script>
-        const log = document.getElementById('log');
-        const results = document.getElementById('results');
+<script>
+    const logEl = document.getElementById('log');
+    const resultsEl = document.getElementById('results');
 
-        function writeLog(msg) {
-            log.innerHTML += `<div>> ${msg}</div>`;
-            log.scrollTop = log.scrollHeight;
-        }
+    function writeLog(msg) {
+        const time = new Date().toLocaleTimeString();
+        logEl.innerHTML += `<div>[${time}] > ${msg}</div>`;
+        logEl.scrollTop = logEl.scrollHeight;
+    }
 
-        async function deepScan() {
-            results.innerHTML = "";
-            writeLog("Bắt đầu tìm kiếm danh sách Database...");
-
-            try {
-                // TỰ ĐỘNG lấy danh sách tất cả DB hiện có trong trình duyệt
-                const dbs = await indexedDB.databases();
-                
-                if (dbs.length === 0) {
-                    writeLog("Không tìm thấy Database nào.");
-                    return;
-                }
-
-                writeLog(`Tìm thấy ${dbs.length} Database.`);
-
-                for (const dbInfo of dbs) {
-                    writeLog(`Đang mở: ${dbInfo.name}...`);
-                    scanSpecificDB(dbInfo.name);
-                }
-            } catch (err) {
-                writeLog("Lỗi: Trình duyệt của bạn có thể không hỗ trợ liệt kê DB hoặc bị chặn bảo mật.");
+    async function deepScan() {
+        resultsEl.innerHTML = "";
+        writeLog("Đang quét các cơ sở dữ liệu khả dụng...");
+        try {
+            const dbs = await indexedDB.databases();
+            if (dbs.length === 0) {
+                writeLog("Không tìm thấy Database nào trong Origin này.");
+                return;
             }
+            dbs.forEach(dbInfo => renderDB(dbInfo.name));
+            writeLog(`Đã liệt kê ${dbs.length} Database.`);
+        } catch (e) {
+            writeLog("Lỗi: Không thể liệt kê DB. Hãy đảm bảo bạn dùng trình duyệt hiện đại.");
+        }
+    }
+
+    function renderDB(dbName) {
+        const req = indexedDB.open(dbName);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const dbCard = document.createElement('div');
+            dbCard.className = 'db-card';
+            dbCard.innerHTML = `<div class="db-title">📂 DB: ${dbName} <small>(Version: ${db.version})</small></div>`;
+
+            Array.from(db.objectStoreNames).forEach(sName => {
+                const tx = db.transaction(sName, "readonly");
+                const store = tx.objectStore(sName);
+                const countReq = store.count();
+
+                countReq.onsuccess = () => {
+                    const safeId = btoa(dbName + sName).replace(/[^a-z0-9]/gi, "");
+                    const storeDiv = document.createElement('div');
+                    storeDiv.className = 'store-item';
+                    storeDiv.innerHTML = `
+                        <div class="store-header">
+                            <div>
+                                <span class="store-name">📦 ${sName}</span>
+                                <span class="badge" id="count_${safeId}">${countReq.result} records</span>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn-view" onclick="toggleView('${dbName}', '${sName}', '${safeId}')">👁️ View List</button>
+                                <button class="btn-import" onclick="document.getElementById('file_${safeId}').click()">📥 Import</button>
+                                <button class="btn-export" onclick="exportStore('${dbName}', '${sName}')">📤 Export</button>
+                                <button class="btn-clear" onclick="clearStore('${dbName}', '${sName}', '${safeId}')">🗑️ Clear</button>
+                                <input type="file" id="file_${safeId}" onchange="importToStore(event, '${dbName}', '${sName}', '${safeId}')">
+                            </div>
+                        </div>
+                        <div class="data-viewer" id="view_${safeId}">
+                            <table id="table_${safeId}"><thead></thead><tbody></tbody></table>
+                        </div>
+                    `;
+                    dbCard.appendChild(storeDiv);
+                };
+            });
+            resultsEl.appendChild(dbCard);
+            db.close();
+        };
+    }
+
+    // --- 1. VIEW LIST ---
+    function toggleView(dbName, storeName, safeId) {
+        const viewer = document.getElementById(`view_${safeId}`);
+        if (viewer.style.display === "block") {
+            viewer.style.display = "none";
+            return;
         }
 
-        function scanSpecificDB(dbName) {
-            const request = indexedDB.open(dbName);
+        const req = indexedDB.open(dbName);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            db.transaction(storeName, "readonly").objectStore(storeName).getAll().onsuccess = (ev) => {
+                const data = ev.target.result;
+                const table = document.getElementById(`table_${safeId}`);
+                const thead = table.querySelector('thead');
+                const tbody = table.querySelector('tbody');
 
-            request.onsuccess = (e) => {
-                const db = e.target.result;
-                const storeNames = Array.from(db.objectStoreNames);
-                
-                const dbSection = document.createElement('div');
-                dbSection.className = 'db-card';
-                dbSection.innerHTML = `<h3>Database: ${dbName} (v${db.version})</h3>`;
-                results.appendChild(dbSection);
-
-                storeNames.forEach(storeName => {
-                    const tx = db.transaction(storeName, "readonly");
-                    const store = tx.objectStore(storeName);
-                    const getAll = store.getAll();
-
-                    getAll.onsuccess = () => {
-                        const data = getAll.result;
-                        const storeDiv = document.createElement('div');
-                        storeDiv.innerHTML = `
-                            <p>Bảng: <span class="store-name">${storeName}</span> - <b>${data.length}</b> bản ghi 
-                            <button class="btn-download" onclick='download('${dbName}_${storeName}', ${JSON.stringify(data).replace(/'/g, "&apos;")})'>Tải JSON</button></p>
-                        `;
-                        dbSection.appendChild(storeDiv);
-                        writeLog(`Đã quét xong bảng [${storeName}] của DB [${dbName}]`);
-                    };
-                });
+                thead.innerHTML = ""; tbody.innerHTML = "";
+                if (data.length > 0) {
+                    const keys = Object.keys(data[0]);
+                    thead.innerHTML = `<tr><th>#</th>${keys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+                    data.forEach((row, i) => {
+                        tbody.innerHTML += `<tr><td>${i+1}</td>${keys.map(k => {
+                            let val = typeof row[k] === 'object' ? JSON.stringify(row[k]) : row[k];
+                            return `<td class="cell-data" title='${val}'>${val}</td>`;
+                        }).join('')}</tr>`;
+                    });
+                } else {
+                    tbody.innerHTML = "<tr><td colspan='100%'>Bảng này hiện không có dữ liệu.</td></tr>";
+                }
+                viewer.style.display = "block";
+                db.close();
             };
-        }
+        };
+    }
 
-        function download(filename, data) {
-            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${filename}.json`;
-            a.click();
-        }
-    </script>
+    // --- 2. EXPORT ---
+    function exportStore(dbName, storeName) {
+        const req = indexedDB.open(dbName);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            db.transaction(storeName, "readonly").objectStore(storeName).getAll().onsuccess = (ev) => {
+                const blob = new Blob([JSON.stringify(ev.target.result, null, 2)], {type: 'application/json'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `Export_${dbName}_${storeName}.json`;
+                a.click();
+                writeLog(`✅ Đã xuất dữ liệu ${storeName} thành công.`);
+                db.close();
+            };
+        };
+    }
+
+    // --- 3. IMPORT ---
+    function importToStore(event, dbName, storeName, safeId) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const items = JSON.parse(e.target.result);
+                const req = indexedDB.open(dbName);
+                req.onsuccess = (ev) => {
+                    const db = ev.target.result;
+                    const tx = db.transaction(storeName, "readwrite");
+                    const store = tx.objectStore(storeName);
+                    items.forEach(item => store.put(item));
+                    tx.oncomplete = () => {
+                        writeLog(`✅ Đã nhập ${items.length} bản ghi vào ${storeName}.`);
+                        updateCount(dbName, storeName, safeId);
+                        db.close();
+                    };
+                };
+            } catch (err) { writeLog("❌ Lỗi: File JSON không hợp lệ."); }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- 4. CLEAR ---
+    function clearStore(dbName, storeName, safeId) {
+        if (!confirm(`Bạn có chắc chắn muốn xóa sạch dữ liệu trong bảng [${storeName}]?`)) return;
+        const req = indexedDB.open(dbName);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction(storeName, "readwrite");
+            tx.objectStore(storeName).clear();
+            tx.oncomplete = () => {
+                writeLog(`🗑️ Đã xóa sạch bảng ${storeName}.`);
+                updateCount(dbName, storeName, safeId);
+                document.getElementById(`view_${safeId}`).style.display = "none";
+                db.close();
+            };
+        };
+    }
+
+    function updateCount(dbName, storeName, safeId) {
+        const req = indexedDB.open(dbName);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            db.transaction(storeName, "readonly").objectStore(storeName).count().onsuccess = (ev) => {
+                document.getElementById(`count_${safeId}`).innerText = `${ev.target.result} records`;
+                db.close();
+            };
+        };
+    }
+</script>
+
 </body>
 </html>

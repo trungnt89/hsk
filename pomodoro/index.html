@@ -11,7 +11,7 @@
             --primary: #48dbfb; --dark: #2d3436; --gray: #95a5a6;
             /* Ảnh minh họa học tập và nghỉ ngơi */
             --work-img: url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&q=80&w=1000');
-            --break-img: url('https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1000');
+            --break-img: url('https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&q=80&w=1000');
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -24,7 +24,7 @@
         }
 
         .app-card {
-            background: rgba(255, 255, 255, 0.9); /* Làm mờ nhẹ card để thấy nền */
+            background: rgba(255, 255, 255, 0.9); 
             backdrop-filter: blur(10px);
             width: 100%; max-width: 400px;
             padding: 30px 20px; border-radius: 30px;
@@ -159,7 +159,6 @@
     let pomoCompletedToday = 0, db;
     const alarm = document.getElementById('alarmAudio');
 
-    // KHỞI TẠO DB
     const request = indexedDB.open("PomoMobileDB", 1);
     request.onupgradeneeded = (e) => {
         db = e.target.result;
@@ -208,7 +207,6 @@
         };
     }
 
-    // LOGIC CHÍNH
     function toggleTimer() {
         if (!isRunning) {
             alarm.play().then(() => {
@@ -237,7 +235,6 @@
         clearInterval(timer);
         isRunning = false;
         document.getElementById('startBtn').textContent = "BẮT ĐẦU";
-        // Giữ nguyên thời gian hiện tại nhưng dừng đếm
     }
 
     function triggerAlarm() {

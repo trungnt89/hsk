@@ -268,10 +268,20 @@
                     }
                     cursor.continue();
                 } else {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hour = String(now.getHours()).padStart(2, '0');
+                    const minute = String(now.getMinutes()).padStart(2, '0');
+                    
+                    const timestamp = `${year}.${month}.${day}_${hour}.${minute}`;
+                    const fileName = `${storeName}_${timestamp}.json`;
+
                     const blob = new Blob([JSON.stringify(exportList, null, 2)], {type: 'application/json'});
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    a.download = `Export_${dbName}_${storeName}.json`;
+                    a.download = fileName;
                     a.click();
                     writeLog(`Đã xuất dữ liệu ${storeName} ra file JSON.`);
                     db.close();

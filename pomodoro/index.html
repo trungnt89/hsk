@@ -8,8 +8,9 @@
         :root {
             --work-bg: #fff5f5; --work-color: #ff5e57;
             --break-bg: #f0fff4; --break-color: #1dd1a1;
-            --primary: #48dbfb; --dark: #2d3436; --gray: #95a5a6;
-            /* Ảnh minh họa học tập và nghỉ ngơi */
+            --primary: #48dbfb; 
+            --dark: #1a2a6c; /* Đã thay đổi từ màu đen sang Xanh Navy sâu */
+            --gray: #95a5a6;
             --work-img: url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&q=80&w=1000');
             --break-img: url('https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&q=80&w=1000');
         }
@@ -49,7 +50,7 @@
         }
 
         #startBtn { background: var(--dark); color: white; }
-        #startBtn:active { transform: scale(0.96); }
+        .main-btn:active { transform: scale(0.95); opacity: 0.9; }
 
         #stopAlarmBtn { 
             background: #ff9f43; color: white; display: none;
@@ -62,8 +63,9 @@
         .sec-btn {
             background: #f1f2f6; border: none; padding: 12px;
             border-radius: 15px; font-weight: 600; color: var(--dark);
-            cursor: pointer;
+            cursor: pointer; transition: 0.2s;
         }
+        .sec-btn:active { transform: scale(0.95); background: #e2e3e9; }
 
         .goal-box {
             margin-top: 25px; padding: 20px; background: rgba(253, 253, 253, 0.5);
@@ -85,7 +87,7 @@
         .input-group label { font-size: 11px; color: var(--gray); margin-bottom: 5px; text-transform: uppercase; }
         .input-group input {
             width: 80px; padding: 10px; text-align: center; border: 2px solid #f1f2f6;
-            border-radius: 12px; font-weight: 700; font-size: 1rem;
+            border-radius: 12px; font-weight: 700; font-size: 1rem; color: var(--dark);
         }
 
         .history-card {
@@ -102,7 +104,6 @@
             75% { transform: rotate(-2deg); } 100% { transform: rotate(0); }
         }
 
-        /* Thống nhất hình nền theo Mode */
         body.work-mode { background-image: var(--work-img); }
         body.work-mode .status-badge { background: #ffeaea; color: var(--work-color); }
         body.break-mode { background-image: var(--break-img); }
@@ -157,72 +158,91 @@
 <script>
     let timer, isRunning = false, isWorkMode = true, timeLeft;
     let pomoCompletedToday = 0, db;
+    const APP_KEY = "pomodoro_app_data";
     const alarm = document.getElementById('alarmAudio');
 
-    const request = indexedDB.open("PomoMobileDB", 1);
+    // Hàm hỗ trợ rung
+    function btnVibrate() {
+        if (navigator.vibrate) navigator.vibrate(50);
+    }
+
+    const request = indexedDB.open("PomoUnifiedDB", 1);
     request.onupgradeneeded = (e) => {
         db = e.target.result;
-        db.createObjectStore("settings", { keyPath: "id" });
-        db.createObjectStore("history", { keyPath: "date" });
+        if (!db.objectStoreNames.contains("app_data")) {
+            db.createObjectStore("app_data");
+        }
     };
     request.onsuccess = (e) => {
         db = e.target.result;
-        loadFromDB();
+        initApp();
     };
 
-    function loadFromDB() {
-        db.transaction("settings").objectStore("settings").get("config").onsuccess = (e) => {
-            if(e.target.result) {
-                document.getElementById('workInput').value = e.target.result.work;
-                document.getElementById('breakInput').value = e.target.result.break;
-                resetTimer();
-            }
-        };
-        renderHistory();
+    async function initApp() {
+        const data = await getAppData();
+        document.getElementById('workInput').value = data.settings.work;
+        document.getElementById('breakInput').value = data.settings.break;
+        renderHistory(data.history);
+        resetTimer(true);
     }
 
-    function saveSettings() {
-        const work = parseFloat(document.getElementById('workInput').value);
-        const breakTime = parseFloat(document.getElementById('breakInput').value);
-        db.transaction("settings", "readwrite").objectStore("settings").put({ id: "config", work, break: breakTime });
-        if(!isRunning) resetTimer();
+    function getAppData() {
+        return new Promise((resolve) => {
+            const tx = db.transaction("app_data", "readonly");
+            const store = tx.objectStore("app_data");
+            const req = store.get(APP_KEY);
+            req.onsuccess = () => {
+                const defaultData = { 
+                    settings: { work: 25, break: 5 }, 
+                    history: {} 
+                };
+                resolve(req.result ? JSON.parse(req.result) : defaultData);
+            };
+        });
     }
 
-    async function renderHistory() {
-        const store = db.transaction("history").objectStore("history");
-        store.getAll().onsuccess = (e) => {
-            const data = e.target.result.sort((a,b) => new Date(b.date) - new Date(a.date));
-            const today = new Date().toLocaleDateString('sv-SE');
-            
-            document.getElementById('historyList').innerHTML = data.map(item => `
-                <div class="history-item">
-                    <span style="color:#7f8c8d">${item.date === today ? 'Hôm nay' : item.date}</span>
-                    <span style="font-weight:bold">${item.count} Lượt</span>
-                </div>
-            `).join('');
+    function saveAppData(data) {
+        return new Promise((resolve) => {
+            const tx = db.transaction("app_data", "readwrite");
+            const store = tx.objectStore("app_data");
+            const req = store.put(JSON.stringify(data), APP_KEY);
+            req.onsuccess = () => resolve();
+        });
+    }
 
-            const todayData = data.find(i => i.date === today);
-            pomoCompletedToday = todayData ? todayData.count : 0;
-            updateUI();
-        };
+    async function saveSettings() {
+        const data = await getAppData();
+        data.settings.work = parseFloat(document.getElementById('workInput').value);
+        data.settings.break = parseFloat(document.getElementById('breakInput').value);
+        await saveAppData(data);
+        if(!isRunning) resetTimer(true);
+    }
+
+    function renderHistory(historyObj) {
+        const today = new Date().toLocaleDateString('sv-SE');
+        const sortedDates = Object.keys(historyObj).sort((a, b) => new Date(b) - new Date(a));
+        
+        document.getElementById('historyList').innerHTML = sortedDates.map(date => `
+            <div class="history-item">
+                <span style="color:#7f8c8d">${date === today ? 'Hôm nay' : date}</span>
+                <span style="font-weight:bold">${historyObj[date]} Lượt</span>
+            </div>
+        `).join('');
+
+        pomoCompletedToday = historyObj[today] || 0;
+        updateUI();
     }
 
     function toggleTimer() {
+        btnVibrate();
         if (!isRunning) {
-            alarm.play().then(() => {
-                alarm.pause(); 
-                alarm.currentTime = 0;
-            }).catch(() => {});
-
+            alarm.play().then(() => { alarm.pause(); alarm.currentTime = 0; }).catch(() => {});
             isRunning = true;
             document.getElementById('startBtn').textContent = "TẠM DỪNG";
             timer = setInterval(() => {
                 timeLeft--;
                 updateDisplay();
-                if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    triggerAlarm();
-                }
+                if (timeLeft <= 0) { clearInterval(timer); triggerAlarm(); }
             }, 1000);
         } else {
             clearInterval(timer);
@@ -232,6 +252,7 @@
     }
 
     function stopTimer() {
+        btnVibrate();
         clearInterval(timer);
         isRunning = false;
         document.getElementById('startBtn').textContent = "BẮT ĐẦU";
@@ -244,16 +265,18 @@
         if (navigator.vibrate) navigator.vibrate([500, 300, 500]);
     }
 
-    function stopAlarm() {
+    async function stopAlarm() {
+        btnVibrate();
         alarm.pause(); alarm.currentTime = 0;
         document.getElementById('stopAlarmBtn').style.display = 'none';
         document.getElementById('startBtn').style.display = 'block';
         
         if (isWorkMode) {
-            pomoCompletedToday++;
-            const date = new Date().toLocaleDateString('sv-SE');
-            db.transaction("history", "readwrite").objectStore("history").put({ date, count: pomoCompletedToday });
-            renderHistory();
+            const data = await getAppData();
+            const today = new Date().toLocaleDateString('sv-SE');
+            data.history[today] = (data.history[today] || 0) + 1;
+            await saveAppData(data);
+            renderHistory(data.history);
         }
         switchMode();
     }
@@ -280,7 +303,8 @@
         document.getElementById('progressBar').style.width = Math.min((pomoCompletedToday/4)*100, 100) + "%";
     }
 
-    function resetTimer() {
+    function resetTimer(isInit = false) {
+        if(!isInit) btnVibrate();
         clearInterval(timer); isRunning = false; isWorkMode = true;
         timeLeft = parseFloat(document.getElementById('workInput').value) * 60;
         document.getElementById('status').textContent = "Sẵn sàng";

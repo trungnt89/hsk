@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Pro - Goal 4/Day</title>
+    <style>
+        :root { --work: #e74c3c; --break: #27ae60; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 380px; text-align: center; }
+        
+        .status-label { font-size: 1.2rem; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+        .timer-display { font-size: 5rem; font-weight: 800; color: #2c3e50; margin: 10px 0; }
+        
+        .controls button { padding: 12px 20px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; border-radius: 8px; margin: 5px; color: white; transition: 0.2s; }
+        #startBtn { background: #3498db; }
+        #stopAlarmBtn { background: #f1c40f; color: #333; display: none; width: 100%; margin-top: 10px; }
+        #resetBtn { background: #95a5a6; }
+
+        .goal-section { margin-top: 25px; padding: 15px; background: #f8f9fa; border-radius: 12px; }
+        .progress-container { background: #eee; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { background: var(--break); height: 100%; width: 0%; transition: 0.5s; }
+        .goal-text { font-size: 13px; color: #666; }
+
+        .settings { margin-top: 20px; display: flex; justify-content: space-around; border-top: 1px solid #eee; padding-top: 15px; }
+        .setting-group { display: flex; flex-direction: column; font-size: 12px; }
+        .setting-group input { width: 50px; padding: 5px; text-align: center; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px; }
+
+        body.work-mode { background: #fdecea; }
+        body.work-mode .status-label { color: var(--work); }
+        body.break-mode { background: #ebf9f1; }
+        body.break-mode .status-label { color: var(--break); }
+    </style>
+</head>
+<body class="work-mode">
+
+<div class="container">
+    <div id="status" class="status-label">Sẵn sàng</div>
+    <div class="timer-display" id="timer">25:00</div>
+
+    <div class="controls">
+        <button id="startBtn" onclick="toggleTimer()">BẮT ĐẦU</button>
+        <button id="resetBtn" onclick="resetTimer()">ĐẶT LẠI</button>
+        <button id="stopAlarmBtn" onclick="stopAlarm()">DỪNG CHUÔNG 🔔</button>
+    </div>
+
+    <div class="goal-section">
+        <div class="goal-text">Mục tiêu hôm nay: <span id="pomoCount">0</span>/4 Pomodoro</div>
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <div id="goalMsg" style="font-size: 11px; color: #27ae60; font-weight: bold;"></div>
+    </div>
+
+    <div class="settings">
+        <div class="setting-group">
+            <label>Làm việc</label>
+            <input type="number" id="workInput" value="25" onchange="saveSettings()">
+        </div>
+        <div class="setting-group">
+            <label>Nghỉ ngơi</label>
+            <input type="number" id="breakInput" value="5" onchange="saveSettings()">
+        </div>
+    </div>
+</div>
+
+<audio id="alarmAudio" loop>
+    <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+    let timer, isRunning = false, isWorkMode = true, timeLeft;
+    let pomoCompleted = 0;
+    let db;
+
+    // --- KHỞI TẠO INDEXEDDB ---
+    const request = indexedDB.open("PomodoroDB", 1);
+    request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        db.createObjectStore("settings", { keyPath: "id" });
+        db.createObjectStore("history", { keyPath: "date" });
+    };
+    request.onsuccess = (e) => {
+        db = e.target.result;
+        loadData();
+    };
+
+    function loadData() {
+        // Load Settings
+        const tx = db.transaction("settings", "readonly");
+        const store = tx.objectStore("settings");
+        store.get("config").onsuccess = (e) => {
+            if(e.target.result) {
+                document.getElementById('workInput').value = e.target.result.work;
+                document.getElementById('breakInput').value = e.target.result.break;
+                resetTimer();
+            }
+        };
+
+        // Load History (Hôm nay)
+        const dateStr = new Date().toLocaleDateString();
+        const txH = db.transaction("history", "readonly");
+        txH.objectStore("history").get(dateStr).onsuccess = (e) => {
+            if(e.target.result) {
+                pomoCompleted = e.target.result.count;
+                updateGoalUI();
+            }
+        };
+    }
+
+    function saveSettings() {
+        const config = {
+            id: "config",
+            work: parseInt(document.getElementById('workInput').value),
+            break: parseInt(document.getElementById('breakInput').value)
+        };
+        const tx = db.transaction("settings", "readwrite");
+        tx.objectStore("settings").put(config);
+        if(!isRunning) resetTimer();
+    }
+
+    function saveHistory() {
+        const dateStr = new Date().toLocaleDateString();
+        const tx = db.transaction("history", "readwrite");
+        tx.objectStore("history").put({ date: dateStr, count: pomoCompleted });
+    }
+
+    // --- LOGIC TIMER ---
+    function updateDisplay() {
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        document.getElementById('timer').textContent = timeStr;
+        document.title = `${timeStr} - Pomodoro`;
+    }
+
+    function toggleTimer() {
+        if (isRunning) {
+            clearInterval(timer);
+            document.getElementById('startBtn').textContent = "TIẾP TỤC";
+        } else {
+            document.getElementById('startBtn').textContent = "TẠM DỪNG";
+            timer = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    startAlarm();
+                }
+            }, 1000);
+        }
+        isRunning = !isRunning;
+    }
+
+    function startAlarm() {
+        const alarm = document.getElementById('alarmAudio');
+        alarm.play();
+        document.getElementById('stopAlarmBtn').style.display = 'block';
+        document.getElementById('startBtn').disabled = true;
+    }
+
+    function stopAlarm() {
+        const alarm = document.getElementById('alarmAudio');
+        alarm.pause();
+        alarm.currentTime = 0;
+        document.getElementById('stopAlarmBtn').style.display = 'none';
+        document.getElementById('startBtn').disabled = false;
+        
+        if (isWorkMode) {
+            pomoCompleted++;
+            updateGoalUI();
+            saveHistory();
+        }
+        switchMode();
+    }
+
+    function switchMode() {
+        isWorkMode = !isWorkMode;
+        if (isWorkMode) {
+            timeLeft = document.getElementById('workInput').value * 60;
+            document.getElementById('status').textContent = "Làm việc!";
+            document.body.className = "work-mode";
+        } else {
+            timeLeft = document.getElementById('breakInput').value * 60;
+            document.getElementById('status').textContent = "Nghỉ ngơi";
+            document.body.className = "break-mode";
+        }
+        updateDisplay();
+        isRunning = false;
+        toggleTimer();
+    }
+
+    function updateGoalUI() {
+        document.getElementById('pomoCount').textContent = pomoCompleted;
+        const progress = Math.min((pomoCompleted / 4) * 100, 100);
+        document.getElementById('progressBar').style.width = progress + "%";
+        if (pomoCompleted >= 4) {
+            document.getElementById('goalMsg').textContent = "🎉 TUYỆT VỜI! ĐÃ ĐẠT MỤC TIÊU NGÀY.";
+        }
+    }
+
+    function resetTimer() {
+        clearInterval(timer);
+        isRunning = false;
+        isWorkMode = true;
+        timeLeft = document.getElementById('workInput').value * 60;
+        document.getElementById('status').textContent = "Sẵn sàng";
+        document.getElementById('startBtn').textContent = "BẮT ĐẦU";
+        document.body.className = "work-mode";
+        updateDisplay();
+    }
+
+    // Khởi tạo ban đầu khi chưa có DB
+    timeLeft = 25 * 60;
+    updateDisplay();
+</script>
+
+</body>
+</html>

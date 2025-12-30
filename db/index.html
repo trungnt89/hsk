@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Siêu Quét IndexedDB Tự Động</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .db-card { border: 1px solid #ccc; margin-bottom: 20px; padding: 15px; border-radius: 8px; background: #fff; }
+        .store-name { color: #d35400; font-weight: bold; }
+        .btn-download { background: #27ae60; color: white; padding: 5px 10px; border: none; cursor: pointer; border-radius: 4px; }
+        #log { background: #2c3e50; color: #ecf0f1; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>Máy Quét Toàn Bộ IndexedDB</h2>
+    <div id="log">Đang chờ lệnh...</div>
+    <button onclick="deepScan()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Bắt đầu Quét Toàn Bộ Hệ Thống</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const log = document.getElementById('log');
+        const results = document.getElementById('results');
+
+        function writeLog(msg) {
+            log.innerHTML += `<div>> ${msg}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function deepScan() {
+            results.innerHTML = "";
+            writeLog("Bắt đầu tìm kiếm danh sách Database...");
+
+            try {
+                // TỰ ĐỘNG lấy danh sách tất cả DB hiện có trong trình duyệt
+                const dbs = await indexedDB.databases();
+                
+                if (dbs.length === 0) {
+                    writeLog("Không tìm thấy Database nào.");
+                    return;
+                }
+
+                writeLog(`Tìm thấy ${dbs.length} Database.`);
+
+                for (const dbInfo of dbs) {
+                    writeLog(`Đang mở: ${dbInfo.name}...`);
+                    scanSpecificDB(dbInfo.name);
+                }
+            } catch (err) {
+                writeLog("Lỗi: Trình duyệt của bạn có thể không hỗ trợ liệt kê DB hoặc bị chặn bảo mật.");
+            }
+        }
+
+        function scanSpecificDB(dbName) {
+            const request = indexedDB.open(dbName);
+
+            request.onsuccess = (e) => {
+                const db = e.target.result;
+                const storeNames = Array.from(db.objectStoreNames);
+                
+                const dbSection = document.createElement('div');
+                dbSection.className = 'db-card';
+                dbSection.innerHTML = `<h3>Database: ${dbName} (v${db.version})</h3>`;
+                results.appendChild(dbSection);
+
+                storeNames.forEach(storeName => {
+                    const tx = db.transaction(storeName, "readonly");
+                    const store = tx.objectStore(storeName);
+                    const getAll = store.getAll();
+
+                    getAll.onsuccess = () => {
+                        const data = getAll.result;
+                        const storeDiv = document.createElement('div');
+                        storeDiv.innerHTML = `
+                            <p>Bảng: <span class="store-name">${storeName}</span> - <b>${data.length}</b> bản ghi 
+                            <button class="btn-download" onclick='download('${dbName}_${storeName}', ${JSON.stringify(data).replace(/'/g, "&apos;")})'>Tải JSON</button></p>
+                        `;
+                        dbSection.appendChild(storeDiv);
+                        writeLog(`Đã quét xong bảng [${storeName}] của DB [${dbName}]`);
+                    };
+                });
+            };
+        }
+
+        function download(filename, data) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${filename}.json`;
+            a.click();
+        }
+    </script>
+</body>
+</html>

@@ -15,19 +15,18 @@ git add . ;  git commit -m "SRC change" ; git push;
 
 
 
-
 🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
 NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
 chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn 
 🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1. Thêm âm báo khi hết giờ học tập cũng như nghỉ giải lao.Khi hết giờ cần rung chuông hay gì đó và cần người dùng phải tắt chứ ko tự chuyển
-2. Hết 1 lượt pomodoro thì để người dùng tự start vòng tiếp theo chứ ko tự chạy liên tục
-
+1. Nhạc setting không áp dụng khi click vào bắt đầu học,kiểm tra lại lúc học và nghỉ có phát đúng nhạc setting không
+2.Biểu đồ line chuyển màu khác,ko thích màu đen
 
 
 -------------------
 Src gốc cần sửa:
--------------------<!DOCTYPE html>
+-------------------
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -66,6 +65,12 @@ Src gốc cần sửa:
         .btn-stop { background: #e67e22; }
         .btn-mock { background: #8e44ad; }
 
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); 
+            display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(10px); }
+        .alarm-box { background: white; padding: 40px; border-radius: 40px; text-align: center; width: 85%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        .btn-alarm-off { background: var(--work-color); animation: pulse 1s infinite; margin-top: 20px; box-shadow: 0 10px 20px rgba(255,94,87,0.4); }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
         .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .input-group { display: flex; flex-direction: column; text-align: left; }
         .input-group label { font-size: 10px; font-weight: 800; color: var(--gray); margin-bottom: 5px; }
@@ -81,9 +86,21 @@ Src gốc cần sửa:
         
         body.work-mode { background-image: var(--work-img); }
         body.break-mode { background-image: var(--break-img); }
+
+        /* Custom scrollbar for history log */
+        #historyLog::-webkit-scrollbar { width: 5px; }
+        #historyLog::-webkit-scrollbar-thumb { background: #eee; border-radius: 10px; }
     </style>
 </head>
 <body class="work-mode">
+
+<div id="alarmOverlay" class="overlay">
+    <div class="alarm-box">
+        <h2 id="alarmMsg" style="color: var(--dark); margin: 0;">THÔNG BÁO</h2>
+        <p style="color: var(--gray); font-weight: 600;">Vui lòng xác nhận để tiếp tục</p>
+        <button class="main-btn btn-alarm-off" onclick="stopAlarm()">TẮT CHUÔNG & XÁC NHẬN</button>
+    </div>
+</div>
 
 <div class="app-card">
     <div id="status" style="font-weight: 800; color: var(--gray); letter-spacing: 2px;">POMODORO PRO</div>
@@ -121,14 +138,18 @@ Src gốc cần sửa:
             <label>ÂM THANH HỌC</label>
             <select id="workMusic" onchange="previewMusic(this.value, 'workMusic')">
                 <option value="none">Tắt nhạc</option>
-                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy trong vắt</option>
+                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy 1</option>
+                <option value="https://cdn.pixabay.com/download/audio/2023/08/09/audio_7931fcfaa5.mp3?filename=baseline-ambience-music-nearby-a-mountain-stream-161392.mp3">Suối núi 2</option>
+                <option value="https://cdn.pixabay.com/download/audio/2025/11/09/audio_3b45b446fa.mp3?filename=mountain-stream-433499.mp3">Dòng suối 3</option>
             </select>
         </div>
         <div class="input-group">
             <label>ÂM THANH NGHỈ</label>
             <select id="breakMusic" onchange="previewMusic(this.value, 'breakMusic')">
                 <option value="none">Tắt nhạc</option>
-                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy trong vắt</option>
+                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy 1</option>
+                <option value="https://cdn.pixabay.com/download/audio/2023/08/09/audio_7931fcfaa5.mp3?filename=baseline-ambience-music-nearby-a-mountain-stream-161392.mp3">Suối núi 2</option>
+                <option value="https://cdn.pixabay.com/download/audio/2025/11/09/audio_3b45b446fa.mp3?filename=mountain-stream-433499.mp3">Dòng suối 3</option>
             </select>
         </div>
     </div>
@@ -151,7 +172,15 @@ Src gốc cần sửa:
     <div class="chart-container">
         <canvas id="pomoChart"></canvas>
     </div>
-    <button class="main-btn btn-mock" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
+
+    <div id="historyLog" style="margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 15px;">
+        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊCH SỬ</small>
+        <table style="width: 100%; font-size: 13px; color: var(--dark); border-collapse: collapse;">
+            <tbody id="historyTableBody"></tbody>
+        </table>
+    </div>
+
+    <button class="main-btn btn-mock" style="margin-top: 20px;" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
 </div>
 
 <audio id="bgAudio" loop></audio>
@@ -159,7 +188,7 @@ Src gốc cần sửa:
 
 <script>
     let timer, isRunning = false, isWorkMode = true, timeLeft = 1500;
-    let db, myChart;
+    let db, myChart, alarmInterval;
     const APP_KEY = "pomodoro_app_data";
     const bgAudio = document.getElementById('bgAudio');
     let appSettings = { workTime: 25, breakTime: 5, workMusic: 'none', breakMusic: 'none' };
@@ -212,7 +241,6 @@ Src gốc cần sửa:
         tx.objectStore("app_data").put(JSON.stringify(mergedData), APP_KEY);
     }
 
-    // --- CÁC HÀM ĐÃ FIX LỖI ---
     function updateTimeSetting(type, val) {
         btnVibrate();
         if (type === 'work') appSettings.workTime = parseFloat(val);
@@ -249,16 +277,24 @@ Src gốc cần sửa:
     }
 
     function triggerAlarm() {
-        document.getElementById('alarmAudio').play().catch(() => {});
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        setTimeout(() => {
+        const alarm = document.getElementById('alarmAudio');
+        alarm.loop = true;
+        alarm.play().catch(() => {});
+        alarmInterval = setInterval(() => { if (navigator.vibrate) navigator.vibrate(500); }, 1000);
+        document.getElementById('alarmMsg').textContent = isWorkMode ? "HẾT GIỜ HỌC RỒI!" : "HẾT GIỜ NGHỈ RỒI!";
+        document.getElementById('alarmOverlay').style.display = 'flex';
+
+        window.stopAlarm = () => {
+            clearInterval(alarmInterval);
+            alarm.pause();
+            alarm.currentTime = 0;
+            document.getElementById('alarmOverlay').style.display = 'none';
+            if (isWorkMode) recordSession();
             isWorkMode = !isWorkMode;
             document.body.className = isWorkMode ? 'work-mode' : 'break-mode';
-            document.getElementById('status').textContent = isWorkMode ? 'HỌC TẬP' : 'NGHỈ NGƠI';
-            if (!isWorkMode) recordSession();
+            document.getElementById('status').textContent = isWorkMode ? 'SẴN SÀNG HỌC' : 'SẴN SÀNG NGHỈ';
             resetTimer();
-            toggleTimer();
-        }, 2000);
+        };
     }
 
     async function recordSession() {
@@ -287,26 +323,65 @@ Src gốc cần sửa:
         const sorted = [...entries].sort((a, b) => b[1] - a[1]);
         document.getElementById('maxDay').textContent = sorted[0][0];
         document.getElementById('maxVal').textContent = formatTime(sorted[0][1]);
+        
+        const minSorted = [...entries].sort((a, b) => a[1] - b[1]);
+        document.getElementById('minDay').textContent = minSorted[0][0];
+        document.getElementById('minVal').textContent = formatTime(minSorted[0][1]);
+
+        renderHistoryTable(minutesObj);
+    }
+
+    function renderHistoryTable(minutesObj) {
+        const body = document.getElementById('historyTableBody');
+        const sortedKeys = Object.keys(minutesObj).sort().reverse();
+        body.innerHTML = sortedKeys.map(date => `
+            <tr style="border-bottom: 1px solid #f9f9f9;">
+                <td style="padding: 10px 0; font-weight: 600;">📅 ${date}</td>
+                <td style="padding: 10px 0; text-align: right; color: var(--dark); font-weight: 700;">${formatTime(minutesObj[date])}</td>
+            </tr>
+        `).join('');
     }
 
     function renderChart(minutesObj) {
         const ctx = document.getElementById('pomoChart').getContext('2d');
         const labels = Object.keys(minutesObj).sort();
         const data = labels.map(l => minutesObj[l]);
+        
         if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'line',
-            data: { labels, datasets: [{ label: 'Phút học', data, borderColor: '#1a2a6c', fill: true }] }
+            data: { labels, datasets: [{ label: 'Phút học', data, borderColor: '#1a2a6c', fill: true, tension: 0.4 }] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        min: labels[labels.length - 30] || labels[0],
+                        max: labels[labels.length - 1]
+                    },
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    zoom: {
+                        pan: {
+                            enabled: true,
+                            mode: 'x',
+                            threshold: 10
+                        }
+                    }
+                }
+            }
         });
     }
 
     function generateMockData() {
         const mock = {};
-        for(let i=0; i<10; i++) {
+        for(let i=0; i<100; i++) {
             const d = new Date(); d.setDate(d.getDate() - i);
-            mock[d.toLocaleDateString('sv-SE')] = Math.floor(Math.random()*100);
+            mock[d.toLocaleDateString('sv-SE')] = Math.floor(Math.random()*300);
         }
         renderChart(mock);
+        calculateStats(mock);
     }
 </script>
 </body>

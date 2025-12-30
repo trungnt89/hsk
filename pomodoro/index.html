@@ -37,7 +37,6 @@
         .btn-stop { background: #e67e22; }
         .btn-mock { background: #8e44ad; }
 
-        /* Style cho Alarm Overlay */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); 
             display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(10px); }
         .alarm-box { background: white; padding: 40px; border-radius: 40px; text-align: center; width: 85%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
@@ -59,6 +58,9 @@
         
         body.work-mode { background-image: var(--work-img); }
         body.break-mode { background-image: var(--break-img); }
+
+        #historyLog::-webkit-scrollbar { width: 5px; }
+        #historyLog::-webkit-scrollbar-thumb { background: #eee; border-radius: 10px; }
     </style>
 </head>
 <body class="work-mode">
@@ -107,14 +109,18 @@
             <label>ÂM THANH HỌC</label>
             <select id="workMusic" onchange="previewMusic(this.value, 'workMusic')">
                 <option value="none">Tắt nhạc</option>
-                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy trong vắt</option>
+                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy 1</option>
+                <option value="https://cdn.pixabay.com/download/audio/2023/08/09/audio_7931fcfaa5.mp3?filename=baseline-ambience-music-nearby-a-mountain-stream-161392.mp3">Suối núi 2</option>
+                <option value="https://cdn.pixabay.com/download/audio/2025/11/09/audio_3b45b446fa.mp3?filename=mountain-stream-433499.mp3">Dòng suối 3</option>
             </select>
         </div>
         <div class="input-group">
             <label>ÂM THANH NGHỈ</label>
             <select id="breakMusic" onchange="previewMusic(this.value, 'breakMusic')">
                 <option value="none">Tắt nhạc</option>
-                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy trong vắt</option>
+                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy 1</option>
+                <option value="https://cdn.pixabay.com/download/audio/2023/08/09/audio_7931fcfaa5.mp3?filename=baseline-ambience-music-nearby-a-mountain-stream-161392.mp3">Suối núi 2</option>
+                <option value="https://cdn.pixabay.com/download/audio/2025/11/09/audio_3b45b446fa.mp3?filename=mountain-stream-433499.mp3">Dòng suối 3</option>
             </select>
         </div>
     </div>
@@ -137,7 +143,15 @@
     <div class="chart-container">
         <canvas id="pomoChart"></canvas>
     </div>
-    <button class="main-btn btn-mock" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
+
+    <div id="historyLog" style="margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 15px;">
+        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊST SỬ</small>
+        <table style="width: 100%; font-size: 13px; color: var(--dark); border-collapse: collapse;">
+            <tbody id="historyTableBody"></tbody>
+        </table>
+    </div>
+
+    <button class="main-btn btn-mock" style="margin-top: 20px;" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
 </div>
 
 <audio id="bgAudio" loop></audio>
@@ -175,6 +189,8 @@
             appSettings = data.settings;
             document.getElementById('workTime').value = appSettings.workTime;
             document.getElementById('breakTime').value = appSettings.breakTime;
+            document.getElementById('workMusic').value = appSettings.workMusic;
+            document.getElementById('breakMusic').value = appSettings.breakMusic;
             timeLeft = Math.round(appSettings.workTime * 60);
             updateDisplay();
         }
@@ -210,6 +226,7 @@
         btnVibrate();
         if (!isRunning) {
             isRunning = true;
+            playModeMusic();
             document.getElementById('startBtn').textContent = "TẠM DỪNG";
             timer = setInterval(() => {
                 timeLeft--;
@@ -219,28 +236,38 @@
         } else { stopTimer(); }
     }
 
+    function playModeMusic() {
+        const musicUrl = isWorkMode ? appSettings.workMusic : appSettings.breakMusic;
+        if (musicUrl && musicUrl !== 'none') {
+            bgAudio.src = musicUrl;
+            bgAudio.play().catch(() => console.log("Interaction required for audio"));
+        } else {
+            bgAudio.pause();
+        }
+    }
+
     function stopTimer() {
         clearInterval(timer);
         isRunning = false;
-        document.getElementById('startBtn').textContent = "TIẾP TỤC";
+        bgAudio.pause();
+        document.getElementById('startBtn').textContent = isWorkMode ? "BẮT ĐẦU" : "TIẾP TỤC";
     }
 
     function resetTimer() {
         btnVibrate();
         clearInterval(timer); isRunning = false;
+        bgAudio.pause();
         timeLeft = Math.round((isWorkMode ? appSettings.workTime : appSettings.breakTime) * 60);
         updateDisplay();
         document.getElementById('startBtn').textContent = "BẮT ĐẦU";
     }
 
     function triggerAlarm() {
+        bgAudio.pause();
         const alarm = document.getElementById('alarmAudio');
         alarm.loop = true;
         alarm.play().catch(() => {});
-        
-        // Rung chuông liên tục mỗi giây
         alarmInterval = setInterval(() => { if (navigator.vibrate) navigator.vibrate(500); }, 1000);
-        
         document.getElementById('alarmMsg').textContent = isWorkMode ? "HẾT GIỜ HỌC RỒI!" : "HẾT GIỜ NGHỈ RỒI!";
         document.getElementById('alarmOverlay').style.display = 'flex';
 
@@ -250,13 +277,19 @@
             alarm.currentTime = 0;
             document.getElementById('alarmOverlay').style.display = 'none';
             
-            if (isWorkMode) recordSession();
-            
-            isWorkMode = !isWorkMode;
-            document.body.className = isWorkMode ? 'work-mode' : 'break-mode';
-            document.getElementById('status').textContent = isWorkMode ? 'SẴN SÀNG HỌC' : 'SẴN SÀNG NGHỈ';
-            
-            resetTimer(); // Dừng tại đây, chờ người dùng bấm "Bắt đầu" vòng mới
+            if (isWorkMode) {
+                recordSession();
+                isWorkMode = false;
+                document.body.className = 'break-mode';
+                document.getElementById('status').textContent = 'ĐANG NGHỈ NGƠI';
+                resetTimer();
+                toggleTimer(); // Tự động bắt đầu đếm ngược thời gian nghỉ
+            } else {
+                isWorkMode = true;
+                document.body.className = 'work-mode';
+                document.getElementById('status').textContent = 'SẴN SÀNG HỌC';
+                resetTimer();
+            }
         };
     }
 
@@ -276,7 +309,8 @@
     function previewMusic(url, id) {
         appSettings[id] = url;
         saveAppData({ settings: appSettings });
-        if (url === 'none') bgAudio.pause(); 
+        if (isRunning) playModeMusic();
+        else if (url === 'none') bgAudio.pause(); 
         else { bgAudio.src = url; bgAudio.play().catch(()=>{}); }
     }
 
@@ -286,26 +320,67 @@
         const sorted = [...entries].sort((a, b) => b[1] - a[1]);
         document.getElementById('maxDay').textContent = sorted[0][0];
         document.getElementById('maxVal').textContent = formatTime(sorted[0][1]);
+        
+        const minSorted = [...entries].sort((a, b) => a[1] - b[1]);
+        document.getElementById('minDay').textContent = minSorted[0][0];
+        document.getElementById('minVal').textContent = formatTime(minSorted[0][1]);
+        renderHistoryTable(minutesObj);
+    }
+
+    function renderHistoryTable(minutesObj) {
+        const body = document.getElementById('historyTableBody');
+        const sortedKeys = Object.keys(minutesObj).sort().reverse();
+        body.innerHTML = sortedKeys.map(date => `
+            <tr style="border-bottom: 1px solid #f9f9f9;">
+                <td style="padding: 10px 0; font-weight: 600;">📅 ${date}</td>
+                <td style="padding: 10px 0; text-align: right; color: var(--dark); font-weight: 700;">${formatTime(minutesObj[date])}</td>
+            </tr>
+        `).join('');
     }
 
     function renderChart(minutesObj) {
         const ctx = document.getElementById('pomoChart').getContext('2d');
         const labels = Object.keys(minutesObj).sort();
         const data = labels.map(l => minutesObj[l]);
+        
         if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'line',
-            data: { labels, datasets: [{ label: 'Phút học', data, borderColor: '#1a2a6c', fill: true }] }
+            data: { labels, datasets: [{ 
+                label: 'Phút học', 
+                data, 
+                borderColor: '#3498db', 
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                fill: true, 
+                tension: 0.4 
+            }] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        min: labels[labels.length - 30] || labels[0],
+                        max: labels[labels.length - 1]
+                    },
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    zoom: {
+                        pan: { enabled: true, mode: 'x', threshold: 10 }
+                    }
+                }
+            }
         });
     }
 
     function generateMockData() {
         const mock = {};
-        for(let i=0; i<10; i++) {
+        for(let i=0; i<100; i++) {
             const d = new Date(); d.setDate(d.getDate() - i);
-            mock[d.toLocaleDateString('sv-SE')] = Math.floor(Math.random()*100);
+            mock[d.toLocaleDateString('sv-SE')] = Math.floor(Math.random()*300);
         }
         renderChart(mock);
+        calculateStats(mock);
     }
 </script>
 </body>

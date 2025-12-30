@@ -9,6 +9,9 @@
             --work-bg: #fff5f5; --work-color: #ff5e57;
             --break-bg: #f0fff4; --break-color: #1dd1a1;
             --primary: #48dbfb; --dark: #2d3436; --gray: #95a5a6;
+            /* Ảnh minh họa học tập và nghỉ ngơi */
+            --work-img: url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&q=80&w=1000');
+            --break-img: url('https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1000');
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -16,13 +19,16 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; background-color: #f7f9fb; transition: background 0.5s ease;
+            min-height: 100vh; background-color: #f7f9fb; transition: all 0.5s ease;
+            background-size: cover; background-position: center; background-repeat: no-repeat;
         }
 
         .app-card {
-            background: white; width: 100%; max-width: 400px;
+            background: rgba(255, 255, 255, 0.9); /* Làm mờ nhẹ card để thấy nền */
+            backdrop-filter: blur(10px);
+            width: 100%; max-width: 400px;
             padding: 30px 20px; border-radius: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05); text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center;
         }
 
         .status-badge {
@@ -56,10 +62,11 @@
         .sec-btn {
             background: #f1f2f6; border: none; padding: 12px;
             border-radius: 15px; font-weight: 600; color: var(--dark);
+            cursor: pointer;
         }
 
         .goal-box {
-            margin-top: 25px; padding: 20px; background: #fdfdfd;
+            margin-top: 25px; padding: 20px; background: rgba(253, 253, 253, 0.5);
             border: 1px solid #f1f2f6; border-radius: 20px; text-align: left;
         }
         .progress-container {
@@ -83,7 +90,7 @@
 
         .history-card {
             width: 100%; max-width: 400px; margin-top: 20px;
-            background: white; padding: 20px; border-radius: 25px;
+            background: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 25px;
         }
         .history-item {
             display: flex; justify-content: space-between; padding: 12px 0;
@@ -95,10 +102,10 @@
             75% { transform: rotate(-2deg); } 100% { transform: rotate(0); }
         }
 
-        /* Thống nhất màu sắc theo Mode */
-        body.work-mode { background-color: var(--work-bg); }
+        /* Thống nhất hình nền theo Mode */
+        body.work-mode { background-image: var(--work-img); }
         body.work-mode .status-badge { background: #ffeaea; color: var(--work-color); }
-        body.break-mode { background-color: var(--break-bg); }
+        body.break-mode { background-image: var(--break-img); }
         body.break-mode .status-badge { background: #e3fcef; color: var(--break-color); }
     </style>
 </head>
@@ -113,7 +120,7 @@
 
     <div class="secondary-controls">
         <button class="sec-btn" onclick="resetTimer()">Đặt lại</button>
-        <button class="sec-btn" onclick="location.reload()">Làm mới</button>
+        <button class="sec-btn" onclick="stopTimer()">DỪNG</button>
     </div>
 
     <div class="goal-box">
@@ -203,10 +210,9 @@
 
     // LOGIC CHÍNH
     function toggleTimer() {
-        // FIX BUG AUDIO MOBILE: Kích hoạt audio ngay khi người dùng nhấn nút lần đầu
         if (!isRunning) {
             alarm.play().then(() => {
-                alarm.pause(); // Phát xong dừng ngay để "mồi" trình duyệt
+                alarm.pause(); 
                 alarm.currentTime = 0;
             }).catch(() => {});
 
@@ -227,11 +233,18 @@
         }
     }
 
+    function stopTimer() {
+        clearInterval(timer);
+        isRunning = false;
+        document.getElementById('startBtn').textContent = "BẮT ĐẦU";
+        // Giữ nguyên thời gian hiện tại nhưng dừng đếm
+    }
+
     function triggerAlarm() {
         alarm.play();
         document.getElementById('stopAlarmBtn').style.display = 'block';
         document.getElementById('startBtn').style.display = 'none';
-        if (navigator.vibrate) navigator.vibrate([500, 300, 500]); // Rung mobile nếu hỗ trợ
+        if (navigator.vibrate) navigator.vibrate([500, 300, 500]);
     }
 
     function stopAlarm() {

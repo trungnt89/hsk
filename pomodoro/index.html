@@ -19,38 +19,35 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: stretch;
+            margin: 0; padding: 5px; display: flex; flex-direction: column; align-items: center;
             background-color: #f7f9fb; background-size: cover; background-position: center; transition: 0.5s;
-            min-height: 100vh; justify-content: center;
+            min-height: 100vh; overflow-x: hidden;
         }
 
-        /* Thẻ card trong suốt hơn, không mờ (blur) để nhìn rõ ảnh nền */
         .app-card, .history-card {
-            background: rgba(255, 255, 255, 0.4); backdrop-filter: none;
-            width: 100%; max-width: 650px; padding: 20px; border-radius: 0;
+            /* Yêu cầu 2: Vùng màu trắng mờ 70% */
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
+            width: 100%; max-width: 650px; padding: 15px; border-radius: 20px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center;
-            margin-left: auto; margin-right: auto;
         }
 
-        /* Full màn hình 100% cho phần Timer */
+        /* Yêu cầu 1: Sửa hiển thị 100% trên mobile */
         .app-card { 
-            min-height: 100vh; 
+            min-height: 90vh; 
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
         }
 
-        /* Ẩn phần thống kê mặc định */
         .history-card { 
             display: none; 
             overflow-y: auto;
-            max-height: 100vh;
-            min-height: 100vh;
+            max-height: 98vh;
         }
 
-        .timer-display { font-size: 5.5rem; font-weight: 800; color: var(--dark); margin: 10px 0; letter-spacing: -2px; }
+        .timer-display { font-size: 5rem; font-weight: 800; color: var(--dark); margin: 5px 0; letter-spacing: -2px; }
         
-        .main-btn { width: 100%; padding: 18px; font-size: 1.1rem; font-weight: 700; border: none; border-radius: 20px; cursor: pointer; transition: 0.2s; margin-top: 10px; color: white; }
+        .main-btn { width: 100%; padding: 15px; font-size: 1.1rem; font-weight: 700; border: none; border-radius: 20px; cursor: pointer; transition: 0.2s; margin-top: 8px; color: white; }
         #startBtn { background: var(--dark); }
         .btn-reset { background: #27ae60; }
         .btn-stop { background: #e67e22; }
@@ -62,18 +59,18 @@
         .btn-alarm-off { background: var(--work-color); animation: pulse 1s infinite; margin-top: 20px; box-shadow: 0 10px 20px rgba(255,94,87,0.4); }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .input-group { display: flex; flex-direction: column; text-align: left; }
-        .input-group label { font-size: 10px; font-weight: 800; color: var(--dark); margin-bottom: 5px; }
-        select { padding: 12px; border-radius: 12px; border: 2px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.7); font-weight: 600; cursor: pointer; overflow: hidden; text-overflow: ellipsis; color: var(--dark); }
+        .input-group label { font-size: 9px; font-weight: 800; color: var(--gray); margin-bottom: 3px; }
+        select { padding: 10px; border-radius: 12px; border: 2px solid #eee; background: white; font-weight: 600; cursor: pointer; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
 
-        .stats-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
-        .stat-box { background: rgba(255, 255, 255, 0.5); padding: 15px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.05); }
-        .stat-box small { color: var(--dark); opacity: 0.7; display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; }
-        .stat-box b { color: var(--dark); font-size: 16px; display: block; }
-        .stat-box i { font-style: normal; font-size: 12px; color: #ff5e57; font-weight: bold; }
+        .stats-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .stat-box { background: rgba(255,255,255,0.8); padding: 12px; border-radius: 15px; border: 1px solid #eee; }
+        .stat-box small { color: var(--gray); display: block; font-size: 10px; font-weight: bold; margin-bottom: 3px; }
+        .stat-box b { color: var(--dark); font-size: 14px; display: block; }
+        .stat-box i { font-style: normal; font-size: 11px; color: #ff5e57; font-weight: bold; }
 
-        .chart-container { position: relative; height: 320px; width: 100%; margin-top: 10px; background: rgba(255,255,255,0.3); border-radius: 15px; padding: 10px; }
+        .chart-container { position: relative; height: 300px; width: 100%; margin-top: 10px; }
         
         body.work-mode { background-image: var(--work-img); }
         body.break-mode { background-image: var(--break-img); }
@@ -93,16 +90,16 @@
 </div>
 
 <div class="app-card">
-    <div id="status" style="font-weight: 800; color: var(--dark); letter-spacing: 2px;">POMODORO PRO</div>
+    <div id="status" style="font-weight: 800; color: var(--gray); letter-spacing: 2px; font-size: 0.9rem;">POMODORO PRO</div>
     <div class="timer-display" id="timer">25:00</div>
 
     <button id="startBtn" class="main-btn" onclick="toggleTimer()">BẮT ĐẦU</button>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <button class="main-btn btn-reset" onclick="resetTimer()">Đặt lại</button>
         <button class="main-btn btn-stop" onclick="stopTimer()">Dừng</button>
     </div>
 
-    <button class="main-btn" style="background: rgba(149, 165, 166, 0.8); margin-top: 20px;" onclick="toggleView()">📊 XEM THỐNG KÊ</button>
+    <button class="main-btn" style="background: var(--gray); margin-top: 15px;" onclick="toggleView()">📊 XEM THỐNG KÊ</button>
 
     <div class="settings-grid">
         <div class="input-group">
@@ -166,14 +163,14 @@
         <canvas id="pomoChart"></canvas>
     </div>
 
-    <div id="historyLog" style="margin-top: 20px; text-align: left; max-height: 200px; overflow-y: auto; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px;">
-        <small style="color: var(--dark); opacity: 0.7; font-weight: 800; display: block; margin-bottom: 10px;">CHI TIẾT LỊCH SỬ</small>
-        <table style="width: 100%; font-size: 13px; color: var(--dark); border-collapse: collapse;">
+    <div id="historyLog" style="margin-top: 15px; text-align: left; max-height: 180px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px;">
+        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 8px;">CHI TIẾT LỊCH SỬ</small>
+        <table style="width: 100%; font-size: 12px; color: var(--dark); border-collapse: collapse;">
             <tbody id="historyTableBody"></tbody>
         </table>
     </div>
 
-    <button class="main-btn btn-mock" style="margin-top: 20px;" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
+    <button class="main-btn btn-mock" style="margin-top: 15px;" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
     
     <button class="main-btn" style="background: var(--dark); margin-top: 10px;" onclick="toggleView()">⬅️ QUAY LẠI TIMER</button>
 </div>
@@ -201,9 +198,7 @@
         } else {
             timerPage.style.display = 'none';
             statsPage.style.display = 'block';
-            getAppData().then(d => {
-                renderChart(d.totalMinutes || {});
-            });
+            getAppData().then(d => renderChart(d.totalMinutes || {}));
         }
     }
 
@@ -374,7 +369,7 @@
         const body = document.getElementById('historyTableBody');
         const sortedKeys = Object.keys(minutesObj).sort().reverse();
         body.innerHTML = sortedKeys.map(date => `
-            <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+            <tr style="border-bottom: 1px solid #f9f9f9;">
                 <td style="padding: 10px 0; font-weight: 600;">📅 ${date}</td>
                 <td style="padding: 10px 0; text-align: right; color: var(--dark); font-weight: 700;">${formatTime(minutesObj[date])}</td>
             </tr>
@@ -394,8 +389,8 @@
             data: { labels, datasets: [{ 
                 label: 'Thời gian học', 
                 data, 
-                borderColor: '#1a2a6c', 
-                backgroundColor: 'rgba(26, 42, 108, 0.2)',
+                borderColor: '#3498db', 
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
                 fill: true, 
                 tension: 0.4 
             }] },

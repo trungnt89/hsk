@@ -9,7 +9,7 @@
             --work-bg: #fff5f5; --work-color: #ff5e57;
             --break-bg: #f0fff4; --break-color: #1dd1a1;
             --primary: #48dbfb; 
-            --dark: #1a2a6c; /* Đã thay đổi từ màu đen sang Xanh Navy sâu */
+            --dark: #1a2a6c; 
             --gray: #95a5a6;
             --work-img: url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&q=80&w=1000');
             --break-img: url('https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&q=80&w=1000');
@@ -61,11 +61,13 @@
             display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;
         }
         .sec-btn {
-            background: #f1f2f6; border: none; padding: 12px;
-            border-radius: 15px; font-weight: 600; color: var(--dark);
+            border: none; padding: 12px;
+            border-radius: 15px; font-weight: 600;
             cursor: pointer; transition: 0.2s;
         }
-        .sec-btn:active { transform: scale(0.95); background: #e2e3e9; }
+        .btn-reset { background: #27ae60; color: white; }
+        .btn-stop { background: #e67e22; color: white; }
+        .sec-btn:active { transform: scale(0.95); opacity: 0.8; }
 
         .goal-box {
             margin-top: 25px; padding: 20px; background: rgba(253, 253, 253, 0.5);
@@ -120,8 +122,8 @@
     <button id="stopAlarmBtn" class="main-btn" onclick="stopAlarm()">DỪNG CHUÔNG 🔔</button>
 
     <div class="secondary-controls">
-        <button class="sec-btn" onclick="resetTimer()">Đặt lại</button>
-        <button class="sec-btn" onclick="stopTimer()">DỪNG</button>
+        <button class="sec-btn btn-reset" onclick="resetTimer()">Đặt lại</button>
+        <button class="sec-btn btn-stop" onclick="stopTimer()">DỪNG</button>
     </div>
 
     <div class="goal-box">
@@ -147,7 +149,7 @@
 </div>
 
 <div class="history-card">
-    <div style="font-weight:800; margin-bottom:15px">📊 LỊCH SỬ</div>
+    <div style="font-weight:800; margin-bottom:15px">📊 LỊCH SỬ HỌC TẬP</div>
     <div id="historyList"></div>
 </div>
 
@@ -161,7 +163,6 @@
     const APP_KEY = "pomodoro_app_data";
     const alarm = document.getElementById('alarmAudio');
 
-    // Hàm hỗ trợ rung
     function btnVibrate() {
         if (navigator.vibrate) navigator.vibrate(50);
     }
@@ -182,7 +183,7 @@
         const data = await getAppData();
         document.getElementById('workInput').value = data.settings.work;
         document.getElementById('breakInput').value = data.settings.break;
-        renderHistory(data.history);
+        renderHistory(data.history, data.totalMinutes || {});
         resetTimer(true);
     }
 
@@ -194,7 +195,8 @@
             req.onsuccess = () => {
                 const defaultData = { 
                     settings: { work: 25, break: 5 }, 
-                    history: {} 
+                    history: {},
+                    totalMinutes: {}
                 };
                 resolve(req.result ? JSON.parse(req.result) : defaultData);
             };
@@ -218,16 +220,20 @@
         if(!isRunning) resetTimer(true);
     }
 
-    function renderHistory(historyObj) {
+    function renderHistory(historyObj, totalMinsObj) {
         const today = new Date().toLocaleDateString('sv-SE');
         const sortedDates = Object.keys(historyObj).sort((a, b) => new Date(b) - new Date(a));
         
-        document.getElementById('historyList').innerHTML = sortedDates.map(date => `
-            <div class="history-item">
-                <span style="color:#7f8c8d">${date === today ? 'Hôm nay' : date}</span>
-                <span style="font-weight:bold">${historyObj[date]} Lượt</span>
-            </div>
-        `).join('');
+        document.getElementById('historyList').innerHTML = sortedDates.map(date => {
+            const count = historyObj[date] || 0;
+            const mins = totalMinsObj[date] || 0;
+            return `
+                <div class="history-item">
+                    <span style="color:#7f8c8d">${date === today ? 'Hôm nay' : date}</span>
+                    <span style="font-weight:bold">${count} lượt (${mins} phút)</span>
+                </div>
+            `;
+        }).join('');
 
         pomoCompletedToday = historyObj[today] || 0;
         updateUI();
@@ -274,9 +280,15 @@
         if (isWorkMode) {
             const data = await getAppData();
             const today = new Date().toLocaleDateString('sv-SE');
+            if(!data.totalMinutes) data.totalMinutes = {};
+            
+            // Chỉ cộng khi hoàn thành đúng thời gian đã cài đặt
+            const workMins = parseFloat(document.getElementById('workInput').value);
             data.history[today] = (data.history[today] || 0) + 1;
+            data.totalMinutes[today] = (data.totalMinutes[today] || 0) + workMins;
+            
             await saveAppData(data);
-            renderHistory(data.history);
+            renderHistory(data.history, data.totalMinutes);
         }
         switchMode();
     }

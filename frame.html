@@ -2,21 +2,15 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Chuyển Đổi Trang</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-
     <style>
         body, html {
             margin: 0; padding: 0;
-            height: 100vh; width: 100vw;
+            height: 100%; width: 100%;
             overflow: hidden;
             font-family: 'Segoe UI', sans-serif;
             background: #000;
-            position: fixed; /* Ngăn chặn trình duyệt đàn hồi (bounce) làm lộ thanh địa chỉ */
         }
 
         /* Nút điều khiển nổi (Floating Button) */
@@ -39,8 +33,14 @@
             gap: 10px;
         }
 
-        .toggle-btn:hover { transform: scale(1.1); background: #2980b9; }
-        .toggle-btn:active { transform: scale(0.95); }
+        .toggle-btn:hover {
+            transform: scale(1.1);
+            background: #2980b9;
+        }
+
+        .toggle-btn:active {
+            transform: scale(0.95);
+        }
 
         /* Container của các trang */
         .page-container {
@@ -55,11 +55,13 @@
             width: 100%;
             height: 100%;
             border: none;
+            /* Thay đổi: Sử dụng visibility thay vì opacity để duy trì trạng thái hoạt động của DOM */
             visibility: hidden;
             z-index: 1;
             pointer-events: none;
         }
 
+        /* Class kích hoạt trang */
         iframe.active {
             visibility: visible;
             z-index: 10;
@@ -69,7 +71,7 @@
         /* Label hiển thị tên trang đang xem */
         .page-label {
             position: fixed;
-            top: env(safe-area-inset-top, 15px); /* Tối ưu cho tai thỏ điện thoại */
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0,0,0,0.6);
@@ -104,24 +106,21 @@
         const label = document.getElementById('currentLabel');
         const btnText = document.getElementById('btnText');
 
-        // Hàm ẩn thanh địa chỉ khi load (chỉ hoạt động trên một số trình duyệt cũ)
-        window.addEventListener("load", function() {
-            setTimeout(function(){
-                window.scrollTo(0, 1);
-            }, 0);
-        });
-
         function switchPage() {
             if (isPage1) {
+                // Chuyển hiển thị sang Trang 2 nhưng Trang 1 vẫn chạy ngầm bên dưới
                 p1.classList.remove('active');
                 p2.classList.add('active');
+                
                 label.innerText = "Đang xem: Database Manager";
                 btnText.innerText = "Chuyển sang Pomodoro";
                 isPage1 = false;
                 try { p2.contentWindow.focus(); } catch(e) {}
             } else {
+                // Chuyển hiển thị sang Trang 1 nhưng Trang 2 vẫn chạy ngầm bên dưới
                 p2.classList.remove('active');
                 p1.classList.add('active');
+                
                 label.innerText = "Đang xem: Pomodoro Timer";
                 btnText.innerText = "Chuyển sang Quản lý DB";
                 isPage1 = true;
@@ -129,6 +128,7 @@
             }
         }
 
+        // Đảm bảo focus khi load xong
         p1.onload = () => { if(isPage1) p1.contentWindow.focus(); };
         p2.onload = () => { if(!isPage1) p2.contentWindow.focus(); };
     </script>

@@ -18,7 +18,7 @@
             position: fixed;
             bottom: 25px;
             right: 25px;
-            padding: 12px 24px;
+            padding: 12px 18px;
             background: #3498db;
             color: white;
             border: none;
@@ -27,19 +27,24 @@
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(0,0,0,0.4);
             z-index: 9999;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             align-items: center;
             gap: 10px;
+            
+            /* Xử lý che nội dung: Mặc định mờ và thu nhỏ */
+            opacity: 0.4;
+            max-width: 45px; 
+            overflow: hidden;
+            white-space: nowrap;
         }
 
-        .toggle-btn:hover {
-            transform: scale(1.1);
+        /* Khi người dùng tương tác: Hiện rõ và bung rộng chữ */
+        .toggle-btn:hover, .toggle-btn:active {
+            opacity: 1;
+            max-width: 250px;
             background: #2980b9;
-        }
-
-        .toggle-btn:active {
-            transform: scale(0.95);
+            transform: scale(1.05);
         }
 
         /* Container của các trang */
@@ -55,7 +60,6 @@
             width: 100%;
             height: 100%;
             border: none;
-            /* Thay đổi: Sử dụng visibility thay vì opacity để duy trì trạng thái hoạt động của DOM */
             visibility: hidden;
             z-index: 1;
             pointer-events: none;
@@ -108,19 +112,15 @@
 
         function switchPage() {
             if (isPage1) {
-                // Chuyển hiển thị sang Trang 2 nhưng Trang 1 vẫn chạy ngầm bên dưới
                 p1.classList.remove('active');
                 p2.classList.add('active');
-                
                 label.innerText = "Đang xem: Database Manager";
                 btnText.innerText = "Chuyển sang Pomodoro";
                 isPage1 = false;
                 try { p2.contentWindow.focus(); } catch(e) {}
             } else {
-                // Chuyển hiển thị sang Trang 1 nhưng Trang 2 vẫn chạy ngầm bên dưới
                 p2.classList.remove('active');
                 p1.classList.add('active');
-                
                 label.innerText = "Đang xem: Pomodoro Timer";
                 btnText.innerText = "Chuyển sang Quản lý DB";
                 isPage1 = true;
@@ -128,7 +128,6 @@
             }
         }
 
-        // Đảm bảo focus khi load xong
         p1.onload = () => { if(isPage1) p1.contentWindow.focus(); };
         p2.onload = () => { if(!isPage1) p2.contentWindow.focus(); };
     </script>

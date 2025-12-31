@@ -3,152 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomodoro & DB Manager System</title>
+    <title>Hệ Thống Chuyển Đổi Trang</title>
     <style>
-        :root {
-            --panel-bg: #2c3e50;
-            --btn-primary: #3498db;
-            --btn-success: #27ae60;
-        }
-
         body, html {
             margin: 0; padding: 0;
             height: 100%; width: 100%;
-            font-family: sans-serif;
             overflow: hidden;
-            background: #1a1a1a;
+            font-family: 'Segoe UI', sans-serif;
+            background: #000;
         }
 
-        /* Thanh điều khiển trên cùng */
-        .top-bar {
-            height: 50px;
-            background: var(--panel-bg);
+        /* Nút điều khiển nổi (Floating Button) */
+        .toggle-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 9999;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             align-items: center;
-            padding: 0 20px;
-            gap: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            z-index: 100;
+            gap: 10px;
+        }
+
+        .toggle-btn:hover {
+            transform: scale(1.1);
+            background: #2980b9;
+        }
+
+        .toggle-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Container của các trang */
+        .page-container {
             position: relative;
-        }
-
-        .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            color: white;
-            font-weight: bold;
-            font-size: 13px;
-            transition: 0.3s;
-        }
-
-        .btn-mode { background: var(--btn-primary); }
-        .btn-toggle { background: var(--btn-success); }
-        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
-
-        /* Container chứa 2 iframe */
-        .main-container {
-            display: flex;
-            height: calc(100% - 50px);
             width: 100%;
-            transition: 0.5s;
+            height: 100%;
         }
 
         iframe {
-            flex: 1;
-            border: none;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
             height: 100%;
-            background: white;
-            transition: 0.5s;
+            border: none;
+            /* Thay đổi: Sử dụng visibility thay vì opacity để duy trì trạng thái hoạt động của DOM */
+            visibility: hidden;
+            z-index: 1;
+            pointer-events: none;
         }
 
-        /* Chế độ View đơn (Focus) */
-        .focus-1 #frame2 { display: none; }
-        .focus-2 #frame1 { display: none; }
-
-        .status-dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            background: #e74c3c;
-            display: inline-block;
+        /* Class kích hoạt trang */
+        iframe.active {
+            visibility: visible;
+            z-index: 10;
+            pointer-events: auto;
         }
-        .active-dot { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
 
-        .label { color: #bdc3c7; font-size: 12px; font-weight: bold; }
+        /* Label hiển thị tên trang đang xem */
+        .page-label {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <span class="label">HỆ THỐNG QUẢN TRỊ</span>
-    <button class="btn btn-mode" onclick="toggleLayout()">🌓 ĐỔI CHẾ ĐỘ VIEW</button>
-    <button class="btn btn-toggle" id="btnSwitch" onclick="switchFocus()" style="display:none;">🔄 ĐỔI TRANG FOCUS</button>
-    
-    <div style="margin-left: auto; display: flex; gap: 20px;">
-        <div><span id="dot1" class="status-dot active-dot"></span> <span class="label">Pomodoro</span></div>
-        <div><span id="dot2" class="status-dot active-dot"></span> <span class="label">DB Manager</span></div>
+    <div class="page-label" id="currentLabel">Đang xem: Pomodoro Timer</div>
+
+    <button class="toggle-btn" onclick="switchPage()">
+        <span id="btnIcon">🔄</span> 
+        <span id="btnText">Chuyển sang Quản lý DB</span>
+    </button>
+
+    <div class="page-container">
+        <iframe src="pomodoro/index.html" id="page1" class="active"></iframe>
+        <iframe src="index.html" id="page2"></iframe>
     </div>
-</div>
 
-<div class="main-container" id="layoutContainer">
-    <iframe src="pomodoro/index.html" id="frame1" title="Pomodoro Pro"></iframe>
-    <iframe src="index.html" id="frame2" title="DB Manager"></iframe>
-</div>
+    <script>
+        let isPage1 = true;
+        const p1 = document.getElementById('page1');
+        const p2 = document.getElementById('page2');
+        const label = document.getElementById('currentLabel');
+        const btnText = document.getElementById('btnText');
 
-<script>
-    let currentMode = 'dual'; // dual, focus1, focus2
-    const container = document.getElementById('layoutContainer');
-    const btnSwitch = document.getElementById('btnSwitch');
-    const dot1 = document.getElementById('dot1');
-    const dot2 = document.getElementById('dot2');
-
-    function toggleLayout() {
-        if (currentMode === 'dual') {
-            currentMode = 'focus1';
-            container.classList.add('focus-1');
-            btnSwitch.style.display = 'block';
-            updateDots();
-        } else {
-            currentMode = 'dual';
-            container.classList.remove('focus-1', 'focus-2');
-            btnSwitch.style.display = 'none';
-            updateDots();
+        function switchPage() {
+            if (isPage1) {
+                // Chuyển hiển thị sang Trang 2 nhưng Trang 1 vẫn chạy ngầm bên dưới
+                p1.classList.remove('active');
+                p2.classList.add('active');
+                
+                label.innerText = "Đang xem: Database Manager";
+                btnText.innerText = "Chuyển sang Pomodoro";
+                isPage1 = false;
+                try { p2.contentWindow.focus(); } catch(e) {}
+            } else {
+                // Chuyển hiển thị sang Trang 1 nhưng Trang 2 vẫn chạy ngầm bên dưới
+                p2.classList.remove('active');
+                p1.classList.add('active');
+                
+                label.innerText = "Đang xem: Pomodoro Timer";
+                btnText.innerText = "Chuyển sang Quản lý DB";
+                isPage1 = true;
+                try { p1.contentWindow.focus(); } catch(e) {}
+            }
         }
-    }
 
-    function switchFocus() {
-        if (currentMode === 'focus1') {
-            currentMode = 'focus2';
-            container.classList.remove('focus-1');
-            container.classList.add('focus-2');
-        } else {
-            currentMode = 'focus1';
-            container.classList.remove('focus-2');
-            container.classList.add('focus-1');
-        }
-        updateDots();
-    }
-
-    function updateDots() {
-        if (currentMode === 'dual') {
-            dot1.classList.add('active-dot');
-            dot2.classList.add('active-dot');
-        } else if (currentMode === 'focus1') {
-            dot1.classList.add('active-dot');
-            dot2.classList.remove('active-dot');
-        } else {
-            dot1.classList.remove('active-dot');
-            dot2.classList.add('active-dot');
-        }
-    }
-
-    // Tự động reload iframe nếu cần (optional)
-    function reloadAll() {
-        document.getElementById('frame1').contentWindow.location.reload();
-        document.getElementById('frame2').contentWindow.location.reload();
-    }
-</script>
-
+        // Đảm bảo focus khi load xong
+        p1.onload = () => { if(isPage1) p1.contentWindow.focus(); };
+        p2.onload = () => { if(!isPage1) p2.contentWindow.focus(); };
+    </script>
 </body>
 </html>

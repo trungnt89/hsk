@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro & DB Manager System</title>
+    <style>
+        :root {
+            --panel-bg: #2c3e50;
+            --btn-primary: #3498db;
+            --btn-success: #27ae60;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            height: 100%; width: 100%;
+            font-family: sans-serif;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+
+        /* Thanh điều khiển trên cùng */
+        .top-bar {
+            height: 50px;
+            background: var(--panel-bg);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 100;
+            position: relative;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+
+        .btn-mode { background: var(--btn-primary); }
+        .btn-toggle { background: var(--btn-success); }
+        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
+
+        /* Container chứa 2 iframe */
+        .main-container {
+            display: flex;
+            height: calc(100% - 50px);
+            width: 100%;
+            transition: 0.5s;
+        }
+
+        iframe {
+            flex: 1;
+            border: none;
+            height: 100%;
+            background: white;
+            transition: 0.5s;
+        }
+
+        /* Chế độ View đơn (Focus) */
+        .focus-1 #frame2 { display: none; }
+        .focus-2 #frame1 { display: none; }
+
+        .status-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #e74c3c;
+            display: inline-block;
+        }
+        .active-dot { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+
+        .label { color: #bdc3c7; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <span class="label">HỆ THỐNG QUẢN TRỊ</span>
+    <button class="btn btn-mode" onclick="toggleLayout()">🌓 ĐỔI CHẾ ĐỘ VIEW</button>
+    <button class="btn btn-toggle" id="btnSwitch" onclick="switchFocus()" style="display:none;">🔄 ĐỔI TRANG FOCUS</button>
+    
+    <div style="margin-left: auto; display: flex; gap: 20px;">
+        <div><span id="dot1" class="status-dot active-dot"></span> <span class="label">Pomodoro</span></div>
+        <div><span id="dot2" class="status-dot active-dot"></span> <span class="label">DB Manager</span></div>
+    </div>
+</div>
+
+<div class="main-container" id="layoutContainer">
+    <iframe src="pomodoro/index.html" id="frame1" title="Pomodoro Pro"></iframe>
+    <iframe src="index.html" id="frame2" title="DB Manager"></iframe>
+</div>
+
+<script>
+    let currentMode = 'dual'; // dual, focus1, focus2
+    const container = document.getElementById('layoutContainer');
+    const btnSwitch = document.getElementById('btnSwitch');
+    const dot1 = document.getElementById('dot1');
+    const dot2 = document.getElementById('dot2');
+
+    function toggleLayout() {
+        if (currentMode === 'dual') {
+            currentMode = 'focus1';
+            container.classList.add('focus-1');
+            btnSwitch.style.display = 'block';
+            updateDots();
+        } else {
+            currentMode = 'dual';
+            container.classList.remove('focus-1', 'focus-2');
+            btnSwitch.style.display = 'none';
+            updateDots();
+        }
+    }
+
+    function switchFocus() {
+        if (currentMode === 'focus1') {
+            currentMode = 'focus2';
+            container.classList.remove('focus-1');
+            container.classList.add('focus-2');
+        } else {
+            currentMode = 'focus1';
+            container.classList.remove('focus-2');
+            container.classList.add('focus-1');
+        }
+        updateDots();
+    }
+
+    function updateDots() {
+        if (currentMode === 'dual') {
+            dot1.classList.add('active-dot');
+            dot2.classList.add('active-dot');
+        } else if (currentMode === 'focus1') {
+            dot1.classList.add('active-dot');
+            dot2.classList.remove('active-dot');
+        } else {
+            dot1.classList.remove('active-dot');
+            dot2.classList.add('active-dot');
+        }
+    }
+
+    // Tự động reload iframe nếu cần (optional)
+    function reloadAll() {
+        document.getElementById('frame1').contentWindow.location.reload();
+        document.getElementById('frame2').contentWindow.location.reload();
+    }
+</script>
+
+</body>
+</html>

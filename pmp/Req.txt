@@ -1,4 +1,4 @@
-https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec
+https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec?key=current_state
 
 git add . ;  git commit -m "SRC change" ; git push;
 
@@ -8,305 +8,258 @@ git add . ;  git commit -m "SRC change" ; git push;
 NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
 chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn 
 🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1. Lưu lại vĩnh cửu thông tin url của gas để dùng về sau  vào indexdb
+1. tất cả các data được Lưu trữ vào indexdb chi với 1 KEY   
 -------------------
 Src gốc cần sửa:
 -------------------
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản trị IndexedDB - Sync Google Drive</title>
+    <title>Mastery Matrix V18.1 - Clean & Top Layout</title>
     <style>
-        :root { --primary: #3498db; --view: #9b59b6; --export: #27ae60; --import: #f39c12; --clear: #e74c3c; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; }
+        :root { 
+            --primary: #4f46e5; --success: #10b981; --fail: #ef4444; 
+            --bg: #f8fafc; --text: #1e293b; --weekend: #fff1f2; --warning: #f59e0b;
+            --danger: #991b1b; --disabled: #e2e8f0;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 25px rgba(0,0,0,0.05); margin: auto; max-width: 1300px; }
         
-        .header-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; }
-        #log { background: #1e1e1e; color: #00ff00; padding: 10px; border-radius: 8px; max-height: 80px; overflow-y: auto; font-family: monospace; font-size: 11px; margin-bottom: 20px; }
-        
-        .db-card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .store-item { border: 1px solid #e1e4e8; border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
-        .store-header { background: #f8f9fa; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e1e4e8; }
-        
-        .btn-group { display: flex; gap: 5px; }
-        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 11px; color: white; transition: opacity 0.2s; }
-        button:hover { opacity: 0.8; }
-        .btn-scan { background: var(--primary); width: 100%; padding: 12px; font-size: 14px; margin-bottom: 20px; }
-        .btn-view { background: var(--view); }
-        .btn-export { background: var(--export); }
-        .btn-import { background: var(--import); }
-        .btn-clear { background: var(--clear); }
+        .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .month-label { font-weight: 800; font-size: 1.2rem; color: var(--primary); min-width: 160px; text-align: center; }
 
-        .data-viewer { display: none; padding: 10px; background: #fff; max-height: 600px; overflow: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
-        th { background: #f1f3f5; position: sticky; top: 0; padding: 10px; border: 1px solid #dee2e6; z-index: 10; }
-        td { border: 1px solid #dee2e6; padding: 8px; text-align: left; vertical-align: top; word-break: break-all; }
-        .cell-key { font-weight: bold; color: #2c3e50; background: #fdfefe; width: 150px; }
-        .cell-index { width: 40px; text-align: center; }
-        .cell-blob { color: #7f8c8d; font-style: italic; display: block; margin-bottom: 5px; }
-        
-        pre.json-pretty { 
-            background: #f8f9fa; 
-            padding: 8px; 
-            border-radius: 4px; 
-            border: 1px solid #eee; 
-            white-space: pre-wrap; 
-            font-family: 'Consolas', monospace; 
-            color: #d63384;
-            margin: 0;
-            max-height: 300px;
-            overflow: auto;
+        /* Bảng lên trên */
+        .table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 30px; }
+        table { border-collapse: collapse; width: max-content; background: white; }
+
+        .sticky-col { 
+            position: sticky; left: 0; z-index: 100; background: #fff; width: 220px; 
+            border-right: 3px solid #e2e8f0; padding: 10px; box-shadow: 4px 0 6px -4px rgba(0,0,0,0.1);
+            vertical-align: middle;
         }
         
-        .audio-ctrl { display: flex; flex-direction: column; gap: 5px; }
-        audio { height: 30px; width: 100%; max-width: 250px; }
-        .download-link { font-size: 11px; color: var(--primary); text-decoration: none; font-weight: bold; }
+        .habit-name-box { 
+            width: 100%; border: none; font-weight: 700; font-size: 14px; 
+            color: var(--text); resize: none; background: transparent; outline: none;
+            overflow: hidden; display: block; line-height: 1.4; height: auto;
+        }
 
-        .config-box { margin-bottom: 10px; text-align: left; font-size: 12px; }
-        #scriptUrl { width: 100%; padding: 5px; margin-top: 5px; border: 1px solid #ccc; }
+        .day-col { width: 45px; text-align: center; border: 1px solid #f1f5f9; vertical-align: middle; }
+        
+        .mark { 
+            width: 32px; height: 32px; margin: auto; border-radius: 8px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; background: #f1f5f9; transition: 0.2s; 
+        }
+
+        /* Vô hiệu hóa ngày tương lai hoàn toàn */
+        .future-day { opacity: 0.2; cursor: not-allowed !important; pointer-events: none; background: #eceff1 !important; }
+        .future-day .mark { display: none; } /* Ẩn luôn nút bấm ở ngày tương lai */
+        
+        .status-done { background: var(--success) !important; color: white; }
+        .status-fail { background: var(--fail) !important; color: white; }
+        .is-today { background: var(--primary) !important; color: white !important; }
+        .weekend { background: var(--weekend) !important; }
+
+        /* Dashboard xuống dưới */
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr 280px; gap: 20px; }
+        .chart-container { background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 15px; min-height: 160px; }
+        
+        .chart-row { margin-bottom: 12px; }
+        .chart-label { font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block; }
+        .bar-bg { background: #f1f5f9; height: 10px; border-radius: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; transition: width 0.6s ease; }
+
+        /* Cảnh báo phân cấp */
+        .warning-alert { padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 12px; border-left: 5px solid; }
+        .warn-yellow { background: #fffbeb; border-color: var(--warning); color: #92400e; }
+        .warn-red { background: #fef2f2; border-color: var(--fail); color: #b91c1c; font-weight: 600; }
+        .warn-danger { background: #450a0a; border-color: #f87171; color: #fecaca; animation: pulse-danger 1.5s infinite; }
+
+        @keyframes pulse-danger {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.01); background: #7f1d1d; }
+        }
+
+        .btn-delete { color: #cbd5e1; cursor: pointer; font-size: 18px; margin-left: 5px; }
+        button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 18px; font-weight: bold; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-nav { background: #f1f5f9; color: var(--primary); }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header-box">
-        <h2>📊 Trình Quản Lý Dữ Liệu Audio & JSON Cache</h2>
-        <div class="config-box">
-            <label>Google Script Web App URL:</label>
-            <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+<div class="card">
+    <div class="header-area">
+        <h2 style="margin:0; color: var(--primary)">⚔️ Kỷ Luật Toàn Diện V18.1</h2>
+        <div style="display:flex; gap:10px; align-items:center">
+            <button class="btn-nav" onclick="moveMonth(-1)">◀</button>
+            <div class="month-label" id="mLabel">Tháng 01/2026</div>
+            <button class="btn-nav" onclick="moveMonth(1)">▶</button>
+            <button class="btn-primary" onclick="addNewHabit()">+ Thêm việc</button>
         </div>
     </div>
-    
-    <div id="log">Sẵn sàng...</div>
-    <button class="btn-scan" onclick="deepScan()">🔄 QUÉT TOÀN BỘ DATABASE</button>
-    <div id="results"></div>
+
+    <div class="table-container">
+        <table>
+            <thead id="tHead"></thead>
+            <tbody id="tBody"></tbody>
+        </table>
+    </div>
+
+    <div class="dashboard">
+        <div class="chart-container">
+            <h4 style="margin:0 0 15px 0">Tỉ lệ hoàn thành (%)</h4>
+            <div id="barCharts"></div>
+        </div>
+        <div class="chart-container">
+            <h4 style="margin:0 0 10px 0">Trạng thái kỷ luật ⚠️</h4>
+            <div id="streakWarnings"></div>
+        </div>
+        <div class="chart-container" style="text-align: center; display:flex; flex-direction:column; justify-content:center; background: var(--fail); color: white; border:none">
+            <h4 style="margin:0">Yếu nhất tháng ⚠️</h4>
+            <div id="worstHabit" style="font-size: 18px; font-weight: 800; margin: 10px 0; color: #fff">--</div>
+            <p style="margin:0; opacity: 0.9; font-size: 11px;">Dựa trên dữ liệu thực tế</p>
+        </div>
+    </div>
 </div>
 
 <script>
-    const logEl = document.getElementById('log');
-    const resultsEl = document.getElementById('results');
-    const scriptUrlInput = document.getElementById('scriptUrl');
+    let habits = JSON.parse(localStorage.getItem('v16_habits')) || [{ id: 1, name: "Thói quen mẫu" }];
+    let logs = JSON.parse(localStorage.getItem('v16_logs')) || {};
+    let displayDate = new Date();
+    const today = new Date(); today.setHours(0,0,0,0);
 
-    function writeLog(msg) {
-        const time = new Date().toLocaleTimeString();
-        logEl.innerHTML += `<div>[${time}] > ${msg}</div>`;
-        logEl.scrollTop = logEl.scrollHeight;
-    }
-
-    async function deepScan() {
-        resultsEl.innerHTML = "";
-        try {
-            const dbs = await indexedDB.databases();
-            if (dbs.length === 0) {
-                writeLog("Không tìm thấy Database nào.");
-                return;
+    // HÀM QUAN TRỌNG: Xóa mọi dữ liệu tương lai nếu lỡ có trong localStorage
+    function cleanFutureData() {
+        let changed = false;
+        for (let dateKey in logs) {
+            const checkDate = new Date(dateKey);
+            if (checkDate > today) {
+                delete logs[dateKey];
+                changed = true;
             }
-            dbs.forEach(dbInfo => renderDB(dbInfo.name));
-            writeLog(`Tìm thấy ${dbs.length} Database.`);
-        } catch (e) { writeLog("Lỗi: Trình duyệt không hỗ trợ hoặc lỗi quét danh sách DB."); }
-    }
-
-    function renderDB(dbName) {
-        const req = indexedDB.open(dbName);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const dbCard = document.createElement('div');
-            dbCard.className = 'db-card';
-            dbCard.innerHTML = `<div style="margin-bottom:10px"><b>📂 DB: ${dbName}</b></div>`;
-
-            Array.from(db.objectStoreNames).forEach(sName => {
-                const safeId = btoa(unescape(encodeURIComponent(dbName + sName))).replace(/[^a-z0-9]/gi, "");
-                const storeDiv = document.createElement('div');
-                storeDiv.className = 'store-item';
-                storeDiv.innerHTML = `
-                    <div class="store-header">
-                        <span>📦 <b>${sName}</b></span>
-                        <div class="btn-group">
-                            <button class="btn-view" onclick="toggleView('${dbName}', '${sName}', '${safeId}')">👁️ View</button>
-                            <button class="btn-export" onclick="syncToCloud('${dbName}', '${sName}')">📤 Sync to Cloud</button>
-                            <button class="btn-import" onclick="syncFromCloud('${dbName}', '${sName}')">📥 Sync from Cloud</button>
-                            <button class="btn-clear" onclick="clearData('${dbName}', '${sName}', '${safeId}')">🗑️ Clear</button>
-                        </div>
-                    </div>
-                    <div class="data-viewer" id="view_${safeId}">
-                        <table id="table_${safeId}">
-                            <thead><tr><th class="cell-index">#</th><th class="cell-key">Key</th><th>Value (Content)</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                `;
-                dbCard.appendChild(storeDiv);
-            });
-            resultsEl.appendChild(dbCard);
-            db.close();
-        };
-    }
-
-    function toggleView(dbName, storeName, safeId) {
-        const viewer = document.getElementById(`view_${safeId}`);
-        if (viewer.style.display === "block") {
-            viewer.style.display = "none";
-            return;
         }
-
-        const tbody = document.getElementById(`table_${safeId}`).querySelector('tbody');
-        tbody.innerHTML = "<tr><td colspan='3'>Đang tải dữ liệu...</td></tr>";
-        viewer.style.display = "block";
-
-        const req = indexedDB.open(dbName);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction(storeName, "readonly");
-            const store = tx.objectStore(storeName);
-            const cursorReq = store.openCursor();
-            
-            tbody.innerHTML = "";
-            let count = 0;
-
-            cursorReq.onsuccess = (ev) => {
-                const cursor = ev.target.result;
-                if (cursor) {
-                    count++;
-                    const key = cursor.key;
-                    const value = cursor.value;
-                    const tr = document.createElement('tr');
-                    
-                    let valueDisplay = "";
-                    
-                    if (value instanceof Blob) {
-                        const url = URL.createObjectURL(value);
-                        const isAudio = value.type.includes('audio');
-                        valueDisplay = `
-                            <div class="audio-ctrl">
-                                <span class="cell-blob">Blob [${value.type}] - ${(value.size/1024).toFixed(2)} KB</span>
-                                ${isAudio ? `<audio controls src="${url}"></audio>` : ''}
-                                <a href="${url}" download="${key}" class="download-link">💾 Tải về máy</a>
-                            </div>`;
-                    } else if (typeof value === 'object' && value !== null) {
-                        const jsonStr = JSON.stringify(value, null, 4);
-                        valueDisplay = `<pre class="json-pretty">${jsonStr}</pre>`;
-                    } else if (typeof value === 'string') {
-                        try {
-                            const parsed = JSON.parse(value);
-                            if (typeof parsed === 'object' && parsed !== null) {
-                                valueDisplay = `<pre class="json-pretty">${JSON.stringify(parsed, null, 4)}</pre>`;
-                            } else {
-                                valueDisplay = `<span>${value}</span>`;
-                            }
-                        } catch (e) {
-                            valueDisplay = `<span>${value}</span>`;
-                        }
-                    } else {
-                        valueDisplay = `<span>${value}</span>`;
-                    }
-
-                    tr.innerHTML = `
-                        <td class="cell-index">${count}</td>
-                        <td class="cell-key">${key}</td>
-                        <td>${valueDisplay}</td>
-                    `;
-                    tbody.appendChild(tr);
-                    cursor.continue();
-                } else if (count === 0) {
-                    tbody.innerHTML = "<tr><td colspan='3' style='text-align:center'>Trống.</td></tr>";
-                }
-                db.close();
-            };
-        };
+        if (changed) save();
     }
 
-    async function syncToCloud(dbName, storeName) {
-        const url = scriptUrlInput.value;
-        if (!url) return alert("Vui lòng nhập Google Script URL!");
+    function save() { 
+        localStorage.setItem('v16_habits', JSON.stringify(habits)); 
+        localStorage.setItem('v16_logs', JSON.stringify(logs)); 
+    }
+    
+    function moveMonth(s) { displayDate.setMonth(displayDate.getMonth() + s); render(); }
+    function addNewHabit() { habits.push({ id: Date.now(), name: "Việc mới" }); save(); render(); }
+    function deleteHabit(id) { if(confirm('Xóa thói quen này?')) { habits = habits.filter(h => h.id !== id); save(); render(); } }
 
-        writeLog(`Bắt đầu đồng bộ ${storeName} lên Cloud...`);
-        const req = indexedDB.open(dbName);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction(storeName, "readonly");
-            const store = tx.objectStore(storeName);
-            
-            store.openCursor().onsuccess = async (ev) => {
-                const cursor = ev.target.result;
-                if (cursor) {
-                    const key = cursor.key;
-                    let value = cursor.value;
-                    
-                    // Chỉ đồng bộ JSON/String, không hỗ trợ Blob trực tiếp qua json sync này
-                    if (!(value instanceof Blob)) {
-                        try {
-                            await fetch(url, {
-                                method: 'POST',
-                                mode: 'no-cors', // Cần thiết cho GAS nếu không có CORS header
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ key: String(key), value: value })
-                            });
-                            writeLog(`Đã gửi Key: ${key}`);
-                        } catch (err) { writeLog(`Lỗi gửi Key ${key}: ${err.message}`); }
-                    }
-                    cursor.continue();
-                } else {
-                    writeLog(`Hoàn tất gửi dữ liệu ${storeName}.`);
-                    db.close();
-                }
-            };
-        };
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
     }
 
-    async function syncFromCloud(dbName, storeName) {
-        const url = scriptUrlInput.value;
-        if (!url) return alert("Vui lòng nhập Google Script URL!");
+    function toggle(dStr, id) {
+        const targetDate = new Date(dStr);
+        if (targetDate > today) return; // Chặn click ngày tương lai
 
-        const keyToSync = prompt("Nhập KEY cần đồng bộ từ Cloud về (Tên file trên Driver):");
-        if (!keyToSync) return;
-
-        writeLog(`Đang lấy dữ liệu cho Key: ${keyToSync} ...`);
-        try {
-            const response = await fetch(`${url}?key=${encodeURIComponent(keyToSync)}`);
-            const cloudData = await response.json();
-            
-            if (cloudData === null) {
-                writeLog(`Không tìm thấy dữ liệu cho Key: ${keyToSync} trên Cloud.`);
-                return;
-            }
-
-            const req = indexedDB.open(dbName);
-            req.onsuccess = (e) => {
-                const db = e.target.result;
-                const tx = db.transaction(storeName, "readwrite");
-                const store = tx.objectStore(storeName);
-                
-                store.put(cloudData, keyToSync);
-                tx.oncomplete = () => {
-                    writeLog(`Đã cập nhật thành công Key: ${keyToSync} vào ${storeName}`);
-                    db.close();
-                    deepScan();
-                };
-            };
-        } catch (err) {
-            writeLog(`Lỗi khi lấy dữ liệu: ${err.message}`);
-        }
+        if(!logs[dStr]) logs[dStr] = {};
+        const cur = logs[dStr][id];
+        logs[dStr][id] = (cur === 'done') ? 'fail' : (cur === 'fail' ? null : 'done');
+        save(); render();
     }
 
-    function clearData(dbName, storeName, safeId) {
-        if (!confirm(`CẢNH BÁO: Bạn có chắc muốn XÓA VĨNH VIỄN toàn bộ Database [${dbName}]?`)) return;
+    function render() {
+        cleanFutureData(); // Dọn dẹp data mỗi lần render
         
-        const req = indexedDB.open(dbName);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            db.close(); 
-            
-            const delReq = indexedDB.deleteDatabase(dbName);
-            delReq.onsuccess = () => {
-                writeLog(`Đã XÓA Database: ${dbName}`);
-                deepScan(); 
-            };
-            delReq.onerror = (err) => writeLog("Lỗi khi xóa Database: " + err.target.error);
-            delReq.onblocked = () => writeLog("Xóa bị chặn: Vui lòng đóng các tab khác đang dùng DB này.");
-        };
-    }
-</script>
+        const year = displayDate.getFullYear();
+        const month = displayDate.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        document.getElementById('mLabel').innerText = `Tháng ${(month + 1).toString().padStart(2, '0')}/${year}`;
 
+        let worstH = { name: '--', count: 999 };
+        let barHtml = '';
+        let warningHtml = '';
+
+        habits.forEach(h => {
+            let doneCount = 0;
+            let currentXStreak = 0;
+            let tempStreak = 0;
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const checkDate = new Date(year, month, i);
+                checkDate.setHours(0,0,0,0);
+                const dStr = checkDate.toISOString().split('T')[0];
+                const status = logs[dStr]?.[h.id];
+                
+                if (status === 'done') { doneCount++; tempStreak = 0; } 
+                else if (status === 'fail') { tempStreak++; } 
+                else { tempStreak = 0; }
+                
+                // Chỉ tính streak đến ngày hôm nay
+                if (checkDate.getTime() <= today.getTime()) {
+                    currentXStreak = tempStreak;
+                }
+            }
+
+            if(doneCount < worstH.count) worstH = { name: h.name, count: doneCount };
+            const pct = Math.round((doneCount / daysInMonth) * 100) || 0;
+            
+            barHtml += `<div class="chart-row">
+                <span class="chart-label">${h.name} (${pct}%)</span>
+                <div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:${pct > 70 ? 'var(--success)' : 'var(--primary)'}"></div></div>
+            </div>`;
+            
+            if (currentXStreak > 3) {
+                warningHtml += `<div class="warning-alert warn-danger">💀 <b>${h.name}</b>: Chuỗi lười ${currentXStreak} ngày. Nguy cơ bỏ cuộc!</div>`;
+            } else if (currentXStreak === 3) {
+                warningHtml += `<div class="warning-alert warn-red">🔴 <b>${h.name}</b>: Cảnh báo đỏ! Lười 3 ngày liên tiếp.</div>`;
+            } else if (currentXStreak === 2) {
+                warningHtml += `<div class="warning-alert warn-yellow">⚠️ <b>${h.name}</b>: Đã 2 ngày chưa thực hiện.</div>`;
+            }
+        });
+
+        document.getElementById('barCharts').innerHTML = barHtml;
+        document.getElementById('streakWarnings').innerHTML = warningHtml || '<p style="font-size:12px; color:var(--success)">🔥 Phong độ tuyệt vời!</p>';
+        document.getElementById('worstHabit').innerText = worstH.name;
+
+        // Render Table
+        let headHtml = `<tr><th class="sticky-col">Mục tiêu</th>`;
+        for(let i=1; i<=daysInMonth; i++) {
+            const d = new Date(year, month, i);
+            d.setHours(0,0,0,0);
+            const isT = d.getTime() === today.getTime();
+            const isFuture = d > today;
+            
+            headHtml += `<th class="day-col ${isT ? 'is-today' : ''} ${d.getDay()%6===0?'weekend':''} ${isFuture?'future-day':''}">
+                <div style="font-size:9px">${d.toLocaleDateString('vi-VN',{weekday:'short'}).replace('Th ','T')}</div>
+                <b>${i}</b></th>`;
+        }
+        document.getElementById('tHead').innerHTML = headHtml + `</tr>`;
+
+        let bodyHtml = '';
+        habits.forEach(h => {
+            bodyHtml += `<tr><td class="sticky-col" style="display:flex; align-items:center;">
+                <textarea class="habit-name-box" oninput="autoResize(this)" onchange="h.name=this.value; save(); render();">${h.name}</textarea>
+                <span class="btn-delete" onclick="deleteHabit(${h.id})">🗑</span>
+            </td>`;
+            for(let i=1; i<=daysInMonth; i++) {
+                const d = new Date(year, month, i);
+                d.setHours(0,0,0,0);
+                const dStr = d.toISOString().split('T')[0];
+                const st = logs[dStr]?.[h.id] || '';
+                const isFuture = d > today;
+
+                bodyHtml += `<td class="day-col ${d.getDay()%6===0?'weekend':''} ${isFuture?'future-day':''}">
+                    <div class="mark status-${st}" onclick="toggle('${dStr}', ${h.id})">${st==='done'?'✓':(st==='fail'?'✕':'')}</div>
+                </td>`;
+            }
+            bodyHtml += `</tr>`;
+        });
+        document.getElementById('tBody').innerHTML = bodyHtml;
+        document.querySelectorAll('.habit-name-box').forEach(el => autoResize(el));
+    }
+    render();
+</script>
 </body>
 </html>

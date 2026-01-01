@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản trị IndexedDB - Hiển thị Blob Audio & JSON</title>
+    <title>Quản trị IndexedDB - Sync Google Drive</title>
     <style>
         :root { --primary: #3498db; --view: #9b59b6; --export: #27ae60; --import: #f39c12; --clear: #e74c3c; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 20px; }
@@ -48,6 +48,9 @@
         .audio-ctrl { display: flex; flex-direction: column; gap: 5px; }
         audio { height: 30px; width: 100%; max-width: 250px; }
         .download-link { font-size: 11px; color: var(--primary); text-decoration: none; font-weight: bold; }
+
+        .config-box { margin-bottom: 10px; text-align: left; font-size: 12px; }
+        #scriptUrl { width: 100%; padding: 5px; margin-top: 5px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -55,21 +58,49 @@
 <div class="container">
     <div class="header-box">
         <h2>📊 Trình Quản Lý Dữ Liệu Audio & JSON Cache</h2>
+        <div class="config-box">
+            <label>Google Script Web App URL:</label>
+            <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveGasUrl(this.value)">
+        </div>
     </div>
     
-    <div id="log">Sẵn sàng quét...</div>
+    <div id="log">Sẵn sàng...</div>
     <button class="btn-scan" onclick="deepScan()">🔄 QUÉT TOÀN BỘ DATABASE</button>
     <div id="results"></div>
 </div>
 
-<input type="file" id="importFile" style="display:none" accept=".json">
-
 <script>
     const logEl = document.getElementById('log');
     const resultsEl = document.getElementById('results');
-    const importInput = document.getElementById('importFile');
-    let currentImportDB = "";
-    let currentImportStore = "";
+    const scriptUrlInput = document.getElementById('scriptUrl');
+
+    (function initConfig() {
+        const req = indexedDB.open("GAS_Config", 1);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains("settings")) {
+                db.createObjectStore("settings");
+            }
+        };
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction("settings", "readonly");
+            const store = tx.objectStore("settings");
+            const getReq = store.get("gas_url");
+            getReq.onsuccess = () => {
+                if (getReq.result) scriptUrlInput.value = getReq.result;
+            };
+        };
+    })();
+
+    function saveGasUrl(url) {
+        const req = indexedDB.open("GAS_Config", 1);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction("settings", "readwrite");
+            tx.objectStore("settings").put(url, "gas_url");
+        };
+    }
 
     function writeLog(msg) {
         const time = new Date().toLocaleTimeString();
@@ -85,7 +116,9 @@
                 writeLog("Không tìm thấy Database nào.");
                 return;
             }
-            dbs.forEach(dbInfo => renderDB(dbInfo.name));
+            dbs.forEach(dbInfo => {
+                if(dbInfo.name !== "GAS_Config") renderDB(dbInfo.name);
+            });
             writeLog(`Tìm thấy ${dbs.length} Database.`);
         } catch (e) { writeLog("Lỗi: Trình duyệt không hỗ trợ hoặc lỗi quét danh sách DB."); }
     }
@@ -107,8 +140,8 @@
                         <span>📦 <b>${sName}</b></span>
                         <div class="btn-group">
                             <button class="btn-view" onclick="toggleView('${dbName}', '${sName}', '${safeId}')">👁️ View</button>
-                            <button class="btn-export" onclick="exportData('${dbName}', '${sName}')">📤 Export</button>
-                            <button class="btn-import" onclick="triggerImport('${dbName}', '${sName}')">📥 Import</button>
+                            <button class="btn-export" onclick="syncToCloud('${dbName}', '${sName}')">📤 Sync to Cloud</button>
+                            <button class="btn-import" onclick="syncFromCloud('${dbName}', '${sName}')">📥 Sync from Cloud</button>
                             <button class="btn-clear" onclick="clearData('${dbName}', '${sName}', '${safeId}')">🗑️ Clear</button>
                         </div>
                     </div>
@@ -199,96 +232,78 @@
         };
     }
 
-    function triggerImport(dbName, storeName) {
-        currentImportDB = dbName;
-        currentImportStore = storeName;
-        importInput.click();
-    }
+    async function syncToCloud(dbName, storeName) {
+        const url = scriptUrlInput.value;
+        if (!url) return alert("Vui lòng nhập Google Script URL!");
 
-    importInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            try {
-                const data = JSON.parse(ev.target.result);
-                if (!Array.isArray(data)) {
-                    throw new Error("File Import phải là định dạng mảng JSON các bản ghi.");
-                }
-                importToDB(data);
-            } catch (err) {
-                alert("Lỗi file: " + err.message);
-            }
-        };
-        reader.readAsText(file);
-        importInput.value = ""; 
-    };
-
-    function importToDB(dataList) {
-        const req = indexedDB.open(currentImportDB);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction(currentImportStore, "readwrite");
-            const store = tx.objectStore(currentImportStore);
-            
-            let successCount = 0;
-            dataList.forEach(item => {
-                if (item.hasOwnProperty('key') && item.hasOwnProperty('value')) {
-                    store.put(item.value, item.key);
-                } else {
-                    store.put(item);
-                }
-                successCount++;
-            });
-
-            tx.oncomplete = () => {
-                writeLog(`Import thành công ${successCount} bản ghi vào ${currentImportStore}`);
-                alert(`Đã Import xong ${successCount} bản ghi.`);
-                db.close();
-                deepScan(); 
-            };
-            tx.onerror = (err) => writeLog("Lỗi khi ghi dữ liệu: " + err.target.error);
-        };
-    }
-
-    function exportData(dbName, storeName) {
+        writeLog(`Bắt đầu đồng bộ Store [${storeName}] lên Cloud...`);
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
             const db = e.target.result;
             const tx = db.transaction(storeName, "readonly");
             const store = tx.objectStore(storeName);
-            const exportList = [];
-
-            store.openCursor().onsuccess = (ev) => {
+            const allData = {};
+            
+            store.openCursor().onsuccess = async (ev) => {
                 const cursor = ev.target.result;
                 if (cursor) {
-                    let val = cursor.value;
-                    if (val instanceof Blob) {
-                        exportList.push({ key: cursor.key, value: "[Blob Data - Cannot Export]" });
-                    } else {
-                        exportList.push({ key: cursor.key, value: val });
+                    if (!(cursor.value instanceof Blob)) {
+                        allData[cursor.key] = cursor.value;
                     }
                     cursor.continue();
                 } else {
-                    const now = new Date();
-                    const pad = (n) => String(n).padStart(2, '0');
-                    const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-                    
-                    const blob = new Blob([JSON.stringify(exportList, null, 2)], {type: 'application/json'});
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `Export_${dbName}_${storeName}_${ts}.json`;
-                    a.click();
-                    writeLog(`Đã xuất dữ liệu ${storeName} ra file JSON.`);
+                    try {
+                        await fetch(url, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ key: storeName, value: allData })
+                        });
+                        writeLog(`Đã đồng bộ toàn bộ Store [${storeName}] lên Cloud.`);
+                    } catch (err) { writeLog(`Lỗi đồng bộ: ${err.message}`); }
                     db.close();
                 }
             };
-        }; 
+        };
+    }
+
+    async function syncFromCloud(dbName, storeName) {
+        const url = scriptUrlInput.value;
+        if (!url) return alert("Vui lòng nhập Google Script URL!");
+
+        writeLog(`Đang lấy dữ liệu Store [${storeName}] từ Cloud...`);
+        try {
+            const response = await fetch(`${url}?key=${encodeURIComponent(storeName)}`);
+            const cloudData = await response.json();
+            
+            if (!cloudData || typeof cloudData !== 'object') {
+                writeLog(`Không có dữ liệu hợp lệ cho Store: ${storeName}`);
+                return;
+            }
+
+            const req = indexedDB.open(dbName);
+            req.onsuccess = (e) => {
+                const db = e.target.result;
+                const tx = db.transaction(storeName, "readwrite");
+                const store = tx.objectStore(storeName);
+                
+                Object.keys(cloudData).forEach(key => {
+                    store.put(cloudData[key], key);
+                });
+
+                tx.oncomplete = () => {
+                    writeLog(`Đã cập nhật thành công Store [${storeName}] từ Cloud.`);
+                    db.close();
+                    deepScan();
+                };
+            };
+        } catch (err) {
+            writeLog(`Lỗi khi lấy dữ liệu: ${err.message}`);
+        }
     }
 
     function clearData(dbName, storeName, safeId) {
-        if (!confirm(`CẢNH BÁO: Bạn có chắc muốn XÓA VĨNH VIỄN toàn bộ Database [${dbName}]?\n\nHành động này sẽ xóa mọi Store bên trong và không thể hoàn tác.`)) return;
+        if (!confirm(`CẢNH BÁO: Bạn có chắc muốn XÓA VĨNH VIỄN toàn bộ Database [${dbName}]?`)) return;
         
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
@@ -303,7 +318,6 @@
             delReq.onerror = (err) => writeLog("Lỗi khi xóa Database: " + err.target.error);
             delReq.onblocked = () => writeLog("Xóa bị chặn: Vui lòng đóng các tab khác đang dùng DB này.");
         };
-        req.onerror = (err) => writeLog("Lỗi mở DB: " + err.target.error);
     }
 </script>
 

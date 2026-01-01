@@ -1,3 +1,5 @@
+https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec
+
 git add . ;  git commit -m "SRC change" ; git push;
 
 
@@ -6,7 +8,7 @@ git add . ;  git commit -m "SRC change" ; git push;
 NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
 chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn 
 🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-Trong opption setting thời gian học và thời gian nghỉ thêm opption có thể setting giá trị tùy ý ngoài giá trị đã có trong option
+1. Lưu lại vĩnh cửu thông tin url của gas để dùng về sau  vào indexdb
 -------------------
 Src gốc cần sửa:
 -------------------
@@ -14,440 +16,297 @@ Src gốc cần sửa:
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pomodoro Pro - Ambient Analytics</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <title>Quản trị IndexedDB - Sync Google Drive</title>
     <style>
-        :root {
-            --work-bg: #fff5f5; --work-color: #ff5e57;
-            --break-bg: #f0fff4; --break-color: #1dd1a1;
-            --dark: #1a2a6c; --gray: #95a5a6;
-            --work-img: url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&q=80&w=1000');
-            --break-img: url('https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&q=80&w=1000');
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0; padding: 10px 0; display: flex; justify-content: center; align-items: flex-start;
-            background-color: #f7f9fb; background-size: cover; background-position: center; transition: 0.5s;
-            min-height: 100vh; width: 100vw; overflow-y: auto;
-        }
-
-        .app-card, .history-card {
-            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);
-            width: 90vw; min-height: 85vh; padding: 25px; border-radius: 30px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center;
-            max-width: none; overflow: visible;
-        }
-
-        .app-card { 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-        }
-
-        .history-card { 
-            display: none; 
-        }
-
-        .timer-display { font-size: 5rem; font-weight: 800; color: var(--dark); margin: 5px 0; letter-spacing: -2px; }
+        :root { --primary: #3498db; --view: #9b59b6; --export: #27ae60; --import: #f39c12; --clear: #e74c3c; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; }
         
-        .main-btn { width: 100%; padding: 15px; font-size: 1.1rem; font-weight: 700; border: none; border-radius: 20px; cursor: pointer; transition: 0.2s; margin-top: 8px; color: white; }
-        #startBtn { background: var(--dark); }
-        .btn-reset { background: #27ae60; }
-        .btn-stop { background: #e67e22; }
-        .btn-mock { background: #8e44ad; }
-
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); 
-            display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(10px); }
-        .alarm-box { background: white; padding: 40px; border-radius: 40px; text-align: center; width: 85%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
-        .btn-alarm-off { background: var(--work-color); animation: pulse 1s infinite; margin-top: 20px; box-shadow: 0 10px 20px rgba(255,94,87,0.4); }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .input-group { display: flex; flex-direction: column; text-align: left; }
-        .input-group label { font-size: 9px; font-weight: 800; color: var(--gray); margin-bottom: 3px; }
-        select { padding: 10px; border-radius: 12px; border: 2px solid #eee; background: white; font-weight: 600; cursor: pointer; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
-
-        .stats-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .stat-box { background: rgba(255,255,255,0.8); padding: 12px; border-radius: 15px; border: 1px solid #eee; }
-        .stat-box small { color: var(--gray); display: block; font-size: 10px; font-weight: bold; margin-bottom: 3px; }
-        .stat-box b { color: var(--dark); font-size: 14px; display: block; }
-        .stat-box i { font-style: normal; font-size: 11px; color: #ff5e57; font-weight: bold; }
-
-        .chart-container { position: relative; height: 300px; width: 100%; margin-top: 10px; }
+        .header-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; }
+        #log { background: #1e1e1e; color: #00ff00; padding: 10px; border-radius: 8px; max-height: 80px; overflow-y: auto; font-family: monospace; font-size: 11px; margin-bottom: 20px; }
         
-        body.work-mode { background-image: var(--work-img); }
-        body.break-mode { background-image: var(--break-img); }
+        .db-card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .store-item { border: 1px solid #e1e4e8; border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+        .store-header { background: #f8f9fa; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e1e4e8; }
+        
+        .btn-group { display: flex; gap: 5px; }
+        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 11px; color: white; transition: opacity 0.2s; }
+        button:hover { opacity: 0.8; }
+        .btn-scan { background: var(--primary); width: 100%; padding: 12px; font-size: 14px; margin-bottom: 20px; }
+        .btn-view { background: var(--view); }
+        .btn-export { background: var(--export); }
+        .btn-import { background: var(--import); }
+        .btn-clear { background: var(--clear); }
 
-        #historyLog::-webkit-scrollbar { width: 5px; }
-        #historyLog::-webkit-scrollbar-thumb { background: #eee; border-radius: 10px; }
+        .data-viewer { display: none; padding: 10px; background: #fff; max-height: 600px; overflow: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+        th { background: #f1f3f5; position: sticky; top: 0; padding: 10px; border: 1px solid #dee2e6; z-index: 10; }
+        td { border: 1px solid #dee2e6; padding: 8px; text-align: left; vertical-align: top; word-break: break-all; }
+        .cell-key { font-weight: bold; color: #2c3e50; background: #fdfefe; width: 150px; }
+        .cell-index { width: 40px; text-align: center; }
+        .cell-blob { color: #7f8c8d; font-style: italic; display: block; margin-bottom: 5px; }
+        
+        pre.json-pretty { 
+            background: #f8f9fa; 
+            padding: 8px; 
+            border-radius: 4px; 
+            border: 1px solid #eee; 
+            white-space: pre-wrap; 
+            font-family: 'Consolas', monospace; 
+            color: #d63384;
+            margin: 0;
+            max-height: 300px;
+            overflow: auto;
+        }
+        
+        .audio-ctrl { display: flex; flex-direction: column; gap: 5px; }
+        audio { height: 30px; width: 100%; max-width: 250px; }
+        .download-link { font-size: 11px; color: var(--primary); text-decoration: none; font-weight: bold; }
+
+        .config-box { margin-bottom: 10px; text-align: left; font-size: 12px; }
+        #scriptUrl { width: 100%; padding: 5px; margin-top: 5px; border: 1px solid #ccc; }
     </style>
 </head>
-<body class="work-mode">
+<body>
 
-<div id="alarmOverlay" class="overlay">
-    <div class="alarm-box">
-        <h2 id="alarmMsg" style="color: var(--dark); margin: 0;">THÔNG BÁO</h2>
-        <p style="color: var(--gray); font-weight: 600;">Vui lòng xác nhận để tiếp tục</p>
-        <button class="main-btn btn-alarm-off" onclick="stopAlarm()">TẮT CHUÔNG & XÁC NHẬN</button>
+<div class="container">
+    <div class="header-box">
+        <h2>📊 Trình Quản Lý Dữ Liệu Audio & JSON Cache</h2>
+        <div class="config-box">
+            <label>Google Script Web App URL:</label>
+            <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
     </div>
-</div>
-
-<div class="app-card">
-    <div style="font-weight: 900; color: var(--dark); letter-spacing: 4px; font-size: 2rem; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">POMODORO PRO</div>
-    <div id="status" style="font-weight: 800; color: var(--gray); letter-spacing: 1px; font-size: 0.8rem; margin-bottom: 15px;">SẴN SÀNG HỌC</div>
     
-    <div class="timer-display" id="timer">25:00</div>
-
-    <button id="startBtn" class="main-btn" onclick="toggleTimer()">BẮT ĐẦU</button>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button class="main-btn btn-reset" onclick="resetTimer()">Đặt lại</button>
-        <button class="main-btn btn-stop" onclick="stopTimer()">Dừng</button>
-    </div>
-
-    <button class="main-btn" style="background: var(--gray); margin-top: 15px;" onclick="toggleView()">📊 XEM THỐNG KÊ</button>
-
-    <div class="settings-grid">
-        <div class="input-group">
-            <label>THỜI GIAN HỌC (PHÚT)</label>
-            <select id="workTime" onchange="updateTimeSetting('work', this.value)">
-                <option value="0.0833">5 giây (Test)</option>
-                <option value="15">15 phút</option>
-                <option value="25" selected>25 phút</option>
-                <option value="45">45 phút</option>
-                <option value="60">60 phút</option>
-                <option value="90">90 phút</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <label>THỜI GIAN NGHỈ (PHÚT)</label>
-            <select id="breakTime" onchange="updateTimeSetting('break', this.value)">
-                <option value="0.0833">5 giây (Test)</option>
-                <option value="5" selected>5 phút</option>
-                <option value="10">10 phút</option>
-                <option value="15">15 phút</option>
-                <option value="20">20 phút</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <label>ÂM THANH HỌC</label>
-            <select id="workMusic" onchange="previewMusic(this.value, 'workMusic')">
-                <option value="none">Tắt nhạc</option>
-                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy 1</option>
-                <option value="https://cdn.pixabay.com/download/audio/2023/08/09/audio_7931fcfaa5.mp3?filename=baseline-ambience-music-nearby-a-mountain-stream-161392.mp3">Suối núi 2</option>
-                <option value="https://cdn.pixabay.com/download/audio/2025/11/09/audio_3b45b446fa.mp3?filename=mountain-stream-433499.mp3">Dòng suối 3</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <label>ÂM THANH NGHỈ</label>
-            <select id="breakMusic" onchange="previewMusic(this.value, 'breakMusic')">
-                <option value="none">Tắt nhạc</option>
-                <option value="https://cdn.pixabay.com/download/audio/2024/05/13/audio_6abbc49727.mp3?filename=stream-208813.mp3">Suối chảy 1</option>
-                <option value="https://cdn.pixabay.com/download/audio/2023/08/09/audio_7931fcfaa5.mp3?filename=baseline-ambience-music-nearby-a-mountain-stream-161392.mp3">Suối núi 2</option>
-                <option value="https://cdn.pixabay.com/download/audio/2025/11/09/audio_3b45b446fa.mp3?filename=mountain-stream-433499.mp3">Dòng suối 3</option>
-            </select>
-        </div>
-    </div>
+    <div id="log">Sẵn sàng...</div>
+    <button class="btn-scan" onclick="deepScan()">🔄 QUÉT TOÀN BỘ DATABASE</button>
+    <div id="results"></div>
 </div>
-
-<div class="history-card">
-    <button class="main-btn" style="background: var(--dark); margin: 0 0 20px 0;" onclick="toggleView()">⬅️ QUAY LẠI TIMER</button>
-    <h3 style="margin:0; color: var(--dark)">📈 XU HƯỚNG HIỆU SUẤT</h3>
-    
-    <div class="stats-summary">
-        <div class="stat-box">
-            <small>🏆 CAO NHẤT</small>
-            <b id="maxDay">-</b>
-            <i id="maxVal">00:00:00</i>
-        </div>
-        <div class="stat-box">
-            <small>📉 THẤP NHẤT</small>
-            <b id="minDay">-</b>
-            <i id="minVal">00:00:00</i>
-        </div>
-    </div>
-    <div class="chart-container">
-        <canvas id="pomoChart"></canvas>
-    </div>
-
-    <div id="historyLog" style="margin-top: 15px; text-align: left; max-height: 180px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px;">
-        <small style="color: var(--gray); font-weight: 800; display: block; margin-bottom: 8px;">CHI TIẾT LỊCH SỬ</small>
-        <table style="width: 100%; font-size: 12px; color: var(--dark); border-collapse: collapse;">
-            <tbody id="historyTableBody"></tbody>
-        </table>
-    </div>
-
-    <button class="main-btn btn-mock" style="margin-top: 15px;" onclick="generateMockData()">GIẢ LẬP 100 NGÀY DỮ LIỆU</button>
-</div>
-
-<audio id="bgAudio" loop></audio>
-<audio id="alarmAudio"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
 <script>
-    /* Phần Script giữ nguyên hoàn toàn */
-    let timer, isRunning = false, isWorkMode = true, timeLeft = 1500;
-    let db, myChart, alarmInterval;
-    const APP_KEY = "pomodoro_app_data";
-    const bgAudio = document.getElementById('bgAudio');
-    let appSettings = { workTime: 25, breakTime: 5, workMusic: 'none', breakMusic: 'none' };
+    const logEl = document.getElementById('log');
+    const resultsEl = document.getElementById('results');
+    const scriptUrlInput = document.getElementById('scriptUrl');
 
-    function btnVibrate() { if (navigator.vibrate) navigator.vibrate(50); }
-
-    function toggleView() {
-        btnVibrate();
-        const timerPage = document.querySelector('.app-card');
-        const statsPage = document.querySelector('.history-card');
-        
-        if (timerPage.style.display === 'none') {
-            timerPage.style.display = 'flex';
-            statsPage.style.display = 'none';
-        } else {
-            timerPage.style.display = 'none';
-            statsPage.style.display = 'block';
-            getAppData().then(d => renderChart(d.totalMinutes || {}));
-        }
+    function writeLog(msg) {
+        const time = new Date().toLocaleTimeString();
+        logEl.innerHTML += `<div>[${time}] > ${msg}</div>`;
+        logEl.scrollTop = logEl.scrollHeight;
     }
 
-    function formatTime(totalMinutes) {
-        if (!totalMinutes || totalMinutes === 0) return "00:00:00";
-        const h = Math.floor(totalMinutes / 60);
-        const m = Math.floor(totalMinutes % 60);
-        const s = Math.round((totalMinutes * 60) % 60);
-        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-
-    const request = indexedDB.open("PomoUnifiedDB", 1);
-    request.onupgradeneeded = (e) => {
-        db = e.target.result;
-        if (!db.objectStoreNames.contains("app_data")) db.createObjectStore("app_data");
-    };
-    request.onsuccess = (e) => {
-        db = e.target.result;
-        loadAndRender();
-    };
-
-    async function loadAndRender() {
-        const data = await getAppData();
-        if (data.settings) {
-            appSettings = data.settings;
-            document.getElementById('workTime').value = appSettings.workTime;
-            document.getElementById('breakTime').value = appSettings.breakTime;
-            document.getElementById('workMusic').value = appSettings.workMusic;
-            document.getElementById('breakMusic').value = appSettings.breakMusic;
-            timeLeft = Math.round(appSettings.workTime * 60);
-            updateDisplay();
-        }
-        renderChart(data.totalMinutes || {});
-        calculateStats(data.totalMinutes || {});
-    }
-
-    function getAppData() {
-        return new Promise((res) => {
-            const tx = db.transaction("app_data", "readonly");
-            const store = tx.objectStore("app_data");
-            const req = store.get(APP_KEY);
-            req.onsuccess = () => res(req.result ? JSON.parse(req.result) : { totalMinutes:{}, settings: appSettings });
-        });
-    }
-
-    async function saveAppData(newData) {
-        const currentData = await getAppData();
-        const mergedData = { ...currentData, ...newData };
-        const tx = db.transaction("app_data", "readwrite");
-        tx.objectStore("app_data").put(JSON.stringify(mergedData), APP_KEY);
-    }
-
-    function updateTimeSetting(type, val) {
-        btnVibrate();
-        if (type === 'work') appSettings.workTime = parseFloat(val);
-        else appSettings.breakTime = parseFloat(val);
-        saveAppData({ settings: appSettings });
-        if (!isRunning) resetTimer();
-    }
-
-    function toggleTimer() {
-        btnVibrate();
-        if (!isRunning) {
-            isRunning = true;
-            document.getElementById('alarmAudio').load(); 
-            playModeMusic();
-            document.getElementById('startBtn').textContent = "TẠM DỪNG";
-            timer = setInterval(() => {
-                timeLeft--;
-                updateDisplay();
-                if (timeLeft <= 0) { clearInterval(timer); triggerAlarm(); }
-            }, 1000);
-        } else { stopTimer(); }
-    }
-
-    function playModeMusic() {
-        const musicUrl = isWorkMode ? appSettings.workMusic : appSettings.breakMusic;
-        if (musicUrl && musicUrl !== 'none') {
-            bgAudio.src = musicUrl;
-            bgAudio.play().catch(() => console.log("Interaction required for audio"));
-        } else {
-            bgAudio.pause();
-        }
-    }
-
-    function stopTimer() {
-        clearInterval(timer);
-        isRunning = false;
-        bgAudio.pause();
-        document.getElementById('startBtn').textContent = isWorkMode ? "BẮT ĐẦU" : "TIẾP TỤC";
-    }
-
-    function resetTimer() {
-        btnVibrate();
-        clearInterval(timer); isRunning = false;
-        bgAudio.pause();
-        timeLeft = Math.round((isWorkMode ? appSettings.workTime : appSettings.breakTime) * 60);
-        updateDisplay();
-        document.getElementById('startBtn').textContent = "BẮT ĐẦU";
-    }
-
-    function triggerAlarm() {
-        bgAudio.pause();
-        const alarm = document.getElementById('alarmAudio');
-        alarm.loop = true;
-        alarm.play().catch(() => {});
-        alarmInterval = setInterval(() => { if (navigator.vibrate) navigator.vibrate(500); }, 1000);
-        document.getElementById('alarmMsg').textContent = isWorkMode ? "HẾT GIỜ HỌC RỒI!" : "HẾT GIỜ NGHỈ RỒI!";
-        document.getElementById('alarmOverlay').style.display = 'flex';
-
-        window.stopAlarm = () => {
-            clearInterval(alarmInterval);
-            alarm.pause();
-            alarm.currentTime = 0;
-            document.getElementById('alarmOverlay').style.display = 'none';
-            
-            if (isWorkMode) {
-                recordSession();
-                isWorkMode = false;
-                document.body.className = 'break-mode';
-                document.getElementById('status').textContent = 'ĐANG NGHỈ NGƠI';
-                resetTimer();
-                toggleTimer(); 
-            } else {
-                isWorkMode = true;
-                document.body.className = 'work-mode';
-                document.getElementById('status').textContent = 'SẴN SÀNG HỌC';
-                resetTimer();
+    async function deepScan() {
+        resultsEl.innerHTML = "";
+        try {
+            const dbs = await indexedDB.databases();
+            if (dbs.length === 0) {
+                writeLog("Không tìm thấy Database nào.");
+                return;
             }
+            dbs.forEach(dbInfo => renderDB(dbInfo.name));
+            writeLog(`Tìm thấy ${dbs.length} Database.`);
+        } catch (e) { writeLog("Lỗi: Trình duyệt không hỗ trợ hoặc lỗi quét danh sách DB."); }
+    }
+
+    function renderDB(dbName) {
+        const req = indexedDB.open(dbName);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const dbCard = document.createElement('div');
+            dbCard.className = 'db-card';
+            dbCard.innerHTML = `<div style="margin-bottom:10px"><b>📂 DB: ${dbName}</b></div>`;
+
+            Array.from(db.objectStoreNames).forEach(sName => {
+                const safeId = btoa(unescape(encodeURIComponent(dbName + sName))).replace(/[^a-z0-9]/gi, "");
+                const storeDiv = document.createElement('div');
+                storeDiv.className = 'store-item';
+                storeDiv.innerHTML = `
+                    <div class="store-header">
+                        <span>📦 <b>${sName}</b></span>
+                        <div class="btn-group">
+                            <button class="btn-view" onclick="toggleView('${dbName}', '${sName}', '${safeId}')">👁️ View</button>
+                            <button class="btn-export" onclick="syncToCloud('${dbName}', '${sName}')">📤 Sync to Cloud</button>
+                            <button class="btn-import" onclick="syncFromCloud('${dbName}', '${sName}')">📥 Sync from Cloud</button>
+                            <button class="btn-clear" onclick="clearData('${dbName}', '${sName}', '${safeId}')">🗑️ Clear</button>
+                        </div>
+                    </div>
+                    <div class="data-viewer" id="view_${safeId}">
+                        <table id="table_${safeId}">
+                            <thead><tr><th class="cell-index">#</th><th class="cell-key">Key</th><th>Value (Content)</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                `;
+                dbCard.appendChild(storeDiv);
+            });
+            resultsEl.appendChild(dbCard);
+            db.close();
         };
     }
 
-    async function recordSession() {
-        const dateStr = new Date().toLocaleDateString('sv-SE');
-        const data = await getAppData();
-        data.totalMinutes[dateStr] = (data.totalMinutes[dateStr] || 0) + appSettings.workTime;
-        await saveAppData({ totalMinutes: data.totalMinutes });
-        loadAndRender();
-    }
-
-    function updateDisplay() {
-        const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-        document.getElementById('timer').textContent = `${m}:${s < 10 ? '0'+s : s}`;
-    }
-
-    function previewMusic(url, id) {
-        appSettings[id] = url;
-        saveAppData({ settings: appSettings });
-        if (isRunning) playModeMusic();
-        else if (url === 'none') bgAudio.pause(); 
-        else { bgAudio.src = url; bgAudio.play().catch(()=>{}); }
-    }
-
-    function calculateStats(minutesObj) {
-        const entries = Object.entries(minutesObj);
-        if (entries.length === 0) return;
-        const sorted = [...entries].sort((a, b) => b[1] - a[1]);
-        document.getElementById('maxDay').textContent = sorted[0][0];
-        document.getElementById('maxVal').textContent = formatTime(sorted[0][1]);
-        
-        const minSorted = [...entries].sort((a, b) => a[1] - b[1]);
-        document.getElementById('minDay').textContent = minSorted[0][0];
-        document.getElementById('minVal').textContent = formatTime(minSorted[0][1]);
-        renderHistoryTable(minutesObj);
-    }
-
-    function renderHistoryTable(minutesObj) {
-        const body = document.getElementById('historyTableBody');
-        const sortedKeys = Object.keys(minutesObj).sort().reverse();
-        body.innerHTML = sortedKeys.map(date => `
-            <tr style="border-bottom: 1px solid #f9f9f9;">
-                <td style="padding: 10px 0; font-weight: 600;">📅 ${date}</td>
-                <td style="padding: 10px 0; text-align: right; color: var(--dark); font-weight: 700;">${formatTime(minutesObj[date])}</td>
-            </tr>
-        `).join('');
-    }
-
-    function renderChart(minutesObj) {
-        const canvas = document.getElementById('pomoChart');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const labels = Object.keys(minutesObj).sort();
-        const data = labels.map(l => minutesObj[l]);
-        
-        if (myChart) myChart.destroy();
-        myChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels, datasets: [{ 
-                label: 'Thời gian học', 
-                data, 
-                borderColor: '#3498db', 
-                backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                fill: true, 
-                tension: 0.4 
-            }] },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        min: labels[labels.length - 30] || labels[0],
-                        max: labels[labels.length - 1]
-                    },
-                    y: { 
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                const h = Math.floor(value / 60);
-                                const m = Math.floor(value % 60);
-                                return h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    zoom: {
-                        pan: { enabled: true, mode: 'x', threshold: 10 }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'Thời gian: ' + formatTime(context.raw);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function generateMockData() {
-        const mock = {};
-        for(let i=0; i<100; i++) {
-            const d = new Date(); d.setDate(d.getDate() - i);
-            mock[d.toLocaleDateString('sv-SE')] = Math.floor(Math.random()*300);
+    function toggleView(dbName, storeName, safeId) {
+        const viewer = document.getElementById(`view_${safeId}`);
+        if (viewer.style.display === "block") {
+            viewer.style.display = "none";
+            return;
         }
-        renderChart(mock);
-        calculateStats(mock);
+
+        const tbody = document.getElementById(`table_${safeId}`).querySelector('tbody');
+        tbody.innerHTML = "<tr><td colspan='3'>Đang tải dữ liệu...</td></tr>";
+        viewer.style.display = "block";
+
+        const req = indexedDB.open(dbName);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction(storeName, "readonly");
+            const store = tx.objectStore(storeName);
+            const cursorReq = store.openCursor();
+            
+            tbody.innerHTML = "";
+            let count = 0;
+
+            cursorReq.onsuccess = (ev) => {
+                const cursor = ev.target.result;
+                if (cursor) {
+                    count++;
+                    const key = cursor.key;
+                    const value = cursor.value;
+                    const tr = document.createElement('tr');
+                    
+                    let valueDisplay = "";
+                    
+                    if (value instanceof Blob) {
+                        const url = URL.createObjectURL(value);
+                        const isAudio = value.type.includes('audio');
+                        valueDisplay = `
+                            <div class="audio-ctrl">
+                                <span class="cell-blob">Blob [${value.type}] - ${(value.size/1024).toFixed(2)} KB</span>
+                                ${isAudio ? `<audio controls src="${url}"></audio>` : ''}
+                                <a href="${url}" download="${key}" class="download-link">💾 Tải về máy</a>
+                            </div>`;
+                    } else if (typeof value === 'object' && value !== null) {
+                        const jsonStr = JSON.stringify(value, null, 4);
+                        valueDisplay = `<pre class="json-pretty">${jsonStr}</pre>`;
+                    } else if (typeof value === 'string') {
+                        try {
+                            const parsed = JSON.parse(value);
+                            if (typeof parsed === 'object' && parsed !== null) {
+                                valueDisplay = `<pre class="json-pretty">${JSON.stringify(parsed, null, 4)}</pre>`;
+                            } else {
+                                valueDisplay = `<span>${value}</span>`;
+                            }
+                        } catch (e) {
+                            valueDisplay = `<span>${value}</span>`;
+                        }
+                    } else {
+                        valueDisplay = `<span>${value}</span>`;
+                    }
+
+                    tr.innerHTML = `
+                        <td class="cell-index">${count}</td>
+                        <td class="cell-key">${key}</td>
+                        <td>${valueDisplay}</td>
+                    `;
+                    tbody.appendChild(tr);
+                    cursor.continue();
+                } else if (count === 0) {
+                    tbody.innerHTML = "<tr><td colspan='3' style='text-align:center'>Trống.</td></tr>";
+                }
+                db.close();
+            };
+        };
+    }
+
+    async function syncToCloud(dbName, storeName) {
+        const url = scriptUrlInput.value;
+        if (!url) return alert("Vui lòng nhập Google Script URL!");
+
+        writeLog(`Bắt đầu đồng bộ ${storeName} lên Cloud...`);
+        const req = indexedDB.open(dbName);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction(storeName, "readonly");
+            const store = tx.objectStore(storeName);
+            
+            store.openCursor().onsuccess = async (ev) => {
+                const cursor = ev.target.result;
+                if (cursor) {
+                    const key = cursor.key;
+                    let value = cursor.value;
+                    
+                    // Chỉ đồng bộ JSON/String, không hỗ trợ Blob trực tiếp qua json sync này
+                    if (!(value instanceof Blob)) {
+                        try {
+                            await fetch(url, {
+                                method: 'POST',
+                                mode: 'no-cors', // Cần thiết cho GAS nếu không có CORS header
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ key: String(key), value: value })
+                            });
+                            writeLog(`Đã gửi Key: ${key}`);
+                        } catch (err) { writeLog(`Lỗi gửi Key ${key}: ${err.message}`); }
+                    }
+                    cursor.continue();
+                } else {
+                    writeLog(`Hoàn tất gửi dữ liệu ${storeName}.`);
+                    db.close();
+                }
+            };
+        };
+    }
+
+    async function syncFromCloud(dbName, storeName) {
+        const url = scriptUrlInput.value;
+        if (!url) return alert("Vui lòng nhập Google Script URL!");
+
+        const keyToSync = prompt("Nhập KEY cần đồng bộ từ Cloud về (Tên file trên Driver):");
+        if (!keyToSync) return;
+
+        writeLog(`Đang lấy dữ liệu cho Key: ${keyToSync} ...`);
+        try {
+            const response = await fetch(`${url}?key=${encodeURIComponent(keyToSync)}`);
+            const cloudData = await response.json();
+            
+            if (cloudData === null) {
+                writeLog(`Không tìm thấy dữ liệu cho Key: ${keyToSync} trên Cloud.`);
+                return;
+            }
+
+            const req = indexedDB.open(dbName);
+            req.onsuccess = (e) => {
+                const db = e.target.result;
+                const tx = db.transaction(storeName, "readwrite");
+                const store = tx.objectStore(storeName);
+                
+                store.put(cloudData, keyToSync);
+                tx.oncomplete = () => {
+                    writeLog(`Đã cập nhật thành công Key: ${keyToSync} vào ${storeName}`);
+                    db.close();
+                    deepScan();
+                };
+            };
+        } catch (err) {
+            writeLog(`Lỗi khi lấy dữ liệu: ${err.message}`);
+        }
+    }
+
+    function clearData(dbName, storeName, safeId) {
+        if (!confirm(`CẢNH BÁO: Bạn có chắc muốn XÓA VĨNH VIỄN toàn bộ Database [${dbName}]?`)) return;
+        
+        const req = indexedDB.open(dbName);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            db.close(); 
+            
+            const delReq = indexedDB.deleteDatabase(dbName);
+            delReq.onsuccess = () => {
+                writeLog(`Đã XÓA Database: ${dbName}`);
+                deepScan(); 
+            };
+            delReq.onerror = (err) => writeLog("Lỗi khi xóa Database: " + err.target.error);
+            delReq.onblocked = () => writeLog("Xóa bị chặn: Vui lòng đóng các tab khác đang dùng DB này.");
+        };
     }
 </script>
+
 </body>
 </html>

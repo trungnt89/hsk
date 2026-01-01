@@ -25,39 +25,34 @@
         .btn-import { background: var(--import); }
         .btn-clear { background: var(--clear); }
 
+        /* Tối ưu View 1 cột cho Mobile */
         .data-viewer { display: none; padding: 10px; background: #fff; max-height: 600px; overflow: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
-        th { background: #f1f3f5; position: sticky; top: 0; padding: 10px; border: 1px solid #dee2e6; z-index: 10; }
-        td { border: 1px solid #dee2e6; padding: 8px; text-align: left; vertical-align: top; word-break: break-all; }
-        
-        /* Tối ưu cột cho Mobile */
-        .cell-index { width: 30px; text-align: center; }
-        .cell-key { font-weight: bold; color: #2c3e50; background: #fdfefe; width: 25%; }
-        
-        .cell-blob { color: #7f8c8d; font-style: italic; display: block; margin-bottom: 5px; }
+        .record-card { border-bottom: 2px solid #eee; padding: 15px 5px; margin-bottom: 5px; }
+        .record-header { display: flex; justify-content: space-between; font-size: 11px; color: #7f8c8d; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 3px; }
+        .record-key { font-weight: bold; color: #2c3e50; font-size: 13px; margin-bottom: 8px; word-break: break-all; display: block; background: #f1f3f5; padding: 5px 8px; border-radius: 4px; }
         
         pre.json-pretty { 
             background: #f8f9fa; 
-            padding: 8px; 
+            padding: 10px; 
             border-radius: 4px; 
             border: 1px solid #eee; 
             white-space: pre-wrap; 
             font-family: 'Consolas', monospace; 
             color: #d63384;
             margin: 0;
-            max-height: 300px;
+            max-height: 400px;
             overflow: auto;
-            font-size: 11px;
+            font-size: 12px;
+            line-height: 1.4;
         }
         
-        .audio-ctrl { display: flex; flex-direction: column; gap: 5px; }
-        audio { height: 30px; width: 100%; max-width: 250px; }
-        .download-link { font-size: 11px; color: var(--primary); text-decoration: none; font-weight: bold; }
+        .audio-ctrl { display: flex; flex-direction: column; gap: 5px; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+        audio { height: 35px; width: 100%; }
+        .download-link { font-size: 12px; color: var(--primary); text-decoration: none; font-weight: bold; }
 
         .config-box { margin-bottom: 10px; text-align: left; font-size: 12px; }
-        #scriptUrl { width: 100%; padding: 5px; margin-top: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        #scriptUrl { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; box-sizing: border-box; border-radius: 4px; }
 
-        /* Toast Notification */
         #toast {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: #333; color: #fff; padding: 12px 25px; border-radius: 30px;
@@ -66,9 +61,10 @@
 
         @media (max-width: 600px) {
             body { padding: 10px; }
-            .cell-key { width: 80px; }
             .btn-group { gap: 3px; }
-            button { padding: 5px 8px; font-size: 10px; }
+            button { padding: 8px 10px; font-size: 11px; flex: 1; min-width: 80px; }
+            .store-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .btn-group { width: 100%; justify-content: space-between; }
         }
     </style>
 </head>
@@ -91,6 +87,7 @@
 </div>
 
 <script>
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec?key=current_state";
     const logEl = document.getElementById('log');
     const resultsEl = document.getElementById('results');
     const scriptUrlInput = document.getElementById('scriptUrl');
@@ -110,7 +107,12 @@
             const store = tx.objectStore("settings");
             const getReq = store.get("gas_url");
             getReq.onsuccess = () => {
-                if (getReq.result) scriptUrlInput.value = getReq.result;
+                if (getReq.result) {
+                    scriptUrlInput.value = getReq.result;
+                } else {
+                    scriptUrlInput.value = DEFAULT_GAS_URL;
+                    saveGasUrl(DEFAULT_GAS_URL);
+                }
             };
         };
     })();
@@ -174,10 +176,7 @@
                         </div>
                     </div>
                     <div class="data-viewer" id="view_${safeId}">
-                        <table id="table_${safeId}">
-                            <thead><tr><th class="cell-index">#</th><th class="cell-key">Key</th><th>Value (Content)</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
+                        <div id="content_${safeId}"></div>
                     </div>
                 `;
                 dbCard.appendChild(storeDiv);
@@ -194,8 +193,8 @@
             return;
         }
 
-        const tbody = document.getElementById(`table_${safeId}`).querySelector('tbody');
-        tbody.innerHTML = "<tr><td colspan='3'>Đang tải dữ liệu...</td></tr>";
+        const contentBox = document.getElementById(`content_${safeId}`);
+        contentBox.innerHTML = "<div style='padding:10px'>Đang tải dữ liệu...</div>";
         viewer.style.display = "block";
 
         const req = indexedDB.open(dbName);
@@ -205,7 +204,7 @@
             const store = tx.objectStore(storeName);
             const cursorReq = store.openCursor();
             
-            tbody.innerHTML = "";
+            contentBox.innerHTML = "";
             let count = 0;
 
             cursorReq.onsuccess = (ev) => {
@@ -214,46 +213,41 @@
                     count++;
                     const key = cursor.key;
                     const value = cursor.value;
-                    const tr = document.createElement('tr');
+                    const recordDiv = document.createElement('div');
+                    recordDiv.className = 'record-card';
                     
                     let valueDisplay = "";
-                    
                     if (value instanceof Blob) {
                         const url = URL.createObjectURL(value);
                         const isAudio = value.type.includes('audio');
                         valueDisplay = `
                             <div class="audio-ctrl">
-                                <span class="cell-blob">Blob [${value.type}] - ${(value.size/1024).toFixed(2)} KB</span>
+                                <span style="font-size:11px; color:#666">Blob [${value.type}] - ${(value.size/1024).toFixed(2)} KB</span>
                                 ${isAudio ? `<audio controls src="${url}"></audio>` : ''}
                                 <a href="${url}" download="${key}" class="download-link">💾 Tải về máy</a>
                             </div>`;
-                    } else if (typeof value === 'object' && value !== null) {
-                        const jsonStr = JSON.stringify(value, null, 4);
-                        valueDisplay = `<pre class="json-pretty">${jsonStr}</pre>`;
-                    } else if (typeof value === 'string') {
-                        try {
-                            const parsed = JSON.parse(value);
-                            if (typeof parsed === 'object' && parsed !== null) {
-                                valueDisplay = `<pre class="json-pretty">${JSON.stringify(parsed, null, 4)}</pre>`;
-                            } else {
-                                valueDisplay = `<span>${value}</span>`;
-                            }
-                        } catch (e) {
-                            valueDisplay = `<span>${value}</span>`;
-                        }
                     } else {
-                        valueDisplay = `<span>${value}</span>`;
+                        let jsonStr = "";
+                        try {
+                            const parsed = (typeof value === 'string') ? JSON.parse(value) : value;
+                            jsonStr = JSON.stringify(parsed, null, 4);
+                        } catch (e) {
+                            jsonStr = String(value);
+                        }
+                        valueDisplay = `<pre class="json-pretty">${jsonStr}</pre>`;
                     }
 
-                    tr.innerHTML = `
-                        <td class="cell-index">${count}</td>
-                        <td class="cell-key">${key}</td>
-                        <td>${valueDisplay}</td>
+                    recordDiv.innerHTML = `
+                        <div class="record-header">
+                            <span>Bản ghi #${count}</span>
+                        </div>
+                        <span class="record-key">🔑 ${key}</span>
+                        <div class="record-value">${valueDisplay}</div>
                     `;
-                    tbody.appendChild(tr);
+                    contentBox.appendChild(recordDiv);
                     cursor.continue();
                 } else if (count === 0) {
-                    tbody.innerHTML = "<tr><td colspan='3' style='text-align:center'>Trống.</td></tr>";
+                    contentBox.innerHTML = "<div style='text-align:center; padding:20px; color:#999'>Trống.</div>";
                 }
                 db.close();
             };
@@ -311,7 +305,7 @@
 
         writeLog(`Đang lấy dữ liệu Store [${storeName}] từ Cloud...`);
         try {
-            const response = await fetch(`${url}?key=${encodeURIComponent(storeName)}`);
+            const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}key=${encodeURIComponent(storeName)}`);
             const cloudData = await response.json();
             
             if (!cloudData || typeof cloudData !== 'object') {

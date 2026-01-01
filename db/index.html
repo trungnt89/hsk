@@ -73,6 +73,8 @@
     const logEl = document.getElementById('log');
     const resultsEl = document.getElementById('results');
     const scriptUrlInput = document.getElementById('scriptUrl');
+    // Khởi tạo URL mặc định
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec";
 
     (function initConfig() {
         const req = indexedDB.open("GAS_Config", 1);
@@ -88,7 +90,8 @@
             const store = tx.objectStore("settings");
             const getReq = store.get("gas_url");
             getReq.onsuccess = () => {
-                if (getReq.result) scriptUrlInput.value = getReq.result;
+                // Nếu có trong DB thì lấy, nếu không thì dùng mặc định
+                scriptUrlInput.value = getReq.result || DEFAULT_GAS_URL;
             };
         };
     })();

@@ -2,10 +2,11 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Quản trị IndexedDB - Sync Google Drive</title>
     <style>
         :root { --primary: #3498db; --view: #9b59b6; --export: #27ae60; --import: #f39c12; --clear: #e74c3c; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 20px; -webkit-text-size-adjust: 100%; }
         .container { max-width: 1200px; margin: auto; }
         
         .header-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; }
@@ -15,7 +16,7 @@
         .store-item { border: 1px solid #e1e4e8; border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
         .store-header { background: #f8f9fa; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e1e4e8; }
         
-        .btn-group { display: flex; gap: 5px; }
+        .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
         button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 11px; color: white; transition: opacity 0.2s; }
         button:hover { opacity: 0.8; }
         .btn-scan { background: var(--primary); width: 100%; padding: 12px; font-size: 14px; margin-bottom: 20px; }
@@ -28,8 +29,11 @@
         table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
         th { background: #f1f3f5; position: sticky; top: 0; padding: 10px; border: 1px solid #dee2e6; z-index: 10; }
         td { border: 1px solid #dee2e6; padding: 8px; text-align: left; vertical-align: top; word-break: break-all; }
-        .cell-key { font-weight: bold; color: #2c3e50; background: #fdfefe; width: 150px; }
-        .cell-index { width: 40px; text-align: center; }
+        
+        /* Tối ưu cột cho Mobile */
+        .cell-index { width: 30px; text-align: center; }
+        .cell-key { font-weight: bold; color: #2c3e50; background: #fdfefe; width: 25%; }
+        
         .cell-blob { color: #7f8c8d; font-style: italic; display: block; margin-bottom: 5px; }
         
         pre.json-pretty { 
@@ -43,6 +47,7 @@
             margin: 0;
             max-height: 300px;
             overflow: auto;
+            font-size: 11px;
         }
         
         .audio-ctrl { display: flex; flex-direction: column; gap: 5px; }
@@ -50,10 +55,26 @@
         .download-link { font-size: 11px; color: var(--primary); text-decoration: none; font-weight: bold; }
 
         .config-box { margin-bottom: 10px; text-align: left; font-size: 12px; }
-        #scriptUrl { width: 100%; padding: 5px; margin-top: 5px; border: 1px solid #ccc; }
+        #scriptUrl { width: 100%; padding: 5px; margin-top: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+
+        /* Toast Notification */
+        #toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #333; color: #fff; padding: 12px 25px; border-radius: 30px;
+            font-size: 13px; z-index: 10000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .cell-key { width: 80px; }
+            .btn-group { gap: 3px; }
+            button { padding: 5px 8px; font-size: 10px; }
+        }
     </style>
 </head>
 <body>
+
+<div id="toast"></div>
 
 <div class="container">
     <div class="header-box">
@@ -73,8 +94,7 @@
     const logEl = document.getElementById('log');
     const resultsEl = document.getElementById('results');
     const scriptUrlInput = document.getElementById('scriptUrl');
-    // Khởi tạo URL mặc định
-    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec";
+    const toastEl = document.getElementById('toast');
 
     (function initConfig() {
         const req = indexedDB.open("GAS_Config", 1);
@@ -90,11 +110,16 @@
             const store = tx.objectStore("settings");
             const getReq = store.get("gas_url");
             getReq.onsuccess = () => {
-                // Nếu có trong DB thì lấy, nếu không thì dùng mặc định
-                scriptUrlInput.value = getReq.result || DEFAULT_GAS_URL;
+                if (getReq.result) scriptUrlInput.value = getReq.result;
             };
         };
     })();
+
+    function showToast(msg, duration = 3000) {
+        toastEl.innerText = msg;
+        toastEl.style.display = 'block';
+        setTimeout(() => { toastEl.style.display = 'none'; }, duration);
+    }
 
     function saveGasUrl(url) {
         const req = indexedDB.open("GAS_Config", 1);
@@ -237,7 +262,10 @@
 
     async function syncToCloud(dbName, storeName) {
         const url = scriptUrlInput.value;
-        if (!url) return alert("Vui lòng nhập Google Script URL!");
+        if (!url) {
+            showToast("⚠️ Chưa nhập Google Script URL!");
+            return;
+        }
 
         writeLog(`Bắt đầu đồng bộ Store [${storeName}] lên Cloud...`);
         const req = indexedDB.open(dbName);
@@ -263,7 +291,11 @@
                             body: JSON.stringify({ key: storeName, value: allData })
                         });
                         writeLog(`Đã đồng bộ toàn bộ Store [${storeName}] lên Cloud.`);
-                    } catch (err) { writeLog(`Lỗi đồng bộ: ${err.message}`); }
+                        showToast(`✅ Đã đồng bộ [${storeName}] xong!`);
+                    } catch (err) { 
+                        writeLog(`Lỗi đồng bộ: ${err.message}`); 
+                        showToast("❌ Lỗi đồng bộ lên Cloud.");
+                    }
                     db.close();
                 }
             };
@@ -272,7 +304,10 @@
 
     async function syncFromCloud(dbName, storeName) {
         const url = scriptUrlInput.value;
-        if (!url) return alert("Vui lòng nhập Google Script URL!");
+        if (!url) {
+            showToast("⚠️ Chưa nhập Google Script URL!");
+            return;
+        }
 
         writeLog(`Đang lấy dữ liệu Store [${storeName}] từ Cloud...`);
         try {
@@ -281,6 +316,7 @@
             
             if (!cloudData || typeof cloudData !== 'object') {
                 writeLog(`Không có dữ liệu hợp lệ cho Store: ${storeName}`);
+                showToast("⚠️ Không tìm thấy dữ liệu trên Cloud.");
                 return;
             }
 
@@ -296,12 +332,14 @@
 
                 tx.oncomplete = () => {
                     writeLog(`Đã cập nhật thành công Store [${storeName}] từ Cloud.`);
+                    showToast(`✅ Đã tải dữ liệu [${storeName}] về!`);
                     db.close();
                     deepScan();
                 };
             };
         } catch (err) {
             writeLog(`Lỗi khi lấy dữ liệu: ${err.message}`);
+            showToast("❌ Lỗi khi tải dữ liệu từ Cloud.");
         }
     }
 
@@ -316,6 +354,7 @@
             const delReq = indexedDB.deleteDatabase(dbName);
             delReq.onsuccess = () => {
                 writeLog(`Đã XÓA Database: ${dbName}`);
+                showToast(`🗑️ Đã xóa DB ${dbName}`);
                 deepScan(); 
             };
             delReq.onerror = (err) => writeLog("Lỗi khi xóa Database: " + err.target.error);

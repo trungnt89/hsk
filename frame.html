@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Hệ Thống Chuyển Đổi Trang</title>
     <style>
         body, html {
@@ -11,9 +11,10 @@
             overflow: hidden;
             font-family: 'Segoe UI', sans-serif;
             background: #000;
+            /* Khử mọi hành vi tự động giãn cách của trình duyệt */
+            -webkit-text-size-adjust: 100%;
         }
 
-        /* Nút điều khiển nổi (Floating Button) */
         .toggle-btn {
             position: fixed;
             bottom: 25px;
@@ -31,15 +32,12 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            
-            /* Xử lý che nội dung: Mặc định mờ và thu nhỏ */
             opacity: 0.4;
             max-width: 45px; 
             overflow: hidden;
             white-space: nowrap;
         }
 
-        /* Khi người dùng tương tác: Hiện rõ và bung rộng chữ */
         .toggle-btn:hover, .toggle-btn:active {
             opacity: 1;
             max-width: 250px;
@@ -47,32 +45,31 @@
             transform: scale(1.05);
         }
 
-        /* Container của các trang */
         .page-container {
             position: relative;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
         }
 
         iframe {
+            all: initial;
+            display: none;
             position: absolute;
             top: 0; left: 0;
             width: 100%;
             height: 100%;
             border: none;
-            visibility: hidden;
             z-index: 1;
-            pointer-events: none;
+            /* CỐ LẬP KHÔNG GIAN: Ép iframe xử lý như một cửa sổ độc lập */
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* Class kích hoạt trang */
         iframe.active {
-            visibility: visible;
+            display: block;
             z-index: 10;
-            pointer-events: auto;
         }
 
-        /* Label hiển thị tên trang đang xem */
         .page-label {
             position: fixed;
             top: 15px;
@@ -91,20 +88,20 @@
 </head>
 <body>
 
-    <div class="page-label" id="currentLabel">Đang xem: Pomodoro Timer</div>
+    <div class="page-label" id="currentLabel">Đang xem: Database Manager</div>
 
     <button class="toggle-btn" onclick="switchPage()">
         <span id="btnIcon">🔄</span> 
-        <span id="btnText">Chuyển sang Quản lý DB</span>
+        <span id="btnText">Chuyển sang Pomodoro</span>
     </button>
 
     <div class="page-container">
-        <iframe src="pomodoro/index.html" id="page1" class="active"></iframe>
-        <iframe src="index.html" id="page2"></iframe>
+        <iframe src="pomodoro/index.html" id="page1"></iframe>
+        <iframe src="index.html" id="page2" class="active"></iframe>
     </div>
 
     <script>
-        let isPage1 = true;
+        let isPage1 = false;
         const p1 = document.getElementById('page1');
         const p2 = document.getElementById('page2');
         const label = document.getElementById('currentLabel');
@@ -117,19 +114,14 @@
                 label.innerText = "Đang xem: Database Manager";
                 btnText.innerText = "Chuyển sang Pomodoro";
                 isPage1 = false;
-                try { p2.contentWindow.focus(); } catch(e) {}
             } else {
                 p2.classList.remove('active');
                 p1.classList.add('active');
                 label.innerText = "Đang xem: Pomodoro Timer";
                 btnText.innerText = "Chuyển sang Quản lý DB";
                 isPage1 = true;
-                try { p1.contentWindow.focus(); } catch(e) {}
             }
         }
-
-        p1.onload = () => { if(isPage1) p1.contentWindow.focus(); };
-        p2.onload = () => { if(!isPage1) p2.contentWindow.focus(); };
     </script>
 </body>
 </html>

@@ -103,22 +103,22 @@
         <div class="input-group">
             <label>THỜI GIAN HỌC (PHÚT)</label>
             <select id="workTime" onchange="updateTimeSetting('work', this.value)">
-                <option value="0.0833">5 giây (Test)</option>
                 <option value="15">15 phút</option>
                 <option value="25" selected>25 phút</option>
                 <option value="45">45 phút</option>
                 <option value="60">60 phút</option>
                 <option value="90">90 phút</option>
+				<option value="custom">Tùy chỉnh...</option>
             </select>
         </div>
         <div class="input-group">
             <label>THỜI GIAN NGHỈ (PHÚT)</label>
             <select id="breakTime" onchange="updateTimeSetting('break', this.value)">
-                <option value="0.0833">5 giây (Test)</option>
                 <option value="5" selected>5 phút</option>
                 <option value="10">10 phút</option>
                 <option value="15">15 phút</option>
                 <option value="20">20 phút</option>
+				<option value="custom">Tùy chỉnh...</option>
             </select>
         </div>
         <div class="input-group">
@@ -176,7 +176,6 @@
 <audio id="alarmAudio"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
 <script>
-    /* Phần Script giữ nguyên hoàn toàn */
     let timer, isRunning = false, isWorkMode = true, timeLeft = 1500;
     let db, myChart, alarmInterval;
     const APP_KEY = "pomodoro_app_data";
@@ -222,8 +221,21 @@
         const data = await getAppData();
         if (data.settings) {
             appSettings = data.settings;
-            document.getElementById('workTime').value = appSettings.workTime;
-            document.getElementById('breakTime').value = appSettings.breakTime;
+            
+            const setCustomVal = (id, val) => {
+                const el = document.getElementById(id);
+                let opt = el.querySelector(`option[value="${val}"]`);
+                if (!opt) {
+                    opt = document.createElement('option');
+                    opt.value = val;
+                    opt.textContent = val + " phút (Tùy chỉnh)";
+                    el.appendChild(opt);
+                }
+                el.value = val;
+            };
+
+            setCustomVal('workTime', appSettings.workTime);
+            setCustomVal('breakTime', appSettings.breakTime);
             document.getElementById('workMusic').value = appSettings.workMusic;
             document.getElementById('breakMusic').value = appSettings.breakMusic;
             timeLeft = Math.round(appSettings.workTime * 60);
@@ -251,6 +263,24 @@
 
     function updateTimeSetting(type, val) {
         btnVibrate();
+        if (val === 'custom') {
+            const customVal = prompt("Nhập số phút mong muốn:", type === 'work' ? appSettings.workTime : appSettings.breakTime);
+            if (customVal !== null && !isNaN(customVal) && customVal > 0) {
+                val = parseFloat(customVal);
+                const selectEl = document.getElementById(type === 'work' ? 'workTime' : 'breakTime');
+                let opt = selectEl.querySelector(`option[value="${val}"]`);
+                if (!opt) {
+                    opt = document.createElement('option');
+                    opt.value = val;
+                    opt.textContent = val + " phút (Tùy chỉnh)";
+                    selectEl.appendChild(opt);
+                }
+                selectEl.value = val;
+            } else {
+                document.getElementById(type === 'work' ? 'workTime' : 'breakTime').value = type === 'work' ? appSettings.workTime : appSettings.breakTime;
+                return;
+            }
+        }
         if (type === 'work') appSettings.workTime = parseFloat(val);
         else appSettings.breakTime = parseFloat(val);
         saveAppData({ settings: appSettings });

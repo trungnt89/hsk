@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Mastery Matrix V15 - Full Analytics</title>
+    <style>
+        :root { 
+            --primary: #4f46e5; --success: #10b981; --fail: #ef4444; 
+            --bg: #f8fafc; --text: #1e293b; --weekend: #fff1f2;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 25px rgba(0,0,0,0.05); margin: auto; max-width: 1250px; }
+        
+        /* Dashboard Layout */
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr 250px; gap: 20px; margin-bottom: 30px; }
+        .chart-container { background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 15px; min-height: 220px; position: relative; }
+        
+        /* Bar Chart Style */
+        .chart-row { margin-bottom: 8px; }
+        .chart-label { font-size: 11px; font-weight: 600; margin-bottom: 2px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bar-bg { background: #f1f5f9; height: 8px; border-radius: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; transition: width 0.5s ease; }
+
+        /* Line Chart (Simplified with Flex) */
+        .line-chart { display: flex; align-items: flex-end; height: 120px; gap: 2px; margin-top: 10px; }
+        .line-bar { flex: 1; background: var(--primary); opacity: 0.3; border-radius: 2px 2px 0 0; position: relative; }
+        .line-bar:hover { opacity: 1; }
+        .line-bar.is-today-bar { background: var(--fail); opacity: 0.8; }
+
+        /* Table Area */
+        .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px; }
+        table { border-collapse: collapse; width: max-content; background: white; }
+
+        .sticky-col { 
+            position: sticky; left: 0; z-index: 10; background: #fff; width: 200px; 
+            border-right: 3px solid #e2e8f0; padding: 8px;
+        }
+        
+        /* Textarea cho tên thói quen để không bị che */
+        .habit-name-box { 
+            width: 100%; border: none; font-weight: 700; font-size: 13px; color: var(--text);
+            resize: none; background: transparent; outline: none; padding: 4px;
+        }
+
+        .day-col { width: 45px; text-align: center; border: 1px solid #f1f5f9; }
+        .mark { width: 32px; height: 32px; margin: auto; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #f8fafc; transition: 0.2s; }
+        .status-done { background: var(--success) !important; color: white; transform: scale(1.1); }
+        .status-fail { background: var(--fail) !important; color: white; }
+        
+        .is-today { background: var(--primary) !important; color: white !important; }
+        .weekend { background: var(--weekend) !important; }
+
+        /* Nút xóa */
+        .action-col { width: 40px; text-align: center; border-left: 1px solid #f1f5f9; }
+        .btn-delete { color: #cbd5e1; cursor: pointer; font-size: 18px; transition: 0.2s; }
+        .btn-delete:hover { color: var(--fail); }
+
+        button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 18px; font-weight: bold; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-nav { background: #f1f5f9; color: var(--primary); padding: 8px 12px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header-area">
+        <h2 style="margin:0; color: var(--primary)">🎯 Mastery Matrix <span id="mLabel"></span></h2>
+        <div style="display:flex; gap:8px">
+            <button class="btn-nav" onclick="moveMonth(-1)">◀</button>
+            <button class="btn-nav" onclick="moveMonth(1)">▶</button>
+            <button class="btn-primary" onclick="addNewHabit()">+ Thêm mục tiêu</button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="chart-container">
+            <h4 style="margin:0 0 15px 0">Tỉ lệ hoàn thành (%)</h4>
+            <div id="barCharts"></div>
+        </div>
+
+        <div class="chart-container">
+            <h4 style="margin:0">Hoàn thành theo ngày</h4>
+            <small style="color:#64748b">Tổng số việc xong mỗi ngày</small>
+            <div class="line-chart" id="dayTrends"></div>
+        </div>
+
+        <div class="chart-container" style="text-align: center; display:flex; flex-direction:column; justify-content:center">
+            <h4 style="margin:0">Ngôi sao tháng 🌟</h4>
+            <div id="bestHabit" style="font-size: 18px; font-weight: 800; color: var(--success); margin: 10px 0;">--</div>
+            <div id="completionRate" style="font-size: 24px; font-weight: 800; color: var(--primary);">0%</div>
+            <small>Tổng hiệu suất</small>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead id="tHead"></thead>
+            <tbody id="tBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let habits = JSON.parse(localStorage.getItem('v15_habits')) || [
+        { id: 1, name: "Chạy bộ buổi sáng" }, { id: 2, name: "Đọc sách phát triển bản thân" }, { id: 3, name: "Học lập trình" }
+    ];
+    let logs = JSON.parse(localStorage.getItem('v15_logs')) || {};
+    let displayDate = new Date();
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    function moveMonth(s) { displayDate.setMonth(displayDate.getMonth() + s); render(); }
+    
+    function addNewHabit() { 
+        habits.push({ id: Date.now(), name: "Thói quen mới" }); 
+        save(); render(); 
+    }
+
+    function deleteHabit(id) {
+        if(confirm('Xóa thói quen này?')) {
+            habits = habits.filter(h => h.id !== id);
+            save(); render();
+        }
+    }
+
+    function save() { 
+        localStorage.setItem('v15_habits', JSON.stringify(habits)); 
+        localStorage.setItem('v15_logs', JSON.stringify(logs)); 
+    }
+
+    function toggle(d, id) {
+        if(!logs[d]) logs[d] = {};
+        logs[d][id] = (logs[d][id] === 'done') ? 'fail' : (logs[d][id] === 'fail' ? null : 'done');
+        save(); render();
+    }
+
+    function render() {
+        const year = displayDate.getFullYear();
+        const month = displayDate.getMonth();
+        const days = new Date(year, month + 1, 0).getDate();
+        document.getElementById('mLabel').innerText = `${month + 1}/${year}`;
+
+        // 1. Phân tích Dữ liệu
+        let chartHtml = '';
+        let trendHtml = '';
+        let topH = { name: '--', count: -1 };
+        let totalDone = 0;
+
+        // Tính theo thói quen (Bar chart)
+        habits.forEach(h => {
+            let hDone = 0;
+            for(let i=1; i<=days; i++) {
+                const dStr = new Date(year, month, i).toISOString().split('T')[0];
+                if(logs[dStr]?.[h.id] === 'done') hDone++;
+            }
+            totalDone += hDone;
+            const pct = Math.round((hDone / days) * 100) || 0;
+            if(hDone > topH.count) topH = { name: h.name, count: hDone };
+
+            chartHtml += `
+                <div class="chart-row">
+                    <span class="chart-label">${h.name}</span>
+                    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background: ${pct > 70 ? 'var(--success)' : 'var(--primary)'}"></div></div>
+                </div>`;
+        });
+
+        // Tính theo ngày (Trend chart)
+        for(let i=1; i<=days; i++) {
+            const dStr = new Date(year, month, i).toISOString().split('T')[0];
+            let dayCount = 0;
+            habits.forEach(h => { if(logs[dStr]?.[h.id] === 'done') dayCount++; });
+            const height = (dayCount / habits.length) * 100 || 5;
+            trendHtml += `<div class="line-bar ${dStr===todayStr?'is-today-bar':''}" style="height:${height}%" title="Ngày ${i}: xong ${dayCount}"></div>`;
+        }
+
+        document.getElementById('barCharts').innerHTML = chartHtml;
+        document.getElementById('dayTrends').innerHTML = trendHtml;
+        document.getElementById('bestHabit').innerText = topH.count > 0 ? topH.name : '--';
+        document.getElementById('completionRate').innerText = Math.round(totalDone / (habits.length * days) * 100 || 0) + '%';
+
+        // 2. Render Table
+        let hRow = `<tr><th class="sticky-col">Mục tiêu</th>`;
+        for(let i=1; i<=days; i++) {
+            const d = new Date(year, month, i);
+            const isT = d.toISOString().split('T')[0] === todayStr;
+            hRow += `<th class="day-col ${isT ? 'is-today' : ''} ${d.getDay()%6===0?'weekend':''}">
+                <div style="font-size:9px">${d.toLocaleDateString('vi-VN',{weekday:'short'}).replace('Th ','T')}</div>
+                <b>${i}</b></th>`;
+        }
+        document.getElementById('tHead').innerHTML = hRow + `<th class="action-col">#</th></tr>`;
+
+        let bRow = '';
+        habits.forEach(h => {
+            bRow += `<tr><td class="sticky-col">
+                <textarea class="habit-name-box" onchange="h.name=this.value; save(); render();">${h.name}</textarea>
+            </td>`;
+            for(let i=1; i<=days; i++) {
+                const dStr = new Date(year, month, i).toISOString().split('T')[0];
+                const st = logs[dStr]?.[h.id] || '';
+                bRow += `<td class="day-col ${new Date(year,month,i).getDay()%6===0?'weekend':''}">
+                    <div class="mark status-${st}" onclick="toggle('${dStr}', ${h.id})">${st==='done'?'✓':(st==='fail'?'✕':'')}</div>
+                </td>`;
+            }
+            bRow += `<td class="action-col"><span class="btn-delete" onclick="deleteHabit(${h.id})">🗑</span></td></tr>`;
+        });
+        document.getElementById('tBody').innerHTML = bRow;
+    }
+    render();
+</script>
+</body>
+</html>

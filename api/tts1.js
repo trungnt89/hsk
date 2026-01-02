@@ -1,33 +1,48 @@
 /**
- * =========================================================
- * Azure Text-to-Speech Serverless API (Vercel / Node.js)
- * =========================================================
+ * =====================================================================
+ * AZURE TEXT-TO-SPEECH SERVERLESS API (VERCEL / NODE.JS)
+ * =====================================================================
  *
- * 📌 MÔ TẢ
- * - API đọc text → audio bằng Azure Speech TTS
+ * 🎯 MỤC ĐÍCH
+ * - Chuyển văn bản → giọng nói bằng Azure Speech TTS
  * - Hỗ trợ đa ngôn ngữ, đa giọng (NAM / NỮ)
- * - Nếu KHÔNG truyền tham số → mặc định:
- *     🇨🇳 Tiếng Trung (zh-CN) – Giọng NỮ
+ * - Có thể điều chỉnh tốc độ đọc
  *
- * =========================================================
- * 📌 CẤU HÌNH ENV (bắt buộc)
+ * ---------------------------------------------------------------------
+ * 🔧 CẤU HÌNH ENV (BẮT BUỘC)
  *
  * AZURE_TTS_ENDPOINT=https://<region>.tts.speech.microsoft.com
- * AZURE_TTS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ * AZURE_TTS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
  *
- * =========================================================
- * 📌 QUERY PARAMS
+ * ⚠️ LƯU Ý:
+ * - Endpoint PHẢI là *.tts.speech.microsoft.com
+ * - KHÔNG dùng api.cognitive.microsoft.com
  *
- * text   : nội dung cần đọc (URL encoded)
- * lang   : mã ngôn ngữ (vd: zh-CN, ja-JP, en-US)
- * voice  : giọng đọc Azure Neural (NAM / NỮ)
- * format : (optional) format audio
+ * ---------------------------------------------------------------------
+ * 🧩 QUERY PARAMETERS (TẤT CẢ ĐỀU LÀ OPTIONAL)
  *
- * =========================================================
- * 📌 GIỌNG ĐỌC MẪU (NAM / NỮ)
+ * | Param  | Mặc định | Ý nghĩa |
+ * |------|---------|--------|
+ * | text   | 你好 | Nội dung cần đọc |
+ * | lang   | zh-CN | Ngôn ngữ SSML |
+ * | voice  | zh-CN-XiaoxiaoNeural | Giọng đọc |
+ * | rate   | 1.0 | Tốc độ đọc |
+ * | format | audio-16khz-32kbitrate-mono-mp3 | Format audio |
+ *
+ * ---------------------------------------------------------------------
+ * 🌐 LANG (Ngôn ngữ phổ biến)
+ *
+ * zh-CN : Trung Quốc
+ * ja-JP : Nhật
+ * en-US : Anh (Mỹ)
+ * ko-KR : Hàn
+ * vi-VN : Việt
+ *
+ * ---------------------------------------------------------------------
+ * 🎤 VOICE (GIỌNG ĐỌC THAM KHẢO – NEURAL)
  *
  * 🇨🇳 Chinese (zh-CN)
- *   - Nữ : zh-CN-XiaoxiaoNeural
+ *   - Nữ : zh-CN-XiaoxiaoNeural (DEFAULT)
  *   - Nam: zh-CN-YunxiNeural
  *
  * 🇯🇵 Japanese (ja-JP)
@@ -38,33 +53,60 @@
  *   - Nữ : en-US-JennyNeural
  *   - Nam: en-US-GuyNeural
  *
- * =========================================================
+ * 🇻🇳 Vietnamese (vi-VN)
+ *   - Nữ : vi-VN-HoaiMyNeural
+ *   - Nam: vi-VN-NamMinhNeural
+ *
+ * ---------------------------------------------------------------------
+ * ⏩ RATE (TỐC ĐỘ ĐỌC – KHUYẾN NGHỊ)
+ *
+ * | Giá trị | Mức độ | Dùng khi |
+ * |-------|-------|---------|
+ * | 0.7   | Rất chậm | Trẻ em / mới học |
+ * | 0.85  | Chậm | Học từ mới |
+ * | 1.0   | Bình thường | Nghe hiểu |
+ * | 1.1   | Hơi nhanh | Luyện phản xạ |
+ * | 1.25  | Nhanh | Nghe tự nhiên |
+ * | 1.5   | Rất nhanh | Nâng cao |
+ *
+ * 👉 App học từ vựng nên dùng: 0.85 → 1.0 → 1.2
+ *
+ * ---------------------------------------------------------------------
+ * 🎧 FORMAT AUDIO (Azure hỗ trợ)
+ *
+ * audio-16khz-32kbitrate-mono-mp3   (DEFAULT, nhẹ, web friendly)
+ * audio-24khz-48kbitrate-mono-mp3
+ * audio-16khz-128kbitrate-mono-mp3
+ * riff-16khz-16bit-mono-pcm         (wav)
+ *
+ * ---------------------------------------------------------------------
  * 📌 VÍ DỤ GỌI API
  *
- * 🇨🇳 Trung – Giọng NỮ (default)
+ * 1️⃣ Mặc định (Trung – Nữ – Normal)
  * /api/tts?text=你好
  *
- * 🇨🇳 Trung – Giọng NAM
- * /api/tts?text=你好&voice=zh-CN-YunxiNeural
+ * 2️⃣ Trung – Nam – Chậm
+ * /api/tts?text=你好&voice=zh-CN-YunxiNeural&rate=0.85
  *
- * 🇯🇵 Nhật – Giọng NỮ
+ * 3️⃣ Nhật – Nữ – Normal
  * /api/tts?text=こんにちは&lang=ja-JP&voice=ja-JP-NanamiNeural
  *
- * 🇺🇸 Anh – Giọng NAM
- * /api/tts?text=Hello&lang=en-US&voice=en-US-GuyNeural
+ * 4️⃣ Anh – Nam – Nhanh
+ * /api/tts?text=Hello&lang=en-US&voice=en-US-GuyNeural&rate=1.2
  *
- * =========================================================
+ * =====================================================================
  */
 
 export default async function handler(req, res) {
   try {
     // ===============================
-    // 1️⃣ DEFAULT: Chinese – Female
+    // 1️⃣ PARAMS + DEFAULT
     // ===============================
     const {
       text = '你好',
       lang = 'zh-CN',
-      voice = 'zh-CN-XiaoxiaoNeural', // 👈 mặc định giọng NỮ
+      voice = 'zh-CN-XiaoxiaoNeural', // default: Chinese female
+      rate = '1.0',
       format = 'audio-16khz-32kbitrate-mono-mp3'
     } = req.query;
 
@@ -80,7 +122,7 @@ export default async function handler(req, res) {
 
     if (endpoint.includes('api.cognitive.microsoft.com')) {
       return res.status(500).json({
-        error: 'Invalid Azure TTS endpoint. Use *.tts.speech.microsoft.com'
+        error: 'Invalid Azure TTS endpoint'
       });
     }
 
@@ -88,12 +130,14 @@ export default async function handler(req, res) {
     const ttsUrl = `${endpoint}/cognitiveservices/v1`;
 
     // ===============================
-    // 3️⃣ SSML
+    // 3️⃣ SSML (rate applied)
     // ===============================
     const ssml = `
 <speak version="1.0" xml:lang="${lang}">
   <voice name="${voice}">
-    ${escapeXml(text)}
+    <prosody rate="${rate}">
+      ${escapeXml(text)}
+    </prosody>
   </voice>
 </speak>`;
 

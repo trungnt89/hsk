@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mastery Matrix V18.3 - Auto Fail Past</title>
+    <title>Mastery Matrix V18.3 - Pro Pie Charts</title>
     <style>
         :root { 
             --primary: #4f46e5; --success: #10b981; --fail: #ef4444; 
@@ -16,82 +16,61 @@
         .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .month-label { font-weight: 800; font-size: 1.2rem; color: var(--primary); min-width: 180px; text-align: center; background: #eef2ff; padding: 8px 15px; border-radius: 12px; }
 
-        /* Mobile Optimized Queries */
         @media (max-width: 768px) {
             body { padding: 10px; }
             .card { padding: 15px; border-radius: 12px; }
             .header-area { flex-direction: column; gap: 12px; align-items: stretch; }
-            .month-label { font-size: 1rem; min-width: unset; padding: 6px; }
-            .dashboard { grid-template-columns: 1fr !important; gap: 15px; }
-            .sticky-col { width: 130px !important; min-width: 130px; padding: 8px 5px !important; }
-            .habit-name-box { font-size: 12px !important; max-height: 45px; }
-            .day-col { min-width: 48px; } /* Đảm bảo vùng chạm đủ rộng */
-            h2 { font-size: 1.1rem; text-align: center; }
+            .dashboard { grid-template-columns: 1fr !important; }
+            .sticky-col { width: 130px !important; min-width: 130px; }
         }
 
-        /* Bảng lên trên */
-        .table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 15px; margin-bottom: 30px; box-shadow: inset 0 0 10px rgba(0,0,0,0.02); }
+        .table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 15px; margin-bottom: 30px; }
         table { border-collapse: collapse; width: 100%; min-width: max-content; background: white; }
-        th { background: #f8fafc; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
         td, th { border: 1px solid #f1f5f9; height: 55px; }
 
         .sticky-col { 
             position: sticky; left: 0; z-index: 100; background: #fff; width: 220px; 
-            border-right: 4px solid #f1f5f9; padding: 10px; box-shadow: 10px 0 15px -10px rgba(0,0,0,0.05);
-            vertical-align: middle;
+            border-right: 4px solid #f1f5f9; padding: 10px;
         }
         
         .habit-name-box { 
             width: 100%; border: none; font-weight: 600; font-size: 13px; 
-            color: var(--text); resize: none; background: #f8fafc; outline: none; padding: 5px; border-radius: 4px;
-            overflow: hidden; display: block; line-height: 1.4; height: auto;
+            color: var(--text); resize: none; background: #f8fafc; outline: none; padding: 5px;
         }
 
-        .day-col { width: 45px; text-align: center; vertical-align: middle; }
+        .day-col { width: 45px; text-align: center; }
+        .mark { width: 32px; height: 32px; margin: auto; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #f1f5f9; }
         
-        .mark { 
-            width: 32px; height: 32px; margin: auto; border-radius: 8px; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; background: #f1f5f9; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
-            border: 1px solid transparent;
-        }
-        .mark:hover { transform: scale(1.1); border-color: #cbd5e1; }
-
-        /* Vô hiệu hóa ngày tương lai hoàn toàn */
-        .future-day { opacity: 0.2; cursor: not-allowed !important; pointer-events: none; background: #eceff1 !important; }
-        .future-day .mark { display: none; } 
-        
-        .status-done { background: var(--success) !important; color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
-        .status-fail { background: var(--fail) !important; color: white; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+        .status-done { background: var(--success) !important; color: white; }
+        .status-fail { background: var(--fail) !important; color: white; }
         .is-today { background: var(--primary) !important; color: white !important; }
-        .weekend { background: var(--weekend) !important; }
 
-        /* Dashboard xuống dưới */
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr 280px; gap: 20px; }
-        .chart-container { background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 15px; min-height: 160px; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr 300px; gap: 20px; }
+        .chart-container { background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 15px; }
         
         .chart-row { margin-bottom: 12px; }
         .chart-label { font-size: 12px; font-weight: 600; margin-bottom: 4px; display: block; }
         .bar-bg { background: #f1f5f9; height: 10px; border-radius: 10px; overflow: hidden; }
         .bar-fill { height: 100%; transition: width 0.6s ease; }
 
-        /* Cảnh báo phân cấp */
-        .warning-alert { padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 12px; border-left: 5px solid; }
-        .warn-yellow { background: #fffbeb; border-color: var(--warning); color: #92400e; }
-        .warn-red { background: #fef2f2; border-color: var(--fail); color: #b91c1c; font-weight: 600; }
-        .warn-danger { background: #450a0a; border-color: #f87171; color: #fecaca; animation: pulse-danger 1.5s infinite; }
-
-        @keyframes pulse-danger {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.01); background: #7f1d1d; }
+        /* Pie Chart Pro CSS */
+        .pie-item { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 60px; }
+        .pie {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: conic-gradient(var(--c) calc(var(--p)*1%), rgba(255,255,255,0.25) 0);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 800; color: #fff;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.1);
+            position: relative;
         }
+        /* Tạo lỗ ở giữa để thành donut chart nếu muốn, hiện tại để tròn đặc như yêu cầu */
+        .pie-name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; opacity: 0.9; text-align: center; }
 
-        .btn-delete { color: #cbd5e1; cursor: pointer; font-size: 18px; margin-left: 5px; transition: color 0.2s; }
-        .btn-delete:hover { color: var(--fail); }
-        button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 18px; font-weight: bold; transition: opacity 0.2s; }
-        button:hover { opacity: 0.9; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-nav { background: #f1f5f9; color: var(--primary); }
+        .warning-alert { padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 12px; border-left: 5px solid; }
+        .warn-danger { background: #450a0a; border-color: #f87171; color: #fecaca; }
+        .btn-delete { color: #cbd5e1; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: white; padding: 10px 18px; border-radius: 8px; font-weight: bold; }
+        .btn-nav { background: #f1f5f9; color: var(--primary); padding: 10px; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -123,10 +102,13 @@
             <h4 style="margin:0 0 10px 0">Trạng thái kỷ luật ⚠️</h4>
             <div id="streakWarnings"></div>
         </div>
-        <div class="chart-container" style="text-align: center; display:flex; flex-direction:column; justify-content:center; background: var(--fail); color: white; border:none">
-            <h4 style="margin:0">Yếu nhất tháng ⚠️</h4>
-            <div id="worstHabit" style="font-size: 18px; font-weight: 800; margin: 10px 0; color: #fff">--</div>
-            <p style="margin:0; opacity: 0.9; font-size: 11px;">Dựa trên dữ liệu thực tế</p>
+        <div class="chart-container" style="text-align: center; display:flex; flex-direction:column; background: var(--fail); color: white; border:none; min-height: 220px;">
+            <h4 style="margin:0 0 15px 0">Hiệu suất thực tế 📊</h4>
+            <div id="pieChartsContainer" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-bottom: 15px;"></div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.2); pt: 10px;">
+                <h4 style="margin:10px 0 5px 0">Yếu nhất tháng ⚠️</h4>
+                <div id="worstHabit" style="font-size: 16px; font-weight: 800; color: #fff">--</div>
+            </div>
         </div>
     </div>
 </div>
@@ -146,9 +128,7 @@
             const request = indexedDB.open(dbName, 1);
             request.onupgradeneeded = (e) => {
                 const db = e.target.result;
-                if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName);
-                }
+                if (!db.objectStoreNames.contains(storeName)) db.createObjectStore(storeName);
             };
             request.onsuccess = async (e) => {
                 const db = e.target.result;
@@ -158,18 +138,8 @@
                     const req = store.get(dataKey);
                     req.onsuccess = () => r(req.result);
                 });
-                
-                if (res) {
-                    habits = res.habits || [];
-                    logs = res.logs || {};
-                } else {
-                    habits = [
-                        { id: 1, name: "Dậy sớm 5h" },
-                        { id: 2, name: "Chạy thể dục" }
-                    ];
-                    logs = {};
-                    await save();
-                }
+                if (res) { habits = res.habits || []; logs = res.logs || {}; }
+                else { habits = [{ id: 1, name: "Dậy sớm 5h" }, { id: 2, name: "Chạy thể dục" }]; await save(); }
                 resolve();
             };
         });
@@ -188,54 +158,41 @@
         });
     }
 
-    function cleanFutureData() {
-        let changed = false;
-        for (let dateKey in logs) {
-            const checkDate = new Date(dateKey);
-            if (checkDate > today) {
-                delete logs[dateKey];
-                changed = true;
-            }
-        }
-        if (changed) save();
-    }
-
     function moveMonth(s) { displayDate.setMonth(displayDate.getMonth() + s); render(); }
     async function addNewHabit() { habits.push({ id: Date.now(), name: "Việc mới" }); await save(); render(); }
-    async function deleteHabit(id) { if(confirm('Xóa thói quen này?')) { habits = habits.filter(h => h.id !== id); await save(); render(); } }
-
-    function autoResize(el) {
-        el.style.height = 'auto';
-        el.style.height = el.scrollHeight + 'px';
-    }
+    async function deleteHabit(id) { if(confirm('Xóa?')) { habits = habits.filter(h => h.id !== id); await save(); render(); } }
+    function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
 
     async function toggle(dStr, id) {
         const targetDate = new Date(dStr);
         if (targetDate > today) return;
-
         if(!logs[dStr]) logs[dStr] = {};
         let cur = logs[dStr][id];
-        
-        if (targetDate < today && !cur) {
-            logs[dStr][id] = 'done';
-        } else {
-            logs[dStr][id] = (cur === 'done') ? 'fail' : (cur === 'fail' ? null : 'done');
-        }
-        
+        if (targetDate < today && !cur) logs[dStr][id] = 'done';
+        else logs[dStr][id] = (cur === 'done') ? 'fail' : (cur === 'fail' ? null : 'done');
         await save(); render();
     }
 
     function render() {
-        cleanFutureData();
-        
         const year = displayDate.getFullYear();
         const month = displayDate.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         document.getElementById('mLabel').innerText = `Tháng ${(month + 1).toString().padStart(2, '0')}/${year}`;
 
+        // Tính số ngày đã qua của tháng để làm mẫu số cho Pie Chart
+        let elapsedDays = 0;
+        if (year < today.getFullYear() || (year === today.getFullYear() && month < today.getMonth())) {
+            elapsedDays = daysInMonth; // Tháng cũ đã qua hết
+        } else if (year === today.getFullYear() && month === today.getMonth()) {
+            elapsedDays = today.getDate(); // Tháng hiện tại tính đến hôm nay
+        } else {
+            elapsedDays = 0; // Tháng tương lai
+        }
+
         let worstH = { name: '--', count: 999 };
         let barHtml = '';
         let warningHtml = '';
+        let pieHtml = '';
 
         habits.forEach(h => {
             let doneCount = 0;
@@ -243,50 +200,51 @@
             let tempStreak = 0;
             
             for (let i = 1; i <= daysInMonth; i++) {
-                const checkDate = new Date(year, month, i);
-                checkDate.setHours(0,0,0,0);
+                const checkDate = new Date(year, month, i); checkDate.setHours(0,0,0,0);
                 const dStr = checkDate.toISOString().split('T')[0];
                 let status = logs[dStr]?.[h.id];
-                
                 if (!status && checkDate < today) status = 'fail';
                 if (status === 'done') { doneCount++; tempStreak = 0; } 
                 else if (status === 'fail') { tempStreak++; } 
-                else { tempStreak = 0; }
-                
-                if (checkDate.getTime() <= today.getTime()) {
-                    currentXStreak = tempStreak;
-                }
+                else tempStreak = 0;
+                if (checkDate.getTime() <= today.getTime()) currentXStreak = tempStreak;
             }
 
             if(doneCount < worstH.count) worstH = { name: h.name, count: doneCount };
-            const pct = Math.round((doneCount / daysInMonth) * 100) || 0;
             
+            // Tỷ lệ hoàn thành trên cả tháng (cho Progress Bar)
+            const totalPct = Math.round((doneCount / daysInMonth) * 100) || 0;
             barHtml += `<div class="chart-row">
-                <span class="chart-label">${h.name} (${pct}%)</span>
-                <div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:${pct > 70 ? 'var(--success)' : 'var(--primary)'}"></div></div>
+                <span class="chart-label">${h.name} (${totalPct}%)</span>
+                <div class="bar-bg"><div class="bar-fill" style="width:${totalPct}%; background:${totalPct > 70 ? 'var(--success)' : 'var(--primary)'}"></div></div>
             </div>`;
+
+            // Tỷ lệ hoàn thành trên số ngày đã qua (cho Pie Chart)
+            const piePct = elapsedDays > 0 ? Math.round((doneCount / elapsedDays) * 100) : 0;
+            let pieColor = piePct >= 80 ? '#10b981' : (piePct >= 60 ? '#f59e0b' : '#ef4444');
+
+            pieHtml += `
+                <div class="pie-item">
+                    <div class="pie" style="--p:${piePct}; --c:${pieColor}">${piePct}%</div>
+                    <div class="pie-name">${h.name}</div>
+                </div>`;
             
-            if (currentXStreak > 3) {
-                warningHtml += `<div class="warning-alert warn-danger">💀 <b>${h.name}</b>: Chuỗi lười ${currentXStreak} ngày. Nguy cơ bỏ cuộc!</div>`;
-            } else if (currentXStreak === 3) {
-                warningHtml += `<div class="warning-alert warn-red">🔴 <b>${h.name}</b>: Cảnh báo đỏ! Lười 3 ngày liên tiếp.</div>`;
-            } else if (currentXStreak === 2) {
-                warningHtml += `<div class="warning-alert warn-yellow">⚠️ <b>${h.name}</b>: Đã 2 ngày chưa thực hiện.</div>`;
+            if (currentXStreak >= 2) {
+                let cls = currentXStreak > 3 ? 'warn-danger' : 'warn-red';
+                warningHtml += `<div class="warning-alert ${cls}">⚠️ <b>${h.name}</b>: Lười ${currentXStreak} ngày.</div>`;
             }
         });
 
         document.getElementById('barCharts').innerHTML = barHtml;
-        document.getElementById('streakWarnings').innerHTML = warningHtml || '<p style="font-size:12px; color:var(--success)">🔥 Phong độ tuyệt vời!</p>';
+        document.getElementById('streakWarnings').innerHTML = warningHtml || '<p style="font-size:12px; color:var(--success)">🔥 Phong độ tốt!</p>';
         document.getElementById('worstHabit').innerText = worstH.name;
+        document.getElementById('pieChartsContainer').innerHTML = pieHtml;
 
+        // Bảng dữ liệu
         let headHtml = `<tr><th class="sticky-col">Mục tiêu</th>`;
         for(let i=1; i<=daysInMonth; i++) {
-            const d = new Date(year, month, i);
-            d.setHours(0,0,0,0);
-            const isT = d.getTime() === today.getTime();
-            const isFuture = d > today;
-            
-            headHtml += `<th class="day-col ${isT ? 'is-today' : ''} ${d.getDay()%6===0?'weekend':''} ${isFuture?'future-day':''}">
+            const d = new Date(year, month, i); d.setHours(0,0,0,0);
+            headHtml += `<th class="day-col ${d.getTime()===today.getTime()?'is-today':''}">
                 <div style="font-size:9px">${d.toLocaleDateString('vi-VN',{weekday:'short'}).replace('Th ','T')}</div>
                 <b>${i}</b></th>`;
         }
@@ -295,26 +253,20 @@
         let bodyHtml = '';
         habits.forEach(h => {
             bodyHtml += `<tr><td class="sticky-col" style="display:flex; align-items:center; gap:5px; border:none;">
-                <textarea class="habit-name-box" oninput="autoResize(this)" onchange="const idx=habits.findIndex(x=>x.id===${h.id}); if(idx>-1){habits[idx].name=this.value; save(); render();}">${h.name}</textarea>
+                <textarea class="habit-name-box" onchange="const idx=habits.findIndex(x=>x.id===${h.id}); if(idx>-1){habits[idx].name=this.value; save(); render();}">${h.name}</textarea>
                 <span class="btn-delete" onclick="deleteHabit(${h.id})">🗑</span>
             </td>`;
             for(let i=1; i<=daysInMonth; i++) {
-                const d = new Date(year, month, i);
-                d.setHours(0,0,0,0);
+                const d = new Date(year, month, i); d.setHours(0,0,0,0);
                 const dStr = d.toISOString().split('T')[0];
-                let st = logs[dStr]?.[h.id] || '';
-                const isFuture = d > today;
-
-                if (!st && d < today) st = 'fail';
-
-                bodyHtml += `<td class="day-col ${d.getDay()%6===0?'weekend':''} ${isFuture?'future-day':''}">
+                let st = logs[dStr]?.[h.id] || (d < today ? 'fail' : '');
+                bodyHtml += `<td class="day-col">
                     <div class="mark status-${st}" onclick="toggle('${dStr}', ${h.id})">${st==='done'?'✓':(st==='fail'?'✕':'')}</div>
                 </td>`;
             }
             bodyHtml += `</tr>`;
         });
         document.getElementById('tBody').innerHTML = bodyHtml;
-        document.querySelectorAll('.habit-name-box').forEach(el => autoResize(el));
     }
 
     initDB().then(() => render());

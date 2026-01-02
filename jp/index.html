@@ -28,9 +28,12 @@
       flex-wrap: wrap;
       margin-top: 10px;
     }
-    select, button {
+    select, button, textarea {
       padding: 8px;
       font-size: 15px;
+    }
+    textarea {
+      width: 100%;
     }
   </style>
 </head>
@@ -60,6 +63,13 @@
   <button onclick="toggleRepeatAll()">🔁 Lặp cả danh sách</button>
 </div>
 
+<div class="controls">
+  <textarea id="textInput" rows="4" placeholder="Nhập nội dung tiếng Nhật..."></textarea>
+  <button onclick="addText()">➕ Thêm</button>
+  <button onclick="updateText()">✏️ Sửa</button>
+  <button onclick="deleteText()">🗑 Xoá</button>
+</div>
+
 <ul id="list"></ul>
 
 <audio id="audio" controls style="width:100%; margin-top:16px;"></audio>
@@ -70,18 +80,11 @@ const API_URL = "https://hsk-gilt.vercel.app/api/tts1";
 const DB_NAME = "tts-audio-cache";
 const STORE_NAME = "audio";
 
-/* ====================== SAMPLE TEXT ====================== */
+/* ====================== SAMPLE TEXT (100+ chữ) ====================== */
 const texts = [
-  "おはようございます。今日はいい天気ですね。",
-  "はじめまして。どうぞよろしくお願いします。",
-  "これは私の本です。とても面白いですよ。",
-  "昨日は忙しかったですが、楽しかったです。",
-  "すみません、もう一度言ってください。",
-  "日本語を勉強するのは楽しいです。",
-  "駅はどこですか？ここから近いですか。",
-  "今日は仕事が終わったら早く帰ります。",
-  "コーヒーとケーキを一つお願いします。",
-  "明日も頑張りましょう。お疲れさまでした。"
+  "日本で働き始めてから、毎日の生活リズムが大きく変わりました。朝は早く起きて電車に乗り、会社では多くの人と協力しながら仕事を進めています。最初は言葉や文化の違いに戸惑うこともありましたが、少しずつ慣れてきました。",
+  "日本語の勉強は簡単ではありませんが、毎日少しずつ続けることが大切だと思います。聞く力、話す力、読む力、書く力をバランスよく伸ばすことで、実際の生活でも自信を持って使えるようになります。",
+  "週末になると、公園を散歩したり、本を読んだりしてリラックスする時間を大切にしています。忙しい日常の中でも、自分の心と体を休める時間を持つことが、長く頑張るためには必要だと感じています。"
 ];
 
 let currentIndex = 0;
@@ -90,8 +93,40 @@ let repeatAll = false;
 
 const audio = document.getElementById("audio");
 const listEl = document.getElementById("list");
+const textInput = document.getElementById("textInput");
+
+/* ====================== SETTINGS ====================== */
+function saveSettings() {
+  localStorage.setItem("voice", voiceEl().value);
+  localStorage.setItem("rate", rateEl().value);
+}
+
+function loadSettings() {
+  const v = localStorage.getItem("voice");
+  const r = localStorage.getItem("rate");
+  if (v) voiceEl().value = v;
+  if (r) rateEl().value = r;
+}
+
+voiceEl().addEventListener("change", saveSettings);
+rateEl().addEventListener("change", saveSettings);
+
+/* ====================== TEXT STORAGE ====================== */
+function saveTexts() {
+  localStorage.setItem("texts", JSON.stringify(texts));
+}
+
+function loadTexts() {
+  const saved = localStorage.getItem("texts");
+  if (saved) {
+    texts.length = 0;
+    JSON.parse(saved).forEach(t => texts.push(t));
+  }
+}
 
 /* ====================== UI ====================== */
+loadSettings();
+loadTexts();
 renderList();
 
 function renderList() {
@@ -101,6 +136,7 @@ function renderList() {
     li.textContent = text;
     li.onclick = () => {
       currentIndex = i;
+      textInput.value = text;
       playCurrent();
     };
     listEl.appendChild(li);
@@ -112,6 +148,32 @@ function highlight() {
   [...listEl.children].forEach((li, i) => {
     li.classList.toggle("active", i === currentIndex);
   });
+}
+
+/* ====================== CRUD ====================== */
+function addText() {
+  const v = textInput.value.trim();
+  if (!v) return;
+  texts.push(v);
+  saveTexts();
+  renderList();
+}
+
+function updateText() {
+  if (texts[currentIndex]) {
+    texts[currentIndex] = textInput.value;
+    saveTexts();
+    renderList();
+  }
+}
+
+function deleteText() {
+  if (texts[currentIndex]) {
+    texts.splice(currentIndex, 1);
+    currentIndex = 0;
+    saveTexts();
+    renderList();
+  }
 }
 
 /* ====================== INDEXED DB ====================== */
@@ -144,9 +206,7 @@ async function saveAudio(key, blob) {
 
 /* ====================== PLAY LOGIC ====================== */
 function buildKey(text) {
-  const voice = voiceEl().value;
-  const rate = rateEl().value;
-  return `ja-JP|${voice}|${rate}|${text}`;
+  return `ja-JP|${voiceEl().value}|${rateEl().value}|${text}`;
 }
 
 function buildUrl(text) {
@@ -195,7 +255,6 @@ function toggleRepeatAll() {
 
 audio.addEventListener("ended", () => {
   if (repeatOne) return playCurrent();
-
   currentIndex++;
   if (currentIndex >= texts.length) {
     if (repeatAll) currentIndex = 0;
@@ -205,8 +264,12 @@ audio.addEventListener("ended", () => {
 });
 
 /* ====================== HELPERS ====================== */
-const voiceEl = () => document.getElementById("voice");
-const rateEl = () => document.getElementById("rate");
+function voiceEl() {
+  return document.getElementById("voice");
+}
+function rateEl() {
+  return document.getElementById("rate");
+}
 </script>
 
 </body>

@@ -1,24 +1,3 @@
-https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec?key=current_state
-
-git add . ;  git commit -m "SRC change" ; git push;
-
-
-
-🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
-chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn 
-🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1 thêm icon vào các vùng button để làm to nổi bật
-Quá hạn
-Khẩn cấp
-Cảnh báo
-Xong
-
-2. Form thêm có thể set thời gian thực hiện theo giờ/ngày/tuần/tháng
-3. Luu tất cả thông tin vào 1 key trong indexdb
--------------------
-Src gốc cần sửa:
--------------------
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -47,13 +26,14 @@ Src gốc cần sửa:
             gap: 16px; margin-top: 20px;
         }
         .stat-item {
-            padding: 12px; background: #f8f9fa; border-radius: 12px;
+            padding: 15px; background: #f8f9fa; border-radius: 12px;
             text-align: center; cursor: pointer; transition: 0.3s;
             border: 2px solid transparent;
         }
         .stat-item.active-filter { border-color: #667eea; background: #fff; }
-        .stat-value { font-size: 24px; font-weight: 700; }
-        .stat-label { font-size: 11px; color: #6c757d; text-transform: uppercase; }
+        .stat-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+        .stat-label { font-size: 12px; color: #495057; font-weight: 700; text-transform: uppercase; }
+        .stat-icon { font-size: 24px; margin-bottom: 4px; }
         .stat-item.overdue .stat-value { color: #dc3545; }
         .stat-item.urgent .stat-value { color: #ffc107; }
         .stat-item.warning .stat-value { color: #2196F3; }
@@ -125,18 +105,22 @@ Src gốc cần sửa:
 
             <div class="stats-bar" id="statsBar">
                 <div class="stat-item overdue" onclick="filterTasks('overdue', this)">
+                    <div class="stat-icon">🚫</div>
                     <div class="stat-value" id="statOverdue">0</div>
                     <div class="stat-label">🔴 Quá hạn</div>
                 </div>
                 <div class="stat-item urgent" onclick="filterTasks('urgent', this)">
+                    <div class="stat-icon">⚡</div>
                     <div class="stat-value" id="statUrgent">0</div>
                     <div class="stat-label">⚠️ Khẩn cấp</div>
                 </div>
                 <div class="stat-item warning" onclick="filterTasks('warning', this)">
+                    <div class="stat-icon">⏰</div>
                     <div class="stat-value" id="statWarning">0</div>
                     <div class="stat-label">🔵 Cảnh báo</div>
                 </div>
                 <div class="stat-item safe" onclick="filterTasks('completed', this)">
+                    <div class="stat-icon">🏆</div>
                     <div class="stat-value" id="statSafe">0</div>
                     <div class="stat-label">✅ Xong</div>
                 </div>
@@ -175,20 +159,57 @@ Src gốc cần sửa:
     <button class="btn-open-modal" onclick="toggleModal()">+</button>
 
     <script>
-        let tasks = [
-            { id: 1, title: "Hoàn thành báo cáo Q4", detail: "Gửi file PDF qua email", deadline: new Date(Date.now() - 86400000).toISOString(), priority: "high", completed: false },
-            { id: 2, title: "Họp khách hàng ABC", detail: "Chốt ngân sách dự án", deadline: new Date(Date.now() + 43200000).toISOString(), priority: "high", completed: false }
-        ];
+        let tasks = [];
         let currentFilter = 'all';
+        let editingTaskId = null;
+        let db;
+        const DB_NAME = "TodoDBPro";
+        const STORE_NAME = "tasks_store";
+
+        // Khởi tạo IndexedDB
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = e => {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: "id" });
+        };
+        request.onsuccess = e => {
+            db = e.target.result;
+            loadTasksFromDB();
+        };
+
+        function saveToDB() {
+            if (!db) return;
+            const tx = db.transaction(STORE_NAME, "readwrite");
+            const store = tx.objectStore(STORE_NAME);
+            store.put({ id: "current_tasks_list", data: tasks });
+        }
+
+        function loadTasksFromDB() {
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.get("current_tasks_list");
+            req.onsuccess = () => {
+                if (req.result) tasks = req.result.data;
+                updateStats(); renderTasks();
+            };
+        }
 
         function toggleModal() {
             const modal = document.getElementById('taskModal');
             if (modal.style.display !== 'flex') {
+                if (!editingTaskId) {
+                    document.querySelector('#taskModal h2').textContent = "➕ Thêm việc mới";
+                    document.querySelector('.btn-add').textContent = "LƯU CÔNG VIỆC";
+                    resetForm();
+                }
                 const now = new Date();
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                 document.getElementById('taskDeadline').value = now.toISOString().slice(0, 16);
                 modal.style.display = 'flex';
-            } else modal.style.display = 'none';
+            } else {
+                modal.style.display = 'none';
+                resetForm();
+            }
         }
 
         function calculateDeadline() {
@@ -229,7 +250,10 @@ Src gốc cần sửa:
                 }
             });
 
-            ['Overdue', 'Urgent', 'Warning', 'Safe'].forEach(id => document.getElementById('stat' + id).textContent = stats[id.toLowerCase()]);
+            ['Overdue', 'Urgent', 'Warning', 'Safe'].forEach(id => {
+                const el = document.getElementById('stat' + id);
+                if(el) el.textContent = stats[id.toLowerCase()] || 0;
+            });
             document.getElementById('todoToday').textContent = counts.today;
             document.getElementById('todoWeek').textContent = counts.week;
             document.getElementById('todoMonth').textContent = counts.month;
@@ -267,7 +291,8 @@ Src gốc cần sửa:
                         ${t.detail ? `<span class="task-detail-sub">- ${t.detail}</span>` : ''}
                     </div>
                     <div class="deadline-info">📅 ${new Date(t.deadline).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</div>
-                    <div style="display: flex; gap: 5px;">
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <button class="btn-icon" style="background:#e3f2fd" onclick="editTask(${t.id})">✏️</button>
                         ${!t.completed ? `<button class="btn-icon" style="background:#d4edda" onclick="completeTask(${t.id})">✓</button>` : ''}
                         <button class="btn-icon" style="background:#f8d7da" onclick="deleteTask(${t.id})">🗑️</button>
                     </div>
@@ -279,16 +304,41 @@ Src gốc cần sửa:
             const title = document.getElementById('taskTitle').value;
             const dl = document.getElementById('taskDeadline').value;
             if (!title || !dl) return alert("Nhập đủ thông tin!");
-            tasks.unshift({ id: Date.now(), title, detail: document.getElementById('taskDetail').value, deadline: new Date(dl).toISOString(), priority: document.getElementById('taskPriority').value, completed: false });
-            toggleModal(); updateStats(); renderTasks();
+
+            if (editingTaskId) {
+                const index = tasks.findIndex(t => t.id === editingTaskId);
+                if (index !== -1) {
+                    tasks[index] = { ...tasks[index], title, detail: document.getElementById('taskDetail').value, deadline: new Date(dl).toISOString(), priority: document.getElementById('taskPriority').value };
+                }
+                editingTaskId = null;
+            } else {
+                tasks.unshift({ id: Date.now(), title, detail: document.getElementById('taskDetail').value, deadline: new Date(dl).toISOString(), priority: document.getElementById('taskPriority').value, completed: false });
+            }
+            
+            saveToDB(); toggleModal(); updateStats(); renderTasks(); resetForm();
+        }
+
+        function editTask(id) {
+            const t = tasks.find(x => x.id === id);
+            if (!t) return;
+            editingTaskId = id;
+            document.getElementById('taskTitle').value = t.title;
+            document.getElementById('taskDetail').value = t.detail;
+            document.getElementById('taskPriority').value = t.priority;
+            document.getElementById('taskDeadline').value = t.deadline.slice(0, 16);
+            document.querySelector('#taskModal h2').textContent = "📝 Sửa công việc";
+            document.querySelector('.btn-add').textContent = "CẬP NHẬT THAY ĐỔI";
+            document.getElementById('taskModal').style.display = 'flex';
+        }
+
+        function resetForm() {
             ['taskTitle', 'taskDetail', 'durationValue'].forEach(id => document.getElementById(id).value = '');
+            editingTaskId = null;
         }
 
         function filterTasks(f, el) { currentFilter = f; renderTasks(); }
-        function completeTask(id) { const t = tasks.find(x => x.id === id); if(t) t.completed = true; updateStats(); renderTasks(); }
-        function deleteTask(id) { if(confirm("Xóa?")) { tasks = tasks.filter(x => x.id !== id); updateStats(); renderTasks(); } }
-
-        updateStats(); renderTasks();
+        function completeTask(id) { const t = tasks.find(x => x.id === id); if(t) t.completed = true; saveToDB(); updateStats(); renderTasks(); }
+        function deleteTask(id) { if(confirm("Xóa?")) { tasks = tasks.filter(x => x.id !== id); saveToDB(); updateStats(); renderTasks(); } }
     </script>
 </body>
 </html>

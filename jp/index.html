@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Japanese Reading Practice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system;
+      max-width: 900px;
+      margin: auto;
+      padding: 16px;
+    }
+    li {
+      list-style: none;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-top: 6px;
+      cursor: pointer;
+    }
+    li.active {
+      background: #e8f0ff;
+      border-color: #4a7cff;
+    }
+    .controls, .play-modes {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    select, button {
+      padding: 8px;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📖 Japanese Reading Practice (Cached)</h1>
+
+<div class="controls">
+  <select id="voice">
+    <option value="ja-JP-NanamiNeural">Nữ – Nanami</option>
+    <option value="ja-JP-KeitaNeural" selected>Nam – Keita</option>
+  </select>
+
+  <select id="rate">
+    <option value="0.7">Rất chậm</option>
+    <option value="0.85">Chậm</option>
+    <option value="1.0">Bình thường</option>
+    <option value="1.1">Hơi nhanh</option>
+    <option value="1.25">Nhanh</option>
+  </select>
+</div>
+
+<div class="play-modes">
+  <button onclick="playCurrent()">▶️ Đọc đoạn</button>
+  <button onclick="playAll()">▶️▶️ Đọc lần lượt</button>
+  <button onclick="toggleRepeatOne()">🔂 Lặp 1 đoạn</button>
+  <button onclick="toggleRepeatAll()">🔁 Lặp cả danh sách</button>
+</div>
+
+<ul id="list"></ul>
+
+<audio id="audio" controls style="width:100%; margin-top:16px;"></audio>
+
+<script>
+/* ====================== CONFIG ====================== */
+const API_URL = "https://hsk-gilt.vercel.app/api/tts1";
+const DB_NAME = "tts-audio-cache";
+const STORE_NAME = "audio";
+
+/* ====================== SAMPLE TEXT ====================== */
+const texts = [
+  "おはようございます。今日はいい天気ですね。",
+  "はじめまして。どうぞよろしくお願いします。",
+  "これは私の本です。とても面白いですよ。",
+  "昨日は忙しかったですが、楽しかったです。",
+  "すみません、もう一度言ってください。",
+  "日本語を勉強するのは楽しいです。",
+  "駅はどこですか？ここから近いですか。",
+  "今日は仕事が終わったら早く帰ります。",
+  "コーヒーとケーキを一つお願いします。",
+  "明日も頑張りましょう。お疲れさまでした。"
+];
+
+let currentIndex = 0;
+let repeatOne = false;
+let repeatAll = false;
+
+const audio = document.getElementById("audio");
+const listEl = document.getElementById("list");
+
+/* ====================== UI ====================== */
+renderList();
+
+function renderList() {
+  listEl.innerHTML = "";
+  texts.forEach((text, i) => {
+    const li = document.createElement("li");
+    li.textContent = text;
+    li.onclick = () => {
+      currentIndex = i;
+      playCurrent();
+    };
+    listEl.appendChild(li);
+  });
+  highlight();
+}
+
+function highlight() {
+  [...listEl.children].forEach((li, i) => {
+    li.classList.toggle("active", i === currentIndex);
+  });
+}
+
+/* ====================== INDEXED DB ====================== */
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore(STORE_NAME);
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = reject;
+  });
+}
+
+async function getCachedAudio(key) {
+  const db = await openDB();
+  return new Promise(resolve => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.get(key);
+    req.onsuccess = () => resolve(req.result || null);
+  });
+}
+
+async function saveAudio(key, blob) {
+  const db = await openDB();
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).put(blob, key);
+}
+
+/* ====================== PLAY LOGIC ====================== */
+function buildKey(text) {
+  const voice = voiceEl().value;
+  const rate = rateEl().value;
+  return `ja-JP|${voice}|${rate}|${text}`;
+}
+
+function buildUrl(text) {
+  return `${API_URL}?text=${encodeURIComponent(text)}`
+    + `&lang=ja-JP`
+    + `&voice=${voiceEl().value}`
+    + `&rate=${rateEl().value}`;
+}
+
+async function playCurrent() {
+  highlight();
+  const text = texts[currentIndex];
+  const key = buildKey(text);
+
+  const cached = await getCachedAudio(key);
+  if (cached) {
+    audio.src = URL.createObjectURL(cached);
+    audio.play();
+    return;
+  }
+
+  const res = await fetch(buildUrl(text));
+  const blob = await res.blob();
+  await saveAudio(key, blob);
+
+  audio.src = URL.createObjectURL(blob);
+  audio.play();
+}
+
+function playAll() {
+  repeatOne = false;
+  playCurrent();
+}
+
+function toggleRepeatOne() {
+  repeatOne = !repeatOne;
+  repeatAll = false;
+  alert("Lặp 1 đoạn: " + (repeatOne ? "BẬT" : "TẮT"));
+}
+
+function toggleRepeatAll() {
+  repeatAll = !repeatAll;
+  repeatOne = false;
+  alert("Lặp cả danh sách: " + (repeatAll ? "BẬT" : "TẮT"));
+}
+
+audio.addEventListener("ended", () => {
+  if (repeatOne) return playCurrent();
+
+  currentIndex++;
+  if (currentIndex >= texts.length) {
+    if (repeatAll) currentIndex = 0;
+    else return;
+  }
+  playCurrent();
+});
+
+/* ====================== HELPERS ====================== */
+const voiceEl = () => document.getElementById("voice");
+const rateEl = () => document.getElementById("rate");
+</script>
+
+</body>
+</html>

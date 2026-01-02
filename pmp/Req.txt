@@ -8,16 +8,17 @@ git add . ;  git commit -m "SRC change" ; git push;
 NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
 chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn 
 🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1. tất cả các data được Lưu trữ vào indexdb chi với 1 KEY   
+sửa lỗi : 
+index.html:1 Uncaught ReferenceError: h is not defined
+    at HTMLTextAreaElement.onchange (index.html:1:1)
 -------------------
 Src gốc cần sửa:
 -------------------
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Mastery Matrix V18.1 - Clean & Top Layout</title>
+    <title>Mastery Matrix V18.3 - Auto Fail Past</title>
     <style>
         :root { 
             --primary: #4f46e5; --success: #10b981; --fail: #ef4444; 
@@ -93,7 +94,7 @@ Src gốc cần sửa:
 
 <div class="card">
     <div class="header-area">
-        <h2 style="margin:0; color: var(--primary)">⚔️ Kỷ Luật Toàn Diện V18.1</h2>
+        <h2 style="margin:0; color: var(--primary)">⚔️ Kỷ Luật Toàn Diện V18.3</h2>
         <div style="display:flex; gap:10px; align-items:center">
             <button class="btn-nav" onclick="moveMonth(-1)">◀</button>
             <div class="month-label" id="mLabel">Tháng 01/2026</div>
@@ -127,12 +128,62 @@ Src gốc cần sửa:
 </div>
 
 <script>
-    let habits = JSON.parse(localStorage.getItem('v16_habits')) || [{ id: 1, name: "Thói quen mẫu" }];
-    let logs = JSON.parse(localStorage.getItem('v16_logs')) || {};
+    let habits = [];
+    let logs = {};
     let displayDate = new Date();
     const today = new Date(); today.setHours(0,0,0,0);
 
-    // HÀM QUAN TRỌNG: Xóa mọi dữ liệu tương lai nếu lỡ có trong localStorage
+    const dbName = "MasteryMatrixDB";
+    const storeName = "MainStore";
+    const dataKey = "matrix_data";
+
+    async function initDB() {
+        return new Promise((resolve) => {
+            const request = indexedDB.open(dbName, 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(storeName)) {
+                    db.createObjectStore(storeName);
+                }
+            };
+            request.onsuccess = async (e) => {
+                const db = e.target.result;
+                const tx = db.transaction(storeName, "readonly");
+                const store = tx.objectStore(storeName);
+                const res = await new Promise(r => {
+                    const req = store.get(dataKey);
+                    req.onsuccess = () => r(req.result);
+                });
+                
+                if (res) {
+                    habits = res.habits || [];
+                    logs = res.logs || {};
+                } else {
+                    habits = [
+                        { id: 1, name: "Dậy sớm 5h" },
+                        { id: 2, name: "Chạy thể dục" }
+                    ];
+                    logs = {};
+                    await save();
+                }
+                resolve();
+            };
+        });
+    }
+
+    async function save() {
+        return new Promise((resolve) => {
+            const request = indexedDB.open(dbName, 1);
+            request.onsuccess = (e) => {
+                const db = e.target.result;
+                const tx = db.transaction(storeName, "readwrite");
+                const store = tx.objectStore(storeName);
+                store.put({ habits, logs }, dataKey);
+                tx.oncomplete = () => resolve();
+            };
+        });
+    }
+
     function cleanFutureData() {
         let changed = false;
         for (let dateKey in logs) {
@@ -145,32 +196,35 @@ Src gốc cần sửa:
         if (changed) save();
     }
 
-    function save() { 
-        localStorage.setItem('v16_habits', JSON.stringify(habits)); 
-        localStorage.setItem('v16_logs', JSON.stringify(logs)); 
-    }
-    
     function moveMonth(s) { displayDate.setMonth(displayDate.getMonth() + s); render(); }
-    function addNewHabit() { habits.push({ id: Date.now(), name: "Việc mới" }); save(); render(); }
-    function deleteHabit(id) { if(confirm('Xóa thói quen này?')) { habits = habits.filter(h => h.id !== id); save(); render(); } }
+    async function addNewHabit() { habits.push({ id: Date.now(), name: "Việc mới" }); await save(); render(); }
+    async function deleteHabit(id) { if(confirm('Xóa thói quen này?')) { habits = habits.filter(h => h.id !== id); await save(); render(); } }
 
     function autoResize(el) {
         el.style.height = 'auto';
         el.style.height = el.scrollHeight + 'px';
     }
 
-    function toggle(dStr, id) {
+    async function toggle(dStr, id) {
         const targetDate = new Date(dStr);
-        if (targetDate > today) return; // Chặn click ngày tương lai
+        if (targetDate > today) return;
 
         if(!logs[dStr]) logs[dStr] = {};
-        const cur = logs[dStr][id];
-        logs[dStr][id] = (cur === 'done') ? 'fail' : (cur === 'fail' ? null : 'done');
-        save(); render();
+        let cur = logs[dStr][id];
+        
+        // Nếu là ngày quá khứ và chưa có data (đang hiển thị giả định fail), 
+        // click lần đầu sẽ chuyển sang 'done'.
+        if (targetDate < today && !cur) {
+            logs[dStr][id] = 'done';
+        } else {
+            logs[dStr][id] = (cur === 'done') ? 'fail' : (cur === 'fail' ? null : 'done');
+        }
+        
+        await save(); render();
     }
 
     function render() {
-        cleanFutureData(); // Dọn dẹp data mỗi lần render
+        cleanFutureData();
         
         const year = displayDate.getFullYear();
         const month = displayDate.getMonth();
@@ -190,13 +244,15 @@ Src gốc cần sửa:
                 const checkDate = new Date(year, month, i);
                 checkDate.setHours(0,0,0,0);
                 const dStr = checkDate.toISOString().split('T')[0];
-                const status = logs[dStr]?.[h.id];
+                let status = logs[dStr]?.[h.id];
                 
+                // Quy tắc 1: Quá khứ không data = fail
+                if (!status && checkDate < today) status = 'fail';
+
                 if (status === 'done') { doneCount++; tempStreak = 0; } 
                 else if (status === 'fail') { tempStreak++; } 
                 else { tempStreak = 0; }
                 
-                // Chỉ tính streak đến ngày hôm nay
                 if (checkDate.getTime() <= today.getTime()) {
                     currentXStreak = tempStreak;
                 }
@@ -223,7 +279,6 @@ Src gốc cần sửa:
         document.getElementById('streakWarnings').innerHTML = warningHtml || '<p style="font-size:12px; color:var(--success)">🔥 Phong độ tuyệt vời!</p>';
         document.getElementById('worstHabit').innerText = worstH.name;
 
-        // Render Table
         let headHtml = `<tr><th class="sticky-col">Mục tiêu</th>`;
         for(let i=1; i<=daysInMonth; i++) {
             const d = new Date(year, month, i);
@@ -247,8 +302,11 @@ Src gốc cần sửa:
                 const d = new Date(year, month, i);
                 d.setHours(0,0,0,0);
                 const dStr = d.toISOString().split('T')[0];
-                const st = logs[dStr]?.[h.id] || '';
+                let st = logs[dStr]?.[h.id] || '';
                 const isFuture = d > today;
+
+                // Quy tắc 1 áp dụng cho hiển thị Table
+                if (!st && d < today) st = 'fail';
 
                 bodyHtml += `<td class="day-col ${d.getDay()%6===0?'weekend':''} ${isFuture?'future-day':''}">
                     <div class="mark status-${st}" onclick="toggle('${dStr}', ${h.id})">${st==='done'?'✓':(st==='fail'?'✕':'')}</div>
@@ -259,7 +317,8 @@ Src gốc cần sửa:
         document.getElementById('tBody').innerHTML = bodyHtml;
         document.querySelectorAll('.habit-name-box').forEach(el => autoResize(el));
     }
-    render();
+
+    initDB().then(() => render());
 </script>
 </body>
 </html>

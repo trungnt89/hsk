@@ -4,75 +4,138 @@
   <meta charset="UTF-8" />
   <title>Japanese Reading Practice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
     body {
       font-family: system-ui, -apple-system;
       max-width: 900px;
       margin: auto;
-      padding: 16px;
+      padding: 12px;
+      background: #f5f6f8;
     }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    select, button, input, textarea {
+      padding: 6px 8px;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    ul {
+      padding: 0;
+      margin: 0;
+    }
+
     li {
       list-style: none;
       border: 1px solid #ddd;
-      padding: 10px;
+      padding: 8px;
       margin-top: 6px;
+      border-radius: 6px;
       cursor: pointer;
+      font-size: 14px;
     }
+
     li.active {
       background: #e8f0ff;
       border-color: #4a7cff;
     }
-    .controls, .play-modes {
+
+    .actions {
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
+      gap: 6px;
+      margin-top: 6px;
     }
-    select, button, textarea {
-      padding: 8px;
-      font-size: 15px;
-    }
-    textarea {
+
+    audio {
       width: 100%;
+    }
+
+    @media (max-width: 600px) {
+      .row {
+        flex-direction: column;
+        align-items: stretch;
+      }
     }
   </style>
 </head>
 <body>
 
-<h1>📖 Japanese Reading Practice (Cached)</h1>
+<h1>📖 Japanese Reading Practice</h1>
 
-<div class="controls">
-  <select id="voice">
-    <option value="ja-JP-NanamiNeural">Nữ – Nanami</option>
-    <option value="ja-JP-KeitaNeural" selected>Nam – Keita</option>
-  </select>
+<!-- SETTINGS -->
+<div class="card">
+  <div class="row">
+    <strong>🔧 Settings</strong>
+  </div>
+  <div class="row" style="margin-top:6px">
+    <select id="voice">
+      <option value="ja-JP-NanamiNeural">Nữ – Nanami</option>
+      <option value="ja-JP-KeitaNeural" selected>Nam – Keita</option>
+    </select>
 
-  <select id="rate">
-    <option value="0.7">Rất chậm</option>
-    <option value="0.85">Chậm</option>
-    <option value="1.0">Bình thường</option>
-    <option value="1.1">Hơi nhanh</option>
-    <option value="1.25">Nhanh</option>
-  </select>
+    <select id="rate">
+      <option value="0.7">Rất chậm</option>
+      <option value="0.85">Chậm</option>
+      <option value="1.0">Bình thường</option>
+      <option value="1.1">Hơi nhanh</option>
+      <option value="1.25">Nhanh</option>
+    </select>
+  </div>
 </div>
 
-<div class="play-modes">
-  <button onclick="playCurrent()">▶️ Đọc đoạn</button>
-  <button onclick="playAll()">▶️▶️ Đọc lần lượt</button>
-  <button onclick="toggleRepeatOne()">🔂 Lặp 1 đoạn</button>
-  <button onclick="toggleRepeatAll()">🔁 Lặp cả danh sách</button>
+<!-- PLAY CONTROLS -->
+<div class="card">
+  <div class="row">
+    <strong>▶️ Playback</strong>
+  </div>
+  <div class="row" style="margin-top:6px">
+    <button onclick="playCurrent()">▶️ Đọc đoạn</button>
+    <button onclick="playAll()">▶️▶️ Đọc lần lượt</button>
+    <button onclick="toggleRepeatOne()">🔂 Lặp 1 đoạn</button>
+    <button onclick="toggleRepeatAll()">🔁 Lặp cả list</button>
+  </div>
 </div>
 
-<div class="controls">
-  <textarea id="textInput" rows="4" placeholder="Nhập nội dung tiếng Nhật..."></textarea>
-  <button onclick="addText()">➕ Thêm</button>
-  <button onclick="updateText()">✏️ Sửa</button>
-  <button onclick="deleteText()">🗑 Xoá</button>
+<!-- LIST -->
+<div class="card">
+  <strong>📚 Danh sách nội dung</strong>
+  <ul id="list"></ul>
 </div>
 
-<ul id="list"></ul>
-
-<audio id="audio" controls style="width:100%; margin-top:16px;"></audio>
+<!-- AUDIO -->
+<div class="card">
+  <strong>🔊 Audio</strong>
+  <audio id="audio" controls></audio>
+</div>
 
 <script>
 /* ====================== CONFIG ====================== */
@@ -80,11 +143,11 @@ const API_URL = "https://hsk-gilt.vercel.app/api/tts1";
 const DB_NAME = "tts-audio-cache";
 const STORE_NAME = "audio";
 
-/* ====================== SAMPLE TEXT (100+ chữ) ====================== */
+/* ====================== SAMPLE TEXT ====================== */
 const texts = [
-  "日本で働き始めてから、毎日の生活リズムが大きく変わりました。朝は早く起きて電車に乗り、会社では多くの人と協力しながら仕事を進めています。最初は言葉や文化の違いに戸惑うこともありましたが、少しずつ慣れてきました。",
-  "日本語の勉強は簡単ではありませんが、毎日少しずつ続けることが大切だと思います。聞く力、話す力、読む力、書く力をバランスよく伸ばすことで、実際の生活でも自信を持って使えるようになります。",
-  "週末になると、公園を散歩したり、本を読んだりしてリラックスする時間を大切にしています。忙しい日常の中でも、自分の心と体を休める時間を持つことが、長く頑張るためには必要だと感じています。"
+  "日本語を勉強することは簡単ではありませんが、毎日少しずつ続ければ、必ず上達します。大切なのは諦めないことです。",
+  "仕事が忙しい時でも、短い時間を見つけて勉強することで、自分の成長を実感することができます。",
+  "新しい言語を学ぶことは、考え方や文化の違いを理解する良い機会になります。"
 ];
 
 let currentIndex = 0;
@@ -93,40 +156,8 @@ let repeatAll = false;
 
 const audio = document.getElementById("audio");
 const listEl = document.getElementById("list");
-const textInput = document.getElementById("textInput");
-
-/* ====================== SETTINGS ====================== */
-function saveSettings() {
-  localStorage.setItem("voice", voiceEl().value);
-  localStorage.setItem("rate", rateEl().value);
-}
-
-function loadSettings() {
-  const v = localStorage.getItem("voice");
-  const r = localStorage.getItem("rate");
-  if (v) voiceEl().value = v;
-  if (r) rateEl().value = r;
-}
-
-voiceEl().addEventListener("change", saveSettings);
-rateEl().addEventListener("change", saveSettings);
-
-/* ====================== TEXT STORAGE ====================== */
-function saveTexts() {
-  localStorage.setItem("texts", JSON.stringify(texts));
-}
-
-function loadTexts() {
-  const saved = localStorage.getItem("texts");
-  if (saved) {
-    texts.length = 0;
-    JSON.parse(saved).forEach(t => texts.push(t));
-  }
-}
 
 /* ====================== UI ====================== */
-loadSettings();
-loadTexts();
 renderList();
 
 function renderList() {
@@ -136,7 +167,6 @@ function renderList() {
     li.textContent = text;
     li.onclick = () => {
       currentIndex = i;
-      textInput.value = text;
       playCurrent();
     };
     listEl.appendChild(li);
@@ -148,32 +178,6 @@ function highlight() {
   [...listEl.children].forEach((li, i) => {
     li.classList.toggle("active", i === currentIndex);
   });
-}
-
-/* ====================== CRUD ====================== */
-function addText() {
-  const v = textInput.value.trim();
-  if (!v) return;
-  texts.push(v);
-  saveTexts();
-  renderList();
-}
-
-function updateText() {
-  if (texts[currentIndex]) {
-    texts[currentIndex] = textInput.value;
-    saveTexts();
-    renderList();
-  }
-}
-
-function deleteText() {
-  if (texts[currentIndex]) {
-    texts.splice(currentIndex, 1);
-    currentIndex = 0;
-    saveTexts();
-    renderList();
-  }
 }
 
 /* ====================== INDEXED DB ====================== */
@@ -255,6 +259,7 @@ function toggleRepeatAll() {
 
 audio.addEventListener("ended", () => {
   if (repeatOne) return playCurrent();
+
   currentIndex++;
   if (currentIndex >= texts.length) {
     if (repeatAll) currentIndex = 0;
@@ -264,12 +269,8 @@ audio.addEventListener("ended", () => {
 });
 
 /* ====================== HELPERS ====================== */
-function voiceEl() {
-  return document.getElementById("voice");
-}
-function rateEl() {
-  return document.getElementById("rate");
-}
+const voiceEl = () => document.getElementById("voice");
+const rateEl = () => document.getElementById("rate");
 </script>
 
 </body>

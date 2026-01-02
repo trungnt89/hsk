@@ -19,8 +19,10 @@
         body {
             font-family: 'Montserrat', sans-serif;
             background: var(--bg);
-            margin: 0; padding: 0;
-            display: flex; flex-direction: column;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
             min-height: 100vh;
             color: var(--text);
         }
@@ -31,11 +33,15 @@
             background: white;
             border-bottom: 1px solid #e2e8f0;
         }
+
         header h1 {
-            margin: 0; font-size: 1.5rem; font-weight: 800;
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
             color: var(--primary);
             letter-spacing: -1px;
         }
+
         header p {
             margin: 5px 0 0;
             font-size: 12px;
@@ -49,7 +55,7 @@
             padding: 20px;
             display: grid;
             grid-template-columns: 1fr;
-            gap: 15px;
+            gap: 16px;
             max-width: 520px;
             margin: 0 auto;
             width: calc(100% - 40px);
@@ -57,58 +63,68 @@
 
         .nav-card {
             background: var(--card);
-            border-radius: 24px;
-            padding: 20px;
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            border-radius: 22px;
+            padding: 18px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
             border: 2px solid transparent;
         }
 
-        .nav-card:active {
-            transform: scale(0.97);
-            border-color: var(--primary);
-        }
-
         .icon-wrapper {
-            width: 56px; height: 56px;
-            border-radius: 16px;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 22px;
             flex-shrink: 0;
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .group-title {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .group-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .group-links {
+            margin: 8px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .group-links li {
+            margin: 6px 0;
+        }
+
+        .group-links a {
+            text-decoration: none;
+            font-size: 13px;
+            color: var(--text);
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 10px;
+            background: #f1f5f9;
+        }
+
+        .group-links a:active {
+            background: #e2e8f0;
         }
 
         .bg-learn { background: #eff6ff; color: var(--primary); }
         .bg-audio { background: #ecfdf5; color: var(--success); }
-        .bg-data { background: #f0f9ff; color: var(--info); }
-        .bg-pomodoro { background: #fff1f2; color: #e11d48; }
         .bg-challenge { background: #fff7ed; color: var(--warning); }
-        .bg-todo { background: #f5f3ff; color: #7c3aed; }
-        .bg-api { background: #f8fafc; color: #334155; }
-        .bg-jp { background: #fef2f2; color: #dc2626; }
-
-        .content { flex: 1; }
-        .content b { display: block; font-size: 16px; margin-bottom: 4px; }
-        .content p { margin: 0; font-size: 12px; color: #64748b; }
-
-        .badge {
-            background: #f1f5f9;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 9px;
-            font-weight: 800;
-            color: #475569;
-            margin-top: 6px;
-            display: inline-block;
-        }
-
-        .chevron { color: #cbd5e1; font-size: 20px; }
+        .bg-system { background: #f8fafc; color: #334155; }
 
         footer {
             padding: 30px;
@@ -128,98 +144,71 @@
 
 <div class="dashboard">
 
-    <a href="api/" class="nav-card">
-        <div class="icon-wrapper bg-api">🔌</div>
-        <div class="content">
-            <b>API Center</b>
-            <p>Tổng hợp API nội bộ, TTS, Script, JSON.</p>
-            <div class="badge">API /</div>
+    <!-- LANGUAGE -->
+    <div class="nav-card">
+        <div class="group-header">
+            <div class="icon-wrapper bg-learn">🎓</div>
+            <div>
+                <div class="group-title">Học ngôn ngữ</div>
+                <div class="group-desc">Tiếng Trung & Tiếng Nhật</div>
+            </div>
         </div>
-        <div class="chevron">›</div>
-    </a>
+        <ul class="group-links">
+            <li><a href="hsk/index.html">🇨🇳 Chương trình HSK</a></li>
+            <li><a href="jp/index.html">🇯🇵 Tiếng Nhật</a></li>
+        </ul>
+    </div>
 
-    <a href="hsk/index.html" class="nav-card">
-        <div class="icon-wrapper bg-learn">🇨🇳</div>
-        <div class="content">
-            <b>Chương Trình HSK</b>
-            <p>Học từ vựng tiếng Trung và phát âm.</p>
-            <div class="badge">HSK</div>
+    <!-- CERT -->
+    <div class="nav-card">
+        <div class="group-header">
+            <div class="icon-wrapper bg-audio">🏆</div>
+            <div>
+                <div class="group-title">Chứng chỉ</div>
+                <div class="group-desc">Học & ôn tập chuyên sâu</div>
+            </div>
         </div>
-        <div class="chevron">›</div>
-    </a>
+        <ul class="group-links">
+            <li><a href="pmp/index.html">📘 PMP</a></li>
+        </ul>
+    </div>
 
-    <a href="jp/index.html" class="nav-card">
-        <div class="icon-wrapper bg-jp">🇯🇵</div>
-        <div class="content">
-            <b>Tiếng Nhật</b>
-            <p>Luyện đọc, nghe và ghi nhớ đoạn văn.</p>
-            <div class="badge">JP</div>
+    <!-- PRODUCTIVITY -->
+    <div class="nav-card">
+        <div class="group-header">
+            <div class="icon-wrapper bg-challenge">⏱️</div>
+            <div>
+                <div class="group-title">Năng suất cá nhân</div>
+                <div class="group-desc">Thói quen & quản lý thời gian</div>
+            </div>
         </div>
-        <div class="chevron">›</div>
-    </a>
+        <ul class="group-links">
+            <li><a href="challenge/index.html">⚔️ Thử thách</a></li>
+            <li><a href="todo/index.html">📅 Todo</a></li>
+            <li><a href="pomodoro/index.html">🍅 Pomodoro</a></li>
+        </ul>
+    </div>
 
-    <a href="pmp/index.html" class="nav-card">
-        <div class="icon-wrapper bg-audio">🏆</div>
-        <div class="content">
-            <b>Chứng Chỉ PMP</b>
-            <p>Ôn tập quản lý dự án chuyên nghiệp.</p>
-            <div class="badge">PMP</div>
+    <!-- SYSTEM -->
+    <div class="nav-card">
+        <div class="group-header">
+            <div class="icon-wrapper bg-system">🛠️</div>
+            <div>
+                <div class="group-title">Hệ thống</div>
+                <div class="group-desc">API & dữ liệu cục bộ</div>
+            </div>
         </div>
-        <div class="chevron">›</div>
-    </a>
-
-    <a href="challenge/index.html" class="nav-card">
-        <div class="icon-wrapper bg-challenge">⚔️</div>
-        <div class="content">
-            <b>Thử Thách Thói Quen</b>
-            <p>Theo dõi chuỗi kỷ luật cá nhân.</p>
-            <div class="badge">CHALLENGE</div>
-        </div>
-        <div class="chevron">›</div>
-    </a>
-
-    <a href="todo/index.html" class="nav-card">
-        <div class="icon-wrapper bg-todo">📅</div>
-        <div class="content">
-            <b>Todo</b>
-            <p>Quản lý công việc hằng ngày.</p>
-            <div class="badge">TODO</div>
-        </div>
-        <div class="chevron">›</div>
-    </a>
-
-    <a href="pomodoro/index.html" class="nav-card">
-        <div class="icon-wrapper bg-pomodoro">🍅</div>
-        <div class="content">
-            <b>Pomodoro</b>
-            <p>Quản lý thời gian tập trung.</p>
-            <div class="badge">POMODORO</div>
-        </div>
-        <div class="chevron">›</div>
-    </a>
-
-    <a href="db/index.html" class="nav-card">
-        <div class="icon-wrapper bg-data">🛠️</div>
-        <div class="content">
-            <b>Database</b>
-            <p>Quản lý IndexedDB và dữ liệu local.</p>
-            <div class="badge">DB</div>
-        </div>
-        <div class="chevron">›</div>
-    </a>
+        <ul class="group-links">
+            <li><a href="api/">🔌 API Center</a></li>
+            <li><a href="db/index.html">🗄️ Database</a></li>
+        </ul>
+    </div>
 
 </div>
 
 <footer>
     PHÁT TRIỂN BỞI AI ASSISTANT • 2026
 </footer>
-
-<script>
-document.querySelectorAll('.nav-card').forEach(card => {
-    card.addEventListener('touchstart', () => card.style.opacity = '0.7');
-    card.addEventListener('touchend', () => card.style.opacity = '1');
-});
-</script>
 
 </body>
 </html>

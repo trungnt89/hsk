@@ -8,14 +8,7 @@ git add . ;  git commit -m "SRC change" ; git push;
 NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
 chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn 
 🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1 thêm icon vào các vùng button để làm to nổi bật
-Quá hạn
-Khẩn cấp
-Cảnh báo
-Xong
-
-2. Form thêm có thể set thời gian thực hiện theo giờ/ngày/tuần/tháng
-3. Luu tất cả thông tin vào 1 key trong indexdb
+1 thêm menu todo/index.html
 -------------------
 Src gốc cần sửa:
 -------------------
@@ -23,272 +16,185 @@ Src gốc cần sửa:
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Todo Manager Pro - Compact View</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Learning Master Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --info: #0ea5e9;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --warning: #f59e0b;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh; padding: 20px;
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg);
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            min-height: 100vh;
+            color: var(--text);
         }
-        .container { max-width: 1200px; margin: 0 auto; }
-        
-        .header {
-            background: white; padding: 25px; border-radius: 20px;
-            margin-bottom: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+
+        /* Header */
+        header {
+            padding: 40px 20px 20px;
+            text-align: center;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .header h1 {
-            font-size: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px;
+        header h1 { 
+            margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--primary); 
+            letter-spacing: -1px;
         }
-        .stats-bar {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px; margin-top: 20px;
+        header p { margin: 5px 0 0; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+
+        /* Dashboard Grid */
+        .dashboard {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: calc(100% - 40px);
         }
-        .stat-item {
-            padding: 12px; background: #f8f9fa; border-radius: 12px;
-            text-align: center; cursor: pointer; transition: 0.3s;
+
+        .nav-card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
             border: 2px solid transparent;
         }
-        .stat-item.active-filter { border-color: #667eea; background: #fff; }
-        .stat-value { font-size: 24px; font-weight: 700; }
-        .stat-label { font-size: 11px; color: #6c757d; text-transform: uppercase; }
-        .stat-item.overdue .stat-value { color: #dc3545; }
-        .stat-item.urgent .stat-value { color: #ffc107; }
-        .stat-item.warning .stat-value { color: #2196F3; }
-        .stat-item.safe .stat-value { color: #28a745; }
 
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-            display: none; justify-content: center; align-items: center; z-index: 1000;
-        }
-        .add-task-section {
-            background: white; padding: 30px; border-radius: 24px;
-            width: 90%; max-width: 450px; position: relative;
-        }
-        .btn-open-modal {
-            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
-            border-radius: 50%; background: linear-gradient(135deg, #11998e, #38ef7d);
-            color: white; border: none; font-size: 30px; cursor: pointer;
-            box-shadow: 0 10px 30px rgba(56, 239, 125, 0.4); z-index: 999;
+        .nav-card:active {
+            transform: scale(0.97);
+            border-color: var(--primary);
         }
 
-        .alert-banner {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-            color: white; padding: 15px 20px; border-radius: 12px;
-            margin-bottom: 20px; display: flex; align-items: center; gap: 16px;
+        .icon-wrapper {
+            width: 56px; height: 56px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; flex-shrink: 0;
         }
 
-        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-        .form-group label { font-size: 13px; font-weight: 600; color: #495057; }
-        .form-group input, .form-group textarea, .form-group select { padding: 12px; border: 2px solid #e9ecef; border-radius: 10px; }
-        .btn-add {
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #11998e, #38ef7d);
-            color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
+        /* Màu sắc các mục */
+        .bg-learn { background: #eff6ff; color: var(--primary); }
+        .bg-audio { background: #ecfdf5; color: var(--success); }
+        .bg-data { background: #f0f9ff; color: var(--info); }
+        .bg-pomodoro { background: #fff1f2; color: #e11d48; }
+        .bg-challenge { background: #fff7ed; color: var(--warning); } /* Màu cam cho Challenge */
+
+        .content { flex: 1; }
+        .content b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--text); }
+        .content p { margin: 0; font-size: 12px; color: #64748b; line-height: 1.4; }
+
+        .badge {
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 800;
+            color: #475569;
+            margin-top: 6px;
+            display: inline-block;
         }
 
-        .tasks-grid { display: flex; flex-direction: column; gap: 8px; }
-        .task-card { 
-            background: white; padding: 12px 20px; border-radius: 12px; 
-            border-left: 5px solid #e9ecef; transition: 0.2s;
-            display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 20px;
+        .chevron { color: #cbd5e1; font-size: 20px; }
+
+        footer {
+            padding: 30px;
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
         }
-        .task-card:hover { transform: translateX(5px); }
-        .task-card.overdue { border-left-color: #dc3545; }
-        .task-card.urgent { border-left-color: #ff6b6b; }
-        .task-card.warning { border-left-color: #2196F3; }
-        .task-card.safe { border-left-color: #28a745; }
-        
-        .task-title { font-size: 16px; font-weight: 700; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .task-detail-sub { font-size: 13px; color: #777; font-weight: 400; margin-left: 8px; font-style: italic; }
-        .deadline-info { font-size: 13px; color: #555; font-family: monospace; min-width: 130px; text-align: right; }
-        .btn-icon { width: 32px; height: 32px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .priority-badge { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; background: #eee; margin-left: 5px;}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📋 Todo Manager Pro</h1>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <p style="font-size: 14px; color: #666;">Danh sách công việc rút gọn</p>
-                <button onclick="filterTasks('all', this)" style="padding: 5px 12px; border: 1px solid #667eea; color: #667eea; background: white; cursor: pointer; border-radius: 8px; font-size: 12px; font-weight: 600;">👁️ Xem tất cả</button>
-            </div>
-            
-            <div style="display: flex; gap: 15px; margin-bottom: 20px; padding: 12px; background: #f0f2f5; border-radius: 12px; font-size: 13px; color: #444;">
-                <span style="cursor:pointer; border-bottom: 1px dashed #999" onclick="filterByTime('today', this)">📅 Hôm nay: <strong id="todoToday">0</strong></span>
-                <span style="cursor:pointer; border-bottom: 1px dashed #999" onclick="filterByTime('week', this)">🗓️ Trong tuần: <strong id="todoWeek">0</strong></span>
-                <span style="cursor:pointer; border-bottom: 1px dashed #999" onclick="filterByTime('month', this)">📅 Trong tháng: <strong id="todoMonth">0</strong></span>
-            </div>
 
-            <div class="stats-bar" id="statsBar">
-                <div class="stat-item overdue" onclick="filterTasks('overdue', this)">
-                    <div class="stat-value" id="statOverdue">0</div>
-                    <div class="stat-label">🔴 Quá hạn</div>
-                </div>
-                <div class="stat-item urgent" onclick="filterTasks('urgent', this)">
-                    <div class="stat-value" id="statUrgent">0</div>
-                    <div class="stat-label">⚠️ Khẩn cấp</div>
-                </div>
-                <div class="stat-item warning" onclick="filterTasks('warning', this)">
-                    <div class="stat-value" id="statWarning">0</div>
-                    <div class="stat-label">🔵 Cảnh báo</div>
-                </div>
-                <div class="stat-item safe" onclick="filterTasks('completed', this)">
-                    <div class="stat-value" id="statSafe">0</div>
-                    <div class="stat-label">✅ Xong</div>
-                </div>
+    <header>
+        <h1>LEARNING HUB</h1>
+        <p>Hệ thống học tập cá nhân</p>
+    </header>
+
+    <div class="dashboard">
+        <a href="hsk/index.html" class="nav-card">
+            <div class="icon-wrapper bg-learn">🇨🇳</div>
+            <div class="content">
+                <b>Chương Trình HSK</b>
+                <p>Học từ vựng tiếng Trung, phát âm Azure và ví dụ ngữ cảnh.</p>
+                <div class="badge">HSK / INDEX.HTML</div>
             </div>
-        </div>
+            <div class="chevron">›</div>
+        </a>
 
-        <div class="alert-banner" id="alertBanner" style="display: none;">
-            <div class="alert-icon">🚨</div>
-            <div class="alert-content"><p id="alertText"></p></div>
-        </div>
+        <a href="pmp/index.html" class="nav-card">
+            <div class="icon-wrapper bg-audio">🏆</div>
+            <div class="content">
+                <b>Chứng Chỉ PMP</b>
+                <p>Quản lý dự án chuyên nghiệp. Ôn tập kiến thức và thuật ngữ.</p>
+                <div class="badge">PMP / INDEX.HTML</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
 
-        <div class="tasks-grid" id="tasksGrid"></div>
+        <a href="challenge/index.html" class="nav-card">
+            <div class="icon-wrapper bg-challenge">⚔️</div>
+            <div class="content">
+                <b>Thử Thách Thói Quen</b>
+                <p>Mastery Matrix: Theo dõi tính liên tục và xây dựng kỷ luật thép.</p>
+                <div class="badge">CHALLENGE / INDEX.HTML</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+
+        <a href="pomodoro/index.html" class="nav-card">
+            <div class="icon-wrapper bg-pomodoro">🍅</div>
+            <div class="content">
+                <b>Đồng hồ Pomodoro</b>
+                <p>Phương pháp quản lý thời gian, tăng cường sự tập trung cao độ.</p>
+                <div class="badge">POMODORO / INDEX.HTML</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+
+        <a href="db/index.html" class="nav-card">
+            <div class="icon-wrapper bg-data">🛠️</div>
+            <div class="content">
+                <b>Quản Lý Dữ Liệu</b>
+                <p>Công cụ quản trị IndexedDB: Xem, xuất, nhập và xóa dữ liệu hệ thống.</p>
+                <div class="badge">DB / INDEX.HTML</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
     </div>
 
-    <div class="modal-overlay" id="taskModal">
-        <div class="add-task-section">
-            <button onclick="toggleModal()" style="position:absolute; right:20px; top:20px; border:none; background:none; cursor:pointer; font-size:20px; color:#999">✕</button>
-            <h2 style="margin-bottom:20px">➕ Thêm việc mới</h2>
-            <div class="form-group"><label>Tên công việc *</label><input type="text" id="taskTitle" placeholder="..."></div>
-            <div class="form-group"><label>Chi tiết</label><textarea id="taskDetail" rows="2" placeholder="..."></textarea></div>
-            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div><label>Xử lý trong</label><input type="number" id="durationValue" placeholder="Số" oninput="calculateDeadline()"></div>
-                <div><label>Đơn vị</label><select id="durationUnit" onchange="calculateDeadline()">
-                    <option value="hours">Giờ</option>
-                    <option value="days" selected>Ngày</option>
-                    <option value="weeks">Tuần</option>
-                    <option value="months">Tháng</option>
-                </select></div>
-            </div>
-            <div class="form-group"><label>Deadline *</label><input type="datetime-local" id="taskDeadline"></div>
-            <div class="form-group"><label>Ưu tiên</label><select id="taskPriority"><option value="high">Cao</option><option value="medium" selected>Trung bình</option><option value="low">Thấp</option></select></div>
-            <button class="btn-add" onclick="addTask()">LƯU CÔNG VIỆC</button>
-        </div>
-    </div>
-
-    <button class="btn-open-modal" onclick="toggleModal()">+</button>
+    <footer>
+        PHÁT TRIỂN BỞI AI ASSISTANT • 2026
+    </footer>
 
     <script>
-        let tasks = [
-            { id: 1, title: "Hoàn thành báo cáo Q4", detail: "Gửi file PDF qua email", deadline: new Date(Date.now() - 86400000).toISOString(), priority: "high", completed: false },
-            { id: 2, title: "Họp khách hàng ABC", detail: "Chốt ngân sách dự án", deadline: new Date(Date.now() + 43200000).toISOString(), priority: "high", completed: false }
-        ];
-        let currentFilter = 'all';
-
-        function toggleModal() {
-            const modal = document.getElementById('taskModal');
-            if (modal.style.display !== 'flex') {
-                const now = new Date();
-                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                document.getElementById('taskDeadline').value = now.toISOString().slice(0, 16);
-                modal.style.display = 'flex';
-            } else modal.style.display = 'none';
-        }
-
-        function calculateDeadline() {
-            const val = parseFloat(document.getElementById('durationValue').value);
-            const unit = document.getElementById('durationUnit').value;
-            if (!val || val <= 0) return;
-            const now = new Date();
-            if (unit === 'hours') now.setHours(now.getHours() + val);
-            else if (unit === 'days') now.setDate(now.getDate() + val);
-            else if (unit === 'weeks') now.setDate(now.getDate() + (val * 7));
-            else if (unit === 'months') now.setMonth(now.getMonth() + val);
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('taskDeadline').value = now.toISOString().slice(0, 16);
-        }
-
-        function getDeadlineStatus(deadline, completed) {
-            if (completed) return 'completed';
-            const diff = new Date(deadline) - new Date();
-            if (diff < 0) return 'overdue';
-            if (diff / 3600000 < 48) return 'urgent';
-            if (diff / 3600000 < 168) return 'warning';
-            return 'safe';
-        }
-
-        function updateStats() {
-            const stats = { overdue: 0, urgent: 0, warning: 0, completed: 0 };
-            const now = new Date();
-            let counts = { today: 0, week: 0, month: 0 };
-
-            tasks.forEach(t => {
-                const s = getDeadlineStatus(t.deadline, t.completed);
-                if (s === 'completed') stats.completed++; else if (s in stats) stats[s]++;
-                if (!t.completed) {
-                    const d = new Date(t.deadline);
-                    if (d.toDateString() === now.toDateString()) counts.today++;
-                    if ((d - now) / 86400000 <= 7 && (d-now) >= 0) counts.week++;
-                    if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) counts.month++;
-                }
+        document.querySelectorAll('.nav-card').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                card.style.opacity = '0.7';
             });
-
-            ['Overdue', 'Urgent', 'Warning', 'Safe'].forEach(id => document.getElementById('stat' + id).textContent = stats[id.toLowerCase()]);
-            document.getElementById('todoToday').textContent = counts.today;
-            document.getElementById('todoWeek').textContent = counts.week;
-            document.getElementById('todoMonth').textContent = counts.month;
-
-            const banner = document.getElementById('alertBanner');
-            if (stats.overdue > 0) {
-                banner.style.display = 'flex';
-                document.getElementById('alertText').textContent = `Có ${stats.overdue} việc quá hạn!`;
-            } else banner.style.display = 'none';
-        }
-
-        function filterByTime(range) {
-            currentFilter = range;
-            const now = new Date();
-            let filtered = tasks.filter(t => {
-                if (t.completed) return false;
-                const d = new Date(t.deadline);
-                if (range === 'today') return d.toDateString() === now.toDateString();
-                if (range === 'week') return (d - now) / 86400000 <= 7 && (d-now) >= 0;
-                if (range === 'month') return d.getMonth() === now.getMonth();
-                return true;
+            card.addEventListener('touchend', () => {
+                card.style.opacity = '1';
             });
-            renderTasks(filtered);
-        }
-
-        function renderTasks(customList = null) {
-            const grid = document.getElementById('tasksGrid');
-            let filtered = customList || tasks;
-            if (!customList && currentFilter !== 'all') filtered = tasks.filter(t => getDeadlineStatus(t.deadline, t.completed) === currentFilter);
-
-            grid.innerHTML = filtered.length ? filtered.map(t => `
-                <div class="task-card ${getDeadlineStatus(t.deadline, t.completed)}">
-                    <div class="task-title">
-                        <span>${t.completed ? '✅ ' : ''}${t.title} <span class="priority-badge">${t.priority}</span></span>
-                        ${t.detail ? `<span class="task-detail-sub">- ${t.detail}</span>` : ''}
-                    </div>
-                    <div class="deadline-info">📅 ${new Date(t.deadline).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</div>
-                    <div style="display: flex; gap: 5px;">
-                        ${!t.completed ? `<button class="btn-icon" style="background:#d4edda" onclick="completeTask(${t.id})">✓</button>` : ''}
-                        <button class="btn-icon" style="background:#f8d7da" onclick="deleteTask(${t.id})">🗑️</button>
-                    </div>
-                </div>
-            `).join('') : '<div style="text-align:center; padding:30px; color:white; opacity:0.7">Trống...</div>';
-        }
-
-        function addTask() {
-            const title = document.getElementById('taskTitle').value;
-            const dl = document.getElementById('taskDeadline').value;
-            if (!title || !dl) return alert("Nhập đủ thông tin!");
-            tasks.unshift({ id: Date.now(), title, detail: document.getElementById('taskDetail').value, deadline: new Date(dl).toISOString(), priority: document.getElementById('taskPriority').value, completed: false });
-            toggleModal(); updateStats(); renderTasks();
-            ['taskTitle', 'taskDetail', 'durationValue'].forEach(id => document.getElementById(id).value = '');
-        }
-
-        function filterTasks(f, el) { currentFilter = f; renderTasks(); }
-        function completeTask(id) { const t = tasks.find(x => x.id === id); if(t) t.completed = true; updateStats(); renderTasks(); }
-        function deleteTask(id) { if(confirm("Xóa?")) { tasks = tasks.filter(x => x.id !== id); updateStats(); renderTasks(); } }
-
-        updateStats(); renderTasks();
+        });
     </script>
 </body>
 </html>

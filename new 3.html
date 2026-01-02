@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>Japanese Reading Practice</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+:root {
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --primary: #4f46e5;
+  --primary-soft: #eef2ff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e5e7eb;
+}
+
+body {
+  font-family: system-ui, -apple-system;
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 24px 20px 40px;
+}
+
+h1 {
+  font-size: 26px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.card h2 {
+  font-size: 13px;
+  margin: 0 0 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.controls,
+.playback-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+select, button {
+  padding: 9px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button.primary {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  border: none;
+}
+
+button.ghost {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: none;
+}
+
+ul#list {
+  padding: 0;
+  margin: 0;
+}
+
+ul#list li {
+  list-style: none;
+  padding: 12px 14px;
+  border-radius: 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .15s ease;
+  background: #fafafa;
+}
+
+ul#list li.active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+ul#list li:hover {
+  background: #f1f5f9;
+}
+
+audio {
+  width: 100%;
+  margin-top: 4px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>📘 Japanese Reading Practice</h1>
+
+  <!-- SETTINGS -->
+  <div class="card">
+    <h2>Settings</h2>
+    <div class="controls">
+      <select id="voice">
+        <option value="ja-JP-NanamiNeural">Nữ – Nanami</option>
+        <option value="ja-JP-KeitaNeural" selected>Nam – Keita</option>
+      </select>
+
+      <select id="rate">
+        <option value="0.7">Rất chậm</option>
+        <option value="0.85">Chậm</option>
+        <option value="1.0">Bình thường</option>
+        <option value="1.1">Hơi nhanh</option>
+        <option value="1.25">Nhanh</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- PLAYBACK -->
+  <div class="card">
+    <h2>Playback</h2>
+    <div class="playback-buttons">
+      <button class="primary" onclick="playCurrent()">▶ Đọc đoạn</button>
+      <button class="ghost" onclick="playAll()">▶▶ Đọc lần lượt</button>
+      <button onclick="toggleRepeatOne()">🔂 Lặp 1 đoạn</button>
+      <button onclick="toggleRepeatAll()">🔁 Lặp cả list</button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div class="card">
+    <h2>Danh sách nội dung</h2>
+    <ul id="list"></ul>
+  </div>
+
+  <!-- AUDIO -->
+  <div class="card">
+    <h2>Audio</h2>
+    <audio id="audio" controls></audio>
+  </div>
+
+</div>
+
+<!-- ====================== SCRIPT GIỮ NGUYÊN ====================== -->
+<script>
+/* ====================== CONFIG ====================== */
+const API_URL = "https://hsk-gilt.vercel.app/api/tts1";
+const DB_NAME = "tts-audio-cache";
+const STORE_NAME = "audio";
+
+/* ====================== SAMPLE TEXT ====================== */
+const texts = [
+  "日本語を勉強することは簡単ではありませんが、毎日少しずつ続ければ、必ず上達します。大切なのは諦めないことです。",
+  "仕事が忙しい時でも、短い時間を見つけて勉強することで、自分の成長を実感することができます。",
+  "新しい言語を学ぶことは、考え方や文化の違いを理解する良い機会になります。"
+];
+
+let currentIndex = 0;
+let repeatOne = false;
+let repeatAll = false;
+
+const audio = document.getElementById("audio");
+const listEl = document.getElementById("list");
+
+/* ====================== UI ====================== */
+renderList();
+
+function renderList() {
+  listEl.innerHTML = "";
+  texts.forEach((text, i) => {
+    const li = document.createElement("li");
+    li.textContent = text;
+    li.onclick = () => {
+      currentIndex = i;
+      playCurrent();
+    };
+    listEl.appendChild(li);
+  });
+  highlight();
+}
+
+function highlight() {
+  [...listEl.children].forEach((li, i) => {
+    li.classList.toggle("active", i === currentIndex);
+  });
+}
+
+/* ====================== INDEXED DB ====================== */
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore(STORE_NAME);
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = reject;
+  });
+}
+
+async function getCachedAudio(key) {
+  const db = await openDB();
+  return new Promise(resolve => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.get(key);
+    req.onsuccess = () => resolve(req.result || null);
+  });
+}
+
+async function saveAudio(key, blob) {
+  const db = await openDB();
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).put(blob, key);
+}
+
+/* ====================== PLAY LOGIC ====================== */
+function buildKey(text) {
+  return `ja-JP|${voiceEl().value}|${rateEl().value}|${text}`;
+}
+
+function buildUrl(text) {
+  return `${API_URL}?text=${encodeURIComponent(text)}`
+    + `&lang=ja-JP`
+    + `&voice=${voiceEl().value}`
+    + `&rate=${rateEl().value}`;
+}
+
+async function playCurrent() {
+  highlight();
+  const text = texts[currentIndex];
+  const key = buildKey(text);
+
+  const cached = await getCachedAudio(key);
+  if (cached) {
+    audio.src = URL.createObjectURL(cached);
+    audio.play();
+    return;
+  }
+
+  const res = await fetch(buildUrl(text));
+  const blob = await res.blob();
+  await saveAudio(key, blob);
+
+  audio.src = URL.createObjectURL(blob);
+  audio.play();
+}
+
+function playAll() {
+  repeatOne = false;
+  playCurrent();
+}
+
+function toggleRepeatOne() {
+  repeatOne = !repeatOne;
+  repeatAll = false;
+}
+
+function toggleRepeatAll() {
+  repeatAll = !repeatAll;
+  repeatOne = false;
+}
+
+audio.addEventListener("ended", () => {
+  if (repeatOne) return playCurrent();
+
+  currentIndex++;
+  if (currentIndex >= texts.length) {
+    if (repeatAll) currentIndex = 0;
+    else return;
+  }
+  playCurrent();
+});
+
+/* ====================== HELPERS ====================== */
+const voiceEl = () => document.getElementById("voice");
+const rateEl = () => document.getElementById("rate");
+</script>
+
+</body>
+</html>

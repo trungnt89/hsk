@@ -1,277 +1,331 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Japanese Reading Practice</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Japanese Reading Practice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <style>
-    body {
-      font-family: system-ui, -apple-system;
-      max-width: 900px;
-      margin: auto;
-      padding: 12px;
-      background: #f5f6f8;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-    h1 {
-      font-size: 20px;
-      margin-bottom: 12px;
-    }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
 
-    .card {
-      background: #fff;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
 
-    .row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
 
-    select, button, input, textarea {
-      padding: 6px 8px;
-      font-size: 14px;
-    }
+        .content {
+            padding: 30px;
+        }
 
-    button {
-      cursor: pointer;
-    }
+        .section {
+            margin-bottom: 30px;
+        }
 
-    textarea {
-      width: 100%;
-      min-height: 80px;
-      resize: vertical;
-    }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    ul {
-      padding: 0;
-      margin: 0;
-    }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
 
-    li {
-      list-style: none;
-      border: 1px solid #ddd;
-      padding: 8px;
-      margin-top: 6px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-    }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-    li.active {
-      background: #e8f0ff;
-      border-color: #4a7cff;
-    }
+        .form-group label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
 
-    .actions {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-    }
+        select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
-    audio {
-      width: 100%;
-    }
+        select:hover {
+            border-color: #667eea;
+        }
 
-    @media (max-width: 600px) {
-      .row {
-        flex-direction: column;
-        align-items: stretch;
-      }
-    }
-  </style>
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .playback-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #f5f7ff;
+            transform: translateY(-2px);
+        }
+
+        .text-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .text-item {
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .text-item:hover {
+            background: #f0f2ff;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .audio-section {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        audio {
+            width: 100%;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        audio::-webkit-media-controls-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                border-radius: 0;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .playback-controls {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>📖</span>
+                Japanese Reading Practice
+            </h1>
+        </div>
 
-<h1>📖 Japanese Reading Practice</h1>
+        <div class="content">
+            <!-- Settings Section -->
+            <div class="section">
+                <div class="section-title">
+                    <span>🔧</span>
+                    Cài đặt
+                </div>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label for="difficulty">Độ khó</label>
+                        <select id="difficulty">
+                            <option value="easy">Nam - Keita</option>
+                            <option value="medium">Trung bình</option>
+                            <option value="hard">Khó</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="speed">Tốc độ</label>
+                        <select id="speed">
+                            <option value="slow">Rất chậm</option>
+                            <option value="normal">Bình thường</option>
+                            <option value="fast">Nhanh</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-<!-- SETTINGS -->
-<div class="card">
-  <div class="row">
-    <strong>🔧 Settings</strong>
-  </div>
-  <div class="row" style="margin-top:6px">
-    <select id="voice">
-      <option value="ja-JP-NanamiNeural">Nữ – Nanami</option>
-      <option value="ja-JP-KeitaNeural" selected>Nam – Keita</option>
-    </select>
+            <!-- Playback Controls -->
+            <div class="section">
+                <div class="section-title">
+                    <span>▶️</span>
+                    Điều khiển phát
+                </div>
+                <div class="playback-controls">
+                    <button class="btn btn-primary">
+                        <span>▶️</span>
+                        Đọc đoạn
+                    </button>
+                    <button class="btn btn-primary">
+                        <span>⏩</span>
+                        Đọc lặp lượt
+                    </button>
+                    <button class="btn btn-secondary">
+                        <span>🔄</span>
+                        Lặp 1 đoạn
+                    </button>
+                    <button class="btn btn-secondary">
+                        <span>📋</span>
+                        Lặp cả list
+                    </button>
+                </div>
+            </div>
 
-    <select id="rate">
-      <option value="0.7">Rất chậm</option>
-      <option value="0.85">Chậm</option>
-      <option value="1.0">Bình thường</option>
-      <option value="1.1">Hơi nhanh</option>
-      <option value="1.25">Nhanh</option>
-    </select>
-  </div>
-</div>
+            <!-- Text Content -->
+            <div class="section">
+                <div class="section-title">
+                    <span>📝</span>
+                    Danh sách nội dung
+                </div>
+                <div class="text-list">
+                    <div class="text-item">
+                        日本語を勉強することは簡単ではありませんが、毎日少しずつ続ければ、必ず上達します。大切なのは諦めないことです。
+                    </div>
+                    <div class="text-item">
+                        仕事が忙しい時でも、短い時間を見つけて勉強することで、自分の成長を実感することができます。
+                    </div>
+                    <div class="text-item">
+                        新しい言語を学ぶことは、考え方や文化の違いを理解する良い機会になります。
+                    </div>
+                </div>
+            </div>
 
-<!-- PLAY CONTROLS -->
-<div class="card">
-  <div class="row">
-    <strong>▶️ Playback</strong>
-  </div>
-  <div class="row" style="margin-top:6px">
-    <button onclick="playCurrent()">▶️ Đọc đoạn</button>
-    <button onclick="playAll()">▶️▶️ Đọc lần lượt</button>
-    <button onclick="toggleRepeatOne()">🔂 Lặp 1 đoạn</button>
-    <button onclick="toggleRepeatAll()">🔁 Lặp cả list</button>
-  </div>
-</div>
+            <!-- Audio Player -->
+            <div class="section">
+                <div class="section-title">
+                    <span>🔊</span>
+                    Âm thanh
+                </div>
+                <div class="audio-section">
+                    <audio controls>
+                        <source src="" type="audio/mpeg">
+                        Trình duyệt của bạn không hỗ trợ phát audio.
+                    </audio>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- LIST -->
-<div class="card">
-  <strong>📚 Danh sách nội dung</strong>
-  <ul id="list"></ul>
-</div>
+    <script>
+        // Add interactivity
+        const textItems = document.querySelectorAll('.text-item');
+        textItems.forEach((item, index) => {
+            item.addEventListener('click', () => {
+                textItems.forEach(t => t.style.borderLeftColor = '#667eea');
+                item.style.borderLeftColor = '#764ba2';
+                console.log(`Selected text ${index + 1}`);
+            });
+        });
 
-<!-- AUDIO -->
-<div class="card">
-  <strong>🔊 Audio</strong>
-  <audio id="audio" controls></audio>
-</div>
-
-<script>
-/* ====================== CONFIG ====================== */
-const API_URL = "https://hsk-gilt.vercel.app/api/tts1";
-const DB_NAME = "tts-audio-cache";
-const STORE_NAME = "audio";
-
-/* ====================== SAMPLE TEXT ====================== */
-const texts = [
-  "日本語を勉強することは簡単ではありませんが、毎日少しずつ続ければ、必ず上達します。大切なのは諦めないことです。",
-  "仕事が忙しい時でも、短い時間を見つけて勉強することで、自分の成長を実感することができます。",
-  "新しい言語を学ぶことは、考え方や文化の違いを理解する良い機会になります。"
-];
-
-let currentIndex = 0;
-let repeatOne = false;
-let repeatAll = false;
-
-const audio = document.getElementById("audio");
-const listEl = document.getElementById("list");
-
-/* ====================== UI ====================== */
-renderList();
-
-function renderList() {
-  listEl.innerHTML = "";
-  texts.forEach((text, i) => {
-    const li = document.createElement("li");
-    li.textContent = text;
-    li.onclick = () => {
-      currentIndex = i;
-      playCurrent();
-    };
-    listEl.appendChild(li);
-  });
-  highlight();
-}
-
-function highlight() {
-  [...listEl.children].forEach((li, i) => {
-    li.classList.toggle("active", i === currentIndex);
-  });
-}
-
-/* ====================== INDEXED DB ====================== */
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = e => {
-      e.target.result.createObjectStore(STORE_NAME);
-    };
-    req.onsuccess = e => resolve(e.target.result);
-    req.onerror = reject;
-  });
-}
-
-async function getCachedAudio(key) {
-  const db = await openDB();
-  return new Promise(resolve => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.get(key);
-    req.onsuccess = () => resolve(req.result || null);
-  });
-}
-
-async function saveAudio(key, blob) {
-  const db = await openDB();
-  const tx = db.transaction(STORE_NAME, "readwrite");
-  tx.objectStore(STORE_NAME).put(blob, key);
-}
-
-/* ====================== PLAY LOGIC ====================== */
-function buildKey(text) {
-  return `ja-JP|${voiceEl().value}|${rateEl().value}|${text}`;
-}
-
-function buildUrl(text) {
-  return `${API_URL}?text=${encodeURIComponent(text)}`
-    + `&lang=ja-JP`
-    + `&voice=${voiceEl().value}`
-    + `&rate=${rateEl().value}`;
-}
-
-async function playCurrent() {
-  highlight();
-  const text = texts[currentIndex];
-  const key = buildKey(text);
-
-  const cached = await getCachedAudio(key);
-  if (cached) {
-    audio.src = URL.createObjectURL(cached);
-    audio.play();
-    return;
-  }
-
-  const res = await fetch(buildUrl(text));
-  const blob = await res.blob();
-  await saveAudio(key, blob);
-
-  audio.src = URL.createObjectURL(blob);
-  audio.play();
-}
-
-function playAll() {
-  repeatOne = false;
-  playCurrent();
-}
-
-function toggleRepeatOne() {
-  repeatOne = !repeatOne;
-  repeatAll = false;
-  alert("Lặp 1 đoạn: " + (repeatOne ? "BẬT" : "TẮT"));
-}
-
-function toggleRepeatAll() {
-  repeatAll = !repeatAll;
-  repeatOne = false;
-  alert("Lặp cả danh sách: " + (repeatAll ? "BẬT" : "TẮT"));
-}
-
-audio.addEventListener("ended", () => {
-  if (repeatOne) return playCurrent();
-
-  currentIndex++;
-  if (currentIndex >= texts.length) {
-    if (repeatAll) currentIndex = 0;
-    else return;
-  }
-  playCurrent();
-});
-
-/* ====================== HELPERS ====================== */
-const voiceEl = () => document.getElementById("voice");
-const rateEl = () => document.getElementById("rate");
-</script>
-
+        // Button click handlers
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                console.log('Button clicked:', e.target.textContent.trim());
+            });
+        });
+    </script>
 </body>
 </html>

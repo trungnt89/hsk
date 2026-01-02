@@ -5,43 +5,31 @@
   <title>Japanese Reading Practice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body {
-      font-family: system-ui, -apple-system;
-      max-width: 900px;
-      margin: auto;
-      padding: 16px;
-    }
-    li {
-      list-style: none;
-      border: 1px solid #ddd;
-      padding: 10px;
-      margin-top: 6px;
-      cursor: pointer;
-    }
-    li.active {
-      background: #e8f0ff;
-      border-color: #4a7cff;
-    }
-    .controls, .play-modes {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    select, button, textarea {
-      padding: 8px;
-      font-size: 15px;
-    }
-    textarea {
-      width: 100%;
-    }
+    body { font-family: system-ui, -apple-system; max-width: 900px; margin: auto; padding: 16px; background: #fcfcfc; }
+    li { list-style: none; border: 1px solid #ddd; padding: 12px; margin-top: 8px; cursor: pointer; border-radius: 8px; background: white; transition: 0.2s; }
+    li:hover { border-color: #aaa; }
+    li.active { background: #e8f0ff; border-color: #4a7cff; font-weight: bold; }
+    
+    .controls, .play-modes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .section-box { border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    
+    select, button, textarea { padding: 10px; font-size: 15px; border-radius: 8px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #fff; transition: 0.2s; }
+    button:active { transform: translateY(1px); }
+    button.active { background: #2563eb; color: white; border-color: #1d4ed8; }
+    
+    textarea { width: 100%; box-sizing: border-box; font-family: inherit; }
+    
+    /* Modal Styles */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
   </style>
 </head>
 <body>
 
-<h1>📖 Japanese Reading Practice (Cached)</h1>
+<h1>📖 Japanese Reading Practice</h1>
 
-<div class="controls">
+<div class="section-box controls">
   <select id="voice">
     <option value="ja-JP-NanamiNeural">Nữ – Nanami</option>
     <option value="ja-JP-KeitaNeural" selected>Nam – Keita</option>
@@ -50,41 +38,45 @@
   <select id="rate">
     <option value="0.7">Rất chậm</option>
     <option value="0.85">Chậm</option>
-    <option value="1.0">Bình thường</option>
+    <option value="1.0" selected>Bình thường</option>
     <option value="1.1">Hơi nhanh</option>
     <option value="1.25">Nhanh</option>
   </select>
 </div>
 
-<div class="play-modes">
-  <button onclick="playCurrent()">▶️ Đọc đoạn</button>
-  <button onclick="playAll()">▶️▶️ Đọc lần lượt</button>
-  <button onclick="toggleRepeatOne()">🔂 Lặp 1 đoạn</button>
-  <button onclick="toggleRepeatAll()">🔁 Lặp cả danh sách</button>
+<div class="section-box play-modes">
+  <button id="btnPlayCur" onclick="playCurrent()">▶️ Đọc đoạn</button>
+  <button id="btnRepeatOne" onclick="toggleRepeatOne()">🔂 Lặp 1 đoạn</button>
+  <button id="btnRepeatAll" onclick="toggleRepeatAll()">🔁 Lặp cả danh sách</button>
+  <button onclick="openEditor()" style="margin-left:auto; background: #f1f5f9;">⚙️ Sửa nội dung</button>
 </div>
 
-<div class="controls">
-  <textarea id="textInput" rows="4" placeholder="Nhập nội dung tiếng Nhật..."></textarea>
-  <button onclick="addText()">➕ Thêm</button>
-  <button onclick="updateText()">✏️ Sửa</button>
-  <button onclick="deleteText()">🗑 Xoá</button>
+<div id="editorModal" class="modal">
+  <div class="modal-content">
+    <h3 style="margin-top:0">Quản lý nội dung</h3>
+    <textarea id="textInput" rows="6" placeholder="Nhập nội dung tiếng Nhật..."></textarea>
+    <div class="controls" style="margin-top:15px; justify-content: flex-end;">
+      <button onclick="addText()" style="background: #ecfdf5; color: #059669;">➕ Thêm mới</button>
+      <button onclick="updateText()" style="background: #eff6ff; color: #2563eb;">✏️ Lưu sửa</button>
+      <button onclick="deleteText()" style="color: #dc2626;">🗑 Xoá</button>
+      <button onclick="closeEditor()" style="margin-left: 10px;">Đóng</button>
+    </div>
+  </div>
 </div>
 
 <ul id="list"></ul>
 
-<audio id="audio" controls style="width:100%; margin-top:16px;"></audio>
+<audio id="audio" controls style="width:100%; margin-top:16px; border-radius: 8px;"></audio>
 
 <script>
-/* ====================== CONFIG ====================== */
 const API_URL = "https://hsk-gilt.vercel.app/api/tts1";
 const DB_NAME = "tts-audio-cache";
 const STORE_NAME = "audio";
 
-/* ====================== SAMPLE TEXT (100+ chữ) ====================== */
 const texts = [
   "日本で働き始めてから、毎日の生活リズムが大きく変わりました。朝は早く起きて電車に乗り、会社では多くの人と協力しながら仕事を進めています。最初は言葉や文化の違いに戸惑うこともありましたが、少しずつ慣れてきました。",
-  "日本語の勉強は簡単ではありませんが、毎日少しずつ続けることが大切だと思います。聞く力、話す力、読む力、書く力をバランスよく伸ばすことで、実際の生活でも自信を持って使えるようになります。",
-  "週末になると、公園を散歩したり、本を読んだりしてリラックスする時間を大切にしています。忙しい日常の中でも、自分の心と体を休める時間を持つことが、長く頑張るためには必要だと感じています。"
+  "日本語の勉強は簡単ではありませんが、毎日少しずつ続けることが大切だと思います。",
+  "週末になると、公園を散歩したり、本を読んだりしてリラックスする時間を大切にしています。"
 ];
 
 let currentIndex = 0;
@@ -95,7 +87,7 @@ const audio = document.getElementById("audio");
 const listEl = document.getElementById("list");
 const textInput = document.getElementById("textInput");
 
-/* ====================== SETTINGS ====================== */
+/* ====================== SETTINGS & STATE ====================== */
 function saveSettings() {
   localStorage.setItem("voice", voiceEl().value);
   localStorage.setItem("rate", rateEl().value);
@@ -106,25 +98,36 @@ function loadSettings() {
   const r = localStorage.getItem("rate");
   if (v) voiceEl().value = v;
   if (r) rateEl().value = r;
+  
+  repeatOne = localStorage.getItem("repeatOne") === "true";
+  repeatAll = localStorage.getItem("repeatAll") === "true";
+  updateButtonStates();
+}
+
+function updateButtonStates() {
+  document.getElementById("btnRepeatOne").classList.toggle("active", repeatOne);
+  document.getElementById("btnRepeatAll").classList.toggle("active", repeatAll);
 }
 
 voiceEl().addEventListener("change", saveSettings);
 rateEl().addEventListener("change", saveSettings);
 
-/* ====================== TEXT STORAGE ====================== */
-function saveTexts() {
-  localStorage.setItem("texts", JSON.stringify(texts));
+/* ====================== UI MODAL ====================== */
+function openEditor() {
+  textInput.value = texts[currentIndex] || "";
+  document.getElementById("editorModal").style.display = "flex";
+}
+function closeEditor() {
+  document.getElementById("editorModal").style.display = "none";
 }
 
+/* ====================== DATA STORAGE ====================== */
+function saveTexts() { localStorage.setItem("texts", JSON.stringify(texts)); }
 function loadTexts() {
   const saved = localStorage.getItem("texts");
-  if (saved) {
-    texts.length = 0;
-    JSON.parse(saved).forEach(t => texts.push(t));
-  }
+  if (saved) { texts.length = 0; JSON.parse(saved).forEach(t => texts.push(t)); }
 }
 
-/* ====================== UI ====================== */
 loadSettings();
 loadTexts();
 renderList();
@@ -134,11 +137,7 @@ function renderList() {
   texts.forEach((text, i) => {
     const li = document.createElement("li");
     li.textContent = text;
-    li.onclick = () => {
-      currentIndex = i;
-      textInput.value = text;
-      playCurrent();
-    };
+    li.onclick = () => { currentIndex = i; playCurrent(); };
     listEl.appendChild(li);
   });
   highlight();
@@ -155,15 +154,13 @@ function addText() {
   const v = textInput.value.trim();
   if (!v) return;
   texts.push(v);
-  saveTexts();
-  renderList();
+  saveTexts(); renderList(); closeEditor();
 }
 
 function updateText() {
   if (texts[currentIndex]) {
     texts[currentIndex] = textInput.value;
-    saveTexts();
-    renderList();
+    saveTexts(); renderList(); closeEditor();
   }
 }
 
@@ -171,8 +168,7 @@ function deleteText() {
   if (texts[currentIndex]) {
     texts.splice(currentIndex, 1);
     currentIndex = 0;
-    saveTexts();
-    renderList();
+    saveTexts(); renderList(); closeEditor();
   }
 }
 
@@ -180,9 +176,7 @@ function deleteText() {
 function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = e => {
-      e.target.result.createObjectStore(STORE_NAME);
-    };
+    req.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME);
     req.onsuccess = e => resolve(e.target.result);
     req.onerror = reject;
   });
@@ -192,8 +186,7 @@ async function getCachedAudio(key) {
   const db = await openDB();
   return new Promise(resolve => {
     const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.get(key);
+    const req = tx.objectStore(STORE_NAME).get(key);
     req.onsuccess = () => resolve(req.result || null);
   });
 }
@@ -205,72 +198,48 @@ async function saveAudio(key, blob) {
 }
 
 /* ====================== PLAY LOGIC ====================== */
-function buildKey(text) {
-  return `ja-JP|${voiceEl().value}|${rateEl().value}|${text}`;
-}
-
-function buildUrl(text) {
-  return `${API_URL}?text=${encodeURIComponent(text)}`
-    + `&lang=ja-JP`
-    + `&voice=${voiceEl().value}`
-    + `&rate=${rateEl().value}`;
-}
+function buildKey(text) { return `ja-JP|${voiceEl().value}|${rateEl().value}|${text}`; }
+function buildUrl(text) { return `${API_URL}?text=${encodeURIComponent(text)}&lang=ja-JP&voice=${voiceEl().value}&rate=${rateEl().value}`; }
 
 async function playCurrent() {
   highlight();
   const text = texts[currentIndex];
+  if(!text) return;
   const key = buildKey(text);
-
   const cached = await getCachedAudio(key);
-  if (cached) {
-    audio.src = URL.createObjectURL(cached);
-    audio.play();
-    return;
-  }
-
+  if (cached) { audio.src = URL.createObjectURL(cached); audio.play(); return; }
   const res = await fetch(buildUrl(text));
   const blob = await res.blob();
   await saveAudio(key, blob);
-
   audio.src = URL.createObjectURL(blob);
   audio.play();
 }
 
-function playAll() {
-  repeatOne = false;
-  playCurrent();
-}
-
 function toggleRepeatOne() {
-  repeatOne = !repeatOne;
-  repeatAll = false;
-  alert("Lặp 1 đoạn: " + (repeatOne ? "BẬT" : "TẮT"));
+  repeatOne = !repeatOne; if(repeatOne) repeatAll = false;
+  localStorage.setItem("repeatOne", repeatOne);
+  localStorage.setItem("repeatAll", repeatAll);
+  updateButtonStates();
 }
 
 function toggleRepeatAll() {
-  repeatAll = !repeatAll;
-  repeatOne = false;
-  alert("Lặp cả danh sách: " + (repeatAll ? "BẬT" : "TẮT"));
+  repeatAll = !repeatAll; if(repeatAll) repeatOne = false;
+  localStorage.setItem("repeatOne", repeatOne);
+  localStorage.setItem("repeatAll", repeatAll);
+  updateButtonStates();
 }
 
 audio.addEventListener("ended", () => {
   if (repeatOne) return playCurrent();
   currentIndex++;
   if (currentIndex >= texts.length) {
-    if (repeatAll) currentIndex = 0;
-    else return;
+    if (repeatAll) currentIndex = 0; else return;
   }
   playCurrent();
 });
 
-/* ====================== HELPERS ====================== */
-function voiceEl() {
-  return document.getElementById("voice");
-}
-function rateEl() {
-  return document.getElementById("rate");
-}
+function voiceEl() { return document.getElementById("voice"); }
+function rateEl() { return document.getElementById("rate"); }
 </script>
-
 </body>
 </html>

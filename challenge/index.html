@@ -45,7 +45,8 @@
         .status-fail { background: var(--fail) !important; color: white; }
         .is-today { background: var(--primary) !important; color: white !important; }
 
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr 300px; gap: 20px; }
+        /* Dashboard Grid chỉnh lại còn 2 cột vì đã dời 1 khối lên trên */
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .chart-container { background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 15px; }
         
         .chart-row { margin-bottom: 12px; }
@@ -63,7 +64,6 @@
             box-shadow: inset 0 0 8px rgba(0,0,0,0.1);
             position: relative;
         }
-        /* Tạo lỗ ở giữa để thành donut chart nếu muốn, hiện tại để tròn đặc như yêu cầu */
         .pie-name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; opacity: 0.9; text-align: center; }
 
         .warning-alert { padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 12px; border-left: 5px solid; }
@@ -86,6 +86,15 @@
         </div>
     </div>
 
+    <div class="chart-container" style="text-align: center; display:flex; flex-direction:column; background: var(--fail); color: white; border:none; margin-bottom: 25px;">
+        <h4 style="margin:0 0 15px 0">Hiệu suất thực tế (Theo ngày đã qua) 📊</h4>
+        <div id="pieChartsContainer" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 15px;"></div>
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+            <h4 style="margin:0">Yếu nhất tháng ⚠️: </h4>
+            <div id="worstHabit" style="font-size: 16px; font-weight: 800; color: #fff">--</div>
+        </div>
+    </div>
+
     <div class="table-container">
         <table>
             <thead id="tHead"></thead>
@@ -101,14 +110,6 @@
         <div class="chart-container">
             <h4 style="margin:0 0 10px 0">Trạng thái kỷ luật ⚠️</h4>
             <div id="streakWarnings"></div>
-        </div>
-        <div class="chart-container" style="text-align: center; display:flex; flex-direction:column; background: var(--fail); color: white; border:none; min-height: 220px;">
-            <h4 style="margin:0 0 15px 0">Hiệu suất thực tế 📊</h4>
-            <div id="pieChartsContainer" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-bottom: 15px;"></div>
-            <div style="border-top: 1px solid rgba(255,255,255,0.2); pt: 10px;">
-                <h4 style="margin:10px 0 5px 0">Yếu nhất tháng ⚠️</h4>
-                <div id="worstHabit" style="font-size: 16px; font-weight: 800; color: #fff">--</div>
-            </div>
         </div>
     </div>
 </div>
@@ -161,8 +162,7 @@
     function moveMonth(s) { displayDate.setMonth(displayDate.getMonth() + s); render(); }
     async function addNewHabit() { habits.push({ id: Date.now(), name: "Việc mới" }); await save(); render(); }
     async function deleteHabit(id) { if(confirm('Xóa?')) { habits = habits.filter(h => h.id !== id); await save(); render(); } }
-    function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
-
+    
     async function toggle(dStr, id) {
         const targetDate = new Date(dStr);
         if (targetDate > today) return;
@@ -179,14 +179,13 @@
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         document.getElementById('mLabel').innerText = `Tháng ${(month + 1).toString().padStart(2, '0')}/${year}`;
 
-        // Tính số ngày đã qua của tháng để làm mẫu số cho Pie Chart
         let elapsedDays = 0;
         if (year < today.getFullYear() || (year === today.getFullYear() && month < today.getMonth())) {
-            elapsedDays = daysInMonth; // Tháng cũ đã qua hết
+            elapsedDays = daysInMonth;
         } else if (year === today.getFullYear() && month === today.getMonth()) {
-            elapsedDays = today.getDate(); // Tháng hiện tại tính đến hôm nay
+            elapsedDays = today.getDate();
         } else {
-            elapsedDays = 0; // Tháng tương lai
+            elapsedDays = 0;
         }
 
         let worstH = { name: '--', count: 999 };
@@ -212,14 +211,12 @@
 
             if(doneCount < worstH.count) worstH = { name: h.name, count: doneCount };
             
-            // Tỷ lệ hoàn thành trên cả tháng (cho Progress Bar)
             const totalPct = Math.round((doneCount / daysInMonth) * 100) || 0;
             barHtml += `<div class="chart-row">
                 <span class="chart-label">${h.name} (${totalPct}%)</span>
                 <div class="bar-bg"><div class="bar-fill" style="width:${totalPct}%; background:${totalPct > 70 ? 'var(--success)' : 'var(--primary)'}"></div></div>
             </div>`;
 
-            // Tỷ lệ hoàn thành trên số ngày đã qua (cho Pie Chart)
             const piePct = elapsedDays > 0 ? Math.round((doneCount / elapsedDays) * 100) : 0;
             let pieColor = piePct >= 80 ? '#10b981' : (piePct >= 60 ? '#f59e0b' : '#ef4444');
 
@@ -240,7 +237,6 @@
         document.getElementById('worstHabit').innerText = worstH.name;
         document.getElementById('pieChartsContainer').innerHTML = pieHtml;
 
-        // Bảng dữ liệu
         let headHtml = `<tr><th class="sticky-col">Mục tiêu</th>`;
         for(let i=1; i<=daysInMonth; i++) {
             const d = new Date(year, month, i); d.setHours(0,0,0,0);

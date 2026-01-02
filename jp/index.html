@@ -14,13 +14,12 @@
     .section-box { border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     
     select, button, textarea { padding: 10px; font-size: 15px; border-radius: 8px; border: 1px solid #ccc; }
-    button { cursor: pointer; background: #fff; transition: 0.2s; }
+    button { cursor: pointer; background: #fff; transition: 0.2s; font-weight: 500; }
     button:active { transform: translateY(1px); }
-    button.active { background: #2563eb; color: white; border-color: #1d4ed8; }
+    button.active { background: #2563eb !important; color: white !important; border-color: #1d4ed8 !important; }
     
     textarea { width: 100%; box-sizing: border-box; font-family: inherit; }
     
-    /* Modal Styles */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
   </style>
@@ -74,7 +73,7 @@ const DB_NAME = "tts-audio-cache";
 const STORE_NAME = "audio";
 
 const texts = [
-  "日本で働き始めてから、毎日の生活リズムが大きく変わりました。朝は早く起きて電車に乗り、会社では多くの人と協力しながら仕事を進めています。最初は言葉や文化の違いに戸惑うこともありましたが、少しずつ慣れてきました。",
+  "日本で働き始めてから、毎日の生活リズムが大きく変わりました。",
   "日本語の勉強は簡単ではありませんが、毎日少しずつ続けることが大切だと思います。",
   "週末になると、公園を散歩したり、本を読んだりしてリラックスする時間を大切にしています。"
 ];
@@ -88,17 +87,11 @@ const listEl = document.getElementById("list");
 const textInput = document.getElementById("textInput");
 
 /* ====================== SETTINGS & STATE ====================== */
-function saveSettings() {
-  localStorage.setItem("voice", voiceEl().value);
-  localStorage.setItem("rate", rateEl().value);
-}
-
 function loadSettings() {
   const v = localStorage.getItem("voice");
   const r = localStorage.getItem("rate");
   if (v) voiceEl().value = v;
   if (r) rateEl().value = r;
-  
   repeatOne = localStorage.getItem("repeatOne") === "true";
   repeatAll = localStorage.getItem("repeatAll") === "true";
   updateButtonStates();
@@ -109,17 +102,20 @@ function updateButtonStates() {
   document.getElementById("btnRepeatAll").classList.toggle("active", repeatAll);
 }
 
-voiceEl().addEventListener("change", saveSettings);
-rateEl().addEventListener("change", saveSettings);
+// Hàm mới để xử lý trạng thái nút Đọc đoạn
+function setPlayBtnActive(isActive) {
+  document.getElementById("btnPlayCur").classList.toggle("active", isActive);
+}
+
+voiceEl().addEventListener("change", () => localStorage.setItem("voice", voiceEl().value));
+rateEl().addEventListener("change", () => localStorage.setItem("rate", rateEl().value));
 
 /* ====================== UI MODAL ====================== */
 function openEditor() {
   textInput.value = texts[currentIndex] || "";
   document.getElementById("editorModal").style.display = "flex";
 }
-function closeEditor() {
-  document.getElementById("editorModal").style.display = "none";
-}
+function closeEditor() { document.getElementById("editorModal").style.display = "none"; }
 
 /* ====================== DATA STORAGE ====================== */
 function saveTexts() { localStorage.setItem("texts", JSON.stringify(texts)); }
@@ -156,14 +152,12 @@ function addText() {
   texts.push(v);
   saveTexts(); renderList(); closeEditor();
 }
-
 function updateText() {
   if (texts[currentIndex]) {
     texts[currentIndex] = textInput.value;
     saveTexts(); renderList(); closeEditor();
   }
 }
-
 function deleteText() {
   if (texts[currentIndex]) {
     texts.splice(currentIndex, 1);
@@ -181,7 +175,6 @@ function openDB() {
     req.onerror = reject;
   });
 }
-
 async function getCachedAudio(key) {
   const db = await openDB();
   return new Promise(resolve => {
@@ -190,7 +183,6 @@ async function getCachedAudio(key) {
     req.onsuccess = () => resolve(req.result || null);
   });
 }
-
 async function saveAudio(key, blob) {
   const db = await openDB();
   const tx = db.transaction(STORE_NAME, "readwrite");
@@ -207,7 +199,11 @@ async function playCurrent() {
   if(!text) return;
   const key = buildKey(text);
   const cached = await getCachedAudio(key);
-  if (cached) { audio.src = URL.createObjectURL(cached); audio.play(); return; }
+  if (cached) {
+    audio.src = URL.createObjectURL(cached);
+    audio.play();
+    return;
+  }
   const res = await fetch(buildUrl(text));
   const blob = await res.blob();
   await saveAudio(key, blob);
@@ -221,7 +217,6 @@ function toggleRepeatOne() {
   localStorage.setItem("repeatAll", repeatAll);
   updateButtonStates();
 }
-
 function toggleRepeatAll() {
   repeatAll = !repeatAll; if(repeatAll) repeatOne = false;
   localStorage.setItem("repeatOne", repeatOne);
@@ -229,7 +224,11 @@ function toggleRepeatAll() {
   updateButtonStates();
 }
 
+/* Audio Events để nhận biết trạng thái đang phát */
+audio.addEventListener("play", () => setPlayBtnActive(true));
+audio.addEventListener("pause", () => setPlayBtnActive(false));
 audio.addEventListener("ended", () => {
+  setPlayBtnActive(false);
   if (repeatOne) return playCurrent();
   currentIndex++;
   if (currentIndex >= texts.length) {

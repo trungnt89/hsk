@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mastery Matrix V18.3 - Pro Pie Charts</title>
+    <title>Mastery Matrix V18.3 - Fixed Sticky</title>
     <style>
         :root { 
             --primary: #4f46e5; --success: #10b981; --fail: #ef4444; 
@@ -21,16 +21,24 @@
             .card { padding: 15px; border-radius: 12px; }
             .header-area { flex-direction: column; gap: 12px; align-items: stretch; }
             .dashboard { grid-template-columns: 1fr !important; }
-            .sticky-col { width: 130px !important; min-width: 130px; }
+            /* Fix cột tên bị trôi khi cuộn trên Mobile */
+            .sticky-col { 
+                width: 100px !important; 
+                min-width: 100px !important; 
+                position: sticky !important;
+                left: 0 !important;
+                z-index: 101 !important;
+                background: white !important;
+            }
         }
 
-        .table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 15px; margin-bottom: 30px; }
-        table { border-collapse: collapse; width: 100%; min-width: max-content; background: white; }
+        .table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 15px; margin-bottom: 30px; position: relative; }
+        table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: max-content; background: white; }
         td, th { border: 1px solid #f1f5f9; height: 55px; }
 
         .sticky-col { 
             position: sticky; left: 0; z-index: 100; background: #fff; width: 220px; 
-            border-right: 4px solid #f1f5f9; padding: 10px;
+            border-right: 4px solid #f1f5f9 !important; padding: 10px;
         }
         
         .habit-name-box { 
@@ -45,7 +53,6 @@
         .status-fail { background: var(--fail) !important; color: white; }
         .is-today { background: var(--primary) !important; color: white !important; }
 
-        /* Dashboard Grid chỉnh lại còn 2 cột vì đã dời 1 khối lên trên */
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .chart-container { background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 15px; }
         
@@ -54,7 +61,6 @@
         .bar-bg { background: #f1f5f9; height: 10px; border-radius: 10px; overflow: hidden; }
         .bar-fill { height: 100%; transition: width 0.6s ease; }
 
-        /* Pie Chart Pro CSS */
         .pie-item { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 60px; }
         .pie {
             width: 48px; height: 48px; border-radius: 50%;
@@ -62,7 +68,6 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 11px; font-weight: 800; color: #fff;
             box-shadow: inset 0 0 8px rgba(0,0,0,0.1);
-            position: relative;
         }
         .pie-name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; opacity: 0.9; text-align: center; }
 

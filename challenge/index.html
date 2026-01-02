@@ -2,15 +2,15 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mastery Matrix V18.3 - Fixed Sticky</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mastery Matrix V18.3 - Safari Optimized</title>
     <style>
         :root { 
             --primary: #4f46e5; --success: #10b981; --fail: #ef4444; 
             --bg: #f8fafc; --text: #1e293b; --weekend: #fff1f2; --warning: #f59e0b;
             --danger: #991b1b; --disabled: #e2e8f0;
         }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 25px rgba(0,0,0,0.05); margin: auto; max-width: 1300px; }
         
         .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -21,32 +21,28 @@
             .card { padding: 15px; border-radius: 12px; }
             .header-area { flex-direction: column; gap: 12px; align-items: stretch; }
             .dashboard { grid-template-columns: 1fr !important; }
-            /* Fix cột tên bị trôi khi cuộn trên Mobile */
-            .sticky-col { 
-                width: 100px !important; 
-                min-width: 100px !important; 
-                position: sticky !important;
-                left: 0 !important;
-                z-index: 101 !important;
-                background: white !important;
-            }
+            .sticky-col { width: 150px !important; min-width: 150px !important; }
         }
 
-        .table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 15px; margin-bottom: 30px; position: relative; }
-        table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: max-content; background: white; }
-        td, th { border: 1px solid #f1f5f9; height: 55px; }
+        .table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 15px; margin-bottom: 30px; -webkit-overflow-scrolling: touch; }
+        table { border-collapse: collapse; width: 100%; min-width: max-content; background: white; table-layout: fixed; }
+        td, th { border: 1px solid #f1f5f9; height: 55px; overflow: hidden; }
 
         .sticky-col { 
-            position: sticky; left: 0; z-index: 100; background: #fff; width: 220px; 
-            border-right: 4px solid #f1f5f9 !important; padding: 10px;
+            position: sticky; left: 0; z-index: 10; background: #fff !important; 
+            width: 220px; min-width: 220px; 
+            border-right: 4px solid #f1f5f9; padding: 10px;
+            -webkit-transform: translateZ(0); 
         }
         
         .habit-name-box { 
             width: 100%; border: none; font-weight: 600; font-size: 13px; 
             color: var(--text); resize: none; background: #f8fafc; outline: none; padding: 5px;
+            overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+            display: block; line-height: 1.2;
         }
 
-        .day-col { width: 45px; text-align: center; }
+        .day-col { width: 45px; min-width: 45px; text-align: center; }
         .mark { width: 32px; height: 32px; margin: auto; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #f1f5f9; }
         
         .status-done { background: var(--success) !important; color: white; }
@@ -61,41 +57,41 @@
         .bar-bg { background: #f1f5f9; height: 10px; border-radius: 10px; overflow: hidden; }
         .bar-fill { height: 100%; transition: width 0.6s ease; }
 
-        .pie-item { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 60px; }
+        .pie-item { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 65px; }
         .pie {
             width: 48px; height: 48px; border-radius: 50%;
-            background: conic-gradient(var(--c) calc(var(--p)*1%), rgba(255,255,255,0.25) 0);
+            background: conic-gradient(var(--c) calc(var(--p)*1%), rgba(255,255,255,0.2) 0);
             display: flex; align-items: center; justify-content: center;
             font-size: 11px; font-weight: 800; color: #fff;
-            box-shadow: inset 0 0 8px rgba(0,0,0,0.1);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
         }
         .pie-name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; opacity: 0.9; text-align: center; }
 
         .warning-alert { padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 12px; border-left: 5px solid; }
         .warn-danger { background: #450a0a; border-color: #f87171; color: #fecaca; }
-        .btn-delete { color: #cbd5e1; cursor: pointer; }
-        .btn-primary { background: var(--primary); color: white; padding: 10px 18px; border-radius: 8px; font-weight: bold; }
-        .btn-nav { background: #f1f5f9; color: var(--primary); padding: 10px; border-radius: 8px; }
+        .btn-delete { color: #cbd5e1; cursor: pointer; padding: 0 5px; }
+        .btn-primary { background: var(--primary); color: white; padding: 10px 18px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; }
+        .btn-nav { background: #f1f5f9; color: var(--primary); padding: 10px; border-radius: 8px; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <div class="header-area">
-        <h2 style="margin:0; color: var(--primary)">⚔️ Kỷ Luật Toàn Diện V18.3</h2>
+        <h2 style="margin:0; color: var(--primary)">⚔️ Kỷ Luật V18.3</h2>
         <div style="display:flex; gap:10px; align-items:center">
             <button class="btn-nav" onclick="moveMonth(-1)">◀</button>
-            <div class="month-label" id="mLabel">Tháng 01/2026</div>
+            <div class="month-label" id="mLabel">Tháng --/----</div>
             <button class="btn-nav" onclick="moveMonth(1)">▶</button>
-            <button class="btn-primary" onclick="addNewHabit()">+ Thêm việc</button>
+            <button class="btn-primary" onclick="addNewHabit()">+ Thêm</button>
         </div>
     </div>
 
     <div class="chart-container" style="text-align: center; display:flex; flex-direction:column; background: var(--fail); color: white; border:none; margin-bottom: 25px;">
-        <h4 style="margin:0 0 15px 0">Hiệu suất thực tế (Theo ngày đã qua) 📊</h4>
+        <h4 style="margin:0 0 15px 0">HIỆU SUẤT THỰC TẾ (SO VỚI NGÀY ĐÃ QUA) 📊</h4>
         <div id="pieChartsContainer" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 15px;"></div>
         <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; display: flex; justify-content: center; align-items: center; gap: 10px;">
-            <h4 style="margin:0">Yếu nhất tháng ⚠️: </h4>
+            <h4 style="margin:0; font-size: 14px; opacity: 0.9;">Yếu nhất tháng: </h4>
             <div id="worstHabit" style="font-size: 16px; font-weight: 800; color: #fff">--</div>
         </div>
     </div>
@@ -152,16 +148,12 @@
     }
 
     async function save() {
-        return new Promise((resolve) => {
-            const request = indexedDB.open(dbName, 1);
-            request.onsuccess = (e) => {
-                const db = e.target.result;
-                const tx = db.transaction(storeName, "readwrite");
-                const store = tx.objectStore(storeName);
-                store.put({ habits, logs }, dataKey);
-                tx.oncomplete = () => resolve();
-            };
+        const db = await new Promise((resolve) => {
+            const req = indexedDB.open(dbName, 1);
+            req.onsuccess = () => resolve(req.result);
         });
+        const tx = db.transaction(storeName, "readwrite");
+        tx.objectStore(storeName).put({ habits, logs }, dataKey);
     }
 
     function moveMonth(s) { displayDate.setMonth(displayDate.getMonth() + s); render(); }
@@ -242,6 +234,7 @@
         document.getElementById('worstHabit').innerText = worstH.name;
         document.getElementById('pieChartsContainer').innerHTML = pieHtml;
 
+        // Render Table
         let headHtml = `<tr><th class="sticky-col">Mục tiêu</th>`;
         for(let i=1; i<=daysInMonth; i++) {
             const d = new Date(year, month, i); d.setHours(0,0,0,0);
@@ -253,9 +246,11 @@
 
         let bodyHtml = '';
         habits.forEach(h => {
-            bodyHtml += `<tr><td class="sticky-col" style="display:flex; align-items:center; gap:5px; border:none;">
-                <textarea class="habit-name-box" onchange="const idx=habits.findIndex(x=>x.id===${h.id}); if(idx>-1){habits[idx].name=this.value; save(); render();}">${h.name}</textarea>
-                <span class="btn-delete" onclick="deleteHabit(${h.id})">🗑</span>
+            bodyHtml += `<tr><td class="sticky-col">
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <textarea class="habit-name-box" onchange="const idx=habits.findIndex(x=>x.id===${h.id}); if(idx>-1){habits[idx].name=this.value; save(); render();}">${h.name}</textarea>
+                    <span class="btn-delete" onclick="deleteHabit(${h.id})">🗑</span>
+                </div>
             </td>`;
             for(let i=1; i<=daysInMonth; i++) {
                 const d = new Date(year, month, i); d.setHours(0,0,0,0);

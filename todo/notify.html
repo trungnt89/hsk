@@ -9,24 +9,28 @@
     <button onclick="sendNotification()">Hiển thị Hello World</button>
 
     <script>
-        // 1. Đăng ký Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('SW đã đăng ký thành công!', reg))
+            // Thêm v=... để trình duyệt luôn nạp bản mới nhất của sw.js
+            navigator.serviceWorker.register('sw.js?v=' + Date.now())
+            .then(reg => console.log('SW đã sẵn sàng!', reg))
             .catch(err => console.error('Lỗi đăng ký SW:', err));
         }
 
         async function sendNotification() {
-            // 2. Xin quyền thông báo
             const permission = await Notification.requestPermission();
+            console.log('Quyền thông báo:', permission);
             
             if (permission === 'granted') {
-                // 3. Gửi tín hiệu cho SW để hiện thông báo
                 navigator.serviceWorker.ready.then(reg => {
-                    reg.active.postMessage('trigger-notify');
+                    if (reg.active) {
+                        console.log('Đang gửi tin nhắn tới SW...');
+                        reg.active.postMessage('trigger-notify');
+                    } else {
+                        console.error('SW chưa active!');
+                    }
                 });
             } else {
-                alert('Bạn cần cấp quyền thông báo để xem kết quả!');
+                alert('Bạn phải Cho phép (Allow) thông báo trên trình duyệt!');
             }
         }
     </script>

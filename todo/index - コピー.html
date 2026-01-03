@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Todo Manager Pro - Test Notification</title>
+    <title>Todo Manager Pro - Compact View</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -52,6 +52,7 @@
             box-shadow: 0 10px 30px rgba(56, 239, 125, 0.4); z-index: 999;
         }
 
+        /* PHẦN SỬA ĐỔI: ALERT BANNER */
         .alert-banner {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
             color: white; padding: 15px 20px; border-radius: 12px;
@@ -96,8 +97,17 @@
         .priority-badge { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; background: #eee; margin-left: 5px;}
 
         @media (max-width: 600px) {
-            .task-card { grid-template-columns: 1fr; gap: 5px; padding: 10px 15px; }
-            .task-footer-mobile { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+            .task-card {
+                grid-template-columns: 1fr;
+                gap: 5px;
+                padding: 10px 15px;
+            }
+            .task-footer-mobile { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                margin-top: 5px;
+            }
             .deadline-info { text-align: left; min-width: auto; flex: 1; }
         }
 
@@ -115,6 +125,7 @@
             border-bottom: 2px solid white;
             position: relative; z-index: 2;
         }
+        .time-tab:hover:not(.active) { background: #d5d5d5; }
     </style>
 </head>
 <body>
@@ -126,7 +137,7 @@
 
         <div class="header">
             <h1>📋 Todo Manager Pro</h1>
-            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Chế độ Test: Thông báo mỗi 1 giây</p>
+            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Danh sách công việc rút gọn</p>
 
             <div class="stats-bar" id="statsBar">
                 <div class="stat-item overdue" onclick="filterTasks('overdue', this)">
@@ -172,50 +183,6 @@
         const DB_NAME = "TodoDBPro";
         const STORE_NAME = "tasks_store";
 
-        // --- PHẦN BỔ SUNG: SERVICE WORKER THÔNG BÁO 1 GIÂY (DÀNH CHO TEST) ---
-        const swCode = `
-            const DB_NAME = "${DB_NAME}";
-            const STORE_NAME = "${STORE_NAME}";
-            
-            async function checkAndNotify() {
-                const request = indexedDB.open(DB_NAME, 1);
-                request.onsuccess = (event) => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) return;
-                    
-                    const tx = db.transaction(STORE_NAME, "readonly");
-                    const store = tx.objectStore(STORE_NAME);
-                    const getReq = store.get("current_tasks_list");
-
-                    getReq.onsuccess = () => {
-                        const tasks = getReq.result?.data || [];
-                        const today = new Date().toDateString();
-                        const hasTaskToday = tasks.some(t => new Date(t.deadline).toDateString() === today);
-
-                        // Nếu hôm nay không có task nào, bắn thông báo ngay
-                        if (!hasTaskToday) {
-                            self.registration.showNotification("📋 Nhắc nhở Todo", {
-                                body: "Hôm nay bạn chưa có công việc nào. Hãy tạo việc mới ngay!",
-                                icon: "https://cdn-icons-png.flaticon.com/512/906/906334.png",
-                                tag: "remind-test",
-                                requireInteraction: true
-                            });
-                        }
-                    };
-                };
-            }
-            // Kiểm tra mỗi 1 giây
-            setInterval(checkAndNotify, 1000);
-        `;
-
-        if ('serviceWorker' in navigator && 'Notification' in window && window.location.protocol !== 'file:') {
-            const swDataUrl = 'data:application/javascript;base64,' + btoa(unescape(encodeURIComponent(swCode)));
-            navigator.serviceWorker.register(swDataUrl).then(reg => {
-                if (Notification.permission !== 'granted') Notification.requestPermission();
-            }).catch(err => console.log("SW Error:", err));
-        }
-
-        // --- GIỮ NGUYÊN LOGIC CŨ ---
         const request = indexedDB.open(DB_NAME, 1);
         request.onupgradeneeded = e => {
             db = e.target.result;
@@ -279,7 +246,10 @@
                     addTaskRow("Công việc cảm thấy phiền phức nhất trong hôm nay là gì", true);
                 }
                 modal.style.display = 'flex';
-            } else { modal.style.display = 'none'; resetForm(); }
+            } else {
+                modal.style.display = 'none';
+                resetForm();
+            }
         }
 
         function autoCalcDeadline(val, unit) {
@@ -309,6 +279,7 @@
                 const s = getDeadlineStatus(t.deadline, t.completed);
                 if (s === 'completed') stats.completed++; 
                 else if (s === 'overdue') stats.overdue++;
+
                 if (!t.completed) {
                     const d = new Date(t.deadline);
                     if (d.toDateString() === now.toDateString()) counts.today++;
@@ -316,15 +287,18 @@
                     if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) counts.month++;
                 }
             });
+            
             if(document.getElementById('statOverdue')) document.getElementById('statOverdue').textContent = stats.overdue;
             if(document.getElementById('statSafe')) document.getElementById('statSafe').textContent = stats.completed;
+
             document.getElementById('todoToday').textContent = counts.today;
             document.getElementById('todoWeek').textContent = counts.week;
             document.getElementById('todoMonth').textContent = counts.month;
+            
             const banner = document.getElementById('alertBanner');
             if (stats.overdue > 0) {
                 banner.style.display = 'flex';
-                document.getElementById('alertText').innerHTML = `<b>NGUY HIỂM:</b> Có ${stats.overdue} việc quá hạn!`;
+                document.getElementById('alertText').innerHTML = `<b>NGUY HIỂM:</b> Có ${stats.overdue} việc quá hạn! Nhấp vào đây để xem ngay.`;
             } else banner.style.display = 'none';
         }
 
@@ -332,6 +306,7 @@
             currentFilter = range;
             document.querySelectorAll('.time-tab').forEach(t => t.classList.remove('active'));
             if(el) el.classList.add('active');
+
             const now = new Date();
             let filtered = tasks.filter(t => {
                 if (t.completed) return false;
@@ -350,13 +325,16 @@
             if (!customList && currentFilter !== 'all') filtered = tasks.filter(t => getDeadlineStatus(t.deadline, t.completed) === currentFilter);
             grid.innerHTML = filtered.length ? filtered.map(t => `
                 <div class="task-card ${getDeadlineStatus(t.deadline, t.completed)}">
-                    <div class="task-title">${t.completed ? '✅ ' : ''}${t.title} <span class="priority-badge">${t.priority}</span></div>
+                    <div class="task-title">
+                        <span>${t.completed ? '✅ ' : ''}${t.title} <span class="priority-badge">${t.priority}</span></span>
+                        ${t.detail ? `<span class="task-detail-sub">- ${t.detail}</span>` : ''}
+                    </div>
                     <div class="task-footer-mobile">
-                        <div class="deadline-info">📅 ${new Date(t.deadline).toLocaleString('vi-VN')}</div>
-                        <div style="display: flex; gap: 5px;">
-                            <button class="btn-icon" onclick="editTask(${t.id})">✏️</button>
-                            <button class="btn-icon" onclick="completeTask(${t.id})">${t.completed ? '↩️' : '✓'}</button>
-                            <button class="btn-icon" onclick="deleteTask(${t.id})">🗑️</button>
+                        <div class="deadline-info">📅 ${new Date(t.deadline).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</div>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <button class="btn-icon" style="background:#e3f2fd" onclick="editTask(${t.id})">✏️</button>
+                            <button class="btn-icon" style="background:${t.completed ? '#ffeb3b' : '#d4edda'}" onclick="completeTask(${t.id})">${t.completed ? '↩️' : '✓'}</button>
+                            <button class="btn-icon" style="background:#f8d7da" onclick="deleteTask(${t.id})">🗑️</button>
                         </div>
                     </div>
                 </div>
@@ -366,21 +344,34 @@
         function addTask() {
             const rows = document.querySelectorAll('.task-row-input');
             const priority = document.getElementById('taskPriority').value;
+
             if (editingTaskId) {
                 const title = rows[0].querySelector('.multi-title').value.trim();
                 const dur = parseFloat(rows[0].querySelector('.multi-duration').value);
                 const unit = rows[0].querySelector('.multi-unit').value;
+                if (!title) return alert("Tên công việc không được để trống!");
                 const index = tasks.findIndex(t => t.id === editingTaskId);
-                if (index !== -1) tasks[index] = { ...tasks[index], title, deadline: autoCalcDeadline(dur, unit), priority };
+                if (index !== -1) {
+                    tasks[index] = { ...tasks[index], title, deadline: autoCalcDeadline(dur, unit), priority };
+                }
+                editingTaskId = null;
             } else {
+                let hasEmpty = false;
+                rows.forEach(row => {
+                    const title = row.querySelector('.multi-title').value.trim();
+                    if (!title) hasEmpty = true;
+                });
+                if (hasEmpty) return alert("Vui lòng nhập nội dung cho tất cả các ô công việc bắt buộc!");
                 rows.forEach(row => {
                     const title = row.querySelector('.multi-title').value.trim();
                     const dur = parseFloat(row.querySelector('.multi-duration').value);
                     const unit = row.querySelector('.multi-unit').value;
-                    if (title) tasks.unshift({ id: Date.now() + Math.random(), title, deadline: autoCalcDeadline(dur, unit), priority, completed: false });
+                    if (!isNaN(dur)) {
+                        tasks.unshift({ id: Date.now() + Math.random(), title, detail: "", deadline: autoCalcDeadline(dur, unit), priority, completed: false });
+                    }
                 });
             }
-            saveToDB(); toggleModal(); updateStats(); renderTasks();
+            saveToDB(); toggleModal(); updateStats(); renderTasks(); resetForm();
         }
 
         function editTask(id) {
@@ -389,15 +380,27 @@
             editingTaskId = id;
             document.getElementById('multiTaskContainer').innerHTML = '';
             addTaskRow(t.title, true);
+            document.querySelector('.task-row-input label').innerHTML = `SỬA NỘI DUNG <span style="color:red">*</span>`;
             document.querySelector('.multi-title').value = t.title;
             document.getElementById('taskPriority').value = t.priority;
+            document.querySelector('#taskModal h2').textContent = "📝 Sửa công việc";
+            document.querySelector('.btn-add').textContent = "CẬP NHẬT THAY ĐỔI";
             document.getElementById('taskModal').style.display = 'flex';
         }
 
+        function resetForm() {
+            document.getElementById('multiTaskContainer').innerHTML = '';
+            editingTaskId = null;
+        }
+
+        function filterTasks(f, el) { 
+            currentFilter = f; 
+            document.querySelectorAll('.time-tab').forEach(t => t.classList.remove('active'));
+            if(el) el.classList.add('active');
+            renderTasks(); 
+        }
         function completeTask(id) { const t = tasks.find(x => x.id === id); if(t) t.completed = !t.completed; saveToDB(); updateStats(); renderTasks(); }
-        function deleteTask(id) { if(confirm("Xóa?")) { tasks = tasks.filter(x => x.id !== id); saveToDB(); updateStats(); renderTasks(); } }
-        function resetForm() { editingTaskId = null; }
-        function filterTasks(f, el) { currentFilter = f; renderTasks(); }
+        function deleteTask(id) { if(confirm("Xóa?")) { tasks = tasks.filter(x => x.id !== id); saveToDB(); updateStats(); if(currentFilter === 'today' || currentFilter === 'week' || currentFilter === 'month') { filterByTime(currentFilter); } else { renderTasks(); } } }
     </script>
 </body>
 </html>

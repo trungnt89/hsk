@@ -17,22 +17,28 @@
         }
 
         async function sendNotification() {
-            const permission = await Notification.requestPermission();
-            console.log('Quyền thông báo:', permission);
-            
-            if (permission === 'granted') {
-                navigator.serviceWorker.ready.then(reg => {
-                    if (reg.active) {
-                        console.log('Đang gửi tin nhắn tới SW...');
-                        reg.active.postMessage('trigger-notify');
-                    } else {
-                        console.error('SW chưa active!');
-                    }
-                });
-            } else {
-                alert('Bạn phải Cho phép (Allow) thông báo trên trình duyệt!');
-            }
-        }
+			// Kiểm tra xem trình duyệt có hỗ trợ Notification không
+			if (!("Notification" in window)) {
+				alert("Trình duyệt này không hỗ trợ thông báo.");
+				return;
+			}
+
+			const permission = await Notification.requestPermission();
+			
+			if (permission === 'granted') {
+				const registration = await navigator.serviceWorker.ready;
+				if (registration.showNotification) {
+					// Gọi trực tiếp từ registration để đảm bảo Mobile xử lý được
+					registration.showNotification('Hello Mobile!', {
+						body: 'Thông báo này đã được tối ưu cho điện thoại',
+						badge: 'https://cdn-icons-png.flaticon.com/512/252/252035.png', // Icon nhỏ trên thanh trạng thái
+						vibrate: [200, 100, 200] // Rung nhẹ trên Android
+					});
+				}
+			} else {
+				alert('Vui lòng cấp quyền thông báo trong cài đặt trình duyệt!');
+			}
+		}
     </script>
 </body>
 </html>

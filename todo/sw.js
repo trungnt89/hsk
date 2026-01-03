@@ -3,7 +3,10 @@ const STORE_NAME = "tasks_store";
 
 async function checkAndNotify() {
     // CHỈ CHẠY NẾU ĐÃ CÓ QUYỀN
+	alert(1)
+	alert(Notification.permission)
     if (Notification.permission === 'granted') {
+		alert(2)
         const request = indexedDB.open(DB_NAME, 1);
         request.onsuccess = (event) => {
             const db = event.target.result;
@@ -29,5 +32,6 @@ async function checkAndNotify() {
             };
         };
     }
+	alert(3)
 }
 setInterval(checkAndNotify, 1000);

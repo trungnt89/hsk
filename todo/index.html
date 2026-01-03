@@ -173,46 +173,98 @@
         const DB_NAME = "TodoDBPro";
         const STORE_NAME = "tasks_store";
 
-        // --- ĐĂNG KÝ SERVICE WORKER (ĐÃ FIX LỖI) ---
+        // --- SERVICE WORKER ---
         if ('serviceWorker' in navigator && 'Notification' in window && window.location.protocol !== 'file:') {
-            // Thêm cache busting để đảm bảo SW mới được nạp
             navigator.serviceWorker.register('sw.js?v=' + Date.now()).then(reg => {
-                console.log("SW Registered Status:", Notification.permission);
-                // Chỉ xin quyền khi trạng thái là 'default'
-                if (Notification.permission === 'default') {
-                    Notification.requestPermission();
-                }
+                if (Notification.permission === 'default') Notification.requestPermission();
             }).catch(err => console.error("SW Error:", err));
         }
 
+        // --- DATABASE INIT ---
         const request = indexedDB.open(DB_NAME, 1);
         request.onupgradeneeded = e => {
             db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: "id" });
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: "id" });
+            }
         };
         request.onsuccess = e => {
             db = e.target.result;
             loadTasksFromDB();
         };
 
+        // --- CORE FUNCTIONS (FIXED SAVE) ---
         function saveToDB() {
-            if (!db) return;
+            if (!db || !db.objectStoreNames.contains(STORE_NAME)) return;
             const tx = db.transaction(STORE_NAME, "readwrite");
             const store = tx.objectStore(STORE_NAME);
-            store.put({ id: "current_tasks_list", data: tasks });
+            const req = store.put({ id: "current_tasks_list", data: tasks });
+            
+            req.onsuccess = () => {
+                console.log("Ghi DB thành công.");
+                updateStats();
+                renderTasks();
+            };
+            req.onerror = () => console.error("Lỗi ghi DB");
         }
 
         function loadTasksFromDB() {
+            if (!db || !db.objectStoreNames.contains(STORE_NAME)) return;
             const tx = db.transaction(STORE_NAME, "readonly");
             const store = tx.objectStore(STORE_NAME);
             const req = store.get("current_tasks_list");
             req.onsuccess = () => {
-                if (req.result) {
+                if (req.result && req.result.data) {
                     tasks = req.result.data;
                     document.getElementById('defaultTab').click();
                 }
                 updateStats(); 
             };
+        }
+
+        function addTask() {
+            const rows = document.querySelectorAll('.task-row-input');
+            const priority = document.getElementById('taskPriority').value;
+            let hasChange = false;
+
+            if (editingTaskId) {
+                const title = rows[0].querySelector('.multi-title').value.trim();
+                const dur = parseFloat(rows[0].querySelector('.multi-duration').value);
+                const unit = rows[0].querySelector('.multi-unit').value;
+                if (!title) return alert("Vui lòng nhập nội dung!");
+
+                const index = tasks.findIndex(t => t.id === editingTaskId);
+                if (index !== -1) {
+                    tasks[index] = { ...tasks[index], title, deadline: autoCalcDeadline(dur, unit), priority };
+                    hasChange = true;
+                }
+                editingTaskId = null;
+            } else {
+                let empty = false;
+                rows.forEach(row => { if(!row.querySelector('.multi-title').value.trim()) empty = true; });
+                if (empty) return alert("Vui lòng nhập nội dung!");
+
+                rows.forEach(row => {
+                    const title = row.querySelector('.multi-title').value.trim();
+                    const dur = parseFloat(row.querySelector('.multi-duration').value);
+                    const unit = row.querySelector('.multi-unit').value;
+                    tasks.unshift({ 
+                        id: Date.now() + Math.random(), 
+                        title, 
+                        detail: "", 
+                        deadline: autoCalcDeadline(dur, unit), 
+                        priority, 
+                        completed: false 
+                    });
+                });
+                hasChange = true;
+            }
+
+            if (hasChange) {
+                saveToDB(); // Hàm này sẽ tự động gọi updateStats và renderTasks khi thành công
+                toggleModal();
+                resetForm();
+            }
         }
 
         function addTaskRow(val = "", isRequired = false) {
@@ -252,11 +304,11 @@
         }
 
         function autoCalcDeadline(val, unit) {
-            if (isNaN(val)) return new Date().toISOString();
             const now = new Date();
-            if (unit === 'hours') now.setHours(now.getHours() + val);
-            else if (unit === 'days') now.setDate(now.getDate() + val);
-            else if (unit === 'weeks') now.setDate(now.getDate() + (val * 7));
+            const v = isNaN(val) ? 1 : val;
+            if (unit === 'hours') now.setHours(now.getHours() + v);
+            else if (unit === 'days') now.setDate(now.getDate() + v);
+            else if (unit === 'weeks') now.setDate(now.getDate() + (v * 7));
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             return now.toISOString();
         }
@@ -285,8 +337,8 @@
                     if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) counts.month++;
                 }
             });
-            if(document.getElementById('statOverdue')) document.getElementById('statOverdue').textContent = stats.overdue;
-            if(document.getElementById('statSafe')) document.getElementById('statSafe').textContent = stats.completed;
+            document.getElementById('statOverdue').textContent = stats.overdue;
+            document.getElementById('statSafe').textContent = stats.completed;
             document.getElementById('todoToday').textContent = counts.today;
             document.getElementById('todoWeek').textContent = counts.week;
             document.getElementById('todoMonth').textContent = counts.month;
@@ -316,7 +368,12 @@
         function renderTasks(customList = null) {
             const grid = document.getElementById('tasksGrid');
             let filtered = customList || tasks;
-            if (!customList && currentFilter !== 'all') filtered = tasks.filter(t => getDeadlineStatus(t.deadline, t.completed) === currentFilter);
+            if (!customList && currentFilter !== 'all') {
+                filtered = tasks.filter(t => {
+                   const s = getDeadlineStatus(t.deadline, t.completed);
+                   return s === currentFilter;
+                });
+            }
             grid.innerHTML = filtered.length ? filtered.map(t => `
                 <div class="task-card ${getDeadlineStatus(t.deadline, t.completed)}">
                     <div class="task-title">
@@ -335,38 +392,12 @@
             `).join('') : '<div style="text-align:center; padding:30px; color:#999;">Trống...</div>';
         }
 
-        function addTask() {
-            const rows = document.querySelectorAll('.task-row-input');
-            const priority = document.getElementById('taskPriority').value;
-            if (editingTaskId) {
-                const title = rows[0].querySelector('.multi-title').value.trim();
-                const dur = parseFloat(rows[0].querySelector('.multi-duration').value);
-                const unit = rows[0].querySelector('.multi-unit').value;
-                if (!title) return alert("Tên công việc không được để trống!");
-                const index = tasks.findIndex(t => t.id === editingTaskId);
-                if (index !== -1) tasks[index] = { ...tasks[index], title, deadline: autoCalcDeadline(dur, unit), priority };
-                editingTaskId = null;
-            } else {
-                let hasEmpty = false;
-                rows.forEach(row => { if (!row.querySelector('.multi-title').value.trim()) hasEmpty = true; });
-                if (hasEmpty) return alert("Vui lòng nhập nội dung cho tất cả các ô công việc bắt buộc!");
-                rows.forEach(row => {
-                    const title = row.querySelector('.multi-title').value.trim();
-                    const dur = parseFloat(row.querySelector('.multi-duration').value);
-                    const unit = row.querySelector('.multi-unit').value;
-                    if (!isNaN(dur)) tasks.unshift({ id: Date.now() + Math.random(), title, detail: "", deadline: autoCalcDeadline(dur, unit), priority, completed: false });
-                });
-            }
-            saveToDB(); toggleModal(); updateStats(); renderTasks(); resetForm();
-        }
-
         function editTask(id) {
             const t = tasks.find(x => x.id === id);
             if (!t) return;
             editingTaskId = id;
             document.getElementById('multiTaskContainer').innerHTML = '';
             addTaskRow(t.title, true);
-            document.querySelector('.task-row-input label').innerHTML = `SỬA NỘI DUNG <span style="color:red">*</span>`;
             document.querySelector('.multi-title').value = t.title;
             document.getElementById('taskPriority').value = t.priority;
             document.querySelector('#taskModal h2').textContent = "📝 Sửa công việc";
@@ -381,8 +412,19 @@
             if(el) el.classList.add('active');
             renderTasks(); 
         }
-        function completeTask(id) { const t = tasks.find(x => x.id === id); if(t) t.completed = !t.completed; saveToDB(); updateStats(); renderTasks(); }
-        function deleteTask(id) { if(confirm("Xóa?")) { tasks = tasks.filter(x => x.id !== id); saveToDB(); updateStats(); if(currentFilter === 'today' || currentFilter === 'week' || currentFilter === 'month') { filterByTime(currentFilter); } else { renderTasks(); } } }
+        function completeTask(id) { 
+            const t = tasks.find(x => x.id === id); 
+            if(t) {
+                t.completed = !t.completed; 
+                saveToDB(); 
+            }
+        }
+        function deleteTask(id) { 
+            if(confirm("Xóa?")) { 
+                tasks = tasks.filter(x => x.id !== id); 
+                saveToDB(); 
+            } 
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple SW Notification</title>
+</head>
+<body>
+    <h1>Service Worker Notification</h1>
+    <button onclick="sendNotification()">Hiển thị Hello World</button>
+
+    <script>
+        // 1. Đăng ký Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('SW đã đăng ký thành công!', reg))
+            .catch(err => console.error('Lỗi đăng ký SW:', err));
+        }
+
+        async function sendNotification() {
+            // 2. Xin quyền thông báo
+            const permission = await Notification.requestPermission();
+            
+            if (permission === 'granted') {
+                // 3. Gửi tín hiệu cho SW để hiện thông báo
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.active.postMessage('trigger-notify');
+                });
+            } else {
+                alert('Bạn cần cấp quyền thông báo để xem kết quả!');
+            }
+        }
+    </script>
+</body>
+</html>

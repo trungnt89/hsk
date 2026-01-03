@@ -173,10 +173,12 @@
         const DB_NAME = "TodoDBPro";
         const STORE_NAME = "tasks_store";
 
-        // --- ĐĂNG KÝ SERVICE WORKER (CHECK THÔNG BÁO 1S) ---
+        // --- ĐĂNG KÝ SERVICE WORKER (ĐÃ FIX LỖI) ---
         if ('serviceWorker' in navigator && 'Notification' in window && window.location.protocol !== 'file:') {
-            navigator.serviceWorker.register('sw.js').then(reg => {
-                console.log("SW Registered");
+            // Thêm cache busting để đảm bảo SW mới được nạp
+            navigator.serviceWorker.register('sw.js?v=' + Date.now()).then(reg => {
+                console.log("SW Registered Status:", Notification.permission);
+                // Chỉ xin quyền khi trạng thái là 'default'
                 if (Notification.permission === 'default') {
                     Notification.requestPermission();
                 }

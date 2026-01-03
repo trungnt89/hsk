@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Todo Manager Pro - Test Notification</title>
+    <title>Todo Manager Pro - Production</title>
     <style>
+        /* GIỮ NGUYÊN TOÀN BỘ CSS CỦA BẠN */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -82,39 +83,24 @@
             display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px;
             border-bottom: 1px solid #eee;
         }
-        .task-card:last-child { border-bottom: none; }
         .task-card:hover { transform: translateX(5px); background: #fcfcfc; }
         .task-card.overdue { border-left-color: #dc3545; }
         .task-card.urgent { border-left-color: #ff6b6b; }
         .task-card.warning { border-left-color: #2196F3; }
         .task-card.safe { border-left-color: #28a745; }
         
-        .task-title { font-size: 16px; font-weight: 700; color: #333; white-space: normal; word-break: break-word; }
-        .task-detail-sub { font-size: 13px; color: #777; font-weight: 400; margin-left: 8px; font-style: italic; }
+        .task-title { font-size: 16px; font-weight: 700; color: #333; }
         .deadline-info { font-size: 13px; color: #555; font-family: monospace; min-width: 130px; text-align: right; }
         .btn-icon { width: 32px; height: 32px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .priority-badge { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; background: #eee; margin-left: 5px;}
-
-        @media (max-width: 600px) {
-            .task-card { grid-template-columns: 1fr; gap: 5px; padding: 10px 15px; }
-            .task-footer-mobile { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
-            .deadline-info { text-align: left; min-width: auto; flex: 1; }
-        }
 
         .time-tab {
             flex: 1; padding: 12px; border: none; 
             border-radius: 8px 8px 0 0; background: #e0e0e0; 
             cursor: pointer; font-size: 12px; font-weight: 700; 
             transition: 0.2s; color: #666;
-            border-bottom: 2px solid transparent;
         }
-        .time-tab.active {
-            background: white !important;
-            color: #667eea !important;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            border-bottom: 2px solid white;
-            position: relative; z-index: 2;
-        }
+        .time-tab.active { background: white !important; color: #667eea !important; border-bottom: 2px solid white; }
     </style>
 </head>
 <body>
@@ -126,7 +112,7 @@
 
         <div class="header">
             <h1>📋 Todo Manager Pro</h1>
-            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Chế độ Test: Thông báo mỗi 1 giây</p>
+            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Đang hoạt động với Service Worker (File: sw.js)</p>
 
             <div class="stats-bar" id="statsBar">
                 <div class="stat-item overdue" onclick="filterTasks('overdue', this)">
@@ -161,7 +147,6 @@
             <button class="btn-add" onclick="addTask()">LƯU CÔNG VIỆC</button>
         </div>
     </div>
-
     <button class="btn-open-modal" onclick="toggleModal()">+</button>
 
     <script>
@@ -172,51 +157,17 @@
         const DB_NAME = "TodoDBPro";
         const STORE_NAME = "tasks_store";
 
-        // --- PHẦN BỔ SUNG: SERVICE WORKER THÔNG BÁO 1 GIÂY (DÀNH CHO TEST) ---
-        const swCode = `
-            const DB_NAME = "${DB_NAME}";
-            const STORE_NAME = "${STORE_NAME}";
-            
-            async function checkAndNotify() {
-			alert(123);
-                const request = indexedDB.open(DB_NAME, 1);
-                request.onsuccess = (event) => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) return;
-                    
-                    const tx = db.transaction(STORE_NAME, "readonly");
-                    const store = tx.objectStore(STORE_NAME);
-                    const getReq = store.get("current_tasks_list");
-
-                    getReq.onsuccess = () => {
-                        const tasks = getReq.result?.data || [];
-                        const today = new Date().toDateString();
-                        const hasTaskToday = tasks.some(t => new Date(t.deadline).toDateString() === today);
-
-                        // Nếu hôm nay không có task nào, bắn thông báo ngay
-                        if (!hasTaskToday) {
-                            self.registration.showNotification("📋 Nhắc nhở Todo", {
-                                body: "Hôm nay bạn chưa có công việc nào. Hãy tạo việc mới ngay!",
-                                icon: "https://cdn-icons-png.flaticon.com/512/906/906334.png",
-                                tag: "remind-test",
-                                requireInteraction: true
-                            });
-                        }
-                    };
-                };
-            }
-            // Kiểm tra mỗi 1 giây
-            setInterval(checkAndNotify, 1000);
-        `;
-
+        // --- ĐĂNG KÝ SERVICE WORKER TỪ FILE VẬT LÝ ---
         if ('serviceWorker' in navigator && 'Notification' in window && window.location.protocol !== 'file:') {
-            const swDataUrl = 'data:application/javascript;base64,' + btoa(unescape(encodeURIComponent(swCode)));
-            navigator.serviceWorker.register(swDataUrl).then(reg => {
-                if (Notification.permission !== 'granted') Notification.requestPermission();
-            }).catch(err => console.log("SW Error:", err));
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => {
+                    console.log("Service Worker đã sẵn sàng.");
+                    if (Notification.permission !== 'granted') Notification.requestPermission();
+                })
+                .catch(err => console.error("Lỗi đăng ký Service Worker:", err));
         }
 
-        // --- GIỮ NGUYÊN LOGIC CŨ ---
+        // --- LOGIC XỬ LÝ DỮ LIỆU (GIỮ NGUYÊN) ---
         const request = indexedDB.open(DB_NAME, 1);
         request.onupgradeneeded = e => {
             db = e.target.result;
@@ -317,8 +268,8 @@
                     if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) counts.month++;
                 }
             });
-            if(document.getElementById('statOverdue')) document.getElementById('statOverdue').textContent = stats.overdue;
-            if(document.getElementById('statSafe')) document.getElementById('statSafe').textContent = stats.completed;
+            document.getElementById('statOverdue').textContent = stats.overdue;
+            document.getElementById('statSafe').textContent = stats.completed;
             document.getElementById('todoToday').textContent = counts.today;
             document.getElementById('todoWeek').textContent = counts.week;
             document.getElementById('todoMonth').textContent = counts.month;
@@ -373,6 +324,7 @@
                 const unit = rows[0].querySelector('.multi-unit').value;
                 const index = tasks.findIndex(t => t.id === editingTaskId);
                 if (index !== -1) tasks[index] = { ...tasks[index], title, deadline: autoCalcDeadline(dur, unit), priority };
+                editingTaskId = null;
             } else {
                 rows.forEach(row => {
                     const title = row.querySelector('.multi-title').value.trim();

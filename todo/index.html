@@ -52,10 +52,20 @@
             box-shadow: 0 10px 30px rgba(56, 239, 125, 0.4); z-index: 999;
         }
 
+        /* PHẦN SỬA ĐỔI: ALERT BANNER */
         .alert-banner {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
             color: white; padding: 15px 20px; border-radius: 12px;
             margin-bottom: 20px; display: flex; align-items: center; gap: 16px;
+            cursor: pointer; 
+            animation: danger-blink 0.8s infinite alternate;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        @keyframes danger-blink {
+            0% { filter: brightness(1); transform: scale(1); }
+            100% { filter: brightness(1.2); transform: scale(1.01); background: #ff0000; }
         }
 
         .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
@@ -120,6 +130,11 @@
 </head>
 <body>
     <div class="container">
+        <div class="alert-banner" id="alertBanner" style="display: none;" onclick="filterTasks('overdue')">
+            <div class="alert-icon">🚨</div>
+            <div class="alert-content"><p id="alertText"></p></div>
+        </div>
+
         <div class="header">
             <h1>📋 Todo Manager Pro</h1>
             <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Danh sách công việc rút gọn</p>
@@ -136,11 +151,6 @@
                     <div class="stat-label">✅ Hoàn thành</div>
                 </div>
             </div>
-        </div>
-
-        <div class="alert-banner" id="alertBanner" style="display: none;">
-            <div class="alert-icon">🚨</div>
-            <div class="alert-content"><p id="alertText"></p></div>
         </div>
 
         <div style="display: flex; margin-top: 24px; background: #ccc; border-radius: 12px 12px 0 0; padding: 8px 8px 0 8px; gap: 4px; border-bottom: 1px solid #ddd;">
@@ -284,10 +294,11 @@
             document.getElementById('todoToday').textContent = counts.today;
             document.getElementById('todoWeek').textContent = counts.week;
             document.getElementById('todoMonth').textContent = counts.month;
+            
             const banner = document.getElementById('alertBanner');
             if (stats.overdue > 0) {
                 banner.style.display = 'flex';
-                document.getElementById('alertText').textContent = `Có ${stats.overdue} việc quá hạn!`;
+                document.getElementById('alertText').innerHTML = `<b>NGUY HIỂM:</b> Có ${stats.overdue} việc quá hạn! Nhấp vào đây để xem ngay.`;
             } else banner.style.display = 'none';
         }
 

@@ -141,9 +141,9 @@
             <h2 style="margin-bottom:20px">➕ Thêm việc mới</h2>
             <div class="form-group"><label>Tên công việc *</label><input type="text" id="taskTitle" placeholder="..."></div>
             <div class="form-group"><label>Chi tiết</label><textarea id="taskDetail" rows="2" placeholder="..."></textarea></div>
-            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div><label>Xử lý trong</label><input type="number" id="durationValue" placeholder="Số" oninput="calculateDeadline()"></div>
-                <div><label>Đơn vị</label><select id="durationUnit" onchange="calculateDeadline()">
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end;">
+                <div><label>Xử lý trong</label><input type="number" id="durationValue" value="1" placeholder="Số" oninput="calculateDeadline()"></div>
+                <div><select id="durationUnit" onchange="calculateDeadline()" style="width: 100%;">
                     <option value="hours">Giờ</option>
                     <option value="days" selected>Ngày</option>
                     <option value="weeks">Tuần</option>
@@ -201,10 +201,17 @@
                     document.querySelector('#taskModal h2').textContent = "➕ Thêm việc mới";
                     document.querySelector('.btn-add').textContent = "LƯU CÔNG VIỆC";
                     resetForm();
+                    // Gọi tính toán deadline mặc định ngay khi mở (cho 1 ngày)
+                    calculateDeadline();
+                } else {
+                    modal.style.display = 'flex';
                 }
                 const now = new Date();
-                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                document.getElementById('taskDeadline').value = now.toISOString().slice(0, 16);
+                // Nếu không có tính toán deadline từ durationValue thì lấy mặc định
+                if(!document.getElementById('taskDeadline').value) {
+                    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                    document.getElementById('taskDeadline').value = now.toISOString().slice(0, 16);
+                }
                 modal.style.display = 'flex';
             } else {
                 modal.style.display = 'none';
@@ -215,7 +222,7 @@
         function calculateDeadline() {
             const val = parseFloat(document.getElementById('durationValue').value);
             const unit = document.getElementById('durationUnit').value;
-            if (!val || val <= 0) return;
+            if (isNaN(val) || val <= 0) return;
             const now = new Date();
             if (unit === 'hours') now.setHours(now.getHours() + val);
             else if (unit === 'days') now.setDate(now.getDate() + val);
@@ -332,7 +339,8 @@
         }
 
         function resetForm() {
-            ['taskTitle', 'taskDetail', 'durationValue'].forEach(id => document.getElementById(id).value = '');
+            ['taskTitle', 'taskDetail'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('durationValue').value = '1';
             editingTaskId = null;
         }
 

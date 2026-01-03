@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo Manager Pro - Compact View</title>
     <style>
+        /* GIỮ NGUYÊN CSS GỐC */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -52,7 +53,6 @@
             box-shadow: 0 10px 30px rgba(56, 239, 125, 0.4); z-index: 999;
         }
 
-        /* PHẦN SỬA ĐỔI: ALERT BANNER */
         .alert-banner {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
             color: white; padding: 15px 20px; border-radius: 12px;
@@ -182,6 +182,53 @@
         let db;
         const DB_NAME = "TodoDBPro";
         const STORE_NAME = "tasks_store";
+
+        // --- PHẦN BỔ SUNG: SERVICE WORKER THÔNG BÁO 5 PHÚT ---
+        const swCode = `
+            const DB_NAME = "${DB_NAME}";
+            const STORE_NAME = "${STORE_NAME}";
+            
+            async function checkAndNotify() {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onsuccess = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) return;
+                    
+                    const tx = db.transaction(STORE_NAME, "readonly");
+                    const store = tx.objectStore(STORE_NAME);
+                    const getReq = store.get("current_tasks_list");
+
+                    getReq.onsuccess = () => {
+                        const tasks = getReq.result?.data || [];
+                        const today = new Date().toDateString();
+                        const hasTaskToday = tasks.some(t => new Date(t.deadline).toDateString() === today);
+
+                        if (!hasTaskToday) {
+                            self.registration.showNotification("📋 Nhắc nhở Todo", {
+                                body: "Hôm nay bạn chưa có công việc nào. Hãy mở ứng dụng để tạo việc ngay!",
+                                icon: "https://cdn-icons-png.flaticon.com/512/906/906334.png",
+                                tag: "remind-5m",
+                                requireInteraction: true
+                            });
+                        }
+                    };
+                };
+            }
+            // Kiểm tra ngay khi khởi chạy và mỗi 5 phút
+            checkAndNotify();
+            setInterval(checkAndNotify, 5 * 60 * 1000);
+        `;
+
+        if ('serviceWorker' in navigator && 'Notification' in window) {
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).then(reg => {
+                if (Notification.permission !== 'granted') {
+                    Notification.requestPermission();
+                }
+            });
+        }
+        // --- KẾT THÚC PHẦN BỔ SUNG ---
 
         const request = indexedDB.open(DB_NAME, 1);
         request.onupgradeneeded = e => {

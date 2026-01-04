@@ -1,20 +1,33 @@
 const DB_NAME = "TodoDBPro";
 const STORE_NAME = "tasks_store";
 
+// Hàm hỗ trợ gửi log về UI để xem trên mobile
+async function sendLogToUI(msg, type = "info") {
+    const allClients = await self.clients.matchAll();
+    allClients.forEach(client => {
+        client.postMessage({
+            action: 'log_from_sw',
+            message: msg,
+            logType: type
+        });
+    });
+    console.log(`SW Log: ${msg}`);
+}
+
 // --- LOGIC KIỂM TRA VÀ GỬI THÔNG BÁO ---
 async function checkAndNotify() {
     const now = new Date();
-    console.log("%c SW Debug: --- Bắt đầu Check --- ", "background: #222; color: #bada55");
+    await sendLogToUI("--- Bắt đầu Check ---");
     
     // Kiểm tra quyền ngay trong SW
     if (Notification.permission !== 'granted') {
-        console.warn("SW Debug: Quyền thông báo hiện tại là:", Notification.permission);
+        await sendLogToUI(`Quyền thông báo hiện tại là: ${Notification.permission}`, "warn");
         return;
     }
 
     const db = await openDB();
     if (!db) {
-        console.error("SW Debug: Lỗi kết nối IndexedDB");
+        await sendLogToUI("Lỗi kết nối IndexedDB", "error");
         return;
     }
 
@@ -23,54 +36,57 @@ async function checkAndNotify() {
         const todayStr = now.toDateString();
         const hasTaskToday = (tasks && tasks.data) ? tasks.data.some(t => new Date(t.deadline).toDateString() === todayStr) : false;
 
-        console.log("SW Debug: Task hôm nay:", hasTaskToday ? "✅ Đã có" : "❌ Chưa có");
+        await sendLogToUI(`Task hôm nay: ${hasTaskToday ? "✅ Đã có" : "❌ Chưa có"}`);
 
         if (hasTaskToday) {
             await deleteData(db, "notify_log");
-            console.log("SW Debug: Đã có task, hủy gửi notify.");
+            await sendLogToUI("Đã có task, dừng gửi notify.");
             return;
         }
 
         const currentHour = now.getHours();
+        await sendLogToUI(`Giờ hiện tại: ${currentHour}h`);
+
         if (currentHour >= 8) {
             const lastNotify = await getData(db, "notify_log");
             const lastTime = lastNotify ? lastNotify.time : 0;
             const oneHourInMs = 3600000;
             const diff = now.getTime() - lastTime;
 
-            console.log("SW Debug: Lần cuối notify cách đây (phút):", Math.floor(diff/60000));
+            await sendLogToUI(`Lần cuối gửi cách đây: ${Math.floor(diff/60000)} phút`);
 
             if (diff >= oneHourInMs) {
-                console.log("SW Debug: Đủ điều kiện gửi. Đang gọi Notification...");
+                await sendLogToUI("Đủ điều kiện. Đang gọi showNotification...");
                 
                 const options = {
                     body: "🚨 CẢNH BÁO: Bạn chưa thiết lập công việc nào cho hôm nay!",
                     icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
                     tag: "daily-reminder-persistent",
                     requireInteraction: true,
-                    vibrate: [200, 100, 200]
+                    vibrate: [200, 100, 200],
+                    badge: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png"
                 };
 
                 await self.registration.showNotification("Todo Manager Pro", options);
                 await setData(db, { id: "notify_log", time: now.getTime() });
-                console.log("SW Debug: Gửi thành công!");
+                await sendLogToUI("Gửi thông báo thành công!", "success");
             } else {
-                console.log("SW Debug: Chưa đủ 1 giờ kể từ lần gửi cuối.");
+                await sendLogToUI("Chưa đủ 1 giờ kể từ lần cuối.");
             }
         } else {
-            console.log("SW Debug: Chưa đến 8h sáng, không gửi.");
+            await sendLogToUI("Chưa đến 8h sáng.");
         }
     } catch (error) {
-        console.error("SW Debug: Lỗi logic chính:", error);
+        await sendLogToUI(`Lỗi hệ thống: ${error.message}`, "error");
     }
 }
 
-// --- HELPERS (Giữ nguyên logic bất biến) ---
+// --- HELPERS (Bất biến) ---
 function openDB() {
     return new Promise((resolve) => {
         const request = indexedDB.open(DB_NAME, 1);
         request.onsuccess = () => resolve(request.result);
-        request.onerror = (e) => { console.error("DB Error:", e); resolve(null); };
+        request.onerror = () => resolve(null);
     });
 }
 
@@ -105,25 +121,18 @@ function deleteData(db, id) {
 }
 
 // --- EVENTS ---
-self.addEventListener('install', (e) => {
-    console.log("SW Debug: Đang cài đặt (Install)...");
-    self.skipWaiting();
-});
+self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (event) => {
-    console.log("SW Debug: Đã kích hoạt (Activate).");
-    event.waitUntil(self.clients.claim());
+    event.waitUntil(self.clients.claim().then(() => sendLogToUI("Service Worker đã kích hoạt!")));
     setInterval(checkAndNotify, 300000); 
-    checkAndNotify();
 });
 
 self.addEventListener('message', (event) => {
     if (event.data.action === 'test_notify_now') {
-        console.log("SW Debug: Nhận lệnh Force Test từ UI.");
+        sendLogToUI("Nhận lệnh Force Test từ giao diện...");
         openDB().then(db => {
-            deleteData(db, "notify_log").then(() => {
-                checkAndNotify();
-            });
+            deleteData(db, "notify_log").then(() => checkAndNotify());
         });
     }
 });

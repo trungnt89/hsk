@@ -1,7 +1,6 @@
 const DB_NAME = "TodoDBPro";
 const STORE_NAME = "tasks_store";
 
-// Gửi log về giao diện để xem trên điện thoại
 async function sendLogToUI(msg, type = "info") {
     const allClients = await self.clients.matchAll();
     allClients.forEach(client => {
@@ -9,42 +8,61 @@ async function sendLogToUI(msg, type = "info") {
     });
 }
 
-function getLocalISODate(date) {
-    const d = new Date(date);
-    const offset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - offset).toISOString().split('T')[0];
+/**
+ * Hàm chuẩn hóa ngày cực kỳ quan trọng cho Mobile
+ * Chuyển bất kỳ kiểu Date/String nào về chuỗi "YYYY-MM-DD" đúng múi giờ địa phương
+ */
+function toLocalYMD(input) {
+    const d = new Date(input);
+    if (isNaN(d.getTime())) return null;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
-// --- LOGIC KIỂM TRA CHÍNH ---
 async function checkAndNotify(isForced = false) {
     const now = new Date();
-    const todayStr = getLocalISODate(now);
+    const todayStr = toLocalYMD(now); // Lấy "2026-01-04" chuẩn Mobile
+    await sendLogToUI(`--- Check Logic: ${todayStr} ---`);
 
     const db = await openDB();
     if (!db) return;
 
     try {
-        // 1. Kiểm tra cấu hình Tắt/Bật
+        // 1. Check Cấu hình Bật/Tắt
         const config = await getData(db, "notify_config");
         if (config && config.enabled === false && !isForced) {
-            await sendLogToUI("Thông báo đang ở trạng thái: TẮT.");
+            await sendLogToUI("Thông báo đang TẮT.");
             return;
         }
 
-        // 2. Kiểm tra Task trong DB
+        // 2. Check Data Task
         const tasks = await getData(db, "current_tasks_list");
         let hasTaskToday = false;
+
         if (tasks && Array.isArray(tasks.data)) {
-            hasTaskToday = tasks.data.some(t => getLocalISODate(t.deadline) === todayStr);
+            await sendLogToUI(`DB có ${tasks.data.length} tasks. Đang so sánh...`);
+            hasTaskToday = tasks.data.some(t => {
+                const taskDate = toLocalYMD(t.deadline);
+                // Log để bạn check trực tiếp trên Console Mobile
+                if (taskDate === todayStr) {
+                    sendLogToUI(`Tìm thấy task trùng: ${t.deadline} -> ${taskDate}`, "success");
+                    return true;
+                }
+                return false;
+            });
         }
 
+        await sendLogToUI(`Kết quả cuối: ${hasTaskToday ? "ĐÃ CÓ TASK (Chặn)" : "CHƯA CÓ TASK (Gửi)"}`);
+
+        // LOGIC CHẶN
         if (hasTaskToday) {
-            await deleteData(db, "notify_log");
-            await sendLogToUI(`Đã có task cho ngày ${todayStr}. Không gửi.`);
-            return;
+            await deleteData(db, "notify_log"); // Reset log để mai gửi lại
+            return; 
         }
 
-        // 3. Kiểm tra mốc thời gian (8h sáng và chu kỳ 1h)
+        // 3. Logic Gửi (Chỉ gửi khi hasTaskToday === false)
         const currentHour = now.getHours();
         if (currentHour >= 8 || isForced) {
             const lastNotify = await getData(db, "notify_log");
@@ -54,21 +72,22 @@ async function checkAndNotify(isForced = false) {
 
             if (diff >= oneHourInMs || isForced) {
                 await self.registration.showNotification("Todo Manager Pro", {
-                    body: isForced ? "Test: Hệ thống đang hoạt động!" : "🚨 Bạn chưa có công việc nào cho hôm nay!",
+                    body: "🚨 CẢNH BÁO: Bạn chưa thiết lập công việc nào cho hôm nay!",
                     icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
                     tag: "daily-reminder",
-                    requireInteraction: true
+                    requireInteraction: true,
+                    vibrate: [200, 100, 200]
                 });
                 await setData(db, { id: "notify_log", time: now.getTime() });
-                await sendLogToUI("Đã gửi thông báo thành công!", "success");
+                await sendLogToUI("Đã hiện Notify!", "success");
             } else {
-                await sendLogToUI(`Chưa đủ 1h (còn ${Math.floor((oneHourInMs-diff)/60000)}p).`);
+                await sendLogToUI(`Chưa đủ 1h chờ.`, "warn");
             }
         }
-    } catch (e) { await sendLogToUI("Lỗi: " + e.message, "error"); }
+    } catch (e) { await sendLogToUI("Lỗi Logic: " + e.message, "error"); }
 }
 
-// --- HELPERS DB ---
+// --- DB HELPERS (Giữ nguyên) ---
 function openDB() {
     return new Promise(res => {
         const req = indexedDB.open(DB_NAME, 1);
@@ -113,14 +132,15 @@ self.addEventListener('activate', (e) => {
 });
 
 self.onmessage = (event) => {
-    const action = event.data.action;
-    if (action === 'test_notify_now') {
+    if (event.data.action === 'test_notify_now') {
         openDB().then(db => deleteData(db, "notify_log").then(() => checkAndNotify(true)));
     }
-    if (action === 'set_notify_status') {
-        openDB().then(db => {
-            setData(db, { id: "notify_config", enabled: event.data.value });
-            sendLogToUI(`Đã ${event.data.value ? 'BẬT' : 'TẮT'} thông báo hệ thống.`, "warn");
-        });
+    if (event.data.action === 'set_notify_status') {
+        openDB().then(db => setData(db, { id: "notify_config", enabled: event.data.value }));
     }
 };
+
+self.addEventListener('notificationclick', (e) => {
+    e.notification.close();
+    e.waitUntil(clients.matchAll({ type: 'window' }).then(list => list.length > 0 ? list[0].focus() : clients.openWindow('/')));
+});

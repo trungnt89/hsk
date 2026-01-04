@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo Manager Pro - Professional UI</title>
-	<script src="../assistive.js"></script>    
+    <script src="../assistive.js"></script>    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -213,7 +213,22 @@
         request.onsuccess = e => {
             db = e.target.result;
             loadTasksFromDB();
+            registerServiceWorker(); // Gọi đăng ký SW
         };
+
+        // Hàm đăng ký Service Worker
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('SW Registered');
+                        if (Notification.permission !== 'granted') {
+                            Notification.requestPermission();
+                        }
+                    })
+                    .catch(err => console.log('SW Registration Failed', err));
+            }
+        }
 
         function saveToDB() {
             if (!db) return;
@@ -381,7 +396,6 @@
         function renderTasks(customList = null) {
             const grid = document.getElementById('tasksGrid');
             let filtered = customList;
-            // Duy trì filter nếu không có customList truyền vào
             if (!filtered) {
                 filtered = (currentFilter === 'all') ? tasks : tasks.filter(t => getDeadlineStatus(t.deadline, t.completed) === currentFilter);
             }
@@ -466,7 +480,6 @@
             if(t) t.completed = !t.completed; 
             saveToDB(); 
             updateStats(); 
-            // Fix: Re-run filter based on current active tab
             if(['today', 'week', 'month'].includes(currentFilter)) {
                 filterByTime(currentFilter);
             } else {

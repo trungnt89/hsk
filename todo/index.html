@@ -198,7 +198,6 @@
     <button class="btn-open-modal" onclick="toggleModal()">+</button>
 
     <script>
-        // GIỮ NGUYÊN TOÀN BỘ LOGIC XỬ LÝ
         let tasks = [];
         let currentFilter = 'all';
         let editingTaskId = null;
@@ -381,8 +380,11 @@
 
         function renderTasks(customList = null) {
             const grid = document.getElementById('tasksGrid');
-            let filtered = customList || tasks;
-            if (!customList && currentFilter !== 'all') filtered = tasks.filter(t => getDeadlineStatus(t.deadline, t.completed) === currentFilter);
+            let filtered = customList;
+            // Duy trì filter nếu không có customList truyền vào
+            if (!filtered) {
+                filtered = (currentFilter === 'all') ? tasks : tasks.filter(t => getDeadlineStatus(t.deadline, t.completed) === currentFilter);
+            }
             grid.innerHTML = filtered.length ? filtered.map(t => `
                 <div class="task-card ${getDeadlineStatus(t.deadline, t.completed)}">
                     <div class="task-title">
@@ -458,7 +460,20 @@
             if(el) el.classList.add('active');
             renderTasks(); 
         }
-        function completeTask(id) { const t = tasks.find(x => x.id === id); if(t) t.completed = !t.completed; saveToDB(); updateStats(); renderTasks(); }
+
+        function completeTask(id) { 
+            const t = tasks.find(x => x.id === id); 
+            if(t) t.completed = !t.completed; 
+            saveToDB(); 
+            updateStats(); 
+            // Fix: Re-run filter based on current active tab
+            if(['today', 'week', 'month'].includes(currentFilter)) {
+                filterByTime(currentFilter);
+            } else {
+                renderTasks();
+            }
+        }
+
         function deleteTask(id) { if(confirm("Xác nhận xóa?")) { tasks = tasks.filter(x => x.id !== id); saveToDB(); updateStats(); if(currentFilter === 'today' || currentFilter === 'week' || currentFilter === 'month') { filterByTime(currentFilter); } else { renderTasks(); } } }
     </script>
 </body>

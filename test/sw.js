@@ -1,5 +1,5 @@
-const DB_NAME = "TodoDBPro";
-const STORE_NAME = "tasks_store";
+// URL chứa dữ liệu Task của bạn (Ví dụ: https://domain.com/data.json)
+const URL_API = "https://your-domain.com/api/tasks.json"; 
 
 async function sendLogToUI(msg, type = "info") {
     const allClients = await self.clients.matchAll();
@@ -8,13 +8,8 @@ async function sendLogToUI(msg, type = "info") {
     });
 }
 
-/**
- * Hàm chuẩn hóa ngày cực kỳ quan trọng cho Mobile
- * Chuyển bất kỳ kiểu Date/String nào về chuỗi "YYYY-MM-DD" đúng múi giờ địa phương
- */
-function toLocalYMD(input) {
-    const d = new Date(input);
-    if (isNaN(d.getTime())) return null;
+function toLocalYMD(date) {
+    const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -23,104 +18,76 @@ function toLocalYMD(input) {
 
 async function checkAndNotify(isForced = false) {
     const now = new Date();
-    const todayStr = toLocalYMD(now); // Lấy "2026-01-04" chuẩn Mobile
-    await sendLogToUI(`--- Check Logic: ${todayStr} ---`);
-
-    const db = await openDB();
-    if (!db) return;
+    const todayStr = toLocalYMD(now);
+    await sendLogToUI(`--- Check Server: ${todayStr} ---`);
 
     try {
-        // 1. Check Cấu hình Bật/Tắt
-        const config = await getData(db, "notify_config");
-        if (config && config.enabled === false && !isForced) {
-            await sendLogToUI("Thông báo đang TẮT.");
+        // 1. Lấy dữ liệu từ Server (Thêm timestamp để tránh cache trình duyệt)
+        const response = await fetch(`${URL_API}?t=${Date.now()}`);
+        if (!response.ok) throw new Error("Không thể kết nối Server");
+        
+        const result = await response.json(); 
+        // Giả sử cấu trúc JSON là: { "tasks": [{ "deadline": "2026-01-04" }, ...] }
+        const tasks = result.tasks || [];
+
+        // 2. Kiểm tra Task cho ngày hôm nay
+        const hasTaskToday = tasks.some(t => toLocalYMD(t.deadline) === todayStr);
+        await sendLogToUI(`Server trả về ${tasks.length} tasks. Trùng hôm nay: ${hasTaskToday}`);
+
+        if (hasTaskToday) {
+            await sendLogToUI("Đã có task trên Server. Hủy thông báo.");
             return;
         }
 
-        // 2. Check Data Task
-        const tasks = await getData(db, "current_tasks_list");
-        let hasTaskToday = false;
-
-        if (tasks && Array.isArray(tasks.data)) {
-            await sendLogToUI(`DB có ${tasks.data.length} tasks. Đang so sánh...`);
-            hasTaskToday = tasks.data.some(t => {
-                const taskDate = toLocalYMD(t.deadline);
-                // Log để bạn check trực tiếp trên Console Mobile
-                if (taskDate === todayStr) {
-                    sendLogToUI(`Tìm thấy task trùng: ${t.deadline} -> ${taskDate}`, "success");
-                    return true;
-                }
-                return false;
-            });
-        }
-
-        await sendLogToUI(`Kết quả cuối: ${hasTaskToday ? "ĐÃ CÓ TASK (Chặn)" : "CHƯA CÓ TASK (Gửi)"}`);
-
-        // LOGIC CHẶN
-        if (hasTaskToday) {
-            await deleteData(db, "notify_log"); // Reset log để mai gửi lại
-            return; 
-        }
-
-        // 3. Logic Gửi (Chỉ gửi khi hasTaskToday === false)
+        // 3. Logic giờ giấc (8h sáng)
         const currentHour = now.getHours();
         if (currentHour >= 8 || isForced) {
-            const lastNotify = await getData(db, "notify_log");
-            const lastTime = lastNotify ? lastNotify.time : 0;
-            const oneHourInMs = 3600000;
-            const diff = now.getTime() - lastTime;
+            // Vẫn dùng IndexedDB chỉ để lưu mốc thời gian đã gửi (tránh spam 1h/lần)
+            const db = await openNotifyDB();
+            const lastNotify = await getNotifyLog(db);
+            const diff = now.getTime() - (lastNotify || 0);
 
-            if (diff >= oneHourInMs || isForced) {
+            if (diff >= 3600000 || isForced) {
                 await self.registration.showNotification("Todo Manager Pro", {
-                    body: "🚨 CẢNH BÁO: Bạn chưa thiết lập công việc nào cho hôm nay!",
+                    body: "🚨 Server báo: Bạn chưa có công việc nào cho hôm nay!",
                     icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
                     tag: "daily-reminder",
-                    requireInteraction: true,
-                    vibrate: [200, 100, 200]
+                    requireInteraction: true
                 });
-                await setData(db, { id: "notify_log", time: now.getTime() });
-                await sendLogToUI("Đã hiện Notify!", "success");
+                if (db) await setNotifyLog(db, now.getTime());
+                await sendLogToUI("Đã gửi Notify thành công!", "success");
             } else {
-                await sendLogToUI(`Chưa đủ 1h chờ.`, "warn");
+                await sendLogToUI("Chưa đủ 1h từ lần gửi cuối.");
             }
         }
-    } catch (e) { await sendLogToUI("Lỗi Logic: " + e.message, "error"); }
+    } catch (e) {
+        await sendLogToUI("Lỗi Fetch Server: " + e.message, "error");
+    }
 }
 
-// --- DB HELPERS (Giữ nguyên) ---
-function openDB() {
+// --- DB MINI (Chỉ để lưu log thời gian gửi, tránh spam) ---
+function openNotifyDB() {
     return new Promise(res => {
-        const req = indexedDB.open(DB_NAME, 1);
+        const req = indexedDB.open("NotifyLogDB", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("logs");
         req.onsuccess = () => res(req.result);
         req.onerror = () => res(null);
     });
 }
-function getData(db, id) {
+function getNotifyLog(db) {
     return new Promise(res => {
-        try {
-            const tx = db.transaction(STORE_NAME, "readonly");
-            const req = tx.objectStore(STORE_NAME).get(id);
-            req.onsuccess = () => res(req.result);
-            req.onerror = () => res(null);
-        } catch { res(null); }
+        if (!db) return res(null);
+        const req = db.transaction("logs").objectStore("logs").get("last_sent");
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => res(null);
     });
 }
-function setData(db, data) {
+function setNotifyLog(db, time) {
     return new Promise(res => {
-        try {
-            const tx = db.transaction(STORE_NAME, "readwrite");
-            tx.objectStore(STORE_NAME).put(data);
-            tx.oncomplete = () => res(true);
-        } catch { res(false); }
-    });
-}
-function deleteData(db, id) {
-    return new Promise(res => {
-        try {
-            const tx = db.transaction(STORE_NAME, "readwrite");
-            tx.objectStore(STORE_NAME).delete(id);
-            tx.oncomplete = () => res(true);
-        } catch { res(false); }
+        if (!db) return res(null);
+        const tx = db.transaction("logs", "readwrite");
+        tx.objectStore("logs").put(time, "last_sent");
+        tx.oncomplete = () => res(true);
     });
 }
 
@@ -132,15 +99,5 @@ self.addEventListener('activate', (e) => {
 });
 
 self.onmessage = (event) => {
-    if (event.data.action === 'test_notify_now') {
-        openDB().then(db => deleteData(db, "notify_log").then(() => checkAndNotify(true)));
-    }
-    if (event.data.action === 'set_notify_status') {
-        openDB().then(db => setData(db, { id: "notify_config", enabled: event.data.value }));
-    }
+    if (event.data.action === 'test_notify_now') checkAndNotify(true);
 };
-
-self.addEventListener('notificationclick', (e) => {
-    e.notification.close();
-    e.waitUntil(clients.matchAll({ type: 'window' }).then(list => list.length > 0 ? list[0].focus() : clients.openWindow('/')));
-});

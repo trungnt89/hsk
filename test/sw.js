@@ -1,5 +1,5 @@
 // URL chứa dữ liệu Task của bạn (Ví dụ: https://domain.com/data.json)
-const URL_API = "https://your-domain.com/api/tasks.json"; 
+const URL_API = "https://hsk-gilt.vercel.app/db/todo.json"; 
 
 async function sendLogToUI(msg, type = "info") {
     const allClients = await self.clients.matchAll();

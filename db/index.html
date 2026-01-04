@@ -322,7 +322,13 @@
                 const store = tx.objectStore(storeName);
                 
                 Object.keys(cloudData).forEach(key => {
-                    store.put(cloudData[key], key);
+                    const value = cloudData[key];
+                    // Sửa lỗi Uncaught DataError: Kiểm tra xem store có dùng in-line key không
+                    if (store.keyPath) {
+                        store.put(value);
+                    } else {
+                        store.put(value, key);
+                    }
                 });
 
                 tx.oncomplete = () => {

@@ -2,124 +2,74 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-	<link rel="manifest" href="manifest.json">
-    <title>Debug Notification - Todo Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo Notify Manager</title>
     <style>
-        :root { --primary: #4facfe; --bg: #f0f2f5; --text: #2d3436; }
-        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto; display: flex; flex-direction: column; align-items: center; padding-top: 30px; background: var(--bg); margin: 0; color: var(--text); padding-bottom: 260px; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; box-sizing: border-box; }
-        h2 { margin-top: 0; color: var(--primary); font-size: 20px; }
-        .instruction { font-size: 13px; color: #636e72; margin-bottom: 20px; line-height: 1.5; }
-        button { padding: 16px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 12px; font-size: 15px; transition: transform 0.1s active; -webkit-tap-highlight-color: transparent; }
-        button:active { transform: scale(0.95); background: #eee; }
-        .btn-test { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4); }
-        .btn-perm { background: #55efc4; color: #2d3436; }
-        .status { font-size: 12px; color: #636e72; background: #e9ecef; padding: 12px; border-radius: 10px; margin-bottom: 10px; word-break: break-all; min-height: 20px; }
-        
-        #mobile-console {
-            width: 100%; height: 250px; background: #1e2124; color: #a2fca2;
-            position: fixed; bottom: 0; left: 0; font-family: "SF Mono", "Courier New", monospace; 
-            font-size: 11px; overflow-y: auto; padding: 15px; box-sizing: border-box;
-            border-top: 3px solid var(--primary); z-index: 1000;
-        }
-        .log-error { color: #ff7675; border-left: 2px solid #ff7675; padding-left: 5px; }
-        .log-warn { color: #fdcb6e; border-left: 2px solid #fdcb6e; padding-left: 5px; }
-        .log-success { color: #55efc4; font-weight: bold; }
-        .log-info { border-left: 2px solid var(--primary); padding-left: 5px; opacity: 0.9; }
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; padding-bottom: 270px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
+        button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-blue { background: #4facfe; color: white; }
+        .btn-green { background: #55efc4; }
+        .btn-red { background: #ff7675; color: white; }
+        .btn-gray { background: #636e72; color: white; }
+        #mobile-console { position: fixed; bottom: 0; left: 0; width: 100%; height: 250px; background: #1e2124; color: #a2fca2; padding: 15px; font-family: monospace; font-size: 11px; overflow-y: auto; box-sizing: border-box; border-top: 3px solid #4facfe; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🛠️ Debug Notification</h2>
-    <div class="instruction">
-        Môi trường yêu cầu: <b>HTTPS</b> <br>
-        Trạng thái: Không dùng tab ẩn danh.
-    </div>
-    
-    <div class="status" id="statusText">Đang khởi tạo Service Worker...</div>
-
-    <button class="btn-perm" id="btnPerm" onclick="requestPerm()">1. CẤP QUYỀN THÔNG BÁO</button>
-    <button class="btn-test" onclick="triggerNow()">2. GỬI THÔNG BÁO TEST</button>
-    
-    <div style="font-size: 11px; color: #b2bec3; margin-top: 10px;">
-        Phiên bản Debug v4.2 - Mobile Console
-    </div>
+    <h3>🔔 Quản lý Thông báo</h3>
+    <button class="btn-green" onclick="requestPerm()">1. CẤP QUYỀN</button>
+    <button class="btn-blue" onclick="triggerTest()">2. GỬI TEST</button>
+    <button id="toggleBtn" class="btn-red" onclick="toggleStatus(false)">3. TẮT THÔNG BÁO</button>
+    <button class="btn-gray" onclick="uninstallSW()">4. GỠ BỎ HỆ THỐNG (RESET)</button>
 </div>
 
-<div id="mobile-console">
-    <div style="color: #4facfe;">--- LOG HỆ THỐNG READY ---</div>
-</div>
+<div id="mobile-console"><div>--- Debug Console ---</div></div>
 
 <script>
-    const statusText = document.getElementById('statusText');
-    const mobileConsole = document.getElementById('mobile-console');
+    const addLog = (m, t="info") => {
+        const d = document.createElement('div');
+        d.textContent = `[${new Date().toLocaleTimeString()}] ${m}`;
+        d.style.color = t === "error" ? "#ff7675" : (t === "warn" ? "#fdcb6e" : "#a2fca2");
+        document.getElementById('mobile-console').appendChild(d);
+        document.getElementById('mobile-console').scrollTop = 99999;
+    };
 
-    function addLog(msg, type = "info") {
-        const div = document.createElement('div');
-        div.className = `log-${type}`;
-        div.style.marginBottom = "5px";
-        div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-        mobileConsole.appendChild(div);
-        mobileConsole.scrollTop = mobileConsole.scrollHeight;
-    }
-
-    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-        addLog("LỖI: Bạn đang dùng HTTP. Không thể hiện Popup quyền!", "error");
-    }
-
-    // 1. Đăng ký Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(reg => {
-            reg.update(); // Ép kiểm tra bản sw.js mới nhất
-            statusText.innerText = "SW: Đã đăng ký (Active)";
-            addLog("SW đã đăng ký thành công.");
-        }).catch(err => {
-            addLog("Lỗi đăng ký SW: " + err, "error");
+        navigator.serviceWorker.register('sw.js').then(() => addLog("SW: Ready"));
+        navigator.serviceWorker.addEventListener('message', e => {
+            if (e.data.action === 'log_from_sw') addLog(e.data.message, e.data.logType);
         });
-
-        navigator.serviceWorker.addEventListener('message', event => {
-            if (event.data && event.data.action === 'log_from_sw') {
-                addLog(event.data.message, event.data.logType);
-            }
-        });
-    } else {
-        addLog("Trình duyệt không hỗ trợ SW!", "error");
     }
 
-    // 2. Hàm cấp quyền (Tối ưu cho mọi trình duyệt mobile)
     async function requestPerm() {
-        addLog("Yêu cầu quyền thông báo...");
-        if (!("Notification" in window)) {
-            addLog("API Notification không tồn tại!", "error");
-            return;
-        }
+        const p = await Notification.requestPermission();
+        addLog("Quyền: " + p, p === 'granted' ? 'info' : 'error');
+    }
 
-        try {
-            const permission = await Notification.requestPermission();
-            statusText.innerText = `Quyền: ${permission.toUpperCase()}`;
-            addLog(`Kết quả: ${permission}`, permission === 'granted' ? 'success' : 'warn');
-            if(permission !== 'granted') alert("Vui lòng cấp quyền trong cài đặt trang web!");
-        } catch (err) {
-            addLog("Lỗi: " + err, "error");
+    function triggerTest() {
+        navigator.serviceWorker.controller?.postMessage({ action: 'test_notify_now' });
+    }
+
+    function toggleStatus(val) {
+        navigator.serviceWorker.controller?.postMessage({ action: 'set_notify_status', value: val });
+        const btn = document.getElementById('toggleBtn');
+        if (val) {
+            btn.innerText = "3. TẮT THÔNG BÁO";
+            btn.className = "btn-red";
+            btn.onclick = () => toggleStatus(false);
+        } else {
+            btn.innerText = "3. BẬT LẠI THÔNG BÁO";
+            btn.className = "btn-green";
+            btn.onclick = () => toggleStatus(true);
         }
     }
 
-    // 3. Hàm Test
-    function triggerNow() {
-        if (!navigator.serviceWorker.controller) {
-            addLog("LỖI: Controller Null. Hãy vuốt xuống Reload trang để SW nhận quyền!", "error");
-            // Thử đăng ký lại nếu bị mất kết nối
-            navigator.serviceWorker.ready.then(reg => {
-                addLog("Thử gửi qua registration.active...");
-                reg.active.postMessage({ action: 'test_notify_now' });
-            });
-            return;
-        }
-        
-        addLog("Đã gửi message: test_notify_now");
-        navigator.serviceWorker.controller.postMessage({ action: 'test_notify_now' });
+    async function uninstallSW() {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (let r of regs) await r.unregister();
+        addLog("Đã hủy đăng ký. Vui lòng tải lại trang!", "warn");
     }
 </script>
 </body>

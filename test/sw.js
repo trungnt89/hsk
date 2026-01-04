@@ -1,7 +1,7 @@
 const DB_NAME = "TodoDBPro";
 const STORE_NAME = "tasks_store";
 
-// Hàm gửi log về UI (Mobile Console) để debug
+// Gửi log về giao diện để xem trên điện thoại
 async function sendLogToUI(msg, type = "info") {
     const allClients = await self.clients.matchAll();
     allClients.forEach(client => {
@@ -9,10 +9,9 @@ async function sendLogToUI(msg, type = "info") {
     });
 }
 
-// Hàm chuẩn hóa ngày về định dạng YYYY-MM-DD theo múi giờ địa phương
 function getLocalISODate(date) {
     const d = new Date(date);
-    const offset = d.getTimezoneOffset() * 60000; // Lấy độ lệch múi giờ tính bằng ms
+    const offset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - offset).toISOString().split('T')[0];
 }
 
@@ -20,37 +19,32 @@ function getLocalISODate(date) {
 async function checkAndNotify(isForced = false) {
     const now = new Date();
     const todayStr = getLocalISODate(now);
-    await sendLogToUI(`--- Bắt đầu check ngày: ${todayStr} ---`);
 
     const db = await openDB();
-    if (!db) {
-        await sendLogToUI("Lỗi: Không thể mở IndexedDB", "error");
-        return;
-    }
+    if (!db) return;
 
     try {
+        // 1. Kiểm tra cấu hình Tắt/Bật
+        const config = await getData(db, "notify_config");
+        if (config && config.enabled === false && !isForced) {
+            await sendLogToUI("Thông báo đang ở trạng thái: TẮT.");
+            return;
+        }
+
+        // 2. Kiểm tra Task trong DB
         const tasks = await getData(db, "current_tasks_list");
-        
-        // 1. Kiểm tra sự tồn tại của task cho ngày hôm nay
         let hasTaskToday = false;
         if (tasks && Array.isArray(tasks.data)) {
-            await sendLogToUI(`Dữ liệu DB: Tìm thấy ${tasks.data.length} tasks.`);
-            hasTaskToday = tasks.data.some(t => {
-                const taskDateStr = getLocalISODate(t.deadline);
-                return taskDateStr === todayStr;
-            });
+            hasTaskToday = tasks.data.some(t => getLocalISODate(t.deadline) === todayStr);
         }
 
-        await sendLogToUI(`Kết quả: ${hasTaskToday ? "✅ ĐÃ CÓ TASK" : "❌ CHƯA CÓ TASK"}`);
-
-        // 2. NẾU ĐÃ CÓ TASK: Tuyệt đối không gửi thông báo
         if (hasTaskToday) {
             await deleteData(db, "notify_log");
-            await sendLogToUI("Đã có task cho hôm nay. Dừng tiến trình gửi.");
-            return; 
+            await sendLogToUI(`Đã có task cho ngày ${todayStr}. Không gửi.`);
+            return;
         }
 
-        // 3. NẾU CHƯA CÓ TASK: Kiểm tra điều kiện thời gian
+        // 3. Kiểm tra mốc thời gian (8h sáng và chu kỳ 1h)
         const currentHour = now.getHours();
         if (currentHour >= 8 || isForced) {
             const lastNotify = await getData(db, "notify_log");
@@ -59,97 +53,74 @@ async function checkAndNotify(isForced = false) {
             const diff = now.getTime() - lastTime;
 
             if (diff >= oneHourInMs || isForced) {
-                await sendLogToUI("Đủ điều kiện. Đang hiện thông báo...", "success");
-                
                 await self.registration.showNotification("Todo Manager Pro", {
-                    body: isForced && !hasTaskToday ? "[TEST] Bạn chưa có việc nào hôm nay!" : "🚨 CẢNH BÁO: Bạn chưa thiết lập công việc nào cho hôm nay!",
+                    body: isForced ? "Test: Hệ thống đang hoạt động!" : "🚨 Bạn chưa có công việc nào cho hôm nay!",
                     icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
-                    tag: "daily-reminder-unique", // Tránh trùng lặp thông báo
-                    requireInteraction: true,
-                    vibrate: [300, 100, 300]
+                    tag: "daily-reminder",
+                    requireInteraction: true
                 });
-
                 await setData(db, { id: "notify_log", time: now.getTime() });
+                await sendLogToUI("Đã gửi thông báo thành công!", "success");
             } else {
-                await sendLogToUI(`Chưa đủ 1 giờ kể từ lần gửi cuối (${Math.floor(diff/60000)}p đã trôi qua).`);
+                await sendLogToUI(`Chưa đủ 1h (còn ${Math.floor((oneHourInMs-diff)/60000)}p).`);
             }
-        } else {
-            await sendLogToUI(`Chưa đến 8h sáng (Hiện tại: ${currentHour}h).`);
         }
-    } catch (error) {
-        await sendLogToUI(`Lỗi hệ thống: ${error.message}`, "error");
-    }
+    } catch (e) { await sendLogToUI("Lỗi: " + e.message, "error"); }
 }
 
-// --- INDEXEDDB HELPERS (Bất biến) ---
+// --- HELPERS DB ---
 function openDB() {
-    return new Promise((resolve) => {
-        const request = indexedDB.open(DB_NAME, 1);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => resolve(null);
+    return new Promise(res => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => res(null);
     });
 }
-
 function getData(db, id) {
-    return new Promise((resolve) => {
+    return new Promise(res => {
         try {
             const tx = db.transaction(STORE_NAME, "readonly");
-            const store = tx.objectStore(STORE_NAME);
-            const request = store.get(id);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => resolve(null);
-        } catch(e) { resolve(null); }
+            const req = tx.objectStore(STORE_NAME).get(id);
+            req.onsuccess = () => res(req.result);
+            req.onerror = () => res(null);
+        } catch { res(null); }
     });
 }
-
 function setData(db, data) {
-    return new Promise((resolve) => {
+    return new Promise(res => {
         try {
             const tx = db.transaction(STORE_NAME, "readwrite");
-            const store = tx.objectStore(STORE_NAME);
-            store.put(data);
-            tx.oncomplete = () => resolve(true);
-        } catch(e) { resolve(false); }
+            tx.objectStore(STORE_NAME).put(data);
+            tx.oncomplete = () => res(true);
+        } catch { res(false); }
     });
 }
-
 function deleteData(db, id) {
-    return new Promise((resolve) => {
+    return new Promise(res => {
         try {
             const tx = db.transaction(STORE_NAME, "readwrite");
-            const store = tx.objectStore(STORE_NAME);
-            store.delete(id);
-            tx.oncomplete = () => resolve(true);
-        } catch(e) { resolve(false); }
+            tx.objectStore(STORE_NAME).delete(id);
+            tx.oncomplete = () => res(true);
+        } catch { res(false); }
     });
 }
 
 // --- EVENTS ---
 self.addEventListener('install', () => self.skipWaiting());
-
-self.addEventListener('activate', (event) => {
-    event.waitUntil(self.clients.claim());
-    setInterval(checkAndNotify, 300000); // 5 phút check 1 lần
+self.addEventListener('activate', (e) => {
+    e.waitUntil(self.clients.claim());
+    setInterval(checkAndNotify, 300000); 
 });
 
-// Nhận message từ UI
 self.onmessage = (event) => {
-    if (event.data.action === 'test_notify_now' || event.data === 'trigger-notify') {
-        // Xóa log cũ để "ép" gửi ngay nếu thỏa mãn điều kiện DB
+    const action = event.data.action;
+    if (action === 'test_notify_now') {
+        openDB().then(db => deleteData(db, "notify_log").then(() => checkAndNotify(true)));
+    }
+    if (action === 'set_notify_status') {
         openDB().then(db => {
-            deleteData(db, "notify_log").then(() => {
-                checkAndNotify(true);
-            });
+            setData(db, { id: "notify_config", enabled: event.data.value });
+            sendLogToUI(`Đã ${event.data.value ? 'BẬT' : 'TẮT'} thông báo hệ thống.`, "warn");
         });
     }
 };
-
-self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
-    event.waitUntil(
-        clients.matchAll({ type: 'window' }).then((list) => {
-            if (list.length > 0) return list[0].focus();
-            return clients.openWindow('/');
-        })
-    );
-});

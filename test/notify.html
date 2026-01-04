@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Notification Fix</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f2f5; }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 8px; }
+        #mobile-console {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 180px;
+            background: #000; color: #0f0; font-size: 11px; overflow-y: auto; padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>iOS Notification Fix</h1>
+    <button onclick="sendNotification()">Kích hoạt Hello World</button>
+
+    <div id="mobile-console">-- Console Debug --<br></div>
+
+    <script>
+        const consoleBox = document.getElementById('mobile-console');
+        function log(msg) { 
+            consoleBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        // Đăng ký Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => log("SW: Đã đăng ký"))
+                .catch(err => log("SW Error: " + err.message));
+        }
+
+        async function sendNotification() {
+            log("Đang kiểm tra API...");
+
+            // Kiểm tra Notification API
+            if (!("Notification" in window)) {
+                log("LỖI: window.Notification không tồn tại.");
+                alert("iPhone: Bạn phải xóa App cũ, cập nhật iOS 16.4+ và Add to Home Screen lại.");
+                return;
+            }
+
+            try {
+                const permission = await Notification.requestPermission();
+                log("Quyền: " + permission);
+
+                if (permission === 'granted') {
+                    const reg = await navigator.serviceWorker.ready;
+                    log("SW Sẵn sàng. Hiển thị...");
+                    
+                    await reg.showNotification('Thành công!', {
+                        body: 'Thông báo đã hiện trên iOS PWA',
+                        icon: 'https://cdn-icons-png.flaticon.com/512/252/252035.png'
+                    });
+                }
+            } catch (err) {
+                log("Lỗi: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

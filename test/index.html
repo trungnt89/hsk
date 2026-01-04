@@ -6,17 +6,16 @@
     <title>Debug Notification - Todo Pro</title>
     <style>
         :root { --primary: #4facfe; --bg: #f0f2f5; --text: #2d3436; }
-        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto; display: flex; flex-direction: column; align-items: center; padding-top: 30px; background: var(--bg); margin: 0; color: var(--text); }
+        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto; display: flex; flex-direction: column; align-items: center; padding-top: 30px; background: var(--bg); margin: 0; color: var(--text); padding-bottom: 260px; }
         .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; box-sizing: border-box; }
         h2 { margin-top: 0; color: var(--primary); font-size: 20px; }
         .instruction { font-size: 13px; color: #636e72; margin-bottom: 20px; line-height: 1.5; }
-        button { padding: 16px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 12px; font-size: 15px; transition: transform 0.1s active; }
-        button:active { transform: scale(0.98); }
+        button { padding: 16px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 12px; font-size: 15px; transition: transform 0.1s active; -webkit-tap-highlight-color: transparent; }
+        button:active { transform: scale(0.95); background: #eee; }
         .btn-test { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4); }
         .btn-perm { background: #55efc4; color: #2d3436; }
-        .status { font-size: 12px; color: #636e72; background: #e9ecef; padding: 12px; border-radius: 10px; margin-bottom: 10px; word-break: break-all; }
+        .status { font-size: 12px; color: #636e72; background: #e9ecef; padding: 12px; border-radius: 10px; margin-bottom: 10px; word-break: break-all; min-height: 20px; }
         
-        /* Mobile Console */
         #mobile-console {
             width: 100%; height: 250px; background: #1e2124; color: #a2fca2;
             position: fixed; bottom: 0; left: 0; font-family: "SF Mono", "Courier New", monospace; 
@@ -34,21 +33,22 @@
 <div class="card">
     <h2>🛠️ Debug Notification</h2>
     <div class="instruction">
-        Nếu bấm nút "Cấp quyền" mà không thấy gì, hãy đảm bảo bạn đang dùng <b>HTTPS</b> và không dùng tab ẩn danh.
+        Môi trường yêu cầu: <b>HTTPS</b> <br>
+        Trạng thái: Không dùng tab ẩn danh.
     </div>
     
-    <div class="status" id="statusText">Đang kiểm tra trình duyệt...</div>
+    <div class="status" id="statusText">Đang khởi tạo Service Worker...</div>
 
     <button class="btn-perm" id="btnPerm" onclick="requestPerm()">1. CẤP QUYỀN THÔNG BÁO</button>
     <button class="btn-test" onclick="triggerNow()">2. GỬI THÔNG BÁO TEST</button>
     
     <div style="font-size: 11px; color: #b2bec3; margin-top: 10px;">
-        Phiên bản Debug v4.1 - Mobile Console
+        Phiên bản Debug v4.2 - Mobile Console
     </div>
 </div>
 
 <div id="mobile-console">
-    <div>[Hệ thống] Đang đợi tương tác...</div>
+    <div style="color: #4facfe;">--- LOG HỆ THỐNG READY ---</div>
 </div>
 
 <script>
@@ -64,77 +64,61 @@
         mobileConsole.scrollTop = mobileConsole.scrollHeight;
     }
 
-    // Kiểm tra môi trường an toàn
     if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-        addLog("CẢNH BÁO: Bạn đang dùng HTTP. Notification chỉ chạy trên HTTPS!", "error");
+        addLog("LỖI: Bạn đang dùng HTTP. Không thể hiện Popup quyền!", "error");
     }
 
     // 1. Đăng ký Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=' + Date.now()).then(reg => {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            reg.update(); // Ép kiểm tra bản sw.js mới nhất
             statusText.innerText = "SW: Đã đăng ký (Active)";
-            addLog("Service Worker đã sẵn sàng.");
+            addLog("SW đã đăng ký thành công.");
         }).catch(err => {
             addLog("Lỗi đăng ký SW: " + err, "error");
         });
 
-        // Lắng nghe log từ SW
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data && event.data.action === 'log_from_sw') {
-                addLog(`[SW] ${event.data.message}`, event.data.logType);
+                addLog(event.data.message, event.data.logType);
             }
         });
     } else {
-        addLog("Trình duyệt KHÔNG hỗ trợ Service Worker!", "error");
+        addLog("Trình duyệt không hỗ trợ SW!", "error");
     }
 
-    // 2. Hàm cấp quyền (Fix lỗi treo trên mobile)
+    // 2. Hàm cấp quyền (Tối ưu cho mọi trình duyệt mobile)
     async function requestPerm() {
-        addLog("Bắt đầu yêu cầu quyền...");
-        
+        addLog("Yêu cầu quyền thông báo...");
         if (!("Notification" in window)) {
-            addLog("Trình duyệt không hỗ trợ Notification API", "error");
+            addLog("API Notification không tồn tại!", "error");
             return;
         }
 
         try {
-            // Fix cho cả Chrome (Promise) và Safari cũ (Callback)
-            const permission = await new Promise((resolve, reject) => {
-                const promise = Notification.requestPermission((result) => {
-                    resolve(result);
-                });
-                if (promise) {
-                    promise.then(resolve).catch(reject);
-                }
-            });
-
-            statusText.innerText = `Quyền hiện tại: ${permission.toUpperCase()}`;
+            const permission = await Notification.requestPermission();
+            statusText.innerText = `Quyền: ${permission.toUpperCase()}`;
             addLog(`Kết quả: ${permission}`, permission === 'granted' ? 'success' : 'warn');
-
-            if (permission === 'denied') {
-                addLog("Bạn đã chặn quyền. Hãy click vào ổ khóa trên URL để Reset.", "error");
-            }
+            if(permission !== 'granted') alert("Vui lòng cấp quyền trong cài đặt trang web!");
         } catch (err) {
-            addLog("Lỗi thực thi yêu cầu: " + err, "error");
+            addLog("Lỗi: " + err, "error");
         }
     }
 
-    // 3. Hàm kích hoạt Test
+    // 3. Hàm Test
     function triggerNow() {
         if (!navigator.serviceWorker.controller) {
-            addLog("SW chưa kiểm soát trang (Controller null). Hãy F5 hoặc vuốt xuống để Reload!", "warn");
+            addLog("LỖI: Controller Null. Hãy vuốt xuống Reload trang để SW nhận quyền!", "error");
+            // Thử đăng ký lại nếu bị mất kết nối
+            navigator.serviceWorker.ready.then(reg => {
+                addLog("Thử gửi qua registration.active...");
+                reg.active.postMessage({ action: 'test_notify_now' });
+            });
             return;
         }
         
-        if (Notification.permission !== 'granted') {
-            addLog("Chưa có quyền! Hãy bấm nút 'Cấp quyền' trước.", "warn");
-            return;
-        }
-
-        addLog("Đang gửi tín hiệu Test tới SW...");
-        navigator.serviceWorker.controller.postMessage({
-            action: 'test_notify_now'
-        });
+        addLog("Đã gửi message: test_notify_now");
+        navigator.serviceWorker.controller.postMessage({ action: 'test_notify_now' });
     }
 </script>
 </body>

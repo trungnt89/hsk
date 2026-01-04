@@ -1,33 +1,22 @@
 const DB_NAME = "TodoDBPro";
 const STORE_NAME = "tasks_store";
 
-// Hàm hỗ trợ gửi log về UI để xem trên mobile
+// Hàm gửi log về UI (Mobile Console)
 async function sendLogToUI(msg, type = "info") {
     const allClients = await self.clients.matchAll();
     allClients.forEach(client => {
-        client.postMessage({
-            action: 'log_from_sw',
-            message: msg,
-            logType: type
-        });
+        client.postMessage({ action: 'log_from_sw', message: msg, logType: type });
     });
-    console.log(`SW Log: ${msg}`);
 }
 
-// --- LOGIC KIỂM TRA VÀ GỬI THÔNG BÁO ---
-async function checkAndNotify() {
+// --- LOGIC KIỂM TRA TỰ ĐỘNG (Chạy ngầm mỗi 1h) ---
+async function checkAndNotify(isForced = false) {
     const now = new Date();
-    await sendLogToUI("--- Bắt đầu Check ---");
-    
-    // Kiểm tra quyền ngay trong SW
-    if (Notification.permission !== 'granted') {
-        await sendLogToUI(`Quyền thông báo hiện tại là: ${Notification.permission}`, "warn");
-        return;
-    }
+    await sendLogToUI(`--- Bắt đầu check (${isForced ? 'Manual' : 'Auto'}) ---`);
 
     const db = await openDB();
     if (!db) {
-        await sendLogToUI("Lỗi kết nối IndexedDB", "error");
+        await sendLogToUI("Lỗi: Không thể mở IndexedDB", "error");
         return;
     }
 
@@ -40,53 +29,47 @@ async function checkAndNotify() {
 
         if (hasTaskToday) {
             await deleteData(db, "notify_log");
-            await sendLogToUI("Đã có task, dừng gửi notify.");
+            await sendLogToUI("Đã có task, hủy lịch gửi.");
             return;
         }
 
         const currentHour = now.getHours();
-        await sendLogToUI(`Giờ hiện tại: ${currentHour}h`);
-
-        if (currentHour >= 8) {
+        if (currentHour >= 8 || isForced) {
             const lastNotify = await getData(db, "notify_log");
             const lastTime = lastNotify ? lastNotify.time : 0;
             const oneHourInMs = 3600000;
             const diff = now.getTime() - lastTime;
 
-            await sendLogToUI(`Lần cuối gửi cách đây: ${Math.floor(diff/60000)} phút`);
-
-            if (diff >= oneHourInMs) {
-                await sendLogToUI("Đủ điều kiện. Đang gọi showNotification...");
+            if (diff >= oneHourInMs || isForced) {
+                await sendLogToUI("Đủ điều kiện gửi thông báo...", "success");
                 
-                const options = {
-                    body: "🚨 CẢNH BÁO: Bạn chưa thiết lập công việc nào cho hôm nay!",
+                await self.registration.showNotification("Todo Manager Pro", {
+                    body: isForced ? "Thông báo Test thành công!" : "🚨 CẢNH BÁO: Bạn chưa có công việc nào cho hôm nay!",
                     icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
-                    tag: "daily-reminder-persistent",
+                    tag: "daily-reminder", // Tag trùng nhau sẽ ghi đè thông báo cũ, tránh rác máy
                     requireInteraction: true,
-                    vibrate: [200, 100, 200],
-                    badge: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png"
-                };
+                    vibrate: [200, 100, 200]
+                });
 
-                await self.registration.showNotification("Todo Manager Pro", options);
                 await setData(db, { id: "notify_log", time: now.getTime() });
-                await sendLogToUI("Gửi thông báo thành công!", "success");
             } else {
-                await sendLogToUI("Chưa đủ 1 giờ kể từ lần cuối.");
+                await sendLogToUI(`Chờ thêm: ${Math.floor((oneHourInMs - diff)/60000)} phút.`);
             }
         } else {
             await sendLogToUI("Chưa đến 8h sáng.");
         }
     } catch (error) {
-        await sendLogToUI(`Lỗi hệ thống: ${error.message}`, "error");
+        await sendLogToUI("Lỗi logic: " + error.message, "error");
     }
 }
 
-// --- HELPERS (Bất biến) ---
+// --- INDEXEDDB HELPERS ---
 function openDB() {
     return new Promise((resolve) => {
         const request = indexedDB.open(DB_NAME, 1);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => resolve(null);
+        request.onblocked = () => resolve(null);
     });
 }
 
@@ -104,38 +87,55 @@ function getData(db, id) {
 
 function setData(db, data) {
     return new Promise((resolve) => {
-        const tx = db.transaction(STORE_NAME, "readwrite");
-        const store = tx.objectStore(STORE_NAME);
-        store.put(data);
-        tx.oncomplete = () => resolve(true);
+        try {
+            const tx = db.transaction(STORE_NAME, "readwrite");
+            const store = tx.objectStore(STORE_NAME);
+            store.put(data);
+            tx.oncomplete = () => resolve(true);
+        } catch(e) { resolve(false); }
     });
 }
 
 function deleteData(db, id) {
     return new Promise((resolve) => {
-        const tx = db.transaction(STORE_NAME, "readwrite");
-        const store = tx.objectStore(STORE_NAME);
-        store.delete(id);
-        tx.oncomplete = () => resolve(true);
+        try {
+            const tx = db.transaction(STORE_NAME, "readwrite");
+            const store = tx.objectStore(STORE_NAME);
+            store.delete(id);
+            tx.oncomplete = () => resolve(true);
+        } catch(e) { resolve(false); }
     });
 }
 
 // --- EVENTS ---
-self.addEventListener('install', () => self.skipWaiting());
+
+self.addEventListener('install', () => {
+    self.skipWaiting();
+});
 
 self.addEventListener('activate', (event) => {
-    event.waitUntil(self.clients.claim().then(() => sendLogToUI("Service Worker đã kích hoạt!")));
+    event.waitUntil(
+        self.clients.claim().then(() => {
+            return sendLogToUI("Service Worker đã kích hoạt!");
+        })
+    );
+    // Chạy kiểm tra mỗi 5 phút để bắt đúng mốc giờ
     setInterval(checkAndNotify, 300000); 
 });
 
-self.addEventListener('message', (event) => {
-    if (event.data.action === 'test_notify_now') {
-        sendLogToUI("Nhận lệnh Force Test từ giao diện...");
-        openDB().then(db => {
-            deleteData(db, "notify_log").then(() => checkAndNotify());
+// Sử dụng onmessage để tăng độ ổn định trên mobile
+self.onmessage = (event) => {
+    if (event.data.action === 'test_notify_now' || event.data === 'trigger-notify') {
+        // 1. Gửi thông báo ngay lập tức để xác nhận quyền (Bypass mọi logic)
+        self.registration.showNotification("Hệ thống", {
+            body: "🚀 Lệnh Test đã nhận! Đang kiểm tra logic ngầm...",
+            icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png"
         });
+
+        // 2. Sau đó chạy logic kiểm tra để debug
+        checkAndNotify(true);
     }
-});
+};
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();

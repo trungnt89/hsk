@@ -4,61 +4,85 @@ const STORE_NAME = "tasks_store";
 // --- LOGIC KIỂM TRA VÀ GỬI THÔNG BÁO ---
 async function checkAndNotify() {
     const now = new Date();
+    console.log("%c SW Debug: --- Bắt đầu Check --- ", "background: #222; color: #bada55");
     
-    // Mở kết nối IndexedDB
-    const db = await openDB();
-    if (!db) return;
-
-    // 1. Lấy danh sách tasks
-    const tasks = await getData(db, "current_tasks_list");
-    const todayStr = now.toDateString();
-    const hasTaskToday = (tasks && tasks.data) ? tasks.data.some(t => new Date(t.deadline).toDateString() === todayStr) : false;
-
-    // 2. Nếu ĐÃ CÓ task -> Reset log và dừng
-    if (hasTaskToday) {
-        await deleteData(db, "notify_log");
+    // Kiểm tra quyền ngay trong SW
+    if (Notification.permission !== 'granted') {
+        console.warn("SW Debug: Quyền thông báo hiện tại là:", Notification.permission);
         return;
     }
 
-    // 3. Nếu CHƯA CÓ task -> Kiểm tra mốc 8h sáng và chu kỳ 1h
-    const currentHour = now.getHours();
-    if (currentHour >= 8) {
-        const lastNotify = await getData(db, "notify_log");
-        const lastTime = lastNotify ? lastNotify.time : 0;
-        const oneHourInMs = 3600000;
+    const db = await openDB();
+    if (!db) {
+        console.error("SW Debug: Lỗi kết nối IndexedDB");
+        return;
+    }
 
-        if (now.getTime() - lastTime >= oneHourInMs) {
-            // Thực hiện gửi thông báo
-            self.registration.showNotification("Todo Manager Pro", {
-                body: "🚨 CẢNH BÁO: Bạn chưa thiết lập công việc nào cho hôm nay!",
-                icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
-                tag: "daily-reminder-persistent",
-                requireInteraction: true,
-                badge: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png"
-            });
+    try {
+        const tasks = await getData(db, "current_tasks_list");
+        const todayStr = now.toDateString();
+        const hasTaskToday = (tasks && tasks.data) ? tasks.data.some(t => new Date(t.deadline).toDateString() === todayStr) : false;
 
-            // Lưu lại thời điểm vừa gửi vào DB
-            await setData(db, { id: "notify_log", time: now.getTime() });
+        console.log("SW Debug: Task hôm nay:", hasTaskToday ? "✅ Đã có" : "❌ Chưa có");
+
+        if (hasTaskToday) {
+            await deleteData(db, "notify_log");
+            console.log("SW Debug: Đã có task, hủy gửi notify.");
+            return;
         }
+
+        const currentHour = now.getHours();
+        if (currentHour >= 8) {
+            const lastNotify = await getData(db, "notify_log");
+            const lastTime = lastNotify ? lastNotify.time : 0;
+            const oneHourInMs = 3600000;
+            const diff = now.getTime() - lastTime;
+
+            console.log("SW Debug: Lần cuối notify cách đây (phút):", Math.floor(diff/60000));
+
+            if (diff >= oneHourInMs) {
+                console.log("SW Debug: Đủ điều kiện gửi. Đang gọi Notification...");
+                
+                const options = {
+                    body: "🚨 CẢNH BÁO: Bạn chưa thiết lập công việc nào cho hôm nay!",
+                    icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
+                    tag: "daily-reminder-persistent",
+                    requireInteraction: true,
+                    vibrate: [200, 100, 200]
+                };
+
+                await self.registration.showNotification("Todo Manager Pro", options);
+                await setData(db, { id: "notify_log", time: now.getTime() });
+                console.log("SW Debug: Gửi thành công!");
+            } else {
+                console.log("SW Debug: Chưa đủ 1 giờ kể từ lần gửi cuối.");
+            }
+        } else {
+            console.log("SW Debug: Chưa đến 8h sáng, không gửi.");
+        }
+    } catch (error) {
+        console.error("SW Debug: Lỗi logic chính:", error);
     }
 }
 
-// --- CÁC HÀM TRỢ GIÚP INDEXEDDB (Promise hóa để dùng Async/Await) ---
+// --- HELPERS (Giữ nguyên logic bất biến) ---
 function openDB() {
     return new Promise((resolve) => {
         const request = indexedDB.open(DB_NAME, 1);
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => resolve(null);
+        request.onerror = (e) => { console.error("DB Error:", e); resolve(null); };
     });
 }
 
 function getData(db, id) {
     return new Promise((resolve) => {
-        const tx = db.transaction(STORE_NAME, "readonly");
-        const store = tx.objectStore(STORE_NAME);
-        const request = store.get(id);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => resolve(null);
+        try {
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.get(id);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => resolve(null);
+        } catch(e) { resolve(null); }
     });
 }
 
@@ -80,27 +104,22 @@ function deleteData(db, id) {
     });
 }
 
-// --- EVENT LISTENERS ---
-
-// 1. Khi cài đặt và kích hoạt
-self.addEventListener('install', () => self.skipWaiting());
-
-self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        self.clients.claim().then(() => {
-            // Kiểm tra ngay khi kích hoạt
-            checkAndNotify();
-            // Thiết lập vòng lặp kiểm tra mỗi 5 phút (để đảm bảo chính xác mốc 1 giờ)
-            setInterval(checkAndNotify, 300000);
-        })
-    );
+// --- EVENTS ---
+self.addEventListener('install', (e) => {
+    console.log("SW Debug: Đang cài đặt (Install)...");
+    self.skipWaiting();
 });
 
-// 2. Lắng nghe lệnh gửi ngay từ file Test HTML
+self.addEventListener('activate', (event) => {
+    console.log("SW Debug: Đã kích hoạt (Activate).");
+    event.waitUntil(self.clients.claim());
+    setInterval(checkAndNotify, 300000); 
+    checkAndNotify();
+});
+
 self.addEventListener('message', (event) => {
     if (event.data.action === 'test_notify_now') {
-        console.log("SW: Nhận lệnh gửi test ngay...");
-        // Ép buộc xóa log cũ để gửi được ngay mà không cần đợi 1h
+        console.log("SW Debug: Nhận lệnh Force Test từ UI.");
         openDB().then(db => {
             deleteData(db, "notify_log").then(() => {
                 checkAndNotify();
@@ -109,12 +128,11 @@ self.addEventListener('message', (event) => {
     }
 });
 
-// 3. Khi người dùng click vào thông báo
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     event.waitUntil(
-        clients.matchAll({ type: 'window' }).then((clientList) => {
-            if (clientList.length > 0) return clientList[0].focus();
+        clients.matchAll({ type: 'window' }).then((list) => {
+            if (list.length > 0) return list[0].focus();
             return clients.openWindow('/');
         })
     );

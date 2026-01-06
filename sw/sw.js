@@ -37,35 +37,37 @@ async function checkAndNotify(isForced = false) {
         if (!response.ok) throw new Error("Kết nối API thất bại");
         const result = await response.json(); 
         
-        const hasTaskToday = result.has_tasks_today === true;
         const totalTasks = result.total_tasks_today || 0;
         const tasks = result.tasks_details || [];
 
-        if (hasTaskToday || isForced) {
-            const db = await openNotifyDB();
-            const lastNotify = await getNotifyLog(db);
-            const diff = now.getTime() - (lastNotify || 0);
+        // Logic kiểm tra khoảng thời gian thông báo
+        const db = await openNotifyDB();
+        const lastNotify = await getNotifyLog(db);
+        const diff = now.getTime() - (lastNotify || 0);
 
-            // Chống spam: 1 giờ/lần trừ khi Force
-            if (diff >= 3600000 || isForced) {
-                const taskSummary = tasks.slice(0, 3).map(t => `• ${t.title}`).join('\n');
-                const extraTasks = totalTasks > 3 ? `\n... và ${totalTasks - 3} việc khác.` : '';
-                
-                await self.registration.showNotification("Todo Manager Pro", {
-                    body: totalTasks > 0 ? `Hôm nay bạn có ${totalTasks} việc:\n${taskSummary}${extraTasks}` : "Bạn có việc cần hoàn thành!",
-                    icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
-                    tag: "daily-reminder-" + (isForced ? Date.now() : "fixed"),
-                    renotify: true,
-                    requireInteraction: true,
-                    data: { url: "/" } 
-                });
+        // Xác định thời gian chờ: Nếu không có task thì 5 phút (300.000ms), có task thì 1 giờ (3.600.000ms)
+        const waitTime = totalTasks > 0 ? 3600000 : 300000;
 
-                if (db) await setNotifyLog(db, now.getTime());
-                await sendLogToUI("🔔 Thông báo đã được hiển thị!", "success");
-            } else {
-                await sendLogToUI("Bỏ qua: Vừa thông báo trong vòng 1h qua.");
-            }
+        if (diff >= waitTime || isForced) {
+            const taskSummary = tasks.slice(0, 3).map(t => `• ${t.title}`).join('\n');
+            const extraTasks = totalTasks > 3 ? `\n... và ${totalTasks - 3} việc khác.` : '';
+            
+            await self.registration.showNotification("Todo Manager Pro", {
+                body: totalTasks > 0 ? `Hôm nay bạn có ${totalTasks} việc:\n${taskSummary}${extraTasks}` : "Bạn chưa có công việc nào cho hôm nay. Hãy thêm ngay!",
+                icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
+                tag: "daily-reminder-" + (isForced ? Date.now() : "fixed"),
+                renotify: true,
+                requireInteraction: true,
+                data: { url: "/" } 
+            });
+
+            if (db) await setNotifyLog(db, now.getTime());
+            await sendLogToUI("🔔 Thông báo đã được hiển thị!", "success");
+        } else {
+            const minutesLeft = Math.ceil((waitTime - diff) / 60000);
+            await sendLogToUI(`Bỏ qua: Cần chờ thêm ${minutesLeft} phút nữa.`);
         }
+        
     } catch (e) {
         await sendLogToUI("Lỗi SW: " + e.message, "error");
     }
@@ -102,7 +104,8 @@ self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {
     e.waitUntil(self.clients.claim());
     checkAndNotify();
-    setInterval(checkAndNotify, 300000); // 5 phút check 1 lần
+    // Vòng lặp kiểm tra API mỗi 5 phút để khớp với yêu cầu thông báo nhanh nhất
+    setInterval(checkAndNotify, 300000); 
 });
 
 // Lắng nghe lệnh từ file index.html
@@ -110,7 +113,6 @@ self.onmessage = (event) => {
     if (event.data.action === 'test_notify_now') {
         checkAndNotify(true);
     }
-    // Chức năng số 3: Cập nhật biến Bật/Tắt
     if (event.data.action === 'set_notify_status') {
         isNotifyEnabled = event.data.value;
         const statusText = isNotifyEnabled ? "BẬT" : "TẮT";

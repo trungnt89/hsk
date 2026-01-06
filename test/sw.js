@@ -4,7 +4,7 @@
  */
 
 // URL của Google Apps Script (Hãy thay bằng link Web App của bạn)
-const URL_API = "https://script.google.com/macros/s/AKfycbzxgeuILa7zgN06IoNqBMzG1aGJXQPRbUdiCbeJIUWzJerhO4l4p26SjyVi7lp1XZSBkA/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycbxWu1xG6JIKV913b9a988K3YKUIGohJ9yXpumQWHMyygIWssn3w-Wb2nbCDg8bt-6ghgg/exec";
 
 // --- HELPERS ---
 

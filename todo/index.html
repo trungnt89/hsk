@@ -139,12 +139,12 @@
             <p style="font-size: 13px; color: #636e72; font-weight: 500;">Hệ thống quản lý công việc tối giản & hiệu quả</p>
 
             <div class="stats-bar" id="statsBar">
-                <div class="stat-item overdue" onclick="filterTasks('overdue', this)">
+                <div id="statItemOverdue" class="stat-item overdue" onclick="filterTasks('overdue', this)">
                     <div class="stat-icon">🚫</div>
                     <div class="stat-value" id="statOverdue">0</div>
                     <div class="stat-label">Quá hạn</div>
                 </div>
-                <div class="stat-item safe" onclick="filterTasks('completed', this)">
+                <div id="statItemCompleted" class="stat-item safe" onclick="filterTasks('completed', this)">
                     <div class="stat-icon">🏆</div>
                     <div class="stat-value" id="statSafe">0</div>
                     <div class="stat-label">Hoàn thành</div>
@@ -367,7 +367,7 @@
 
         function filterByTime(range, el) {
             currentFilter = range;
-            document.querySelectorAll('.time-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.time-tab, .stat-item').forEach(t => t.classList.remove('active', 'active-filter'));
             if(el) el.classList.add('active');
 
             const now = new Date();
@@ -470,8 +470,8 @@
 
         function filterTasks(f, el) { 
             currentFilter = f; 
-            document.querySelectorAll('.time-tab').forEach(t => t.classList.remove('active'));
-            if(el) el.classList.add('active');
+            document.querySelectorAll('.time-tab, .stat-item').forEach(t => t.classList.remove('active', 'active-filter'));
+            if(el) el.classList.add(el.classList.contains('time-tab') ? 'active' : 'active-filter');
             renderTasks(); 
         }
 

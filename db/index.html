@@ -262,6 +262,8 @@
             return;
         }
 
+        if (!confirm(`XÁC NHẬN: Bạn muốn tải dữ liệu từ [${storeName}] lên Google Drive?`)) return;
+
         writeLog(`Bắt đầu đồng bộ Store [${storeName}] lên Cloud...`);
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
@@ -303,6 +305,8 @@
             showToast("⚠️ Chưa nhập Google Script URL!");
             return;
         }
+
+        if (!confirm(`XÁC NHẬN: Bạn muốn ghi đè dữ liệu địa phương bằng dữ liệu [${storeName}] từ Cloud?`)) return;
 
         writeLog(`Đang lấy dữ liệu Store [${storeName}] từ Cloud...`);
         try {

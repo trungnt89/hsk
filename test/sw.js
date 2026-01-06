@@ -1,5 +1,12 @@
-// URL chứa dữ liệu Task của bạn (Ví dụ: https://domain.com/data.json)
-const URL_API = "https://hsk-gilt.vercel.app/db/todo.json"; 
+/**
+ * Service Worker: Todo Manager Pro
+ * Logic: Đọc dữ liệu từ Google Script, hiển thị thông báo danh sách task hôm nay.
+ */
+
+// URL của Google Apps Script (Hãy thay bằng link Web App của bạn)
+const URL_API = "https://script.google.com/macros/s/AKfycbzxgeuILa7zgN06IoNqBMzG1aGJXQPRbUdiCbeJIUWzJerhO4l4p26SjyVi7lp1XZSBkA/exec";
+
+// --- HELPERS ---
 
 async function sendLogToUI(msg, type = "info") {
     const allClients = await self.clients.matchAll();
@@ -8,64 +15,67 @@ async function sendLogToUI(msg, type = "info") {
     });
 }
 
-function toLocalYMD(date) {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
+// --- CORE LOGIC ---
 
 async function checkAndNotify(isForced = false) {
     const now = new Date();
-    const todayStr = toLocalYMD(now);
-    await sendLogToUI(`--- Check Server: ${todayStr} ---`);
+    await sendLogToUI(`--- Check Server: ${now.toLocaleTimeString()} ---`);
 
     try {
-        // 1. Lấy dữ liệu từ Server (Thêm timestamp để tránh cache trình duyệt)
+        // 1. Fetch dữ liệu từ Google Script (thêm timestamp để tránh cache)
         const response = await fetch(`${URL_API}?t=${Date.now()}`);
         if (!response.ok) throw new Error("Không thể kết nối Server");
         
         const result = await response.json(); 
-        // Giả sử cấu trúc JSON là: { "tasks": [{ "deadline": "2026-01-04" }, ...] }
-        const tasks = result.tasks || [];
+        
+        // 2. Phân tích dữ liệu từ format JSON mới
+        const hasTaskToday = result.has_tasks_today === true;
+        const totalTasks = result.total_tasks_today || 0;
+        const tasks = result.tasks_details || [];
 
-        // 2. Kiểm tra Task cho ngày hôm nay
-        const hasTaskToday = tasks.some(t => toLocalYMD(t.deadline) === todayStr);
-        await sendLogToUI(`Server trả về ${tasks.length} tasks. Trùng hôm nay: ${hasTaskToday}`);
+        await sendLogToUI(`Server: ${hasTaskToday ? "CÓ TASK" : "KHÔNG"} (${totalTasks} việc)`);
 
-        if (hasTaskToday) {
-            await sendLogToUI("Đã có task trên Server. Hủy thông báo.");
-            return;
-        }
-
-        // 3. Logic giờ giấc (8h sáng)
-        const currentHour = now.getHours();
-        if (currentHour >= 8 || isForced) {
-            // Vẫn dùng IndexedDB chỉ để lưu mốc thời gian đã gửi (tránh spam 1h/lần)
+        // 3. Nếu có task hôm nay
+        if (hasTaskToday || isForced) {
             const db = await openNotifyDB();
             const lastNotify = await getNotifyLog(db);
             const diff = now.getTime() - (lastNotify || 0);
 
+            // Kiểm tra chống spam: 1 giờ (3600000ms) hoặc khi bấm Test (isForced)
             if (diff >= 3600000 || isForced) {
+                
+                // Tạo nội dung hiển thị (tối đa 3 tiêu đề đầu tiên)
+                const taskSummary = tasks.slice(0, 3).map(t => `• ${t.title}`).join('\n');
+                const extraTasks = totalTasks > 3 ? `\n... và ${totalTasks - 3} việc khác.` : '';
+                const bodyContent = totalTasks > 0 
+                    ? `Bạn có ${totalTasks} việc cần làm:\n${taskSummary}${extraTasks}`
+                    : "Bạn có công việc cần hoàn thành trong hôm nay!";
+
                 await self.registration.showNotification("Todo Manager Pro", {
-                    body: "🚨 Server báo: Bạn chưa có công việc nào cho hôm nay!",
+                    body: bodyContent,
                     icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
+                    badge: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
                     tag: "daily-reminder",
-                    requireInteraction: true
+                    requireInteraction: true,
+                    data: { tasks: tasks, timestamp: now.getTime() }
                 });
+
                 if (db) await setNotifyLog(db, now.getTime());
                 await sendLogToUI("Đã gửi Notify thành công!", "success");
             } else {
-                await sendLogToUI("Chưa đủ 1h từ lần gửi cuối.");
+                await sendLogToUI("Bỏ qua: Chưa đủ 1h từ lần gửi cuối.");
             }
+        } else {
+            await sendLogToUI("Hôm nay không có task nào.");
         }
+
     } catch (e) {
-        await sendLogToUI("Lỗi Fetch Server: " + e.message, "error");
+        await sendLogToUI("Lỗi SW: " + e.message, "error");
     }
 }
 
-// --- DB MINI (Chỉ để lưu log thời gian gửi, tránh spam) ---
+// --- DATABASE (Chống spam) ---
+
 function openNotifyDB() {
     return new Promise(res => {
         const req = indexedDB.open("NotifyLogDB", 1);
@@ -74,30 +84,58 @@ function openNotifyDB() {
         req.onerror = () => res(null);
     });
 }
+
 function getNotifyLog(db) {
     return new Promise(res => {
         if (!db) return res(null);
-        const req = db.transaction("logs").objectStore("logs").get("last_sent");
-        req.onsuccess = () => res(req.result);
-        req.onerror = () => res(null);
+        try {
+            const req = db.transaction("logs").objectStore("logs").get("last_sent");
+            req.onsuccess = () => res(req.result);
+            req.onerror = () => res(null);
+        } catch(e) { res(null); }
     });
 }
+
 function setNotifyLog(db, time) {
     return new Promise(res => {
         if (!db) return res(null);
-        const tx = db.transaction("logs", "readwrite");
-        tx.objectStore("logs").put(time, "last_sent");
-        tx.oncomplete = () => res(true);
+        try {
+            const tx = db.transaction("logs", "readwrite");
+            tx.objectStore("logs").put(time, "last_sent");
+            tx.oncomplete = () => res(true);
+        } catch(e) { res(null); }
     });
 }
 
-// --- EVENTS ---
-self.addEventListener('install', () => self.skipWaiting());
+// --- LIFE CYCLE & EVENTS ---
+
+self.addEventListener('install', () => {
+    self.skipWaiting();
+});
+
 self.addEventListener('activate', (e) => {
     e.waitUntil(self.clients.claim());
+    // Kiểm tra ngay khi kích hoạt và sau đó mỗi 5 phút
+    checkAndNotify();
     setInterval(checkAndNotify, 300000); 
 });
 
+// Lắng nghe lệnh từ UI (nút Test hoặc Sync)
 self.onmessage = (event) => {
-    if (event.data.action === 'test_notify_now') checkAndNotify(true);
+    if (event.data.action === 'test_notify_now') {
+        checkAndNotify(true);
+    }
 };
+
+// Xử lý khi người dùng click vào thông báo
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            if (clientList.length > 0) {
+                return clientList[0].focus();
+            }
+            return clients.openWindow('/');
+        })
+    );
+});

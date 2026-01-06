@@ -9,7 +9,8 @@ NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụn
 chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn. 
 Sau khi đối ứng các yêu cầu hãy tạo file html hoàn chỉnh
 🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1. Trên title của các tab hiển thị thêm thời gian để nhận biết rõ phạm vi thời gian hiển thị 
+1. Từ 8h kiêm tra nếu ngày hôm đó không công việc nào được thiết lập thì gửi notify cảnh báo 
+
 
 -------------------
 Src gốc cần sửa:
@@ -19,129 +20,128 @@ Src gốc cần sửa:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Todo Manager Pro - Compact View</title>
+    <title>Todo Manager Pro - Professional UI</title>
 	<script src="../assistive.js"></script>    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh; padding: 20px;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(circle at top left, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh; padding: 20px; color: #2d3436;
         }
         .container { max-width: 1200px; margin: 0 auto; }
         .header {
-            background: white; padding: 25px; border-radius: 20px;
-            margin-bottom: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px);
+            padding: 25px; border-radius: 24px; margin-bottom: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.4);
         }
         .header h1 {
-            font-size: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px;
+            font-size: 26px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px;
         }
         .stats-bar {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            display: grid; grid-template-columns: repeat(2, 1fr);
             gap: 16px; margin-top: 20px;
         }
         .stat-item {
-            padding: 15px; background: #f8f9fa; border-radius: 12px;
-            text-align: center; cursor: pointer; transition: 0.3s;
-            border: 2px solid transparent;
+            padding: 15px; background: rgba(255,255,255,0.6); border-radius: 18px;
+            text-align: center; cursor: pointer; transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.4);
         }
-        .stat-item.active-filter { border-color: #667eea; background: #fff; }
-        .stat-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
-        .stat-label { font-size: 12px; color: #495057; font-weight: 700; text-transform: uppercase; }
-        .stat-icon { font-size: 24px; margin-bottom: 4px; }
-        .stat-item.overdue .stat-value { color: #dc3545; }
-        .stat-item.safe .stat-value { color: #28a745; }
+        .stat-item.active-filter { border-color: #4facfe; background: #fff; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .stat-value { font-size: 28px; font-weight: 800; margin-bottom: 2px; }
+        .stat-label { font-size: 11px; color: #636e72; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-icon { font-size: 22px; margin-bottom: 4px; }
+        .stat-item.overdue .stat-value { color: #ff7675; }
+        .stat-item.safe .stat-value { color: #55efc4; }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
             display: none; justify-content: center; align-items: center; z-index: 1000;
         }
         .add-task-section {
-            background: white; padding: 30px; border-radius: 24px;
+            background: white; padding: 30px; border-radius: 28px;
             width: 90%; max-width: 450px; position: relative;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
         }
         .btn-open-modal {
-            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
-            border-radius: 50%; background: linear-gradient(135deg, #11998e, #38ef7d);
-            color: white; border: none; font-size: 30px; cursor: pointer;
-            box-shadow: 0 10px 30px rgba(56, 239, 125, 0.4); z-index: 999;
+            position: fixed; bottom: 30px; right: 30px; width: 64px; height: 64px;
+            border-radius: 50%; background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white; border: none; font-size: 32px; cursor: pointer;
+            box-shadow: 0 10px 25px rgba(79, 172, 254, 0.5); z-index: 999;
+            transition: 0.3s;
         }
+        .btn-open-modal:hover { transform: scale(1.1) rotate(90deg); }
 
         .alert-banner {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-            color: white; padding: 15px 20px; border-radius: 12px;
+            background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+            color: white; padding: 15px 20px; border-radius: 16px;
             margin-bottom: 20px; display: flex; align-items: center; gap: 16px;
-            cursor: pointer; 
-            animation: danger-blink 0.8s infinite alternate;
-            border: 2px solid #fff;
-            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+            cursor: pointer; animation: danger-blink 1s infinite alternate;
+            border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 10px 20px rgba(214, 48, 49, 0.3);
         }
 
         @keyframes danger-blink {
-            0% { filter: brightness(1); transform: scale(1); }
-            100% { filter: brightness(1.2); transform: scale(1.01); background: #ff0000; }
+            0% { transform: scale(1); filter: brightness(1); }
+            100% { transform: scale(1.02); filter: brightness(1.1); }
         }
 
         .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-        .form-group label { font-size: 13px; font-weight: 600; color: #495057; }
-        .form-group input, .form-group textarea, .form-group select { padding: 12px; border: 2px solid #e9ecef; border-radius: 10px; width: 100%; }
+        .form-group label { font-size: 13px; font-weight: 700; color: #2d3436; }
+        .form-group input, .form-group select { padding: 12px; border: 2px solid #f1f2f6; border-radius: 12px; width: 100%; transition: 0.3s; }
+        .form-group input:focus { border-color: #4facfe; outline: none; }
         .btn-add {
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #11998e, #38ef7d);
-            color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
         }
 
-        .tasks-grid { display: flex; flex-direction: column; gap: 8px; }
+        .tasks-grid { display: flex; flex-direction: column; gap: 12px; }
         .task-card { 
-            background: white; padding: 12px 20px; border-radius: 12px; 
-            border-left: 5px solid #e9ecef; transition: 0.2s;
-            display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px;
-            border-bottom: 1px solid #eee;
+            background: white; padding: 16px 20px; border-radius: 18px; 
+            border-left: 6px solid #dfe6e9; transition: 0.3s;
+            display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
-        .task-card:last-child { border-bottom: none; }
-        .task-card:hover { transform: translateX(5px); background: #fcfcfc; }
-        .task-card.overdue { border-left-color: #dc3545; }
-        .task-card.urgent { border-left-color: #ff6b6b; }
-        .task-card.warning { border-left-color: #2196F3; }
-        .task-card.safe { border-left-color: #28a745; }
+        .task-card:hover { transform: translateX(8px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); background: #fff; }
+        .task-card.overdue { border-left-color: #ff7675; }
+        .task-card.urgent { border-left-color: #fdcb6e; }
+        .task-card.warning { border-left-color: #74b9ff; }
+        .task-card.safe { border-left-color: #55efc4; }
         
-        .task-title { font-size: 16px; font-weight: 700; color: #333; white-space: normal; word-break: break-word; }
-        .task-detail-sub { font-size: 13px; color: #777; font-weight: 400; margin-left: 8px; font-style: italic; }
-        .deadline-info { font-size: 13px; color: #555; font-family: monospace; min-width: 130px; text-align: right; }
-        .btn-icon { width: 32px; height: 32px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .priority-badge { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; background: #eee; margin-left: 5px;}
+        .task-title { font-size: 15px; font-weight: 700; color: #2d3436; line-height: 1.4; }
+        .task-detail-sub { font-size: 12px; color: #b2bec3; font-weight: 400; margin-left: 4px; }
+        .deadline-info { font-size: 12px; color: #636e72; font-family: 'Courier New', monospace; font-weight: 600; text-align: right; }
+        .btn-icon { width: 36px; height: 36px; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-icon:hover { transform: scale(1.1); filter: brightness(0.9); }
+        .priority-badge { padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 800; text-transform: uppercase; background: #f1f2f6; margin-left: 8px; color: #636e72;}
 
         @media (max-width: 600px) {
-            .task-card {
-                grid-template-columns: 1fr;
-                gap: 5px;
-                padding: 10px 15px;
-            }
-            .task-footer-mobile { 
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center; 
-                margin-top: 5px;
-            }
-            .deadline-info { text-align: left; min-width: auto; flex: 1; }
+            .task-card { grid-template-columns: 1fr; gap: 8px; padding: 15px; }
+            .task-footer-mobile { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+            .deadline-info { text-align: left; }
         }
 
+        /* Tabs UI */
+        .tabs-container {
+            display: flex; margin-top: 24px; padding: 10px; 
+            background: rgba(255,255,255,0.3); backdrop-filter: blur(10px);
+            border-radius: 20px 20px 0 0; gap: 8px; border: 1px solid rgba(255,255,255,0.2);
+        }
         .time-tab {
-            flex: 1; padding: 12px; border: none; 
-            border-radius: 8px 8px 0 0; background: #e0e0e0; 
-            cursor: pointer; font-size: 12px; font-weight: 700; 
-            transition: 0.2s; color: #666;
-            border-bottom: 2px solid transparent;
+            flex: 1; padding: 12px 5px; border: none; 
+            border-radius: 15px; background: rgba(255,255,255,0.4); 
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #444; display: flex; flex-direction: column; align-items: center; gap: 2px;
         }
         .time-tab.active {
-            background: white !important;
-            color: #667eea !important;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            border-bottom: 2px solid white;
-            position: relative; z-index: 2;
+            background: #fff !important; color: #4facfe !important;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1); transform: translateY(-8px);
         }
-        .time-tab:hover:not(.active) { background: #d5d5d5; }
+        .time-tab:hover:not(.active) { background: rgba(255,255,255,0.7); transform: translateY(-3px); }
+        .tab-label { font-size: 13px; font-weight: 800; white-space: nowrap; }
+        .tab-date { font-size: 9px; opacity: 0.8; font-weight: 600; font-family: monospace; }
+        .tab-count { font-size: 11px; font-weight: 700; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -153,45 +153,62 @@ Src gốc cần sửa:
 
         <div class="header">
             <h1>📋 Todo Manager Pro</h1>
-            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Danh sách công việc rút gọn</p>
+            <p style="font-size: 13px; color: #636e72; font-weight: 500;">Hệ thống quản lý công việc tối giản & hiệu quả</p>
 
             <div class="stats-bar" id="statsBar">
                 <div class="stat-item overdue" onclick="filterTasks('overdue', this)">
                     <div class="stat-icon">🚫</div>
                     <div class="stat-value" id="statOverdue">0</div>
-                    <div class="stat-label">🔴 Quá hạn</div>
+                    <div class="stat-label">Quá hạn</div>
                 </div>
                 <div class="stat-item safe" onclick="filterTasks('completed', this)">
                     <div class="stat-icon">🏆</div>
                     <div class="stat-value" id="statSafe">0</div>
-                    <div class="stat-label">✅ Hoàn thành</div>
+                    <div class="stat-label">Hoàn thành</div>
                 </div>
             </div>
         </div>
 
-        <div style="display: flex; margin-top: 24px; background: #ccc; border-radius: 12px 12px 0 0; padding: 8px 8px 0 8px; gap: 4px; border-bottom: 1px solid #ddd;">
+        <div class="tabs-container">
             <button id="defaultTab" class="time-tab" onclick="filterByTime('today', this)">
-                📅 Ngày <span id="displayDate" style="font-size: 10px; display: block; opacity: 0.8; margin-top: 2px;"></span> (<span id="todoToday">0</span>)
+                <span class="tab-label">📅 Ngày</span>
+                <span class="tab-date" id="displayDate"></span>
+                <span class="tab-count">(<span id="todoToday">0</span>)</span>
             </button>
             <button class="time-tab" onclick="filterByTime('week', this)">
-                🗓️ Tuần <span id="displayWeek" style="font-size: 10px; display: block; opacity: 0.8; margin-top: 2px;"></span> (<span id="todoWeek">0</span>)
+                <span class="tab-label">🗓️ Tuần</span>
+                <span class="tab-date" id="displayWeek"></span>
+                <span class="tab-count">(<span id="todoWeek">0</span>)</span>
             </button>
             <button class="time-tab" onclick="filterByTime('month', this)">
-                📅 Tháng <span id="displayMonth" style="font-size: 10px; display: block; opacity: 0.8; margin-top: 2px;"></span> (<span id="todoMonth">0</span>)
+                <span class="tab-label">📊 Tháng</span>
+                <span class="tab-date" id="displayMonth"></span>
+                <span class="tab-count">(<span id="todoMonth">0</span>)</span>
             </button>
-            <button class="time-tab" onclick="filterTasks('all', this)">👁️ Tất cả</button>
+            <button class="time-tab" onclick="filterTasks('all', this)">
+                <span class="tab-label">👁️ Tất cả</span>
+                <span class="tab-date">Toàn bộ</span>
+                <span class="tab-count">---</span>
+            </button>
         </div>
-        <div class="tasks-grid" id="tasksGrid" style="background: white; padding: 15px; border-radius: 0 0 12px 12px; min-height: 100px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"></div>
+        <div class="tasks-grid" id="tasksGrid" style="background: rgba(255,255,255,0.8); padding: 20px; border-radius: 0 0 24px 24px; min-height: 120px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.3); border-top: none;"></div>
     </div>
 
     <div class="modal-overlay" id="taskModal">
         <div class="add-task-section">
-            <button onclick="toggleModal()" style="position:absolute; right:20px; top:20px; border:none; background:none; cursor:pointer; font-size:20px; color:#999">✕</button>
-            <h2 style="margin-bottom:20px">➕ Thêm việc mới</h2>
-            <div id="multiTaskContainer" style="max-height: 350px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #eee; padding: 10px; border-radius: 12px;"></div>
-            <button onclick="addTaskRow()" style="width:100%; padding:8px; margin-bottom:15px; border:2px dashed #ccc; background:none; border-radius:10px; cursor:pointer; color:#666; font-weight:600">+ Thêm công việc khác</button>
-            <div class="form-group"><label>Ưu tiên</label><select id="taskPriority"><option value="high">Cao</option><option value="medium" selected>Trung bình</option><option value="low">Thấp</option></select></div>
-            <button class="btn-add" onclick="addTask()">LƯU CÔNG VIỆC</button>
+            <button onclick="toggleModal()" style="position:absolute; right:20px; top:20px; border:none; background:none; cursor:pointer; font-size:20px; color:#b2bec3">✕</button>
+            <h2 style="margin-bottom:20px; font-size: 22px; color: #2d3436;">➕ Thêm việc mới</h2>
+            <div id="multiTaskContainer" style="max-height: 350px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #f1f2f6; padding: 10px; border-radius: 16px; background: #fafafa;"></div>
+            <button onclick="addTaskRow()" style="width:100%; padding:10px; margin-bottom:15px; border:2px dashed #dfe6e9; background:none; border-radius:12px; cursor:pointer; color:#636e72; font-weight:700; font-size: 13px;">+ Thêm dòng công việc</button>
+            <div class="form-group">
+                <label>Mức độ ưu tiên</label>
+                <select id="taskPriority">
+                    <option value="high">🔴 Cao</option>
+                    <option value="medium" selected>🟡 Trung bình</option>
+                    <option value="low">🟢 Thấp</option>
+                </select>
+            </div>
+            <button class="btn-add" onclick="addTask()">XÁC NHẬN LƯU</button>
         </div>
     </div>
 
@@ -239,19 +256,19 @@ Src gốc cần sửa:
             const container = document.getElementById('multiTaskContainer');
             const div = document.createElement('div');
             div.className = 'task-row-input';
-            div.style = 'background:#f9f9f9; padding:10px; border-radius:10px; margin-bottom:10px; position:relative; border:1px solid #eee';
+            div.style = 'background:white; padding:12px; border-radius:12px; margin-bottom:10px; position:relative; border:1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02)';
             div.innerHTML = `
-                <label style="font-size:12px; font-weight:700; color:#333; display:block; margin-bottom:5px;">${isRequired ? val : 'CÔNG VIỆC KHÁC'} <span style="color:red">*</span></label>
-                <input type="text" class="multi-title" required placeholder="Nhập nội dung..." style="margin-bottom:8px; padding:8px; width:100%; border:1px solid #ddd; border-radius:6px;">
+                <label style="font-size:11px; font-weight:800; color:#4facfe; display:block; margin-bottom:5px; text-transform: uppercase;">${isRequired ? val : 'CÔNG VIỆC KHÁC'} <span style="color:#ff7675">*</span></label>
+                <input type="text" class="multi-title" required placeholder="Nội dung cần làm..." style="margin-bottom:8px; padding:10px; width:100%; border:1px solid #f1f2f6; border-radius:8px; font-size:14px;">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                    <input type="number" class="multi-duration" value="1" placeholder="Số lượng" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
-                    <select class="multi-unit" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <input type="number" class="multi-duration" value="1" style="padding:10px; border:1px solid #f1f2f6; border-radius:8px; font-size:13px;">
+                    <select class="multi-unit" style="padding:10px; border:1px solid #f1f2f6; border-radius:8px; font-size:13px;">
                         <option value="hours">Giờ</option>
                         <option value="days" selected>Ngày</option>
                         <option value="weeks">Tuần</option>
                     </select>
                 </div>
-                ${!isRequired ? `<button onclick="this.parentElement.remove()" style="position:absolute; right:10px; top:5px; border:none; background:none; color:red; cursor:pointer; font-weight:bold">✕</button>` : ''}
+                ${!isRequired ? `<button onclick="this.parentElement.remove()" style="position:absolute; right:10px; top:10px; border:none; background:none; color:#ff7675; cursor:pointer; font-weight:bold; font-size:16px;">✕</button>` : ''}
             `;
             container.appendChild(div);
         }
@@ -261,11 +278,11 @@ Src gốc cần sửa:
             if (modal.style.display !== 'flex') {
                 if (!editingTaskId) {
                     document.querySelector('#taskModal h2').textContent = "➕ Thêm việc mới";
-                    document.querySelector('.btn-add').textContent = "LƯU CÔNG VIỆC";
+                    document.querySelector('.btn-add').textContent = "XÁC NHẬN LƯU";
                     resetForm();
                     document.getElementById('multiTaskContainer').innerHTML = '';
-                    addTaskRow("Công việc mang lại giá trị nhất trong hôm nay là gì", true);
-                    addTaskRow("Công việc cảm thấy phiền phức nhất trong hôm nay là gì", true);
+                    addTaskRow("Giá trị nhất hôm nay là gì", true);
+                    addTaskRow("Việc phiền phức nhất hôm nay là gì", true);
                 }
                 modal.style.display = 'flex';
             } else {
@@ -297,7 +314,6 @@ Src gốc cần sửa:
             const stats = { overdue: 0, completed: 0 };
             const now = new Date();
 
-            // HIỂN THỊ THỜI GIAN TRÊN TAB
             if(document.getElementById('displayDate')) {
                 document.getElementById('displayDate').textContent = now.toLocaleDateString('vi-VN');
             }
@@ -322,7 +338,6 @@ Src gốc cần sửa:
                 if (!t.completed) {
                     const d = new Date(t.deadline);
                     const isToday = d.toDateString() === now.toDateString();
-                    
                     const firstDayOfWeek = new Date(now);
                     const day = now.getDay() || 7; 
                     firstDayOfWeek.setDate(now.getDate() - day + 1);
@@ -331,7 +346,6 @@ Src gốc cần sửa:
                     lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
                     lastDayOfWeek.setHours(23,59,59,999);
                     const isThisWeek = d >= firstDayOfWeek && d <= lastDayOfWeek;
-
                     const isThisMonth = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 
                     if (isToday) counts.today++;
@@ -342,7 +356,6 @@ Src gốc cần sửa:
             
             if(document.getElementById('statOverdue')) document.getElementById('statOverdue').textContent = stats.overdue;
             if(document.getElementById('statSafe')) document.getElementById('statSafe').textContent = stats.completed;
-
             document.getElementById('todoToday').textContent = counts.today;
             document.getElementById('todoWeek').textContent = counts.week;
             document.getElementById('todoMonth').textContent = counts.month;
@@ -350,7 +363,7 @@ Src gốc cần sửa:
             const banner = document.getElementById('alertBanner');
             if (stats.overdue > 0) {
                 banner.style.display = 'flex';
-                document.getElementById('alertText').innerHTML = `<b>NGUY HIỂM:</b> Có ${stats.overdue} việc quá hạn! Nhấp vào đây để xem ngay.`;
+                document.getElementById('alertText').innerHTML = `<b>CHÚ Ý:</b> ${stats.overdue} việc quá hạn! Nhấp để lọc.`;
             } else banner.style.display = 'none';
         }
 
@@ -363,9 +376,7 @@ Src gốc cần sửa:
             let filtered = tasks.filter(t => {
                 if (t.completed) return false;
                 const d = new Date(t.deadline);
-                
                 const isToday = d.toDateString() === now.toDateString();
-                
                 const startWeek = new Date(now);
                 const day = now.getDay() || 7;
                 startWeek.setDate(now.getDate() - day + 1);
@@ -374,7 +385,6 @@ Src gốc cần sửa:
                 endWeek.setDate(startWeek.getDate() + 6);
                 endWeek.setHours(23,59,59,999);
                 const isThisWeek = d >= startWeek && d <= endWeek;
-
                 const isThisMonth = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 
                 if (range === 'today') return isToday;
@@ -387,8 +397,11 @@ Src gốc cần sửa:
 
         function renderTasks(customList = null) {
             const grid = document.getElementById('tasksGrid');
-            let filtered = customList || tasks;
-            if (!customList && currentFilter !== 'all') filtered = tasks.filter(t => getDeadlineStatus(t.deadline, t.completed) === currentFilter);
+            let filtered = customList;
+            // Duy trì filter nếu không có customList truyền vào
+            if (!filtered) {
+                filtered = (currentFilter === 'all') ? tasks : tasks.filter(t => getDeadlineStatus(t.deadline, t.completed) === currentFilter);
+            }
             grid.innerHTML = filtered.length ? filtered.map(t => `
                 <div class="task-card ${getDeadlineStatus(t.deadline, t.completed)}">
                     <div class="task-title">
@@ -396,15 +409,15 @@ Src gốc cần sửa:
                         ${t.detail ? `<span class="task-detail-sub">- ${t.detail}</span>` : ''}
                     </div>
                     <div class="task-footer-mobile">
-                        <div class="deadline-info">📅 ${new Date(t.deadline).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</div>
-                        <div style="display: flex; gap: 5px; align-items: center;">
-                            <button class="btn-icon" style="background:#e3f2fd" onclick="editTask(${t.id})">✏️</button>
-                            <button class="btn-icon" style="background:${t.completed ? '#ffeb3b' : '#d4edda'}" onclick="completeTask(${t.id})">${t.completed ? '↩️' : '✓'}</button>
-                            <button class="btn-icon" style="background:#f8d7da" onclick="deleteTask(${t.id})">🗑️</button>
+                        <div class="deadline-info">🕒 ${new Date(t.deadline).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}</div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button class="btn-icon" style="background:#f1f2f6" onclick="editTask(${t.id})">✏️</button>
+                            <button class="btn-icon" style="background:${t.completed ? '#ffeaa7' : '#55efc4'}" onclick="completeTask(${t.id})">${t.completed ? '↩️' : '✓'}</button>
+                            <button class="btn-icon" style="background:#fab1a0" onclick="deleteTask(${t.id})">🗑️</button>
                         </div>
                     </div>
                 </div>
-            `).join('') : '<div style="text-align:center; padding:30px; color:#999;">Trống...</div>';
+            `).join('') : '<div style="text-align:center; padding:40px; color:#b2bec3; font-weight:600;">☕ Mọi thứ đã hoàn tất!</div>';
         }
 
         function addTask() {
@@ -415,7 +428,7 @@ Src gốc cần sửa:
                 const title = rows[0].querySelector('.multi-title').value.trim();
                 const dur = parseFloat(rows[0].querySelector('.multi-duration').value);
                 const unit = rows[0].querySelector('.multi-unit').value;
-                if (!title) return alert("Tên công việc không được để trống!");
+                if (!title) return alert("Vui lòng nhập nội dung!");
                 const index = tasks.findIndex(t => t.id === editingTaskId);
                 if (index !== -1) {
                     tasks[index] = { ...tasks[index], title, deadline: autoCalcDeadline(dur, unit), priority };
@@ -424,10 +437,9 @@ Src gốc cần sửa:
             } else {
                 let hasEmpty = false;
                 rows.forEach(row => {
-                    const title = row.querySelector('.multi-title').value.trim();
-                    if (!title) hasEmpty = true;
+                    if (!row.querySelector('.multi-title').value.trim()) hasEmpty = true;
                 });
-                if (hasEmpty) return alert("Vui lòng nhập nội dung cho tất cả các ô công việc bắt buộc!");
+                if (hasEmpty) return alert("Vui lòng điền đủ thông tin!");
                 rows.forEach(row => {
                     const title = row.querySelector('.multi-title').value.trim();
                     const dur = parseFloat(row.querySelector('.multi-duration').value);
@@ -446,11 +458,11 @@ Src gốc cần sửa:
             editingTaskId = id;
             document.getElementById('multiTaskContainer').innerHTML = '';
             addTaskRow(t.title, true);
-            document.querySelector('.task-row-input label').innerHTML = `SỬA NỘI DUNG <span style="color:red">*</span>`;
+            document.querySelector('.task-row-input label').textContent = `SỬA CÔNG VIỆC *`;
             document.querySelector('.multi-title').value = t.title;
             document.getElementById('taskPriority').value = t.priority;
             document.querySelector('#taskModal h2').textContent = "📝 Sửa công việc";
-            document.querySelector('.btn-add').textContent = "CẬP NHẬT THAY ĐỔI";
+            document.querySelector('.btn-add').textContent = "CẬP NHẬT";
             document.getElementById('taskModal').style.display = 'flex';
         }
 
@@ -465,8 +477,21 @@ Src gốc cần sửa:
             if(el) el.classList.add('active');
             renderTasks(); 
         }
-        function completeTask(id) { const t = tasks.find(x => x.id === id); if(t) t.completed = !t.completed; saveToDB(); updateStats(); renderTasks(); }
-        function deleteTask(id) { if(confirm("Xóa?")) { tasks = tasks.filter(x => x.id !== id); saveToDB(); updateStats(); if(currentFilter === 'today' || currentFilter === 'week' || currentFilter === 'month') { filterByTime(currentFilter); } else { renderTasks(); } } }
+
+        function completeTask(id) { 
+            const t = tasks.find(x => x.id === id); 
+            if(t) t.completed = !t.completed; 
+            saveToDB(); 
+            updateStats(); 
+            // Fix: Re-run filter based on current active tab
+            if(['today', 'week', 'month'].includes(currentFilter)) {
+                filterByTime(currentFilter);
+            } else {
+                renderTasks();
+            }
+        }
+
+        function deleteTask(id) { if(confirm("Xác nhận xóa?")) { tasks = tasks.filter(x => x.id !== id); saveToDB(); updateStats(); if(currentFilter === 'today' || currentFilter === 'week' || currentFilter === 'month') { filterByTime(currentFilter); } else { renderTasks(); } } }
     </script>
 </body>
 </html>

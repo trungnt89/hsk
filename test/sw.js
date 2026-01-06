@@ -1,12 +1,11 @@
 /**
  * Service Worker: Todo Manager Pro
- * Logic: Đọc dữ liệu từ Google Script, hiển thị thông báo danh sách task hôm nay.
+ * Logic: Đọc từ Google Apps Script API & Hiển thị thông báo danh sách task.
  */
 
-// URL của Google Apps Script (Hãy thay bằng link Web App của bạn)
 const URL_API = "https://script.google.com/macros/s/AKfycbxWu1xG6JIKV913b9a988K3YKUIGohJ9yXpumQWHMyygIWssn3w-Wb2nbCDg8bt-6ghgg/exec";
 
-// --- HELPERS ---
+// --- TIỆN ÍCH ---
 
 async function sendLogToUI(msg, type = "info") {
     const allClients = await self.clients.matchAll();
@@ -15,66 +14,71 @@ async function sendLogToUI(msg, type = "info") {
     });
 }
 
-// --- CORE LOGIC ---
+// --- LOGIC CHÍNH ---
 
 async function checkAndNotify(isForced = false) {
     const now = new Date();
-    await sendLogToUI(`--- Check Server: ${now.toLocaleTimeString()} ---`);
+    await sendLogToUI(`--- Kiểm tra: ${now.toLocaleTimeString()} ---`);
 
     try {
-        // 1. Fetch dữ liệu từ Google Script (thêm timestamp để tránh cache)
-        const response = await fetch(`${URL_API}?t=${Date.now()}`);
-        if (!response.ok) throw new Error("Không thể kết nối Server");
+        // 1. Fetch dữ liệu từ GAS
+        // Cấu hình redirect: "follow" cực kỳ quan trọng vì GAS luôn redirect URL
+        const response = await fetch(`${URL_API}?t=${Date.now()}`, { 
+            method: "GET",
+            redirect: "follow", 
+            cache: "no-store" 
+        });
+
+        if (!response.ok) throw new Error("Kết nối API thất bại");
         
         const result = await response.json(); 
         
-        // 2. Phân tích dữ liệu từ format JSON mới
         const hasTaskToday = result.has_tasks_today === true;
         const totalTasks = result.total_tasks_today || 0;
         const tasks = result.tasks_details || [];
 
-        await sendLogToUI(`Server: ${hasTaskToday ? "CÓ TASK" : "KHÔNG"} (${totalTasks} việc)`);
+        await sendLogToUI(`Kết quả: ${hasTaskToday ? "CÓ TASK" : "KHÔNG"} (${totalTasks} việc)`);
 
-        // 3. Nếu có task hôm nay
+        // 2. Xử lý thông báo
         if (hasTaskToday || isForced) {
             const db = await openNotifyDB();
             const lastNotify = await getNotifyLog(db);
             const diff = now.getTime() - (lastNotify || 0);
 
-            // Kiểm tra chống spam: 1 giờ (3600000ms) hoặc khi bấm Test (isForced)
+            // Chống spam: 1 giờ/lần (3600000ms), trừ khi click tay (isForced)
             if (diff >= 3600000 || isForced) {
                 
-                // Tạo nội dung hiển thị (tối đa 3 tiêu đề đầu tiên)
+                // Gom danh sách tiêu đề
                 const taskSummary = tasks.slice(0, 3).map(t => `• ${t.title}`).join('\n');
                 const extraTasks = totalTasks > 3 ? `\n... và ${totalTasks - 3} việc khác.` : '';
-                const bodyContent = totalTasks > 0 
-                    ? `Bạn có ${totalTasks} việc cần làm:\n${taskSummary}${extraTasks}`
-                    : "Bạn có công việc cần hoàn thành trong hôm nay!";
-
-                await self.registration.showNotification("Todo Manager Pro", {
-                    body: bodyContent,
+                
+                const notificationOptions = {
+                    body: totalTasks > 0 
+                        ? `Bạn có ${totalTasks} việc hôm nay:\n${taskSummary}${extraTasks}`
+                        : "Bạn có công việc cần hoàn thành!",
                     icon: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
                     badge: "https://cdn-icons-png.flaticon.com/512/10691/10691830.png",
-                    tag: "daily-reminder",
-                    requireInteraction: true,
-                    data: { tasks: tasks, timestamp: now.getTime() }
-                });
+                    tag: "daily-reminder-" + (isForced ? Date.now() : "fixed"), // Tag động nếu Force để ép hiện
+                    renotify: true,           // Ép rung/chuông/pop-up kể cả khi trùng Tag
+                    vibrate: [200, 100, 200],
+                    requireInteraction: true,  // Không tự ẩn thông báo
+                    data: { url: "/" } 
+                };
+
+                await self.registration.showNotification("Todo Manager Pro", notificationOptions);
 
                 if (db) await setNotifyLog(db, now.getTime());
-                await sendLogToUI("Đã gửi Notify thành công!", "success");
+                await sendLogToUI("🔔 Thông báo đã được đẩy lên màn hình!", "success");
             } else {
-                await sendLogToUI("Bỏ qua: Chưa đủ 1h từ lần gửi cuối.");
+                await sendLogToUI("Bỏ qua: Đã thông báo trong vòng 1h qua.");
             }
-        } else {
-            await sendLogToUI("Hôm nay không có task nào.");
         }
-
     } catch (e) {
         await sendLogToUI("Lỗi SW: " + e.message, "error");
     }
 }
 
-// --- DATABASE (Chống spam) ---
+// --- DATABASE CHỐNG SPAM (IndexedDB) ---
 
 function openNotifyDB() {
     return new Promise(res => {
@@ -107,35 +111,30 @@ function setNotifyLog(db, time) {
     });
 }
 
-// --- LIFE CYCLE & EVENTS ---
+// --- VÒNG ĐỜI VÀ SỰ KIỆN ---
 
-self.addEventListener('install', () => {
-    self.skipWaiting();
-});
+self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (e) => {
     e.waitUntil(self.clients.claim());
-    // Kiểm tra ngay khi kích hoạt và sau đó mỗi 5 phút
-    checkAndNotify();
-    setInterval(checkAndNotify, 300000); 
+    checkAndNotify(); // Chạy ngay khi kích hoạt
+    setInterval(checkAndNotify, 300000); // Lặp lại mỗi 5 phút
 });
 
-// Lắng nghe lệnh từ UI (nút Test hoặc Sync)
 self.onmessage = (event) => {
     if (event.data.action === 'test_notify_now') {
         checkAndNotify(true);
     }
 };
 
-// Xử lý khi người dùng click vào thông báo
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-            if (clientList.length > 0) {
-                return clientList[0].focus();
+            for (const client of clientList) {
+                if (client.url.includes('/') && 'focus' in client) return client.focus();
             }
-            return clients.openWindow('/');
+            if (clients.openWindow) return clients.openWindow('/');
         })
     );
 });

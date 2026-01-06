@@ -6,71 +6,144 @@
 	<link rel="manifest" href="manifest.json">
     <title>Todo Notify Manager</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; padding-bottom: 270px; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
-        button { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; padding-bottom: 270px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; box-sizing: border-box; }
+        h3 { margin-top: 0; color: #1e293b; }
+        button { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: transform 0.1s, opacity 0.2s; font-size: 14px; }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        
         .btn-blue { background: #4facfe; color: white; }
-        .btn-green { background: #55efc4; }
+        .btn-green { background: #00b894; color: white; }
         .btn-red { background: #ff7675; color: white; }
         .btn-gray { background: #636e72; color: white; }
-        #mobile-console { position: fixed; bottom: 0; left: 0; width: 100%; height: 250px; background: #1e2124; color: #a2fca2; padding: 15px; font-family: monospace; font-size: 11px; overflow-y: auto; box-sizing: border-box; border-top: 3px solid #4facfe; }
+        
+        #mobile-console { position: fixed; bottom: 0; left: 0; width: 100%; height: 250px; background: #1e2124; color: #a2fca2; padding: 15px; font-family: 'Courier New', monospace; font-size: 12px; overflow-y: auto; box-sizing: border-box; border-top: 4px solid #4facfe; }
+        .log-line { margin-bottom: 4px; border-bottom: 1px solid #2d3136; padding-bottom: 2px; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h3>🔔 Quản lý Thông báo</h3>
-    <button class="btn-green" onclick="requestPerm()">1. CẤP QUYỀN</button>
-    <button class="btn-blue" onclick="triggerTest()">2. GỬI TEST</button>
+    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Trạng thái hệ thống: <b id="status-text">Đang kiểm tra...</b></p>
+    
+    <button class="btn-green" onclick="requestPerm()">1. CẤP QUYỀN THÔNG BÁO</button>
+    <button class="btn-blue" onclick="triggerTest()">2. GỬI TEST NGAY</button>
     <button id="toggleBtn" class="btn-red" onclick="toggleStatus(false)">3. TẮT THÔNG BÁO</button>
     <button class="btn-gray" onclick="uninstallSW()">4. GỠ BỎ HỆ THỐNG (RESET)</button>
 </div>
 
-<div id="mobile-console"><div>--- Debug Console ---</div></div>
+<div id="mobile-console">
+    <div style="color: #4facfe; font-weight: bold;">--- Debug Console Hệ Thống ---</div>
+</div>
 
 <script>
+    const consoleEl = document.getElementById('mobile-console');
+    const statusEl = document.getElementById('status-text');
+
     const addLog = (m, t="info") => {
         const d = document.createElement('div');
+        d.className = "log-line";
         d.textContent = `[${new Date().toLocaleTimeString()}] ${m}`;
-        d.style.color = t === "error" ? "#ff7675" : (t === "warn" ? "#fdcb6e" : "#a2fca2");
-        document.getElementById('mobile-console').appendChild(d);
-        document.getElementById('mobile-console').scrollTop = 99999;
+        if (t === "error") d.style.color = "#ff7675";
+        else if (t === "warn") d.style.color = "#fdcb6e";
+        else if (t === "success") d.style.color = "#55efc4";
+        consoleEl.appendChild(d);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
     };
 
+    // 1. Đăng ký và lắng nghe Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(() => addLog("SW: Ready"));
-        navigator.serviceWorker.addEventListener('message', e => {
-            if (e.data.action === 'log_from_sw') addLog(e.data.message, e.data.logType);
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                addLog("Service Worker: Đã đăng ký thành công", "success");
+                statusEl.textContent = "Đang hoạt động";
+                statusEl.style.color = "#00b894";
+            }).catch(err => {
+                addLog("Lỗi đăng ký SW: " + err, "error");
+                statusEl.textContent = "Lỗi kết nối";
+            });
         });
+
+        // Nhận log từ sw.js gửi về
+        navigator.serviceWorker.addEventListener('message', e => {
+            if (e.data.action === 'log_from_sw') {
+                addLog(e.data.message, e.data.logType);
+            }
+        });
+    } else {
+        addLog("Trình duyệt này không hỗ trợ Service Worker!", "error");
     }
 
+    // 2. Chức năng cấp quyền
     async function requestPerm() {
+        addLog("Đang yêu cầu quyền...");
         const p = await Notification.requestPermission();
-        addLog("Quyền: " + p, p === 'granted' ? 'info' : 'error');
+        addLog("Kết quả quyền: " + p, p === 'granted' ? 'success' : 'error');
+        if (p === 'granted') {
+            addLog("Đã sẵn sàng nhận thông báo.");
+        } else {
+            alert("Bạn cần cấp quyền để nhận thông báo công việc!");
+        }
     }
 
+    // 3. Gửi lệnh Test
     function triggerTest() {
-        navigator.serviceWorker.controller?.postMessage({ action: 'test_notify_now' });
+        if (!navigator.serviceWorker.controller) {
+            addLog("Lỗi: SW chưa sẵn sàng. Hãy Refresh (F5).", "warn");
+            return;
+        }
+        addLog("Đang yêu cầu SW gửi thông báo test...");
+        navigator.serviceWorker.controller.postMessage({ action: 'test_notify_now' });
     }
 
-    function toggleStatus(val) {
-        navigator.serviceWorker.controller?.postMessage({ action: 'set_notify_status', value: val });
+    // 4. Chức năng Bật/Tắt (Chức năng 3)
+    function toggleStatus(enable) {
+        if (!navigator.serviceWorker.controller) {
+            addLog("Không tìm thấy trình điều khiển SW.", "error");
+            return;
+        }
+
+        // Gửi lệnh vào SW
+        navigator.serviceWorker.controller.postMessage({ 
+            action: 'set_notify_status', 
+            value: enable 
+        });
+
         const btn = document.getElementById('toggleBtn');
-        if (val) {
+        if (enable) {
             btn.innerText = "3. TẮT THÔNG BÁO";
             btn.className = "btn-red";
             btn.onclick = () => toggleStatus(false);
+            addLog("Hệ thống: Đã BẬT kiểm tra ngầm.", "warn");
         } else {
             btn.innerText = "3. BẬT LẠI THÔNG BÁO";
             btn.className = "btn-green";
             btn.onclick = () => toggleStatus(true);
+            addLog("Hệ thống: Đã TẮT kiểm tra ngầm.", "warn");
         }
     }
 
+    // 5. Gỡ bỏ hoàn toàn (Chức năng 4)
     async function uninstallSW() {
+        if (!confirm("Bạn có chắc chắn muốn gỡ bỏ toàn bộ hệ thống thông báo?")) return;
+        
         const regs = await navigator.serviceWorker.getRegistrations();
-        for (let r of regs) await r.unregister();
-        addLog("Đã hủy đăng ký. Vui lòng tải lại trang!", "warn");
+        for (let r of regs) {
+            await r.unregister();
+        }
+        addLog("Đang xóa dữ liệu hệ thống...", "warn");
+        
+        // Xóa thêm cache nếu có
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            for (let key of keys) await caches.delete(key);
+        }
+
+        addLog("Đã gỡ bỏ sạch sẽ. Tự động khởi động lại sau 2s...", "error");
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
     }
 </script>
 </body>

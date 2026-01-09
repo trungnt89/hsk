@@ -1,7 +1,7 @@
 /**
  * DB SYNC MODULE - PREMIUM STABLE 2026
- * Tác giả: Gemini Thought Partner
- * Tính năng: Tự động hóa hoàn toàn, Key động theo Database, UI Glassmorphism
+ * Tính năng: Key động [DB|Store], Confirm, Toast & Auto-Reload
+ * Đảm bảo dữ liệu mới được áp dụng ngay lập tức sau khi khôi phục.
  */
 
 const DBSyncModule = (function() {
@@ -10,194 +10,187 @@ const DBSyncModule = (function() {
         configDB: "GAS_Config"
     };
 
-    // --- 1. HỆ THỐNG TOAST THÔNG BÁO ---
     const UI = {
-        showStatus: function(msg, type = 'success') {
+        showToast: function(msg, type = 'success') {
+            const existing = document.getElementById('sync-toast');
+            if (existing) existing.remove();
+
             const toast = document.createElement('div');
-            const bg = type === 'success' 
-                ? 'linear-gradient(135deg, #27ae60, #2ecc71)' 
-                : 'linear-gradient(135deg, #e74c3c, #ff7675)';
+            toast.id = 'sync-toast';
+            const colors = {
+                success: '#2ecc71',
+                error: '#e74c3c',
+                info: '#3498db'
+            };
             
             toast.style = `
-                position: fixed; top: 25px; left: 50%; transform: translateX(-50%) translateY(-120px);
-                background: ${bg}; color: white; padding: 14px 28px; border-radius: 18px;
-                font-size: 14px; font-weight: 700; box-shadow: 0 12px 35px rgba(0,0,0,0.2);
-                z-index: 10005; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.2);
+                position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+                background: ${colors[type]}; color: white; padding: 14px 28px; 
+                border-radius: 50px; font-size: 14px; font-weight: 600; z-index: 20000;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: all 0.3s ease;
+                display: flex; align-items: center; gap: 10px; animation: slideUp 0.4s ease forwards;
             `;
             
-            toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+            const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+            toast.innerHTML = `<span>${icon}</span> ${msg}`;
             document.body.appendChild(toast);
-            setTimeout(() => toast.style.transform = 'translateX(-50%) translateY(0)', 100);
-            
+
             setTimeout(() => {
-                toast.style.transform = 'translateX(-50%) translateY(-120px)';
                 toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 500);
-            }, 3500);
+                toast.style.transform = 'translateX(-50%) translateY(20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
     };
 
-    // --- 2. KHỞI TẠO GIAO DIỆN ---
-    async function initUI() {
-        if (document.getElementById('module-sync-container')) return;
+    const style = document.createElement('style');
+    style.innerHTML = ` @keyframes slideUp { from { bottom: -50px; opacity: 0; } to { bottom: 30px; opacity: 1; } } `;
+    document.head.appendChild(style);
 
+    async function getDbStorePairs() {
+        const pairs = [];
+        try {
+            const dbs = await indexedDB.databases();
+            for (const dbInfo of dbs) {
+                if (dbInfo.name === config.configDB) continue;
+                await new Promise((resolve) => {
+                    const req = indexedDB.open(dbInfo.name);
+                    req.onsuccess = (e) => {
+                        const db = e.target.result;
+                        Array.from(db.objectStoreNames).forEach(storeName => {
+                            pairs.push({
+                                label: `${dbInfo.name} » ${storeName}`,
+                                value: `${dbInfo.name}|${storeName}`
+                            });
+                        });
+                        db.close();
+                        resolve();
+                    };
+                    req.onerror = () => resolve();
+                });
+            }
+        } catch (e) { console.error("Lỗi quét DB:", e); }
+        return pairs.length ? pairs : [{label: "Default DB", value: "TodoDBPro|tasks"}];
+    }
+
+    async function initUI() {
+        const containerId = 'module-sync-container';
+        if (document.getElementById(containerId)) document.getElementById(containerId).remove();
+
+        const pairs = await getDbStorePairs();
         let target = document.querySelector('.header') || document.querySelector('.container') || document.body;
-        const dbNames = await getAllDatabases();
         
         const container = document.createElement('div');
-        container.id = "module-sync-container";
+        container.id = containerId;
         container.style = `
-            margin: 20px auto; padding: 22px; background: rgba(255, 255, 255, 0.95);
-            border-radius: 30px; border: 1px solid #edf2f7;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.05); width: 95%; max-width: 450px;
-            display: flex; flex-direction: column; gap: 15px; box-sizing: border-box;
+            margin: 20px auto; padding: 25px; background: white;
+            border-radius: 24px; border: 1px solid #f0f0f0; width: 95%; max-width: 480px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.06); box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
         `;
 
         container.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
-                <span style="font-size: 11px; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 1.5px;">Cloud Sync Engine</span>
-                <div id="module-indicator" style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></div>
-            </div>
-            
-            <div style="display: flex; gap: 12px;">
-                <select id="module-db-select" style="flex: 1.2; padding: 14px; border-radius: 18px; border: 2px solid #f1f5f9; font-weight: 600; font-size: 13px; outline: none; background: #f8fafc; color: #1e293b; cursor: pointer;">
-                    ${dbNames.map(name => `<option value="${name}">${name}</option>`).join('')}
+            <div style="font-size: 11px; font-weight: 800; color: #6366f1; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Cloud Sync Engine</div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <select id="module-db-select" style="width: 100%; padding: 14px; border-radius: 14px; border: 2px solid #f3f4f6; font-size: 14px; outline: none; background: #fafafa; font-weight: 500;">
+                    ${pairs.map(p => `<option value="${p.value}">${p.label}</option>`).join('')}
                 </select>
-                
-                <button id="btn-module-upload" style="flex: 1; background: #6366f1; color: white; border: none; padding: 14px; border-radius: 18px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">Sao lưu</button>
-                
-                <button id="btn-module-download" style="flex: 1; background: #10b981; color: white; border: none; padding: 14px; border-radius: 18px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">Khôi phục</button>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-module-up" style="flex: 1; background: #6366f1; color: white; border: none; padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 14px;">📤 Sao lưu</button>
+                    <button id="btn-module-down" style="flex: 1; background: #10b981; color: white; border: none; padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 14px;">📥 Khôi phục</button>
+                </div>
             </div>
-            <div id="module-status-text" style="font-size: 11px; color: #94a3b8; text-align: center; font-weight: 600;">Sẵn sàng đồng bộ đa Database</div>
         `;
 
         target.appendChild(container);
 
-        // Hiệu ứng Hover/Active
-        const style = document.createElement('style');
-        style.innerHTML = `.sync-btn-active:active { transform: scale(0.95); opacity: 0.9; }`;
-        document.head.appendChild(style);
-        
-        document.getElementById('btn-module-upload').classList.add('sync-btn-active');
-        document.getElementById('btn-module-download').classList.add('sync-btn-active');
-
-        document.getElementById('btn-module-upload').onclick = handleUpload;
-        document.getElementById('btn-module-download').onclick = handleDownload;
+        document.getElementById('btn-module-up').onclick = () => handleSync('upload');
+        document.getElementById('btn-module-down').onclick = () => handleSync('download');
     }
 
-    // --- 3. LOGIC SAO LƯU (SỬ DỤNG KEY LÀ TÊN DB) ---
-    async function handleUpload() {
-        const dbName = document.getElementById('module-db-select').value;
-        const btn = document.getElementById('btn-module-upload');
-        const statusText = document.getElementById('module-status-text');
+    async function handleSync(action) {
+        const select = document.getElementById('module-db-select');
+        const combinedValue = select.value;
+        const [dbName, storeName] = combinedValue.split('|');
+        const cloudKey = `${dbName}_${storeName}`;
+
+        const confirmMsg = action === 'upload' 
+            ? `Bạn có chắc muốn SAO LƯU bảng [${storeName}] lên Cloud?\nDữ liệu cũ trên Drive sẽ bị ghi đè.` 
+            : `Xác nhận KHÔI PHỤC bảng [${storeName}]?\nTrang web sẽ tự động reload sau khi hoàn tất.`;
         
+        if (!confirm(confirmMsg)) return;
+
+        const btn = action === 'upload' ? document.getElementById('btn-module-up') : document.getElementById('btn-module-down');
         btn.disabled = true;
-        btn.innerText = "⏳ Lưu...";
+        const originalText = btn.innerText;
+        btn.innerText = "⏳...";
 
         const request = indexedDB.open(dbName);
-        request.onsuccess = (e) => {
+        request.onsuccess = async (e) => {
             const db = e.target.result;
-            const storeName = db.objectStoreNames[0]; // Tự động lấy store đầu tiên
-            if (!storeName) {
-                UI.showStatus("Database này rỗng!", "error");
-                btn.disabled = false;
-                btn.innerText = "Sao lưu";
-                return;
+            
+            try {
+                if (action === 'upload') {
+                    const tx = db.transaction(storeName, "readonly");
+                    const store = tx.objectStore(storeName);
+                    const allData = {};
+                    
+                    store.openCursor().onsuccess = async (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            allData[cursor.key] = cursor.value;
+                            cursor.continue();
+                        } else {
+                            await fetch(config.gasUrl, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                body: JSON.stringify({ key: cloudKey, value: allData })
+                            });
+                            UI.showToast(`Sao lưu [${storeName}] thành công!`);
+                            finish();
+                        }
+                    };
+                } else {
+                    const res = await fetch(`${config.gasUrl}?key=${encodeURIComponent(cloudKey)}`);
+                    const data = await res.json();
+
+                    if (!data || Object.keys(data).length === 0) {
+                        UI.showToast("Dữ liệu Cloud trống!", "error");
+                        return finish();
+                    }
+
+                    const tx = db.transaction(storeName, "readwrite");
+                    const store = tx.objectStore(storeName);
+                    
+                    store.clear().onsuccess = () => {
+                        Object.keys(data).forEach(k => {
+                            if (store.keyPath) store.put(data[k]);
+                            else store.put(data[k], k);
+                        });
+                    };
+                    
+                    tx.oncomplete = () => {
+                        UI.showToast(`Khôi phục [${storeName}] thành công! Đang tải lại...`);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1200); // Reload sau 1.2s để người dùng thấy thông báo thành công
+                    };
+                }
+            } catch (err) {
+                UI.showToast("Lỗi kết nối hoặc hệ thống", "error");
+                finish();
             }
 
-            const tx = db.transaction(storeName, "readonly");
-            const allData = {};
-            
-            tx.objectStore(storeName).openCursor().onsuccess = async (event) => {
-                const cursor = event.target.result;
-                if (cursor) {
-                    allData[cursor.key] = cursor.value;
-                    cursor.continue();
-                } else {
-                    try {
-                        // Gửi key là dbName để tách biệt dữ liệu trên Cloud
-                        await fetch(config.gasUrl, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            body: JSON.stringify({ key: dbName, value: allData })
-                        });
-                        UI.showStatus(`Đã sao lưu [${dbName}] thành công!`);
-                        statusText.innerText = `Lần cuối: ${new Date().toLocaleTimeString()}`;
-                    } catch (err) {
-                        UI.showStatus("Lỗi kết nối Server", "error");
-                    }
-                    btn.disabled = false;
-                    btn.innerText = "Sao lưu";
-                    db.close();
-                }
-            };
+            function finish() {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                db.close();
+            }
         };
-    }
-
-    // --- 4. LOGIC KHÔI PHỤC (FIX DATAERROR + KEY ĐỘNG) ---
-    async function handleDownload() {
-        const dbName = document.getElementById('module-db-select').value;
-        const btn = document.getElementById('btn-module-download');
-        
-        if (!confirm(`Tải dữ liệu Cloud của [${dbName}] và ghi đè máy này?`)) return;
-
-        btn.disabled = true;
-        btn.innerText = "⏳ Tải...";
-
-        try {
-            // Lấy dữ liệu theo Key là tên Database
-            const res = await fetch(`${config.gasUrl}?key=${encodeURIComponent(dbName)}`);
-            const data = await res.json();
-
-            if (!data || Object.keys(data).length === 0) throw new Error("Empty");
-
-            const request = indexedDB.open(dbName);
-            request.onsuccess = (e) => {
-                const db = e.target.result;
-                const storeName = db.objectStoreNames[0];
-                const tx = db.transaction(storeName, "readwrite");
-                const store = tx.objectStore(storeName);
-                
-                store.clear().onsuccess = () => {
-                    Object.keys(data).forEach(k => {
-                        const record = data[k];
-                        // FIXED: Auto-detect in-line vs out-of-line keys
-                        if (store.keyPath) {
-                            store.put(record); // Key đã nằm trong object
-                        } else {
-                            store.put(record, k); // Key nằm ngoài object
-                        }
-                    });
-                };
-                
-                tx.oncomplete = () => {
-                    UI.showStatus(`Đã khôi phục [${dbName}] từ Cloud!`);
-                    // Gọi callback load lại dữ liệu nếu có
-                    if (typeof loadTasksFromDB === 'function') loadTasksFromDB();
-                    if (typeof renderTasks === 'function') renderTasks();
-                    btn.disabled = false;
-                    btn.innerText = "Khôi phục";
-                    db.close();
-                };
-            };
-        } catch (err) {
-            UI.showStatus(`Cloud chưa có dữ liệu cho [${dbName}]`, "error");
-            btn.disabled = false;
-            btn.innerText = "Khôi phục";
-        }
-    }
-
-    async function getAllDatabases() {
-        try {
-            const dbs = await indexedDB.databases();
-            const names = dbs.map(db => db.name).filter(n => n !== config.configDB);
-            return names.length ? names : ["TodoDBPro"];
-        } catch (e) { return ["TodoDBPro"]; }
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUI);
     else initUI();
 
-    return { refreshDB: initUI };
+    return { refresh: initUI };
 })();

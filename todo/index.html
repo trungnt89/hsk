@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo Manager Pro - Professional UI</title>
-    <script src="../assistive.js"></script>    
+    <script src="../assistive.js"></script>
+	<script src="../dbsync.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -212,21 +213,7 @@
         request.onsuccess = e => {
             db = e.target.result;
             loadTasksFromDB();
-            registerServiceWorker(); 
         };
-
-        function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => {
-                        console.log('SW Registered');
-                        if (Notification.permission !== 'granted') {
-                            Notification.requestPermission();
-                        }
-                    })
-                    .catch(err => console.log('SW Registration Failed', err));
-            }
-        }
 
         function saveToDB() {
             if (!db) return;

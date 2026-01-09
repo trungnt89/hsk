@@ -112,7 +112,8 @@ const DBSyncModule = (function() {
         const select = document.getElementById('module-db-select');
         const combinedValue = select.value;
         const [dbName, storeName] = combinedValue.split('|');
-        const cloudKey = `${dbName}_${storeName}`;
+        //const cloudKey = `${dbName}_${storeName}`;
+		const cloudKey = ${storeName};
 
         const confirmMsg = action === 'upload' 
             ? `Bạn có chắc muốn SAO LƯU bảng [${storeName}] lên Cloud?\nDữ liệu cũ trên Drive sẽ bị ghi đè.` 

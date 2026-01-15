@@ -1,271 +1,261 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Message Scheduler - Single Table IndexedDB</title>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --success: #10b981;
-            --danger: #ef4444;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
-        }
+https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec?key=current_state
 
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            padding: 20px 10px;
-            margin: 0;
-        }
+git add . ;  git commit -m "SRC change" ; git push;
 
-        .container {
-            background: var(--card);
-            width: 100%;
-            max-width: 800px;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
 
-        .view { display: none; }
-        .view.active { display: block; animation: fadeIn 0.3s ease; }
 
-        .nav-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid #f1f5f9;
-        }
+🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
+NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
+chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn. 
+Sau khi đối ứng các yêu cầu hãy tạo file đã sửa hoàn chỉnh
+🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
+1. Bổ sung log đầy đủ lý do gửi/không gửi notify và số lần đã gửi
+-------------------
+Src gốc cần sửa:
+-------------------
+/* ==================================================================================================
+YÊU CẦU HỆ THỐNG:
+1. Đọc sheet chuyển thành json, sử dụng header động, ko fix cứng để có thể thêm cột tùy ý
+2. Đọc json ở bước 1 để tiến hành gửi notify ,cập nhật lại LastNotified,AlertCount trong json sau đó ghi đè json vào sheet
+3. Nhận reply từ user, update vào cột ngày tương ứng . Nếu ngày chưa có thì bổ sung vào json ở bước 1, 
+   sắp xếp ngày tăng dần sau đó ghi đè vào sheet
+4. TẤT CẢ CÁC BƯỚC XỬ LÝ ĐỀU PHẢI CÓ LOG chi tiết cụ thể, đặc biệt việc gửi và nhận notify
+==================================================================================================
+*/
 
-        h2 { margin: 0; font-size: 1.3rem; font-weight: 800; color: var(--primary); }
+/* ==================================================================================================
+YÊU CẦU HỆ THỐNG:
+1. Đọc sheet chuyển thành json, sử dụng header động, ko fix cứng để có thể thêm cột tùy ý
+2. Đọc json ở bước 1 để tiến hành gửi notify ,cập nhật lại LastNotified,AlertCount trong json sau đó ghi đè json vào sheet
+3. Nhận reply từ user, update vào cột ngày tương ứng . Nếu ngày chưa có thì bổ sung vào json ở bước 1, 
+   sắp xếp ngày tăng dần sau đó ghi đè vào sheet
+4. TẤT CẢ CÁC BƯỚC XỬ LÝ ĐỀU PHẢI CÓ LOG chi tiết cụ thể, đặc biệt việc gửi và nhận notify
+==================================================================================================
+*/
 
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: #64748b; }
+const TELEGRAM_TOKEN = "8019068142:AAEyOi2cg-TBIr-XPfkHP4iqMw_rj9XLw1s";
+const SHEET_ID = "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8";
+const SHEET_NAME = "Tasks";
+/**
+ * Lấy tiêu đề thô từ Sheet để phục vụ đồng bộ
+ */
+function getRawHeadersFromSheet() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+}
 
-        textarea {
-            width: 100%; padding: 14px; border: 1px solid var(--border);
-            border-radius: 10px; resize: vertical; box-sizing: border-box;
-            font-family: inherit; transition: all 0.2s;
-        }
+/**
+ * 1. CHUYỂN SHEET THÀNH JSON (HEADER ĐỘNG)
+ */
+function getSheetAsJson() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const rawHeaders = data[0];
+  writeLog("JSON_PROCESS", `Đọc Sheet. Cấu trúc Header động detected: ${rawHeaders.length} cột.`);
+  
+  const json = data.slice(1).map((row) => {
+    let obj = {};
+    rawHeaders.forEach((h, i) => {
+      let key = (h instanceof Date) ? Utilities.formatDate(h, "GMT+9", "dd/MM") : String(h);
+      obj[key] = row[i];
+    });
+    return obj;
+  });
+  
+  writeLog("JSON_SUCCESS", `Convert thành công ${json.length} dòng dữ liệu.`);
+  return { json: json, rawHeaders: rawHeaders };
+}
 
-        .quick-select { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+/**
+ * 2. GỬI NOTIFY DỰA TRÊN JSON (CẬP NHẬT QUA JSON)
+ */
+function sendTaskNotifications() {
+  writeLog("NOTIFY_START", "--- Bắt đầu quét Notify ---");
+  const { json, rawHeaders } = getSheetAsJson();
+  const now = new Date();
+  const todayStr = Utilities.formatDate(now, "GMT+9", "dd/MM");
+  const currentTimeNum = now.getHours() * 60 + now.getMinutes();
+  let hasChange = false;
+console.log(json);
+  json.forEach((task) => {
+    const taskId = task["Key"];
+    const status = String(task["Status"]);
+    const userId = String(task["UserID"]).trim();
+    const startStr = String(task["Start"]);
+    const freq = Number(task["Freg"] || 30);
+    const lastNotified = task["LastNotified"];
+    const todayResult = String(task[todayStr] || "").toLowerCase();
 
-        .btn-opt {
-            padding: 10px; border: 1px solid var(--border); background: white;
-            border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500;
-        }
-        .btn-opt.active { background: var(--primary); color: white; border-color: var(--primary); }
-        
-        .btn-main {
-            width: 100%; padding: 14px; background: var(--primary);
-            color: white; border: none; border-radius: 10px; font-weight: 600;
-            cursor: pointer; font-size: 1rem;
-        }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #f8fafc; text-align: left; padding: 12px; font-size: 0.75rem; color: #64748b; border-bottom: 2px solid #f1f5f9; }
-        td { padding: 16px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
-        .content-cell { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .btn-test { background: var(--success); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; }
-        .btn-edit { background: #eff6ff; color: var(--primary); border: 1px solid #dbeafe; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; margin: 0 4px; }
-        .btn-delete { background: #fef2f2; color: var(--danger); border: 1px solid #fee2e2; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; }
-        
-        .btn-test:hover, .btn-edit:hover, .btn-delete:hover { transform: translateY(-1px); opacity: 0.9; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div id="view-list" class="view active">
-        <div class="nav-header">
-            <h2>Hệ thống Gửi tin</h2>
-            <button class="btn-opt active" style="padding: 10px 20px;" onclick="openCreateView()">+ Thêm Cấu hình</button>
-        </div>
-        <div id="schedule-list" style="overflow-x: auto;"></div>
-    </div>
-
-    <div id="view-form" class="view">
-        <div class="nav-header">
-            <h2 id="form-title">Tạo mới</h2>
-            <button class="btn-opt" onclick="showView('view-list')">Quay lại</button>
-        </div>
-        
-        <div class="form-group">
-            <label>Nội dung tin nhắn</label>
-            <textarea id="msgContent" rows="6" placeholder="Lưu vào config_table..."></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>Tần suất gửi</label>
-            <div class="quick-select">
-                <button class="btn-opt active btn-q" onclick="setFreq(1, this)">1p</button>
-                <button class="btn-opt btn-q" onclick="setFreq(5, this)">5p</button>
-                <button class="btn-opt btn-q" onclick="setFreq(10, this)">10p</button>
-                <button class="btn-opt btn-q" onclick="setFreq(30, this)">30p</button>
-                <button class="btn-opt btn-q" id="btnCustom" onclick="toggleCustom(this)">...</button>
-            </div>
-            <div id="customGroup" style="display:none; gap:10px; margin-top:15px;">
-                <input type="number" id="freqValue" value="1" min="1" style="padding:10px; border:1px solid var(--border); border-radius:8px; width:100px;">
-                <select id="freqUnit" style="padding:10px; border:1px solid var(--border); border-radius:8px;">
-                    <option value="minutes">Phút</option>
-                    <option value="hours">Giờ</option>
-                </select>
-            </div>
-        </div>
-
-        <button class="btn-main" onclick="saveSchedule()">Lưu Toàn Bộ Dữ Liệu</button>
-    </div>
-</div>
-
-<script>
-    const DB_NAME = 'MessageSchedulerApp';
-    const TABLE_NAME = 'config_table'; // 1 Table duy nhất
-    const DATA_KEY = 'all_configs';    // 1 Key duy nhất
-    let currentFreq = 1, currentUnit = 'minutes', isCustomMode = false, editingId = null;
-
-    function initDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, 1);
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(TABLE_NAME)) db.createObjectStore(TABLE_NAME);
-            };
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
+    if (status !== "1") {
+      writeLog("NOTIFY_SKIP", `Key ${taskId}: Status off.`);
+      return;
+    }
+    if (userId === "") {
+      writeLog("NOTIFY_SKIP", `Key ${taskId}: Trống UserID.`);
+      return;
     }
 
-    function showView(viewId) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById(viewId).classList.add('active');
-        if(viewId === 'view-list') loadSchedules();
-    }
+    if (!todayResult.includes("done")) {
+      try {
+        const [h, m] = startStr.split(":").map(Number);
+        const startMinutes = h * 60 + m;
 
-    function openCreateView() {
-        resetForm();
-        document.getElementById('form-title').innerText = "Tạo cấu hình mới";
-        showView('view-form');
-    }
+        if (currentTimeNum >= startMinutes) {
+          let shouldNotify = false;
+          let reason = "";
 
-    function setFreq(val, btn) {
-        isCustomMode = false; currentFreq = val; currentUnit = 'minutes';
-        document.getElementById('customGroup').style.display = 'none';
-        updateActiveBtn(btn);
-    }
-
-    function toggleCustom(btn) {
-        isCustomMode = true;
-        document.getElementById('customGroup').style.display = 'flex';
-        updateActiveBtn(btn);
-    }
-
-    function updateActiveBtn(btn) {
-        document.querySelectorAll('.btn-q').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    }
-
-    async function saveSchedule() {
-        const content = document.getElementById('msgContent').value.trim();
-        if (!content) return alert("Vui lòng nhập nội dung!");
-
-        const freq = isCustomMode ? document.getElementById('freqValue').value : currentFreq;
-        const unit = isCustomMode ? document.getElementById('freqUnit').value : currentUnit;
-
-        const db = await initDB();
-        const tx = db.transaction(TABLE_NAME, 'readwrite');
-        const store = tx.objectStore(TABLE_NAME);
-
-        store.get(DATA_KEY).onsuccess = (e) => {
-            let list = e.target.result || [];
-            const data = { 
-                id: editingId || `scheduler_config_${Date.now()}`, 
-                content, frequency: parseInt(freq), unit, timestamp: Date.now() 
-            };
-
-            if (editingId) {
-                list = list.map(item => item.id === editingId ? data : item);
+          if (!lastNotified || lastNotified === "") {
+            shouldNotify = true;
+            reason = "Gửi lần đầu";
+          } else {
+            const lastDate = new Date(lastNotified);
+            const diffMin = Math.floor((now - lastDate) / (1000 * 60));
+            if (diffMin >= freq) {
+              shouldNotify = true;
+              reason = `Quá hạn Freg (${diffMin}p >= ${freq}p)`;
             } else {
-                list.push(data);
+              writeLog("NOTIFY_SKIP", `Key ${taskId}: Giãn cách chưa đủ (${diffMin}/${freq}p).`);
             }
-            store.put(list, DATA_KEY);
-            tx.oncomplete = () => showView('view-list');
-        };
-    }
+          }
 
-    async function loadSchedules() {
-        const db = await initDB();
-        db.transaction(TABLE_NAME, 'readonly').objectStore(TABLE_NAME).get(DATA_KEY).onsuccess = (e) => {
-            const results = e.target.result || [];
-            const list = document.getElementById('schedule-list');
-            if (results.length === 0) { 
-                list.innerHTML = `<div style="text-align:center; padding:40px; color:#94a3b8;">Trống.</div>`; 
-                return; 
-            }
+          if (shouldNotify) {
+            sendTelegram(userId, `🔔 *NHẮC NHỞ*\n📝 ${task["TaskContent"]}\n\n👉 *Reply* để update.\n\`[ID:${taskId}]\``);
             
-            let html = `<table><thead><tr><th>Nội dung tin nhắn</th><th>Tần suất</th><th>Thao tác</th></tr></thead><tbody>`;
-            html += results.map(item => `
-                <tr>
-                    <td class="content-cell" title="${item.content}">${item.content}</td>
-                    <td>${item.frequency}${item.unit === 'minutes' ? 'p' : 'h'}</td>
-                    <td style="white-space: nowrap;">
-                        <button class="btn-test" onclick="testSend('${item.content.replace(/'/g, "\\'")}')">Test</button>
-                        <button class="btn-edit" onclick="editSchedule('${item.id}')">Sửa</button>
-                        <button class="btn-delete" onclick="deleteSchedule('${item.id}')">Xóa</button>
-                    </td>
-                </tr>`).join('');
-            list.innerHTML = html + `</tbody></table>`;
-        };
+            // CẬP NHẬT TRỰC TIẾP VÀO JSON
+            task["LastNotified"] = now;
+            task["AlertCount"] = (Number(task["AlertCount"]) || 0) + 1;
+            hasChange = true;
+            writeLog("NOTIFY_SENT", `Key ${taskId}: ${reason}. AlertCount: ${task["AlertCount"]}`);
+          }
+        } else {
+          writeLog("NOTIFY_SKIP", `Key ${taskId}: Chưa tới giờ (${currentTimeNum} < ${startMinutes}).`);
+        }
+      } catch (err) {
+        writeLog("NOTIFY_ERROR", `Lỗi Key ${taskId}: ${err.message}`);
+      }
+    } else {
+      writeLog("NOTIFY_SKIP", `Key ${taskId}: Đã done.`);
     }
+  });
 
-    async function deleteSchedule(id) {
-        if (!confirm('Xóa bản ghi này khỏi Table?')) return;
-        const db = await initDB();
-        const tx = db.transaction(TABLE_NAME, 'readwrite');
-        const store = tx.objectStore(TABLE_NAME);
-        store.get(DATA_KEY).onsuccess = (e) => {
-            const list = e.target.result || [];
-            const newList = list.filter(item => item.id !== id);
-            store.put(newList, DATA_KEY).onsuccess = loadSchedules;
-        };
+  if (hasChange) {
+    syncJsonToSheet(json, rawHeaders);
+  }
+  writeLog("NOTIFY_END", "--- Kết thúc quét Notify ---");
+}
+
+/**
+ * 3. NHẬN REPLY & CẬP NHẬT JSON (SẮP XẾP NGÀY)
+ */
+function doPost(e) {
+  try {
+    const update = JSON.parse(e.postData.contents);
+    writeLog("WEBHOOK_RECEIVE", "Nhận dữ liệu Telegram.");
+
+    if (!update.message || !update.message.reply_to_message) return;
+
+    const replyText = update.message.text;
+    const originalText = update.message.reply_to_message.text;
+    const idMatch = originalText.match(/\[ID:(\d+)\]/);
+    
+    if (idMatch) {
+      writeLog("REPLY_DETECT", `Phát hiện ID ${idMatch[1]}. Đang update JSON...`);
+      updateSheetByTaskId(idMatch[1], replyText);
+      sendTelegram(update.message.chat.id, `✅ Đã ghi nhận ID ${idMatch[1]}.`);
     }
+  } catch (err) {
+    writeLog("CRITICAL_ERROR", `Lỗi doPost: ${err.toString()}`);
+  }
+}
 
-    async function editSchedule(id) {
-        const db = await initDB();
-        db.transaction(TABLE_NAME, 'readonly').objectStore(TABLE_NAME).get(DATA_KEY).onsuccess = (e) => {
-            const list = e.target.result || [];
-            const data = list.find(item => item.id === id);
-            document.getElementById('msgContent').value = data.content;
-            editingId = data.id;
-            document.getElementById('form-title').innerText = "Chỉnh sửa";
-            toggleCustom(document.getElementById('btnCustom'));
-            document.getElementById('freqValue').value = data.frequency;
-            document.getElementById('freqUnit').value = data.unit;
-            showView('view-form');
-        };
+function updateSheetByTaskId(taskId, content) {
+  const { json, rawHeaders } = getSheetAsJson();
+  const now = new Date();
+  const todayStr = Utilities.formatDate(now, "GMT+9", "dd/MM");
+  const timeStr = Utilities.formatDate(now, "GMT+9", "HH:mm");
+
+  const datePattern = /^\d{1,2}\/\d{1,2}$/;
+  let dateHeaders = [];
+  json.forEach(t => {
+    Object.keys(t).forEach(k => {
+      if (datePattern.test(k) && !dateHeaders.includes(k)) dateHeaders.push(k);
+    });
+  });
+
+  if (!dateHeaders.includes(todayStr)) {
+    dateHeaders.push(todayStr);
+    json.forEach(t => { if (!(todayStr in t)) t[todayStr] = ""; });
+    writeLog("HEADER_NEW", `Thêm ngày mới ${todayStr} vào JSON.`);
+  }
+
+  let found = false;
+  json.forEach(task => {
+    if (String(task["Key"]) === String(taskId)) {
+      const entry = `[${timeStr}] ${content}`;
+      task[todayStr] = task[todayStr] ? task[todayStr] + "\n" + entry : entry;
+      found = true;
+      writeLog("DATA_UPDATE", `Cập nhật nội dung cho Key ${taskId} vào JSON.`);
     }
+  });
 
-    function testSend(content) { alert("🚀 TEST GỬI TIN:\n\n" + content); }
+  if (found) {
+    syncJsonToSheet(json, rawHeaders);
+  } else {
+    writeLog("SYNC_FAIL", `Không tìm thấy Key ${taskId}.`);
+  }
+}
 
-    function resetForm() {
-        editingId = null;
-        document.getElementById('msgContent').value = '';
-        setFreq(1, document.querySelector('.btn-q'));
-    }
+/**
+ * HÀM ĐỒNG BỘ: SẮP XẾP VÀ GHI ĐÈ SHEET
+ */
+function syncJsonToSheet(json, rawHeaders) {
+  writeLog("SYNC_START", "Đang ghi đè JSON vào Sheet...");
+  const datePattern = /^\d{1,2}\/\d{1,2}$/;
+  const attrHeaders = rawHeaders.map(h => (h instanceof Date) ? Utilities.formatDate(h, "GMT+9", "dd/MM") : String(h)).filter(h => !datePattern.test(h));
+  
+  let dateHeaders = [];
+  json.forEach(t => {
+    Object.keys(t).forEach(k => {
+      if (datePattern.test(k) && !dateHeaders.includes(k)) dateHeaders.push(k);
+    });
+  });
 
-    window.onload = loadSchedules;
-</script>
-</body>
-</html>
+  dateHeaders.sort((a, b) => {
+    const p = (s) => { const [d, m] = s.split('/').map(Number); return new Date(2026, m - 1, d); };
+    return p(a) - p(b);
+  });
+
+  const finalHeaders = [...attrHeaders, ...dateHeaders];
+  const outputData = [finalHeaders];
+  json.forEach(t => outputData.push(finalHeaders.map(h => t[h] || "")));
+
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  sheet.clearContents();
+  sheet.getRange(1, 1, outputData.length, finalHeaders.length).setValues(outputData);
+  writeLog("SYNC_COMPLETE", `Ghi đè thành công.`);
+}
+
+/**
+ * 4. HÀM GHI LOG
+ */
+function writeLog(type, content) {
+  Logger.log(type + ":" + content);
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    let logSheet = ss.getSheetByName("Logs") || ss.insertSheet("Logs");
+    logSheet.insertRowAfter(1);
+    logSheet.getRange(2, 1, 1, 3).setValues([[new Date(), type, content]]);
+  } catch (e) {}
+}
+
+function sendTelegram(chatId, text) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+  UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({ chat_id: chatId, text: text, parse_mode: "Markdown" })
+  });
+}

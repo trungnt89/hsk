@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Performance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #2563eb; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 20px; color: #1e293b; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .stat { font-size: 2rem; font-weight: bold; margin: 10px 0; color: var(--primary); }
+        .chart-container { position: relative; height: 300px; width: 100%; margin-top: 20px; }
+        h2 { margin-top: 0; font-size: 1.1rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .badge-done { background: #dcfce7; color: #166534; }
+        .badge-pending { background: #fef9c3; color: #854d0e; }
+    </style>
+</head>
+<body>
+
+    <h1 style="margin-bottom: 30px;">Báo Cáo Hiệu Suất Task (11/01 - 12/01)</h1>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Tỷ lệ Hoàn thành</h2>
+            <div class="stat">38%</div>
+            <p style="color: var(--success)">↑ 17.5% so với hôm qua</p>
+        </div>
+        <div class="card">
+            <h2>TB Nhắc nhở/Task</h2>
+            <div class="stat">12.4</div>
+            <p style="color: var(--danger)">Trạng thái: Trì hoãn cao</p>
+        </div>
+        <div class="card">
+            <h2>Điểm Kỷ Luật</h2>
+            <div class="stat">65/100</div>
+            <div style="width: 100%; background: #e2e8f0; height: 8px; border-radius: 4px;">
+                <div style="width: 65%; background: var(--warning); height: 100%; border-radius: 4px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 2fr 1fr;">
+        <div class="card">
+            <h2>Xu hướng Nhắc nhở & Hoàn thành</h2>
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Phân bổ Task</h2>
+            <div class="chart-container">
+                <canvas id="taskPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Chi tiết Task gần đây (Dựa trên Log)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tên Task</th>
+                    <th>Ngày</th>
+                    <th>Số lần nhắc</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Học 1 câu giao tiếp</td>
+                    <td>12/01</td>
+                    <td>18</td>
+                    <td><span class="badge badge-done">DONE</span></td>
+                </tr>
+                <tr>
+                    <td>D5H</td>
+                    <td>12/01</td>
+                    <td>13</td>
+                    <td><span class="badge badge-done">DONE</span></td>
+                </tr>
+                <tr>
+                    <td>Luyện nghe</td>
+                    <td>12/01</td>
+                    <td>15</td>
+                    <td><span class="badge badge-pending">PENDING</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Biểu đồ đường & cột kết hợp
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['11/01', '12/01'],
+                datasets: [{
+                    label: 'Số lần nhắc nhở (AlertCount)',
+                    data: [45, 98],
+                    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    borderWidth: 2
+                }, {
+                    label: 'Task Hoàn thành',
+                    data: [1, 3],
+                    type: 'line',
+                    borderColor: '#22c55e',
+                    fill: false,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Lần nhắc' } },
+                    y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Số Task' } }
+                }
+            }
+        });
+
+        // Biểu đồ tròn phân bổ
+        const pieCtx = document.getElementById('taskPieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Đã xong', 'Bỏ lỡ', 'Đang thực hiện'],
+                datasets: [{
+                    data: [4, 6, 3],
+                    backgroundColor: ['#22c55e', '#ef4444', '#f59e0b']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    </script>
+	<div style="font-family: sans-serif; border: 1px solid #ddd; padding: 20px; border-radius: 10px; width: 350px;">
+  <h3 style="text-align: center;">Thống kê Hoàn thành Task</h3>
+  
+  <div style="margin-bottom: 20px;">
+    <strong>Ngày 11/01:</strong> 
+    <span style="color: green;">1 ◯</span> / <span style="color: red;">4 ✕</span>
+    <div style="display: flex; height: 20px; margin-top: 5px; border-radius: 10px; overflow: hidden; border: 1px solid #ccc;">
+      <div style="width: 20%; background-color: #2ecc71;"></div> <div style="width: 80%; background-color: #e74c3c;"></div> </div>
+    <small>Tỷ lệ: 20%</small>
+  </div>
+
+  <div>
+    <strong>Ngày 12/01:</strong> 
+    <span style="color: green;">3 ◯</span> / <span style="color: red;">5 ✕</span>
+    <div style="display: flex; height: 20px; margin-top: 5px; border-radius: 10px; overflow: hidden; border: 1px solid #ccc;">
+      <div style="width: 37.5%; background-color: #2ecc71;"></div> <div style="width: 62.5%; background-color: #e74c3c;"></div> </div>
+    <small>Tỷ lệ: 37.5%</small>
+  </div>
+  
+  <div style="margin-top: 15px; font-size: 0.8em; color: #666;">
+    * ◯ (Maru): Hoàn thành | ✕ (Batsu): Không hoàn thành
+  </div>
+</div>
+</body>
+</html>

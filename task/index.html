@@ -1,69 +1,40 @@
-https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec?key=current_state
-
-git add . ;  git commit -m "SRC change" ; git push;
-
-
-
-🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
-chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn. 
-Sau khi đối ứng các yêu cầu hãy tạo file đã sửa hoàn chỉnh
-🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1. Thêm chức năng thêm/sửa/xóa task
-2. trong form có thêm 2 giá trị :
-Status UserID
-giá trị mặc định : Status = 1
-UserID = 8536107228
-3. Ô nhập nội dung task rộng và cao 
-4. Thêm mới giá trị cột KEY không có 
-5. Thòi gian bị hiển thị lên sai 
--------------------
-Src gốc cần sửa:
--------------------
 <!DOCTYPE html>
 <html>
   <head>
     <base target="_top">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Monitor Dashboard</title>
     <style>
       body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 6px; background: #f0f2f5; color: #1c1e21; }
       .container { max-width: 600px; margin: auto; }
       table { width: 100%; border-collapse: collapse; }
       tr { display: block; margin-bottom: 12px; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; background: white; }
-      
       .row-done { border: 2px solid #ff007f !important; border-left: 12px solid #ff007f !important; background: linear-gradient(to right, #ffffff, #fff0f6); box-shadow: 0 6px 20px rgba(255, 0, 127, 0.25); transform: scale(1.01); }
       .row-done .key-id { background: #ff007f !important; color: #fff !important; }
-      
       .row-running { border: 1px solid rgba(46, 204, 113, 0.3); border-left: 8px solid #2ecc71 !important; background-color: #eafaf1; }
       .row-force-stop { border: 1px solid rgba(230, 126, 34, 0.2); border-left: 8px solid #e67e22 !important; background-color: #fef5e7; }
       .row-stopped { border-left: 6px solid #95a5a6 !important; background-color: #f8f9f9; border: 1px solid #ddd; opacity: 0.6; }
-
       td { display: block; width: 100%; padding: 12px; box-sizing: border-box; }
       .header-line { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px; }
-      
       .task-specs { font-size: 11px; color: #444; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 500; }
       .spec-item { display: flex; align-items: center; gap: 2px; }
       .spec-val { font-weight: 800; color: #1a73e8; }
-      
       .badge { padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 10px; text-transform: uppercase; color: #fff; }
       .bg-done { background: #ff007f; }
       .bg-running { background: #2ecc71; }
       .bg-force { background: #e67e22; }
       .bg-stopped { background: #95a5a6; }
-
       .key-id { font-family: monospace; font-weight: bold; color: #1a73e8; font-size: 11px; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #d1d9e6; }
       .content-cell { white-space: pre-wrap; font-weight: 700; line-height: 1.5; color: #2c3e50; font-size: 14px; margin: 10px 0; }
       .note-text { white-space: pre-wrap; color: #2d3436; font-size: 12px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid rgba(0,0,0,0.08); }
-      
       .update-time { font-size: 11px; color: #1a73e8; font-weight: bold; }
       .log-box { background: #1a1a1a; color: #bdc3c7; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 10px; max-height: 100px; overflow-y: auto; margin-top: 10px; }
       .stats-container { background: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
       .date-select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-weight: bold; color: #1a73e8; margin-bottom: 15px; }
-
-      /* CSS Chức năng Quản lý */
       .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background: #1a73e8; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; z-index: 1000; border: none; }
-      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; }
-      .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; max-width: 450px; border-radius: 12px; }
+      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; align-items: center; justify-content: center; }
+      .modal-content { background: white; padding: 20px; width: 95%; max-width: 500px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; margin: auto; }
       .form-group { margin-bottom: 12px; }
       .form-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #666; }
       .form-group input, .form-group textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
@@ -91,7 +62,7 @@ Src gốc cần sửa:
 
       <select id="date-filter" class="date-select" onchange="window.currentFilterDate = this.value; renderInternal();"></select>
 
-      <div id="main-content">Đang tải...</div>
+      <div id="main-content">Đang tải dữ liệu từ API...</div>
       
       <div style="margin-top:20px; font-size: 11px; color: #95a5a6; font-weight: bold;">📜 SYSTEM LOGS</div>
       <div id="log-content" class="log-box"></div>
@@ -102,10 +73,19 @@ Src gốc cần sửa:
     <div id="task-modal" class="modal">
       <div class="modal-content">
         <h3 id="modal-title" style="margin-top:0">Thêm Task</h3>
-        <input type="hidden" id="form-key">
+        <div style="display: flex; gap: 10px;">
+          <div class="form-group" style="flex:1">
+            <label>Key ID</label>
+            <input type="text" id="form-key" placeholder="Bỏ trống = Tự tạo">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>User ID</label>
+            <input type="text" id="form-userid" value="8536107228">
+          </div>
+        </div>
         <div class="form-group">
-          <label>Nội dung Task</label>
-          <textarea id="form-content" style="height: 150px; resize: vertical;"></textarea>
+          <label>Nội dung Task (Rộng/Cao)</label>
+          <textarea id="form-content" style="height: 250px; width: 100%; resize: vertical; font-size: 14px; padding: 10px;"></textarea>
         </div>
         <div style="display: flex; gap: 10px;">
           <div class="form-group" style="flex:1">
@@ -115,6 +95,10 @@ Src gốc cần sửa:
           <div class="form-group" style="flex:1">
             <label>Tần suất (Phút)</label>
             <input type="number" id="form-freq">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Trạng thái</label>
+            <input type="text" id="form-status" value="1">
           </div>
         </div>
         <div class="modal-footer">
@@ -128,37 +112,63 @@ Src gốc cần sửa:
       let myChart = null;
       let globalData = null;
       window.currentFilterDate = "TODAY";
+      
+      // URL BACKEND GAS (Cần đảm bảo backend có hàm doGet trả về JSON)
+      const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxvY66MHgos5E_dYYw6YbV4HxFJrOGKD433_uHc6ybR0gdCBgeGnAByjQYZq5i604Pg/exec";
 
-      function formatTime(isoStr) {
-        if (!isoStr || isoStr === '--:--' || isoStr === 'null') return '--:--';
-        try {
-          if (isoStr.length === 5 && isoStr.includes(':')) return isoStr; 
-          const date = new Date(isoStr);
-          if (isNaN(date.getTime())) return isoStr.substring(0, 16).replace('T', ' '); 
-          return date.getHours().toString().padStart(2, '0') + ':' + 
-                 date.getMinutes().toString().padStart(2, '0');
-        } catch(e) { return isoStr; }
+      function formatTime(val) {
+        if (!val || val === '--:--' || val === 'null') return '--:--';
+        if (val instanceof Date) {
+          return val.getHours().toString().padStart(2, '0') + ':' + val.getMinutes().toString().padStart(2, '0');
+        }
+        let s = String(val);
+        if (s.includes('T')) {
+          const d = new Date(s);
+          return isNaN(d.getTime()) ? s : d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+        }
+        if (s.length >= 5 && s.includes(':')) {
+           let parts = s.split(':');
+           let hh = parts[0].padStart(2, '0');
+           let mm = parts[1].substring(0,2).padStart(2, '0');
+           return hh + ':' + mm;
+        }
+        return s;
       }
 
-      function refreshDashboard() {
-        console.log("Hệ thống: Đang làm mới dữ liệu...");
-        google.script.run.withSuccessHandler(function(data) {
+      async function refreshDashboard() {
+        console.log("Hệ thống: Đang làm mới dữ liệu từ API...");
+        try {
+          const response = await fetch(`${GAS_WEB_APP_URL}?action=getDashboardData`);
+          const data = await response.json();
+          
           if (!data || data.error) return;
           globalData = data;
           updateFilterOptions();
           renderChart();
           renderInternal();
           document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
-        }).getDashboardData();
+        } catch (e) {
+          console.error("Lỗi API:", e);
+          document.getElementById('main-content').innerText = "Lỗi kết nối Backend!";
+        }
       }
 
       function updateFilterOptions() {
         const select = document.getElementById('date-filter');
         if (!globalData || !globalData.tasks || select.options.length > 0) return;
         const now = new Date();
-        const d = String(now.getDate()).padStart(2, '0'), m = String(now.getMonth() + 1).padStart(2, '0');
-        const t1 = d + '/' + m, t2 = m + '/' + d; 
-        const keys = Object.keys(globalData.tasks[0] || {}).filter(k => k.match(/^\d{2}\/\d{2}$/)).reverse();
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const t1 = d + '/' + m;
+        const t2 = m + '/' + d; 
+        
+        const keys = Object.keys(globalData.tasks[0] || {})
+          .filter(k => k.match(/^\d{2}\/\d{2}$/))
+          .sort((a, b) => {
+            const pA = a.split('/'), pB = b.split('/');
+            return (pB[1] + pB[0]).localeCompare(pA[1] + pA[0]);
+          });
+        
         keys.forEach(date => {
           let opt = document.createElement('option');
           opt.value = date; 
@@ -167,12 +177,19 @@ Src gốc cần sửa:
           if (isToday) opt.selected = true;
           select.add(opt);
         });
+        
         if (select.value) window.currentFilterDate = select.value;
       }
 
       function renderChart() {
         if (!globalData || !globalData.tasks || globalData.tasks.length === 0) return;
-        const keys = Object.keys(globalData.tasks[0] || {}).filter(k => k.match(/^\d{2}\/\d{2}$/)).sort();
+        const keys = Object.keys(globalData.tasks[0] || {})
+          .filter(k => k.match(/^\d{2}\/\d{2}$/))
+          .sort((a, b) => {
+            const pA = a.split('/'), pB = b.split('/');
+            return (pA[1] + pA[0]).localeCompare(pB[1] + pB[0]);
+          });
+
         const totalActiveCount = globalData.tasks.filter(t => String(t.Status) === "1").length;
         const doneValues = keys.map(date => {
           return globalData.tasks.filter(t => String(t[date] || "").toLowerCase().includes("done")).length;
@@ -223,7 +240,7 @@ Src gốc cần sửa:
             <div class="header-line">
               <span class="key-id">ID: ${t.Key}</span>
               <div class="task-specs">
-                <span class="spec-item">🕒 <span class="spec-val">${t.Start || '--:--'}</span></span>
+                <span class="spec-item">🕒 <span class="spec-val">${formatTime(t.Start) || '--:--'}</span></span>
                 <span class="spec-item">🔄 <span class="spec-val">${freqVal}m</span></span>
                 <span class="spec-item">🔔 <span class="spec-val">${formatTime(t.LastNotified)}</span></span>
                 <span class="spec-item">⚠️ <span class="spec-val">${t.AlertCount || '0'}</span></span>
@@ -246,34 +263,50 @@ Src gốc cần sửa:
       }
 
       function openModal(task = null) {
-        document.getElementById('task-modal').style.display = 'block';
+        const modal = document.getElementById('task-modal');
+        modal.style.display = 'flex';
         document.getElementById('modal-title').innerText = task ? 'Sửa Task' : 'Thêm Task mới';
         document.getElementById('form-key').value = task ? task.Key : '';
+        document.getElementById('form-userid').value = task ? (task.UserID || '8536107228') : '8536107228';
         document.getElementById('form-content').value = task ? task.TaskContent : '';
-        document.getElementById('form-start').value = task ? (task.Start || '08:00') : '08:00';
+        document.getElementById('form-start').value = task ? formatTime(task.Start) : '08:00';
         document.getElementById('form-freq').value = task ? (task.Freq || task.Freg || '60') : '60';
+        document.getElementById('form-status').value = task ? task.Status : '1';
       }
 
       function closeModal() { document.getElementById('task-modal').style.display = 'none'; }
 
-      function saveTask() {
+      async function saveTask() {
         const taskData = {
-          Key: document.getElementById('form-key').value,
+          Key: document.getElementById('form-key').value || ('K' + Date.now().toString().slice(-6)),
           TaskContent: document.getElementById('form-content').value,
-          Start: document.getElementById('form-start').value,
+          Start: (function() {
+            let val = document.getElementById('form-start').value;
+            if (!val.includes(':')) return val;
+            return val.split(':').map(p => p.padStart(2, '0')).join(':');
+          })(),
           Freq: document.getElementById('form-freq').value,
-          Status: "1",
-          UserID: "8536107228"
+          Status: document.getElementById('form-status').value || "1",
+          UserID: document.getElementById('form-userid').value || "8536107228"
         };
-        google.script.run.withSuccessHandler(function() {
+
+        console.log("Hệ thống: Đang gửi dữ liệu lưu...");
+        try {
+          await fetch(`${GAS_WEB_APP_URL}?action=saveTaskToSheet`, {
+            method: 'POST',
+            body: JSON.stringify(taskData)
+          });
           closeModal();
-          refreshDashboard();
-        }).saveTaskToSheet(taskData);
+          setTimeout(refreshDashboard, 1500); 
+        } catch (e) { alert("Lỗi khi lưu task!"); }
       }
 
-      function deleteTask(key) {
+      async function deleteTask(key) {
         if (confirm('Bạn có chắc muốn xóa Task ID: ' + key + '?')) {
-          google.script.run.withSuccessHandler(refreshDashboard).deleteTaskFromSheet(key);
+          try {
+            await fetch(`${GAS_WEB_APP_URL}?action=deleteTaskFromSheet&key=${key}`, { method: 'POST' });
+            setTimeout(refreshDashboard, 1000);
+          } catch (e) { alert("Lỗi khi xóa!"); }
         }
       }
 

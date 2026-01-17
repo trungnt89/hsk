@@ -46,10 +46,24 @@
       .action-btn { font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
       .edit-text { color: #1a73e8; }
       .del-text { color: #d93025; }
+
+      /* Toast Notification System */
+      #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; pointer-events: none; }
+      .toast { 
+        background: #333; color: white; padding: 14px 24px; border-radius: 8px; margin-bottom: 10px; 
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2); animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards; 
+        min-width: 250px; font-weight: 600; font-size: 13px; display: flex; align-items: center;
+      }
+      .toast-success { background: #2ecc71; border-left: 6px solid #27ae60; }
+      .toast-error { background: #e74c3c; border-left: 6px solid #c0392b; }
+      @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      @keyframes fadeOut { to { opacity: 0; transform: translateY(-20px); } }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
+    <div id="toast-container"></div>
+
     <div class="container">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
          <h2 style="margin:0; font-size: 18px; color: #2c3e50;">🚀 Task Monitor</h2>
@@ -113,8 +127,18 @@
       let globalData = null;
       window.currentFilterDate = "TODAY";
       
-      // URL BACKEND GAS (Cần đảm bảo backend có hàm doGet trả về JSON)
       const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxvY66MHgos5E_dYYw6YbV4HxFJrOGKD433_uHc6ybR0gdCBgeGnAByjQYZq5i604Pg/exec";
+
+      // HÀM HIỂN THỊ POPUP THÔNG BÁO (TOAST)
+      function showToast(msg, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerText = msg;
+        container.appendChild(toast);
+        // Tự hủy sau khi kết thúc animation fadeOut
+        setTimeout(() => { if(toast) toast.remove(); }, 3200);
+      }
 
       function formatTime(val) {
         if (!val || val === '--:--' || val === 'null') return '--:--';
@@ -277,6 +301,7 @@
       function closeModal() { document.getElementById('task-modal').style.display = 'none'; }
 
       async function saveTask() {
+        const isEdit = !!document.getElementById('form-key').value;
         const taskData = {
           Key: document.getElementById('form-key').value || ('K' + Date.now().toString().slice(-6)),
           TaskContent: document.getElementById('form-content').value,
@@ -297,16 +322,24 @@
             body: JSON.stringify(taskData)
           });
           closeModal();
+          showToast(isEdit ? "✅ Cập nhật Task thành công!" : "✅ Đã thêm Task mới!");
           setTimeout(refreshDashboard, 1500); 
-        } catch (e) { alert("Lỗi khi lưu task!"); }
+        } catch (e) { 
+          showToast("❌ Lỗi khi lưu task!", "error");
+          console.error("Lỗi lưu:", e);
+        }
       }
 
       async function deleteTask(key) {
         if (confirm('Bạn có chắc muốn xóa Task ID: ' + key + '?')) {
           try {
+            showToast("⏳ Đang xóa Task...");
             await fetch(`${GAS_WEB_APP_URL}?action=deleteTaskFromSheet&key=${key}`, { method: 'POST' });
+            showToast("🗑️ Đã xóa Task thành công!");
             setTimeout(refreshDashboard, 1000);
-          } catch (e) { alert("Lỗi khi xóa!"); }
+          } catch (e) { 
+            showToast("❌ Lỗi khi xóa!", "error");
+          }
         }
       }
 

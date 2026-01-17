@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PMP Master Pro - V1.9 Vocab Protected</title>
+    <title>PMP Master Pro - V1.9.3 Final</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-	<script src="../assistive.js"></script>    
+    <script src="../assistive.js"></script>    
     <script src="data1.js"></script><script src="data2.js"></script>
     <script src="data3.js"></script><script src="data4.js"></script>
     <script src="data5.js"></script>
@@ -29,6 +29,8 @@
         .nav-row { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
         .brand { font-size: 15px; font-weight: 900; color: var(--text-main); }
         
+        #storage-info { font-size: 10px; font-weight: 800; color: #8E8E93; background: #F2F2F7; padding: 2px 8px; border-radius: 10px; }
+
         .filter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 12px 12px; }
         .tab-pill {
             border: none; padding: 12px; border-radius: 12px; 
@@ -82,7 +84,6 @@
         .nav-btn.active { border-color: var(--primary); color: var(--primary); background: #F0F7FF; }
         .nav-btn i { font-style: normal; font-size: 16px; margin-bottom: 3px; }
 
-        /* VOCAB PAGE STYLE */
         #vocab-page { display:none; position:fixed; inset:0; background:var(--bg); z-index:3000; flex-direction:column; padding-top:env(safe-area-inset-top); }
         .vocab-list { flex-grow:1; overflow-y:auto; padding:12px; }
         .vocab-item { background:white; padding:15px; border-radius:15px; margin-bottom:10px; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
@@ -115,6 +116,7 @@
 <header class="system-header">
     <div class="nav-row">
         <div class="brand" onclick="toggleVocabPage(true)">PMP MASTER PRO 📖</div>
+        <div id="storage-info" title="Dung lượng đã dùng trong Sheet">0/50k</div>
         <select id="set-select" onchange="changeExamSet(this.value)" style="border:none; font-weight:800; color:var(--primary); background:transparent; font-size:14px;">
             <option value="DATA_SET_1">ĐỀ 01</option>
             <option value="DATA_SET_2">ĐỀ 02</option>
@@ -143,58 +145,71 @@
 </nav>
 
 <script>
-/** * LƯU TRỮ INDEXEDDB 
- * Thay thế cơ chế localStorage để hỗ trợ dữ liệu lớn và bền vững hơn.
- */
-const DB_NAME = 'PMP_PRO_DB';
-const DB_STORE = 'app_state';
-let db;
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbymhGMFxLaw-7V5JQblXRH13wdjgAYReukTbQQcs4DXrH7ajja-vki0dsGII6iqb8k/exec';
+const SHEET_ID = '1VrTQvaJlLOwZwyKfuIxueRCCz4lCdve0Vk6_-EbQASE';
 
-function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 1);
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains(DB_STORE)) {
-                db.createObjectStore(DB_STORE);
-            }
-        };
-        request.onsuccess = (e) => {
-            db = e.target.result;
-            resolve();
-        };
-        request.onerror = (e) => reject("DB Init Error");
-    });
-}
+let isLoaded = false; // CỜ AN TOÀN
 
 async function loadState() {
-    return new Promise((resolve) => {
-        const tx = db.transaction(DB_STORE, 'readonly');
-        const store = tx.objectStore(DB_STORE);
-        const request = store.get('current_state');
-        request.onsuccess = () => {
-            const data = request.result;
-            resolve(data || {
-                set: 'DATA_SET_1', tab: 'todo', diffFilter: null, progress: {}, lastIdx: 0, vocab: []
-            });
-        };
-    });
+    console.log("[LOG] Đang tải trạng thái từ Google Sheets...");
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=load&sheetId=${SHEET_ID}`);
+        const result = await response.json();
+        console.log("[LOG] Tải dữ liệu thành công.");
+        return result || { set: 'DATA_SET_1', tab: 'todo', diffFilter: null, progress: {}, lastIdx: 0, vocab: [] };
+    } catch (e) {
+        console.error("[LOG] Lỗi backend GAS.", e);
+        return { set: 'DATA_SET_1', tab: 'todo', diffFilter: null, progress: {}, lastIdx: 0, vocab: [] };
+    }
 }
 
 async function save() {
+    // CHỐT CHẶN: Chỉ cho phép lưu nếu ứng dụng đã load xong dữ liệu từ Sheet
+    if (!isLoaded) {
+        console.warn("[LOG] NGĂN CHẶN LỖI: Dữ liệu chưa load xong, hủy lệnh lưu để bảo vệ dữ liệu Sheet.");
+        return;
+    }
+
     state.lastIdx = idx;
-    const tx = db.transaction(DB_STORE, 'readwrite');
-    const store = tx.objectStore(DB_STORE);
-    store.put(state, 'current_state');
+    const jsonStr = JSON.stringify({ action: 'save', sheetId: SHEET_ID, state: state });
+    const currentSize = jsonStr.length;
+    
+    const storageInfo = document.getElementById('storage-info');
+    if (storageInfo) {
+        storageInfo.innerText = `${(currentSize/1024).toFixed(1)}k / 50k`;
+    }
+
+    console.log("[LOG] Đang gửi yêu cầu POST đồng bộ dữ liệu...");
+    try {
+        await fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: jsonStr
+        });
+        console.log("[LOG] Đã lưu thành công.");
+    } catch (e) {
+        console.error("[LOG] Thất bại khi đồng bộ:", e);
+    }
 }
 
-// ---------------------------------------------------------
 let state = {};
 let currentData = []; let filteredData = []; let idx = 0; let isFirstLoad = true;
 
-function changeExamSet(v) { state.set = v; idx = 0; update(); }
-function switchTab(t) { state.tab = t; state.diffFilter = null; idx = 0; update(); }
-function toggleFilter(f) { state.diffFilter = (state.diffFilter === f) ? null : f; idx = 0; update(); }
+function changeExamSet(v) { 
+    console.log("[LOG] Đổi bộ đề sang:", v);
+    state.set = v; idx = 0; update(); save();
+}
+
+function switchTab(t) { 
+    console.log("[LOG] Chuyển tab:", t);
+    state.tab = t; state.diffFilter = null; idx = 0; update(); save();
+}
+
+function toggleFilter(f) { 
+    state.diffFilter = (state.diffFilter === f) ? null : f; 
+    console.log("[LOG] Lọc trạng thái:", state.diffFilter || "Tất cả");
+    idx = 0; update(); save();
+}
 
 document.addEventListener('selectionchange', () => {
     const text = window.getSelection().toString().trim();
@@ -202,6 +217,7 @@ document.addEventListener('selectionchange', () => {
     if (text.length > 2) {
         clearTimeout(window.transTimer);
         window.transTimer = setTimeout(async () => {
+            console.log("[LOG] Yêu cầu dịch thuật văn bản:", text);
             display.innerHTML = '<div class="trans-header">BẢN DỊCH <span class="trans-close" onclick="document.getElementById(\'trans-display\').style.display=\'none\'">ĐÓNG [X]</span></div><div class="trans-content" id="trans-text">Đang dịch...</div>';
             display.style.display = 'flex';
             try {
@@ -210,21 +226,19 @@ document.addEventListener('selectionchange', () => {
                 const result = data[0].map(s => s[0]).join("");
                 document.getElementById('trans-text').innerText = result;
                 saveToVocab(text, result);
-            } catch (e) { document.getElementById('trans-text').innerText = "Lỗi kết nối."; }
+            } catch (e) { 
+                console.error("[LOG] Lỗi dịch API:", e);
+                document.getElementById('trans-text').innerText = "Lỗi kết nối."; 
+            }
         }, 600);
     }
 });
 
 function saveToVocab(en, vi) {
     const q = filteredData[idx];
-    const item = {
-        set: state.set,
-        qid: q ? q.id : 'N/A',
-        en: en,
-        vi: vi,
-        time: new Date().toLocaleString('vi-VN')
-    };
+    const item = { set: state.set, qid: q ? q.id : 'N/A', en: en, vi: vi, time: new Date().toLocaleString('vi-VN') };
     state.vocab.unshift(item);
+    console.log("[LOG] Đã thêm từ vựng mới.");
     save();
 }
 
@@ -247,10 +261,9 @@ function renderVocabList() {
 }
 
 function deleteVocab(i) {
-    if (confirm("Bạn có chắc chắn muốn xóa từ vựng này không?")) {
+    if (confirm("Xóa từ vựng này?")) {
         state.vocab.splice(i, 1);
-        save(); 
-        renderVocabList();
+        save(); renderVocabList();
     }
 }
 
@@ -275,12 +288,10 @@ function importVocab(input) {
             const rows = e.target.result.split('\n').slice(1);
             rows.forEach(row => {
                 const cols = row.split('","').map(c => c.replace(/"/g, ''));
-                if(cols.length >= 4) {
-                    state.vocab.push({ set: cols[0], qid: cols[1], en: cols[2], vi: cols[3], time: cols[4] || '' });
-                }
+                if(cols.length >= 4) state.vocab.push({ set: cols[0], qid: cols[1], en: cols[2], vi: cols[3], time: cols[4] || '' });
             });
             save(); renderVocabList();
-            alert("Đã nhập dữ liệu thành công!");
+            alert("Đã nhập thành công!");
         } catch(err) { alert("Lỗi định dạng file!"); }
     };
     reader.readAsText(file);
@@ -300,15 +311,19 @@ function update() {
     document.getElementById('cnt-Easy').innerText = `(${counts.Easy})`;
     document.getElementById('cnt-Medium').innerText = `(${counts.Medium})`;
     document.getElementById('cnt-Hard').innerText = `(${counts.Hard})`;
+    
     filteredData = currentData.filter(q => {
         const p = state.progress[state.set + q.id];
         let matchTab = (state.tab === 'done') ? (p && p.ans) : (!p || !p.ans);
         let matchDiff = state.diffFilter ? (p?.diff === state.diffFilter) : true;
         return matchTab && matchDiff;
     });
+    
     if (isFirstLoad) { idx = (state.lastIdx < filteredData.length) ? state.lastIdx : 0; isFirstLoad = false; }
     if (idx >= filteredData.length && filteredData.length > 0) idx = 0;
-    save();
+    
+    // ĐÃ XÓA save() TẠI ĐÂY ĐỂ TRÁNH LỖI GHI ĐÈ KHI LOAD
+    
     document.getElementById('tab-todo').classList.toggle('active', state.tab === 'todo');
     document.getElementById('tab-done').classList.toggle('active', state.tab === 'done');
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -336,7 +351,7 @@ function render() {
                 ${Object.entries(q.options).map(([k,v]) => `<div class="option-item ${p.ans===k?'selected':''}" id="opt-${k}" onclick="setAns('${q.id}','${k}')"><b>${k}.</b> ${v}</div>`).join('')}
             </div>
             <div id="exp-box" style="display:none; border-left:4px solid var(--primary);">${q.explanation}</div>
-            <textarea class="note-area" placeholder="Ghi chú..." oninput="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
+            <textarea class="note-area" placeholder="Ghi chú..." onchange="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
         </div>
     `;
 }
@@ -345,22 +360,26 @@ function setStatus(qid, level) {
     const key = state.set + qid;
     if(!state.progress[key]) state.progress[key] = {};
     state.progress[key].diff = (state.progress[key].diff === level) ? null : level;
-    save(); updateCountsOnly(); render();
+    console.log(`[LOG] Đã đánh dấu độ khó cho câu ${qid}: ${level}`);
+    updateCountsOnly(); render(); save(); 
 }
 
 function setAns(qid, k) {
     const key = state.set + qid;
     if(!state.progress[key]) state.progress[key] = {};
     state.progress[key].ans = (state.progress[key].ans === k) ? null : k;
-    save(); updateCountsOnly();
+    console.log(`[LOG] Người dùng chọn đáp án cho câu ${qid}: ${k}`);
+    updateCountsOnly();
     document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
     if(state.progress[key].ans) document.getElementById('opt-'+k).classList.add('selected');
+    save(); 
 }
 
 function saveNote(qid, val) { 
     const key = state.set + qid; 
     if(!state.progress[key]) state.progress[key] = {}; 
     state.progress[key].note = val; 
+    console.log(`[LOG] Cập nhật ghi chú cho câu ${qid}.`);
     save(); 
 }
 
@@ -398,39 +417,36 @@ function toggleAns() {
 let isMoving = false;
 function move(dir) {
     if (isMoving) return;
-    const card = document.getElementById('book-page');
     if (dir === 'next' && idx >= filteredData.length - 1) return;
     if (dir === 'prev' && idx <= 0) return;
     isMoving = true;
-    if (dir === 'next') card.classList.add('slide-out-left'); else card.classList.add('slide-out-right');
+    const card = document.getElementById('book-page');
+    card.classList.add(dir === 'next' ? 'slide-out-left' : 'slide-out-right');
     setTimeout(() => {
-        if (dir === 'next') idx++; else if (dir === 'prev') idx--;
+        if (dir === 'next') idx++; else idx--;
         update(); 
         card.classList.remove('slide-out-left', 'slide-out-right');
-        if (dir === 'next') card.classList.add('slide-in-init-right'); else card.classList.add('slide-in-init-left');
+        card.classList.add(dir === 'next' ? 'slide-in-init-right' : 'slide-in-init-left');
         setTimeout(() => {
             card.classList.remove('slide-in-init-right', 'slide-in-init-left');
             setTimeout(() => { isMoving = false; }, 700);
+            save(); // Lưu vị trí câu hiện tại
         }, 50);
     }, 700);
 }
 
-let touchStartX = 0; let touchEndX = 0;
 document.getElementById('swipe-area').addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
 document.getElementById('swipe-area').addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
 function handleSwipe() {
     if (window.getSelection().toString().trim() !== "") return;
-    const swipeThreshold = 60; 
-    if (touchEndX < touchStartX - swipeThreshold) move('next');
-    if (touchEndX > touchStartX + swipeThreshold) move('prev');
+    if (touchEndX < touchStartX - 60) move('next');
+    if (touchEndX > touchStartX + 60) move('prev');
 }
 
-/**
- * HÀM KHỞI CHẠY (Thay cho window.onload cũ)
- */
 async function startApp() {
-    await initDB();
+    console.log("[LOG] Khởi chạy ứng dụng...");
     state = await loadState();
+    isLoaded = true; // MỞ KHÓA LƯU SAU KHI TẢI XONG
     update();
 }
 

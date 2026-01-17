@@ -1,23 +1,10 @@
-https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec?key=current_state
-
-git add . ;  git commit -m "SRC change" ; git push;
-
-
-
-🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
-chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn. 
-Sau khi đối ứng các yêu cầu hãy tạo file đã sửa hoàn chỉnh
-🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1. Chuyển đổi html gọi backend thông qua api sử dụng ajax là gas hiện tại, để đẩy html/js lên vercel thay vì chạy trực tiếp trong gas
--------------------
-Src gốc cần sửa:
--------------------
 <!DOCTYPE html>
 <html>
   <head>
     <base target="_top">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discipline Tracker - Vercel</title>
     <style>
       body { 
         font-family: 'Segoe UI', Tahoma, sans-serif; 
@@ -208,7 +195,7 @@ Src gốc cần sửa:
         <span id="sync-time" class="update-tag">...</span>
       </div>
 
-      <div id="grid-container">Đang tải dữ liệu...</div>
+      <div id="grid-container">Đang tải dữ liệu từ Cloud...</div>
 
       <div class="legend">
         <div class="legend-item"><span class="cell-icon icon-done" style="width:14px;height:14px;line-height:14px;font-size:8px;">✓</span> Xong</div>
@@ -218,6 +205,9 @@ Src gốc cần sửa:
     </div>
 
     <script>
+      // URL BACKEND CỦA BẠN (Cần deploy lại GAS sau khi thêm hàm doGet)
+      const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvY66MHgos5E_dYYw6YbV4HxFJrOGKD433_uHc6ybR0gdCBgeGnAByjQYZq5i604Pg/exec";
+
       function toggleTask(id) {
         console.log("Hành động: Đóng/Mở task " + id);
         const el = document.getElementById('text-' + id);
@@ -249,9 +239,12 @@ Src gốc cần sửa:
         return s;
       }
 
-      function loadGrid() {
-        console.log("Hệ thống: Đang tải và chuẩn hóa hiển thị thời gian...");
-        google.script.run.withSuccessHandler(function(data) {
+      async function loadGrid() {
+        console.log("Hệ thống: Đang đồng bộ dữ liệu từ Google Sheets API...");
+        try {
+          const response = await fetch(`${GAS_API_URL}?action=getDashboardData`);
+          const data = await response.json();
+
           if (!data || !data.tasks) return;
           const keys = Object.keys(data.tasks[0] || {}).filter(k => k.match(/^\d{2}\/\d{2}$/)).sort();
           
@@ -297,7 +290,10 @@ Src gốc cần sửa:
           html += '</tbody></table>';
           document.getElementById('grid-container').innerHTML = html;
           document.getElementById('sync-time').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        }).getDashboardData();
+        } catch (error) {
+          console.error("Lỗi:", error);
+          document.getElementById('grid-container').innerText = "Không thể kết nối Backend.";
+        }
       }
 
       window.onload = loadGrid;

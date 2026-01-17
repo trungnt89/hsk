@@ -2,316 +2,97 @@
 <html>
   <head>
     <base target="_top">
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Monitor Dashboard</title>
+    <title>Discipline Monitor - Vercel Center</title>
     <style>
-      body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 6px; background: #f0f2f5; color: #1c1e21; }
-      .container { max-width: 600px; margin: auto; }
-      table { width: 100%; border-collapse: collapse; }
-      tr { display: block; margin-bottom: 12px; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; background: white; }
-      .row-done { border: 2px solid #ff007f !important; border-left: 12px solid #ff007f !important; background: linear-gradient(to right, #ffffff, #fff0f6); box-shadow: 0 6px 20px rgba(255, 0, 127, 0.25); transform: scale(1.01); }
-      .row-done .key-id { background: #ff007f !important; color: #fff !important; }
-      .row-running { border: 1px solid rgba(46, 204, 113, 0.3); border-left: 8px solid #2ecc71 !important; background-color: #eafaf1; }
-      .row-force-stop { border: 1px solid rgba(230, 126, 34, 0.2); border-left: 8px solid #e67e22 !important; background-color: #fef5e7; }
-      .row-stopped { border-left: 6px solid #95a5a6 !important; background-color: #f8f9f9; border: 1px solid #ddd; opacity: 0.6; }
-      td { display: block; width: 100%; padding: 12px; box-sizing: border-box; }
-      .header-line { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px; }
-      .task-specs { font-size: 11px; color: #444; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 500; }
-      .spec-item { display: flex; align-items: center; gap: 2px; }
-      .spec-val { font-weight: 800; color: #1a73e8; }
-      .badge { padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 10px; text-transform: uppercase; color: #fff; }
-      .bg-done { background: #ff007f; }
-      .bg-running { background: #2ecc71; }
-      .bg-force { background: #e67e22; }
-      .bg-stopped { background: #95a5a6; }
-      .key-id { font-family: monospace; font-weight: bold; color: #1a73e8; font-size: 11px; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #d1d9e6; }
-      .content-cell { white-space: pre-wrap; font-weight: 700; line-height: 1.5; color: #2c3e50; font-size: 14px; margin: 10px 0; }
-      .note-text { white-space: pre-wrap; color: #2d3436; font-size: 12px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid rgba(0,0,0,0.08); }
-      .update-time { font-size: 11px; color: #1a73e8; font-weight: bold; }
-      .log-box { background: #1a1a1a; color: #bdc3c7; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 10px; max-height: 100px; overflow-y: auto; margin-top: 10px; }
-      .stats-container { background: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-      .date-select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-weight: bold; color: #1a73e8; margin-bottom: 15px; }
-      .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background: #1a73e8; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; z-index: 1000; border: none; }
-      .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; align-items: center; justify-content: center; }
-      .modal-content { background: white; padding: 20px; width: 95%; max-width: 500px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; margin: auto; }
-      .form-group { margin-bottom: 12px; }
-      .form-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #666; }
-      .form-group input, .form-group textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-      .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-      .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
-      .btn-cancel { background: #eee; }
-      .btn-save { background: #1a73e8; color: white; }
-      .action-btns { display: flex; gap: 12px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); }
-      .action-btn { font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-      .edit-text { color: #1a73e8; }
-      .del-text { color: #d93025; }
+      body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #f0f2f5; overflow: hidden; }
+      
+      /* Thanh điều hướng chọn Mode */
+      .nav-bar {
+        height: 45px;
+        background: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 100;
+        position: relative;
+      }
+
+      .nav-btn {
+        padding: 6px 16px;
+        border: none;
+        border-radius: 20px;
+        background: #eee;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+        transition: 0.3s;
+        color: #555;
+      }
+
+      .nav-btn.active {
+        background: #ff007a;
+        color: white;
+      }
+
+      /* Container Iframe */
+      .content-area {
+        height: calc(100% - 45px); /* Trừ đi chiều cao nav-bar */
+        width: 100%;
+      }
+
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: none; /* Ẩn mặc định */
+      }
+
+      iframe.active {
+        display: block; /* Hiện Iframe được chọn */
+      }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
-    <div class="container">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-         <h2 style="margin:0; font-size: 18px; color: #2c3e50;">🚀 Task Monitor</h2>
-         <div id="last-update" class="update-time">--:--:--</div>
-      </div>
 
-      <div class="stats-container">
-        <canvas id="completionChart" height="120"></canvas>
-      </div>
-
-      <select id="date-filter" class="date-select" onchange="window.currentFilterDate = this.value; renderInternal();"></select>
-
-      <div id="main-content">Đang tải dữ liệu từ API...</div>
-      
-      <div style="margin-top:20px; font-size: 11px; color: #95a5a6; font-weight: bold;">📜 SYSTEM LOGS</div>
-      <div id="log-content" class="log-box"></div>
+    <div class="nav-bar">
+      <button class="nav-btn active" onclick="switchMode('dashboard', this)">📊 DASHBOARD</button>
+      <button class="nav-btn" onclick="switchMode('StatusGrid', this)">🚀 STATUS GRID</button>
     </div>
 
-    <button class="fab" onclick="openModal()">+</button>
-
-    <div id="task-modal" class="modal">
-      <div class="modal-content">
-        <h3 id="modal-title" style="margin-top:0">Thêm Task</h3>
-        <div style="display: flex; gap: 10px;">
-          <div class="form-group" style="flex:1">
-            <label>Key ID</label>
-            <input type="text" id="form-key" placeholder="Bỏ trống = Tự tạo">
-          </div>
-          <div class="form-group" style="flex:1">
-            <label>User ID</label>
-            <input type="text" id="form-userid" value="8536107228">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Nội dung Task (Rộng/Cao)</label>
-          <textarea id="form-content" style="height: 250px; width: 100%; resize: vertical; font-size: 14px; padding: 10px;"></textarea>
-        </div>
-        <div style="display: flex; gap: 10px;">
-          <div class="form-group" style="flex:1">
-            <label>Bắt đầu (HH:mm)</label>
-            <input type="text" id="form-start">
-          </div>
-          <div class="form-group" style="flex:1">
-            <label>Tần suất (Phút)</label>
-            <input type="number" id="form-freq">
-          </div>
-          <div class="form-group" style="flex:1">
-            <label>Trạng thái</label>
-            <input type="text" id="form-status" value="1">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-cancel" onclick="closeModal()">Hủy</button>
-          <button class="btn btn-save" onclick="saveTask()">Lưu</button>
-        </div>
-      </div>
+    <div class="content-area" id="frame-container">
+      <iframe id="frame-dashboard" class="active" src=""></iframe>
+      <iframe id="frame-StatusGrid" src=""></iframe>
     </div>
 
     <script>
-      let myChart = null;
-      let globalData = null;
-      window.currentFilterDate = "TODAY";
-      
-      // URL BACKEND GAS (Cần đảm bảo backend có hàm doGet trả về JSON)
-      const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxvY66MHgos5E_dYYw6YbV4HxFJrOGKD433_uHc6ybR0gdCBgeGnAByjQYZq5i604Pg/exec";
+      // LOG: Khởi tạo hệ thống trên Vercel
+      console.log("Log [Init]: Bắt đầu nạp tài nguyên từ Vercel...");
 
-      function formatTime(val) {
-        if (!val || val === '--:--' || val === 'null') return '--:--';
-        if (val instanceof Date) {
-          return val.getHours().toString().padStart(2, '0') + ':' + val.getMinutes().toString().padStart(2, '0');
-        }
-        let s = String(val);
-        if (s.includes('T')) {
-          const d = new Date(s);
-          return isNaN(d.getTime()) ? s : d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-        }
-        if (s.length >= 5 && s.includes(':')) {
-           let parts = s.split(':');
-           let hh = parts[0].padStart(2, '0');
-           let mm = parts[1].substring(0,2).padStart(2, '0');
-           return hh + ':' + mm;
-        }
-        return s;
-      }
+      window.onload = function() {
+        // Nạp file HTML cục bộ thay vì gọi link GAS
+        document.getElementById('frame-dashboard').src = "dashboard.html";
+        document.getElementById('frame-StatusGrid').src = "status_grid.html";
+        console.log("Log [System]: Đã nạp Dashboard và StatusGrid vào hệ thống Frame");
+      };
 
-      async function refreshDashboard() {
-        console.log("Hệ thống: Đang làm mới dữ liệu từ API...");
-        try {
-          const response = await fetch(`${GAS_WEB_APP_URL}?action=getDashboardData`);
-          const data = await response.json();
-          
-          if (!data || data.error) return;
-          globalData = data;
-          updateFilterOptions();
-          renderChart();
-          renderInternal();
-          document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
-        } catch (e) {
-          console.error("Lỗi API:", e);
-          document.getElementById('main-content').innerText = "Lỗi kết nối Backend!";
+      function switchMode(pageId, btn) {
+        // Cập nhật trạng thái nút
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Cập nhật hiển thị Frame
+        document.querySelectorAll('iframe').forEach(f => f.classList.remove('active'));
+        const targetFrame = document.getElementById('frame-' + pageId);
+        if (targetFrame) {
+          targetFrame.classList.add('active');
+          console.log("Log [Navigation]: Chuyển sang chế độ: " + pageId);
+        } else {
+          console.error("Log [Error]: Không tìm thấy Frame ID: " + pageId);
         }
       }
-
-      function updateFilterOptions() {
-        const select = document.getElementById('date-filter');
-        if (!globalData || !globalData.tasks || select.options.length > 0) return;
-        const now = new Date();
-        const d = String(now.getDate()).padStart(2, '0');
-        const m = String(now.getMonth() + 1).padStart(2, '0');
-        const t1 = d + '/' + m;
-        const t2 = m + '/' + d; 
-        
-        const keys = Object.keys(globalData.tasks[0] || {})
-          .filter(k => k.match(/^\d{2}\/\d{2}$/))
-          .sort((a, b) => {
-            const pA = a.split('/'), pB = b.split('/');
-            return (pB[1] + pB[0]).localeCompare(pA[1] + pA[0]);
-          });
-        
-        keys.forEach(date => {
-          let opt = document.createElement('option');
-          opt.value = date; 
-          const isToday = (date === t1 || date === t2);
-          opt.text = "Ngày " + date + (isToday ? " [Hôm nay]" : "");
-          if (isToday) opt.selected = true;
-          select.add(opt);
-        });
-        
-        if (select.value) window.currentFilterDate = select.value;
-      }
-
-      function renderChart() {
-        if (!globalData || !globalData.tasks || globalData.tasks.length === 0) return;
-        const keys = Object.keys(globalData.tasks[0] || {})
-          .filter(k => k.match(/^\d{2}\/\d{2}$/))
-          .sort((a, b) => {
-            const pA = a.split('/'), pB = b.split('/');
-            return (pA[1] + pA[0]).localeCompare(pB[1] + pB[0]);
-          });
-
-        const totalActiveCount = globalData.tasks.filter(t => String(t.Status) === "1").length;
-        const doneValues = keys.map(date => {
-          return globalData.tasks.filter(t => String(t[date] || "").toLowerCase().includes("done")).length;
-        });
-        const ctx = document.getElementById('completionChart').getContext('2d');
-        if (myChart) myChart.destroy();
-        myChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: keys,
-            datasets: [{ label: 'Task đã hoàn thành', data: doneValues, borderColor: '#ff007f', backgroundColor: 'rgba(255, 0, 127, 0.1)', fill: true, tension: 0.3 }]
-          },
-          options: { plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true, suggestedMax: totalActiveCount, ticks: { stepSize: 1 } } } }
-        });
-      }
-
-      function renderInternal() {
-        if (!globalData || !globalData.tasks) return;
-        const mainContent = document.getElementById('main-content');
-        const now = new Date();
-        const d = String(now.getDate()).padStart(2, '0'), m = String(now.getMonth() + 1).padStart(2, '0');
-        const keys = Object.keys(globalData.tasks[0] || {});
-        const todayKey = keys.find(k => k === (d+'/'+m) || k === (m+'/'+d)) || keys.find(k => k.match(/^\d{2}\/\d{2}$/));
-        const targetDate = (window.currentFilterDate === "TODAY") ? todayKey : window.currentFilterDate;
-        
-        let tasks = globalData.tasks.filter(t => String(t.Status) !== "0" || (t[targetDate] && t[targetDate] !== ""));
-        tasks.forEach(t => {
-           let note = String(t[targetDate] || "").toLowerCase();
-           if (note.includes("done")) t._sort = 1;
-           else if (String(t.Status) === "1") t._sort = 2;
-           else if (note.includes("stop")) t._sort = 3;
-           else t._sort = 4;
-        });
-        tasks.sort((a, b) => a._sort - b._sort);
-
-        let html = '<table>';
-        tasks.forEach(t => {
-          let noteStr = t[targetDate] || "";
-          let noteLower = noteStr.toLowerCase();
-          let rowClass = "row-stopped", bClass = "bg-stopped", sText = "STOP";
-          if (noteLower.includes("done")) { rowClass = "row-done"; bClass = "bg-done"; sText = "DONE"; }
-          else if (String(t.Status) === "1") { rowClass = "row-running"; bClass = "bg-running"; sText = "RUN"; }
-          else if (noteLower.includes("stop")) { rowClass = "row-force-stop"; bClass = "bg-force"; sText = "FORCED"; }
-
-          const freqVal = t.Freq || t.Freg || '0';
-
-          html += `<tr class="${rowClass}"><td>
-            <div class="header-line">
-              <span class="key-id">ID: ${t.Key}</span>
-              <div class="task-specs">
-                <span class="spec-item">🕒 <span class="spec-val">${formatTime(t.Start) || '--:--'}</span></span>
-                <span class="spec-item">🔄 <span class="spec-val">${freqVal}m</span></span>
-                <span class="spec-item">🔔 <span class="spec-val">${formatTime(t.LastNotified)}</span></span>
-                <span class="spec-item">⚠️ <span class="spec-val">${t.AlertCount || '0'}</span></span>
-                <span class="badge ${bClass}">${sText}</span>
-              </div>
-            </div>
-            <div class="content-cell">${t.TaskContent || ''}</div>
-            ${noteStr ? `<div class="note-text"><b>Báo cáo ${targetDate}:</b><br>${noteStr}</div>` : ''}
-            
-            <div class="action-btns">
-              <span class="action-btn edit-text" onclick='openModal(${JSON.stringify(t)})'>✏️ SỬA</span>
-              <span class="action-btn del-text" onclick="deleteTask('${t.Key}')">🗑️ XÓA</span>
-            </div>
-          </td></tr>`;
-        });
-        mainContent.innerHTML = html + '</table>';
-        if(globalData.logs) {
-          document.getElementById('log-content').innerHTML = globalData.logs.map(l => `<div>[${l[0]}] ${l[2]}</div>`).join('');
-        }
-      }
-
-      function openModal(task = null) {
-        const modal = document.getElementById('task-modal');
-        modal.style.display = 'flex';
-        document.getElementById('modal-title').innerText = task ? 'Sửa Task' : 'Thêm Task mới';
-        document.getElementById('form-key').value = task ? task.Key : '';
-        document.getElementById('form-userid').value = task ? (task.UserID || '8536107228') : '8536107228';
-        document.getElementById('form-content').value = task ? task.TaskContent : '';
-        document.getElementById('form-start').value = task ? formatTime(task.Start) : '08:00';
-        document.getElementById('form-freq').value = task ? (task.Freq || task.Freg || '60') : '60';
-        document.getElementById('form-status').value = task ? task.Status : '1';
-      }
-
-      function closeModal() { document.getElementById('task-modal').style.display = 'none'; }
-
-      async function saveTask() {
-        const taskData = {
-          Key: document.getElementById('form-key').value || ('K' + Date.now().toString().slice(-6)),
-          TaskContent: document.getElementById('form-content').value,
-          Start: (function() {
-            let val = document.getElementById('form-start').value;
-            if (!val.includes(':')) return val;
-            return val.split(':').map(p => p.padStart(2, '0')).join(':');
-          })(),
-          Freq: document.getElementById('form-freq').value,
-          Status: document.getElementById('form-status').value || "1",
-          UserID: document.getElementById('form-userid').value || "8536107228"
-        };
-
-        console.log("Hệ thống: Đang gửi dữ liệu lưu...");
-        try {
-          await fetch(`${GAS_WEB_APP_URL}?action=saveTaskToSheet`, {
-            method: 'POST',
-            body: JSON.stringify(taskData)
-          });
-          closeModal();
-          setTimeout(refreshDashboard, 1500); 
-        } catch (e) { alert("Lỗi khi lưu task!"); }
-      }
-
-      async function deleteTask(key) {
-        if (confirm('Bạn có chắc muốn xóa Task ID: ' + key + '?')) {
-          try {
-            await fetch(`${GAS_WEB_APP_URL}?action=deleteTaskFromSheet&key=${key}`, { method: 'POST' });
-            setTimeout(refreshDashboard, 1000);
-          } catch (e) { alert("Lỗi khi xóa!"); }
-        }
-      }
-
-      window.onload = refreshDashboard;
-      setInterval(refreshDashboard, 30000);
     </script>
   </body>
 </html>

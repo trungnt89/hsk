@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drive Slide Rectangle Focus</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #1a1a1a; display: flex; justify-content: center; align-items: center; }
+        
+        /* Cấu hình khung hình chữ nhật ngang */
+        .swiper { 
+            width: 95%; 
+            max-width: 900px; /* Độ rộng tối đa của Slide */
+            aspect-ratio: 16 / 9; /* Tỷ lệ khung hình chữ nhật ngang */
+            border-radius: 15px; 
+            overflow: hidden; 
+            background: #000;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+        }
+
+        .swiper-slide { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        .swiper-slide img { 
+            width: 100%; 
+            height: 100%; 
+            /* object-fit: cover giúp ảnh lấp đầy khung. 
+               Nếu ảnh đứng, nó sẽ cắt trên dưới và lấy phần giữa ảnh */
+            object-fit: cover; 
+            object-position: center; 
+            display: none;
+        }
+
+        .loader { color: white; position: absolute; font-family: sans-serif; text-align: center; z-index: 10; }
+        
+        /* Tùy chỉnh dấu chấm phân trang */
+        .swiper-pagination-bullet { background: #fff; opacity: 0.6; }
+        .swiper-pagination-bullet-active { background: #1a73e8; opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div id="loader" class="loader">
+        <div style="font-size: 30px;">⏳</div>
+        <div>Đang xử lý khung hình...</div>
+    </div>
+
+    <div class="swiper mySwiper">
+        <div class="swiper-wrapper" id="slide-wrapper"></div>
+        <div class="swiper-pagination"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxvY66MHgos5E_dYYw6YbV4HxFJrOGKD433_uHc6ybR0gdCBgeGnAByjQYZq5i604Pg/exec";
+
+        async function init() {
+            try {
+                const response = await fetch(`${GAS_URL}?action=getSlideImages`);
+                const images = await response.json();
+                const wrapper = document.getElementById('slide-wrapper');
+
+                if (!images || images.length === 0) {
+                    document.getElementById('loader').innerText = "Không tìm thấy dữ liệu ảnh.";
+                    return;
+                }
+
+                images.forEach(imgData => {
+                    const slideDiv = document.createElement('div');
+                    slideDiv.className = 'swiper-slide';
+                    
+                    const img = new Image();
+                    img.referrerPolicy = "no-referrer";
+                    img.src = imgData.url;
+                    
+                    img.onload = function() {
+                        this.style.display = 'block';
+                    };
+                    
+                    img.onerror = function() {
+                        // Backup link nếu link chính bị lỗi
+                        this.src = `https://lh3.googleusercontent.com/d/${imgData.id}`;
+                        this.style.display = 'block';
+                    };
+
+                    slideDiv.appendChild(img);
+                    wrapper.appendChild(slideDiv);
+                });
+
+                document.getElementById('loader').style.display = 'none';
+
+                new Swiper(".mySwiper", {
+                    loop: images.length > 1,
+                    effect: "fade",
+                    fadeEffect: { crossFade: true },
+                    speed: 1200,
+                    autoplay: { delay: 4000, disableOnInteraction: false },
+                    pagination: { el: ".swiper-pagination", clickable: true }
+                });
+            } catch (e) {
+                document.getElementById('loader').innerText = "Lỗi hiển thị khung hình.";
+            }
+        }
+        window.onload = init;
+    </script>
+</body>
+</html>

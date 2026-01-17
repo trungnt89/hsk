@@ -3,86 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HSK Master - Full Pro</title>
+    <title>HSK Master - Full Pro (Cloud)</title>
 	<script src="../assistive.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #2563eb; --accent: #fbbf24; --danger: #ef4444; --bg: #f8fafc; --card: #ffffff; --success: #10b981; --text-main: #1e293b; --text-sub: #64748b; --highlight: #f59e0b; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100vw; font-family: 'Montserrat', sans-serif; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; }
-        
         .top-section { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding-bottom: 10px; flex-shrink: 0; z-index: 100; }
         header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
         header h3 { margin: 0; color: var(--primary); font-size: 1.1rem; }
         #page-label { font-weight: 800; color: var(--primary); font-size: 10px; background: #eff6ff; padding: 4px 8px; border-radius: 6px; }
-
-        /* Progress Bar Style */
         .progress-container { padding: 0 15px 10px; }
         .progress-info { display: flex; justify-content: space-between; font-size: 9px; font-weight: 800; color: var(--text-sub); margin-bottom: 4px; }
         .progress-bar-bg { width: 100%; height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
         #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--success)); transition: width 0.5s ease; }
-
         .tab-box { display: flex; padding: 0 12px 10px; gap: 8px; }
         .tab-btn { flex: 1; border: none; padding: 10px; border-radius: 12px; font-size: 10px; font-weight: 800; color: #94a3b8; background: #f1f5f9; cursor: pointer; transition: 0.1s; }
         .tab-btn:active { transform: scale(0.95); }
         .tab-btn.active { background: var(--primary); color: white; }
         .tab-btn.active.done-mode { background: var(--success); }
-
         .settings-panel { padding: 0 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .setting-item label { font-size: 7px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 3px; text-transform: uppercase; }
         select { width: 100%; border: 1.5px solid #f1f5f9; padding: 8px; border-radius: 10px; font-weight: 700; font-size: 11px; outline: none; background: #fff; }
-
         .scroll-area { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding: 12px; scroll-behavior: smooth; }
-        .word-card { 
-            background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 10px; 
-            display: flex; align-items: center; border: 2px solid transparent; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.02); width: calc(100% - 32px);
-        }
-        .word-card:active { transform: scale(0.97); }
+        .word-card { background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; border: 2px solid transparent; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.02); width: calc(100% - 32px); }
         .word-card.active { border-color: var(--primary); box-shadow: 0 8px 15px rgba(37, 99, 235, 0.1); }
         .highlight { color: var(--highlight); font-weight: 800; border-bottom: 2px solid var(--highlight); }
-
         .index-col { width: 35px; flex-shrink: 0; text-align: center; margin-right: 12px; }
         .index-number { font-size: 10px; font-weight: 800; color: #cbd5e1; }
         .content-col { flex-grow: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; align-items: center; min-width: 0; }
         .hz-column { font-family: 'Noto Sans SC'; font-size: 1.25rem; color: var(--text-main); font-weight: 700; }
-        
         .info-column { border-left: 1.5px solid #f1f5f9; padding-left: 12px; transition: opacity 0.2s; }
         .info-column.hide-info { opacity: 0; visibility: hidden; }
-
         .pinyin { color: var(--primary); font-weight: 700; font-size: 0.85rem; }
         .meaning { color: var(--text-sub); font-size: 0.8rem; margin-top: 3px; }
-
         .master-btn { width: 44px; height: 44px; border-radius: 14px; border: none; background: #f1f5f9; color: #cbd5e1; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; margin-left: 8px; }
         .master-btn.is-mastered { color: var(--success); background: #ecfdf5; }
-
         .controls-bar { height: 95px; background: #fff; display: flex; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); border-radius: 24px 24px 0 0; padding: 0 8px; flex-shrink: 0; position: relative; }
         .ctrl-group { flex: 1; display: flex; justify-content: space-evenly; align-items: center; }
         .btn-nav { background: transparent; border: none; color: #94a3b8; width: 55px; height: 55px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.15s; }
         .btn-nav.active-blue { color: var(--primary); background: #eff6ff; }
         .btn-nav.active-green { color: var(--success); background: #ecfdf5; }
-
-        .btn-play { 
-            width: 70px; height: 70px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; 
-            font-size: 26px; color: white; cursor: pointer; box-shadow: 0 8px 15px rgba(251, 191, 36, 0.3); 
-            display: flex; align-items: center; justify-content: center; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); 
-        }
+        .btn-play { width: 70px; height: 70px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; font-size: 26px; color: white; cursor: pointer; box-shadow: 0 8px 15px rgba(251, 191, 36, 0.3); display: flex; align-items: center; justify-content: center; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); }
     </style>
 </head>
 <body>
 
 <div class="top-section">
     <header><h3>HSK MASTER</h3><div id="page-label">PAGE 01/01</div></header>
-    
     <div class="progress-container">
-        <div class="progress-info">
-            <span id="progress-text">TIẾN ĐỘ: 0%</span>
-            <span id="count-text">0/0</span>
-        </div>
-        <div class="progress-bar-bg">
-            <div id="progress-fill"></div>
-        </div>
+        <div class="progress-info"><span id="progress-text">TIẾN ĐỘ: 0%</span><span id="count-text">0/0</span></div>
+        <div class="progress-bar-bg"><div id="progress-fill"></div></div>
     </div>
-
     <div class="tab-box">
         <button class="tab-btn active" id="tab-todo" onclick="haptic(); switchTab('todo')">CHƯA THUỘC (0)</button>
         <button class="tab-btn" id="tab-done" onclick="haptic(); switchTab('done')">ĐÃ THUỘC (0)</button>
@@ -131,16 +103,28 @@
 
 <script src="demo-data.js"></script>
 <script>
-// --- CORE VARIABLES ---
+// --- CONFIG & GAS ---
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw4GltbCSYuwZnD2vIZdBgxzjYnf5CZWiDtYa7eBRoePU7pvrAUeHSq3Hu-L_nrsqIP/exec";
+const CONFIG_KEY = "HSK_MASTER_CONFIG";
+const FILE_NAME = window.location.pathname.split('/').pop() || "hsk_data";
+
 let page = 1, isShuffle = false, isSentence = false, isPlaying = false, showInfo = true;
 let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
-const MASTER_KEY = "HSK_MASTER_LIST_DB";
-const CONFIG_KEY = "HSK_MASTER_CONFIG";
+let masteredSet = new Set();
 const audio = new Audio();
 
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
-// --- LƯU & TẢI CẤU HÌNH ---
+// AJAX Gọi GAS
+async function gasAction(action, data = {}) {
+    console.log(`[GAS Request] Action: ${action}`, data);
+    const params = new URLSearchParams({ action, filename: FILE_NAME, ...data });
+    try {
+        const res = await fetch(`${GAS_URL}?${params.toString()}`);
+        return await res.json();
+    } catch (e) { console.error("[GAS Error]", e); return null; }
+}
+
 function saveConfig() {
     const config = {
         voice: document.getElementById('voice-select').value,
@@ -151,7 +135,11 @@ function saveConfig() {
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
 }
 
-function loadConfig() {
+async function loadConfig() {
+    // Tải tiến độ từ GAS trước
+    const res = await gasAction("getMastered");
+    if (res && res.masteredList) masteredSet = new Set(res.masteredList);
+
     const saved = localStorage.getItem(CONFIG_KEY);
     if (saved) {
         const c = JSON.parse(saved);
@@ -167,22 +155,16 @@ function loadConfig() {
         document.getElementById('type-btn').classList.toggle('active-green', isSentence);
         document.getElementById('type-txt').innerText = isSentence ? 'Ví dụ' : 'Từ';
         updateInfoUI();
-        switchTab(currentTab);
     }
+    switchTab(currentTab);
 }
 
-function toggleInfo() {
-    showInfo = !showInfo;
-    updateInfoUI();
-    saveConfig();
-    render(true);
-}
+function toggleInfo() { showInfo = !showInfo; updateInfoUI(); saveConfig(); render(true); }
 
 function updateInfoUI() {
     const btn = document.getElementById('info-btn');
-    const txt = document.getElementById('info-txt');
     btn.classList.toggle('active-blue', !showInfo);
-    txt.innerText = showInfo ? "Hiện" : "Ẩn";
+    document.getElementById('info-txt').innerText = showInfo ? "Hiện" : "Ẩn";
     btn.querySelector('i').innerText = showInfo ? "👁️" : "🙈";
 }
 
@@ -195,43 +177,37 @@ function switchTab(type) {
     render();
 }
 
-function toggleMaster(hz, elementIdx) {
+async function toggleMaster(hz, elementIdx) {
     haptic();
-    let mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
-    mastered = mastered.includes(hz) ? mastered.filter(i => i !== hz) : [...mastered, hz];
-    localStorage.setItem(MASTER_KEY, JSON.stringify(mastered));
-
-    const card = document.getElementById(`card-${elementIdx}`);
-    if(card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
-    setTimeout(() => render(true), 250);
+    console.log(`[Log] Toggling master for: ${hz}`);
+    const res = await gasAction("toggleMaster", { id: hz });
+    if (res && res.status === "success") {
+        masteredSet = new Set(res.masteredList);
+        const card = document.getElementById(`card-${elementIdx}`);
+        if(card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
+        setTimeout(() => render(true), 250);
+    }
 }
 
-// --- CẬP NHẬT THỐNG KÊ (Hàm mới) ---
 function updateStats() {
     const total = hskData.length;
-    const mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]").length;
-    const todo = total - mastered;
-    const percent = Math.round((mastered / total) * 100) || 0;
+    const masteredCount = masteredSet.size;
+    const todoCount = total - masteredCount;
+    const percent = Math.round((masteredCount / total) * 100) || 0;
 
-    // Cập nhật progress bar
     document.getElementById('progress-fill').style.width = percent + '%';
     document.getElementById('progress-text').innerText = `TIẾN ĐỘ: ${percent}%`;
-    document.getElementById('count-text').innerText = `${mastered}/${total}`;
-
-    // Cập nhật text trên button tab
-    document.getElementById('tab-todo').innerText = `CHƯA THUỘC (${todo})`;
-    document.getElementById('tab-done').innerText = `ĐÃ THUỘC (${mastered})`;
+    document.getElementById('count-text').innerText = `${masteredCount}/${total}`;
+    document.getElementById('tab-todo').innerText = `CHƯA THUỘC (${todoCount})`;
+    document.getElementById('tab-done').innerText = `ĐÃ THUỘC (${masteredCount})`;
 }
 
-// --- RENDER ---
 function render(keepShuffle = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
-    const mastered = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
-    
-    updateStats(); // Cập nhật thống kê mỗi lần render
+    updateStats();
 
     let filtered = hskData.filter(item => {
-        const isM = mastered.includes(item.hz);
+        const isM = masteredSet.has(item.hz);
         return currentTab === 'todo' ? !isM : isM;
     });
 
@@ -249,7 +225,7 @@ function render(keepShuffle = false) {
     listEl.innerHTML = '';
     
     currentList.forEach((item, i) => {
-        const isM = mastered.includes(item.hz);
+        const isM = masteredSet.has(item.hz);
         const card = document.createElement('div');
         card.className = `word-card ${i === currentIndex ? 'active' : ''}`;
         card.id = `card-${i}`;
@@ -275,7 +251,6 @@ function render(keepShuffle = false) {
     document.getElementById('page-label').innerText = `PAGE ${page}/${totalP}`;
 }
 
-// --- TTS & CONTROL ---
 async function select(i) {
     currentIndex = i;
     document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
@@ -292,7 +267,7 @@ async function speak(text) {
         const u = new SpeechSynthesisUtterance(text); u.lang = "zh-CN";
         window.speechSynthesis.speak(u); return;
     }
-    const url = voice === "google" ? `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}` : `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
+    const url = voice === "google" ? `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}` : `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
     return new Promise(res => { audio.src = url; audio.onended = res; audio.play().catch(() => res()); });
 }
 
@@ -311,15 +286,14 @@ function togglePlay() {
 }
 
 function stopLoop() { isPlaying = false; document.getElementById('play-btn').innerText = '▶'; clearInterval(autoTimer); }
-function toggleType() { isSentence = !isSentence; saveConfig(); loadConfig(); render(true); }
-function toggleShuffle() { isShuffle = !isShuffle; saveConfig(); loadConfig(); render(); }
+function toggleType() { isSentence = !isSentence; saveConfig(); render(true); }
+function toggleShuffle() { isShuffle = !isShuffle; saveConfig(); render(); }
 function prevPage() { if(page > 1) { page--; render(); } }
 function nextPage() { page++; render(); }
-function clearMastered() { if(confirm("Xóa toàn bộ từ đã thuộc?")) { localStorage.removeItem(MASTER_KEY); render(); } }
+function clearMastered() { alert("Chức năng xóa diện rộng tạm khóa để bảo vệ dữ liệu Cloud."); }
 
 // START
 loadConfig();
-render();
 </script>
 </body>
 </html>

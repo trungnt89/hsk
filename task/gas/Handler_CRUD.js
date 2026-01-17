@@ -98,7 +98,15 @@ function updateSheetByTaskId(taskId, content) {
     }
   });
 
-  if (found) syncJsonToSheet(json, rawHeaders);
+  if (found) {
+    syncJsonToSheet(json, rawHeaders);
+    writeLog("TG_RECEIVE", `Đã nhận reply ID ${taskId}: ${content}`);
+    return 1;
+  }else{
+    writeLog("TG_RECEIVE", `Không tìm thấy reply ID ${taskId}: ${content}`);
+    return 0;
+  }
+  
 }
 
 /**

@@ -49,7 +49,7 @@
 
 <div id="editorModal" class="modal">
   <div class="modal-content">
-    <h3 style="margin-top:0">Quản lý nội dung</h3>
+    <h3 style="margin-top:0">Quản lý nội dung (Cột B)</h3>
     <textarea id="textInput" rows="6" placeholder="Nhập nội dung tiếng Nhật..."></textarea>
     <div class="controls" style="margin-top:15px; justify-content: flex-end;">
       <button onclick="addText()" style="background: #ecfdf5; color: #059669;">➕ Thêm mới</button>
@@ -107,16 +107,18 @@ function openEditor() {
 }
 function closeEditor() { document.getElementById("editorModal").style.display = "none"; }
 
-/* ====================== DATA STORAGE (GAS API) ====================== */
+/* ====================== DATA STORAGE (GAS API - NEW FORMAT) ====================== */
 async function loadTexts() {
-  console.log("LOG: Fetching texts from GAS...");
+  console.log("LOG: Fetching Column B from GAS...");
   try {
-    // Thêm tham số _t (timestamp) để ép trình duyệt tải dữ liệu mới nhất
     const cacheBuster = `?_t=${new Date().getTime()}`;
     const res = await fetch(GAS_URL + cacheBuster);
     if (!res.ok) throw new Error('Network response was not ok');
-    texts = await res.json();
-    console.log("LOG: Loaded texts count:", texts.length);
+    const data = await res.json();
+    
+    // Lọc bỏ dòng trống hoặc lỗi
+    texts = Array.isArray(data) ? data.filter(t => t && !t.toString().startsWith("Error:")) : [];
+    console.log("LOG: Data refreshed. Count:", texts.length);
     renderList();
   } catch (e) {
     console.error("LOG: Error fetching texts", e);
@@ -124,8 +126,7 @@ async function loadTexts() {
 }
 
 async function callGas(data) {
-  console.log("LOG: Calling GAS API for action:", data.action);
-  // Sử dụng mode no-cors cho POST request tới Google Script khi chạy local
+  console.log("LOG: Post action to GAS:", data.action);
   return fetch(GAS_URL, {
     method: "POST",
     mode: "no-cors",
@@ -154,25 +155,25 @@ function highlight() {
 async function addText() {
   const v = textInput.value.trim();
   if (!v) return;
-  console.log("LOG: Adding text");
+  console.log("LOG: Action Add");
   await callGas({ action: "add", text: v });
-  setTimeout(loadTexts, 1000); // Chờ 1s để GAS xử lý xong trước khi reload
+  setTimeout(loadTexts, 1500); 
   closeEditor();
 }
 async function updateText() {
-  if (texts[currentIndex]) {
-    console.log("LOG: Updating index", currentIndex);
+  if (texts[currentIndex] !== undefined) {
+    console.log("LOG: Action Update Index", currentIndex);
     await callGas({ action: "update", index: currentIndex, text: textInput.value });
-    setTimeout(loadTexts, 1000);
+    setTimeout(loadTexts, 1500);
     closeEditor();
   }
 }
 async function deleteText() {
-  if (texts[currentIndex]) {
-    console.log("LOG: Deleting index", currentIndex);
+  if (texts[currentIndex] !== undefined) {
+    console.log("LOG: Action Delete Index", currentIndex);
     await callGas({ action: "delete", index: currentIndex });
     currentIndex = 0;
-    setTimeout(loadTexts, 1000);
+    setTimeout(loadTexts, 1500);
     closeEditor();
   }
 }
@@ -208,7 +209,7 @@ async function playCurrent() {
   highlight();
   const text = texts[currentIndex];
   if(!text) return;
-  console.log("LOG: Playback started");
+  console.log("LOG: Playback started for text in Col B");
   const key = buildKey(text);
   const cached = await getCachedAudio(key);
   if (cached) {

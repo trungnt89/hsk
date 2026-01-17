@@ -45,6 +45,17 @@
         .btn-nav.active-blue { color: var(--primary); background: #eff6ff; }
         .btn-nav.active-green { color: var(--success); background: #ecfdf5; }
         .btn-play { width: 70px; height: 70px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; font-size: 26px; color: white; cursor: pointer; box-shadow: 0 8px 15px rgba(251, 191, 36, 0.3); display: flex; align-items: center; justify-content: center; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); }
+
+        /* Thêm hiệu ứng và Toast */
+        .card-syncing { background: #fffbeb !important; border-color: var(--accent) !important; opacity: 0.8; transition: 0.3s; }
+        #toast-msg {
+            position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px;
+            font-size: 12px; font-weight: 800; z-index: 1001; opacity: 0; pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        #toast-msg.show { opacity: 1; bottom: 120px; }
     </style>
 </head>
 <body>
@@ -100,6 +111,8 @@
         <button class="btn-nav" onclick="haptic(); clearMastered()" style="color: var(--danger)"><i>🗑️</i><small>Xóa</small></button>
     </div>
 </div>
+
+<div id="toast-msg">Cloud Synced</div>
 
 <script src="demo-data.js"></script>
 <script>
@@ -177,15 +190,27 @@ function switchTab(type) {
     render();
 }
 
+function showToast(text) {
+    const toast = document.getElementById('toast-msg');
+    toast.innerText = text;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
 async function toggleMaster(hz, elementIdx) {
-    haptic();
-    console.log(`[Log] Toggling master for: ${hz}`);
+    haptic(); console.log(`[Log] Toggling master for: ${hz}`);
+    const card = document.getElementById(`card-${elementIdx}`);
+    if(card) card.classList.add('card-syncing');
+
     const res = await gasAction("toggleMaster", { id: hz });
     if (res && res.status === "success") {
         masteredSet = new Set(res.masteredList);
-        const card = document.getElementById(`card-${elementIdx}`);
         if(card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
+        showToast("✓ Đã lưu Cloud");
         setTimeout(() => render(true), 250);
+    } else {
+        if(card) card.classList.remove('card-syncing');
+        showToast("❌ Lỗi Cloud");
     }
 }
 

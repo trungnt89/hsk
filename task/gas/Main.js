@@ -3,6 +3,13 @@
  * CỔNG KẾT NỐI API (Dành cho Vercel & Telegram Webhook)
  */
 function doGet(e) {
+  // Bổ sung: API lấy ảnh cho Slide
+  if (e.parameter.action === 'getSlideImages') {
+    const images = getSlideImages();
+    return ContentService.createTextOutput(JSON.stringify(images))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   const data = getDashboardData();
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
@@ -53,6 +60,7 @@ function writeLog(type, content) {
     logSheet.clear(); 
     logSheet.getRange(1, 1, finalData.length, 3).setValues(finalData);
     logSheet.getRange(1, 1, 1, 3).setFontWeight("bold").setBackground("#f3f3f3");
+    console.log(newEntry);
   } catch (e) {
     console.error("Lỗi writeLog: " + e.message);
   }

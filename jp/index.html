@@ -7,9 +7,11 @@
   <script src="../assistive.js"></script>
   <style>
     body { font-family: system-ui, -apple-system; max-width: 900px; margin: auto; padding: 16px; background: #fcfcfc; }
-    li { list-style: none; border: 1px solid #ddd; padding: 12px; margin-top: 8px; cursor: pointer; border-radius: 8px; background: white; transition: 0.2s; }
+    li { list-style: none; border: 1px solid #ddd; padding: 12px; margin-top: 8px; cursor: pointer; border-radius: 8px; background: white; transition: 0.2s; display: flex; flex-direction: column; gap: 4px; }
     li:hover { border-color: #aaa; }
     li.active { background: #e8f0ff; border-color: #4a7cff; font-weight: bold; }
+    .vi-text { font-size: 0.85em; color: #666; font-weight: normal; font-style: italic; }
+    
     .controls, .play-modes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
     .section-box { border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     select, button, textarea { padding: 10px; font-size: 15px; border-radius: 8px; border: 1px solid #ccc; }
@@ -49,7 +51,7 @@
 
 <div id="editorModal" class="modal">
   <div class="modal-content">
-    <h3 style="margin-top:0">Quản lý nội dung (Cột B)</h3>
+    <h3 style="margin-top:0">Quản lý nội dung</h3>
     <textarea id="textInput" rows="6" placeholder="Nhập nội dung tiếng Nhật..."></textarea>
     <div class="controls" style="margin-top:15px; justify-content: flex-end;">
       <button onclick="addText()" style="background: #ecfdf5; color: #059669;">➕ Thêm mới</button>
@@ -102,23 +104,22 @@ voiceEl().addEventListener("change", () => localStorage.setItem("voice", voiceEl
 rateEl().addEventListener("change", () => localStorage.setItem("rate", rateEl().value));
 
 function openEditor() {
-  textInput.value = texts[currentIndex] || "";
+  textInput.value = texts[currentIndex]?.ja || "";
   document.getElementById("editorModal").style.display = "flex";
 }
 function closeEditor() { document.getElementById("editorModal").style.display = "none"; }
 
-/* ====================== DATA STORAGE (GAS API - NEW FORMAT) ====================== */
+/* ====================== DATA STORAGE (GAS API) ====================== */
 async function loadTexts() {
-  console.log("LOG: Fetching Column B from GAS...");
+  console.log("LOG: Fetching JA & VI from GAS...");
   try {
     const cacheBuster = `?_t=${new Date().getTime()}`;
     const res = await fetch(GAS_URL + cacheBuster);
     if (!res.ok) throw new Error('Network response was not ok');
     const data = await res.json();
     
-    // Lọc bỏ dòng trống hoặc lỗi
-    texts = Array.isArray(data) ? data.filter(t => t && !t.toString().startsWith("Error:")) : [];
-    console.log("LOG: Data refreshed. Count:", texts.length);
+    texts = Array.isArray(data) ? data.filter(item => item.ja && !item.ja.toString().startsWith("Error:")) : [];
+    console.log("LOG: Data refreshed. Items:", texts.length);
     renderList();
   } catch (e) {
     console.error("LOG: Error fetching texts", e);
@@ -126,7 +127,7 @@ async function loadTexts() {
 }
 
 async function callGas(data) {
-  console.log("LOG: Post action to GAS:", data.action);
+  console.log("LOG: Post to GAS - Action:", data.action);
   return fetch(GAS_URL, {
     method: "POST",
     mode: "no-cors",
@@ -136,9 +137,15 @@ async function callGas(data) {
 
 function renderList() {
   listEl.innerHTML = "";
-  texts.forEach((text, i) => {
+  texts.forEach((item, i) => {
     const li = document.createElement("li");
-    li.textContent = text;
+    const jaDiv = document.createElement("div");
+    jaDiv.textContent = item.ja;
+    const viDiv = document.createElement("div");
+    viDiv.className = "vi-text";
+    viDiv.textContent = item.vi;
+    li.appendChild(jaDiv);
+    li.appendChild(viDiv);
     li.onclick = () => { currentIndex = i; playCurrent(); };
     listEl.appendChild(li);
   });
@@ -155,72 +162,43 @@ function highlight() {
 async function addText() {
   const v = textInput.value.trim();
   if (!v) return;
-  console.log("LOG: Action Add");
+  console.log("LOG: Adding text");
   await callGas({ action: "add", text: v });
   setTimeout(loadTexts, 1500); 
   closeEditor();
 }
 async function updateText() {
-  if (texts[currentIndex] !== undefined) {
-    console.log("LOG: Action Update Index", currentIndex);
+  if (texts[currentIndex]) {
+    console.log("LOG: Updating text");
     await callGas({ action: "update", index: currentIndex, text: textInput.value });
     setTimeout(loadTexts, 1500);
     closeEditor();
   }
 }
 async function deleteText() {
-  if (texts[currentIndex] !== undefined) {
-    console.log("LOG: Action Delete Index", currentIndex);
-    await callGas({ action: "delete", index: currentIndex });
-    currentIndex = 0;
-    setTimeout(loadTexts, 1500);
-    closeEditor();
+  if (texts[currentIndex]) {
+    // Thêm cảnh báo xác nhận trước khi xóa
+    const confirmDelete = confirm("Bạn có chắc chắn muốn xóa dòng này không?\nNội dung: " + texts[currentIndex].ja);
+    if (confirmDelete) {
+      console.log("LOG: Action Delete confirmed");
+      await callGas({ action: "delete", index: currentIndex });
+      currentIndex = 0;
+      setTimeout(loadTexts, 1500);
+      closeEditor();
+    } else {
+      console.log("LOG: Delete canceled");
+    }
   }
-}
-
-/* ====================== INDEXED DB ====================== */
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME);
-    req.onsuccess = e => resolve(e.target.result);
-    req.onerror = reject;
-  });
-}
-async function getCachedAudio(key) {
-  const db = await openDB();
-  return new Promise(resolve => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const req = tx.objectStore(STORE_NAME).get(key);
-    req.onsuccess = () => resolve(req.result || null);
-  });
-}
-async function saveAudio(key, blob) {
-  const db = await openDB();
-  const tx = db.transaction(STORE_NAME, "readwrite");
-  tx.objectStore(STORE_NAME).put(blob, key);
 }
 
 /* ====================== PLAY LOGIC ====================== */
-function buildKey(text) { return `ja-JP|${voiceEl().value}|${rateEl().value}|${text}`; }
-function buildUrl(text) { return `${API_URL}?text=${encodeURIComponent(text)}&lang=ja-JP&voice=${voiceEl().value}&rate=${rateEl().value}`; }
-
 async function playCurrent() {
   highlight();
-  const text = texts[currentIndex];
-  if(!text) return;
-  console.log("LOG: Playback started for text in Col B");
-  const key = buildKey(text);
-  const cached = await getCachedAudio(key);
-  if (cached) {
-    audio.src = URL.createObjectURL(cached);
-    audio.play();
-    return;
-  }
-  const res = await fetch(buildUrl(text));
-  const blob = await res.blob();
-  await saveAudio(key, blob);
-  audio.src = URL.createObjectURL(blob);
+  const item = texts[currentIndex];
+  if(!item || !item.ja) return;
+  console.log("LOG: Playing audio");
+  const url = `${API_URL}?text=${encodeURIComponent(item.ja)}&lang=ja-JP&voice=${voiceEl().value}&rate=${rateEl().value}`;
+  audio.src = url;
   audio.play();
 }
 

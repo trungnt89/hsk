@@ -10,13 +10,17 @@
     li { list-style: none; border: 1px solid #ddd; padding: 12px; margin-top: 8px; cursor: pointer; border-radius: 8px; background: white; transition: 0.2s; }
     li:hover { border-color: #aaa; }
     li.active { background: #e8f0ff; border-color: #4a7cff; font-weight: bold; }
+    
     .controls, .play-modes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
     .section-box { border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    
     select, button, textarea { padding: 10px; font-size: 15px; border-radius: 8px; border: 1px solid #ccc; }
     button { cursor: pointer; background: #fff; transition: 0.2s; font-weight: 500; }
     button:active { transform: translateY(1px); }
     button.active { background: #2563eb !important; color: white !important; border-color: #1d4ed8 !important; }
+    
     textarea { width: 100%; box-sizing: border-box; font-family: inherit; }
+    
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
   </style>
@@ -66,11 +70,15 @@
 
 <script>
 const API_URL = "https://hsk-gilt.vercel.app/api/tts1";
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyNX96iC37hc8AunT8zWlG_yTFB2ipZp90-XivW8hWzVYVne9nftCC3mSFoTk10v93t/exec";
 const DB_NAME = "tts-audio-cache";
 const STORE_NAME = "audio";
 
-let texts = [];
+const texts = [
+  "日本で働き始めてから、毎日の生活リズムが大きく変わりました。",
+  "日本語の勉強は簡単ではありませんが、毎日少しずつ続けることが大切だと思います。",
+  "週末になると、公園を散歩したり、本を読んだりしてリラックスする時間を大切にしています。"
+];
+
 let currentIndex = 0;
 let repeatOne = false;
 let repeatAll = false;
@@ -79,6 +87,7 @@ const audio = document.getElementById("audio");
 const listEl = document.getElementById("list");
 const textInput = document.getElementById("textInput");
 
+/* ====================== SETTINGS & STATE ====================== */
 function loadSettings() {
   const v = localStorage.getItem("voice");
   const r = localStorage.getItem("rate");
@@ -94,6 +103,7 @@ function updateButtonStates() {
   document.getElementById("btnRepeatAll").classList.toggle("active", repeatAll);
 }
 
+// Hàm mới để xử lý trạng thái nút Đọc đoạn
 function setPlayBtnActive(isActive) {
   document.getElementById("btnPlayCur").classList.toggle("active", isActive);
 }
@@ -101,35 +111,23 @@ function setPlayBtnActive(isActive) {
 voiceEl().addEventListener("change", () => localStorage.setItem("voice", voiceEl().value));
 rateEl().addEventListener("change", () => localStorage.setItem("rate", rateEl().value));
 
+/* ====================== UI MODAL ====================== */
 function openEditor() {
   textInput.value = texts[currentIndex] || "";
   document.getElementById("editorModal").style.display = "flex";
 }
 function closeEditor() { document.getElementById("editorModal").style.display = "none"; }
 
-/* ====================== DATA STORAGE (GAS API) ====================== */
-async function loadTexts() {
-  console.log("LOG: Fetching texts from GAS...");
-  try {
-    const res = await fetch(GAS_URL);
-    if (!res.ok) throw new Error('Network response was not ok');
-    texts = await res.json();
-    console.log("LOG: Loaded texts count:", texts.length);
-    renderList();
-  } catch (e) {
-    console.error("LOG: Error fetching texts", e);
-  }
+/* ====================== DATA STORAGE ====================== */
+function saveTexts() { localStorage.setItem("texts", JSON.stringify(texts)); }
+function loadTexts() {
+  const saved = localStorage.getItem("texts");
+  if (saved) { texts.length = 0; JSON.parse(saved).forEach(t => texts.push(t)); }
 }
 
-async function callGas(data) {
-  console.log("LOG: Calling GAS API for action:", data.action);
-  // Sử dụng mode no-cors cho POST request tới Google Script khi chạy local
-  return fetch(GAS_URL, {
-    method: "POST",
-    mode: "no-cors",
-    body: JSON.stringify(data)
-  });
-}
+loadSettings();
+loadTexts();
+renderList();
 
 function renderList() {
   listEl.innerHTML = "";
@@ -149,29 +147,23 @@ function highlight() {
 }
 
 /* ====================== CRUD ====================== */
-async function addText() {
+function addText() {
   const v = textInput.value.trim();
   if (!v) return;
-  console.log("LOG: Adding text");
-  await callGas({ action: "add", text: v });
-  setTimeout(loadTexts, 1000); // Chờ 1s để GAS xử lý xong trước khi reload
-  closeEditor();
+  texts.push(v);
+  saveTexts(); renderList(); closeEditor();
 }
-async function updateText() {
+function updateText() {
   if (texts[currentIndex]) {
-    console.log("LOG: Updating index", currentIndex);
-    await callGas({ action: "update", index: currentIndex, text: textInput.value });
-    setTimeout(loadTexts, 1000);
-    closeEditor();
+    texts[currentIndex] = textInput.value;
+    saveTexts(); renderList(); closeEditor();
   }
 }
-async function deleteText() {
+function deleteText() {
   if (texts[currentIndex]) {
-    console.log("LOG: Deleting index", currentIndex);
-    await callGas({ action: "delete", index: currentIndex });
+    texts.splice(currentIndex, 1);
     currentIndex = 0;
-    setTimeout(loadTexts, 1000);
-    closeEditor();
+    saveTexts(); renderList(); closeEditor();
   }
 }
 
@@ -206,7 +198,6 @@ async function playCurrent() {
   highlight();
   const text = texts[currentIndex];
   if(!text) return;
-  console.log("LOG: Playback started");
   const key = buildKey(text);
   const cached = await getCachedAudio(key);
   if (cached) {
@@ -234,6 +225,7 @@ function toggleRepeatAll() {
   updateButtonStates();
 }
 
+/* Audio Events để nhận biết trạng thái đang phát */
 audio.addEventListener("play", () => setPlayBtnActive(true));
 audio.addEventListener("pause", () => setPlayBtnActive(false));
 audio.addEventListener("ended", () => {
@@ -248,9 +240,6 @@ audio.addEventListener("ended", () => {
 
 function voiceEl() { return document.getElementById("voice"); }
 function rateEl() { return document.getElementById("rate"); }
-
-loadSettings();
-loadTexts();
 </script>
 </body>
 </html>

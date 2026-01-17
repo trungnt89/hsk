@@ -60,11 +60,13 @@
     <div class="nav-bar">
       <button class="nav-btn active" onclick="switchMode('dashboard', this)">📊 DASHBOARD</button>
       <button class="nav-btn" onclick="switchMode('StatusGrid', this)">🚀 STATUS GRID</button>
+      <button class="nav-btn" onclick="switchMode('Slide', this)">🖼 PHOTO SLIDE</button>
     </div>
 
     <div class="content-area" id="frame-container">
       <iframe id="frame-dashboard" class="active" src=""></iframe>
       <iframe id="frame-StatusGrid" src=""></iframe>
+      <iframe id="frame-Slide" src=""></iframe>
     </div>
 
     <script>
@@ -75,7 +77,10 @@
         // Nạp file HTML cục bộ thay vì gọi link GAS
         document.getElementById('frame-dashboard').src = "dashboard.html";
         document.getElementById('frame-StatusGrid').src = "status_grid.html";
-        console.log("Log [System]: Đã nạp Dashboard và StatusGrid vào hệ thống Frame");
+        // Nạp trang Slide từ thư mục slide/
+        document.getElementById('frame-Slide').src = "../slide/index.html";
+        
+        console.log("Log [System]: Đã nạp Dashboard, StatusGrid và Slide vào hệ thống Frame");
       };
 
       function switchMode(pageId, btn) {
@@ -86,6 +91,7 @@
         // Cập nhật hiển thị Frame
         document.querySelectorAll('iframe').forEach(f => f.classList.remove('active'));
         const targetFrame = document.getElementById('frame-' + pageId);
+        
         if (targetFrame) {
           targetFrame.classList.add('active');
           console.log("Log [Navigation]: Chuyển sang chế độ: " + pageId);

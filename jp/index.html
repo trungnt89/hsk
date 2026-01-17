@@ -111,7 +111,9 @@ function closeEditor() { document.getElementById("editorModal").style.display = 
 async function loadTexts() {
   console.log("LOG: Fetching texts from GAS...");
   try {
-    const res = await fetch(GAS_URL);
+    // Thêm tham số _t (timestamp) để ép trình duyệt tải dữ liệu mới nhất
+    const cacheBuster = `?_t=${new Date().getTime()}`;
+    const res = await fetch(GAS_URL + cacheBuster);
     if (!res.ok) throw new Error('Network response was not ok');
     texts = await res.json();
     console.log("LOG: Loaded texts count:", texts.length);

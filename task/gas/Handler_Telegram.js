@@ -10,6 +10,21 @@ function sendTaskNotifications() {
   const currentTimeNum = now.getHours() * 60 + now.getMinutes();
   let hasChange = false;
 
+  // KIỂM TRA VÀ TẠO CỘT NGÀY MỚI TRONG JSON NẾU CHƯA CÓ
+  json.forEach(task => {
+    if (task[todayStr] === undefined) {
+      task[todayStr] = ""; 
+      hasChange = true;
+      writeLog("DATA_INIT", `Khởi tạo cột ${todayStr} cho ID ${task["Key"]}`);
+    }
+  });
+
+  // Đồng bộ Header lên Sheet trước khi thực hiện các logic gửi tin nhắn
+  if (hasChange) {
+    syncJsonToSheet(json, rawHeaders);
+    hasChange = false; // Reset để bắt đầu ghi nhận các thay đổi từ việc gửi Notify (AlertCount, LastNotified)
+  }
+
   json.forEach((task) => {
     const taskId = task["Key"];
     const status = String(task["Status"]);
@@ -18,7 +33,6 @@ function sendTaskNotifications() {
     const freq = Number(task["Freg"] || task["Freq"] || 30);
     const todayResult = String(task[todayStr] || "").toLowerCase();
 
-    // LOG CHI TIẾT NGUYÊN NHÂN BỎ QUA (SKIP)
     if (status !== "1") {
       writeLog("NOTIFY_SKIP", `ID ${taskId}: Task đang tắt (Status=${status})`);
       return;
@@ -49,7 +63,6 @@ function sendTaskNotifications() {
       
       const startMinutes = h * 60 + m;
       
-      // LOG: Kiểm tra thời gian bắt đầu
       if (currentTimeNum < startMinutes) {
         writeLog("NOTIFY_WAIT", `ID ${taskId}: Chưa tới giờ (Bắt đầu lúc ${h}:${m})`);
       } else {
@@ -61,14 +74,11 @@ function sendTaskNotifications() {
           shouldNotify = true;
         } else {
           let lastDate = new Date(lastNotified);
-          
-          // Kiểm tra nếu là ngày mới
           if (Utilities.formatDate(lastDate, CONFIG.TIMEZONE, "MM/DD") !== todayStr) {
             writeLog("NOTIFY_REASON", `ID ${taskId}: Reset AlertCount cho ngày mới`);
             task["AlertCount"] = 0;
             shouldNotify = true;
           } else {
-            // Kiểm tra tần suất (Frequency)
             let diffMin = Math.floor((now - lastDate) / (1000 * 60));
             if (diffMin >= freq) {
               writeLog("NOTIFY_REASON", `ID ${taskId}: Đã đủ thời gian (${diffMin} >= ${freq} phút)`);
@@ -97,9 +107,6 @@ function sendTaskNotifications() {
   writeLog("NOTIFY_END", "--- Kết thúc quét ---");
 }
 
-/**
- * XỬ LÝ TIN NHẮN ĐẾN TỪ WEBHOOK
- */
 function handleTelegramWebhook(e) {
   try {
     const update = JSON.parse(e.postData.contents);
@@ -123,7 +130,7 @@ function handleTelegramWebhook(e) {
           reply_markup: { inline_keyboard: [[{ text: "📊 Mở Dashboard", url: CONFIG.DASHBOARD_URL + "?id=" + taskId }]] }
         })
       });
-      writeLog("TG_RECEIVE", `Đã nhận reply ID ${taskId}: ${replyText}`);
+      writeLog("TG_RECEIVE", `Đã gửi link Dashboard`);
     }
   } catch (err) { writeLog("TG_ERROR", err.toString()); }
 }

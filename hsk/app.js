@@ -24,8 +24,8 @@ const googleBtn = document.getElementById("googleBtn");
 const azureBtn = document.getElementById("azureBtn");
 
 /* ================= INDEXED DB ================= */
-const DB_NAME = "tts_cache_db";
-const STORE_NAME = "audio";
+const DB_NAME = "HSK_AUDIO_CACHE";
+const STORE_NAME = "AUDIO";
 let db = null;
 
 function openDB() {

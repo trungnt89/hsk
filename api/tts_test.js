@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     // ===============================
     // 2️⃣ CHECK GOOGLE DRIVE FIRST
     // ===============================
-    if (driveUrl) {
+    if (1==1) {
       try {
         // Chuyển đổi link view sang link download trực tiếp
         const fileId = driveUrl.match(/[-\w]{25,}/)[0];

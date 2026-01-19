@@ -2,132 +2,59 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TTS Test - IndexedDB Cache</title>
+    <title>TTS Module Test</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background: #f4f7f6; max-width: 600px; margin: auto; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        button:hover { background: #218838; }
-        button:disabled { background: #6c757d; }
-        #log { margin-top: 20px; padding: 15px; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 12px; border-radius: 6px; height: 150px; overflow-y: auto; }
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin-top: 5px; }
-        .local { background: #fff3cd; color: #856404; }
-        .cloud { background: #d1ecf1; color: #0c5460; }
+        body { font-family: system-ui; padding: 30px; line-height: 1.6; max-width: 500px; margin: auto; }
+        .box { border: 1px solid #ccc; padding: 20px; border-radius: 8px; background: #fff; }
+        input, textarea, select, button { width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        #status { font-size: 13px; color: #555; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>🎙️ Azure TTS Test System</h2>
+<div class="box">
+    <h3>🎙️ TTS Encapsulated</h3>
     
-    <div class="form-group">
-        <label>Văn bản:</label>
-        <textarea id="text" rows="3">Chào bạn, tôi là trợ lý ảo được tối ưu tốc độ.</textarea>
-    </div>
+    <textarea id="text" placeholder="Nhập văn bản...">Xin chào, tôi đã được đóng gói hoàn toàn.</textarea>
+    <input type="text" id="filename" placeholder="ID file (ví dụ: test_01)" value="test_01">
+    
+    <select id="voice">
+        <option value="vi-VN-HoaiMyNeural">Hoài My (Nữ)</option>
+        <option value="vi-VN-NamMinhNeural">Nam Minh (Nam)</option>
+    </select>
+    
+    <input type="number" id="rate" value="1.0" step="0.1" min="0.5" max="2.0">
 
-    <div class="form-group">
-        <label>Mã định danh (Filename/ID):</label>
-        <input type="text" id="filename" value="welcome_01">
-    </div>
-
-    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <div>
-            <label>Giọng đọc:</label>
-            <select id="voice">
-                <option value="vi-VN-HoaiMyNeural">Hoài My (Nữ)</option>
-                <option value="vi-VN-NamMinhNeural">Nam Minh (Nam)</option>
-                <option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (Trung)</option>
-            </select>
-        </div>
-        <div>
-            <label>Tốc độ:</label>
-            <input type="number" id="rate" value="1.0" step="0.1" min="0.5" max="2.0">
-        </div>
-    </div>
-
-    <button id="btnPlay" onclick="startTTS()">PHÁT & LƯU CACHE</button>
-    <div id="log"></div>
+    <button id="btn" onclick="handleAction()">PHÁT ÂM THANH</button>
+    <div id="status">Sẵn sàng</div>
 </div>
 
+<script src="client.js"></script>
 <script>
-    const DB_NAME = "TTS_OFFLINE_DB";
-    const STORE_NAME = "audio_store";
+    async function handleAction() {
+        const btn = document.getElementById('btn');
+        const status = document.getElementById('status');
 
-    // 1. Ghi log hiển thị
-    function writeLog(msg, isLocal = false) {
-        const log = document.getElementById('log');
-        const badge = isLocal ? '<span class="status-badge local">INDEXED_DB</span>' : '<span class="status-badge cloud">AZURE_API</span>';
-        log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${badge} ${msg}</div>`;
-        log.scrollTop = log.scrollHeight;
-    }
-
-    // 2. Khởi tạo IndexedDB
-    async function initDB() {
-        return new Promise((resolve) => {
-            const req = indexedDB.open(DB_NAME, 1);
-            req.onupgradeneeded = (e) => e.target.result.createObjectStore(STORE_NAME);
-            req.onsuccess = (e) => resolve(e.target.result);
-        });
-    }
-
-    // 3. Quy trình xử lý chính
-    async function startTTS() {
-        const text = document.getElementById('text').value;
-        const filename = document.getElementById('filename').value;
-        const voice = document.getElementById('voice').value;
-        const rate = document.getElementById('rate').value;
-        const btn = document.getElementById('btnPlay');
-
-        btn.disabled = true;
-        const db = await initDB();
+        // CHỈ TRUYỀN THAM SỐ
+        const params = {
+            text: document.getElementById('text').value,
+            filename: document.getElementById('filename').value,
+            voice: document.getElementById('voice').value,
+            rate: document.getElementById('rate').value,
+            lang: 'vi-VN' // Mặc định
+        };
 
         try {
-            // TẦNG 1: KIỂM TRA TRONG INDEXEDDB
-            const cachedBlob = await new Promise(r => {
-                const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(filename);
-                req.onsuccess = () => r(req.result);
-            });
-
-            if (cachedBlob) {
-                writeLog("Tìm thấy file trong máy. Phát ngay!", true);
-                playAudio(cachedBlob);
-            } else {
-                // TẦNG 2: GỌI API VERCEL (STREAM)
-                writeLog("Không có cache. Đang gọi Azure...");
-                
-                const query = new URLSearchParams({ text, filename, voice, rate });
-                const response = await fetch(`/api/tts?${query.toString()}`);
-
-                if (!response.ok) throw new Error("API trả về lỗi hoặc Server chưa cấu hình ENV");
-
-                // Nhận dữ liệu dưới dạng Blob từ stream
-                const audioBlob = await response.blob();
-
-                // Lưu vào IndexedDB
-                const tx = db.transaction(STORE_NAME, "readwrite");
-                tx.objectStore(STORE_NAME).put(audioBlob, filename);
-                
-                writeLog("Đã tải xong và lưu vào bộ nhớ.");
-                playAudio(audioBlob);
-            }
+            btn.disabled = true;
+            // Gọi engine đã đóng gói
+            await TTSClient.execute(params, (msg) => status.innerText = msg);
         } catch (e) {
-            writeLog("LỖI: " + e.message);
             console.error(e);
         } finally {
             btn.disabled = false;
         }
     }
-
-    function playAudio(blob) {
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audio.play();
-        audio.onended = () => URL.revokeObjectURL(url);
-    }
 </script>
-
 </body>
 </html>

@@ -2,74 +2,121 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Stable TTS Drive System</title>
+    <title>TTS Ultra Fast - 1s Response</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
-        #log { background: #000; color: #0f0; padding: 15px; height: 200px; overflow-y: auto; font-family: monospace; border-radius: 5px; margin-top: 15px; }
-        button { width: 100%; padding: 15px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; }
-        input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; max-width: 550px; margin: auto; background: #f0f4f8; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h2 { color: #1a73e8; margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        #log { background: #1e1e1e; color: #4af626; padding: 15px; height: 250px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 12px; border-radius: 10px; margin-top: 20px; line-height: 1.6; }
+        button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; font-size: 16px; transition: all 0.2s; }
+        button:hover { background: #1557b0; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(26,115,232,0.3); }
+        button:disabled { background: #bdc3c7; transform: none; box-shadow: none; }
+        input { width: 100%; padding: 12px; margin: 10px 0 20px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .log-info { color: #5bc0de; }
+        .log-success { color: #5cb85c; }
+        .log-error { color: #d9534f; }
     </style>
 </head>
 <body>
-    <h3>TTS Audio Storage</h3>
-    <input type="text" id="inputText" value="Thử nghiệm hệ thống ổn định.">
-    <input type="text" id="filename" value="final_test_stable">
-    <button id="btn" onclick="runProcess()">PHÁT & LƯU</button>
+
+<div class="card">
+    <h2><span>⚡</span> TTS High Speed</h2>
+    <label>Nội dung đọc:</label>
+    <input type="text" id="inputText" value="Chào bạn, âm thanh sẽ phát ngay lập tức.">
+    <label>Tên file (Filename):</label>
+    <input type="text" id="filename" value="speed_test_final">
+    
+    <button id="btnAction" onclick="executeProcess()">PHÁT & TỐI ƯU TỐC ĐỘ</button>
+
     <div id="log"></div>
+</div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec"; 
+    // Link GAS đã được cập nhật theo yêu cầu của bạn
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec";
 
-    function log(msg, color = "#0f0") {
-        const el = document.getElementById('log');
-        el.innerHTML += `<div style="color:${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-        el.scrollTop = el.scrollHeight;
+    function writeLog(msg, type = '') {
+        const logEl = document.getElementById('log');
+        const time = new Date().toLocaleTimeString();
+        const colorClass = type ? `log-${type}` : '';
+        logEl.innerHTML += `<div><span style="color:#888">[${time}]</span> <span class="${colorClass}">${msg}</span></div>`;
+        logEl.scrollTop = logEl.scrollHeight;
     }
 
-    async function playAudioFromProxy(proxyUrl) {
-        log("Đang nạp âm thanh qua Proxy...");
-        const res = await fetch(proxyUrl);
-        const base64 = await res.text();
-        const audio = new Audio("data:audio/mpeg;base64," + base64);
-        return audio.play();
+    // Cơ chế phát nhạc thông minh: Direct -> Proxy Fallback
+    async function playSmart(directUrl, proxyUrl) {
+        return new Promise((resolve, reject) => {
+            const audio = new Audio();
+            audio.src = directUrl;
+            audio.crossOrigin = "anonymous";
+            
+            writeLog("Đang nạp luồng Direct Stream...");
+            
+            // Thử phát ngay bằng link Direct
+            audio.play().then(() => {
+                writeLog("THÀNH CÔNG: Phát tức thì từ Drive (dưới 1s).", "success");
+                resolve();
+            }).catch(async (e) => {
+                writeLog("Direct bị chặn (403), chuyển hướng Proxy...", "info");
+                try {
+                    const res = await fetch(proxyUrl);
+                    const base64Data = await res.text();
+                    const proxyAudio = new Audio("data:audio/mpeg;base64," + base64Data);
+                    await proxyAudio.play();
+                    writeLog("Phát thành công qua Proxy dự phòng.", "success");
+                    resolve();
+                } catch (err) {
+                    writeLog("LỖI PHÁT: " + err.message, "error");
+                    reject(err);
+                }
+            });
+        });
     }
 
-    async function runProcess() {
+    async function executeProcess() {
         const text = document.getElementById('inputText').value;
         const filename = document.getElementById('filename').value;
-        document.getElementById('btn').disabled = true;
-        log("Bắt đầu quy trình...");
+        const btn = document.getElementById('btnAction');
+        
+        btn.disabled = true;
+        writeLog("--- Bắt đầu quy trình tối ưu ---");
 
         try {
-            const vercelRes = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=vi-VN-HoaiMyNeural&rate=1.0&filename=${filename}`);
-            const data = await vercelRes.json();
+            // 1. Gọi Vercel để lấy thông tin file
+            const vercelUrl = `/api/tts?text=${encodeURIComponent(text)}&voice=vi-VN-HoaiMyNeural&rate=1.0&filename=${filename}`;
+            const res = await fetch(vercelUrl);
+            const data = await res.json();
 
             if (data.source === 'driver') {
-                log("Đã có trên Drive. Đang phát...");
-                await playAudioFromProxy(data.url);
-            } else {
-                log("Tạo mới từ Azure...");
+                writeLog("DATABASE: Tìm thấy file sẵn có.");
+                await playSmart(data.url, data.proxyUrl);
+            } 
+            else {
+                writeLog("AZURE: Đang tạo file mới...");
                 const binary = atob(data.audioData);
                 const bytes = new Uint8Array(binary.length);
                 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
                 
+                // PHÁT NGAY từ bộ nhớ RAM (0ms trễ)
                 const audio = new Audio(URL.createObjectURL(new Blob([bytes], {type: 'audio/mpeg'})));
                 audio.play();
+                writeLog("Đang phát bản dịch từ Azure.", "success");
 
-                log("Đang đồng bộ lên Drive...");
-                await fetch(`${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`, {
+                // ĐỒNG BỘ NGẦM (Người dùng không phải chờ)
+                writeLog("Đang đồng bộ ngầm lên Drive...");
+                fetch(`${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`, {
                     method: 'POST',
                     body: JSON.stringify(Array.from(bytes)),
                     mode: 'no-cors'
-                });
-                log("Đã đồng bộ xong.");
+                }).then(() => writeLog("Đã đồng bộ Drive xong.", "success"));
             }
         } catch (e) {
-            log("LỖI: " + e.message, "red");
+            writeLog("LỖI HỆ THỐNG: " + e.message, "error");
         } finally {
-            document.getElementById('btn').disabled = false;
+            btn.disabled = false;
         }
     }
 </script>
+
 </body>
 </html>

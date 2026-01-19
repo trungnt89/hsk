@@ -2,40 +2,49 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TTS 3-Layer Cache</title>
+    <title>TTS Stable Cache</title>
     <style>
-        body { font-family: system-ui; padding: 20px; max-width: 500px; margin: auto; background: #f8f9fa; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        #log-area { background: #1a1a1a; color: #4af626; padding: 15px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; border-radius: 8px; margin-top: 15px; }
-        button { width: 100%; padding: 15px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+        .card { border: 1px solid #ddd; padding: 20px; border-radius: 10px; }
+        #log-area { background: #000; color: #0f0; padding: 10px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; margin-top: 10px; }
+        button { width: 100%; padding: 10px; cursor: pointer; background: #007bff; color: #fff; border: none; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h3>🚀 High-Speed TTS</h3>
-        <input type="text" id="txt" value="Hệ thống cache ba lớp đã sẵn sàng.">
-        <input type="text" id="fname" value="demo_cache_v1">
-        <button onclick="start()">PHÁT ÂM THANH</button>
-        <div id="log-area"></div>
-    </div>
 
-    <script src="tts.js"></script>
-    <script>
-        // Ghi đè console.log để hiển thị lên màn hình
-        const oldLog = console.log;
-        console.log = function(msg, style) {
-            const area = document.getElementById('log-area');
-            area.innerHTML += `<div>${msg}</div>`;
-            area.scrollTop = area.scrollHeight;
-            oldLog(msg);
-        };
+<div class="card">
+    <h3>🚀 TTS High Speed</h3>
+    <input type="text" id="txt" style="width:100%;" value="Hệ thống cache đã sửa lỗi gọi hàm.">
+    <br><br>
+    <input type="text" id="fname" style="width:100%;" value="fixed_test_01">
+    <br><br>
+    <button id="btn" onclick="start()">PHÁT ÂM THANH</button>
+    <div id="log-area"></div>
+</div>
 
-        function start() {
-            const text = document.getElementById('txt').value;
-            const filename = document.getElementById('fname').value;
+<script src="tts.js"></script>
+
+<script>
+    // Ghi log ra màn hình
+    const area = document.getElementById('log-area');
+    const originalLog = console.log;
+    console.log = function(msg) {
+        area.innerHTML += `<div>${msg}</div>`;
+        area.scrollTop = area.scrollHeight;
+        originalLog.apply(console, arguments);
+    };
+
+    function start() {
+        const text = document.getElementById('txt').value;
+        const filename = document.getElementById('fname').value;
+        
+        // Kiểm tra xem hàm đã tồn tại chưa trước khi gọi
+        if (typeof processTTS === 'function') {
             processTTS(text, filename);
+        } else {
+            console.log("%c[ERROR] Hàm processTTS chưa được tải. Vui lòng kiểm tra file tts.js", "color: red");
         }
-    </script>
+    }
+</script>
 </body>
 </html>

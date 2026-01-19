@@ -2,59 +2,25 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TTS Module Test</title>
-    <style>
-        body { font-family: system-ui; padding: 30px; line-height: 1.6; max-width: 500px; margin: auto; }
-        .box { border: 1px solid #ccc; padding: 20px; border-radius: 8px; background: #fff; }
-        input, textarea, select, button { width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
-        #status { font-size: 13px; color: #555; text-align: center; }
-    </style>
+    <title>TTS Test Module</title>
 </head>
 <body>
+    <button onclick="testTTS()">Phát âm thanh</button>
 
-<div class="box">
-    <h3>🎙️ TTS Encapsulated</h3>
-    
-    <textarea id="text" placeholder="Nhập văn bản...">Xin chào, tôi đã được đóng gói hoàn toàn.</textarea>
-    <input type="text" id="filename" placeholder="ID file (ví dụ: test_01)" value="test_01">
-    
-    <select id="voice">
-        <option value="vi-VN-HoaiMyNeural">Hoài My (Nữ)</option>
-        <option value="vi-VN-NamMinhNeural">Nam Minh (Nam)</option>
-    </select>
-    
-    <input type="number" id="rate" value="1.0" step="0.1" min="0.5" max="2.0">
-
-    <button id="btn" onclick="handleAction()">PHÁT ÂM THANH</button>
-    <div id="status">Sẵn sàng</div>
-</div>
-
-<script src="./client.js"></script>
-<script>
-    async function handleAction() {
-        const btn = document.getElementById('btn');
-        const status = document.getElementById('status');
-
-        // CHỈ TRUYỀN THAM SỐ
-        const params = {
-            text: document.getElementById('text').value,
-            filename: document.getElementById('filename').value,
-            voice: document.getElementById('voice').value,
-            rate: document.getElementById('rate').value,
-            lang: 'vi-VN' // Mặc định
-        };
-
-        try {
-            btn.disabled = true;
-            // Gọi engine đã đóng gói
-            await TTSClient.execute(params, (msg) => status.innerText = msg);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            btn.disabled = false;
+    <script src="client.js"></script>
+    <script>
+        async function testTTS() {
+            try {
+                // Gọi module cực kỳ đơn giản
+                await TTSClient.play({
+                    text: "Xin chào, đây là bản module hóa hoàn chỉnh.",
+                    filename: "welcome_speech_v1",
+                    voice: "vi-VN-HoaiMyNeural"
+                });
+            } catch (err) {
+                alert("Lỗi: " + err);
+            }
         }
-    }
-</script>
+    </script>
 </body>
 </html>

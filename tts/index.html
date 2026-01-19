@@ -2,103 +2,88 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TTS Drive Storage - Fixed Player</title>
+    <title>TTS System - Stable Version</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f9f9f9; }
-        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        #log { background: #222; color: #0f0; padding: 15px; border-radius: 5px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; margin-top: 20px; }
-        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-        .tag { font-weight: bold; padding: 2px 5px; border-radius: 3px; margin-right: 5px; }
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; line-height: 1.5; }
+        .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #log { background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 5px; height: 250px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 12px; margin-top: 15px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        .info-msg { color: #5bc0de; }
+        .success-msg { color: #5cb85c; }
+        .error-msg { color: #d9534f; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h3>TTS Drive System (Fixed)</h3>
-    <input type="text" id="inputText" value="Kiểm tra phát lại từ Drive.">
-    <input type="text" id="filename" value="test_drive_fix">
-    <select id="voice">
-        <option value="vi-VN-HoaiMyNeural">Hoài Mỹ (VN)</option>
-        <option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (CN)</option>
-    </select>
-    <button id="btn" onclick="executeTTS()">PHÁT & KIỂM TRA DRIVE</button>
+    <h2>TTS Audio Manager</h2>
+    <input type="text" id="inputText" value="Chào bạn, đây là thử nghiệm phát nhạc qua Proxy.">
+    <input type="text" id="filename" value="proxy_test_01">
+    <button id="btn" onclick="executeProcess()">PHÁT & ĐỒNG BỘ</button>
     <div id="log"></div>
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec";
+    const GAS_URL = "URL_WEB_APP_MỚI_CỦA_BẠN"; // PHẢI CẬP NHẬT URL SAU KHI DEPLOY
 
-    function addLog(msg, color = "#fff") {
+    function addLog(msg, className = '') {
         const log = document.getElementById('log');
-        log.innerHTML += `<div style="color:${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        log.innerHTML += `<div class="${className}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
         log.scrollTop = log.scrollHeight;
     }
 
-    // HÀM QUAN TRỌNG: Tải và phát nhạc để tránh lỗi hỏng nguồn
-    async function playAudioSecurely(url) {
-        try {
-            addLog("Đang tải dữ liệu âm thanh...");
-            const resp = await fetch(url);
-            if (!resp.ok) throw new Error("Google Drive từ chối truy cập (403/404)");
-            
-            const blob = await resp.blob();
-            const localUrl = URL.createObjectURL(blob);
-            const audio = new Audio(localUrl);
-            await audio.play();
-            addLog("Đang phát nhạc thành công!", "#0f0");
-        } catch (e) {
-            addLog("LỖI PHÁT: " + e.message, "#f00");
-            // Nếu link Direct lỗi, thử mở link gốc trong tab mới để kiểm tra quyền
-            addLog("Vui lòng kiểm tra quyền chia sẻ 'Anyone with link' của file trên Drive.");
-        }
+    async function playFromProxy(proxyUrl) {
+        addLog("Đang tải stream qua Proxy GAS...", "info-msg");
+        const resp = await fetch(proxyUrl);
+        const base64Data = await resp.text(); // GAS Proxy trả về chuỗi Base64
+        const audioSrc = `data:audio/mpeg;base64,${base64Data}`;
+        const audio = new Audio(audioSrc);
+        return audio.play();
     }
 
-    async function executeTTS() {
+    async function executeProcess() {
         const text = document.getElementById('inputText').value;
         const filename = document.getElementById('filename').value;
-        const voice = document.getElementById('voice').value;
         const btn = document.getElementById('btn');
-
         btn.disabled = true;
-        addLog("Bắt đầu quy trình kiểm tra...");
+
+        addLog("--- Bắt đầu quy trình ---");
 
         try {
-            // 1. Gọi Vercel để check/lấy dữ liệu
-            const vercelUrl = `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}&rate=1.0&filename=${filename}&lang=vi-VN`;
-            const response = await fetch(vercelUrl);
-            const data = await response.json();
+            // 1. Gọi Vercel
+            const vercelUrl = `/api/tts?text=${encodeURIComponent(text)}&voice=vi-VN-HoaiMyNeural&rate=1.0&filename=${filename}`;
+            const res = await fetch(vercelUrl);
+            const data = await res.json();
 
             if (data.source === 'driver') {
-                addLog("DATABASE: Tìm thấy file trên Drive.", "#5bc0de");
-                await playAudioSecurely(data.url);
+                addLog("DATABASE: Tìm thấy link. Đang phát từ Drive...", "success-msg");
+                await playFromProxy(data.url);
             } 
-            else if (data.source === 'azure') {
-                addLog("AZURE: Đang tạo bản dịch mới...", "#f0ad4e");
+            else {
+                addLog("AZURE: Tạo file mới. Đang phát...", "info-msg");
                 
-                // Giải mã Base64 sang Blob
+                // Chuyển Base64 từ Vercel sang mảng Byte để lưu
                 const binary = atob(data.audioData);
                 const bytes = new Uint8Array(binary.length);
                 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
                 
-                // Phát ngay từ bộ nhớ cục bộ
-                const localUrl = URL.createObjectURL(audioBlob);
-                await playAudioSecurely(localUrl);
+                // Phát ngay lập tức từ Blob nội bộ (Không bị 403)
+                const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+                const audio = new Audio(URL.createObjectURL(audioBlob));
+                audio.play();
 
-                // Lưu lên Drive qua GAS
-                addLog("Đang đồng bộ lên Drive...");
-                const uploadUrl = `${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`;
-                await fetch(uploadUrl, {
+                // Lưu lên GAS
+                addLog("Đang đồng bộ Binary lên Drive...");
+                await fetch(`${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`, {
                     method: 'POST',
                     body: JSON.stringify(Array.from(bytes)),
-                    headers: { 'Content-Type': 'application/json' },
                     mode: 'no-cors'
                 });
-                addLog("Đã đồng bộ xong.");
+                addLog("Đồng bộ hoàn tất.", "success-msg");
             }
-        } catch (error) {
-            addLog("CRITICAL ERROR: " + error.message, "#f00");
+        } catch (e) {
+            addLog("LỖI: " + e.message, "error-msg");
         } finally {
             btn.disabled = false;
         }

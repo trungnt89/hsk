@@ -2,127 +2,132 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TTS Smart Storage</title>
+    <title>TTS Test - IndexedDB Cache</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
-        #log { background: #1e1e1e; color: #0f0; padding: 15px; height: 200px; overflow-y: auto; font-family: monospace; border-radius: 8px; margin-top: 15px; }
-        button { width: 100%; padding: 15px; background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background: #f4f7f6; max-width: 600px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        button:hover { background: #218838; }
+        button:disabled { background: #6c757d; }
+        #log { margin-top: 20px; padding: 15px; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 12px; border-radius: 6px; height: 150px; overflow-y: auto; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin-top: 5px; }
+        .local { background: #fff3cd; color: #856404; }
+        .cloud { background: #d1ecf1; color: #0c5460; }
     </style>
 </head>
 <body>
-    <div style="border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
-        <h3>🎙️ TTS Multi-Layer Cache</h3>
-        <input type="text" id="textInput" value="Chào bạn, âm thanh này sẽ được lưu ở ba nơi.">
-        <input type="text" id="fileKey" value="demo_v1">
-        <button id="btn" onclick="handleTTS()">PHÁT ÂM THANH</button>
-        <div id="log"></div>
+
+<div class="card">
+    <h2>🎙️ Azure TTS Test System</h2>
+    
+    <div class="form-group">
+        <label>Văn bản:</label>
+        <textarea id="text" rows="3">Chào bạn, tôi là trợ lý ảo được tối ưu tốc độ.</textarea>
     </div>
 
+    <div class="form-group">
+        <label>Mã định danh (Filename/ID):</label>
+        <input type="text" id="filename" value="welcome_01">
+    </div>
+
+    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+            <label>Giọng đọc:</label>
+            <select id="voice">
+                <option value="vi-VN-HoaiMyNeural">Hoài My (Nữ)</option>
+                <option value="vi-VN-NamMinhNeural">Nam Minh (Nam)</option>
+                <option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (Trung)</option>
+            </select>
+        </div>
+        <div>
+            <label>Tốc độ:</label>
+            <input type="number" id="rate" value="1.0" step="0.1" min="0.5" max="2.0">
+        </div>
+    </div>
+
+    <button id="btnPlay" onclick="startTTS()">PHÁT & LƯU CACHE</button>
+    <div id="log"></div>
+</div>
+
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec";
-    const DB_NAME = "TTS_OFFLINE_CACHE";
+    const DB_NAME = "TTS_OFFLINE_DB";
     const STORE_NAME = "audio_store";
 
-    function printLog(msg) {
+    // 1. Ghi log hiển thị
+    function writeLog(msg, isLocal = false) {
         const log = document.getElementById('log');
-        log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        const badge = isLocal ? '<span class="status-badge local">INDEXED_DB</span>' : '<span class="status-badge cloud">AZURE_API</span>';
+        log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${badge} ${msg}</div>`;
         log.scrollTop = log.scrollHeight;
     }
 
-    // --- CƠ CHẾ INDEXEDDB ---
+    // 2. Khởi tạo IndexedDB
     async function initDB() {
-        return new Promise(r => {
+        return new Promise((resolve) => {
             const req = indexedDB.open(DB_NAME, 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME);
-            req.onsuccess = e => r(e.target.result);
+            req.onupgradeneeded = (e) => e.target.result.createObjectStore(STORE_NAME);
+            req.onsuccess = (e) => resolve(e.target.result);
         });
     }
-	
-	
 
-    // --- HÀM PHÁT VÀ CHUYỂN ĐỔI ---
-    function playBlob(blob) {
+    // 3. Quy trình xử lý chính
+    async function startTTS() {
+        const text = document.getElementById('text').value;
+        const filename = document.getElementById('filename').value;
+        const voice = document.getElementById('voice').value;
+        const rate = document.getElementById('rate').value;
+        const btn = document.getElementById('btnPlay');
+
+        btn.disabled = true;
+        const db = await initDB();
+
+        try {
+            // TẦNG 1: KIỂM TRA TRONG INDEXEDDB
+            const cachedBlob = await new Promise(r => {
+                const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(filename);
+                req.onsuccess = () => r(req.result);
+            });
+
+            if (cachedBlob) {
+                writeLog("Tìm thấy file trong máy. Phát ngay!", true);
+                playAudio(cachedBlob);
+            } else {
+                // TẦNG 2: GỌI API VERCEL (STREAM)
+                writeLog("Không có cache. Đang gọi Azure...");
+                
+                const query = new URLSearchParams({ text, filename, voice, rate });
+                const response = await fetch(`/api/tts?${query.toString()}`);
+
+                if (!response.ok) throw new Error("API trả về lỗi hoặc Server chưa cấu hình ENV");
+
+                // Nhận dữ liệu dưới dạng Blob từ stream
+                const audioBlob = await response.blob();
+
+                // Lưu vào IndexedDB
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                tx.objectStore(STORE_NAME).put(audioBlob, filename);
+                
+                writeLog("Đã tải xong và lưu vào bộ nhớ.");
+                playAudio(audioBlob);
+            }
+        } catch (e) {
+            writeLog("LỖI: " + e.message);
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function playAudio(blob) {
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         audio.play();
         audio.onended = () => URL.revokeObjectURL(url);
     }
-
-    function b64ToBlob(b64) {
-		// KIỂM TRA AN TOÀN
-		if (!b64 || typeof b64 !== 'string') {
-			throw new Error("Dữ liệu Base64 bị trống hoặc không hợp lệ.");
-		}
-
-		try {
-			const cleanB64 = b64.replace(/\s/g, '');
-			const binary = atob(cleanB64);
-			const bytes = new Uint8Array(binary.length);
-			for (let i = 0; i < binary.length; i++) {
-				bytes[i] = binary.charCodeAt(i);
-			}
-			return new Blob([bytes], { type: 'audio/mpeg' });
-		} catch (e) {
-			throw new Error("Lỗi định dạng Base64: " + e.message);
-		}
-	}
-
-    // --- QUY TRÌNH CHÍNH ---
-    async function handleTTS() {
-        const text = document.getElementById('textInput').value;
-        const filename = document.getElementById('fileKey').value;
-        const btn = document.getElementById('btn');
-        btn.disabled = true;
-
-        try {
-            // TẦNG 1: Kiểm tra IndexedDB
-            const db = await initDB();
-            const localData = await new Promise(r => {
-                const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get(filename);
-                req.onsuccess = () => r(req.result);
-            });
-
-            if (localData) {
-                printLog("✅ Lấy từ IndexedDB (Tốc độ 0ms)");
-                playBlob(localData);
-            } else {
-                // TẦNG 2 & 3: Gọi Vercel API
-                printLog("🔍 Đang tìm trên Drive/Azure...");
-                const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}&filename=${filename}`);
-                const data = await res.json();
-
-                let finalBlob;
-
-                if (data.source === 'driver') {
-                    printLog("☁️ Lấy từ Google Drive");
-                    const proxyRes = await fetch(data.proxyUrl);
-                    const b64 = await proxyRes.text();
-                    finalBlob = b64ToBlob(b64);
-                } else {
-                    printLog("🌐 Lấy từ Azure (Tạo mới)");
-                    finalBlob = b64ToBlob(data.audioData);
-
-                    // Đồng bộ ngầm lên Drive
-                    const bytesArray = Array.from(Uint8Array.from(atob(data.audioData), c => c.charCodeAt(0)));
-                    fetch(`${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`, {
-                        method: 'POST',
-                        body: JSON.stringify(bytesArray),
-                        mode: 'no-cors'
-                    }).then(() => printLog("💾 Đã đồng bộ lên Drive ngầm"));
-                }
-
-                // Lưu vào IndexedDB cho lần sau
-                const tx = db.transaction(STORE_NAME, "readwrite");
-                tx.objectStore(STORE_NAME).put(finalBlob, filename);
-                playBlob(finalBlob);
-            }
-        } catch (e) {
-            printLog("❌ Lỗi: " + e.message);
-        } finally {
-            btn.disabled = false;
-        }
-    }
 </script>
+
 </body>
 </html>

@@ -1,18 +1,3 @@
-🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-NGHIÊM CẤM mọi hành vi sửa code ngoài phạm vi yêu cầu , sử dụng git diff để check cho tôi xem và phê duyệt
-chỉ thực hiện yêu cầu dưới đây, nếu bạn sửa src ngoài phạm vi yêu cầu tôi sẽ kiện bạn. 
-Sau khi đối ứng các yêu cầu hãy tạo file đã sửa hoàn chỉnh
-🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳🔳
-1. Kiểm tra file âm thanh đã có trên driver hay chưa, nếu chưa có thì lấy mới , nếu có rồi thì lấy trên driver
-2. Nếu file chưa có thì lấy mới trên azure, không lưu trực tiếp ở đây mà đẩy file về fronted sau đó fronend sẽ gọi ajax để lưu file lên driver thông qua gas
-3. KEY của file âm thanh bao gồm 
- * | text   | 你好 | Nội dung cần đọc |
- * | lang   | zh-CN | Ngôn ngữ SSML |
- * | voice  | zh-CN-XiaoxiaoNeural | Giọng đọc |
- * | rate   | 1.0 | Tốc độ đọc |
--------------------
-Src gốc cần sửa:
--------------------
 export default async function handler(req, res) {
   try {
     // ===============================

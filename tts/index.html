@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Drive Storage Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+        .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; border: 1px solid #ddd; }
+        button { background: #007bff; color: white; cursor: pointer; font-weight: bold; border: none; }
+        button:hover { background: #0056b3; }
+        #log { background: #f4f4f4; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; height: 150px; overflow-y: auto; margin-top: 20px; border: 1px solid #ddd; }
+        .status-azure { color: #d9534f; font-weight: bold; }
+        .status-driver { color: #5cb85c; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>TTS to Drive System</h2>
+    
+    <label>Nội dung (Text):</label>
+    <input type="text" id="text" value="你好, 我 là AI của bạn">
+    
+    <label>Tên file (Key):</label>
+    <input type="text" id="filename" value="test_audio_01">
+
+    <label>Giọng đọc (Voice):</label>
+    <select id="voice">
+        <option value="zh-CN-XiaoxiaoNeural">zh-CN-XiaoxiaoNeural (Nữ)</option>
+        <option value="zh-CN-YunxiNeural">zh-CN-YunxiNeural (Nam)</option>
+        <option value="vi-VN-HoaiMyNeural">vi-VN-HoaiMyNeural (Việt Nam)</option>
+    </select>
+
+    <button onclick="runTTS()">PHÁT & LƯU HỆ THỐNG</button>
+
+    <div id="log">--- Chờ thực thi ---</div>
+</div>
+
+<script>
+    // CẤU HÌNH: Thay URL GAS của bạn vào đây
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec"; 
+
+    function addLog(msg, type = '') {
+        const logBox = document.getElementById('log');
+        const time = new Date().toLocaleTimeString();
+        logBox.innerHTML += `<div>[${time}] ${type ? `<span class="status-${type}">${msg}</span>` : msg}</div>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    async function runTTS() {
+        const text = document.getElementById('text').value;
+        const filename = document.getElementById('filename').value;
+        const voice = document.getElementById('voice').value;
+        
+        addLog("Đang gọi Vercel API...");
+
+        try {
+            // 1. Gọi Vercel API
+            const vercelUrl = `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}&rate=1.0&filename=${filename}&lang=zh-CN`;
+            const response = await fetch(vercelUrl);
+            const data = await response.json();
+
+            if (data.source === 'driver') {
+                // TRƯỜNG HỢP 1: ĐÃ CÓ TRÊN DRIVE
+                addLog("File đã có trên Drive. Đang phát...", "driver");
+                const audio = new Audio(data.url);
+                audio.play();
+            } 
+            else if (data.source === 'azure') {
+                // TRƯỜNG HỢP 2: LẤY MỚI TỪ AZURE
+                addLog("File mới từ Azure. Đang phát & chuẩn bị lưu...", "azure");
+                
+                // Chuyển Base64 sang Blob
+                const byteCharacters = atob(data.audioData);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const audioBlob = new Blob([new Uint8Array(byteNumbers)], {type: 'audio/mpeg'});
+                
+                // Phát nhạc ngay
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                audio.play();
+
+                // GỌI GAS ĐỂ LƯU BINARY (Requirement 2)
+                addLog("Đang đẩy Binary lên Drive qua GAS...");
+                
+                const uploadUrl = `${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`;
+                
+                // Sử dụng fetch POST với body là Binary
+                fetch(uploadUrl, {
+                    method: 'POST',
+                    body: audioBlob,
+                    mode: 'no-cors' // Cần thiết khi làm việc với GAS Web App redirect
+                }).then(() => {
+                    addLog("Đã gửi lệnh lưu. Kiểm tra Sheet/Drive sau vài giây.");
+                }).catch(err => {
+                    addLog("Lỗi khi gửi tới GAS: " + err.message);
+                });
+            }
+        } catch (error) {
+            addLog("LỖI HỆ THỐNG: " + error.message);
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>

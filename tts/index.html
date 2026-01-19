@@ -50,20 +50,23 @@
     }
 
     function b64ToBlob(b64) {
-    try {
-        // Loại bỏ mọi ký tự không phải base64 nếu có (như xuống dòng, khoảng trắng)
-        const cleanB64 = b64.replace(/\s/g, '');
-        const binary = atob(cleanB64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-        return new Blob([bytes], { type: 'audio/mpeg' });
-    } catch (e) {
-        console.error("Lỗi giải mã Base64:", e);
-        throw new Error("Dữ liệu âm thanh từ server bị lỗi định dạng.");
-    }
-}
+		// KIỂM TRA AN TOÀN
+		if (!b64 || typeof b64 !== 'string') {
+			throw new Error("Dữ liệu Base64 bị trống hoặc không hợp lệ.");
+		}
+
+		try {
+			const cleanB64 = b64.replace(/\s/g, '');
+			const binary = atob(cleanB64);
+			const bytes = new Uint8Array(binary.length);
+			for (let i = 0; i < binary.length; i++) {
+				bytes[i] = binary.charCodeAt(i);
+			}
+			return new Blob([bytes], { type: 'audio/mpeg' });
+		} catch (e) {
+			throw new Error("Lỗi định dạng Base64: " + e.message);
+		}
+	}
 
     // --- QUY TRÌNH CHÍNH ---
     async function handleTTS() {

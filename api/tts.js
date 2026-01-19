@@ -11,16 +11,12 @@ export default async function handler(req, res) {
         const driveData = await checkRes.json();
 
         if (driveData.exists) {
-            return res.status(200).json({
-                source: 'driver',
-                proxyUrl: driveData.proxyUrl,
-                fileKey: fileKey
-            });
+            return res.status(200).json({ source: 'driver', proxyUrl: driveData.proxyUrl, fileKey });
         }
 
-        // 2. Gọi Azure TTS REST API
+        // 2. Gọi Azure TTS
         const azureRegion = process.env.AZURE_REGION || "eastus";
-        const azureKey = process.env.AZURE_KEY; // Đảm bảo đã đặt trong Vercel Env
+        const azureKey = process.env.AZURE_KEY; 
         const azureUrl = `https://${azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`;
 
         const azureRes = await fetch(azureUrl, {
@@ -34,19 +30,25 @@ export default async function handler(req, res) {
             body: `<speak version='1.0' xml:lang='vi-VN'><voice name='${voice}'>${text}</voice></speak>`
         });
 
-        if (!azureRes.ok) throw new Error("Azure API trả về lỗi");
+        if (!azureRes.ok) {
+            const errorDetail = await azureRes.text();
+            throw new Error(`Azure API Error: ${errorDetail}`);
+        }
 
         const arrayBuffer = await azureRes.arrayBuffer();
         const audioBase64 = Buffer.from(arrayBuffer).toString('base64');
 
-        // Trả về JSON sạch
+        // KIỂM TRA CUỐI CÙNG: Nếu không có dữ liệu thì báo lỗi luôn ở Backend
+        if (!audioBase64) throw new Error("Azure returned empty audio data");
+
         return res.status(200).json({
             source: 'azure',
-            audioData: audioBase64, // Chuỗi Base64 chuẩn 100%
+            audioData: audioBase64, // Đảm bảo key này luôn có giá trị
             fileKey: fileKey
         });
 
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        console.error("Vercel Backend Error:", error.message);
+        return res.status(500).json({ error: error.message, audioData: "" });
     }
 }

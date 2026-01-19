@@ -146,7 +146,7 @@ async function speak(text) {
   }
 
   const res = await fetch(
-    `/api/tts?text=${encodeURIComponent(text)}&voice=${azureVoice}`
+    `/api/tts_v2?text=${encodeURIComponent(text)}&voice=${azureVoice}`
   );
   const buf = await res.arrayBuffer();
   const blob = new Blob([buf], { type: "audio/mpeg" });

@@ -1,92 +1,288 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>TTS Auto-Key Tester</title>
-    <style>
-        :root { --primary: #0078d4; }
-        body { font-family: 'Segoe UI', sans-serif; background: #faf9f8; display: flex; justify-content: center; padding: 40px; }
-        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 450px; }
-        .field { margin-bottom: 12px; }
-        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
-        select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        #status { margin-top: 15px; font-size: 13px; color: #666; text-align: center; min-height: 18px; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Japanese Reading Practice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../assistive.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system; max-width: 900px; margin: auto; padding: 16px; background: #fcfcfc; }
+    li { list-style: none; border: 1px solid #ddd; padding: 12px; margin-top: 8px; cursor: pointer; border-radius: 8px; background: white; transition: 0.2s; display: flex; flex-direction: column; gap: 4px; }
+    li:hover { border-color: #aaa; }
+    li.active { background: #e8f0ff; border-color: #4a7cff; font-weight: bold; }
+    .vi-text { font-size: 0.85em; color: #666; font-weight: normal; font-style: italic; }
+    
+    .controls, .play-modes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .section-box { border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    select, button, textarea { padding: 10px; font-size: 15px; border-radius: 8px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #fff; transition: 0.2s; font-weight: 500; }
+    button:active { transform: translateY(1px); }
+    button.active { background: #2563eb !important; color: white !important; border-color: #1d4ed8 !important; }
+    textarea { width: 100%; box-sizing: border-box; font-family: inherit; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+  </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 style="margin-top:0; color: var(--primary)">Azure TTS Engine</h2>
-    
-    <div class="field">
-        <label>Nội dung</label>
-        <textarea id="text" rows="3">Xin chào, filename sẽ tự động được tạo.</textarea>
-    </div>
+<h1>📖 Japanese Reading Practice</h1>
 
-    <div class="field">
-        <label>Ngôn ngữ & Giọng đọc</label>
-        <select id="voiceConfig" onchange="/* Optional: update internal state */">
-            <optgroup label="Tiếng Việt">
-                <option value="vi-VN|vi-VN-HoaiMyNeural">Hoài My (Nữ)</option>
-                <option value="vi-VN|vi-VN-NamMinhNeural">Nam Minh (Nam)</option>
-            </optgroup>
-            <optgroup label="Tiếng Trung">
-                <option value="zh-CN|zh-CN-XiaoxiaoNeural">Xiaoxiao (Nữ)</option>
-                <option value="zh-CN|zh-CN-YunxiNeural">Yunxi (Nam)</option>
-            </optgroup>
-        </select>
-    </div>
+<div class="section-box controls">
+  <select id="voice">
+    <option value="ja-JP-NanamiNeural">Nữ – Nanami</option>
+    <option value="ja-JP-KeitaNeural" selected>Nam – Keita</option>
+  </select>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <div class="field">
-            <label>Tốc độ</label>
-            <select id="rate">
-                <option value="0.8">Chậm</option>
-                <option value="1.0" selected>Bình thường</option>
-                <option value="1.2">Nhanh</option>
-            </select>
-        </div>
-        <div class="field">
-            <label>Định dạng</label>
-            <select id="format">
-                <option value="audio-16khz-32kbitrate-mono-mp3">MP3 Low</option>
-                <option value="audio-16khz-128kbitrate-mono-mp3">MP3 High</option>
-            </select>
-        </div>
-    </div>
-
-    <button id="playBtn" onclick="runTTS()">PHÁT ÂM THANH</button>
-    <div id="status"></div>
+  <select id="rate">
+    <option value="0.7">Rất chậm</option>
+    <option value="0.85">Chậm</option>
+    <option value="1.0" selected>Bình thường</option>
+    <option value="1.1">Hơi nhanh</option>
+    <option value="1.25">Nhanh</option>
+  </select>
 </div>
 
-<script src="../com/TTSClient.js"></script>
+<div class="section-box play-modes">
+  <button id="btnPlayCur" onclick="playCurrent()">▶️ Đọc đoạn</button>
+  <button id="btnRepeatOne" onclick="toggleRepeatOne()">🔂 Lặp 1 đoạn</button>
+  <button id="btnRepeatAll" onclick="toggleRepeatAll()">🔁 Lặp cả danh sách</button>
+  <button onclick="openEditor()" style="margin-left:auto; background: #f1f5f9;">⚙️ Sửa nội dung</button>
+</div>
+
+<div id="editorModal" class="modal">
+  <div class="modal-content">
+    <h3 style="margin-top:0">Quản lý nội dung</h3>
+    <textarea id="textInput" rows="6" placeholder="Nhập nội dung tiếng Nhật..."></textarea>
+    <div class="controls" style="margin-top:15px; justify-content: flex-end;">
+      <button onclick="addText()" style="background: #ecfdf5; color: #059669;">➕ Thêm mới</button>
+      <button onclick="updateText()" style="background: #eff6ff; color: #2563eb;">✏️ Lưu sửa</button>
+      <button onclick="deleteText()" style="color: #dc2626;">🗑 Xoá</button>
+      <button onclick="closeEditor()" style="margin-left: 10px;">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<ul id="list"></ul>
+
+<audio id="audio" controls style="width:100%; margin-top:16px; border-radius: 8px;"></audio>
+
 <script>
-    async function runTTS() {
-        const btn = document.getElementById('playBtn');
-        const status = document.getElementById('status');
-        
-        // Tách Lang và Voice từ value của dropdown
-        const [lang, voice] = document.getElementById('voiceConfig').value.split('|');
+const API_URL = "https://hsk-gilt.vercel.app/api/tts_test";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyNX96iC37hc8AunT8zWlG_yTFB2ipZp90-XivW8hWzVYVne9nftCC3mSFoTk10v93t/exec";
+const DB_NAME = "JP-KAIWA-CACHE";
+const STORE_NAME = "AUDIO";
 
-        const params = {
-            text: document.getElementById('text').value.trim(),
-            lang: lang,
-            voice: voice,
-            rate: document.getElementById('rate').value,
-            format: document.getElementById('format').value,
-            // filename: "" // Để trống để client.js tự generate
-        };
+let texts = [];
+let currentIndex = 0;
+let repeatOne = false;
+let repeatAll = false;
 
-        try {
-            btn.disabled = true;
-            await TTSClient.play(params, (msg) => status.innerText = msg);
-        } catch (err) {
-            status.innerText = "Lỗi hệ thống";
-        } finally {
-            btn.disabled = false;
-        }
+const audio = document.getElementById("audio");
+const listEl = document.getElementById("list");
+const textInput = document.getElementById("textInput");
+
+function loadSettings() {
+  const v = localStorage.getItem("voice");
+  const r = localStorage.getItem("rate");
+  if (v) voiceEl().value = v;
+  if (r) rateEl().value = r;
+  repeatOne = localStorage.getItem("repeatOne") === "true";
+  repeatAll = localStorage.getItem("repeatAll") === "true";
+  updateButtonStates();
+}
+
+function updateButtonStates() {
+  document.getElementById("btnRepeatOne").classList.toggle("active", repeatOne);
+  document.getElementById("btnRepeatAll").classList.toggle("active", repeatAll);
+}
+
+function setPlayBtnActive(isActive) {
+  document.getElementById("btnPlayCur").classList.toggle("active", isActive);
+}
+
+voiceEl().addEventListener("change", () => localStorage.setItem("voice", voiceEl().value));
+rateEl().addEventListener("change", () => localStorage.setItem("rate", rateEl().value));
+
+function openEditor() {
+  textInput.value = texts[currentIndex]?.ja || "";
+  document.getElementById("editorModal").style.display = "flex";
+}
+function closeEditor() { document.getElementById("editorModal").style.display = "none"; }
+
+/* ====================== DATA STORAGE (GAS API) ====================== */
+async function loadTexts() {
+  console.log("LOG: Fetching JA & VI from GAS...");
+  try {
+    const cacheBuster = `?_t=${new Date().getTime()}`;
+    const res = await fetch(GAS_URL + cacheBuster);
+    if (!res.ok) throw new Error('Network response was not ok');
+    const data = await res.json();
+    
+    texts = Array.isArray(data) ? data.filter(item => item.ja && !item.ja.toString().startsWith("Error:")) : [];
+    console.log("LOG: Data refreshed. Items:", texts.length);
+    renderList();
+  } catch (e) {
+    console.error("LOG: Error fetching texts", e);
+  }
+}
+
+async function callGas(data) {
+  console.log("LOG: Post to GAS - Action:", data.action);
+  return fetch(GAS_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify(data)
+  });
+}
+
+function renderList() {
+  listEl.innerHTML = "";
+  texts.forEach((item, i) => {
+    const li = document.createElement("li");
+    const jaDiv = document.createElement("div");
+    jaDiv.textContent = item.ja;
+    const viDiv = document.createElement("div");
+    viDiv.className = "vi-text";
+    viDiv.textContent = item.vi;
+    li.appendChild(jaDiv);
+    li.appendChild(viDiv);
+    li.onclick = () => { currentIndex = i; playCurrent(); };
+    listEl.appendChild(li);
+  });
+  highlight();
+}
+
+function highlight() {
+  [...listEl.children].forEach((li, i) => {
+    li.classList.toggle("active", i === currentIndex);
+  });
+}
+
+/* ====================== CRUD ====================== */
+async function addText() {
+  const v = textInput.value.trim();
+  if (!v) return;
+  console.log("LOG: Adding text");
+  await callGas({ action: "add", text: v });
+  setTimeout(loadTexts, 1500); 
+  closeEditor();
+}
+async function updateText() {
+  if (texts[currentIndex]) {
+    console.log("LOG: Updating text");
+    await callGas({ action: "update", index: currentIndex, text: textInput.value });
+    setTimeout(loadTexts, 1500);
+    closeEditor();
+  }
+}
+async function deleteText() {
+  if (texts[currentIndex]) {
+    const confirmDelete = confirm("Bạn có chắc chắn muốn xóa dòng này không?\nNội dung: " + texts[currentIndex].ja);
+    if (confirmDelete) {
+      console.log("LOG: Action Delete confirmed");
+      await callGas({ action: "delete", index: currentIndex });
+      currentIndex = 0;
+      setTimeout(loadTexts, 1500);
+      closeEditor();
+    } else {
+      console.log("LOG: Delete canceled");
     }
+  }
+}
+
+/* ====================== INDEXED DB LOGIC ====================== */
+function openDB() {
+  return new Promise((resolve, reject) => {
+    console.log("LOG: Opening IndexedDB...");
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      console.log("LOG: Upgrading IndexedDB...");
+      e.target.result.createObjectStore(STORE_NAME);
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = e => {
+      console.error("LOG: DB Error", e);
+      reject(e);
+    };
+  });
+}
+
+async function getCachedAudio(key) {
+  const db = await openDB();
+  return new Promise(resolve => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const req = tx.objectStore(STORE_NAME).get(key);
+    req.onsuccess = () => resolve(req.result || null);
+  });
+}
+
+async function saveAudio(key, blob) {
+  console.log("LOG: Caching audio to IndexedDB...");
+  const db = await openDB();
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).put(blob, key);
+}
+
+/* ====================== PLAY LOGIC ====================== */
+async function playCurrent() {
+  highlight();
+  const item = texts[currentIndex];
+  if(!item || !item.ja) return;
+
+  const cacheKey = `ja-JP|${voiceEl().value}|${rateEl().value}|${item.ja}`;
+  
+  console.log("LOG: Checking cache for audio...");
+  try {
+    const cachedBlob = await getCachedAudio(cacheKey);
+
+    if (cachedBlob) {
+      console.log("LOG: Playing from Cache");
+      audio.src = URL.createObjectURL(cachedBlob);
+    } else {
+      console.log("LOG: Fetching from Azure API");
+      const url = `${API_URL}?text=${encodeURIComponent(item.ja)}&lang=ja-JP&voice=${voiceEl().value}&rate=${rateEl().value}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Audio Fetch Failed");
+      const blob = await res.blob();
+      await saveAudio(cacheKey, blob);
+      audio.src = URL.createObjectURL(blob);
+    }
+    audio.play();
+  } catch (e) {
+    console.error("LOG: Playback flow error", e);
+  }
+}
+
+function toggleRepeatOne() {
+  repeatOne = !repeatOne; if(repeatOne) repeatAll = false;
+  localStorage.setItem("repeatOne", repeatOne);
+  localStorage.setItem("repeatAll", repeatAll);
+  updateButtonStates();
+}
+function toggleRepeatAll() {
+  repeatAll = !repeatAll; if(repeatAll) repeatOne = false;
+  localStorage.setItem("repeatOne", repeatOne);
+  localStorage.setItem("repeatAll", repeatAll);
+  updateButtonStates();
+}
+
+audio.addEventListener("play", () => setPlayBtnActive(true));
+audio.addEventListener("pause", () => setPlayBtnActive(false));
+audio.addEventListener("ended", () => {
+  setPlayBtnActive(false);
+  if (repeatOne) return playCurrent();
+  currentIndex++;
+  if (currentIndex >= texts.length) {
+    if (repeatAll) currentIndex = 0; else return;
+  }
+  playCurrent();
+});
+
+function voiceEl() { return document.getElementById("voice"); }
+function rateEl() { return document.getElementById("rate"); }
+
+loadSettings();
+loadTexts();
 </script>
 </body>
 </html>

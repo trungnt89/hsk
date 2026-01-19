@@ -2,126 +2,107 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Test TTS & Drive Storage</title>
+    <title>TTS Drive Storage - Fixed Player</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f0f2f5; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; margin-top: 15px; }
-        input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
-        button { background-color: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; transition: background 0.3s; margin-top: 25px; }
-        button:hover { background-color: #1557b0; }
-        button:disabled { background-color: #ccc; }
-        #log-container { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
-        #log { background: #282c34; color: #61dafb; padding: 15px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 13px; height: 200px; overflow-y: auto; white-space: pre-wrap; }
-        .status-tag { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-right: 5px; }
-        .tag-azure { background: #ff4d4f; color: white; }
-        .tag-driver { background: #52c41a; color: white; }
-        .tag-info { background: #1890ff; color: white; }
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f9f9f9; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        #log { background: #222; color: #0f0; padding: 15px; border-radius: 5px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; margin-top: 20px; }
+        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        .tag { font-weight: bold; padding: 2px 5px; border-radius: 3px; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>TTS System Dashboard</h2>
-    
-    <label>Nội dung văn bản (Text):</label>
-    <input type="text" id="inputText" value="Chào bạn, hệ thống đã sẵn sàng lưu trữ.">
-    
-    <label>Tên file định danh (Filename):</label>
-    <input type="text" id="filename" value="audio_test_clean">
-
-    <label>Giọng đọc (Azure Voice):</label>
+<div class="card">
+    <h3>TTS Drive System (Fixed)</h3>
+    <input type="text" id="inputText" value="Kiểm tra phát lại từ Drive.">
+    <input type="text" id="filename" value="test_drive_fix">
     <select id="voice">
-        <option value="vi-VN-HoaiMyNeural">Hoài Mỹ (Việt Nam)</option>
-        <option value="vi-VN-NamMinhNeural">Nam Minh (Việt Nam)</option>
-        <option value="zh-CN-XiaoxiaoNeural">Tiểu Tiếu (Trung Quốc)</option>
+        <option value="vi-VN-HoaiMyNeural">Hoài Mỹ (VN)</option>
+        <option value="zh-CN-XiaoxiaoNeural">Xiaoxiao (CN)</option>
     </select>
-
-    <button id="btnAction" onclick="executeTTS()">PHÁT & TỰ ĐỘNG LƯU</button>
-
-    <div id="log-container">
-        <strong>Nhật ký hệ thống (System Logs):</strong>
-        <div id="log"></div>
-    </div>
+    <button id="btn" onclick="executeTTS()">PHÁT & KIỂM TRA DRIVE</button>
+    <div id="log"></div>
 </div>
 
 <script>
-    // CẤU HÌNH: Thay URL GAS của bạn sau khi Deploy New Deployment
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec";
 
-    function printLog(message, type = 'info') {
-        const logEl = document.getElementById('log');
-        const now = new Date();
-        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0') + ":" + now.getSeconds().toString().padStart(2, '0');
-        const tag = `<span class="status-tag tag-${type}">${type}</span>`;
-        logEl.innerHTML += `<div>[${timeStr}] ${tag} ${message}</div>`;
-        logEl.scrollTop = logEl.scrollHeight;
+    function addLog(msg, color = "#fff") {
+        const log = document.getElementById('log');
+        log.innerHTML += `<div style="color:${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // HÀM QUAN TRỌNG: Tải và phát nhạc để tránh lỗi hỏng nguồn
+    async function playAudioSecurely(url) {
+        try {
+            addLog("Đang tải dữ liệu âm thanh...");
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error("Google Drive từ chối truy cập (403/404)");
+            
+            const blob = await resp.blob();
+            const localUrl = URL.createObjectURL(blob);
+            const audio = new Audio(localUrl);
+            await audio.play();
+            addLog("Đang phát nhạc thành công!", "#0f0");
+        } catch (e) {
+            addLog("LỖI PHÁT: " + e.message, "#f00");
+            // Nếu link Direct lỗi, thử mở link gốc trong tab mới để kiểm tra quyền
+            addLog("Vui lòng kiểm tra quyền chia sẻ 'Anyone with link' của file trên Drive.");
+        }
     }
 
     async function executeTTS() {
-        const btn = document.getElementById('btnAction');
         const text = document.getElementById('inputText').value;
         const filename = document.getElementById('filename').value;
         const voice = document.getElementById('voice').value;
+        const btn = document.getElementById('btn');
 
         btn.disabled = true;
-        printLog("Bắt đầu quy trình kiểm tra dữ liệu...", "info");
+        addLog("Bắt đầu quy trình kiểm tra...");
 
         try {
-            // 1. Gọi Vercel API (Sử dụng endpoint của bạn)
-            const vercelApiUrl = `/api/tts?text=${encodeURIComponent(text)}&lang=vi-VN&voice=${voice}&rate=1.0&filename=${filename}`;
-            const response = await fetch(vercelApiUrl);
+            // 1. Gọi Vercel để check/lấy dữ liệu
+            const vercelUrl = `/api/tts?text=${encodeURIComponent(text)}&voice=${voice}&rate=1.0&filename=${filename}&lang=vi-VN`;
+            const response = await fetch(vercelUrl);
             const data = await response.json();
 
             if (data.source === 'driver') {
-                // TRƯỜNG HỢP: ĐÃ CÓ FILE TRÊN DRIVE
-                printLog("PHÁT HIỆN: File tồn tại trên Drive. Lấy dữ liệu...", "driver");
-                const audio = new Audio(data.url);
-                audio.crossOrigin = "anonymous";
-                await audio.play();
-                printLog("Đang phát nhạc trực tiếp từ link Drive.");
+                addLog("DATABASE: Tìm thấy file trên Drive.", "#5bc0de");
+                await playAudioSecurely(data.url);
             } 
             else if (data.source === 'azure') {
-                // TRƯỜNG HỢP: FILE MỚI TỪ AZURE
-                printLog("LẤY MỚI: Nhận dữ liệu từ Azure TTS.", "azure");
+                addLog("AZURE: Đang tạo bản dịch mới...", "#f0ad4e");
                 
-                // Giải mã Base64 sang ArrayBuffer
-                const binaryStr = window.atob(data.audioData);
-                const bytes = new Uint8Array(binaryStr.length);
-                for (let i = 0; i < binaryStr.length; i++) {
-                    bytes[i] = binaryStr.charCodeAt(i);
-                }
+                // Giải mã Base64 sang Blob
+                const binary = atob(data.audioData);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
                 const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
                 
-                // Phát nhạc ngay cho người dùng
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-                audio.play();
-                printLog("Đang phát bản dịch mới từ Azure.");
+                // Phát ngay từ bộ nhớ cục bộ
+                const localUrl = URL.createObjectURL(audioBlob);
+                await playAudioSecurely(localUrl);
 
-                // GỬI LÊN GAS LƯU TRỮ (Bảo toàn nhị phân bằng cách gửi Array)
-                printLog("TIẾN TRÌNH: Đang đồng bộ file lên Google Drive...");
-                const uploadUrl = `${GAS_WEB_APP_URL}?fileKey=${encodeURIComponent(data.fileKey)}`;
-                
-                fetch(uploadUrl, {
+                // Lưu lên Drive qua GAS
+                addLog("Đang đồng bộ lên Drive...");
+                const uploadUrl = `${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`;
+                await fetch(uploadUrl, {
                     method: 'POST',
-                    body: JSON.stringify(Array.from(bytes)), // Gửi dưới dạng mảng byte để GAS không làm hỏng file
+                    body: JSON.stringify(Array.from(bytes)),
                     headers: { 'Content-Type': 'application/json' },
                     mode: 'no-cors'
-                }).then(() => {
-                    printLog("THÀNH CÔNG: File đã được lưu và đăng ký vào Sheet Database.", "driver");
                 });
+                addLog("Đã đồng bộ xong.");
             }
         } catch (error) {
-            printLog("LỖI: " + error.message, "azure");
-            console.error(error);
+            addLog("CRITICAL ERROR: " + error.message, "#f00");
         } finally {
             btn.disabled = false;
         }
     }
 </script>
-
 </body>
 </html>

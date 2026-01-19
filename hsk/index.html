@@ -45,8 +45,6 @@
         .btn-nav.active-blue { color: var(--primary); background: #eff6ff; }
         .btn-nav.active-green { color: var(--success); background: #ecfdf5; }
         .btn-play { width: 70px; height: 70px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; font-size: 26px; color: white; cursor: pointer; box-shadow: 0 8px 15px rgba(251, 191, 36, 0.3); display: flex; align-items: center; justify-content: center; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); }
-
-        /* Thêm hiệu ứng và Toast */
         .card-syncing { background: #fffbeb !important; border-color: var(--accent) !important; opacity: 0.8; transition: 0.3s; }
         #toast-msg {
             position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
@@ -126,9 +124,31 @@ let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 let masteredSet = new Set();
 const audio = new Audio();
 
+// --- INDEXEDDB CACHE LOGIC ---
+const DB_NAME = "HSK_AUDIO_CACHE";
+const DB_STORE = "sounds";
+const dbRequest = indexedDB.open(DB_NAME, 1);
+dbRequest.onupgradeneeded = (e) => { e.target.result.createObjectStore(DB_STORE); };
+
+async function getCache(key) {
+    return new Promise(res => {
+        if (!dbRequest.result) { res(null); return; }
+        const txn = dbRequest.result.transaction(DB_STORE, "readonly");
+        const store = txn.objectStore(DB_STORE);
+        const req = store.get(key);
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => res(null);
+    });
+}
+
+async function setCache(key, blob) {
+    console.log(`[IndexedDB] Caching audio: ${key}`);
+    const txn = dbRequest.result.transaction(DB_STORE, "readwrite");
+    txn.objectStore(DB_STORE).put(blob, key);
+}
+
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
-// AJAX Gọi GAS
 async function gasAction(action, data = {}) {
     console.log(`[GAS Request] Action: ${action}`, data);
     const params = new URLSearchParams({ action, filename: FILE_NAME, ...data });
@@ -149,7 +169,6 @@ function saveConfig() {
 }
 
 async function loadConfig() {
-    // Tải tiến độ từ GAS trước
     const res = await gasAction("getMastered");
     if (res && res.masteredList) masteredSet = new Set(res.masteredList);
 
@@ -287,13 +306,38 @@ async function select(i) {
 
 async function speak(text) {
     const voice = document.getElementById("voice-select").value;
+    const cacheKey = `${FILE_NAME}_${text}_${voice}`;
+    console.log(`[Audio Log] ${new Date().toLocaleTimeString()} | Request: ${text}`);
+
     if (voice === "browser") {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text); u.lang = "zh-CN";
         window.speechSynthesis.speak(u); return;
     }
+
+    // 1. Check IndexedDB Cache
+    const cachedBlob = await getCache(cacheKey);
+    if (cachedBlob) {
+        console.log(`[Audio Log] Cache Hit (IndexedDB): ${text}`);
+        const blobUrl = URL.createObjectURL(cachedBlob);
+        return new Promise(res => { audio.src = blobUrl; audio.onended = res; audio.play().catch(res); });
+    }
+
+    // 2. Cache Miss -> Fetch
     const url = voice === "google" ? `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}` : `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
-    return new Promise(res => { audio.src = url; audio.onended = res; audio.play().catch(() => res()); });
+    
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        
+        // Background Caching
+        setCache(cacheKey, blob);
+
+        const blobUrl = URL.createObjectURL(blob);
+        return new Promise(res => { audio.src = blobUrl; audio.onended = res; audio.play().catch(res); });
+    } catch (e) {
+        console.error("[Audio Error]", e);
+    }
 }
 
 function togglePlay() {
@@ -317,7 +361,6 @@ function prevPage() { if(page > 1) { page--; render(); } }
 function nextPage() { page++; render(); }
 function clearMastered() { alert("Chức năng xóa diện rộng tạm khóa để bảo vệ dữ liệu Cloud."); }
 
-// START
 loadConfig();
 </script>
 </body>

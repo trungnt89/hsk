@@ -29,6 +29,8 @@ export default async function handler(req, res) {
         if (driveResponse.ok) {
           const audio = await driveResponse.arrayBuffer();
           res.setHeader('Content-Type', 'audio/mpeg');
+          // Gửi Header để Client nhận biết nguồn từ Drive
+          res.setHeader('X-Audio-Source', 'Google-Drive');
           console.log(`[SUCCESS] Trả về audio từ Drive: ${filename}`);
           return res.send(Buffer.from(audio));
         }
@@ -98,6 +100,8 @@ export default async function handler(req, res) {
     }
 
     res.setHeader('Content-Type', 'audio/mpeg');
+    // Gửi Header để Client nhận biết nguồn từ Cloud
+    res.setHeader('X-Audio-Source', 'Azure-Cloud');
     res.send(Buffer.from(audio));
 
   } catch (e) {

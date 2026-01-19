@@ -38,6 +38,8 @@
             req.onsuccess = e => r(e.target.result);
         });
     }
+	
+	
 
     // --- HÀM PHÁT VÀ CHUYỂN ĐỔI ---
     function playBlob(blob) {
@@ -48,9 +50,20 @@
     }
 
     function b64ToBlob(b64) {
-        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    try {
+        // Loại bỏ mọi ký tự không phải base64 nếu có (như xuống dòng, khoảng trắng)
+        const cleanB64 = b64.replace(/\s/g, '');
+        const binary = atob(cleanB64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
         return new Blob([bytes], { type: 'audio/mpeg' });
+    } catch (e) {
+        console.error("Lỗi giải mã Base64:", e);
+        throw new Error("Dữ liệu âm thanh từ server bị lỗi định dạng.");
     }
+}
 
     // --- QUY TRÌNH CHÍNH ---
     async function handleTTS() {

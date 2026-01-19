@@ -1,10 +1,13 @@
 export default async function handler(req, res) {
   try {
-    const { text = '', lang = 'zh-CN', voice = 'zh-CN-XiaoxiaoNeural', rate = '1.0', filename = 'speech' } = req.query;
-    
-    // Tạo Key an toàn cho URL (Không dùng toàn bộ text nếu text quá dài)
-    const shortText = text.substring(0, 15).replace(/[^a-z0-9]/gi, '_');
-    const fileKey = `${filename}_${shortText}_${voice}_${rate}`;
+	// Thay đổi logic tạo fileKey
+	const { text, lang, voice, rate, filename = 'speech' } = req.query;
+
+	// Chỉ lấy 10 ký tự đầu của text và loại bỏ mọi ký tự lạ
+	const cleanTextSnippet = text.trim().substring(0, 10).replace(/[^a-zA-Z0-9]/g, '');
+	const fileKey = `${filename}_${cleanTextSnippet}_${voice}_${rate}`.replace(/\s+/g, '_');
+
+	console.log(`[Vercel Log] Strict Key: ${fileKey}`);
 
     const gasUrl = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec";
 

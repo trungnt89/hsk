@@ -51,6 +51,7 @@ function getAudioFromDB(key) {
 }
 
 function saveAudioToDB(key, blob) {
+	console.log("SaveAudioToDB key="+key);
   const tx = db.transaction(STORE_NAME, "readwrite");
   tx.objectStore(STORE_NAME).put(blob, key);
 }

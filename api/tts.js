@@ -1,94 +1,75 @@
-// Cấu hình URL GAS của bạn
+// api/tts.js
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec";
-const DB_NAME = "TTS_SMART_CACHE";
-const STORE_NAME = "audios";
 
-// --- KHỞI TẠO INDEXEDDB ---
-async function initDB() {
-    return new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME);
-            }
-        };
-        req.onsuccess = (e) => resolve(e.target.result);
-        req.onerror = (e) => reject(e);
-    });
-}
-
-// --- TIỆN ÍCH CACHE ---
-const cache = {
-    async get(key) {
-        const db = await initDB();
-        return new Promise((r) => {
-            const tx = db.transaction(STORE_NAME, "readonly");
-            const req = tx.objectStore(STORE_NAME).get(key);
-            req.onsuccess = () => r(req.result);
-            req.onerror = () => r(null);
-        });
-    },
-    async set(key, blob) {
-        const db = await initDB();
-        const tx = db.transaction(STORE_NAME, "readwrite");
-        tx.objectStore(STORE_NAME).put(blob, key);
-    }
-};
-
-// --- CHUYỂN ĐỔI & PHÁT ---
-function b64ToBlob(b64) {
-    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    return new Blob([bytes], { type: 'audio/mpeg' });
-}
-
-function playBlob(blob) {
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.play().catch(e => console.error("[AUDIO] Play error:", e));
-    audio.onended = () => URL.revokeObjectURL(url);
-}
-
-// --- QUY TRÌNH CHÍNH (Hàm này phải khớp với HTML) ---
-async function processTTS(text, filename, voice = "vi-VN-HoaiMyNeural") {
-    console.log(`[TTS] Đang xử lý: ${filename}...`);
+export default async function handler(req, res) {
+    // Thêm log để kiểm tra request đầu vào
+    console.log(`[LOG] Nhận yêu cầu TTS: ${new Date().toISOString()}`);
     
+    const { text, filename, voice = "vi-VN-HoaiMyNeural", rate = "1.0" } = req.query;
+
+    if (!text || !filename) {
+        return res.status(400).json({ error: "Thiếu tham số text hoặc filename" });
+    }
+
+    const fileKey = filename.trim();
+
     try {
-        // Tầng 1: IndexedDB
-        const localBlob = await cache.get(filename);
-        if (localBlob) {
-            console.log("%c[LOCAL] Phát từ IndexedDB (Tốc độ tối đa)", "color: yellow");
-            return playBlob(localBlob);
+        // BƯỚC 1: Kiểm tra sự tồn tại trên Google Drive qua GAS
+        console.log(`[CHECK] Đang kiểm tra fileKey: ${fileKey} trên Drive...`);
+        const checkRes = await fetch(`${GAS_URL}?action=check&key=${encodeURIComponent(fileKey)}`);
+        const driveData = await checkRes.json();
+
+        if (driveData.exists) {
+            console.log(`[FOUND] File đã có trên Drive. Trả về Proxy URL.`);
+            return res.status(200).json({
+                source: 'driver',
+                proxyUrl: driveData.proxyUrl, // Link này để Frontend fetch binary không bị 403
+                fileKey: fileKey
+            });
         }
 
-        // Tầng 2: Google Drive / Azure (Gọi qua Vercel)
-        const vercelUrl = `/api/tts?text=${encodeURIComponent(text)}&filename=${filename}&voice=${voice}`;
-        const res = await fetch(vercelUrl);
-        const data = await res.json();
+        // BƯỚC 2: Nếu không có trên Drive -> Gọi Azure TTS
+        console.log(`[MISS] File chưa có. Đang gọi Azure TTS...`);
+        
+        // Cấu hình Azure TTS (Sử dụng REST API để tối ưu trên Vercel)
+        const azureRegion = process.env.AZURE_REGION || "eastus";
+        const azureKey = process.env.AZURE_KEY;
+        const azureUrl = `https://${azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`;
 
-        if (data.source === 'driver') {
-            console.log("%c[DRIVE] Lấy từ Google Drive", "color: cyan");
-            const proxyRes = await fetch(data.proxyUrl);
-            const b64 = await proxyRes.text();
-            const blob = b64ToBlob(b64);
-            await cache.set(filename, blob);
-            playBlob(blob);
-        } else {
-            console.log("%c[AZURE] Lấy từ Azure Cloud", "color: magenta");
-            const blob = b64ToBlob(data.audioData);
-            
-            playBlob(blob);
-            await cache.set(filename, blob);
-            
-            // Đồng bộ ngầm lên Drive
-            const bytes = Uint8Array.from(atob(data.audioData), c => c.charCodeAt(0));
-            fetch(`${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`, {
-                method: 'POST',
-                body: JSON.stringify(Array.from(bytes)),
-                mode: 'no-cors'
-            }).then(() => console.log("[SYNC] Đã đồng bộ lên Drive."));
+        const response = await fetch(azureUrl, {
+            method: 'POST',
+            headers: {
+                'Ocp-Apim-Subscription-Key': azureKey,
+                'Content-Type': 'application/ssml+xml',
+                'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
+                'User-Agent': 'Vercel-TTS-Service'
+            },
+            body: `<speak version='1.0' xml:lang='vi-VN'>
+                    <voice xml:lang='vi-VN' name='${voice}'>
+                        <prosody rate='${rate}'>${text}</prosody>
+                    </voice>
+                  </speak>`
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Azure TTS Error: ${errText}`);
         }
+
+        // Chuyển đổi ArrayBuffer sang Base64 để gửi về Client
+        const audioBuffer = await response.arrayBuffer();
+        const audioBase64 = Buffer.from(audioBuffer).toString('base64');
+
+        console.log(`[SUCCESS] Đã tạo xong audio từ Azure cho: ${fileKey}`);
+
+        return res.status(200).json({
+            source: 'azure',
+            audioData: audioBase64, // Gửi base64 về để Frontend phát và lưu IndexedDB/Drive
+            fileKey: fileKey
+        });
+
     } catch (error) {
-        console.error("[ERROR]", error);
+        console.error(`[CRITICAL ERROR] ${error.message}`);
+        return res.status(500).json({ error: error.message });
     }
 }

@@ -1,101 +1,76 @@
 /**
- * TTS Client Module - Xử lý Cache IndexedDB & API Azure
- * Logic: Local Cache -> API Azure -> Save Local
+ * TTS ENGINE MODULE - FULLY ENCAPSULATED
  */
+const TTSClient = (function() {
+    const CONFIG = {
+        DB_NAME: "TTS_SYSTEM_STORAGE",
+        STORE_NAME: "audio_cache",
+        API_ENDPOINT: "/api/tts"
+    };
 
-const TTS_CONFIG = {
-    DB_NAME: "TTS_OFFLINE_DB",
-    STORE_NAME: "audio_store",
-    VERSION: 1
-};
-
-// --- KHỞI TẠO DATABASE ---
-async function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(TTS_CONFIG.DB_NAME, TTS_CONFIG.VERSION);
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains(TTS_CONFIG.STORE_NAME)) {
-                db.createObjectStore(TTS_CONFIG.STORE_NAME);
-            }
-        };
-        request.onsuccess = (e) => resolve(e.target.result);
-        request.onerror = (e) => reject("Không thể khởi tạo IndexedDB");
+    const _getDB = () => new Promise((resolve, reject) => {
+        const req = indexedDB.open(CONFIG.DB_NAME, 1);
+        req.onupgradeneeded = e => e.target.result.createObjectStore(CONFIG.STORE_NAME);
+        req.onsuccess = e => resolve(e.target.result);
+        req.onerror = () => reject("IndexedDB failed");
     });
-}
 
-// --- CÁC HÀM CƠ SỞ DỮ LIỆU ---
-const storage = {
-    async get(key) {
-        const db = await initDB();
-        return new Promise((resolve) => {
-            const transaction = db.transaction(TTS_CONFIG.STORE_NAME, "readonly");
-            const req = transaction.objectStore(TTS_CONFIG.STORE_NAME).get(key);
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => resolve(null);
-        });
-    },
-    async save(key, blob) {
-        const db = await initDB();
-        const transaction = db.transaction(TTS_CONFIG.STORE_NAME, "readwrite");
-        transaction.objectStore(TTS_CONFIG.STORE_NAME).put(blob, key);
-        console.log(`[LOG] Đã lưu cache local: ${key}`);
-    }
-};
+    // Tự động tạo mã định danh duy nhất dựa trên các tham số
+    const _generateKey = (p) => {
+        const str = `${p.text}_${p.voice}_${p.lang}_${p.rate}_${p.format}`;
+        // Tạo mã đơn giản (Base64 của chuỗi tham số) để làm filename hợp lệ
+        return btoa(unescape(encodeURIComponent(str))).substring(0, 100);
+    };
 
-// --- HÀM XỬ LÝ CHÍNH ---
-const TTSClient = {
-    async play(options) {
-        const { 
-            text, 
-            filename, 
-            lang = 'vi-VN', 
-            voice = 'vi-VN-HoaiMyNeural', 
-            rate = '1.0' 
-        } = options;
-
-        if (!filename) throw new Error("Cần cung cấp mã định danh (filename)");
-
-        try {
-            // 1. Kiểm tra cache local (IndexedDB)
-            const cachedBlob = await storage.get(filename);
-            
-            if (cachedBlob) {
-                console.log("%c[LOCAL] Phát từ IndexedDB", "color: #ffc107");
-                this._executePlay(cachedBlob);
-                return { source: 'local' };
-            }
-
-            // 2. Gọi API Vercel nếu không có cache
-            console.log("%c[CLOUD] Đang tải từ Azure...", "color: #007bff");
-            const query = new URLSearchParams({ text, lang, voice, rate, filename });
-            const response = await fetch(`/api/tts?${query.toString()}`);
-
-            if (!response.ok) throw new Error("Lỗi kết nối API Azure");
-
-            const audioBlob = await response.blob();
-
-            // 3. Lưu vào IndexedDB để dùng lần sau
-            await storage.save(filename, audioBlob);
-
-            // 4. Phát âm thanh
-            this._executePlay(audioBlob);
-            return { source: 'cloud' };
-
-        } catch (error) {
-            console.error("[TTS Error]", error);
-            throw error;
-        }
-    },
-
-    // Hàm nội bộ để phát âm thanh từ Blob
-    _executePlay(blob) {
+    const _play = (blob) => {
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
-        audio.play();
+        audio.play().catch(console.error);
         audio.onended = () => URL.revokeObjectURL(url);
-    }
-};
+    };
 
-// Xuất module (Dành cho trình duyệt)
-window.TTSClient = TTSClient;
+    return {
+        async play(params, logger = () => {}) {
+            try {
+                // TỰ ĐỘNG SET FILENAME NẾU TRỐNG
+                const key = params.filename || _generateKey(params);
+                console.log(`[TTS] Unique Key: ${key}`);
+
+                const db = await _getDB();
+                
+                // 1. Check Cache
+                const cached = await new Promise(r => {
+                    const req = db.transaction(CONFIG.STORE_NAME, "readonly").objectStore(CONFIG.STORE_NAME).get(key);
+                    req.onsuccess = () => r(req.result);
+                });
+
+                if (cached) {
+                    logger("🚀 Phát từ bộ nhớ máy (Tức thì)");
+                    _play(cached);
+                    return { source: 'cache', key };
+                }
+
+                // 2. Gọi API
+                logger("🌐 Đang tải từ Azure Cloud...");
+                const query = new URLSearchParams(params);
+                const response = await fetch(`${CONFIG.API_ENDPOINT}?${query.toString()}`);
+
+                if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+                const audioBlob = await response.blob();
+
+                // 3. Lưu cache & Phát
+                const tx = db.transaction(CONFIG.STORE_NAME, "readwrite");
+                tx.objectStore(CONFIG.STORE_NAME).put(audioBlob, key);
+                
+                _play(audioBlob);
+                logger("✅ Đã tải và lưu thành công");
+                return { source: 'api', key };
+
+            } catch (err) {
+                logger(`❌ Lỗi: ${err.message}`);
+                throw err;
+            }
+        }
+    };
+})();

@@ -2,141 +2,91 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TTS Professional Tester</title>
+    <title>TTS Auto-Key Tester</title>
     <style>
-        :root { --primary-color: #0078d4; --bg-color: #f3f2f1; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-color); display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-        h2 { color: var(--primary-color); margin-top: 0; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; }
-        .field { margin-bottom: 15px; }
-        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #333; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        textarea { resize: vertical; min-height: 80px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        button { width: 100%; padding: 12px; background: var(--primary-color); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
-        button:hover { background: #005a9e; }
-        button:disabled { background: #c8c6c4; cursor: not-allowed; }
-        #log { margin-top: 15px; font-size: 12px; color: #666; font-style: italic; text-align: center; }
+        :root { --primary: #0078d4; }
+        body { font-family: 'Segoe UI', sans-serif; background: #faf9f8; display: flex; justify-content: center; padding: 40px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 450px; }
+        .field { margin-bottom: 12px; }
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+        select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        #status { margin-top: 15px; font-size: 13px; color: #666; text-align: center; min-height: 18px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Azure TTS Panel</h2>
+<div class="card">
+    <h2 style="margin-top:0; color: var(--primary)">Azure TTS Engine</h2>
     
     <div class="field">
-        <label>Nội dung văn bản (Text)</label>
-        <textarea id="text">Xin chào, hệ thống chuyển đổi văn bản sang giọng nói đã sẵn sàng.</textarea>
+        <label>Nội dung</label>
+        <textarea id="text" rows="3">Xin chào, filename sẽ tự động được tạo.</textarea>
     </div>
 
     <div class="field">
-        <label>Mã định danh (Filename/ID Key)</label>
-        <input type="text" id="filename" placeholder="audio_001" value="audio_test_v1">
+        <label>Ngôn ngữ & Giọng đọc</label>
+        <select id="voiceConfig" onchange="/* Optional: update internal state */">
+            <optgroup label="Tiếng Việt">
+                <option value="vi-VN|vi-VN-HoaiMyNeural">Hoài My (Nữ)</option>
+                <option value="vi-VN|vi-VN-NamMinhNeural">Nam Minh (Nam)</option>
+            </optgroup>
+            <optgroup label="Tiếng Trung">
+                <option value="zh-CN|zh-CN-XiaoxiaoNeural">Xiaoxiao (Nữ)</option>
+                <option value="zh-CN|zh-CN-YunxiNeural">Yunxi (Nam)</option>
+            </optgroup>
+        </select>
     </div>
 
-    <div class="grid">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <div class="field">
-            <label>Ngôn ngữ (Lang)</label>
-            <select id="lang" onchange="updateVoices()">
-                <option value="vi-VN">Tiếng Việt</option>
-                <option value="zh-CN">Tiếng Trung (CN)</option>
-                <option value="en-US">Tiếng Anh (US)</option>
-                <option value="ja-JP">Tiếng Nhật</option>
-            </select>
-        </div>
-        <div class="field">
-            <label>Giọng đọc (Voice)</label>
-            <select id="voice"></select>
-        </div>
-    </div>
-
-    <div class="grid">
-        <div class="field">
-            <label>Tốc độ (Rate)</label>
+            <label>Tốc độ</label>
             <select id="rate">
-                <option value="0.8">Chậm (0.8)</option>
-                <option value="1.0" selected>Bình thường (1.0)</option>
-                <option value="1.2">Nhanh (1.2)</option>
-                <option value="1.5">Rất nhanh (1.5)</option>
+                <option value="0.8">Chậm</option>
+                <option value="1.0" selected>Bình thường</option>
+                <option value="1.2">Nhanh</option>
             </select>
         </div>
         <div class="field">
-            <label>Định dạng (Format)</label>
+            <label>Định dạng</label>
             <select id="format">
-                <option value="audio-16khz-32kbitrate-mono-mp3">MP3 (32kbps)</option>
-                <option value="audio-16khz-128kbitrate-mono-mp3">MP3 (128kbps)</option>
+                <option value="audio-16khz-32kbitrate-mono-mp3">MP3 Low</option>
+                <option value="audio-16khz-128kbitrate-mono-mp3">MP3 High</option>
             </select>
         </div>
     </div>
 
     <button id="playBtn" onclick="runTTS()">PHÁT ÂM THANH</button>
-    <div id="log">Sẵn sàng</div>
+    <div id="status"></div>
 </div>
 
 <script src="../com/TTSClient.js"></script>
 <script>
-    // Danh sách giọng đọc phổ biến
-    const voiceData = {
-        "vi-VN": [
-            { id: "vi-VN-HoaiMyNeural", name: "Hoài My (Nữ)" },
-            { id: "vi-VN-NamMinhNeural", name: "Nam Minh (Nam)" }
-        ],
-        "zh-CN": [
-            { id: "zh-CN-XiaoxiaoNeural", name: "Xiaoxiao (Nữ)" },
-            { id: "zh-CN-YunxiNeural", name: "Yunxi (Nam)" }
-        ],
-        "en-US": [
-            { id: "en-US-AriaNeural", name: "Aria (Nữ)" },
-            { id: "en-US-GuyNeural", name: "Guy (Nam)" }
-        ],
-        "ja-JP": [
-            { id: "ja-JP-NanamiNeural", name: "Nanami (Nữ)" },
-            { id: "ja-JP-KeitaNeural", name: "Keita (Nam)" }
-        ]
-    };
-
-    // Cập nhật dropdown Voice dựa trên Lang
-    function updateVoices() {
-        const lang = document.getElementById('lang').value;
-        const voiceSelect = document.getElementById('voice');
-        voiceSelect.innerHTML = voiceData[lang].map(v => 
-            `<option value="${v.id}">${v.name}</option>`
-        ).join('');
-    }
-
-    // Thực thi TTS qua Module
     async function runTTS() {
         const btn = document.getElementById('playBtn');
-        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        
+        // Tách Lang và Voice từ value của dropdown
+        const [lang, voice] = document.getElementById('voiceConfig').value.split('|');
 
         const params = {
-            text: document.getElementById('text').value,
-            filename: document.getElementById('filename').value,
-            lang: document.getElementById('lang').value,
-            voice: document.getElementById('voice').value,
+            text: document.getElementById('text').value.trim(),
+            lang: lang,
+            voice: voice,
             rate: document.getElementById('rate').value,
-            format: document.getElementById('format').value
+            format: document.getElementById('format').value,
+            // filename: "" // Để trống để client.js tự generate
         };
 
         try {
             btn.disabled = true;
-            log.innerText = "Đang xử lý...";
-            
-            // Gọi hàm play từ module TTSClient.js
-            const result = await TTSClient.play(params);
-            
-            log.innerText = `Hoàn tất! (Nguồn: ${result.source})`;
+            await TTSClient.play(params, (msg) => status.innerText = msg);
         } catch (err) {
-            log.innerText = "Lỗi: " + err;
-            console.error(err);
+            status.innerText = "Lỗi hệ thống";
         } finally {
             btn.disabled = false;
         }
     }
-
-    // Khởi tạo lần đầu
-    updateVoices();
 </script>
 </body>
 </html>

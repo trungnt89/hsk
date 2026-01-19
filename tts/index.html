@@ -2,121 +2,121 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TTS Ultra Fast - 1s Response</title>
+    <title>TTS IndexedDB Cache System</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; max-width: 550px; margin: auto; background: #f0f4f8; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        h2 { color: #1a73e8; margin-top: 0; display: flex; align-items: center; gap: 10px; }
-        #log { background: #1e1e1e; color: #4af626; padding: 15px; height: 250px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 12px; border-radius: 10px; margin-top: 20px; line-height: 1.6; }
-        button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; font-size: 16px; transition: all 0.2s; }
-        button:hover { background: #1557b0; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(26,115,232,0.3); }
-        button:disabled { background: #bdc3c7; transform: none; box-shadow: none; }
-        input { width: 100%; padding: 12px; margin: 10px 0 20px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .log-info { color: #5bc0de; }
-        .log-success { color: #5cb85c; }
-        .log-error { color: #d9534f; }
+        body { font-family: sans-serif; padding: 20px; max-width: 550px; margin: auto; background: #f0f2f5; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        #log { background: #1a1a1a; color: #00ff00; padding: 15px; height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; border-radius: 8px; margin-top: 15px; }
+        button { width: 100%; padding: 15px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .status-local { color: #ffeb3b; } /* IndexedDB */
+        .status-drive { color: #03a9f4; } /* Drive */
+        .status-azure { color: #e91e63; } /* Azure */
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2><span>⚡</span> TTS High Speed</h2>
-    <label>Nội dung đọc:</label>
-    <input type="text" id="inputText" value="Chào bạn, âm thanh sẽ phát ngay lập tức.">
-    <label>Tên file (Filename):</label>
-    <input type="text" id="filename" value="speed_test_final">
-    
-    <button id="btnAction" onclick="executeProcess()">PHÁT & TỐI ƯU TỐC ĐỘ</button>
-
+    <h3>🎙️ TTS Smart Cache (IndexedDB)</h3>
+    <input type="text" id="inputText" style="width:100%; padding:10px; margin-bottom:10px;" value="Thử nghiệm lưu trữ tầng tầng lớp lớp.">
+    <input type="text" id="filename" style="width:100%; padding:10px; margin-bottom:20px;" value="cache_test_01">
+    <button id="btn" onclick="startProcess()">PHÁT ÂM THANH</button>
     <div id="log"></div>
 </div>
 
 <script>
-    // Link GAS đã được cập nhật theo yêu cầu của bạn
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec";
+    const DB_NAME = "TTS_Cache";
+    const STORE_NAME = "audios";
 
-    function writeLog(msg, type = '') {
-        const logEl = document.getElementById('log');
-        const time = new Date().toLocaleTimeString();
-        const colorClass = type ? `log-${type}` : '';
-        logEl.innerHTML += `<div><span style="color:#888">[${time}]</span> <span class="${colorClass}">${msg}</span></div>`;
-        logEl.scrollTop = logEl.scrollHeight;
+    function addLog(msg, type = '') {
+        const log = document.getElementById('log');
+        log.innerHTML += `<div class="${type}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
     }
 
-    // Cơ chế phát nhạc thông minh: Direct -> Proxy Fallback
-    async function playSmart(directUrl, proxyUrl) {
-        return new Promise((resolve, reject) => {
-            const audio = new Audio();
-            audio.src = directUrl;
-            audio.crossOrigin = "anonymous";
-            
-            writeLog("Đang nạp luồng Direct Stream...");
-            
-            // Thử phát ngay bằng link Direct
-            audio.play().then(() => {
-                writeLog("THÀNH CÔNG: Phát tức thì từ Drive (dưới 1s).", "success");
-                resolve();
-            }).catch(async (e) => {
-                writeLog("Direct bị chặn (403), chuyển hướng Proxy...", "info");
-                try {
-                    const res = await fetch(proxyUrl);
-                    const base64Data = await res.text();
-                    const proxyAudio = new Audio("data:audio/mpeg;base64," + base64Data);
-                    await proxyAudio.play();
-                    writeLog("Phát thành công qua Proxy dự phòng.", "success");
-                    resolve();
-                } catch (err) {
-                    writeLog("LỖI PHÁT: " + err.message, "error");
-                    reject(err);
-                }
-            });
+    // --- KHỞI TẠO INDEXEDDB ---
+    function initDB() {
+        return new Promise((resolve) => {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onupgradeneeded = (e) => e.target.result.createObjectStore(STORE_NAME);
+            request.onsuccess = (e) => resolve(e.target.result);
         });
     }
 
-    async function executeProcess() {
+    async function getLocal(key) {
+        const db = await initDB();
+        return new Promise((resolve) => {
+            const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get(key);
+            req.onsuccess = () => resolve(req.result);
+        });
+    }
+
+    async function saveLocal(key, blob) {
+        const db = await initDB();
+        db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).put(blob, key);
+    }
+
+    // --- LOGIC PHÁT ÂM THANH ---
+    async function playAudio(blob) {
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        return audio.play();
+    }
+
+    async function startProcess() {
         const text = document.getElementById('inputText').value;
         const filename = document.getElementById('filename').value;
-        const btn = document.getElementById('btnAction');
-        
+        const btn = document.getElementById('btn');
         btn.disabled = true;
-        writeLog("--- Bắt đầu quy trình tối ưu ---");
 
         try {
-            // 1. Gọi Vercel để lấy thông tin file
-            const vercelUrl = `/api/tts?text=${encodeURIComponent(text)}&voice=vi-VN-HoaiMyNeural&rate=1.0&filename=${filename}`;
-            const res = await fetch(vercelUrl);
-            const data = await res.json();
+            // BƯỚC 1: TÌM TRONG INDEXEDDB (Ưu tiên cao nhất)
+            addLog("Kiểm tra bộ nhớ cục bộ (IndexedDB)...");
+            const localBlob = await getLocal(filename);
+            
+            if (localBlob) {
+                addLog("TÌM THẤY TRONG INDEXEDDB! Phát ngay...", "status-local");
+                await playAudio(localBlob);
+            } else {
+                // BƯỚC 2: TÌM TRÊN DRIVE QUA VERCEL/GAS
+                addLog("IndexedDB trống. Kiểm tra Google Drive...");
+                const vercelRes = await fetch(`/api/tts?text=${encodeURIComponent(text)}&filename=${filename}`);
+                const data = await vercelRes.json();
 
-            if (data.source === 'driver') {
-                writeLog("DATABASE: Tìm thấy file sẵn có.");
-                await playSmart(data.url, data.proxyUrl);
-            } 
-            else {
-                writeLog("AZURE: Đang tạo file mới...");
-                const binary = atob(data.audioData);
-                const bytes = new Uint8Array(binary.length);
-                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                
-                // PHÁT NGAY từ bộ nhớ RAM (0ms trễ)
-                const audio = new Audio(URL.createObjectURL(new Blob([bytes], {type: 'audio/mpeg'})));
-                audio.play();
-                writeLog("Đang phát bản dịch từ Azure.", "success");
+                if (data.source === 'driver') {
+                    addLog("TÌM THẤY TRÊN DRIVE! Đang tải về cache...", "status-drive");
+                    const res = await fetch(data.proxyUrl);
+                    const b64 = await res.text();
+                    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+                    const blob = new Blob([bytes], { type: 'audio/mpeg' });
+                    
+                    await saveLocal(filename, blob); // Lưu vào IndexedDB
+                    await playAudio(blob);
+                } else {
+                    // BƯỚC 3: LẤY TỪ AZURE
+                    addLog("Drive trống. Đang yêu cầu Azure tạo mới...", "status-azure");
+                    const binary = atob(data.audioData);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                    const blob = new Blob([bytes], { type: 'audio/mpeg' });
 
-                // ĐỒNG BỘ NGẦM (Người dùng không phải chờ)
-                writeLog("Đang đồng bộ ngầm lên Drive...");
-                fetch(`${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`, {
-                    method: 'POST',
-                    body: JSON.stringify(Array.from(bytes)),
-                    mode: 'no-cors'
-                }).then(() => writeLog("Đã đồng bộ Drive xong.", "success"));
+                    await playAudio(blob);
+                    await saveLocal(filename, blob); // Lưu vào IndexedDB
+                    
+                    addLog("Đang đồng bộ lên Drive ngầm...");
+                    fetch(`${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`, {
+                        method: 'POST',
+                        body: JSON.stringify(Array.from(bytes)),
+                        mode: 'no-cors'
+                    }).then(() => addLog("Đã lưu vào Drive.", "status-drive"));
+                }
             }
         } catch (e) {
-            writeLog("LỖI HỆ THỐNG: " + e.message, "error");
+            addLog("LỖI: " + e.message, "status-azure");
         } finally {
             btn.disabled = false;
         }
     }
 </script>
-
 </body>
 </html>

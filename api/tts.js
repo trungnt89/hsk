@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   try {
     const { text, lang, voice, rate, filename = 'speech' } = req.query;
-    const fileKey = `${filename}_${voice}_${rate}`;
+    const fileKey = `${filename}_${text}_${lang}_${voice}_${rate}`;
     //const gasUrl = process.env.GAS_WEBHOOK_URL;
 	const gasUrl = "https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec";
 

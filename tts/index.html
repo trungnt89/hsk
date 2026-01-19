@@ -2,90 +2,72 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TTS System - Stable Version</title>
+    <title>Stable TTS Drive System</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; line-height: 1.5; }
-        .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        #log { background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 5px; height: 250px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 12px; margin-top: 15px; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+        #log { background: #000; color: #0f0; padding: 15px; height: 200px; overflow-y: auto; font-family: monospace; border-radius: 5px; margin-top: 15px; }
+        button { width: 100%; padding: 15px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; }
         input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-        .info-msg { color: #5bc0de; }
-        .success-msg { color: #5cb85c; }
-        .error-msg { color: #d9534f; }
     </style>
 </head>
 <body>
-
-<div class="card">
-    <h2>TTS Audio Manager</h2>
-    <input type="text" id="inputText" value="Chào bạn, đây là thử nghiệm phát nhạc qua Proxy.">
-    <input type="text" id="filename" value="proxy_test_01">
-    <button id="btn" onclick="executeProcess()">PHÁT & ĐỒNG BỘ</button>
+    <h3>TTS Audio Storage</h3>
+    <input type="text" id="inputText" value="Thử nghiệm hệ thống ổn định.">
+    <input type="text" id="filename" value="final_test_stable">
+    <button id="btn" onclick="runProcess()">PHÁT & LƯU</button>
     <div id="log"></div>
-</div>
 
 <script>
-    const GAS_URL = "URL_WEB_APP_MỚI_CỦA_BẠN"; // PHẢI CẬP NHẬT URL SAU KHI DEPLOY
+    const GAS_URL = "DÁN_URL_WEB_APP_GAS_CỦA_BẠN_VÀO_ĐÂY"; 
 
-    function addLog(msg, className = '') {
-        const log = document.getElementById('log');
-        log.innerHTML += `<div class="${className}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-        log.scrollTop = log.scrollHeight;
+    function log(msg, color = "#0f0") {
+        const el = document.getElementById('log');
+        el.innerHTML += `<div style="color:${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        el.scrollTop = el.scrollHeight;
     }
 
-    async function playFromProxy(proxyUrl) {
-        addLog("Đang tải stream qua Proxy GAS...", "info-msg");
-        const resp = await fetch(proxyUrl);
-        const base64Data = await resp.text(); // GAS Proxy trả về chuỗi Base64
-        const audioSrc = `data:audio/mpeg;base64,${base64Data}`;
-        const audio = new Audio(audioSrc);
+    async function playAudioFromProxy(proxyUrl) {
+        log("Đang nạp âm thanh qua Proxy...");
+        const res = await fetch(proxyUrl);
+        const base64 = await res.text();
+        const audio = new Audio("data:audio/mpeg;base64," + base64);
         return audio.play();
     }
 
-    async function executeProcess() {
+    async function runProcess() {
         const text = document.getElementById('inputText').value;
         const filename = document.getElementById('filename').value;
-        const btn = document.getElementById('btn');
-        btn.disabled = true;
-
-        addLog("--- Bắt đầu quy trình ---");
+        document.getElementById('btn').disabled = true;
+        log("Bắt đầu quy trình...");
 
         try {
-            // 1. Gọi Vercel
-            const vercelUrl = `/api/tts?text=${encodeURIComponent(text)}&voice=vi-VN-HoaiMyNeural&rate=1.0&filename=${filename}`;
-            const res = await fetch(vercelUrl);
-            const data = await res.json();
+            const vercelRes = await fetch(`/api/tts?text=${encodeURIComponent(text)}&voice=vi-VN-HoaiMyNeural&rate=1.0&filename=${filename}`);
+            const data = await vercelRes.json();
 
             if (data.source === 'driver') {
-                addLog("DATABASE: Tìm thấy link. Đang phát từ Drive...", "success-msg");
-                await playFromProxy(data.url);
-            } 
-            else {
-                addLog("AZURE: Tạo file mới. Đang phát...", "info-msg");
-                
-                // Chuyển Base64 từ Vercel sang mảng Byte để lưu
+                log("Đã có trên Drive. Đang phát...");
+                await playAudioFromProxy(data.url);
+            } else {
+                log("Tạo mới từ Azure...");
                 const binary = atob(data.audioData);
                 const bytes = new Uint8Array(binary.length);
                 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
                 
-                // Phát ngay lập tức từ Blob nội bộ (Không bị 403)
-                const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
-                const audio = new Audio(URL.createObjectURL(audioBlob));
+                const audio = new Audio(URL.createObjectURL(new Blob([bytes], {type: 'audio/mpeg'})));
                 audio.play();
 
-                // Lưu lên GAS
-                addLog("Đang đồng bộ Binary lên Drive...");
+                log("Đang đồng bộ lên Drive...");
                 await fetch(`${GAS_URL}?fileKey=${encodeURIComponent(data.fileKey)}`, {
                     method: 'POST',
                     body: JSON.stringify(Array.from(bytes)),
                     mode: 'no-cors'
                 });
-                addLog("Đồng bộ hoàn tất.", "success-msg");
+                log("Đã đồng bộ xong.");
             }
         } catch (e) {
-            addLog("LỖI: " + e.message, "error-msg");
+            log("LỖI: " + e.message, "red");
         } finally {
-            btn.disabled = false;
+            document.getElementById('btn').disabled = false;
         }
     }
 </script>

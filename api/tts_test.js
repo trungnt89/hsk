@@ -9,7 +9,7 @@ export default async function handler(req, res) {
       voice = 'zh-CN-XiaoxiaoNeural',
       rate = '1.0',
       format = 'audio-16khz-32kbitrate-mono-mp3',
-      driveUrl = '1' // Nhận thêm tham số link drive từ frontend nếu có
+      driveUrl = 'https://drive.google.com/file/d/1rPebExM4pANHI0nmBQZaX-iPR79hS2xs/view' // Nhận thêm tham số link drive từ frontend nếu có
     } = req.query;
 
     // ===============================
@@ -19,7 +19,8 @@ export default async function handler(req, res) {
       try {
         // Chuyển đổi link view sang link download trực tiếp
         const fileId = driveUrl.match(/[-\w]{25,}/)[0];
-        const directLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
+		const directLink = `https://drive.google.com/uc?export=download&id=1rPebExM4pANHI0nmBQZaX-iPR79hS2xs`;
+        //const directLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
         
         console.log(`[DRIVE] Đang lấy file từ ID: ${fileId}`);
         

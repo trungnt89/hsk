@@ -9,32 +9,32 @@ export default async function handler(req, res) {
       voice = 'zh-CN-XiaoxiaoNeural',
       rate = '1.0',
       format = 'audio-16khz-32kbitrate-mono-mp3',
-      driveUrl = 'https://drive.google.com/file/d/1rPebExM4pANHI0nmBQZaX-iPR79hS2xs/view' // Nhận thêm tham số link drive từ frontend nếu có
+      driveUrl = 'https://drive.google.com/file/d/1rPebExM4pANHI0nmBQZaX-iPR79hS2xs/view'
     } = req.query;
+
+    const rawKey = `${text}_${lang}_${voice}_${rate}`;
+    const filename = Buffer.from(rawKey).toString('base64').substring(0, 50);
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec';
 
     // ===============================
     // 2️⃣ CHECK GOOGLE DRIVE FIRST
     // ===============================
-    if (1==1) {
-      try {
-        // Chuyển đổi link view sang link download trực tiếp
-        const fileId = driveUrl.match(/[-\w]{25,}/)[0];
-		const directLink = `https://drive.google.com/uc?export=download&id=1rPebExM4pANHI0nmBQZaX-iPR79hS2xs`;
-        //const directLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
-        
-        console.log(`[DRIVE] Đang lấy file từ ID: ${fileId}`);
-        
-        const driveResponse = await fetch(directLink);
+    try {
+      console.log(`[CHECK] Đang kiểm tra sự tồn tại của file ${filename} trên Drive...`);
+      const checkRes = await fetch(`${GAS_URL}?action=check&filename=${filename}`);
+      const checkData = await checkRes.json();
+
+      if (checkData.exists && checkData.directLink) {
+        const driveResponse = await fetch(checkData.directLink);
         if (driveResponse.ok) {
           const audio = await driveResponse.arrayBuffer();
           res.setHeader('Content-Type', 'audio/mpeg');
-          console.log(`[SUCCESS] Trả về audio từ Drive`);
+          console.log(`[SUCCESS] Trả về audio từ Drive: ${filename}`);
           return res.send(Buffer.from(audio));
         }
-      } catch (driveErr) {
-        console.error('[DRIVE ERROR] Không thể lấy file từ Drive, chuyển sang Azure:', driveErr.message);
-        // Nếu lỗi Drive, code sẽ tự động chạy xuống phần Azure bên dưới
       }
+    } catch (driveErr) {
+      console.error('[DRIVE ERROR] File chưa có hoặc lỗi kết nối Drive, chuyển sang Azure:', driveErr.message);
     }
 
     // ===============================
@@ -79,9 +79,24 @@ export default async function handler(req, res) {
     }
 
     // ===============================
-    // 5️⃣ RESPONSE
+    // 5️⃣ RESPONSE & SAVE TO DRIVE
     // ===============================
     const audio = await azureResponse.arrayBuffer();
+
+    // Lưu âm thanh đã lấy được vào Drive qua GAS để sử dụng về sau
+    if (audio && GAS_URL) {
+      console.log(`[SAVE] Đang lưu file mới lên Drive: ${filename}`);
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: "upload",
+          filename: filename,
+          fileData: Array.from(new Uint8Array(audio))
+        })
+      }).catch(err => console.error('[SAVE ERROR] Lưu Drive thất bại:', err.message));
+    }
+
     res.setHeader('Content-Type', 'audio/mpeg');
     res.send(Buffer.from(audio));
 

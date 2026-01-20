@@ -2,44 +2,48 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TTS Client Test</title>
-    
+    <title>HSK TTS Test</title>
     <script src="../com/TTSClient.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; background: #eee; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 400px; }
+        textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:active { background: #1e7e34; }
+        #status { font-size: 12px; color: #888; margin-top: 10px; text-align: center; }
+    </style>
 </head>
 <body>
 
-    <div style="max-width: 400px; margin: 50px auto; text-align: center; border: 1px solid #ccc; padding: 20px; border-radius: 10px;">
-        <h3>TTS Client Test</h3>
-        <textarea id="txtContent" rows="4" style="width:100%; margin-bottom:10px;">こんにちは、お元気ですか？</textarea>
-        
-        <button onclick="handleSpeak()">🔊 Phát âm thanh</button>
-        
-        <audio id="audioPlayer" hidden></audio>
-        <p id="status" style="color: gray; font-size: 12px; margin-top: 10px;">Sẵn sàng</p>
-    </div>
+<div class="card">
+    <h3>HSK TTS Client</h3>
+    <textarea id="inpText" rows="3">こんにちは、私は日本語を勉強しています。</textarea>
+    
+    <button onclick="testSpeak()">🔊 Speak (Japanese)</button>
+    
+    <div id="status">Ready</div>
+    <audio id="ttsAudio" hidden></audio>
+</div>
 
-    <script>
-        async function handleSpeak() {
-            const text = document.getElementById('txtContent').value;
-            const player = document.getElementById('audioPlayer');
-            const status = document.getElementById('status');
+<script>
+    async function testSpeak() {
+        const text = document.getElementById('inpText').value;
+        const status = document.getElementById('status');
+        const player = document.getElementById('ttsAudio');
 
-            if (!text) return alert("Vui lòng nhập văn bản");
+        status.innerText = "Processing...";
 
-            status.innerText = "⏳ Đang xử lý (Cache/API)...";
+        // Gọi hàm speakCommon đã được window export từ TTSClient.js
+        await speakCommon({
+            text: text,
+            voice: "ja-JP-KeitaNeural", // Bạn có thể thay đổi voice ở đây
+            rate: "1.0",
+            audioControl: player
+        });
 
-            // Gọi hàm từ TTSClient.js đã nhúng phía trên
-            await speakCommon({
-                text: text,
-                voice: "ja-JP-KeitaNeural", // Giọng Nhật Nam
-                lang: "ja-JP",
-                rate: "1.0",
-                audioControl: player
-            });
+        status.innerText = "Finished!";
+    }
+</script>
 
-            status.innerText = "✅ Đã phát xong";
-        }
-    </script>
 </body>
 </html>

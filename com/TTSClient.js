@@ -18,7 +18,7 @@
         try {
             const txn = ttsDb.transaction(DB_STORE, "readwrite");
             txn.objectStore(DB_STORE).put(blob, key);
-            console.log(`[TTS Cache Save] Key: ${key}`);
+            console.log(`[TTS Save] Key: ${key}`);
         } catch (e) { console.warn("[TTS Cache Save Error]", e); }
     }
 

@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec';
 
     console.log(`\n=== [NEW REQUEST] ===`);
-    console.log(`> Text: ${text.substring(0, 50)}`);
+    console.log(`> Text: ${text}`);
     console.log(`> Filename: ${filename}`);
 
     // 2️⃣ CHECK GOOGLE DRIVE

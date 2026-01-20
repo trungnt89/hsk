@@ -5,6 +5,7 @@
   <title>Japanese Reading Practice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="../assistive.js"></script>
+  <script src="../com/TTSClient.js"></script>
   <style>
     body { font-family: system-ui, -apple-system; max-width: 900px; margin: auto; padding: 16px; background: #fcfcfc; }
     li { list-style: none; border: 1px solid #ddd; padding: 12px; margin-top: 8px; cursor: pointer; border-radius: 8px; background: white; transition: 0.2s; display: flex; flex-direction: column; gap: 4px; }
@@ -67,10 +68,8 @@
 <audio id="audio" controls style="width:100%; margin-top:16px; border-radius: 8px;"></audio>
 
 <script>
-const API_URL = "https://hsk-gilt.vercel.app/api/tts_v2";
+// URL giữ nguyên cho việc quản lý văn bản
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyNX96iC37hc8AunT8zWlG_yTFB2ipZp90-XivW8hWzVYVne9nftCC3mSFoTk10v93t/exec";
-const DB_NAME = "JP-KAIWA-CACHE";
-const STORE_NAME = "AUDIO";
 
 let texts = [];
 let currentIndex = 0;
@@ -111,41 +110,24 @@ function closeEditor() { document.getElementById("editorModal").style.display = 
 
 /* ====================== DATA STORAGE (GAS API) ====================== */
 async function loadTexts() {
-  console.log("LOG: Fetching JA & VI from GAS...");
   try {
     const cacheBuster = `?_t=${new Date().getTime()}`;
     const res = await fetch(GAS_URL + cacheBuster);
-    if (!res.ok) throw new Error('Network response was not ok');
     const data = await res.json();
-    
     texts = Array.isArray(data) ? data.filter(item => item.ja && !item.ja.toString().startsWith("Error:")) : [];
-    console.log("LOG: Data refreshed. Items:", texts.length);
     renderList();
-  } catch (e) {
-    console.error("LOG: Error fetching texts", e);
-  }
+  } catch (e) { console.error("LOG: Error fetching texts", e); }
 }
 
 async function callGas(data) {
-  console.log("LOG: Post to GAS - Action:", data.action);
-  return fetch(GAS_URL, {
-    method: "POST",
-    mode: "no-cors",
-    body: JSON.stringify(data)
-  });
+  return fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
 }
 
 function renderList() {
   listEl.innerHTML = "";
   texts.forEach((item, i) => {
     const li = document.createElement("li");
-    const jaDiv = document.createElement("div");
-    jaDiv.textContent = item.ja;
-    const viDiv = document.createElement("div");
-    viDiv.className = "vi-text";
-    viDiv.textContent = item.vi;
-    li.appendChild(jaDiv);
-    li.appendChild(viDiv);
+    li.innerHTML = `<div>${item.ja}</div><div class="vi-text">${item.vi}</div>`;
     li.onclick = () => { currentIndex = i; playCurrent(); };
     listEl.appendChild(li);
   });
@@ -153,104 +135,45 @@ function renderList() {
 }
 
 function highlight() {
-  [...listEl.children].forEach((li, i) => {
-    li.classList.toggle("active", i === currentIndex);
-  });
+  [...listEl.children].forEach((li, i) => { li.classList.toggle("active", i === currentIndex); });
 }
 
 /* ====================== CRUD ====================== */
 async function addText() {
   const v = textInput.value.trim();
   if (!v) return;
-  console.log("LOG: Adding text");
   await callGas({ action: "add", text: v });
-  setTimeout(loadTexts, 1500); 
-  closeEditor();
+  setTimeout(loadTexts, 1500); closeEditor();
 }
 async function updateText() {
   if (texts[currentIndex]) {
-    console.log("LOG: Updating text");
     await callGas({ action: "update", index: currentIndex, text: textInput.value });
-    setTimeout(loadTexts, 1500);
-    closeEditor();
+    setTimeout(loadTexts, 1500); closeEditor();
   }
 }
 async function deleteText() {
-  if (texts[currentIndex]) {
-    const confirmDelete = confirm("Bạn có chắc chắn muốn xóa dòng này không?\nNội dung: " + texts[currentIndex].ja);
-    if (confirmDelete) {
-      console.log("LOG: Action Delete confirmed");
-      await callGas({ action: "delete", index: currentIndex });
-      currentIndex = 0;
-      setTimeout(loadTexts, 1500);
-      closeEditor();
-    } else {
-      console.log("LOG: Delete canceled");
-    }
+  if (texts[currentIndex] && confirm("Xác nhận xoá?")) {
+    await callGas({ action: "delete", index: currentIndex });
+    currentIndex = 0; setTimeout(loadTexts, 1500); closeEditor();
   }
 }
 
-/* ====================== INDEXED DB LOGIC ====================== */
-function openDB() {
-  return new Promise((resolve, reject) => {
-    console.log("LOG: Opening IndexedDB...");
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = e => {
-      console.log("LOG: Upgrading IndexedDB...");
-      e.target.result.createObjectStore(STORE_NAME);
-    };
-    req.onsuccess = e => resolve(e.target.result);
-    req.onerror = e => {
-      console.error("LOG: DB Error", e);
-      reject(e);
-    };
-  });
-}
-
-async function getCachedAudio(key) {
-  const db = await openDB();
-  return new Promise(resolve => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const req = tx.objectStore(STORE_NAME).get(key);
-    req.onsuccess = () => resolve(req.result || null);
-  });
-}
-
-async function saveAudio(key, blob) {
-  console.log("LOG: Caching audio to IndexedDB...");
-  const db = await openDB();
-  const tx = db.transaction(STORE_NAME, "readwrite");
-  tx.objectStore(STORE_NAME).put(blob, key);
-}
-
-/* ====================== PLAY LOGIC ====================== */
+/* ====================== PLAY LOGIC (INTEGRATED speakCommon) ====================== */
 async function playCurrent() {
   highlight();
   const item = texts[currentIndex];
   if(!item || !item.ja) return;
 
-  const cacheKey = `ja-JP|${voiceEl().value}|${rateEl().value}|${item.ja}`;
+  console.log("LOG: Gọi speakCommon cho câu:", item.ja);
   
-  console.log("LOG: Checking cache for audio...");
-  try {
-    const cachedBlob = await getCachedAudio(cacheKey);
-
-    if (cachedBlob) {
-      console.log("LOG: Playing from Cache");
-      audio.src = URL.createObjectURL(cachedBlob);
-    } else {
-      console.log("LOG: Fetching from Azure API");
-      const url = `${API_URL}?text=${encodeURIComponent(item.ja)}&lang=ja-JP&voice=${voiceEl().value}&rate=${rateEl().value}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Audio Fetch Failed");
-      const blob = await res.blob();
-      await saveAudio(cacheKey, blob);
-      audio.src = URL.createObjectURL(blob);
-    }
-    audio.play();
-  } catch (e) {
-    console.error("LOG: Playback flow error", e);
-  }
+  // SỬ DỤNG HÀM TỪ THƯ VIỆN TTSClient.js ĐÃ NHÚNG
+  await speakCommon({
+    text: item.ja,
+    voice: voiceEl().value,
+    lang: "ja-JP",
+    rate: rateEl().value,
+    audioControl: audio // Sử dụng thẻ audio trong DOM
+  });
 }
 
 function toggleRepeatOne() {
@@ -266,11 +189,13 @@ function toggleRepeatAll() {
   updateButtonStates();
 }
 
+// Lắng nghe sự kiện từ thẻ audio để điều khiển luồng phát
 audio.addEventListener("play", () => setPlayBtnActive(true));
 audio.addEventListener("pause", () => setPlayBtnActive(false));
 audio.addEventListener("ended", () => {
   setPlayBtnActive(false);
   if (repeatOne) return playCurrent();
+  
   currentIndex++;
   if (currentIndex >= texts.length) {
     if (repeatAll) currentIndex = 0; else return;

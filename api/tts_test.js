@@ -11,7 +11,8 @@ export default async function handler(req, res) {
     const rate = fullUrl.searchParams.get('rate') || '1.0';
     const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
-    const rawKey = `${lang}_${voice}_${rate}_${text}`;
+    //const rawKey = `${lang}_${voice}_${rate}_${text}`;
+	const rawKey = `${voice}_${rate}_${text}`;
     //const filename = Buffer.from(rawKey).toString('base64').substring(0, 50);
 	const filename = rawKey;
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec';

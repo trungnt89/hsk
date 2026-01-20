@@ -1,14 +1,16 @@
 export default async function handler(req, res) {
-  let debugLog = []; // Biến tích lũy log
+  let debugLog = []; 
   try {
-    // 1️⃣ PARAMS + DEFAULT
-    const {
-      text = '你好',
-      lang = 'ja-JP',
-      voice = 'ja-JP-KeitaNeural',
-      rate = '1.0',
-      format = 'audio-16khz-32kbitrate-mono-mp3'
-    } = req.query;
+    // 1️⃣ PARAMS + DEFAULT (Sử dụng WHATWG URL API thay cho url.parse ẩn)
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    const host = req.headers.host;
+    const fullUrl = new URL(req.url, `${protocol}://${host}`);
+    
+    const text = fullUrl.searchParams.get('text') || '你好';
+    const lang = fullUrl.searchParams.get('lang') || 'ja-JP';
+    const voice = fullUrl.searchParams.get('voice') || 'ja-JP-KeitaNeural';
+    const rate = fullUrl.searchParams.get('rate') || '1.0';
+    const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
     const rawKey = `${text}_${lang}_${voice}_${rate}`;
     const filename = Buffer.from(rawKey).toString('base64').substring(0, 50);
@@ -29,21 +31,16 @@ export default async function handler(req, res) {
         if (driveResponse.ok) {
           const audio = await driveResponse.arrayBuffer();
           res.setHeader('Content-Type', 'audio/mpeg');
-          
           debugLog.push("Result: Drive_OK");
           res.setHeader('X-Audio-Source', debugLog.join(' | '));
-          
-          console.log(`[SUCCESS] Drive: ${filename}`);
           return res.send(Buffer.from(audio));
-        } else {
-          debugLog.push("Result: Drive_Fetch_Failed");
         }
       }
     } catch (driveErr) {
-      debugLog.push(`Err: ${driveErr.message.substring(0, 20)}`);
+      debugLog.push(`Err: Drive_Check_Failed`);
     }
 
-    // 3️⃣ AZURE TTS (Nếu Drive không có)
+    // 3️⃣ AZURE TTS
     let endpoint = process.env.AZURE_TTS_ENDPOINT;
     const key = process.env.AZURE_TTS_KEY;
 
@@ -71,14 +68,15 @@ export default async function handler(req, res) {
 
     const audio = await azureResponse.arrayBuffer();
 
-    // 4️⃣ SAVE TO DRIVE (Async)
+    // 4️⃣ SAVE TO DRIVE (Bổ sung log đầy đủ)
     if (audio && GAS_URL) {
       debugLog.push("Action: SavingDrive");
+      console.log(`[LOG] Đang lưu file lên Drive qua GAS...`);
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: "upload", filename: filename, fileData: Array.from(new Uint8Array(audio)) })
-      }).catch(e => console.error('Save fail'));
+      }).catch(e => console.error('[LOG] Ghi file Drive thất bại'));
     }
 
     res.setHeader('Content-Type', 'audio/mpeg');

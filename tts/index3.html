@@ -1,125 +1,94 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>TTS API Debugger</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; line-height: 1.6; background: #f4f7f6; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #0056b3; }
-        #console { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 6px; height: 300px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; }
-        .log-info { color: #a6e22e; }    /* Xanh lá: Thành công/Thông tin */
-        .log-warn { color: #fd971f; }    /* Cam: Azure/Cảnh báo */
-        .log-error { color: #f92672; }   /* Đỏ: Lỗi */
-        .log-gas { color: #66d9ef; }     /* Xanh biển: GAS/Drive */
-        .source-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-top: 10px; font-weight: bold; }
-        .tag-drive { background: #28a745; color: white; }
-        .tag-azure { background: #fd7e14; color: white; }
-    </style>
-</head>
-<body>
+export default async function handler(req, res) {
+  let debugLog = []; // Biến tích lũy log
+  try {
+    // 1️⃣ PARAMS + DEFAULT
+    const {
+      text = '你好',
+      lang = 'ja-JP',
+      voice = 'ja-JP-KeitaNeural',
+      rate = '1.0',
+      format = 'audio-16khz-32kbitrate-mono-mp3'
+    } = req.query;
 
-    <h2>🛠 TTS API Debugger (Vercel + Drive)</h2>
+    const rawKey = `${text}_${lang}_${voice}_${rate}`;
+    const filename = Buffer.from(rawKey).toString('base64').substring(0, 50);
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec';
 
-    <div class="card">
-        <div class="form-group">
-            <label>Văn bản (Text):</label>
-            <textarea id="text" rows="2">先日は多大なるご支援とご</textarea>
-        </div>
-        <div class="form-group">
-            <label>Giọng đọc (Voice):</label>
-            <select id="voice">
-                <option value="ja-JP-KeitaNeural">ja-JP-KeitaNeural (Nam)</option>
-                <option value="ja-JP-NanamiNeural">ja-JP-NanamiNeural (Nữ)</option>
-                <option value="zh-CN-XiaoxiaoNeural">zh-CN-XiaoxiaoNeural (Trung)</option>
-            </select>
-        </div>
-        <button onclick="testAPI()">🚀 Chạy Test API</button>
-        <div id="sourceIndicator"></div>
-    </div>
+    debugLog.push(`FN: ${filename}`);
 
-    <div class="card">
-        <label>Live Console Logs:</label>
-        <div id="console"></div>
-        <audio id="audioPlayer" controls style="width: 100%; margin-top: 15px; display: none;"></audio>
-    </div>
+    // 2️⃣ CHECK GOOGLE DRIVE FIRST
+    try {
+      debugLog.push("Action: CheckDrive");
+      const checkRes = await fetch(`${GAS_URL}?action=check&filename=${encodeURIComponent(filename)}`);
+      const checkData = await checkRes.json();
+      
+      debugLog.push(`GAS: ${checkData.exists ? 'Exist' : 'Missing'}`);
 
-    <script>
-        const logContainer = document.getElementById('console');
-        const audioPlayer = document.getElementById('audioPlayer');
-        const sourceIndicator = document.getElementById('sourceIndicator');
-
-        function log(message, type = 'info') {
-            const div = document.createElement('div');
-            const time = new Date().toLocaleTimeString();
-            div.className = `log-${type}`;
-            div.innerHTML = `[${time}] ${message}`;
-            logContainer.appendChild(div);
-            logContainer.scrollTop = logContainer.scrollHeight;
-            console.log(`[${type.toUpperCase()}] ${message}`);
+      if (checkData.exists && checkData.directLink) {
+        const driveResponse = await fetch(checkData.directLink);
+        if (driveResponse.ok) {
+          const audio = await driveResponse.arrayBuffer();
+          res.setHeader('Content-Type', 'audio/mpeg');
+          
+          debugLog.push("Result: Drive_OK");
+          res.setHeader('X-Audio-Source', debugLog.join(' | '));
+          
+          console.log(`[SUCCESS] Drive: ${filename}`);
+          return res.send(Buffer.from(audio));
+        } else {
+          debugLog.push("Result: Drive_Fetch_Failed");
         }
+      }
+    } catch (driveErr) {
+      debugLog.push(`Err: ${driveErr.message.substring(0, 20)}`);
+    }
 
-        async function testAPI() {
-            // Reset UI
-            logContainer.innerHTML = '';
-            sourceIndicator.innerHTML = '';
-            audioPlayer.style.display = 'none';
+    // 3️⃣ AZURE TTS (Nếu Drive không có)
+    let endpoint = process.env.AZURE_TTS_ENDPOINT;
+    const key = process.env.AZURE_TTS_KEY;
 
-            const text = document.getElementById('text').value;
-            const voice = document.getElementById('voice').value;
-            const lang = voice.substring(0, 5);
+    if (!endpoint || !key) {
+      debugLog.push("Err: Azure_Config_Missing");
+      res.setHeader('X-Audio-Source', debugLog.join(' | '));
+      return res.status(500).json({ error: 'Server misconfigured' });
+    }
 
-            // 1. Mô phỏng việc tạo filename (Base64) giống như server
-            const rawKey = `${text}_${lang}_${voice}_1.0`;
-            const filename = btoa(unescape(encodeURIComponent(rawKey))).substring(0, 50);
-            
-            log(`Khởi tạo Request: "${text.substring(0, 15)}..."`, 'info');
-            log(`Mã hóa Filename (Base64): ${filename}`, 'info');
+    const ttsUrl = `${endpoint.replace(/\/$/, '')}/cognitiveservices/v1`;
+    const ssml = `<speak version="1.0" xml:lang="${lang}"><voice name="${voice}"><prosody rate="${rate}">${text.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]))}</prosody></voice></speak>`;
 
-            const startTime = performance.now();
-            const apiUrl = `/api/tts_test?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=1.0`;
+    debugLog.push("Action: CallAzure");
+    const azureResponse = await fetch(ttsUrl, {
+      method: 'POST',
+      headers: { 'Ocp-Apim-Subscription-Key': key, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': format },
+      body: ssml
+    });
 
-            try {
-                log(`Đang gọi Vercel API: ${apiUrl}`, 'info');
-                
-                const response = await fetch(apiUrl);
-                const endTime = performance.now();
-                const duration = ((endTime - startTime) / 1000).toFixed(2);
+    if (!azureResponse.ok) {
+      debugLog.push(`Err: Azure_Fail_${azureResponse.status}`);
+      res.setHeader('X-Audio-Source', debugLog.join(' | '));
+      return res.status(500).send(await azureResponse.text());
+    }
 
-                // 2. Kiểm tra Header X-Audio-Source từ API trả về
-                const source = response.headers.get('X-Audio-Source');
-                
-                if (response.ok) {
-                    log(`API phản hồi sau ${duration}s`, 'info');
-                    
-                    if (source === 'Google-Drive') {
-                        log(`⚡ KẾT QUẢ: Lấy thành công từ GOOGLE DRIVE (File có sẵn)`, 'gas');
-                        sourceIndicator.innerHTML = '<span class="source-tag tag-drive">NGUỒN: GOOGLE DRIVE</span>';
-                    } else {
-                        log(`☁️ KẾT QUẢ: Lấy từ AZURE CLOUD (Vừa tạo mới & đang lưu Drive)`, 'warn');
-                        sourceIndicator.innerHTML = '<span class="source-tag tag-azure">NGUỒN: AZURE CLOUD</span>';
-                    }
+    const audio = await azureResponse.arrayBuffer();
 
-                    const blob = await response.blob();
-                    const audioUrl = URL.createObjectURL(blob);
-                    audioPlayer.src = audioUrl;
-                    audioPlayer.style.display = 'block';
-                    audioPlayer.play();
-                    
-                    log(`Dung lượng file: ${(blob.size / 1024).toFixed(2)} KB`, 'info');
-                } else {
-                    const errorText = await response.text();
-                    log(`Lỗi API: ${errorText}`, 'error');
-                }
+    // 4️⃣ SAVE TO DRIVE (Async)
+    if (audio && GAS_URL) {
+      debugLog.push("Action: SavingDrive");
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: "upload", filename: filename, fileData: Array.from(new Uint8Array(audio)) })
+      }).catch(e => console.error('Save fail'));
+    }
 
-            } catch (err) {
-                log(`Lỗi kết nối: ${err.message}`, 'error');
-            }
-        }
-    </script>
-</body>
-</html>
+    res.setHeader('Content-Type', 'audio/mpeg');
+    debugLog.push("Result: Azure_OK");
+    res.setHeader('X-Audio-Source', debugLog.join(' | '));
+    res.send(Buffer.from(audio));
+
+  } catch (e) {
+    debugLog.push(`Crash: ${e.message}`);
+    res.setHeader('X-Audio-Source', debugLog.join(' | '));
+    res.status(500).json({ error: 'TTS failed' });
+  }
+}

@@ -1,94 +1,143 @@
-export default async function handler(req, res) {
-  let debugLog = []; // Biến tích lũy log
-  try {
-    // 1️⃣ PARAMS + DEFAULT
-    const {
-      text = '你好',
-      lang = 'ja-JP',
-      voice = 'ja-JP-KeitaNeural',
-      rate = '1.0',
-      format = 'audio-16khz-32kbitrate-mono-mp3'
-    } = req.query;
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>TTS API Debugger - Deep Log</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui; max-width: 900px; margin: 20px auto; padding: 20px; background: #f0f2f5; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
+        textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+        button { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; }
+        button:hover { background: #1557b0; }
+        
+        /* Log Styling */
+        #log-display { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; min-height: 200px; overflow-y: auto; border-left: 5px solid #007bff; }
+        .log-line { margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; display: flex; }
+        .log-time { color: #888; margin-right: 10px; font-size: 0.85em; }
+        .step-label { color: #569cd6; font-weight: bold; min-width: 100px; display: inline-block; }
+        .step-value { color: #ce9178; word-break: break-all; }
+        
+        .status-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .badge-drive { background: #e6ffed; color: #22863a; border: 1px solid #22863a; }
+        .badge-azure { background: #fff4e5; color: #c24e00; border: 1px solid #c24e00; }
+    </style>
+</head>
+<body>
 
-    const rawKey = `${text}_${lang}_${voice}_${rate}`;
-    const filename = Buffer.from(rawKey).toString('base64').substring(0, 50);
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec';
+    <h2>🔍 TTS Deep Log Debugger</h2>
 
-    debugLog.push(`FN: ${filename}`);
+    <div class="card">
+        <div class="form-group">
+            <label>Nội dung tiếng Nhật:</label>
+            <textarea id="text" rows="3">先日は多大なるご支援とご協力、誠にありがとうございました。</textarea>
+        </div>
+        <div class="form-group" style="display: flex; gap: 15px;">
+            <div style="flex: 1;">
+                <label>Giọng đọc:</label>
+                <select id="voice">
+                    <option value="ja-JP-KeitaNeural">Nam (Keita)</option>
+                    <option value="ja-JP-NanamiNeural">Nữ (Nanami)</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label>Tốc độ:</label>
+                <select id="rate">
+                    <option value="0.8">Chậm (0.8)</option>
+                    <option value="1.0" selected>Thường (1.0)</option>
+                    <option value="1.2">Nhanh (1.2)</option>
+                </select>
+            </div>
+        </div>
+        <button id="btnRun" onclick="runDebug()">🚀 GỌI API & KIỂM TRA LOG</button>
+    </div>
 
-    // 2️⃣ CHECK GOOGLE DRIVE FIRST
-    try {
-      debugLog.push("Action: CheckDrive");
-      const checkRes = await fetch(`${GAS_URL}?action=check&filename=${encodeURIComponent(filename)}`);
-      const checkData = await checkRes.json();
-      
-      debugLog.push(`GAS: ${checkData.exists ? 'Exist' : 'Missing'}`);
+    <div class="card">
+        <div class="status-header">
+            <strong>API INTERNAL LOGS (From Header X-Audio-Source):</strong>
+            <div id="source-badge"></div>
+        </div>
+        <div id="log-display">Chưa có dữ liệu...</div>
+        <audio id="player" controls style="width: 100%; margin-top: 20px; display: none;"></audio>
+    </div>
 
-      if (checkData.exists && checkData.directLink) {
-        const driveResponse = await fetch(checkData.directLink);
-        if (driveResponse.ok) {
-          const audio = await driveResponse.arrayBuffer();
-          res.setHeader('Content-Type', 'audio/mpeg');
-          
-          debugLog.push("Result: Drive_OK");
-          res.setHeader('X-Audio-Source', debugLog.join(' | '));
-          
-          console.log(`[SUCCESS] Drive: ${filename}`);
-          return res.send(Buffer.from(audio));
-        } else {
-          debugLog.push("Result: Drive_Fetch_Failed");
+    <script>
+        async function runDebug() {
+            const display = document.getElementById('log-display');
+            const badge = document.getElementById('source-badge');
+            const player = document.getElementById('player');
+            const btn = document.getElementById('btnRun');
+
+            // Reset UI
+            display.innerHTML = 'Đang gọi API...';
+            badge.innerHTML = '';
+            player.style.display = 'none';
+            btn.disabled = true;
+
+            const text = document.getElementById('text').value;
+            const voice = document.getElementById('voice').value;
+            const rate = document.getElementById('rate').value;
+            const lang = voice.substring(0, 5);
+
+            const url = `/api/tts_test?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
+
+            try {
+                const start = Date.now();
+                const res = await fetch(url);
+                const end = Date.now();
+
+                // 1. Lấy chuỗi log "khổng lồ" từ Header
+                const xLog = res.headers.get('X-Audio-Source');
+                
+                // 2. Hiển thị log chi tiết
+                display.innerHTML = '';
+                if (xLog) {
+                    const steps = xLog.split(' | ');
+                    steps.forEach(step => {
+                        const parts = step.split(': ');
+                        const row = document.createElement('div');
+                        row.className = 'log-line';
+                        row.innerHTML = `
+                            <span class="log-time">${new Date().toLocaleTimeString()}</span>
+                            <span class="step-label">${parts[0] || 'STEP'}:</span>
+                            <span class="step-value">${parts[1] || ''}</span>
+                        `;
+                        display.appendChild(row);
+                    });
+                } else {
+                    display.innerHTML = '<span style="color:red">Không tìm thấy Header X-Audio-Source!</span>';
+                }
+
+                // 3. Phân tích nguồn để gắn Badge
+                if (xLog && xLog.includes('Drive_OK')) {
+                    badge.innerHTML = '<span class="badge badge-drive">DATABASE: GOOGLE DRIVE</span>';
+                } else if (xLog && xLog.includes('Azure_OK')) {
+                    badge.innerHTML = '<span class="badge badge-azure">DATABASE: AZURE CLOUD</span>';
+                }
+
+                if (res.ok) {
+                    const blob = await res.blob();
+                    player.src = URL.createObjectURL(blob);
+                    player.style.display = 'block';
+                    player.play();
+                    
+                    const timeRow = document.createElement('div');
+                    timeRow.style.color = '#a6e22e';
+                    timeRow.style.marginTop = '10px';
+                    timeRow.innerHTML = `✅ Phản hồi trong: ${(end - start)}ms`;
+                    display.appendChild(timeRow);
+                } else {
+                    display.innerHTML += `<div style="color:red">Error: ${res.status}</div>`;
+                }
+
+            } catch (err) {
+                display.innerHTML = `<span style="color:red">Lỗi kết nối: ${err.message}</span>`;
+            } finally {
+                btn.disabled = false;
+            }
         }
-      }
-    } catch (driveErr) {
-      debugLog.push(`Err: ${driveErr.message.substring(0, 20)}`);
-    }
-
-    // 3️⃣ AZURE TTS (Nếu Drive không có)
-    let endpoint = process.env.AZURE_TTS_ENDPOINT;
-    const key = process.env.AZURE_TTS_KEY;
-
-    if (!endpoint || !key) {
-      debugLog.push("Err: Azure_Config_Missing");
-      res.setHeader('X-Audio-Source', debugLog.join(' | '));
-      return res.status(500).json({ error: 'Server misconfigured' });
-    }
-
-    const ttsUrl = `${endpoint.replace(/\/$/, '')}/cognitiveservices/v1`;
-    const ssml = `<speak version="1.0" xml:lang="${lang}"><voice name="${voice}"><prosody rate="${rate}">${text.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]))}</prosody></voice></speak>`;
-
-    debugLog.push("Action: CallAzure");
-    const azureResponse = await fetch(ttsUrl, {
-      method: 'POST',
-      headers: { 'Ocp-Apim-Subscription-Key': key, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': format },
-      body: ssml
-    });
-
-    if (!azureResponse.ok) {
-      debugLog.push(`Err: Azure_Fail_${azureResponse.status}`);
-      res.setHeader('X-Audio-Source', debugLog.join(' | '));
-      return res.status(500).send(await azureResponse.text());
-    }
-
-    const audio = await azureResponse.arrayBuffer();
-
-    // 4️⃣ SAVE TO DRIVE (Async)
-    if (audio && GAS_URL) {
-      debugLog.push("Action: SavingDrive");
-      fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: "upload", filename: filename, fileData: Array.from(new Uint8Array(audio)) })
-      }).catch(e => console.error('Save fail'));
-    }
-
-    res.setHeader('Content-Type', 'audio/mpeg');
-    debugLog.push("Result: Azure_OK");
-    res.setHeader('X-Audio-Source', debugLog.join(' | '));
-    res.send(Buffer.from(audio));
-
-  } catch (e) {
-    debugLog.push(`Crash: ${e.message}`);
-    res.setHeader('X-Audio-Source', debugLog.join(' | '));
-    res.status(500).json({ error: 'TTS failed' });
-  }
-}
+    </script>
+</body>
+</html>

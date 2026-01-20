@@ -74,9 +74,7 @@
             <select id="voice-select" onchange="saveConfig()">
                 <option value="zh-CN-XiaoxiaoNeural">Azure Nữ</option>
                 <option value="zh-CN-YunxiNeural">Azure Nam</option>
-                <option value="google">Google TTS</option>
-                <option value="browser">Máy (Local)</option>
-            </select>
+                </select>
         </div>
         <div class="setting-item"><label>Số lượng</label>
             <select id="limit-select" onchange="page=1; saveConfig(); render();">
@@ -123,7 +121,7 @@ const FILE_NAME = window.location.pathname.split('/').pop() || "hsk_data";
 let page = 1, isShuffle = false, isSentence = false, isPlaying = false, showInfo = true;
 let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 let masteredSet = new Set();
-const audioPlayer = new Audio(); // Đối tượng audio dùng chung cho speakCommon
+const audioPlayer = new Audio(); // Sử dụng cho speakCommon
 
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
@@ -152,7 +150,10 @@ async function loadConfig() {
     const saved = localStorage.getItem(CONFIG_KEY);
     if (saved) {
         const c = JSON.parse(saved);
-        document.getElementById('voice-select').value = c.voice;
+        const voiceSelect = document.getElementById('voice-select');
+        if (voiceSelect.querySelector(`option[value="${c.voice}"]`)) {
+            voiceSelect.value = c.voice;
+        }
         document.getElementById('limit-select').value = c.limit;
         document.getElementById('delay-select').value = c.delay;
         isShuffle = c.isShuffle;
@@ -284,17 +285,11 @@ async function select(i) {
     if (item) await speak(isSentence ? item.exHz : item.hz);
 }
 
-// HÀM SPEAK ĐÃ ĐƯỢC CẬP NHẬT ĐỂ SỬ DỤNG speakCommon
+// HÀM CHỈ SỬ DỤNG speakCommon TỪ THƯ VIỆN
 async function speak(text) {
     const voice = document.getElementById("voice-select").value;
     
-    // Nếu là Google, ta vẫn dùng URL trực tiếp để tối ưu (hoặc bạn có thể thêm config vào speakCommon nếu muốn)
-    if (voice === "google") {
-        const gUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}`;
-        return new Promise(res => { audioPlayer.src = gUrl; audioPlayer.onended = res; audioPlayer.play().catch(res); });
-    }
-
-    // SỬ DỤNG HÀM TẬP TRUNG TỪ THƯ VIỆN
+    // Luôn gọi speakCommon, logic cache và fetch nằm hoàn toàn bên trong thư viện
     await speakCommon({
         text: text,
         voice: voice,

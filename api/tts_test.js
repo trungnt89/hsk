@@ -1,13 +1,15 @@
 export default async function handler(req, res) {
   try {
-    // 1️⃣ PARAMS
-    const {
-      text = '你好',
-      lang = 'ja-JP',
-      voice = 'ja-JP-KeitaNeural',
-      rate = '1.0',
-      format = 'audio-16khz-32kbitrate-mono-mp3'
-    } = req.query;
+    // 1️⃣ PARAMS (Sử dụng WHATWG URL API để triệt tiêu DEP0169)
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    const host = req.headers.host;
+    const fullUrl = new URL(req.url, `${protocol}://${host}`);
+    
+    const text = fullUrl.searchParams.get('text') || '你好';
+    const lang = fullUrl.searchParams.get('lang') || 'ja-JP';
+    const voice = fullUrl.searchParams.get('voice') || 'ja-JP-KeitaNeural';
+    const rate = fullUrl.searchParams.get('rate') || '1.0';
+    const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
     const rawKey = `${text}_${lang}_${voice}_${rate}`;
     const filename = Buffer.from(rawKey).toString('base64').substring(0, 50);
@@ -20,6 +22,7 @@ export default async function handler(req, res) {
     // 2️⃣ CHECK GOOGLE DRIVE
     try {
       console.log(`[STEP 1] Checking Drive via GAS...`);
+      // Sử dụng encodeURIComponent để bảo vệ dấu "+" trong filename
       const checkRes = await fetch(`${GAS_URL}?action=check&filename=${encodeURIComponent(filename)}`);
       const checkData = await checkRes.json();
       
@@ -29,6 +32,7 @@ export default async function handler(req, res) {
         if (driveResponse.ok) {
           const audio = await driveResponse.arrayBuffer();
           res.setHeader('Content-Type', 'audio/mpeg');
+          res.setHeader('X-Audio-Source', 'Google-Drive'); // Vẫn gửi header đơn giản để client biết
           console.log(`[RESULT] Success: Served from Google Drive.`);
           return res.send(Buffer.from(audio));
         }
@@ -82,11 +86,15 @@ export default async function handler(req, res) {
           fileData: Array.from(new Uint8Array(audio)) 
         })
       })
-      .then(() => console.log(`[ASYNC] Save to Drive requested successfully.`))
+      .then(async (r) => {
+          const resSave = await r.json();
+          console.log(`[ASYNC] Save result: ${resSave.status || 'OK'}`);
+      })
       .catch(e => console.error(`[ASYNC ERROR] Save to Drive failed: ${e.message}`));
     }
 
     res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('X-Audio-Source', 'Azure-Cloud');
     console.log(`[RESULT] Success: Served from Azure Cloud.`);
     res.send(Buffer.from(audio));
 

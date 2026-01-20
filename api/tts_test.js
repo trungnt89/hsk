@@ -22,22 +22,24 @@ export default async function handler(req, res) {
     // 2️⃣ CHECK GOOGLE DRIVE
     try {
       console.log(`[STEP 1] Checking Drive via GAS...`);
-      // Sử dụng encodeURIComponent để bảo vệ dấu "+" trong filename
       const checkRes = await fetch(`${GAS_URL}?action=check&filename=${encodeURIComponent(filename)}`);
       const checkData = await checkRes.json();
       
+      // Log toàn bộ JSON để xem xử lý bên trong GAS
+      console.log(`[GAS_CHECK_RESPONSE]: ${JSON.stringify(checkData, null, 2)}`);
+
       if (checkData.exists && checkData.directLink) {
         console.log(`[STEP 2] FOUND on Drive. Downloading...`);
         const driveResponse = await fetch(checkData.directLink);
         if (driveResponse.ok) {
           const audio = await driveResponse.arrayBuffer();
           res.setHeader('Content-Type', 'audio/mpeg');
-          res.setHeader('X-Audio-Source', 'Google-Drive'); // Vẫn gửi header đơn giản để client biết
+          res.setHeader('X-Audio-Source', 'Google-Drive');
           console.log(`[RESULT] Success: Served from Google Drive.`);
           return res.send(Buffer.from(audio));
         }
       }
-      console.log(`[STEP 2] MISSING on Drive. Switching to Azure...`);
+      console.log(`[STEP 2] MISSING or ERROR on Drive. Proceeding to Azure...`);
     } catch (driveErr) {
       console.error(`[ERROR] Drive process error: ${driveErr.message}`);
     }
@@ -88,7 +90,8 @@ export default async function handler(req, res) {
       })
       .then(async (r) => {
           const resSave = await r.json();
-          console.log(`[ASYNC] Save result: ${resSave.status || 'OK'}`);
+          // Log kết quả lưu file
+          console.log(`[GAS_SAVE_RESPONSE]: ${JSON.stringify(resSave, null, 2)}`);
       })
       .catch(e => console.error(`[ASYNC ERROR] Save to Drive failed: ${e.message}`));
     }

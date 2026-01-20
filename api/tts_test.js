@@ -1,125 +1,94 @@
 export default async function handler(req, res) {
+  let debugLog = []; // Biến tích lũy log
   try {
-    // ===============================
     // 1️⃣ PARAMS + DEFAULT
-    // ===============================
     const {
       text = '你好',
-      lang = 'zh-CN',
-      voice = 'zh-CN-XiaoxiaoNeural',
+      lang = 'ja-JP',
+      voice = 'ja-JP-KeitaNeural',
       rate = '1.0',
-      format = 'audio-16khz-32kbitrate-mono-mp3',
-      driveUrl = 'https://drive.google.com/file/d/1rPebExM4pANHI0nmBQZaX-iPR79hS2xs/view'
+      format = 'audio-16khz-32kbitrate-mono-mp3'
     } = req.query;
 
     const rawKey = `${text}_${lang}_${voice}_${rate}`;
     const filename = Buffer.from(rawKey).toString('base64').substring(0, 50);
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec';
 
-    // ===============================
+    debugLog.push(`FN: ${filename}`);
+
     // 2️⃣ CHECK GOOGLE DRIVE FIRST
-    // ===============================
-	
-	//https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec?action=check&filename=5YWI5pel44Gv5aSa5aSn44Gq44KL44GU5pSv5o+044Go44GU5Y
-	
-	
     try {
-      console.log(`[CHECK] Đang kiểm tra sự tồn tại của file ${filename} trên Drive...`);
-      const checkRes = await fetch(`${GAS_URL}?action=check&filename=${filename}`);
+      debugLog.push("Action: CheckDrive");
+      const checkRes = await fetch(`${GAS_URL}?action=check&filename=${encodeURIComponent(filename)}`);
       const checkData = await checkRes.json();
+      
+      debugLog.push(`GAS: ${checkData.exists ? 'Exist' : 'Missing'}`);
 
       if (checkData.exists && checkData.directLink) {
         const driveResponse = await fetch(checkData.directLink);
         if (driveResponse.ok) {
           const audio = await driveResponse.arrayBuffer();
           res.setHeader('Content-Type', 'audio/mpeg');
-          // Gửi Header để Client nhận biết nguồn từ Drive
-          res.setHeader('X-Audio-Source', 'Google-Drive');
-          console.log(`[SUCCESS] Trả về audio từ Drive: ${filename}`);
+          
+          debugLog.push("Result: Drive_OK");
+          res.setHeader('X-Audio-Source', debugLog.join(' | '));
+          
+          console.log(`[SUCCESS] Drive: ${filename}`);
           return res.send(Buffer.from(audio));
+        } else {
+          debugLog.push("Result: Drive_Fetch_Failed");
         }
       }
     } catch (driveErr) {
-      console.error('[DRIVE ERROR] File chưa có hoặc lỗi kết nối Drive, chuyển sang Azure:', driveErr.message);
+      debugLog.push(`Err: ${driveErr.message.substring(0, 20)}`);
     }
 
-    // ===============================
-    // 3️⃣ AZURE CONFIG
-    // ===============================
+    // 3️⃣ AZURE TTS (Nếu Drive không có)
     let endpoint = process.env.AZURE_TTS_ENDPOINT;
     const key = process.env.AZURE_TTS_KEY;
 
     if (!endpoint || !key) {
+      debugLog.push("Err: Azure_Config_Missing");
+      res.setHeader('X-Audio-Source', debugLog.join(' | '));
       return res.status(500).json({ error: 'Server misconfigured' });
     }
 
-    endpoint = endpoint.replace(/\/$/, '');
-    const ttsUrl = `${endpoint}/cognitiveservices/v1`;
+    const ttsUrl = `${endpoint.replace(/\/$/, '')}/cognitiveservices/v1`;
+    const ssml = `<speak version="1.0" xml:lang="${lang}"><voice name="${voice}"><prosody rate="${rate}">${text.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]))}</prosody></voice></speak>`;
 
-    const ssml = `
-<speak version="1.0" xml:lang="${lang}">
-  <voice name="${voice}">
-    <prosody rate="${rate}">
-      ${escapeXml(text)}
-    </prosody>
-  </voice>
-</speak>`;
-
-    // ===============================
-    // 4️⃣ CALL AZURE
-    // ===============================
-    console.log(`[AZURE] Đang gọi Azure TTS cho: ${text.substring(0, 20)}...`);
+    debugLog.push("Action: CallAzure");
     const azureResponse = await fetch(ttsUrl, {
       method: 'POST',
-      headers: {
-        'Ocp-Apim-Subscription-Key': key,
-        'Content-Type': 'application/ssml+xml',
-        'X-Microsoft-OutputFormat': format
-      },
+      headers: { 'Ocp-Apim-Subscription-Key': key, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': format },
       body: ssml
     });
 
     if (!azureResponse.ok) {
-      const err = await azureResponse.text();
-      return res.status(500).send(err);
+      debugLog.push(`Err: Azure_Fail_${azureResponse.status}`);
+      res.setHeader('X-Audio-Source', debugLog.join(' | '));
+      return res.status(500).send(await azureResponse.text());
     }
 
-    // ===============================
-    // 5️⃣ RESPONSE & SAVE TO DRIVE
-    // ===============================
     const audio = await azureResponse.arrayBuffer();
 
-    // Lưu âm thanh đã lấy được vào Drive qua GAS để sử dụng về sau
+    // 4️⃣ SAVE TO DRIVE (Async)
     if (audio && GAS_URL) {
-      console.log(`[SAVE] Đang lưu file mới lên Drive: ${filename}`);
+      debugLog.push("Action: SavingDrive");
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: "upload",
-          filename: filename,
-          fileData: Array.from(new Uint8Array(audio))
-        })
-      }).catch(err => console.error('[SAVE ERROR] Lưu Drive thất bại:', err.message));
+        body: JSON.stringify({ action: "upload", filename: filename, fileData: Array.from(new Uint8Array(audio)) })
+      }).catch(e => console.error('Save fail'));
     }
 
     res.setHeader('Content-Type', 'audio/mpeg');
-    // Gửi Header để Client nhận biết nguồn từ Cloud
-    res.setHeader('X-Audio-Source', 'Azure-Cloud');
+    debugLog.push("Result: Azure_OK");
+    res.setHeader('X-Audio-Source', debugLog.join(' | '));
     res.send(Buffer.from(audio));
 
   } catch (e) {
-    console.error('TTS crash:', e);
+    debugLog.push(`Crash: ${e.message}`);
+    res.setHeader('X-Audio-Source', debugLog.join(' | '));
     res.status(500).json({ error: 'TTS failed' });
   }
-}
-
-function escapeXml(str) {
-  return str.replace(/[<>&'"]/g, c => ({
-    '<': '&lt;',
-    '>': '&gt;',
-    '&': '&amp;',
-    "'": '&apos;',
-    '"': '&quot;'
-  }[c]));
 }

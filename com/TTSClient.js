@@ -70,15 +70,16 @@
         });
 
         if (cachedBlob) {
-            console.log(`[TTS Log] Cache Hit | Key: ${cacheKey}`);
+            console.log(`[TTS Local] ${cacheKey}`);
             return playAudio(URL.createObjectURL(cachedBlob), audioControl);
         }
 
         // 2. Gọi API TTS (Sử dụng endpoint tts_test theo yêu cầu)
-        console.log(`[TTS Log] Fetching API | Text: ${text} | Lang: ${lang} | Rate: ${rate}`);
+        
         const url = `https://hsk-gilt.vercel.app/api/tts_test?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
-
-        try {
+		console.log(`[TTS API] ${url}`);
+        
+		try {
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             

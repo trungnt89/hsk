@@ -35,7 +35,7 @@ export default async function handler(req, res) {
           const audio = await driveResponse.arrayBuffer();
           res.setHeader('Content-Type', 'audio/mpeg');
           res.setHeader('X-Audio-Source', 'Google-Drive');
-          console.log(`[RESULT] Success: Served from Google Drive.`);
+          console.log(`[RESULT] Download Success.Send void to client`);
           return res.send(Buffer.from(audio));
         }
       }

@@ -2,142 +2,42 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>TTS API Debugger - Deep Log</title>
+    <title>TTS Module Test</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui; max-width: 900px; margin: 20px auto; padding: 20px; background: #f0f2f5; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
-        textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
-        button { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; }
-        button:hover { background: #1557b0; }
-        
-        /* Log Styling */
-        #log-display { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; min-height: 200px; overflow-y: auto; border-left: 5px solid #007bff; }
-        .log-line { margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; display: flex; }
-        .log-time { color: #888; margin-right: 10px; font-size: 0.85em; }
-        .step-label { color: #569cd6; font-weight: bold; min-width: 100px; display: inline-block; }
-        .step-value { color: #ce9178; word-break: break-all; }
-        
-        .status-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .badge-drive { background: #e6ffed; color: #22863a; border: 1px solid #22863a; }
-        .badge-azure { background: #fff4e5; color: #c24e00; border: 1px solid #c24e00; }
+        body { font-family: system-ui; display: flex; flex-direction: column; align-items: center; padding: 50px; background: #fafafa; }
+        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 350px; }
+        textarea { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 10px; box-sizing: border-box; margin-bottom: 10px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
     </style>
 </head>
 <body>
 
-    <h2>🔍 TTS Deep Log Debugger</h2>
-
-    <div class="card">
-        <div class="form-group">
-            <label>Nội dung tiếng Nhật:</label>
-            <textarea id="text" rows="3">先日は多大なるご支援とご協力、誠にありがとうございました。</textarea>
-        </div>
-        <div class="form-group" style="display: flex; gap: 15px;">
-            <div style="flex: 1;">
-                <label>Giọng đọc:</label>
-                <select id="voice">
-                    <option value="ja-JP-KeitaNeural">Nam (Keita)</option>
-                    <option value="ja-JP-NanamiNeural">Nữ (Nanami)</option>
-                </select>
-            </div>
-            <div style="flex: 1;">
-                <label>Tốc độ:</label>
-                <select id="rate">
-                    <option value="0.8">Chậm (0.8)</option>
-                    <option value="1.0" selected>Thường (1.0)</option>
-                    <option value="1.2">Nhanh (1.2)</option>
-                </select>
-            </div>
-        </div>
-        <button id="btnRun" onclick="runDebug()">🚀 GỌI API & KIỂM TRA LOG</button>
+    <div class="box">
+        <h3>Test TTS Module</h3>
+        <textarea id="txt" rows="3">こんにちは、元気ですか？</textarea>
+        <button id="btnPlay">🔊 Speak Now</button>
+        <audio id="player" hidden></audio>
     </div>
 
-    <div class="card">
-        <div class="status-header">
-            <strong>API INTERNAL LOGS (From Header X-Audio-Source):</strong>
-            <div id="source-badge"></div>
-        </div>
-        <div id="log-display">Chưa có dữ liệu...</div>
-        <audio id="player" controls style="width: 100%; margin-top: 20px; display: none;"></audio>
-    </div>
+    <script type="module">
+        import { speakCommon } from '../com/TTSClient.js';
 
-    <script>
-        async function runDebug() {
-            const display = document.getElementById('log-display');
-            const badge = document.getElementById('source-badge');
-            const player = document.getElementById('player');
-            const btn = document.getElementById('btnRun');
+        document.getElementById('btnPlay').addEventListener('click', async () => {
+            const text = document.getElementById('txt').value;
+            const audioControl = document.getElementById('player');
 
-            // Reset UI
-            display.innerHTML = 'Đang gọi API...';
-            badge.innerHTML = '';
-            player.style.display = 'none';
-            btn.disabled = true;
+            console.log("Starting TTS...");
+            
+            await speakCommon({
+                text: text,
+                voice: "ja-JP-KeitaNeural",
+                rate: "1.0",
+                audioControl: audioControl
+            });
 
-            const text = document.getElementById('text').value;
-            const voice = document.getElementById('voice').value;
-            const rate = document.getElementById('rate').value;
-            const lang = voice.substring(0, 5);
-
-            const url = `/api/tts_test?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
-
-            try {
-                const start = Date.now();
-                const res = await fetch(url);
-                const end = Date.now();
-
-                // 1. Lấy chuỗi log "khổng lồ" từ Header
-                const xLog = res.headers.get('X-Audio-Source');
-                
-                // 2. Hiển thị log chi tiết
-                display.innerHTML = '';
-                if (xLog) {
-                    const steps = xLog.split(' | ');
-                    steps.forEach(step => {
-                        const parts = step.split(': ');
-                        const row = document.createElement('div');
-                        row.className = 'log-line';
-                        row.innerHTML = `
-                            <span class="log-time">${new Date().toLocaleTimeString()}</span>
-                            <span class="step-label">${parts[0] || 'STEP'}:</span>
-                            <span class="step-value">${parts[1] || ''}</span>
-                        `;
-                        display.appendChild(row);
-                    });
-                } else {
-                    display.innerHTML = '<span style="color:red">Không tìm thấy Header X-Audio-Source!</span>';
-                }
-
-                // 3. Phân tích nguồn để gắn Badge
-                if (xLog && xLog.includes('Drive_OK')) {
-                    badge.innerHTML = '<span class="badge badge-drive">DATABASE: GOOGLE DRIVE</span>';
-                } else if (xLog && xLog.includes('Azure_OK')) {
-                    badge.innerHTML = '<span class="badge badge-azure">DATABASE: AZURE CLOUD</span>';
-                }
-
-                if (res.ok) {
-                    const blob = await res.blob();
-                    player.src = URL.createObjectURL(blob);
-                    player.style.display = 'block';
-                    player.play();
-                    
-                    const timeRow = document.createElement('div');
-                    timeRow.style.color = '#a6e22e';
-                    timeRow.style.marginTop = '10px';
-                    timeRow.innerHTML = `✅ Phản hồi trong: ${(end - start)}ms`;
-                    display.appendChild(timeRow);
-                } else {
-                    display.innerHTML += `<div style="color:red">Error: ${res.status}</div>`;
-                }
-
-            } catch (err) {
-                display.innerHTML = `<span style="color:red">Lỗi kết nối: ${err.message}</span>`;
-            } finally {
-                btn.disabled = false;
-            }
-        }
+            console.log("TTS Finished.");
+        });
     </script>
 </body>
 </html>

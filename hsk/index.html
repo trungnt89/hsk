@@ -124,27 +124,41 @@ let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 let masteredSet = new Set();
 const audio = new Audio();
 
-// --- INDEXEDDB CACHE LOGIC ---
-const DB_NAME = "HSK_AUDIO_CACHE";
-const DB_STORE = "AUDIO";
-const dbRequest = indexedDB.open(DB_NAME, 1);
-dbRequest.onupgradeneeded = (e) => { e.target.result.createObjectStore(DB_STORE); };
+// --- INDEXEDDB CACHE LOGIC (FIXED) ---
+const DB_NAME = "HSK_AUDIO_CACHE_V2";
+const DB_STORE = "AUDIO_DATA";
+let db;
+
+const dbRequest = indexedDB.open(DB_NAME, 2);
+dbRequest.onupgradeneeded = (e) => {
+    const database = e.target.result;
+    if (!database.objectStoreNames.contains(DB_STORE)) {
+        database.createObjectStore(DB_STORE);
+    }
+};
+dbRequest.onsuccess = (e) => { db = e.target.result; };
+dbRequest.onerror = (e) => { console.error("[DB Error]", e); };
 
 async function getCache(key) {
     return new Promise(res => {
-        if (!dbRequest.result) { res(null); return; }
-        const txn = dbRequest.result.transaction(DB_STORE, "readonly");
-        const store = txn.objectStore(DB_STORE);
-        const req = store.get(key);
-        req.onsuccess = () => res(req.result);
-        req.onerror = () => res(null);
+        if (!db) return res(null);
+        try {
+            const txn = db.transaction(DB_STORE, "readonly");
+            const store = txn.objectStore(DB_STORE);
+            const req = store.get(key);
+            req.onsuccess = () => res(req.result);
+            req.onerror = () => res(null);
+        } catch (e) { res(null); }
     });
 }
 
 async function setCache(key, blob) {
-    console.log(`[IndexedDB] Caching audio: ${key}`);
-    const txn = dbRequest.result.transaction(DB_STORE, "readwrite");
-    txn.objectStore(DB_STORE).put(blob, key);
+    if (!db) return;
+    try {
+        console.log(`[IndexedDB Log] Caching audio: ${key}`);
+        const txn = db.transaction(DB_STORE, "readwrite");
+        txn.objectStore(DB_STORE).put(blob, key);
+    } catch (e) { console.warn("[DB Save Error]", e); }
 }
 
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
@@ -315,7 +329,6 @@ async function speak(text) {
         window.speechSynthesis.speak(u); return;
     }
 
-    // 1. Check IndexedDB Cache
     const cachedBlob = await getCache(cacheKey);
     if (cachedBlob) {
         console.log(`[Audio Log] Cache Hit (IndexedDB): ${text}`);
@@ -323,16 +336,12 @@ async function speak(text) {
         return new Promise(res => { audio.src = blobUrl; audio.onended = res; audio.play().catch(res); });
     }
 
-    // 2. Cache Miss -> Fetch
     const url = voice === "google" ? `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}` : `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
     
     try {
         const response = await fetch(url);
         const blob = await response.blob();
-        
-        // Background Caching
         setCache(cacheKey, blob);
-
         const blobUrl = URL.createObjectURL(blob);
         return new Promise(res => { audio.src = blobUrl; audio.onended = res; audio.play().catch(res); });
     } catch (e) {

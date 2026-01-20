@@ -77,7 +77,7 @@
         // 2. Gọi API TTS (Sử dụng endpoint tts_test theo yêu cầu)
         
         const url = `https://hsk-gilt.vercel.app/api/tts_test?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
-		console.log(`[TTS API] ${url}`);
+		console.log(`[TTS API] ${text} -> ${url}`);
         
 		try {
             const res = await fetch(url);

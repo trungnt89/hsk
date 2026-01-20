@@ -19,6 +19,10 @@ export default async function handler(req, res) {
     // ===============================
     // 2️⃣ CHECK GOOGLE DRIVE FIRST
     // ===============================
+	
+	//https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec?action=check&filename=5YWI5pel44Gv5aSa5aSn44Gq44KL44GU5pSv5o+044Go44GU5Y
+	
+	
     try {
       console.log(`[CHECK] Đang kiểm tra sự tồn tại của file ${filename} trên Drive...`);
       const checkRes = await fetch(`${GAS_URL}?action=check&filename=${filename}`);

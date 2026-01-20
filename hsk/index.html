@@ -336,7 +336,9 @@ async function speak(text) {
         return new Promise(res => { audio.src = blobUrl; audio.onended = res; audio.play().catch(res); });
     }
 
-    const url = voice === "google" ? `https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}` : `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&voice=${voice}`;
+    const url = voice === "google" ? 
+	`https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=zh-CN&q=${encodeURIComponent(text)}` 
+	: `https://hsk-gilt.vercel.app/api/tts_test?text=${encodeURIComponent(text)}&voice=${voice}`;
     
     try {
         const response = await fetch(url);

@@ -1,7 +1,7 @@
 // ../com/TTSClient.js - Shared Audio Logic (Global Script Version)
 (function() {
-    const DB_NAME = "HSK_AUDIO_CACHE_V2";
-    const DB_STORE = "AUDIO_DATA";
+    const DB_NAME = "AUDIO_DATA_CACHE";
+    const DB_STORE = "AUDIO";
     let ttsDb;
 
     // Khởi tạo IndexedDB ngay khi nạp file

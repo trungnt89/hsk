@@ -46,18 +46,8 @@
 
         if (!text) return;
 
-        // Xử lý giọng đọc trình duyệt (Local)
-        if (voice === "browser") {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = lang;
-            u.rate = parseFloat(rate);
-            window.speechSynthesis.speak(u);
-            return new Promise(res => { u.onend = res; });
-        }
-
         // CẤU TRÚC KEY LƯU TRỮ: lang_voice_rate_text
-        const cacheKey = `${lang}_${voice}_${rate}_${text}`;
+        const cacheKey = `${voice}_${rate}_${text}`;
 
         // 1. Kiểm tra Cache trong IndexedDB
         const cachedBlob = await new Promise(res => {

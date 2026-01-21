@@ -1,12 +1,29 @@
 (function() {
     // --- ASSISTIVE TOUCH UI ---
     function initAssistiveTouch() {
-        console.log("[Log] Initializing 3x3 Menu (No Close Button)...");
+        console.log("[Log] Initializing 3x3 Menu at Mid-Left position...");
         if (!document.body) return;
 
         const styleSheet = document.createElement("style");
         styleSheet.innerText = `
-            #assistive-touch { position: fixed; top: 150px; right: 20px; width: 50px; height: 50px; background: rgba(0, 0, 0, 0.6); border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 12px; z-index: 10000; cursor: move; touch-action: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+            #assistive-touch { 
+                position: fixed; 
+                top: 50%; 
+                left: 10px; 
+                transform: translateY(-50%); 
+                width: 50px; 
+                height: 50px; 
+                background: rgba(0, 0, 0, 0.6); 
+                border: 4px solid rgba(255, 255, 255, 0.3); 
+                border-radius: 12px; 
+                z-index: 10000; 
+                cursor: move; 
+                touch-action: none; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                box-shadow: 0 0 10px rgba(0,0,0,0.3); 
+            }
             #assistive-touch::after { content: ""; width: 28px; height: 28px; background: rgba(255, 255, 255, 0.8); border-radius: 50%; }
             #assistive-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
             
@@ -31,7 +48,7 @@
                 <div class="menu-section-title">Năng suất</div>
                 <div class="menu-grid">
                     <div class="menu-item" onclick="location.href='/index.html'"><div class="item-icon">🏠</div><span class="item-label">Home</span></div>
-					<div class="menu-item" onclick="location.href='/task/index.html'"><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
+                    <div class="menu-item" onclick="location.href='/task/index.html'"><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
                     <div class="menu-item" onclick="location.href='/pomodoro/index.html'"><div class="item-icon">🍅</div><span class="item-label">Pomo</span></div>
                 </div>
                 <div class="menu-section-title">Học tập</div>
@@ -44,7 +61,7 @@
                 <div class="menu-grid">
                     <div class="menu-item" onclick="location.href='/db/index.html'"><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
                     <div class="menu-item" onclick="location.href='/sms/index.html'"><div class="item-icon">💬</div><span class="item-label">SMS</span></div>
-					<div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
+                    <div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
                 </div>
             </div>`;
 
@@ -77,6 +94,7 @@
                 const x = Math.max(0, Math.min(touch.clientX - offset.x, window.innerWidth - 50));
                 const y = Math.max(0, Math.min(touch.clientY - offset.y, window.innerHeight - 50));
                 
+                button.style.transform = 'none'; // Tắt transform căn giữa khi kéo
                 button.style.setProperty('left', x + 'px', 'important');
                 button.style.setProperty('top', y + 'px', 'important');
                 button.style.right = 'auto';
@@ -89,7 +107,7 @@
                 const rect = button.getBoundingClientRect();
                 button.style.left = rect.left + 'px';
                 button.style.top = rect.top + 'px';
-                console.log("[Log] Drag ended");
+                console.log("[Log] Drag ended at: " + rect.left + ", " + rect.top);
             }
             document.removeEventListener('mousemove', onMove); 
             document.removeEventListener('touchmove', onMove); 
@@ -112,7 +130,7 @@
 
         menu.addEventListener('click', (e) => {
             if (e.target === menu) {
-                console.log("[Log] Menu closed by backdrop click");
+                console.log("[Log] Menu closed");
                 menu.style.display = 'none';
             }
         });

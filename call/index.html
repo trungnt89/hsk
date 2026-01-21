@@ -9,47 +9,42 @@
     <style>
         body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f7f6; margin: 0; padding: 20px; }
         .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; }
-        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; width: 100%; }
-        video { width: 100%; border-radius: 8px; background: #2c3e50; transform: scaleX(-1); border: 2px solid #ddd; }
-        .controls { margin: 20px 0; display: flex; flex-direction: column; gap: 10px; }
+        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; width: 100%; max-width: 900px; }
+        video { width: 100%; border-radius: 8px; background: #2c3e50; transform: scaleX(-1); border: 2px solid #ddd; height: 200px; object-fit: cover; }
+        .controls { margin: 15px 0; display: flex; flex-direction: column; gap: 10px; }
         input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
-        button { padding: 12px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; }
+        .btn-group { display: flex; gap: 10px; justify-content: center; }
+        button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; flex: 1; }
         .btn-primary { background: #007bff; color: white; }
         .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #d63031; color: white; display: none; } /* Ẩn nút kết thúc mặc định */
         #qrcode { display: flex; justify-content: center; margin: 15px 0; }
-        .status-id { font-weight: bold; color: #d63031; font-size: 1.2em; }
+        .status-id { font-weight: bold; color: #d63031; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>Video Call P2P</h2>
-    
     <div class="controls">
         <input type="text" id="my-id-input" placeholder="Tạo ID ngắn (VD: 1234)">
         <button class="btn-primary" id="set-id-btn">Cài đặt ID của tôi</button>
-        <p>ID hiện tại: <span id="peer-id-display" class="status-id">Đang khởi tạo...</span></p>
+        <p>ID của bạn: <span id="peer-id-display" class="status-id">...</span></p>
     </div>
-
     <div id="qrcode"></div>
-
     <hr>
-
     <div class="controls">
         <input type="text" id="remote-id" placeholder="Nhập ID người cần gọi">
-        <button class="btn-success" id="call-btn">Bắt đầu gọi Video</button>
+        <div class="btn-group">
+            <button class="btn-success" id="call-btn">Bắt đầu gọi</button>
+            <button class="btn-danger" id="end-btn">Kết thúc</button>
+        </div>
     </div>
 </div>
 
 <div class="video-grid">
-    <div>
-        <p>Bạn</p>
-        <video id="local-video" autoplay playsinline muted></video>
-    </div>
-    <div>
-        <p>Đối phương</p>
-        <video id="remote-video" autoplay playsinline></video>
-    </div>
+    <div><p>Bạn</p><video id="local-video" autoplay playsinline muted></video></div>
+    <div><p>Đối phương</p><video id="remote-video" autoplay playsinline></video></div>
 </div>
 
 <script src="app.js"></script>

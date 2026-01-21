@@ -50,7 +50,7 @@
 
         // Logic tự động quản lý thẻ Audio nếu đầu vào trống
         let audioControl = config.audioControl;
-		console.log(`[TTS Request] ${new Date().toLocaleTimeString()} | Text: ${config}`);
+		console.log(config);
         if (!audioControl) {
             if (!globalAudio) {
                 globalAudio = document.createElement('audio');

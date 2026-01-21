@@ -2,20 +2,15 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Learning Master Hub</title>
     <script src="../com/assistive.js"></script>
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #2563eb;
-            --success: #10b981;
-            --info: #0ea5e9;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --warning: #f59e0b;
+            --primary: #2563eb; --success: #10b981; --info: #0ea5e9;
+            --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --warning: #f59e0b;
         }
 
         body {
@@ -25,112 +20,82 @@
             padding: 0;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            height: 100dvh; /* Fix cho Safari iOS không bị che bởi thanh công cụ */
+            overflow: hidden;
             color: var(--text);
         }
 
         header {
-            padding: 40px 20px 20px;
+            padding: 15px 15px 5px;
             text-align: center;
             background: white;
             border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            letter-spacing: -1px;
-        }
-
-        header p {
-            margin: 5px 0 0;
-            font-size: 12px;
-            color: #64748b;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+        header h1 { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--primary); }
+        header p { margin: 2px 0 0; font-size: 9px; color: #64748b; text-transform: uppercase; }
 
         .dashboard {
             flex: 1;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-            max-width: 520px;
+            padding: 5px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly; /* Phân bổ đều khoảng trống giữa các card */
+            max-width: 500px;
             margin: 0 auto;
-            width: calc(100% - 40px);
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 0; /* Ngăn chặn việc đẩy nội dung ra ngoài */
         }
 
         .nav-card {
             background: var(--card);
-            border-radius: 22px;
-            padding: 18px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            border: 2px solid transparent;
+            border-radius: 18px;
+            padding: 8px 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            border: 1px solid #f1f5f9;
+            flex-shrink: 1; /* Cho phép card co lại nếu màn hình quá ngắn */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .icon-wrapper {
-            width: 44px;
-            height: 44px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            flex-shrink: 0;
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
         }
 
         .group-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 10px;
+            display: flex; align-items: center;
+            gap: 10px; margin-bottom: 4px;
         }
 
-        .group-title {
-            font-size: 15px;
-            font-weight: 800;
-        }
-
-        .group-desc {
-            font-size: 12px;
-            color: #64748b;
-        }
+        .group-title { font-size: 12px; font-weight: 800; }
+        .group-desc { font-size: 10px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .group-links {
-            margin: 8px 0 0;
-            padding: 0;
+            margin: 2px 0 0; padding: 0;
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 4px;
         }
 
         .group-links a {
             text-decoration: none;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
             color: var(--text);
             display: block;
-            padding: 14px 16px;
-            border-radius: 12px;
+            padding: 7px 15px; /* Nén nút bấm lại */
+            border-radius: 10px;
             background: #f1f5f9;
-            transition: all 0.2s ease;
         }
 
-        .group-links a:active {
-            background: #e2e8f0;
-            transform: scale(0.98);
-        }
-
-        /* Highlight đặc biệt cho Dashboard mới */
-        .link-highlight {
-            background: #eff6ff !important;
-            border: 1px solid #bfdbfe !important;
-            color: #1e40af !important;
-        }
+        .group-links a:active { background: #e2e8f0; transform: scale(0.98); }
 
         .bg-learn { background: #eff6ff; color: var(--primary); }
         .bg-audio { background: #ecfdf5; color: var(--success); }
@@ -138,11 +103,12 @@
         .bg-system { background: #f8fafc; color: #334155; }
 
         footer {
-            padding: 30px;
+            padding: 8px;
             text-align: center;
-            font-size: 11px;
+            font-size: 8px;
             color: #94a3b8;
             font-weight: 600;
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -154,7 +120,6 @@
 </header>
 
 <div class="dashboard">
-
     <div class="nav-card">
         <div class="group-header">
             <div class="icon-wrapper bg-audio">🏆</div>
@@ -191,7 +156,7 @@
             </div>
         </div>
         <ul class="group-links">
-            <li><a href="task/index.html" class="link-highlight-">📊 Monitoring</a></li>
+            <li><a href="task/index.html">📊 Monitoring</a></li>
             <li><a href="pomodoro/index.html">🍅 Pomodoro</a></li>
         </ul>
     </div>
@@ -210,12 +175,15 @@
             <li><a href="db/index.html">🗄️ Database</a></li>
         </ul>
     </div>
-
 </div>
 
 <footer>
     PHÁT TRIỂN BỞI AI ASSISTANT • 2026
 </footer>
+
+<script>
+    console.log("[Log] Dashboard forced to fit screen without scroll.");
+</script>
 
 </body>
 </html>

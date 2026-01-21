@@ -3,6 +3,7 @@
     const DB_NAME = "AUDIO_DATA_CACHE";
     const DB_STORE = "AUDIO";
     let ttsDb;
+    let globalAudio = null;
 
     // Khởi tạo IndexedDB ngay khi nạp file
     const ttsDbReq = indexedDB.open(DB_NAME, 2);
@@ -18,7 +19,7 @@
         try {
             const txn = ttsDb.transaction(DB_STORE, "readwrite");
             txn.objectStore(DB_STORE).put(blob, key);
-            console.log(`[TTS Save] Key: ${key}`);
+            console.log(`[TTS Save] Cache stored for: ${key}`);
         } catch (e) { console.warn("[TTS Cache Save Error]", e); }
     }
 
@@ -35,18 +36,44 @@
 
     /**
      * Hàm gọi chính - Xuất ra phạm vi toàn cục (window)
-     * config: { text, voice, lang, rate, audioControl }
+     * config: { text, voice, lang, rate, audioControl, filename }
      */
     window.speakCommon = async function(config = {}) {
-        const text = config.text || "";
-        const voice = config.voice || "zh-CN-XiaoxiaoNeural";
+        const { 
+            text = "", 
+            voice = "zh-CN-XiaoxiaoNeural", 
+            rate = "1.0", 
+            filename = "hsk_data" 
+        } = config;
+        
         const lang = config.lang || (voice.includes('-') ? voice.substring(0, 5) : "zh-CN");
-        const rate = config.rate || "1.0";
-        const audioControl = config.audioControl || new Audio();
+
+        // Logic tự động quản lý thẻ Audio nếu đầu vào trống
+        let audioControl = config.audioControl;
+        if (!audioControl) {
+            if (!globalAudio) {
+                globalAudio = document.createElement('audio');
+                globalAudio.id = "tts-auto-audio";
+                globalAudio.style.cssText = "position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;bottom:0;left:0;";
+                document.body.appendChild(globalAudio);
+                console.log("[TTS Log] Auto Audio Element Created (1px)");
+            }
+            audioControl = globalAudio;
+        }
 
         if (!text) return;
+        console.log(`[TTS Request] ${new Date().toLocaleTimeString()} | Text: ${text}`);
 
-        // CẤU TRÚC KEY LƯU TRỮ: lang_voice_rate_text
+        // Tích hợp MediaSession hiển thị thông tin khi tắt màn hình
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: text,
+                artist: 'HSK Master',
+                album: filename,
+                artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/3039/3039387.png', sizes: '512x512', type: 'image/png' }]
+            });
+        }
+
         const cacheKey = `${voice}_${rate}_${text}`;
 
         // 1. Kiểm tra Cache trong IndexedDB
@@ -60,18 +87,16 @@
         });
 
         if (cachedBlob) {
-            console.log(`[TTS Local] ${cacheKey}`);
+            console.log(`[TTS Local] Hit: ${text}`);
             return playAudio(URL.createObjectURL(cachedBlob), audioControl);
         }
 
-        // 2. Gọi API TTS (Sử dụng endpoint tts_test theo yêu cầu)
-        
+        // 2. Gọi API TTS
         const url = `https://hsk-gilt.vercel.app/api/tts_test?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
-		console.log(`[TTS API] ${text} -> ${url}`);
         
-		try {
+        try {
             const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             
             const blob = await res.blob();
             saveToCache(cacheKey, blob); 

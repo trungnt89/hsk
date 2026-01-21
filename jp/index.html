@@ -65,10 +65,7 @@
 
 <ul id="list"></ul>
 
-<audio id="audio" controls style="width:100%; margin-top:16px; border-radius: 8px;"></audio>
-
 <script>
-// URL giữ nguyên cho việc quản lý văn bản
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyNX96iC37hc8AunT8zWlG_yTFB2ipZp90-XivW8hWzVYVne9nftCC3mSFoTk10v93t/exec";
 
 let texts = [];
@@ -76,7 +73,6 @@ let currentIndex = 0;
 let repeatOne = false;
 let repeatAll = false;
 
-const audio = document.getElementById("audio");
 const listEl = document.getElementById("list");
 const textInput = document.getElementById("textInput");
 
@@ -158,20 +154,41 @@ async function deleteText() {
   }
 }
 
-/* ====================== PLAY LOGIC (INTEGRATED speakCommon) ====================== */
+/* ====================== PLAY LOGIC (FIXED REPEAT) ====================== */
 async function playCurrent() {
   highlight();
   const item = texts[currentIndex];
   if(!item || !item.ja) return;
 
-  console.log("LOG: Gọi speakCommon cho câu:", item.ja);
+  console.log(`[TTS Log] Đang phát: ${item.ja}`);
+  setPlayBtnActive(true);
   
-  // SỬ DỤNG HÀM TỪ THƯ VIỆN TTSClient.js ĐÃ NHÚNG
+  // Await giúp đợi âm thanh kết thúc trước khi chạy logic tiếp theo
   await speakCommon({
     text: item.ja,
     voice: voiceEl().value,
-    rate: rateEl().value
+    rate: rateEl().value,
+    filename: "japanese_practice"
   });
+
+  onAudioEnded();
+}
+
+function onAudioEnded() {
+  setPlayBtnActive(false);
+  console.log("[TTS Log] Kết thúc âm thanh, xử lý repeat...");
+
+  if (repeatOne) {
+    return playCurrent();
+  }
+  
+  if (repeatAll || currentIndex < texts.length - 1) {
+    currentIndex++;
+    if (currentIndex >= texts.length) {
+      if (repeatAll) currentIndex = 0; else return;
+    }
+    playCurrent();
+  }
 }
 
 function toggleRepeatOne() {
@@ -186,20 +203,6 @@ function toggleRepeatAll() {
   localStorage.setItem("repeatAll", repeatAll);
   updateButtonStates();
 }
-
-// Lắng nghe sự kiện từ thẻ audio để điều khiển luồng phát
-audio.addEventListener("play", () => setPlayBtnActive(true));
-audio.addEventListener("pause", () => setPlayBtnActive(false));
-audio.addEventListener("ended", () => {
-  setPlayBtnActive(false);
-  if (repeatOne) return playCurrent();
-  
-  currentIndex++;
-  if (currentIndex >= texts.length) {
-    if (repeatAll) currentIndex = 0; else return;
-  }
-  playCurrent();
-});
 
 function voiceEl() { return document.getElementById("voice"); }
 function rateEl() { return document.getElementById("rate"); }

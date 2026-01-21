@@ -56,7 +56,7 @@
                 globalAudio = document.createElement('audio');
                 globalAudio.id = "tts-auto-audio";
                 //globalAudio.style.cssText = "position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;bottom:0;left:0;";
-				globalAudio.style.cssText = "position:fixed;width:100px;height:10px;bottom:0;left:0;";
+				globalAudio.style.cssText = "width:100px;height:10px;background:red";
                 document.body.appendChild(globalAudio);
                 console.log("[TTS Log] Auto Audio Element Created (1px)");
             }

@@ -30,9 +30,9 @@
             <div class="menu-container">
                 <div class="menu-section-title">Năng suất</div>
                 <div class="menu-grid">
-                    <div class="menu-item" onclick="location.href='/task/index.html'"><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
+                    <div class="menu-item" onclick="location.href='/index.html'"><div class="item-icon">🏠</div><span class="item-label">Home</span></div>
+					<div class="menu-item" onclick="location.href='/task/index.html'"><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
                     <div class="menu-item" onclick="location.href='/pomodoro/index.html'"><div class="item-icon">🍅</div><span class="item-label">Pomo</span></div>
-                    <div class="menu-item" onclick="location.href='/db/index.html'"><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
                 </div>
                 <div class="menu-section-title">Học tập</div>
                 <div class="menu-grid">
@@ -42,9 +42,9 @@
                 </div>
                 <div class="menu-section-title">Hệ thống</div>
                 <div class="menu-grid">
-                    <div class="menu-item" onclick="location.href='/index.html'"><div class="item-icon">🏠</div><span class="item-label">Home</span></div>
-                    <div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
+                    <div class="menu-item" onclick="location.href='/db/index.html'"><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
                     <div class="menu-item" onclick="location.href='/sms/index.html'"><div class="item-icon">💬</div><span class="item-label">SMS</span></div>
+					<div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
                 </div>
             </div>`;
 

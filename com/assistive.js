@@ -8,8 +8,8 @@
         styleSheet.innerText = `
             #assistive-touch { 
                 position: fixed; 
-                top: 50%; 
-                left: 10px; 
+                top: 40%; 
+                left: 0px; 
                 transform: translateY(-50%); 
                 width: 50px; 
                 height: 50px; 

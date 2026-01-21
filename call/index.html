@@ -3,48 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vercel Video Call - WebRTC</title>
+    <title>Safari Optimized Video Call</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; }
-        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; width: 100%; max-width: 900px; }
-        video { width: 100%; border-radius: 8px; background: #2c3e50; transform: scaleX(-1); border: 2px solid #ddd; height: 200px; object-fit: cover; }
-        .controls { margin: 15px 0; display: flex; flex-direction: column; gap: 10px; }
-        input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
-        .btn-group { display: flex; gap: 10px; justify-content: center; }
-        button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; flex: 1; }
-        .btn-primary { background: #007bff; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-danger { background: #d63031; color: white; display: none; } /* Ẩn nút kết thúc mặc định */
+        body { font-family: -apple-system, system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; margin: 0; padding: 15px; }
+        .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 500px; text-align: center; }
+        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; width: 100%; max-width: 800px; }
+        video { width: 100%; border-radius: 12px; background: #000; transform: scaleX(-1); border: 1px solid #ddd; height: 180px; object-fit: cover; }
+        .controls { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; -webkit-appearance: none; }
+        .btn-group { display: flex; gap: 10px; }
+        button { padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; transition: opacity 0.2s; }
+        .btn-primary { background: #007aff; color: white; }
+        .btn-success { background: #34c759; color: white; }
+        .btn-danger { background: #ff3b30; color: white; display: none; }
         #qrcode { display: flex; justify-content: center; margin: 15px 0; }
-        .status-id { font-weight: bold; color: #d63031; }
+        .status-id { font-weight: bold; color: #ff3b30; word-break: break-all; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Video Call P2P</h2>
+    <h3>Video Call (Safari Ready)</h3>
     <div class="controls">
-        <input type="text" id="my-id-input" placeholder="Tạo ID ngắn (VD: 1234)">
-        <button class="btn-primary" id="set-id-btn">Cài đặt ID của tôi</button>
-        <p>ID của bạn: <span id="peer-id-display" class="status-id">...</span></p>
+        <input type="text" id="my-id-input" placeholder="Tạo ID ngắn (VD: 8888)">
+        <button class="btn-primary" id="set-id-btn">Thiết lập ID</button>
+        <p style="font-size: 14px;">ID của bạn: <span id="peer-id-display" class="status-id">Đang kết nối...</span></p>
     </div>
+
     <div id="qrcode"></div>
-    <hr>
+
+    <hr style="width: 100%; border: 0.5px solid #eee;">
+
     <div class="controls">
-        <input type="text" id="remote-id" placeholder="Nhập ID người cần gọi">
+        <input type="text" id="remote-id" placeholder="ID người nhận">
         <div class="btn-group">
-            <button class="btn-success" id="call-btn">Bắt đầu gọi</button>
+            <button class="btn-success" id="call-btn">Gọi Video</button>
             <button class="btn-danger" id="end-btn">Kết thúc</button>
         </div>
     </div>
 </div>
 
 <div class="video-grid">
-    <div><p>Bạn</p><video id="local-video" autoplay playsinline muted></video></div>
-    <div><p>Đối phương</p><video id="remote-video" autoplay playsinline></video></div>
+    <div><p align="center">Bạn</p><video id="local-video" autoplay playsinline muted></video></div>
+    <div><p align="center">Đối phương</p><video id="remote-video" autoplay playsinline></video></div>
 </div>
 
 <script src="app.js"></script>

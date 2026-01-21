@@ -1,7 +1,7 @@
 (function() {
     // --- ASSISTIVE TOUCH UI ---
     function initAssistiveTouch() {
-        console.log("[Log] Initializing Compact Partitioned Menu...");
+        console.log("[Log] Initializing 3x3 Compact Menu...");
         if (!document.body) return;
 
         const styleSheet = document.createElement("style");
@@ -10,16 +10,17 @@
             #assistive-touch::after { content: ""; width: 28px; height: 28px; background: rgba(255, 255, 255, 0.8); border-radius: 50%; }
             #assistive-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
             
-            .menu-container { background: rgba(28, 28, 30, 0.95); padding: 15px; border-radius: 28px; width: 260px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 0.5px solid rgba(255,255,255,0.1); font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-            .menu-section-title { color: #8e8e93; font-size: 9px; font-weight: 700; text-transform: uppercase; margin: 10px 0 8px 4px; letter-spacing: 0.5px; border-bottom: 0.5px solid rgba(255,255,255,0.1); padding-bottom: 3px; }
-            .menu-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+            .menu-container { position: relative; background: rgba(28, 28, 30, 0.95); padding: 18px; border-radius: 30px; width: 240px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 0.5px solid rgba(255,255,255,0.1); font-family: -apple-system, sans-serif; }
+            .menu-section-title { color: #8e8e93; font-size: 9px; font-weight: 700; text-transform: uppercase; margin: 5px 0 10px 4px; letter-spacing: 0.5px; border-bottom: 0.5px solid rgba(255,255,255,0.1); padding-bottom: 3px; width: 95%; }
+            .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
             
             .menu-item { display: flex; flex-direction: column; align-items: center; color: white; cursor: pointer; transition: transform 0.1s; }
             .menu-item:active { transform: scale(0.9); }
-            .item-icon { width: 40px; height: 40px; background: #3a3a3c; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 4px; }
+            .item-icon { width: 44px; height: 44px; background: #3a3a3c; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 4px; }
             .item-label { font-size: 9px; font-weight: 500; text-align: center; color: #efeff4; }
             
-            .close-btn { grid-column: span 4; margin-top: 10px; padding: 8px; background: #ff453a; border-radius: 10px; color: white; text-align: center; font-size: 11px; font-weight: 700; }
+            #close-menu { position: absolute; top: 15px; right: 15px; width: 22px; height: 22px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #efeff4; font-size: 10px; cursor: pointer; transition: all 0.2s; z-index: 10; font-weight: bold; }
+            #close-menu:active { background: rgba(255,69,58,0.4); }
         `;
         document.head.appendChild(styleSheet);
 
@@ -30,30 +31,27 @@
         
         menu.innerHTML = `
             <div class="menu-container">
+                <div id="close-menu">✕</div>
                 <div class="menu-section-title">Hệ thống</div>
                 <div class="menu-grid">
                     <div class="menu-item" onclick="location.href='/index.html'"><div class="item-icon">🏠</div><span class="item-label">Home</span></div>
-					<div class="menu-item" onclick="window.history.back()"><div class="item-icon">⬅️</div><span class="item-label">Back</span></div>
-                    <div class="menu-item" onclick="window.scrollTo({top: 0, behavior: 'smooth'})"><div class="item-icon">⬆️</div><span class="item-label">Top</span></div>
-					<div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
+                    <div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
+                    <div class="menu-item" onclick="location.href='/db/index.html'"><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
                 </div>
 
-                <div class="menu-section-title">Học tập & Ngôn ngữ</div>
+                <div class="menu-section-title">Học tập</div>
                 <div class="menu-grid">
                     <div class="menu-item" onclick="location.href='/pmp/index.html'"><div class="item-icon">📘</div><span class="item-label">PMP</span></div>
                     <div class="menu-item" onclick="location.href='/jp/index.html'"><div class="item-icon">🇯🇵</div><span class="item-label">Japan</span></div>
                     <div class="menu-item" onclick="location.href='/hsk/index.html'"><div class="item-icon">🇨🇳</div><span class="item-label">HSK</span></div>
                 </div>
 
-                <div class="menu-section-title">Công cụ & Data</div>
+                <div class="menu-section-title">Hiệu suất</div>
                 <div class="menu-grid">
                     <div class="menu-item" onclick="location.href='/task/index.html'"><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
                     <div class="menu-item" onclick="location.href='/pomodoro/index.html'"><div class="item-icon">🍅</div><span class="item-label">Pomo</span></div>
                     <div class="menu-item" onclick="location.href='/sms/index.html'"><div class="item-icon">💬</div><span class="item-label">SMS</span></div>
-                    <div class="menu-item" onclick="location.href='/db/index.html'"><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
                 </div>
-
-                <div class="close-btn" id="close-menu">ĐÓNG MENU</div>
             </div>`;
 
         document.body.appendChild(button);
@@ -91,7 +89,6 @@
             document.removeEventListener('touchmove', onMove); 
         });
 
-        // Logic Click
         button.addEventListener('click', () => { 
             if (!isDragging) {
                 console.log("[Log] Menu opened");

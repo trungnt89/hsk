@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JST Live Console</title>
+	<script src="../com/assistive.js"></script>    
+    <style>
+        body { background: #000; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; overflow: hidden; }
+        .header { background: #111; padding: 20px 5px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; }
+        .container { padding: 15px; height: calc(100vh - 100px); }
+        
+        /* Ghi đè CSS cho trang monitor chuyên dụng */
+        #monitor-box #log-box-inner { 
+            max-height: calc(100vh - 150px) !important; 
+            background: #050505 !important; 
+            border: 1px solid #222 !important;
+            font-size: 16px !important; /* Chữ to rõ cho Monitor */
+        }
+        #monitor-box td {
+            font-size: 16px !important;
+            padding: 12px 8px !important;
+        }
+        #clock {
+            font-family: 'Consolas', monospace;
+            font-size: 32px; /* Đồng hồ cực to */
+            font-weight: bold;
+            color: #2ecc71;
+            text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+        }
+        h3 { font-size: 24px; margin: 0; color: #eee; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <div style="width:15px; height:10px; background:#2ecc71; border-radius:50%; box-shadow: 0 0 15px #2ecc71;"></div>
+            <h3>CONSOLE MONITOR (JST)</h3>
+        </div>
+        <div id="clock">--:--:--</div>
+    </div>
+    <div class="container">
+        <div id="monitor-box"></div>
+    </div>
+
+    <script src="../com/logger.js"></script>
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('ja-JP', {
+                timeZone: 'Asia/Tokyo', 
+                hour12: false
+            });
+        }
+        setInterval(updateClock, 1000);
+        window.onload = () => LoggerModule.init("monitor-box");
+    </script>
+</body>
+</html>

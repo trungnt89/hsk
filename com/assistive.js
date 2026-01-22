@@ -1,7 +1,7 @@
 (function() {
     // --- ASSISTIVE TOUCH UI ---
     function initAssistiveTouch() {
-        console.log("[Log] Initializing 3x3 Menu at Mid-Left position...");
+        console.log("[Log] Initializing 3x3 Menu with Logs link...");
         if (!document.body) return;
 
         const styleSheet = document.createElement("style");
@@ -61,6 +61,7 @@
                 <div class="menu-grid">
                     <div class="menu-item" onclick="location.href='../db/index.html'"><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
                     <div class="menu-item" onclick="location.href='../sms/index.html'"><div class="item-icon">💬</div><span class="item-label">SMS</span></div>
+                    <div class="menu-item" onclick="location.href='../log/index.html'"><div class="item-icon">📜</div><span class="item-label">Logs</span></div>
                     <div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
                 </div>
             </div>`;
@@ -94,7 +95,7 @@
                 const x = Math.max(0, Math.min(touch.clientX - offset.x, window.innerWidth - 50));
                 const y = Math.max(0, Math.min(touch.clientY - offset.y, window.innerHeight - 50));
                 
-                button.style.transform = 'none'; // Tắt transform căn giữa khi kéo
+                button.style.transform = 'none'; 
                 button.style.setProperty('left', x + 'px', 'important');
                 button.style.setProperty('top', y + 'px', 'important');
                 button.style.right = 'auto';
@@ -107,7 +108,6 @@
                 const rect = button.getBoundingClientRect();
                 button.style.left = rect.left + 'px';
                 button.style.top = rect.top + 'px';
-                console.log("[Log] Drag ended at: " + rect.left + ", " + rect.top);
             }
             document.removeEventListener('mousemove', onMove); 
             document.removeEventListener('touchmove', onMove); 
@@ -123,14 +123,12 @@
                 e.preventDefault();
                 e.stopPropagation();
             } else {
-                console.log("[Log] Menu opened");
                 menu.style.display = 'flex'; 
             }
         }, true);
 
         menu.addEventListener('click', (e) => {
             if (e.target === menu) {
-                console.log("[Log] Menu closed");
                 menu.style.display = 'none';
             }
         });

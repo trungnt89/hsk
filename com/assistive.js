@@ -60,7 +60,7 @@
                 <div class="menu-section-title">Hệ thống</div>
                 <div class="menu-grid">
                     <div class="menu-item" onclick="location.href='../db/index.html'"><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
-                    <div class="menu-item" onclick="location.href='../sms/index.html'"><div class="item-icon">💬</div><span class="item-label">SMS</span></div>
+                    <!-- <div class="menu-item" onclick="location.href='../sms/index.html'"><div class="item-icon">💬</div><span class="item-label">SMS</span></div> -->
                     <div class="menu-item" onclick="location.href='../log/index.html'"><div class="item-icon">📜</div><span class="item-label">Logs</span></div>
                     <div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
                 </div>

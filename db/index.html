@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Quản trị IndexedDB - Sync Google Drive</title>
-	<script src="../com/assistive.js"></script>
+    <title>Quản trị IndexedDB - Local Manager</title>
+    <script src="../com/assistive.js"></script>
     <style>
-        :root { --primary: #3498db; --view: #9b59b6; --export: #27ae60; --import: #f39c12; --clear: #e74c3c; }
+        :root { --primary: #3498db; --view: #9b59b6; --clear: #e74c3c; --delete: #c0392b; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 20px; -webkit-text-size-adjust: 100%; }
         .container { max-width: 1200px; margin: auto; }
         
@@ -20,39 +20,24 @@
         .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
         button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 11px; color: white; transition: opacity 0.2s; }
         button:hover { opacity: 0.8; }
-        .btn-scan { background: var(--primary); width: 100%; padding: 12px; font-size: 14px; margin-bottom: 20px; }
         .btn-view { background: var(--view); }
-        .btn-export { background: var(--export); }
-        .btn-import { background: var(--import); }
         .btn-clear { background: var(--clear); }
+        .btn-del-row { background: var(--delete); padding: 4px 8px; }
 
-        /* Tối ưu View 1 cột cho Mobile */
         .data-viewer { display: none; padding: 10px; background: #fff; max-height: 600px; overflow: auto; }
         .record-card { border-bottom: 2px solid #eee; padding: 15px 5px; margin-bottom: 5px; }
-        .record-header { display: flex; justify-content: space-between; font-size: 11px; color: #7f8c8d; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 3px; }
+        .record-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #7f8c8d; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 3px; }
         .record-key { font-weight: bold; color: #2c3e50; font-size: 13px; margin-bottom: 8px; word-break: break-all; display: block; background: #f1f3f5; padding: 5px 8px; border-radius: 4px; }
         
         pre.json-pretty { 
-            background: #f8f9fa; 
-            padding: 10px; 
-            border-radius: 4px; 
-            border: 1px solid #eee; 
-            white-space: pre-wrap; 
-            font-family: 'Consolas', monospace; 
-            color: #d63384;
-            margin: 0;
-            max-height: 400px;
-            overflow: auto;
-            font-size: 12px;
-            line-height: 1.4;
+            background: #f8f9fa; padding: 10px; border-radius: 4px; border: 1px solid #eee; 
+            white-space: pre-wrap; font-family: 'Consolas', monospace; color: #d63384;
+            margin: 0; max-height: 400px; overflow: auto; font-size: 12px; line-height: 1.4;
         }
         
         .audio-ctrl { display: flex; flex-direction: column; gap: 5px; padding: 10px; background: #f9f9f9; border-radius: 5px; }
         audio { height: 35px; width: 100%; }
         .download-link { font-size: 12px; color: var(--primary); text-decoration: none; font-weight: bold; }
-
-        .config-box { margin-bottom: 10px; text-align: left; font-size: 12px; }
-        #scriptUrl { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; box-sizing: border-box; border-radius: 4px; }
 
         #toast {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -75,86 +60,51 @@
 
 <div class="container">
     <div class="header-box">
-        <h2>📊 Trình Quản Lý Dữ Liệu Audio & JSON Cache</h2>
-        <div class="config-box">
-            <label>Google Script Web App URL:</label>
-            <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveGasUrl(this.value)">
-        </div>
+        <h2>📊 Quản Lý Dữ Liệu Nội Bộ (IndexedDB)</h2>
     </div>
     
     <div id="log">Sẵn sàng...</div>
-    <button class="btn-scan" onclick="deepScan()">🔄 QUÉT TOÀN BỘ DATABASE</button>
     <div id="results"></div>
 </div>
 
 <script>
-    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbz-CilJVS0UgOFRHtgF8fhaGA7IM8sNE4vOZYkvZugKp6XlyesS058QeFJbTZ4ZTA_q/exec";
-    const logEl = document.getElementById('log');
-    const resultsEl = document.getElementById('results');
-    const scriptUrlInput = document.getElementById('scriptUrl');
-    const toastEl = document.getElementById('toast');
-
-    (function initConfig() {
-        const req = indexedDB.open("GAS_Config", 1);
-        req.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains("settings")) {
-                db.createObjectStore("settings");
-            }
-        };
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction("settings", "readonly");
-            const store = tx.objectStore("settings");
-            const getReq = store.get("gas_url");
-            getReq.onsuccess = () => {
-                if (getReq.result) {
-                    scriptUrlInput.value = getReq.result;
-                } else {
-                    scriptUrlInput.value = DEFAULT_GAS_URL;
-                    saveGasUrl(DEFAULT_GAS_URL);
-                }
-            };
-        };
-    })();
+    // Tự động quét khi load trang xong
+    window.addEventListener('DOMContentLoaded', () => {
+        writeLog("Trang đã tải. Bắt đầu tự động quét Database...");
+        deepScan();
+    });
 
     function showToast(msg, duration = 3000) {
+        const toastEl = document.getElementById('toast');
         toastEl.innerText = msg;
         toastEl.style.display = 'block';
         setTimeout(() => { toastEl.style.display = 'none'; }, duration);
     }
 
-    function saveGasUrl(url) {
-        const req = indexedDB.open("GAS_Config", 1);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction("settings", "readwrite");
-            tx.objectStore("settings").put(url, "gas_url");
-        };
-    }
-
     function writeLog(msg) {
+        const logEl = document.getElementById('log');
         const time = new Date().toLocaleTimeString();
         logEl.innerHTML += `<div>[${time}] > ${msg}</div>`;
         logEl.scrollTop = logEl.scrollHeight;
     }
 
     async function deepScan() {
+        const resultsEl = document.getElementById('results');
         resultsEl.innerHTML = "";
         try {
             const dbs = await indexedDB.databases();
-            if (dbs.length === 0) {
+            const filteredDbs = dbs.filter(d => d.name !== "GAS_Config");
+            if (filteredDbs.length === 0) {
                 writeLog("Không tìm thấy Database nào.");
                 return;
             }
-            dbs.forEach(dbInfo => {
-                if(dbInfo.name !== "GAS_Config") renderDB(dbInfo.name);
-            });
-            writeLog(`Tìm thấy ${dbs.length} Database.`);
+            filteredDbs.forEach(dbInfo => renderDB(dbInfo.name));
+            writeLog(`Đã tìm thấy ${filteredDbs.length} Database.`);
         } catch (e) { writeLog("Lỗi: Trình duyệt không hỗ trợ hoặc lỗi quét danh sách DB."); }
     }
 
     function renderDB(dbName) {
+        const resultsEl = document.getElementById('results');
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
             const db = e.target.result;
@@ -171,9 +121,7 @@
                         <span>📦 <b>${sName}</b></span>
                         <div class="btn-group">
                             <button class="btn-view" onclick="toggleView('${dbName}', '${sName}', '${safeId}')">👁️ View</button>
-                            <button class="btn-export" onclick="syncToCloud('${dbName}', '${sName}')">📤 Sync to Cloud</button>
-                            <button class="btn-import" onclick="syncFromCloud('${dbName}', '${sName}')">📥 Sync from Cloud</button>
-                            <button class="btn-clear" onclick="clearData('${dbName}', '${sName}', '${safeId}')">🗑️ Clear</button>
+                            <button class="btn-clear" onclick="clearStore('${dbName}', '${sName}', '${safeId}')">🗑️ Clear Store</button>
                         </div>
                     </div>
                     <div class="data-viewer" id="view_${safeId}">
@@ -241,6 +189,7 @@
                     recordDiv.innerHTML = `
                         <div class="record-header">
                             <span>Bản ghi #${count}</span>
+                            <button class="btn-del-row" onclick="deleteRow('${dbName}', '${storeName}', '${key}', '${safeId}')">Xóa dòng</button>
                         </div>
                         <span class="record-key">🔑 ${key}</span>
                         <div class="record-value">${valueDisplay}</div>
@@ -255,115 +204,44 @@
         };
     }
 
-    async function syncToCloud(dbName, storeName) {
-        const url = scriptUrlInput.value;
-        if (!url) {
-            showToast("⚠️ Chưa nhập Google Script URL!");
-            return;
-        }
-
-        if (!confirm(`XÁC NHẬN: Bạn muốn tải dữ liệu từ [${storeName}] lên Google Drive?`)) return;
-
-        writeLog(`Bắt đầu đồng bộ Store [${storeName}] lên Cloud...`);
+    function deleteRow(dbName, storeName, key, safeId) {
+        if (!confirm(`Xác nhận xóa bản ghi với Key: ${key}?`)) return;
+        
+        writeLog(`Đang xóa dòng [${key}] trong Store [${storeName}]...`);
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
             const db = e.target.result;
-            const tx = db.transaction(storeName, "readonly");
+            const tx = db.transaction(storeName, "readwrite");
             const store = tx.objectStore(storeName);
-            const allData = {};
             
-            store.openCursor().onsuccess = async (ev) => {
-                const cursor = ev.target.result;
-                if (cursor) {
-                    if (!(cursor.value instanceof Blob)) {
-                        allData[cursor.key] = cursor.value;
-                    }
-                    cursor.continue();
-                } else {
-                    try {
-                        await fetch(url, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ key: storeName, value: allData })
-                        });
-                        writeLog(`Đã đồng bộ toàn bộ Store [${storeName}] lên Cloud.`);
-                        showToast(`✅ Đã đồng bộ [${storeName}] xong!`);
-                    } catch (err) { 
-                        writeLog(`Lỗi đồng bộ: ${err.message}`); 
-                        showToast("❌ Lỗi đồng bộ lên Cloud.");
-                    }
-                    db.close();
-                }
+            store.delete(key);
+            tx.oncomplete = () => {
+                writeLog(`Đã xóa thành công row [${key}].`);
+                showToast("Đã xóa 1 bản ghi");
+                db.close();
+                document.getElementById(`view_${safeId}`).style.display = "none";
+                toggleView(dbName, storeName, safeId);
             };
         };
     }
 
-    async function syncFromCloud(dbName, storeName) {
-        const url = scriptUrlInput.value;
-        if (!url) {
-            showToast("⚠️ Chưa nhập Google Script URL!");
-            return;
-        }
-
-        if (!confirm(`XÁC NHẬN: Bạn muốn ghi đè dữ liệu địa phương bằng dữ liệu [${storeName}] từ Cloud?`)) return;
-
-        writeLog(`Đang lấy dữ liệu Store [${storeName}] từ Cloud...`);
-        try {
-            const response = await fetch(`${url}${url.includes('?') ? '&' : '?'}key=${encodeURIComponent(storeName)}`);
-            const cloudData = await response.json();
-            
-            if (!cloudData || typeof cloudData !== 'object') {
-                writeLog(`Không có dữ liệu hợp lệ cho Store: ${storeName}`);
-                showToast("⚠️ Không tìm thấy dữ liệu trên Cloud.");
-                return;
-            }
-
-            const req = indexedDB.open(dbName);
-            req.onsuccess = (e) => {
-                const db = e.target.result;
-                const tx = db.transaction(storeName, "readwrite");
-                const store = tx.objectStore(storeName);
-                
-                Object.keys(cloudData).forEach(key => {
-                    const value = cloudData[key];
-                    // Sửa lỗi Uncaught DataError: Kiểm tra xem store có dùng in-line key không
-                    if (store.keyPath) {
-                        store.put(value);
-                    } else {
-                        store.put(value, key);
-                    }
-                });
-
-                tx.oncomplete = () => {
-                    writeLog(`Đã cập nhật thành công Store [${storeName}] từ Cloud.`);
-                    showToast(`✅ Đã tải dữ liệu [${storeName}] về!`);
-                    db.close();
-                    deepScan();
-                };
-            };
-        } catch (err) {
-            writeLog(`Lỗi khi lấy dữ liệu: ${err.message}`);
-            showToast("❌ Lỗi khi tải dữ liệu từ Cloud.");
-        }
-    }
-
-    function clearData(dbName, storeName, safeId) {
-        if (!confirm(`CẢNH BÁO: Bạn có chắc muốn XÓA VĨNH VIỄN toàn bộ Database [${dbName}]?`)) return;
+    function clearStore(dbName, storeName, safeId) {
+        if (!confirm(`CẢNH BÁO: Bạn muốn xóa sạch tất cả dữ liệu trong Store [${storeName}]?`)) return;
         
+        writeLog(`Đang làm sạch Store [${storeName}]...`);
         const req = indexedDB.open(dbName);
         req.onsuccess = (e) => {
             const db = e.target.result;
-            db.close(); 
+            const tx = db.transaction(storeName, "readwrite");
+            const store = tx.objectStore(storeName);
             
-            const delReq = indexedDB.deleteDatabase(dbName);
-            delReq.onsuccess = () => {
-                writeLog(`Đã XÓA Database: ${dbName}`);
-                showToast(`🗑️ Đã xóa DB ${dbName}`);
-                deepScan(); 
+            store.clear();
+            tx.oncomplete = () => {
+                writeLog(`Đã dọn dẹp sạch Store [${storeName}].`);
+                showToast("Đã xóa toàn bộ bản ghi trong bảng");
+                db.close();
+                deepScan();
             };
-            delReq.onerror = (err) => writeLog("Lỗi khi xóa Database: " + err.target.error);
-            delReq.onblocked = () => writeLog("Xóa bị chặn: Vui lòng đóng các tab khác đang dùng DB này.");
         };
     }
 </script>

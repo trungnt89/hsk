@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Japanese Highlight Reader</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: auto; padding: 20px; background: #f4f7f6; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    
+    /* Vùng hiển thị văn bản */
+    #text-display { 
+      font-size: 1.8em; 
+      line-height: 1.8; 
+      margin-bottom: 20px; 
+      min-height: 100px;
+      white-space: pre-wrap;
+    }
+
+    /* Style cho chữ đang được đọc */
+    .char { transition: background 0.1s; border-radius: 3px; padding: 0 1px; }
+    .highlight { background-color: #ffeb3b; color: #000; font-weight: bold; box-shadow: 0 0 5px #ffeb3b; }
+
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    select, button { padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 1rem; cursor: pointer; }
+    button { background: #2563eb; color: white; border: none; font-weight: bold; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; }
+    
+    textarea { width: 100%; height: 100px; margin-bottom: 10px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h3>🎙️ Đọc và Đánh dấu (Highlight)</h3>
+  
+  <textarea id="input-text" placeholder="Nhập tiếng Nhật vào đây...">日本語の勉強はとても楽しいです。頑張りましょう！</textarea>
+
+  <div class="controls">
+    <select id="voice-select"><option>Đang tải giọng đọc...</option></select>
+    <button id="btn-play">▶️ Chạy</button>
+    <button id="btn-stop" style="background:#dc2626">⏹ Dừng</button>
+  </div>
+
+  <div id="text-display"></div>
+</div>
+
+<script>
+  const synth = window.speechSynthesis;
+  const inputText = document.getElementById('input-text');
+  const textDisplay = document.getElementById('text-display');
+  const voiceSelect = document.getElementById('voice-select');
+  const btnPlay = document.getElementById('btn-play');
+  const btnStop = document.getElementById('btn-stop');
+
+  let voices = [];
+
+  // 1. Tải danh sách giọng đọc hệ thống
+  function loadVoices() {
+    voices = synth.getVoices();
+    voiceSelect.innerHTML = voices
+      .filter(v => v.lang.includes('ja'))
+      .map(v => `<option value="${v.name}">${v.name} (${v.lang})</option>`)
+      .join('') || '<option>Không tìm thấy giọng Nhật</option>';
+  }
+
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }
+  loadVoices();
+
+  // 2. Hàm chuẩn bị văn bản (chia nhỏ thành span)
+  function prepareDisplay(text) {
+    textDisplay.innerHTML = text.split('').map((char, index) => 
+      `<span class="char" id="c-${index}">${char}</span>`
+    ).join('');
+  }
+
+  // 3. Logic chính: Phát âm và Highlight
+  function speak() {
+    if (synth.speaking) {
+      console.log("Đang đọc dở, vui lòng dừng trước.");
+      return;
+    }
+
+    const content = inputText.value.trim();
+    if (!content) return;
+
+    prepareDisplay(content);
+    
+    const utter = new SpeechSynthesisUtterance(content);
+    
+    // Chọn giọng đã chọn
+    const selectedVoice = voices.find(v => v.name === voiceSelect.value);
+    if (selectedVoice) utter.voice = selectedVoice;
+
+    // Tốc độ đọc
+    utter.rate = 1.0;
+
+    // SỰ KIỆN QUAN TRỌNG: boundary (khi đọc đến ký tự nào đó)
+    utter.onboundary = (event) => {
+      // event.charIndex là vị trí ký tự trong chuỗi gốc
+      const index = event.charIndex;
+      
+      // Xóa highlight cũ
+      document.querySelectorAll('.char').forEach(el => el.classList.remove('highlight'));
+      
+      // Thêm highlight mới
+      const currentChar = document.getElementById(`c-${index}`);
+      if (currentChar) {
+        currentChar.classList.add('highlight');
+        // Tự động cuộn nếu văn bản quá dài
+        currentChar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    utter.onend = () => {
+      console.log("Kết thúc.");
+      document.querySelectorAll('.char').forEach(el => el.classList.remove('highlight'));
+    };
+
+    utter.onerror = (err) => console.error("Lỗi TTS:", err);
+
+    synth.speak(utter);
+  }
+
+  // Event Listeners
+  btnPlay.addEventListener('click', () => {
+    synth.cancel(); // Đảm bảo không bị chồng âm
+    speak();
+  });
+
+  btnStop.addEventListener('click', () => {
+    synth.cancel();
+    document.querySelectorAll('.char').forEach(el => el.classList.remove('highlight'));
+  });
+
+  // Khởi tạo ban đầu
+  prepareDisplay(inputText.value);
+</script>
+
+</body>
+</html>

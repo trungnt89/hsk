@@ -124,6 +124,7 @@ function toggleAudio() {
   if (!isAudioEnabled) {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (typeof stopAllAudio === "function") stopAllAudio();
+    setPlayBtnActive(false);
   }
   
   updateAudioButton();
@@ -173,17 +174,24 @@ function prevPage() { navigate(currentIndex - 1); }
 
 async function playCurrent() {
   const item = texts[currentIndex];
-  if(!item || !item.ja || !isAudioEnabled) return;
+  if (!item || !item.ja || !isAudioEnabled) return;
   
   setPlayBtnActive(true);
-  await speakCommon({ 
-    text: item.ja, 
-    voice: voiceEl().value, 
-    rate: rateEl().value, 
-    filename: "japanese_practice" 
-  });
-  
-  onAudioEnded();
+  try {
+    await speakCommon({ 
+      text: item.ja, 
+      voice: voiceEl().value, 
+      rate: rateEl().value, 
+      filename: "japanese_practice" 
+    });
+  } finally {
+    // Chỉ chạy tiếp onAudioEnded nếu âm thanh vẫn đang được cho phép
+    if (isAudioEnabled) {
+      onAudioEnded();
+    } else {
+      setPlayBtnActive(false);
+    }
+  }
 }
 
 function onAudioEnded() {

@@ -1,23 +1,24 @@
 /**
- * Japanese Lookup Module - Kanji Support Version
- * Chức năng: Tự động trích xuất Romaji từ Kanji và dịch nghĩa.
+ * Japanese Lookup Module - Cross-platform Version
+ * Hỗ trợ: Desktop, iPhone (Safari/Chrome), Android.
  */
 
 const JapaneseLookup = (() => {
-  // Thêm dt=rm để yêu cầu Google trả về Transliteration (Romaji cho Kanji)
   const TRANSLATE_API = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=vi&dt=t&dt=rm&q=";
   
   const style = document.createElement('style');
   style.textContent = `
     .ja-lookup-popup {
-      position: absolute; z-index: 10000; background: #fff; border: 2px solid #2563eb;
-      border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      font-family: system-ui, -apple-system, sans-serif; max-width: 280px;
-      pointer-events: none; line-height: 1.4;
+      position: absolute; z-index: 99999; background: #fff; border: 1px solid #2563eb;
+      border-radius: 12px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      font-family: system-ui, -apple-system; max-width: 250px;
+      pointer-events: auto; line-height: 1.4; font-weight: normal;
     }
-    .ja-lookup-word { color: #1e40af; font-weight: bold; font-size: 1.25em; display: block; margin-bottom: 2px; }
-    .ja-lookup-romaji { color: #64748b; font-size: 0.95em; font-style: italic; display: block; margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
-    .ja-lookup-meaning { color: #0f172a; font-size: 1em; font-weight: 500; }
+    .ja-lookup-word { color: #1e40af; font-size: 1.2em; display: block; margin-bottom: 2px; }
+    .ja-lookup-romaji { color: #64748b; font-size: 0.9em; font-style: italic; display: block; margin-bottom: 6px; }
+    .ja-lookup-meaning { color: #0f172a; font-size: 1em; white-space: pre-wrap; }
+    /* Đảm bảo text trong popup không bị bôi đen ngược lại */
+    .ja-lookup-popup * { user-select: none; -webkit-user-select: none; }
   `;
   document.head.appendChild(style);
 
@@ -39,9 +40,15 @@ const JapaneseLookup = (() => {
     if (!text || !isJapanese(text)) return;
 
     createPopup();
-    popup.innerHTML = `<div class="ja-lookup-meaning">⌛ Đang tra Kanji...</div>`;
-    popup.style.left = `${x}px`;
-    popup.style.top = `${y + 25}px`;
+    popup.innerHTML = `<div class="ja-lookup-meaning">⌛...</div>`;
+    
+    // Xử lý vị trí để không bị tràn màn hình mobile
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const posX = Math.min(x + scrollX, window.innerWidth - 260); 
+    
+    popup.style.left = `${posX}px`;
+    popup.style.top = `${y + scrollY + 20}px`;
     popup.style.display = 'block';
 
     try {
@@ -50,40 +57,45 @@ const JapaneseLookup = (() => {
       
       const meaning = data[0][0][0];
       let romaji = "";
-
-      // Thuật toán quét mảng: Tìm kiếm chuỗi Romaji trong cấu trúc đa tầng của Google
       if (data[0]) {
         for (let i = 0; i < data[0].length; i++) {
-          // Google thường để Romaji ở index 3 hoặc 2 của các mảng con cuối cùng
-          if (data[0][i][3]) {
-            romaji = data[0][i][3];
-            break;
-          }
+          if (data[0][i][3]) { romaji = data[0][i][3]; break; }
         }
       }
 
       popup.innerHTML = `
         <span class="ja-lookup-word">${text}</span>
-        <span class="ja-lookup-romaji">${romaji ? `[ ${romaji} ]` : '[ Không có cách đọc ]'}</span>
+        <span class="ja-lookup-romaji">${romaji ? `[ ${romaji} ]` : ''}</span>
         <div class="ja-lookup-meaning">🇻🇳 ${meaning}</div>
       `;
     } catch (e) {
-      popup.innerHTML = `<div class="ja-lookup-meaning">❌ Lỗi kết nối</div>`;
+      popup.style.display = 'none';
     }
   }
 
-  function init() {
-    document.addEventListener('mouseup', (e) => {
-      let selectedText = window.getSelection().toString().trim();
+  function handleSelection(e) {
+    // Đợi một chút để hệ thống cập nhật Selection trên iOS
+    setTimeout(() => {
+      const selection = window.getSelection();
+      const selectedText = selection.toString().trim();
+      
       if (selectedText && isJapanese(selectedText)) {
-        lookup(selectedText, e.pageX, e.pageY);
+        // Lấy tọa độ điểm chạm hoặc chuột
+        const rect = selection.getRangeAt(0).getBoundingClientRect();
+        lookup(selectedText, rect.left, rect.bottom);
       } else {
         if (popup) popup.style.display = 'none';
       }
-    });
+    }, 100);
+  }
+
+  function init() {
+    // Hỗ trợ cả Desktop (mouseup) và Mobile (touchend)
+    document.addEventListener('mouseup', handleSelection);
+    document.addEventListener('touchend', handleSelection);
 
     document.addEventListener('mousedown', (e) => {
-      if (popup && e.target !== popup) popup.style.display = 'none';
+      if (popup && !popup.contains(e.target)) popup.style.display = 'none';
     });
   }
 

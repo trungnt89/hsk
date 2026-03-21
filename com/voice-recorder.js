@@ -1,165 +1,173 @@
+/**
+ * Voice Recorder Module - Fixed Scoping, Layout & Loading State
+ */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
-const DB_NAME = "VoiceRecorderDB";
-const DB_STORE = "audios";
-
 let mediaRecorder;
 let audioChunks = [];
 
+const getContextId = () => {
+    const pageInfoEl = document.getElementById('pageInfo');
+    return pageInfoEl ? pageInfoEl.innerText.replace(/\s+/g, '').replace(/\//g, '_') : "default";
+};
+
+const style = document.createElement('style');
+style.textContent = `
+    .vr-top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 15px; z-index: 9999; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .vr-btn-icon { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #cbd5e1; cursor: pointer; font-size: 18px; background: #fff; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; }
+    .vr-btn-rec.active { background: #fee2e2; border-color: #dc2626; animation: vr-pulse 1.5s infinite; }
+    
+    /* Loading Animation */
+    .vr-loading { animation: vr-spin 1s linear infinite; display: inline-block; pointer-events: none; }
+    @keyframes vr-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .vr-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 10px; padding: 1px 5px; border-radius: 10px; border: 2px solid #fff; }
+    .vr-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(2px); }
+    .vr-overlay.show { display: flex; }
+    .vr-modal { background: white; width: 95%; max-width: 420px; border-radius: 12px; padding: 30px 15px 15px 15px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .vr-close-modal { position: absolute; top: 8px; right: 8px; border: none; background: none; font-size: 22px; cursor: pointer; color: #cbd5e1; line-height: 1; }
+    .vr-close-modal:hover { color: #64748b; }
+    .vr-list { max-height: 320px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 5px; }
+    .vr-item { border: 1px solid #f1f5f9; border-radius: 10px; padding: 8px; background: #fff; display: flex; align-items: center; gap: 10px; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .vr-iframe-wrap { flex: 1; height: 48px; overflow: hidden; border-radius: 6px; background: #000; }
+    .vr-item iframe { width: 100%; height: 100%; border: none; display: block; }
+    .vr-item-del { width: 32px; height: 32px; border: 1px solid #fecaca; background: #fff; color: #ef4444; cursor: pointer; font-size: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; }
+    .vr-item-del:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+    @keyframes vr-pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
+    body { padding-top: 55px !important; }
+`;
+document.head.appendChild(style);
+
 const VoiceRecorder = {
-    db: null,
-
-    init: async function() {
-        await this.initDB();
-        this.injectCSS();
-        this.injectUI();
-        this.load(true);
-        console.log("[VR Log] Module Initialized");
-    },
-
-    initDB: () => new Promise(res => {
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = e => e.target.result.createObjectStore(DB_STORE);
-        req.onsuccess = e => { VoiceRecorder.db = e.target.result; res(); };
-    }),
-
-    injectCSS: () => {
-        const style = document.createElement('style');
-        style.textContent = `
-            .vr-bar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: #fff; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 15px; z-index: 9999; }
-            .vr-btn { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #ccc; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; }
-            .vr-btn.active { background: #ffebeb; border-color: red; animation: pulse 1s infinite; }
-            .vr-badge { position: absolute; top: -5px; right: -5px; background: red; color: white; font-size: 10px; padding: 2px 5px; border-radius: 10px; }
-            .vr-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 10000; align-items: center; justify-content: center; }
-            .vr-modal.show { display: flex; }
-            .vr-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
-            .vr-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; border: 1px solid #eee; border-radius: 8px; transition: opacity 0.3s; }
-            audio { height: 35px; flex: 1; }
-            @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,0,0,0.4); } 100% { box-shadow: 0 0 0 10px rgba(255,0,0,0); } }
-        `;
-        document.head.appendChild(style);
-    },
-
     injectUI: () => {
-        const html = `
-            <div class="vr-bar">
-                <button id="vr-start" class="vr-btn">🎤</button>
-                <button id="vr-stop" class="vr-btn" disabled>⏹</button>
-                <button id="vr-open" class="vr-btn">📂<span id="vr-count" class="vr-badge">0</span></button>
+        const bar = document.createElement('div');
+        bar.className = 'vr-top-bar';
+        bar.innerHTML = `
+            <button id="vr-start" class="vr-btn-icon">🎤</button>
+            <button id="vr-stop" class="vr-btn-icon" disabled>⏹</button>
+            <button id="vr-open-history" class="vr-btn-icon">📂<span id="vr-count" class="vr-badge">0</span></button>
+        `;
+        document.body.appendChild(bar);
+
+        const overlay = document.createElement('div');
+        overlay.id = 'vr-overlay';
+        overlay.className = 'vr-overlay';
+        overlay.innerHTML = `
+            <div class="vr-modal">
+                <button class="vr-close-modal" onclick="document.getElementById('vr-overlay').classList.remove('show')">✕</button>
+                <div style="font-weight:bold; margin-bottom:10px; font-size: 15px; color: #475569; padding-left: 5px;">Lịch sử: <span id="vr-pid"></span></div>
+                <div id="vr-list" class="vr-list">Đang tải...</div>
             </div>
-            <div id="vr-overlay" class="vr-modal">
-                <div class="vr-content">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                        <strong>Lịch sử ghi âm</strong>
-                        <button onclick="document.getElementById('vr-overlay').classList.remove('show')">✕</button>
-                    </div>
-                    <div id="vr-list">Đang tải...</div>
-                </div>
-            </div>`;
-        document.body.insertAdjacentHTML('beforeend', html);
-        document.getElementById('vr-start').onclick = () => VoiceRecorder.start();
-        document.getElementById('vr-stop').onclick = () => VoiceRecorder.stop();
-        document.getElementById('vr-open').onclick = () => {
-            document.getElementById('vr-overlay').classList.add('show');
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('vr-start').onclick = VoiceRecorder.start;
+        document.getElementById('vr-stop').onclick = VoiceRecorder.stop;
+        document.getElementById('vr-open-history').onclick = VoiceRecorder.toggle;
+        VoiceRecorder.load(true);
+    },
+
+    toggle: () => {
+        const ovl = document.getElementById('vr-overlay');
+        ovl.classList.toggle('show');
+        if (ovl.classList.contains('show')) {
+            document.getElementById('vr-pid').innerText = getContextId();
             VoiceRecorder.load();
-        };
-    },
-
-    start: async function() {
-        audioChunks = [];
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mime = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
-        mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => this.upload();
-        mediaRecorder.start();
-        document.getElementById('vr-start').classList.add('active');
-        document.getElementById('vr-stop').disabled = false;
-    },
-
-    stop: () => {
-        mediaRecorder.stop();
-        document.getElementById('vr-start').classList.remove('active');
-        document.getElementById('vr-stop').disabled = true;
-    },
-
-    upload: async function() {
-        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = async () => {
-            const base64 = reader.result.split(',')[1];
-            const pid = document.getElementById('pageInfo')?.innerText.trim() || "default";
-            await fetch(GAS_URL, {
-                method: "POST", mode: "no-cors",
-                body: JSON.stringify({ action: "uploadVoice", base64, fileName: `Speak_${pid}_${Date.now()}.webm` })
-            });
-            setTimeout(() => this.load(true), 1500);
-        };
-    },
-
-    load: async function(silent = false) {
-        const pid = document.getElementById('pageInfo')?.innerText.trim() || "default";
-        const res = await fetch(`${GAS_URL}?type=listVoice&lessonId=${pid}`);
-        const data = await res.json();
-        document.getElementById('vr-count').innerText = data.length;
-        if (silent) return;
-
-        const list = document.getElementById('vr-list');
-        list.innerHTML = data.length ? "" : "Trống";
-        data.forEach(f => {
-            const div = document.createElement('div');
-            div.className = 'vr-item';
-            div.id = `item-${f.id}`;
-            div.innerHTML = `<div id="play-${f.id}" style="flex:1">⏳</div><button onclick="VoiceRecorder.delete('${f.id}')" style="color:red; border:none; background:none; cursor:pointer;">✕</button>`;
-            list.appendChild(div);
-            this.prepareAudio(f.id);
-        });
-    },
-
-    prepareAudio: async function(id) {
-        const container = document.getElementById(`play-${id}`);
-        const tx = this.db.transaction(DB_STORE, "readonly");
-        const cached = await new Promise(r => {
-            const req = tx.objectStore(DB_STORE).get(id);
-            req.onsuccess = () => r(req.result);
-        });
-
-        const toBase64Play = (blob) => new Promise(r => {
-            const fr = new FileReader();
-            fr.onloadend = () => r(fr.result);
-            fr.readAsDataURL(blob);
-        });
-
-        if (cached) {
-            const src = await toBase64Play(cached);
-            container.innerHTML = `<audio controls playsinline src="${src}"></audio>`;
-        } else {
-            const res = await fetch(`${GAS_URL}?type=getFileBlob&fileId=${id}`);
-            const json = await res.json();
-            if (json.status === "success") {
-                const bChars = atob(json.data);
-                const bNums = new Array(bChars.length);
-                for (let i = 0; i < bChars.length; i++) bNums[i] = bChars.charCodeAt(i);
-                const blob = new Blob([new Uint8Array(bNums)], { type: json.contentType });
-                
-                const wrTx = this.db.transaction(DB_STORE, "readwrite");
-                wrTx.objectStore(DB_STORE).put(blob, id);
-                
-                const src = await toBase64Play(blob);
-                container.innerHTML = `<audio controls playsinline src="${src}"></audio>`;
-            }
         }
     },
 
-    delete: async function(id) {
-        if (!confirm("Xóa?")) return;
-        const el = document.getElementById(`item-${id}`);
-        el.style.opacity = "0.3";
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteVoice", fileId: id }) });
-        const tx = this.db.transaction(DB_STORE, "readwrite");
-        tx.objectStore(DB_STORE).delete(id);
-        setTimeout(() => { el.remove(); this.load(true); }, 300);
+    start: async () => {
+        try {
+            audioChunks = [];
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = VoiceRecorder.upload;
+            mediaRecorder.start();
+            document.getElementById('vr-start').classList.add('active');
+            document.getElementById('vr-start').disabled = true;
+            document.getElementById('vr-stop').disabled = false;
+        } catch (e) { alert("Micro Error!"); }
+    },
+
+    stop: () => {
+        if (mediaRecorder) mediaRecorder.stop();
+        document.getElementById('vr-start').classList.remove('active');
+        document.getElementById('vr-start').disabled = false;
+        document.getElementById('vr-stop').disabled = true;
+    },
+
+    upload: async () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const reader = new FileReader();
+        const pid = getContextId();
+        const stopBtn = document.getElementById('vr-stop');
+        
+        // Hiển thị loading trên nút dừng khi đang tải lên
+        stopBtn.innerHTML = '<span class="vr-loading">⏳</span>';
+        stopBtn.disabled = true;
+
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+            const base64 = reader.result.split(',')[1];
+            await fetch(GAS_URL, {
+                method: "POST", mode: "no-cors",
+                body: JSON.stringify({ action: "uploadVoice", base64, fileName: `PAGE_${pid}_${Date.now()}.webm`, lessonId: pid })
+            });
+            setTimeout(() => {
+                VoiceRecorder.load(true);
+                stopBtn.innerHTML = '⏹';
+            }, 1000);
+        };
+    },
+
+    load: async (silent = false) => {
+        const pid = getContextId();
+        const listEl = document.getElementById('vr-list');
+        try {
+            const res = await fetch(`${GAS_URL}?type=listVoice&lessonId=${pid}&_t=${Date.now()}`);
+            const data = await res.json();
+            document.getElementById('vr-count').innerText = data.length;
+            if (!silent) {
+                listEl.innerHTML = data.map(f => `
+                    <div class="vr-item" id="vr-item-${f.id}">
+                        <div class="vr-iframe-wrap">
+                            <iframe src="https://drive.google.com/file/d/${f.id}/preview"></iframe>
+                        </div>
+                        <button class="vr-item-del" onclick="VoiceRecorder.delete('${f.id}')">✕</button>
+                    </div>
+                `).join('') || '<div style="text-align:center; color:#94a3b8;">Trống</div>';
+            }
+        } catch (e) { if(!silent) listEl.innerHTML = "Lỗi tải dữ liệu."; }
+    },
+
+    delete: async (id) => {
+        if (!confirm("Xóa bản ghi này?")) return;
+        const btnDel = document.querySelector(`#vr-item-${id} .vr-item-del`);
+        if (btnDel) {
+            btnDel.innerHTML = '<span class="vr-loading">⏳</span>';
+            btnDel.disabled = true;
+        }
+        
+        try {
+            await fetch(GAS_URL, { 
+                method: "POST", 
+                mode: "no-cors", 
+                body: JSON.stringify({ action: "deleteVoice", fileId: id }) 
+            });
+            setTimeout(() => VoiceRecorder.load(true), 800);
+        } catch (err) {
+            alert("Lỗi khi xóa!");
+            VoiceRecorder.load(true);
+        }
     }
 };
 
-VoiceRecorder.init();
+const initVoiceRecorder = () => {
+    window.VoiceRecorder = VoiceRecorder; 
+    VoiceRecorder.injectUI();
+};
+
+if (document.readyState === 'complete') initVoiceRecorder();
+else window.addEventListener('load', initVoiceRecorder);
+
+export default VoiceRecorder;

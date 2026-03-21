@@ -1,79 +1,149 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiểm tra phát Audio Google Drive</title>
-    <style>
-        body { font-family: -apple-system, sans-serif; line-height: 1.6; padding: 20px; background: #f0f2f5; color: #1c1e21; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .case { margin-bottom: 30px; padding: 20px; border: 1px solid #e1e4e8; border-radius: 8px; }
-        .case-1 { border-left: 5px solid #ff4444; } /* Trường hợp lỗi */
-        .case-2 { border-left: 5px solid #00c851; } /* Trường hợp đúng */
-        h2 { margin-top: 0; font-size: 18px; }
-        code { background: #f4f4f4; padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 13px; display: block; margin: 10px 0; white-space: pre-wrap; }
-        audio { width: 100%; margin-top: 10px; }
-        .status { font-size: 12px; margin-top: 8px; font-weight: bold; }
-        .error { color: #dc3545; }
-        .success { color: #28a745; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Audio Google Drive - All Cases</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f6f7;
+    padding: 20px;
+}
+.container {
+    max-width: 700px;
+    margin: auto;
+}
+.case {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border-left: 6px solid #ccc;
+}
+.case h3 {
+    margin: 0 0 10px;
+}
+.success { border-color: green; }
+.fail { border-color: red; }
+audio, iframe {
+    width: 100%;
+    margin-top: 10px;
+}
+.status {
+    font-size: 13px;
+    margin-top: 5px;
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
-    <h1>Test Audio Google Drive</h1>
-    <p style="font-size: 14px; color: #606770;">ID File: <code>1u2w39KKQfWBp4s17T0MGt3G8_YxZBIBe</code></p>
+<h1>Test Audio Google Drive</h1>
 
-    <div class="case case-1">
-        <h2>Trường hợp 1: Có <code>crossorigin="anonymous"</code></h2>
-        <p style="font-size: 13px;">Thường bị kẹt ở 0:00 vì Google Drive không gửi header CORS.</p>
-        <audio id="audio1" controls crossorigin="anonymous" preload="metadata">
-            <source src="https://drive.google.com/uc?export=download&id=1u2w39KKQfWBp4s17T0MGt3G8_YxZBIBe" type="audio/webm">
-        </audio>
-        <div id="status1" class="status">Đang kiểm tra...</div>
-    </div>
+<!-- ID FILE -->
+<script>
+const FILE_ID = "1u2w39KKQfWBp4s17T0MGt3G8_YxZBIBe";
+</script>
 
-    <div class="case case-2">
-        <h2>Trường hợp 2: KHÔNG CÓ <code>crossorigin</code></h2>
-        <p style="font-size: 13px;">Cách này nạp dữ liệu như một request thông thường, dễ hiện thời gian hơn.</p>
-        <audio id="audio2" controls preload="metadata">
-            <source src="https://docs.google.com/uc?id=1u2w39KKQfWBp4s17T0MGt3G8_YxZBIBe" type="audio/webm">
-        </audio>
-        <div id="status2" class="status">Đang kiểm tra...</div>
-    </div>
+<!-- CASE 1 -->
+<div class="case fail">
+<h3>❌ Case 1: Direct link (export=download)</h3>
+<audio id="audio1" controls>
+    <source id="src1" type="audio/webm">
+</audio>
+<div id="status1" class="status">Đang kiểm tra...</div>
+</div>
 
-    <div style="font-size: 12px; color: #8a8d91; text-align: center;">
-        Nếu cả 2 đều báo lỗi, hãy kiểm tra lại quyền "Chia sẻ công khai" trên Drive.
-    </div>
+<!-- CASE 2 -->
+<div class="case fail">
+<h3>❌ Case 2: docs.google.com</h3>
+<audio id="audio2" controls>
+    <source id="src2" type="audio/webm">
+</audio>
+<div id="status2" class="status">Đang kiểm tra...</div>
+</div>
+
+<!-- CASE 3 -->
+<div class="case success">
+<h3>✅ Case 3: Preview (Google player)</h3>
+<iframe id="iframePreview" height="80" allow="autoplay"></iframe>
+<div class="status">Luôn chạy được (Google player)</div>
+</div>
+
+<!-- CASE 4 -->
+<div class="case">
+<h3>⚠️ Case 4: Fetch → Blob</h3>
+<button onclick="loadBlob()">Load & Play</button>
+<audio id="audioBlob" controls></audio>
+<div id="statusBlob" class="status">Chưa load</div>
+</div>
+
 </div>
 
 <script>
-    // Hàm kiểm tra trạng thái nạp của thẻ audio
-    function checkAudio(id, statusId) {
-        const audio = document.getElementById(id);
-        const status = document.getElementById(statusId);
+// GÁN URL
+document.getElementById("src1").src =
+    `https://drive.google.com/uc?export=download&id=${FILE_ID}`;
 
-        audio.onloadedmetadata = function() {
-            status.innerHTML = "✅ Thành công: Đã nhận được thời gian file (" + Math.round(audio.duration) + " giây)";
-            status.className = "status success";
-        };
+document.getElementById("src2").src =
+    `https://docs.google.com/uc?id=${FILE_ID}`;
 
-        audio.onerror = function() {
-            status.innerHTML = "❌ Thất bại: Trình duyệt bị chặn hoặc link sai.";
-            status.className = "status error";
-        };
-        
-        // Timeout sau 5 giây nếu không load được metadata (lỗi 0:00)
-        setTimeout(() => {
-            if (audio.readyState === 0) {
-                status.innerHTML = "❌ Lỗi: Bị kẹt ở 0:00 (CORS hoặc quyền truy cập).";
-                status.className = "status error";
-            }
-        }, 5000);
+document.getElementById("iframePreview").src =
+    `https://drive.google.com/file/d/${FILE_ID}/preview`;
+
+
+// CHECK AUDIO
+function checkAudio(audioId, statusId) {
+    const audio = document.getElementById(audioId);
+    const status = document.getElementById(statusId);
+
+    audio.onloadedmetadata = () => {
+        status.innerHTML = "✅ OK - duration: " + Math.round(audio.duration) + "s";
+        status.style.color = "green";
+    };
+
+    audio.onerror = () => {
+        status.innerHTML = "❌ Lỗi load";
+        status.style.color = "red";
+    };
+
+    setTimeout(() => {
+        if (audio.readyState === 0) {
+            status.innerHTML = "❌ Kẹt 0:00";
+            status.style.color = "red";
+        }
+    }, 5000);
+}
+
+checkAudio("audio1", "status1");
+checkAudio("audio2", "status2");
+
+
+// FETCH BLOB
+async function loadBlob() {
+    const status = document.getElementById("statusBlob");
+    const audio = document.getElementById("audioBlob");
+
+    try {
+        status.innerHTML = "Đang tải...";
+        const res = await fetch(
+            `https://drive.google.com/uc?export=download&id=${FILE_ID}`
+        );
+
+        const blob = await res.blob();
+        audio.src = URL.createObjectURL(blob);
+
+        status.innerHTML = "✅ Đã load xong (play được)";
+        status.style.color = "green";
+
+    } catch (e) {
+        status.innerHTML = "❌ Lỗi fetch";
+        status.style.color = "red";
     }
-
-    checkAudio('audio1', 'status1');
-    checkAudio('audio2', 'status2');
+}
 </script>
 
 </body>

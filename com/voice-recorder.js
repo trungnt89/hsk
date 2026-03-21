@@ -1,4 +1,4 @@
-const GAS_URL = "VUI_LONG_THAY_URL_TRIEN_KHAI_CUA_BAN_TAI_DAY";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 const DB_NAME = "VoiceRecorderDB";
 const DB_STORE = "audios";
 

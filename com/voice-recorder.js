@@ -1,5 +1,5 @@
 /**
- * Voice Recorder Module - Fixed Delete & Layout
+ * Voice Recorder Module - Fixed Scoping & Layout
  */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 let mediaRecorder;
@@ -22,14 +22,11 @@ style.textContent = `
     .vr-close-modal { position: absolute; top: 8px; right: 8px; border: none; background: none; font-size: 22px; cursor: pointer; color: #cbd5e1; line-height: 1; }
     .vr-close-modal:hover { color: #64748b; }
     .vr-list { max-height: 320px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 5px; }
-    
-    /* Layout Item: Iframe | Button */
     .vr-item { border: 1px solid #f1f5f9; border-radius: 10px; padding: 8px; background: #fff; display: flex; align-items: center; gap: 10px; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     .vr-iframe-wrap { flex: 1; height: 48px; overflow: hidden; border-radius: 6px; background: #000; }
     .vr-item iframe { width: 100%; height: 100%; border: none; display: block; }
     .vr-item-del { width: 32px; height: 32px; border: 1px solid #fecaca; background: #fff; color: #ef4444; cursor: pointer; font-size: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; }
     .vr-item-del:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
-    
     @keyframes vr-pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
     body { padding-top: 55px !important; }
 `;
@@ -134,14 +131,12 @@ const VoiceRecorder = {
         const el = document.getElementById(`vr-item-${id}`);
         if (el) el.style.opacity = "0.3";
         
-        // Gửi request xóa. Lưu ý: GAS cần xử lý action "deleteVoice" với fileId
         try {
             await fetch(GAS_URL, { 
                 method: "POST", 
                 mode: "no-cors", 
                 body: JSON.stringify({ action: "deleteVoice", fileId: id }) 
             });
-            // Vì no-cors không đọc được response, ta đợi 1 lát rồi reload list
             setTimeout(() => VoiceRecorder.load(true), 800);
         } catch (err) {
             alert("Lỗi khi xóa!");
@@ -150,7 +145,13 @@ const VoiceRecorder = {
     }
 };
 
-if (document.readyState === 'complete') VoiceRecorder.injectUI();
-else window.addEventListener('load', VoiceRecorder.injectUI);
+// Khởi tạo và gán vào window để tránh lỗi ReferenceError
+const initVoiceRecorder = () => {
+    window.VoiceRecorder = VoiceRecorder; 
+    VoiceRecorder.injectUI();
+};
+
+if (document.readyState === 'complete') initVoiceRecorder();
+else window.addEventListener('load', initVoiceRecorder);
 
 export default VoiceRecorder;

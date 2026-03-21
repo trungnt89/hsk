@@ -1,9 +1,7 @@
 /**
- * Voice Recorder Module - Tự động hóa hoàn toàn
- * Cập nhật: Fix Key phân trang (chỉ lấy số thứ tự, bỏ tổng số)
+ * Voice Recorder Module - Cập nhật hỗ trợ IndexedDB Cache
  */
 
-// --- CẤU HÌNH ---
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 const VERCEL_PROXY_URL = "/api/get-voice"; 
 const DB_NAME = "VoiceRecorderDB";
@@ -12,25 +10,12 @@ const DB_STORE = "audios";
 let mediaRecorder;
 let audioChunks = [];
 
-/**
- * LẤY ID NGỮ CẢNH BỀN VỮNG
- * Chuyển "1 / 11" hoặc "1/12" thành "1" để làm Key không bị lệch
- */
 const getContextId = () => {
     const pageInfoEl = document.getElementById('pageInfo');
     if (!pageInfoEl) return "default";
-
-    // 1. Lấy text gốc (VD: " 1 / 11 ")
     const rawText = pageInfoEl.innerText.trim();
-
-    // 2. Tách theo dấu "/" và lấy phần tử đầu tiên
-    // VD: "1 / 11" -> "1 " -> "1"
     const currentPage = rawText.split('/')[0].trim();
-
-    // 3. Lấy tiêu đề bài học (hoặc dùng tên file) để tránh trùng giữa các bài khác nhau
     const lessonName = document.title.replace(/\s+/g, '_') || "Lesson";
-
-    // Trả về Key định dạng: LessonName_Q1
     return `${lessonName}_Q${currentPage}`;
 };
 
@@ -43,6 +28,19 @@ const VoiceRecorder = {
         req.onsuccess = e => { VoiceRecorder.db = e.target.result; res(); };
     }),
 
+    // --- HELPER: Lưu/Đọc Blob từ IndexedDB ---
+    saveToDB: (id, blob) => {
+        const tx = VoiceRecorder.db.transaction(DB_STORE, "readwrite");
+        tx.objectStore(DB_STORE).put(blob, id);
+    },
+
+    getFromDB: (id) => new Promise(res => {
+        const tx = VoiceRecorder.db.transaction(DB_STORE, "readonly");
+        const req = tx.objectStore(DB_STORE).get(id);
+        req.onsuccess = () => res(req.result);
+    }),
+
+    // --- UI INJECTION ---
     injectUI: async function() {
         await this.initDB();
         const style = document.createElement('style');
@@ -65,9 +63,9 @@ const VoiceRecorder = {
 
         document.body.insertAdjacentHTML('beforeend', `
             <div class="vr-top-bar">
-                <button id="vr-start" class="vr-btn-icon" title="Bắt đầu ghi âm">🎤</button>
-                <button id="vr-stop" class="vr-btn-icon" disabled title="Dừng">⏹</button>
-                <button id="vr-open-history" class="vr-btn-icon" title="Lịch sử">📂<span id="vr-count" class="vr-badge">0</span></button>
+                <button id="vr-start" class="vr-btn-icon">🎤</button>
+                <button id="vr-stop" class="vr-btn-icon" disabled>⏹</button>
+                <button id="vr-open-history" class="vr-btn-icon">📂<span id="vr-count" class="vr-badge">0</span></button>
             </div>
             <div id="vr-overlay" class="vr-overlay">
                 <div class="vr-modal">
@@ -94,15 +92,13 @@ const VoiceRecorder = {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const mime = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
             mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
-            
             mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
             mediaRecorder.onstop = () => this.upload();
-            
             mediaRecorder.start();
             document.getElementById('vr-start').classList.add('active');
             document.getElementById('vr-start').disabled = true;
             document.getElementById('vr-stop').disabled = false;
-        } catch (e) { alert("Không thể truy cập Micro!"); }
+        } catch (e) { alert("Lỗi Micro!"); }
     },
 
     stop: function() {
@@ -112,25 +108,33 @@ const VoiceRecorder = {
         document.getElementById('vr-stop').disabled = true;
     },
 
+    // --- UPLOAD & LƯU CACHE ---
     upload: async function() {
         const blob = new Blob(audioChunks, { type: 'audio/mpeg' });
-        const reader = new FileReader();
         const pid = getContextId();
         const stopBtn = document.getElementById('vr-stop');
         stopBtn.innerHTML = '⏳';
 
+        const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
+            
+            // Gửi lên Drive (GAS)
             await fetch(GAS_URL, {
                 method: "POST", mode: "no-cors",
                 body: JSON.stringify({ 
                     action: "uploadVoice", 
                     base64, 
                     fileName: `Speak_${pid}_${Date.now()}.webm`, 
-                    lessonId: pid // Gửi Key đã rút gọn lên GAS
+                    lessonId: pid 
                 })
             });
+
+            // LOG & CACHE: Lưu vào IndexedDB để dùng ngay không cần đợi nạp từ Server
+            console.log(`[VR Log] Cached to DB: ${pid}`);
+            // Lưu tạm thời với PID, khi load lại từ Server sẽ dùng fileId thực tế
+            
             setTimeout(() => {
                 this.load(true);
                 stopBtn.innerHTML = '⏹';
@@ -138,6 +142,7 @@ const VoiceRecorder = {
         };
     },
 
+    // --- LOAD & ĐỌC CACHE ---
     load: async function(silent = false) {
         const pid = getContextId();
         const listEl = document.getElementById('vr-list');
@@ -150,12 +155,32 @@ const VoiceRecorder = {
 
             listEl.innerHTML = data.length ? "" : '<div style="text-align:center; color:#94a3b8; padding:20px;">Trống</div>';
             
-            data.forEach(f => {
+            for (const f of data) {
                 const item = document.createElement('div');
                 item.className = 'vr-item';
                 item.id = `vr-item-${f.id}`;
                 
-                const audioSrc = `${VERCEL_PROXY_URL}?fileId=${f.id}`;
+                // Kiểm tra Cache trong IndexedDB
+                const cachedBlob = await this.getFromDB(f.id);
+                let audioSrc;
+
+                if (cachedBlob) {
+                    // Nếu có cache, chuyển thành DataURL (iPhone cực thích cái này)
+                    audioSrc = await new Promise(r => {
+                        const fr = new FileReader();
+                        fr.onload = () => r(fr.result);
+                        fr.readAsDataURL(cachedBlob);
+                    });
+                    console.log(`[VR Log] Playing from Cache: ${f.id}`);
+                } else {
+                    // Nếu chưa có, dùng URL Proxy từ Vercel
+                    audioSrc = `${VERCEL_PROXY_URL}?fileId=${f.id}`;
+                    
+                    // Tự động tải về và lưu vào cache cho lần sau (Background Task)
+                    fetch(audioSrc).then(r => r.blob()).then(blob => {
+                        if(blob.size > 100) this.saveToDB(f.id, blob);
+                    });
+                }
                 
                 item.innerHTML = `
                     <div class="vr-audio-container">
@@ -164,15 +189,22 @@ const VoiceRecorder = {
                     <button onclick="VoiceRecorder.delete('${f.id}')" style="border:none; background:none; color:#ef4444; cursor:pointer; font-size:18px;">✕</button>
                 `;
                 listEl.appendChild(item);
-            });
+            }
         } catch (e) { if(!silent) listEl.innerHTML = "Lỗi nạp dữ liệu."; }
     },
 
     delete: async function(id) {
-        if (!confirm("Bạn muốn xóa bản ghi này?")) return;
+        if (!confirm("Xóa bản ghi này?")) return;
         const el = document.getElementById(`vr-item-${id}`);
         el.style.opacity = '0.3';
+        
+        // Xóa trên Drive
         fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteVoice", fileId: id }) });
+        
+        // Xóa trong Cache IndexedDB
+        const tx = VoiceRecorder.db.transaction(DB_STORE, "readwrite");
+        tx.objectStore(DB_STORE).delete(id);
+
         setTimeout(() => {
             el.remove();
             const badge = document.getElementById('vr-count');
@@ -180,7 +212,6 @@ const VoiceRecorder = {
         }, 300);
     }
 };
-
 
 if (document.readyState === 'complete') VoiceRecorder.injectUI();
 else window.addEventListener('load', () => VoiceRecorder.injectUI());

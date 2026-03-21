@@ -1,5 +1,5 @@
 /**
- * Voice Recorder Module - Fixed Scoping & Layout
+ * Voice Recorder Module - Fixed Scoping, Layout & Loading State
  */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 let mediaRecorder;
@@ -15,6 +15,11 @@ style.textContent = `
     .vr-top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 15px; z-index: 9999; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .vr-btn-icon { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #cbd5e1; cursor: pointer; font-size: 18px; background: #fff; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; }
     .vr-btn-rec.active { background: #fee2e2; border-color: #dc2626; animation: vr-pulse 1.5s infinite; }
+    
+    /* Loading Animation */
+    .vr-loading { animation: vr-spin 1s linear infinite; display: inline-block; pointer-events: none; }
+    @keyframes vr-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     .vr-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 10px; padding: 1px 5px; border-radius: 10px; border: 2px solid #fff; }
     .vr-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(2px); }
     .vr-overlay.show { display: flex; }
@@ -95,6 +100,12 @@ const VoiceRecorder = {
         const blob = new Blob(audioChunks, { type: 'audio/webm' });
         const reader = new FileReader();
         const pid = getContextId();
+        const stopBtn = document.getElementById('vr-stop');
+        
+        // Hiển thị loading trên nút dừng khi đang tải lên
+        stopBtn.innerHTML = '<span class="vr-loading">⏳</span>';
+        stopBtn.disabled = true;
+
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
@@ -102,7 +113,10 @@ const VoiceRecorder = {
                 method: "POST", mode: "no-cors",
                 body: JSON.stringify({ action: "uploadVoice", base64, fileName: `PAGE_${pid}_${Date.now()}.webm`, lessonId: pid })
             });
-            setTimeout(() => VoiceRecorder.load(true), 1200);
+            setTimeout(() => {
+                VoiceRecorder.load(true);
+                stopBtn.innerHTML = '⏹';
+            }, 1000);
         };
     },
 
@@ -128,8 +142,11 @@ const VoiceRecorder = {
 
     delete: async (id) => {
         if (!confirm("Xóa bản ghi này?")) return;
-        const el = document.getElementById(`vr-item-${id}`);
-        if (el) el.style.opacity = "0.3";
+        const btnDel = document.querySelector(`#vr-item-${id} .vr-item-del`);
+        if (btnDel) {
+            btnDel.innerHTML = '<span class="vr-loading">⏳</span>';
+            btnDel.disabled = true;
+        }
         
         try {
             await fetch(GAS_URL, { 
@@ -140,12 +157,11 @@ const VoiceRecorder = {
             setTimeout(() => VoiceRecorder.load(true), 800);
         } catch (err) {
             alert("Lỗi khi xóa!");
-            if (el) el.style.opacity = "1";
+            VoiceRecorder.load(true);
         }
     }
 };
 
-// Khởi tạo và gán vào window để tránh lỗi ReferenceError
 const initVoiceRecorder = () => {
     window.VoiceRecorder = VoiceRecorder; 
     VoiceRecorder.injectUI();

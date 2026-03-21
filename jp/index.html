@@ -30,7 +30,7 @@
       white-space: pre-wrap; 
       line-height: 1.8; 
       cursor: pointer;
-      clear: both;
+      font-size: 1.2em;
     }
 
     .vi-text { 
@@ -41,10 +41,8 @@
       font-style: italic; 
       white-space: pre-wrap; 
       line-height: 1.5; 
-      clear: both;
     }
 
-    /* Thẻ HR tùy chỉnh để ngăn cách */
     hr {
       border: 0;
       border-top: 1px dashed #ccc;
@@ -96,6 +94,7 @@
 
 <div class="display-box">
   <div class="ja-text" id="currentJa"></div>
+  <hr id="separator">
   <div class="vi-text" id="currentVi"></div>
 </div>
 
@@ -147,17 +146,19 @@ function renderCurrent() {
   if (!texts.length) return;
   if (currentIndex >= texts.length) currentIndex = 0;
   
-  // Hiển thị tiếng Nhật thuần túy
+  // Quan trọng: Dùng textContent để module tra từ luôn hoạt động
   jaDisplay.textContent = texts[currentIndex].ja;
+  viDisplay.textContent = texts[currentIndex].vi;
   
-  // Hiển thị thẻ hr và tiếng Việt
-  viDisplay.innerHTML = `<hr>${texts[currentIndex].vi}`;
-  
+  // Hiển thị/ẩn đường kẻ dựa trên việc có text hay không
+  document.getElementById("separator").style.display = texts[currentIndex].ja ? "block" : "none";
+
   pageInfo.textContent = `${currentIndex + 1} / ${texts.length}`;
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1 && !repeatAll);
   localStorage.setItem("lastIndex", currentIndex);
 
+  // Gọi lại module tra từ sau khi thay đổi nội dung
   if (window.JapaneseLookup && typeof window.JapaneseLookup.init === 'function') {
       window.JapaneseLookup.init();
   }

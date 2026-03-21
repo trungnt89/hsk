@@ -3,37 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Test Audio Google Drive - All Cases</title>
+<title>Audio Google Drive - Preview Only</title>
 
 <style>
 body {
     font-family: Arial, sans-serif;
     background: #f5f6f7;
-    padding: 20px;
+    padding: 30px;
 }
 .container {
-    max-width: 700px;
+    max-width: 600px;
     margin: auto;
-}
-.case {
     background: white;
-    padding: 15px;
+    padding: 20px;
     border-radius: 10px;
-    margin-bottom: 20px;
-    border-left: 6px solid #ccc;
+    text-align: center;
 }
-.case h3 {
-    margin: 0 0 10px;
-}
-.success { border-color: green; }
-.fail { border-color: red; }
-audio, iframe {
+iframe {
     width: 100%;
-    margin-top: 10px;
-}
-.status {
-    font-size: 13px;
-    margin-top: 5px;
+    height: 80px;
+    border: none;
 }
 </style>
 </head>
@@ -41,110 +30,17 @@ audio, iframe {
 <body>
 
 <div class="container">
-<h1>Test Audio Google Drive</h1>
+    <h2>🎧 Phát Audio từ Google Drive</h2>
 
-<!-- ID FILE -->
-<script>
-const FILE_ID = "1u2w39KKQfWBp4s17T0MGt3G8_YxZBIBe";
-</script>
+    <iframe 
+        src="https://drive.google.com/file/d/1u2w39KKQfWBp4s17T0MGt3G8_YxZBIBe/preview"
+        allow="autoplay">
+    </iframe>
 
-<!-- CASE 1 -->
-<div class="case fail">
-<h3>❌ Case 1: Direct link (export=download)</h3>
-<audio id="audio1" controls>
-    <source id="src1" type="audio/webm">
-</audio>
-<div id="status1" class="status">Đang kiểm tra...</div>
+    <p style="font-size: 13px; color: gray;">
+        (Dùng Google Preview - chạy ổn định)
+    </p>
 </div>
-
-<!-- CASE 2 -->
-<div class="case fail">
-<h3>❌ Case 2: docs.google.com</h3>
-<audio id="audio2" controls>
-    <source id="src2" type="audio/webm">
-</audio>
-<div id="status2" class="status">Đang kiểm tra...</div>
-</div>
-
-<!-- CASE 3 -->
-<div class="case success">
-<h3>✅ Case 3: Preview (Google player)</h3>
-<iframe id="iframePreview" height="80" allow="autoplay"></iframe>
-<div class="status">Luôn chạy được (Google player)</div>
-</div>
-
-<!-- CASE 4 -->
-<div class="case">
-<h3>⚠️ Case 4: Fetch → Blob</h3>
-<button onclick="loadBlob()">Load & Play</button>
-<audio id="audioBlob" controls></audio>
-<div id="statusBlob" class="status">Chưa load</div>
-</div>
-
-</div>
-
-<script>
-// GÁN URL
-document.getElementById("src1").src =
-    `https://drive.google.com/uc?export=download&id=${FILE_ID}`;
-
-document.getElementById("src2").src =
-    `https://docs.google.com/uc?id=${FILE_ID}`;
-
-document.getElementById("iframePreview").src =
-    `https://drive.google.com/file/d/${FILE_ID}/preview`;
-
-
-// CHECK AUDIO
-function checkAudio(audioId, statusId) {
-    const audio = document.getElementById(audioId);
-    const status = document.getElementById(statusId);
-
-    audio.onloadedmetadata = () => {
-        status.innerHTML = "✅ OK - duration: " + Math.round(audio.duration) + "s";
-        status.style.color = "green";
-    };
-
-    audio.onerror = () => {
-        status.innerHTML = "❌ Lỗi load";
-        status.style.color = "red";
-    };
-
-    setTimeout(() => {
-        if (audio.readyState === 0) {
-            status.innerHTML = "❌ Kẹt 0:00";
-            status.style.color = "red";
-        }
-    }, 5000);
-}
-
-checkAudio("audio1", "status1");
-checkAudio("audio2", "status2");
-
-
-// FETCH BLOB
-async function loadBlob() {
-    const status = document.getElementById("statusBlob");
-    const audio = document.getElementById("audioBlob");
-
-    try {
-        status.innerHTML = "Đang tải...";
-        const res = await fetch(
-            `https://drive.google.com/uc?export=download&id=${FILE_ID}`
-        );
-
-        const blob = await res.blob();
-        audio.src = URL.createObjectURL(blob);
-
-        status.innerHTML = "✅ Đã load xong (play được)";
-        status.style.color = "green";
-
-    } catch (e) {
-        status.innerHTML = "❌ Lỗi fetch";
-        status.style.color = "red";
-    }
-}
-</script>
 
 </body>
 </html>

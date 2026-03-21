@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="../com/assistive.js"></script>
   <script src="../com/TTSClient.js"></script>
-  <script type="module" src="../com/japanese-lookup.js"></script>
+  <script type="module" src="../com/japanese-lookup.js?v=1"></script>
   <style>
     body { font-family: system-ui, -apple-system; max-width: 700px; margin: auto; padding: 12px; background: #fff; color: #333; }
     
@@ -30,7 +30,8 @@
       white-space: pre-wrap; 
       line-height: 1.8; 
       cursor: pointer;
-      font-size: 1.2em;
+      font-size: 1.25em;
+      min-height: 50px;
     }
 
     .vi-text { 
@@ -146,11 +147,9 @@ function renderCurrent() {
   if (!texts.length) return;
   if (currentIndex >= texts.length) currentIndex = 0;
   
-  // Quan trọng: Dùng textContent để module tra từ luôn hoạt động
+  console.log("Rendering text for index:", currentIndex);
   jaDisplay.textContent = texts[currentIndex].ja;
   viDisplay.textContent = texts[currentIndex].vi;
-  
-  // Hiển thị/ẩn đường kẻ dựa trên việc có text hay không
   document.getElementById("separator").style.display = texts[currentIndex].ja ? "block" : "none";
 
   pageInfo.textContent = `${currentIndex + 1} / ${texts.length}`;
@@ -158,9 +157,9 @@ function renderCurrent() {
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1 && !repeatAll);
   localStorage.setItem("lastIndex", currentIndex);
 
-  // Gọi lại module tra từ sau khi thay đổi nội dung
-  if (window.JapaneseLookup && typeof window.JapaneseLookup.init === 'function') {
-      window.JapaneseLookup.init();
+  // Ép module tra từ nhận diện lại nội dung mới
+  if (typeof JapaneseLookup !== 'undefined' && JapaneseLookup.render) {
+      JapaneseLookup.render();
   }
 }
 
@@ -196,6 +195,7 @@ async function playCurrent() {
     msg.onend = () => { 
         btnPlay.classList.remove("active"); 
         jaDisplay.textContent = originalText;
+        if (typeof JapaneseLookup !== 'undefined' && JapaneseLookup.render) JapaneseLookup.render();
         onAudioEnded(); 
     };
     window.speechSynthesis.cancel(); window.speechSynthesis.speak(msg);

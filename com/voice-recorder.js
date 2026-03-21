@@ -1,5 +1,5 @@
 /**
- * Voice Recorder Module - Fixed ES6 Export & Icon-Only
+ * Voice Recorder Module - Fixed Delete & Layout
  */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 let mediaRecorder;
@@ -10,24 +10,26 @@ const getContextId = () => {
     return pageInfoEl ? pageInfoEl.innerText.replace(/\s+/g, '').replace(/\//g, '_') : "default";
 };
 
-// 1. CSS Giao diện
 const style = document.createElement('style');
 style.textContent = `
     .vr-top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 15px; z-index: 9999; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .vr-btn-icon { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #cbd5e1; cursor: pointer; font-size: 18px; background: #fff; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; }
-    .vr-btn-icon:disabled { opacity: 0.4; }
     .vr-btn-rec.active { background: #fee2e2; border-color: #dc2626; animation: vr-pulse 1.5s infinite; }
     .vr-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 10px; padding: 1px 5px; border-radius: 10px; border: 2px solid #fff; }
-    .vr-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(2px); }
+    .vr-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(2px); }
     .vr-overlay.show { display: flex; }
-    .vr-modal { background: white; width: 90%; max-width: 400px; border-radius: 12px; padding: 25px 20px 20px 20px; position: relative; }
-    .vr-close-modal { position: absolute; top: 10px; right: 10px; border: none; background: none; font-size: 20px; cursor: pointer; color: #94a3b8; line-height: 1; }
-    .vr-close-modal:hover { color: #475569; }
-    .vr-list { max-height: 300px; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
-    .vr-item { border: 1px solid #f1f5f9; border-radius: 8px; padding: 4px; background: #f8fafc; position: relative; display: flex; flex-direction: column; }
-    .vr-item iframe { width: 100%; height: 45px; border: none; }
-    .vr-item-del { position: absolute; top: 2px; right: 5px; border: none; background: none; color: #cbd5e1; cursor: pointer; font-size: 14px; z-index: 10; font-weight: bold; }
-    .vr-item-del:hover { color: #ef4444; }
+    .vr-modal { background: white; width: 95%; max-width: 420px; border-radius: 12px; padding: 30px 15px 15px 15px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .vr-close-modal { position: absolute; top: 8px; right: 8px; border: none; background: none; font-size: 22px; cursor: pointer; color: #cbd5e1; line-height: 1; }
+    .vr-close-modal:hover { color: #64748b; }
+    .vr-list { max-height: 320px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 5px; }
+    
+    /* Layout Item: Iframe | Button */
+    .vr-item { border: 1px solid #f1f5f9; border-radius: 10px; padding: 8px; background: #fff; display: flex; align-items: center; gap: 10px; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .vr-iframe-wrap { flex: 1; height: 48px; overflow: hidden; border-radius: 6px; background: #000; }
+    .vr-item iframe { width: 100%; height: 100%; border: none; display: block; }
+    .vr-item-del { width: 32px; height: 32px; border: 1px solid #fecaca; background: #fff; color: #ef4444; cursor: pointer; font-size: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; }
+    .vr-item-del:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+    
     @keyframes vr-pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
     body { padding-top: 55px !important; }
 `;
@@ -50,8 +52,8 @@ const VoiceRecorder = {
         overlay.innerHTML = `
             <div class="vr-modal">
                 <button class="vr-close-modal" onclick="document.getElementById('vr-overlay').classList.remove('show')">✕</button>
-                <div style="font-weight:bold; margin-bottom:5px; font-size: 14px;">Lịch sử: <span id="vr-pid"></span></div>
-                <div id="vr-list" class="vr-list"></div>
+                <div style="font-weight:bold; margin-bottom:10px; font-size: 15px; color: #475569; padding-left: 5px;">Lịch sử: <span id="vr-pid"></span></div>
+                <div id="vr-list" class="vr-list">Đang tải...</div>
             </div>
         `;
         document.body.appendChild(overlay);
@@ -86,7 +88,7 @@ const VoiceRecorder = {
     },
 
     stop: () => {
-        mediaRecorder.stop();
+        if (mediaRecorder) mediaRecorder.stop();
         document.getElementById('vr-start').classList.remove('active');
         document.getElementById('vr-start').disabled = false;
         document.getElementById('vr-stop').disabled = true;
@@ -99,39 +101,52 @@ const VoiceRecorder = {
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
-            console.log(`[Log] Uploading for Page: ${pid}`); 
             await fetch(GAS_URL, {
                 method: "POST", mode: "no-cors",
                 body: JSON.stringify({ action: "uploadVoice", base64, fileName: `PAGE_${pid}_${Date.now()}.webm`, lessonId: pid })
             });
-            setTimeout(() => VoiceRecorder.load(true), 1000);
+            setTimeout(() => VoiceRecorder.load(true), 1200);
         };
     },
 
     load: async (silent = false) => {
         const pid = getContextId();
+        const listEl = document.getElementById('vr-list');
         try {
             const res = await fetch(`${GAS_URL}?type=listVoice&lessonId=${pid}&_t=${Date.now()}`);
             const data = await res.json();
             document.getElementById('vr-count').innerText = data.length;
             if (!silent) {
-                document.getElementById('vr-list').innerHTML = data.map(f => `
+                listEl.innerHTML = data.map(f => `
                     <div class="vr-item" id="vr-item-${f.id}">
+                        <div class="vr-iframe-wrap">
+                            <iframe src="https://drive.google.com/file/d/${f.id}/preview"></iframe>
+                        </div>
                         <button class="vr-item-del" onclick="VoiceRecorder.delete('${f.id}')">✕</button>
-                        <iframe src="https://drive.google.com/file/d/${f.id}/preview"></iframe>
                     </div>
-                `).join('') || "Trống";
+                `).join('') || '<div style="text-align:center; color:#94a3b8;">Trống</div>';
             }
-        } catch (e) { }
+        } catch (e) { if(!silent) listEl.innerHTML = "Lỗi tải dữ liệu."; }
     },
 
     delete: async (id) => {
         if (!confirm("Xóa bản ghi này?")) return;
         const el = document.getElementById(`vr-item-${id}`);
         if (el) el.style.opacity = "0.3";
-        console.log(`[Log] Deleting file: ${id}`);
-        await fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "deleteVoice", fileId: id }) });
-        setTimeout(() => VoiceRecorder.load(true), 500);
+        
+        // Gửi request xóa. Lưu ý: GAS cần xử lý action "deleteVoice" với fileId
+        try {
+            await fetch(GAS_URL, { 
+                method: "POST", 
+                mode: "no-cors", 
+                body: JSON.stringify({ action: "deleteVoice", fileId: id }) 
+            });
+            // Vì no-cors không đọc được response, ta đợi 1 lát rồi reload list
+            setTimeout(() => VoiceRecorder.load(true), 800);
+        } catch (err) {
+            alert("Lỗi khi xóa!");
+            if (el) el.style.opacity = "1";
+        }
     }
 };
 

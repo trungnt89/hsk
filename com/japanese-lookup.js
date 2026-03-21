@@ -1,6 +1,5 @@
 /**
  * Japanese Lookup & Vocabulary Manager
- * Link GAS: https://script.google.com/macros/s/AKfycbxRsR4M3R0rjz3i0u2kz6Pg-ME3IeDYs8-7GE0MrjRaakfxQBory3JMtjjgVw3lTbqI/exec
  */
 
 const JapaneseLookup = (() => {
@@ -32,6 +31,14 @@ const JapaneseLookup = (() => {
       background: white; width: 95%; max-width: 500px; max-height: 85vh;
       border-radius: 20px; padding: 20px; overflow-y: auto; position: relative;
     }
+    /* Nút đóng góc trên phải */
+    .ja-close-modal {
+      position: absolute; top: 15px; right: 15px; width: 32px; height: 32px;
+      background: #f1f5f9; border: none; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748b;
+    }
+    .ja-close-modal:hover { background: #e2e8f0; color: #0f172a; }
+
     .ja-word-item {
       padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex;
       justify-content: space-between; align-items: center; gap: 10px;
@@ -64,9 +71,9 @@ const JapaneseLookup = (() => {
       modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
       modal.innerHTML = `
         <div class="ja-modal-content">
+          <button class="ja-close-modal" onclick="this.closest('.ja-modal').style.display='none'">✕</button>
           <h3 style="margin-top:0; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">Từ vựng đã lưu</h3>
           <div id="ja-word-list">Đang tải dữ liệu...</div>
-          <button onclick="this.closest('.ja-modal').style.display='none'" style="width:100%; padding:12px; margin-top:15px; border-radius:10px; border:none; background:#f1f5f9; font-weight:bold; cursor:pointer;">Đóng</button>
         </div>`;
       document.body.appendChild(modal);
     }
@@ -107,16 +114,36 @@ const JapaneseLookup = (() => {
     }
   }
 
-  // Đối tượng global để xử lý sự kiện trong HTML động
   window.JapaneseLookup = {
+    // Hàm xóa tối ưu: Ẩn ngay lập tức, không load lại danh sách
     deleteWord: async (id) => {
-      if (!confirm("Bạn có chắc muốn xóa từ này khỏi danh sách?")) return;
-      console.log(`[Log] Deleting word ID: ${id}`);
-      await callGAS({ action: "deleteWord", id: id });
       const row = document.getElementById(`word-row-${id}`);
-      if (row) row.style.opacity = '0.3';
-      setTimeout(openManager, 500);
+      if (!row) return;
+
+      if (!confirm("Xóa từ này khỏi danh sách?")) return;
+
+      // Hiệu ứng xóa mềm trên giao diện
+      row.style.transition = 'all 0.4s ease';
+      row.style.opacity = '0';
+      row.style.transform = 'translateX(30px)';
+      
+      // Xóa khỏi DOM sau khi hiệu ứng kết thúc
+      setTimeout(() => {
+        row.remove();
+        const list = document.getElementById('ja-word-list');
+        if (list && list.children.length === 0) {
+          list.innerHTML = "Chưa có từ vựng nào được lưu.";
+        }
+      }, 400);
+
+      // Gửi lệnh xóa lên server ngầm
+      console.log(`[Log] Requesting server delete for ID: ${id}`);
+      callGAS({ action: "deleteWord", id: id }).catch(err => {
+        console.error("Lỗi server khi xóa:", err);
+        alert("Không thể xóa trên server, hãy kiểm tra kết nối.");
+      });
     },
+
     editWord: (id, word, romaji, meaning) => {
       const row = document.getElementById(`word-row-${id}`);
       row.innerHTML = `
@@ -163,7 +190,6 @@ const JapaneseLookup = (() => {
         <span class="ja-lookup-romaji">${romaji ? `[ ${romaji} ]` : ''}</span>
         <div class="ja-lookup-meaning">🇻🇳 ${meaning}</div>`;
 
-      // Tự động lưu vào GAS
       callGAS({ 
         action: "saveWord", 
         word: text, 
@@ -181,7 +207,6 @@ const JapaneseLookup = (() => {
   return {
     init: () => {
       createUI();
-      // Xử lý bôi đen
       document.addEventListener('mouseup', () => {
         const sel = window.getSelection();
         const selectedText = sel.toString().trim();
@@ -191,16 +216,17 @@ const JapaneseLookup = (() => {
           lookup(selectedText, rect.left, rect.bottom);
         }
       });
-      // Click ra ngoài để đóng popup
       document.addEventListener('mousedown', (e) => {
         if (popup && !popup.contains(e.target) && !e.target.classList.contains('ja-history-btn')) {
           popup.style.display = 'none';
         }
       });
+    },
+    render: () => {
+        // Hàm này có thể để trống hoặc dùng để re-init nếu cần
     }
   };
 })();
 
-// Khởi tạo module
 JapaneseLookup.init();
 export default JapaneseLookup;

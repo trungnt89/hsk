@@ -181,6 +181,7 @@ const VoiceRecorder = {
     }
 };
 
+
 if (document.readyState === 'complete') VoiceRecorder.injectUI();
 else window.addEventListener('load', () => VoiceRecorder.injectUI());
 

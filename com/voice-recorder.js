@@ -1,5 +1,5 @@
 /**
- * Voice Recorder Module - Optimized with IndexedDB Cache
+ * Voice Recorder Module - Final Optimized (CORS & IndexedDB Support)
  */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 const DB_NAME = "VoiceRecorderDB";
@@ -26,9 +26,9 @@ style.textContent = `
     .vr-modal { background: white; width: 95%; max-width: 420px; border-radius: 12px; padding: 30px 15px 15px 15px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .vr-close-modal { position: absolute; top: 8px; right: 8px; border: none; background: none; font-size: 22px; cursor: pointer; color: #cbd5e1; line-height: 1; }
     .vr-list { max-height: 320px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; padding: 5px; }
-    .vr-item { border: 1px solid #f1f5f9; border-radius: 10px; padding: 12px; background: #fff; display: flex; align-items: center; gap: 10px; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); flex-wrap: wrap; }
-    .vr-audio-wrap { flex: 1; min-width: 200px; }
-    .vr-audio-wrap audio { width: 100%; height: 32px; }
+    .vr-item { border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; background: #fff; display: flex; align-items: center; gap: 8px; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .vr-audio-wrap { flex: 1; display: flex; align-items: center; overflow: hidden; }
+    .vr-audio-wrap audio { width: 100%; height: 36px; outline: none; }
     .vr-item-del { width: 32px; height: 32px; border: 1px solid #fecaca; background: #fff; color: #ef4444; cursor: pointer; font-size: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     @keyframes vr-pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
     body { padding-top: 55px !important; }
@@ -134,10 +134,15 @@ const VoiceRecorder = {
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
+            // Lưu vào DB trước để có cache ngay lập tức
+            const tempId = "temp_" + Date.now();
+            VoiceRecorder.saveToDB(tempId, blob);
+
             await fetch(GAS_URL, {
                 method: "POST", mode: "no-cors",
                 body: JSON.stringify({ action: "uploadVoice", base64, fileName: `PAGE_${pid}_${Date.now()}.webm`, lessonId: pid })
             });
+            
             setTimeout(() => {
                 VoiceRecorder.load(false); 
                 stopBtn.innerHTML = '⏹';
@@ -159,27 +164,38 @@ const VoiceRecorder = {
                     const item = document.createElement('div');
                     item.className = 'vr-item';
                     item.id = `vr-item-${f.id}`;
-                    item.innerHTML = `<div class="vr-audio-wrap" id="audio-container-${f.id}">⏳ Tải cache...</div><button class="vr-item-del" onclick="VoiceRecorder.delete('${f.id}')">✕</button>`;
+                    item.innerHTML = `<div class="vr-audio-wrap" id="audio-container-${f.id}">⏳ Tải...</div><button class="vr-item-del" onclick="VoiceRecorder.delete('${f.id}')">✕</button>`;
                     listEl.appendChild(item);
                     VoiceRecorder.prepareAudio(f.id);
                 }
             }
-        } catch (e) { if(!silent) listEl.innerHTML = "Lỗi tải dữ liệu."; }
+        } catch (e) { if(!silent) listEl.innerHTML = "Lỗi kết nối server."; }
     },
 
     prepareAudio: async (id) => {
         const container = document.getElementById(`audio-container-${id}`);
         let blob = await VoiceRecorder.getFromDB(id);
         
-        if (!blob) {
+        if (blob) {
+            const url = URL.createObjectURL(blob);
+            container.innerHTML = `<audio controls src="${url}"></audio>`;
+        } else {
+            // Thử fetch để cache vào IndexedDB
             try {
                 const response = await fetch(`https://docs.google.com/uc?export=download&id=${id}`);
-                blob = await response.blob();
-                VoiceRecorder.saveToDB(id, blob);
-            } catch (e) { container.innerText = "Lỗi tải âm thanh"; return; }
+                if (response.ok) {
+                    const newBlob = await response.blob();
+                    VoiceRecorder.saveToDB(id, newBlob);
+                    const url = URL.createObjectURL(newBlob);
+                    container.innerHTML = `<audio controls src="${url}"></audio>`;
+                } else {
+                    throw new Error("CORS_OR_403");
+                }
+            } catch (e) {
+                // FALLBACK: Nhúng iframe nếu fetch bị chặn bởi CORS/403
+                container.innerHTML = `<iframe src="https://drive.google.com/file/d/${id}/preview" style="width:100%; height:45px; border:none; border-radius:5px;"></iframe>`;
+            }
         }
-        const url = URL.createObjectURL(blob);
-        container.innerHTML = `<audio controls src="${url}"></audio>`;
     },
 
     delete: async (id) => {

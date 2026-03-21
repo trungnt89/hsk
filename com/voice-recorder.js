@@ -1,5 +1,5 @@
 /**
- * Voice Recorder Module - Fixed ES6 Export & Icon-Only
+ * Voice Recorder Module - Optimized UI with Close button & Delete action
  */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 let mediaRecorder;
@@ -10,21 +10,34 @@ const getContextId = () => {
     return pageInfoEl ? pageInfoEl.innerText.replace(/\s+/g, '').replace(/\//g, '_') : "default";
 };
 
-// 1. CSS Giao diện
+// 1. CSS Giao diện cập nhật
 const style = document.createElement('style');
 style.textContent = `
     .vr-top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 15px; z-index: 9999; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .vr-btn-icon { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #cbd5e1; cursor: pointer; font-size: 18px; background: #fff; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; }
-    .vr-btn-icon:disabled { opacity: 0.4; }
-    .vr-btn-rec.active { background: #fee2e2; border-color: #dc2626; animation: vr-pulse 1.5s infinite; }
+    .vr-btn-rec.active { background: #fee2e2; border-color: #dc2626; color: #dc2626; animation: vr-pulse 1.5s infinite; }
     .vr-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 10px; padding: 1px 5px; border-radius: 10px; border: 2px solid #fff; }
+    
+    /* Modal & List */
     .vr-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(2px); }
     .vr-overlay.show { display: flex; }
-    .vr-modal { background: white; width: 90%; max-width: 400px; border-radius: 12px; padding: 20px; position: relative; }
-    .vr-list { max-height: 300px; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
-    .vr-item { border: 1px solid #f1f5f9; border-radius: 8px; padding: 4px; background: #f8fafc; position: relative; }
-    .vr-item iframe { width: 100%; height: 60px; border: none; }
-    @keyframes vr-pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
+    .vr-modal { background: white; width: 90%; max-width: 400px; border-radius: 12px; padding: 20px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    
+    /* Nút đóng góc trên bên phải */
+    .vr-close-top { position: absolute; top: 12px; right: 12px; border: none; background: none; font-size: 20px; cursor: pointer; color: #94a3b8; padding: 5px; line-height: 1; }
+    .vr-close-top:hover { color: #64748b; }
+
+    .vr-list { max-height: 350px; overflow-y: auto; margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+    
+    /* Item ngắn gọn */
+    .vr-item { border: 1px solid #f1f5f9; border-radius: 8px; padding: 8px; background: #f8fafc; display: flex; align-items: center; gap: 10px; }
+    .vr-item audio { flex: 1; height: 35px; }
+    
+    /* Nút xóa item */
+    .vr-btn-del { border: none; background: #fff; color: #cbd5e1; cursor: pointer; font-size: 16px; width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .vr-btn-del:hover { color: #ef4444; background: #fee2e2; }
+
+    @keyframes vr-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     body { padding-top: 55px !important; }
 `;
 document.head.appendChild(style);
@@ -34,9 +47,11 @@ const VoiceRecorder = {
         const bar = document.createElement('div');
         bar.className = 'vr-top-bar';
         bar.innerHTML = `
-            <button id="vr-start" class="vr-btn-icon">🎤</button>
-            <button id="vr-stop" class="vr-btn-icon" disabled>⏹</button>
-            <button id="vr-open-history" class="vr-btn-icon">📂<span id="vr-count" class="vr-badge">0</span></button>
+            <button id="vr-start" class="vr-btn-icon" title="Ghi âm">🎤</button>
+            <button id="vr-stop" class="vr-btn-icon" disabled title="Dừng">⏹</button>
+            <button id="vr-open-history" class="vr-btn-icon" title="Lịch sử">
+                📂<span id="vr-count" class="vr-badge">0</span>
+            </button>
         `;
         document.body.appendChild(bar);
 
@@ -45,9 +60,9 @@ const VoiceRecorder = {
         overlay.className = 'vr-overlay';
         overlay.innerHTML = `
             <div class="vr-modal">
-                <div style="font-weight:bold; margin-bottom:10px;">Lịch sử: <span id="vr-pid"></span></div>
+                <button class="vr-close-top" onclick="VoiceRecorder.toggle()">✕</button>
+                <div style="font-weight:bold; font-size:15px; color:#1e293b; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">Lịch sử: <span id="vr-pid"></span></div>
                 <div id="vr-list" class="vr-list"></div>
-                <button onclick="document.getElementById('vr-overlay').classList.remove('show')" style="margin-top:10px; width:100%; padding:8px; cursor:pointer;">Đóng</button>
             </div>
         `;
         document.body.appendChild(overlay);
@@ -78,7 +93,7 @@ const VoiceRecorder = {
             document.getElementById('vr-start').classList.add('active');
             document.getElementById('vr-start').disabled = true;
             document.getElementById('vr-stop').disabled = false;
-        } catch (e) { alert("Micro Error!"); }
+        } catch (e) { alert("Lỗi Micro!"); }
     },
 
     stop: () => {
@@ -95,12 +110,12 @@ const VoiceRecorder = {
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
-            console.log(`[Log] Uploading for Page: ${pid}`); // Ghi log đầy đủ
+            console.log(`[Log] Đang tải lên trang: ${pid}`);
             await fetch(GAS_URL, {
                 method: "POST", mode: "no-cors",
                 body: JSON.stringify({ action: "uploadVoice", base64, fileName: `PAGE_${pid}_${Date.now()}.webm`, lessonId: pid })
             });
-            setTimeout(() => VoiceRecorder.load(true), 1000);
+            setTimeout(() => VoiceRecorder.load(true), 1200);
         };
     },
 
@@ -112,16 +127,33 @@ const VoiceRecorder = {
             document.getElementById('vr-count').innerText = data.length;
             if (!silent) {
                 document.getElementById('vr-list').innerHTML = data.map(f => `
-                    <div class="vr-item"><iframe src="https://drive.google.com/file/d/${f.id}/preview"></iframe></div>
-                `).join('') || "Trống";
+                    <div class="vr-item" id="item-${f.id}">
+                        <audio controls src="https://drive.google.com/uc?export=download&id=${f.id}"></audio>
+                        <button class="vr-btn-del" onclick="VoiceRecorder.delete('${f.id}')" title="Xóa">✕</button>
+                    </div>
+                `).join('') || '<div style="text-align:center; color:#94a3b8; font-size:13px; padding:20px;">Trống</div>';
             }
         } catch (e) { }
+    },
+
+    delete: async (id) => {
+        if (!confirm("Bạn muốn xóa bản ghi này?")) return;
+        const item = document.getElementById(`item-${id}`);
+        if (item) item.style.opacity = "0.3";
+        
+        await fetch(GAS_URL, {
+            method: "POST", mode: "no-cors",
+            body: JSON.stringify({ action: "deleteVoice", fileId: id })
+        });
+        
+        setTimeout(() => {
+            if (item) item.remove();
+            VoiceRecorder.load(true);
+        }, 500);
     }
 };
 
-// Khởi chạy khi script được load
 if (document.readyState === 'complete') VoiceRecorder.injectUI();
 else window.addEventListener('load', VoiceRecorder.injectUI);
 
-// ĐÂY LÀ DÒNG QUAN TRỌNG NHẤT ĐỂ HẾT LỖI SYNTAX
 export default VoiceRecorder;

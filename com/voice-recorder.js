@@ -1,5 +1,6 @@
 /**
- * Voice Recorder Module - Final Optimized (CORS & IndexedDB Support)
+ * Voice Recorder Module - Final Optimized (GAS Proxy & IndexedDB Support)
+ * Guiding Principle: "Bất biến Logic" & Full Logging.
  */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 const DB_NAME = "VoiceRecorderDB";
@@ -10,14 +11,16 @@ let audioChunks = [];
 
 const getContextId = () => {
     const pageInfoEl = document.getElementById('pageInfo');
-    return pageInfoEl ? pageInfoEl.innerText.replace(/\s+/g, '').replace(/\//g, '_') : "default";
+    const pid = pageInfoEl ? pageInfoEl.innerText.replace(/\s+/g, '').replace(/\//g, '_') : "default";
+    return pid;
 };
 
+// --- CSS Interface ---
 const style = document.createElement('style');
 style.textContent = `
     .vr-top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 15px; z-index: 9999; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .vr-btn-icon { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #cbd5e1; cursor: pointer; font-size: 18px; background: #fff; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; }
-    .vr-btn-rec.active { background: #fee2e2; border-color: #dc2626; animation: vr-pulse 1.5s infinite; }
+    #vr-start.active { background: #fee2e2; border-color: #dc2626; animation: vr-pulse 1.5s infinite; }
     .vr-loading { animation: vr-spin 1s linear infinite; display: inline-block; pointer-events: none; }
     @keyframes vr-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .vr-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 10px; padding: 1px 5px; border-radius: 10px; border: 2px solid #fff; }
@@ -37,17 +40,26 @@ document.head.appendChild(style);
 
 const VoiceRecorder = {
     db: null,
+
+    // --- Database Management ---
     initDB: () => {
+        console.log("[VR Log] Initializing IndexedDB...");
         return new Promise((resolve) => {
             const req = indexedDB.open(DB_NAME, 1);
             req.onupgradeneeded = e => e.target.result.createObjectStore(DB_STORE);
-            req.onsuccess = e => { VoiceRecorder.db = e.target.result; resolve(); };
+            req.onsuccess = e => { 
+                VoiceRecorder.db = e.target.result; 
+                console.log("[VR Log] IndexedDB Connected.");
+                resolve(); 
+            };
+            req.onerror = () => console.error("[VR Log] IndexedDB Error.");
         });
     },
 
     saveToDB: (id, blob) => {
         const tx = VoiceRecorder.db.transaction(DB_STORE, "readwrite");
         tx.objectStore(DB_STORE).put(blob, id);
+        console.log(`[VR Log] Blob cached in DB: ${id}`);
     },
 
     getFromDB: (id) => {
@@ -61,8 +73,10 @@ const VoiceRecorder = {
     removeFromDB: (id) => {
         const tx = VoiceRecorder.db.transaction(DB_STORE, "readwrite");
         tx.objectStore(DB_STORE).delete(id);
+        console.log(`[VR Log] Cache removed: ${id}`);
     },
 
+    // --- UI Methods ---
     injectUI: async () => {
         await VoiceRecorder.initDB();
         const bar = document.createElement('div');
@@ -101,8 +115,10 @@ const VoiceRecorder = {
         }
     },
 
+    // --- Core Recording Logic ---
     start: async () => {
         try {
+            console.log("[VR Log] Starting Stream...");
             audioChunks = [];
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
@@ -112,7 +128,10 @@ const VoiceRecorder = {
             document.getElementById('vr-start').classList.add('active');
             document.getElementById('vr-start').disabled = true;
             document.getElementById('vr-stop').disabled = false;
-        } catch (e) { alert("Micro Error!"); }
+        } catch (e) { 
+            console.error("[VR Log] Media Error:", e);
+            alert("Không thể truy cập Micro!"); 
+        }
     },
 
     stop: () => {
@@ -123,24 +142,31 @@ const VoiceRecorder = {
     },
 
     upload: async () => {
+        console.log("[VR Log] Processing audio blob...");
         const blob = new Blob(audioChunks, { type: 'audio/webm' });
-        const reader = new FileReader();
         const pid = getContextId();
         const stopBtn = document.getElementById('vr-stop');
         
         stopBtn.innerHTML = '<span class="vr-loading">⏳</span>';
         stopBtn.disabled = true;
 
+        const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
-            // Lưu vào DB trước để có cache ngay lập tức
-            const tempId = "temp_" + Date.now();
+            // Lưu tạm vào DB
+            const tempId = "last_rec_" + Date.now();
             VoiceRecorder.saveToDB(tempId, blob);
 
+            console.log("[VR Log] Uploading to GAS...");
             await fetch(GAS_URL, {
                 method: "POST", mode: "no-cors",
-                body: JSON.stringify({ action: "uploadVoice", base64, fileName: `PAGE_${pid}_${Date.now()}.webm`, lessonId: pid })
+                body: JSON.stringify({ 
+                    action: "uploadVoice", 
+                    base64, 
+                    fileName: `PAGE_${pid}_${Date.now()}.webm`, 
+                    lessonId: pid 
+                })
             });
             
             setTimeout(() => {
@@ -150,10 +176,12 @@ const VoiceRecorder = {
         };
     },
 
+    // --- Fetch & Play Logic ---
     load: async (silent = false) => {
         const pid = getContextId();
         const listEl = document.getElementById('vr-list');
         try {
+            console.log(`[VR Log] Fetching list for: ${pid}`);
             const res = await fetch(`${GAS_URL}?type=listVoice&lessonId=${pid}&_t=${Date.now()}`);
             const data = await res.json();
             document.getElementById('vr-count').innerText = data.length;
@@ -164,35 +192,57 @@ const VoiceRecorder = {
                     const item = document.createElement('div');
                     item.className = 'vr-item';
                     item.id = `vr-item-${f.id}`;
-                    item.innerHTML = `<div class="vr-audio-wrap" id="audio-container-${f.id}">⏳ Tải...</div><button class="vr-item-del" onclick="VoiceRecorder.delete('${f.id}')">✕</button>`;
+                    item.innerHTML = `
+                        <div class="vr-audio-wrap" id="audio-container-${f.id}">⏳ Đang tải...</div>
+                        <button class="vr-item-del" onclick="VoiceRecorder.delete('${f.id}')">✕</button>
+                    `;
                     listEl.appendChild(item);
                     VoiceRecorder.prepareAudio(f.id);
                 }
             }
-        } catch (e) { if(!silent) listEl.innerHTML = "Lỗi kết nối server."; }
+        } catch (e) { 
+            console.error("[VR Log] List fetch failed:", e);
+            if(!silent) listEl.innerHTML = "Lỗi kết nối server."; 
+        }
     },
 
     prepareAudio: async (id) => {
         const container = document.getElementById(`audio-container-${id}`);
+        // 1. Kiểm tra cache IndexedDB
         let blob = await VoiceRecorder.getFromDB(id);
         
         if (blob) {
+            console.log(`[VR Log] Playing from Cache: ${id}`);
             const url = URL.createObjectURL(blob);
             container.innerHTML = `<audio controls src="${url}"></audio>`;
         } else {
-            // Thử fetch để cache vào IndexedDB
+            console.log(`[VR Log] Fetching via Proxy for CORS bypass: ${id}`);
             try {
-                const response = await fetch(`https://docs.google.com/uc?export=download&id=${id}`);
-                if (response.ok) {
-                    const newBlob = await response.blob();
+                // 2. Tải qua GAS Proxy (vượt CORS)
+                const res = await fetch(`${GAS_URL}?type=getFileBlob&fileId=${id}`);
+                const json = await res.json();
+                
+                if (json.status === "success") {
+                    // Chuyển Base64 sang Blob
+                    const byteCharacters = atob(json.data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const newBlob = new Blob([byteArray], {type: json.contentType});
+                    
+                    // Lưu vào DB cho lần sau
                     VoiceRecorder.saveToDB(id, newBlob);
+                    
                     const url = URL.createObjectURL(newBlob);
                     container.innerHTML = `<audio controls src="${url}"></audio>`;
                 } else {
-                    throw new Error("CORS_OR_403");
+                    throw new Error("GAS_PROXY_ERR");
                 }
             } catch (e) {
-                // FALLBACK: Nhúng iframe nếu fetch bị chặn bởi CORS/403
+                console.warn("[VR Log] CORS/Proxy Error, using Iframe fallback:", e);
+                // 3. Fallback: Iframe (Nếu các cách trên đều thất bại)
                 container.innerHTML = `<iframe src="https://drive.google.com/file/d/${id}/preview" style="width:100%; height:45px; border:none; border-radius:5px;"></iframe>`;
             }
         }
@@ -200,6 +250,7 @@ const VoiceRecorder = {
 
     delete: async (id) => {
         if (!confirm("Xóa bản ghi này?")) return;
+        console.log(`[VR Log] Deleting file: ${id}`);
         const btnDel = document.querySelector(`#vr-item-${id} .vr-item-del`);
         if (btnDel) {
             btnDel.innerHTML = '<span class="vr-loading">⏳</span>';
@@ -207,10 +258,15 @@ const VoiceRecorder = {
         }
         
         try {
-            await fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "deleteVoice", fileId: id }) });
+            await fetch(GAS_URL, { 
+                method: "POST", 
+                mode: "no-cors", 
+                body: JSON.stringify({ action: "deleteVoice", fileId: id }) 
+            });
             VoiceRecorder.removeFromDB(id);
             setTimeout(() => VoiceRecorder.load(true), 800);
         } catch (err) {
+            console.error("[VR Log] Delete error:", err);
             alert("Lỗi khi xóa!");
             VoiceRecorder.load(true);
         }

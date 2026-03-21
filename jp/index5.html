@@ -10,7 +10,6 @@
   <style>
     body { font-family: system-ui, -apple-system; max-width: 700px; margin: auto; padding: 12px; background: #fff; color: #333; }
     
-    /* Toolbar siêu gọn ở trên cùng */
     .toolbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
     .nav-top { display: flex; justify-content: center; align-items: center; gap: 12px; }
     .controls-row { display: flex; justify-content: flex-start; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -18,27 +17,25 @@
     .group { display: flex; align-items: center; gap: 4px; border-right: 1px solid #eee; padding-right: 8px; }
     .group:last-child { border-right: none; }
 
-    button { 
-      padding: 4px 10px; border-radius: 6px; border: 1px solid #ccc; 
-      background: #fff; font-size: 13px; cursor: pointer; height: 32px;
-      display: flex; align-items: center; justify-content: center;
-    }
+    button { padding: 4px 10px; border-radius: 6px; border: 1px solid #ccc; background: #fff; font-size: 13px; cursor: pointer; height: 32px; display: flex; align-items: center; }
     button.active { background: #e0f2fe; border-color: #2563eb; color: #2563eb; font-weight: bold; }
-    button:disabled { opacity: 0.3; }
-    select { height: 32px; padding: 0 4px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px; }
+    select { height: 32px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px; }
 
-    /* Nội dung bài đọc - Cỡ chữ bình thường, giữ format xuống dòng */
     .display-box { min-height: 150px; padding: 10px 0; }
-    .ja-text { font-size: 1.1em; color: #000; margin-bottom: 15px; white-space: pre-wrap; line-height: 1.8; }
+    
+    /* Vùng quan trọng để Module tra từ hoạt động */
+    .ja-text { 
+      font-size: 1.25em; color: #000; margin-bottom: 15px; 
+      white-space: pre-wrap; line-height: 1.8; 
+      cursor: pointer;
+    }
     .vi-text { font-size: 1em; color: #666; font-style: italic; white-space: pre-wrap; line-height: 1.5; border-top: 1px dashed #eee; padding-top: 10px; }
 
-    /* Màu highlight khi đọc */
     .hl-now { background-color: #fef08a; border-radius: 2px; }
 
-    /* Modal Editor */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { background: #fff; padding: 16px; border-radius: 12px; width: 90%; max-width: 450px; }
-    textarea { width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; height: 150px; box-sizing: border-box; font-size: 14px; }
+    textarea { width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; height: 150px; box-sizing: border-box; }
   </style>
 </head>
 <body>
@@ -56,8 +53,8 @@
       <button id="btnAudioToggle" onclick="toggleAudio()">🔊</button>
     </div>
     <div class="group">
-      <button id="btnRepeatOne" onclick="toggleRepeatOne()" title="Lặp 1">🔂</button>
-      <button id="btnRepeatAll" onclick="toggleRepeatAll()" title="Tự động chuyển">🔁</button>
+      <button id="btnRepeatOne" onclick="toggleRepeatOne()">🔂</button>
+      <button id="btnRepeatAll" onclick="toggleRepeatAll()">🔁</button>
     </div>
     <div class="group">
       <select id="voice">
@@ -75,7 +72,7 @@
 </div>
 
 <div class="display-box">
-  <div class="ja-text" id="currentJa">Đang tải...</div>
+  <div class="ja-text" id="currentJa"></div>
   <div class="vi-text" id="currentVi"></div>
 </div>
 
@@ -92,9 +89,6 @@
 </div>
 
 <script>
-/** * CAM KẾT: Giữ nguyên Logic điều hướng và lưu trữ. 
- * Mọi hành vi tra từ và hiển thị danh sách từ vựng do module japanese-lookup.js tự xử lý.
- */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyNX96iC37hc8AunT8zWlG_yTFB2ipZp90-XivW8hWzVYVne9nftCC3mSFoTk10v93t/exec";
 let texts = [], currentIndex = 0, repeatOne = false, repeatAll = false, isAudioEnabled = true;
 
@@ -126,19 +120,24 @@ function toggleAudio() {
   updateUIStates(); 
 }
 
+// HÀM RENDER CHÍNH
 function renderCurrent() {
-  if (!texts.length) { jaDisplay.textContent = "Trống"; return; }
+  if (!texts.length) return;
   if (currentIndex >= texts.length) currentIndex = 0;
   
-  const rawText = texts[currentIndex].ja;
-  // Chỉ bọc thẻ span để hỗ trợ Highlight mà không làm hỏng logic tra từ của module
-  jaDisplay.innerHTML = rawText.split('').map((c, i) => `<span id="char-${i}">${c}</span>`).join('');
+  // Dùng textContent để module tra từ không bị lỗi bởi các thẻ HTML lạ
+  jaDisplay.textContent = texts[currentIndex].ja;
   viDisplay.textContent = texts[currentIndex].vi;
   
   pageInfo.textContent = `${currentIndex + 1} / ${texts.length}`;
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1 && !repeatAll);
   localStorage.setItem("lastIndex", currentIndex);
+
+  // KÍCH HOẠT LẠI MODULE TRA TỪ (Nếu có hàm init/refresh)
+  if (window.JapaneseLookup && typeof window.JapaneseLookup.init === 'function') {
+      window.JapaneseLookup.init();
+  }
 }
 
 async function loadTexts() {
@@ -147,18 +146,22 @@ async function loadTexts() {
     const data = await res.json();
     texts = Array.isArray(data) ? data.filter(i => i.ja) : [];
     renderCurrent();
-  } catch (e) { jaDisplay.textContent = "Lỗi kết nối bài đọc."; }
+  } catch (e) { console.error("Data Load Error"); }
 }
 
 async function playCurrent() {
   if (!texts[currentIndex] || !isAudioEnabled) return;
   const mode = document.getElementById("voice").value;
   const btnPlay = document.getElementById("btnPlayCur");
+  const originalText = texts[currentIndex].ja;
+
   btnPlay.classList.add("active");
-  document.querySelectorAll('.ja-text span').forEach(s => s.className = '');
 
   if (mode === "highlight") {
-    const msg = new SpeechSynthesisUtterance(texts[currentIndex].ja);
+    // Chỉ tạo span khi thực sự đọc để highlight
+    jaDisplay.innerHTML = originalText.split('').map((c, i) => `<span id="char-${i}">${c}</span>`).join('');
+    
+    const msg = new SpeechSynthesisUtterance(originalText);
     msg.lang = 'ja-JP';
     msg.rate = parseFloat(document.getElementById("rate").value);
     msg.onboundary = (e) => {
@@ -168,11 +171,16 @@ async function playCurrent() {
         span.className = 'hl-now';
       }
     };
-    msg.onend = () => { btnPlay.classList.remove("active"); onAudioEnded(); };
+    msg.onend = () => { 
+        btnPlay.classList.remove("active"); 
+        // Đọc xong trả về văn bản thuần để module tra từ hoạt động bình thường
+        jaDisplay.textContent = originalText;
+        onAudioEnded(); 
+    };
     window.speechSynthesis.cancel(); window.speechSynthesis.speak(msg);
   } else {
     try {
-      await speakCommon({ text: texts[currentIndex].ja, voice: mode, rate: document.getElementById("rate").value });
+      await speakCommon({ text: originalText, voice: mode, rate: document.getElementById("rate").value });
     } finally { btnPlay.classList.remove("active"); onAudioEnded(); }
   }
 }

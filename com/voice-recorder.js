@@ -231,6 +231,8 @@ const VoiceRecorder = {
     }
 };
 
+
+
 // Khởi chạy khi tài liệu sẵn sàng
 const initVoiceRecorder = () => {
     window.VoiceRecorder = VoiceRecorder; 

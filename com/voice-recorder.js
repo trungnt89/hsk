@@ -1,33 +1,48 @@
 /**
  * Voice Recorder Module - Tự động hóa hoàn toàn
- * Không cần sửa mã nguồn chính (index.html), chỉ cần Import.
+ * Cập nhật: Fix Key phân trang (chỉ lấy số thứ tự, bỏ tổng số)
  */
 
 // --- CẤU HÌNH ---
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
-const VERCEL_PROXY_URL = "/api/get-voice"; // Đường dẫn tới file server js bạn vừa tạo trên Vercel
+const VERCEL_PROXY_URL = "/api/get-voice"; 
 const DB_NAME = "VoiceRecorderDB";
 const DB_STORE = "audios";
 
 let mediaRecorder;
 let audioChunks = [];
 
+/**
+ * LẤY ID NGỮ CẢNH BỀN VỮNG
+ * Chuyển "1 / 11" hoặc "1/12" thành "1" để làm Key không bị lệch
+ */
 const getContextId = () => {
     const pageInfoEl = document.getElementById('pageInfo');
-    return pageInfoEl ? pageInfoEl.innerText.replace(/\s+/g, '').replace(/\//g, '_') : "default";
+    if (!pageInfoEl) return "default";
+
+    // 1. Lấy text gốc (VD: " 1 / 11 ")
+    const rawText = pageInfoEl.innerText.trim();
+
+    // 2. Tách theo dấu "/" và lấy phần tử đầu tiên
+    // VD: "1 / 11" -> "1 " -> "1"
+    const currentPage = rawText.split('/')[0].trim();
+
+    // 3. Lấy tiêu đề bài học (hoặc dùng tên file) để tránh trùng giữa các bài khác nhau
+    const lessonName = document.title.replace(/\s+/g, '_') || "Lesson";
+
+    // Trả về Key định dạng: LessonName_Q1
+    return `${lessonName}_Q${currentPage}`;
 };
 
 const VoiceRecorder = {
     db: null,
 
-    // 1. Khởi tạo Database (IndexedDB)
     initDB: () => new Promise(res => {
         const req = indexedDB.open(DB_NAME, 1);
         req.onupgradeneeded = e => e.target.result.createObjectStore(DB_STORE);
         req.onsuccess = e => { VoiceRecorder.db = e.target.result; res(); };
     }),
 
-    // 2. Tự động tiêm CSS & UI vào trang web
     injectUI: async function() {
         await this.initDB();
         const style = document.createElement('style');
@@ -63,7 +78,6 @@ const VoiceRecorder = {
             </div>
         `);
 
-        // Gán sự kiện
         document.getElementById('vr-start').onclick = () => this.start();
         document.getElementById('vr-stop').onclick = () => this.stop();
         document.getElementById('vr-open-history').onclick = () => {
@@ -71,12 +85,9 @@ const VoiceRecorder = {
             this.load();
         };
 
-        // Load số lượng ban đầu
         this.load(true);
-        console.log("[VR Log] UI Injected & Ready.");
     },
 
-    // 3. Logic Ghi âm (Hỗ trợ iPhone)
     start: async function() {
         try {
             audioChunks = [];
@@ -113,7 +124,12 @@ const VoiceRecorder = {
             const base64 = reader.result.split(',')[1];
             await fetch(GAS_URL, {
                 method: "POST", mode: "no-cors",
-                body: JSON.stringify({ action: "uploadVoice", base64, fileName: `Speak_${pid}_${Date.now()}.webm`, lessonId: pid })
+                body: JSON.stringify({ 
+                    action: "uploadVoice", 
+                    base64, 
+                    fileName: `Speak_${pid}_${Date.now()}.webm`, 
+                    lessonId: pid // Gửi Key đã rút gọn lên GAS
+                })
             });
             setTimeout(() => {
                 this.load(true);
@@ -122,7 +138,6 @@ const VoiceRecorder = {
         };
     },
 
-    // 4. Đồng bộ & Phát âm thanh (Giải pháp Proxy cho iPhone)
     load: async function(silent = false) {
         const pid = getContextId();
         const listEl = document.getElementById('vr-list');
@@ -140,7 +155,6 @@ const VoiceRecorder = {
                 item.className = 'vr-item';
                 item.id = `vr-item-${f.id}`;
                 
-                // SỬ DỤNG VERCEL PROXY URL ĐỂ IPHONE PHÁT MƯỢT NHƯ TTS
                 const audioSrc = `${VERCEL_PROXY_URL}?fileId=${f.id}`;
                 
                 item.innerHTML = `
@@ -158,11 +172,7 @@ const VoiceRecorder = {
         if (!confirm("Bạn muốn xóa bản ghi này?")) return;
         const el = document.getElementById(`vr-item-${id}`);
         el.style.opacity = '0.3';
-        
-        // Gửi lệnh xóa (chạy ngầm)
         fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "deleteVoice", fileId: id }) });
-        
-        // Xóa UI ngay lập tức
         setTimeout(() => {
             el.remove();
             const badge = document.getElementById('vr-count');
@@ -171,15 +181,8 @@ const VoiceRecorder = {
     }
 };
 
-// --- TỰ ĐỘNG KÍCH HOẠT ---
-if (document.readyState === 'complete') {
-    VoiceRecorder.injectUI();
-} else {
-    window.addEventListener('load', () => VoiceRecorder.injectUI());
-}
+if (document.readyState === 'complete') VoiceRecorder.injectUI();
+else window.addEventListener('load', () => VoiceRecorder.injectUI());
 
-// Xuất Module để tránh lỗi SyntaxError
-export default VoiceRecorder;
-
-// Gắn vào window để các hàm onclick trong chuỗi HTML (như nút xóa) có thể gọi được
 window.VoiceRecorder = VoiceRecorder;
+export default VoiceRecorder;

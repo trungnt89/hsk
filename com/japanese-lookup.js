@@ -1,5 +1,5 @@
 /**
- * Japanese Lookup & Vocabulary Manager
+ * Japanese Lookup & Vocabulary Manager - iOS Compatible
  */
 
 const JapaneseLookup = (() => {
@@ -12,6 +12,7 @@ const JapaneseLookup = (() => {
       position: absolute; z-index: 99999; background: #fff; border: 1px solid #2563eb;
       border-radius: 12px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
       font-family: system-ui, -apple-system; width: 220px; pointer-events: auto;
+      -webkit-user-select: none; user-select: none;
     }
     .ja-lookup-word { color: #1e40af; font-size: 1.2em; font-weight: bold; display: block; }
     .ja-lookup-romaji { color: #64748b; font-size: 0.9em; font-style: italic; display: block; margin-bottom: 5px; }
@@ -21,6 +22,7 @@ const JapaneseLookup = (() => {
       position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px;
       background: #2563eb; color: white; border-radius: 50%; border: none;
       cursor: pointer; z-index: 9999; font-size: 24px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+      display: flex; align-items: center; justify-content: center;
     }
 
     .ja-modal {
@@ -31,7 +33,6 @@ const JapaneseLookup = (() => {
       background: white; width: 95%; max-width: 500px; max-height: 85vh;
       border-radius: 20px; padding: 20px; overflow-y: auto; position: relative;
     }
-    /* Nút đóng góc trên phải */
     .ja-close-modal {
       position: absolute; top: 15px; right: 15px; width: 32px; height: 32px;
       background: #f1f5f9; border: none; border-radius: 50%; cursor: pointer;
@@ -45,7 +46,8 @@ const JapaneseLookup = (() => {
     }
     .ja-btn-group { display: flex; gap: 8px; flex-shrink: 0; }
     .ja-btn-sm { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-size: 12px; background: #fff; }
-    .ja-edit-input { width: 100%; padding: 8px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    /* Font-size 16px trên mobile ngăn việc auto-zoom khi click input */
+    .ja-edit-input { width: 100%; padding: 10px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
   `;
   document.head.appendChild(style);
 
@@ -115,19 +117,13 @@ const JapaneseLookup = (() => {
   }
 
   window.JapaneseLookup = {
-    // Hàm xóa tối ưu: Ẩn ngay lập tức, không load lại danh sách
     deleteWord: async (id) => {
       const row = document.getElementById(`word-row-${id}`);
       if (!row) return;
-
       if (!confirm("Xóa từ này khỏi danh sách?")) return;
-
-      // Hiệu ứng xóa mềm trên giao diện
       row.style.transition = 'all 0.4s ease';
       row.style.opacity = '0';
       row.style.transform = 'translateX(30px)';
-      
-      // Xóa khỏi DOM sau khi hiệu ứng kết thúc
       setTimeout(() => {
         row.remove();
         const list = document.getElementById('ja-word-list');
@@ -135,13 +131,7 @@ const JapaneseLookup = (() => {
           list.innerHTML = "Chưa có từ vựng nào được lưu.";
         }
       }, 400);
-
-      // Gửi lệnh xóa lên server ngầm
-      console.log(`[Log] Requesting server delete for ID: ${id}`);
-      callGAS({ action: "deleteWord", id: id }).catch(err => {
-        console.error("Lỗi server khi xóa:", err);
-        alert("Không thể xóa trên server, hãy kiểm tra kết nối.");
-      });
+      callGAS({ action: "deleteWord", id: id });
     },
 
     editWord: (id, word, romaji, meaning) => {
@@ -164,7 +154,6 @@ const JapaneseLookup = (() => {
         romaji: document.getElementById(`edit-r-${id}`).value,
         meaning: document.getElementById(`edit-m-${id}`).value
       };
-      console.log(`[Log] Updating word ID: ${id}`);
       await callGAS(data);
       setTimeout(openManager, 800);
     },
@@ -176,8 +165,12 @@ const JapaneseLookup = (() => {
     createUI();
     popup.innerHTML = `<div style="font-size: 12px; color: #666;">Đang dịch...</div>`;
     popup.style.display = 'block';
-    popup.style.left = `${Math.min(x + window.pageXOffset, window.innerWidth - 240)}px`;
-    popup.style.top = `${y + window.pageYOffset + 20}px`;
+
+    const scrollX = window.scrollX || window.pageXOffset;
+    const scrollY = window.scrollY || window.pageYOffset;
+    
+    popup.style.left = `${Math.min(x + scrollX, window.innerWidth - 240)}px`;
+    popup.style.top = `${y + scrollY + 20}px`;
 
     try {
       const res = await fetch(TRANSLATE_API + encodeURIComponent(text));
@@ -197,7 +190,6 @@ const JapaneseLookup = (() => {
         meaning: meaning, 
         source: window.location.pathname.split('/').pop() 
       });
-      console.log(`[Log] Auto-saved: ${text}`);
     } catch (e) { 
       console.error("Lookup failed", e);
       popup.style.display = 'none'; 
@@ -207,26 +199,13 @@ const JapaneseLookup = (() => {
   return {
     init: () => {
       createUI();
-      document.addEventListener('mouseup', () => {
+      
+      const handleSelection = () => {
         const sel = window.getSelection();
         const selectedText = sel.toString().trim();
-        if (selectedText) {
+        if (selectedText && selectedText.length > 0) {
           const range = sel.getRangeAt(0);
           const rect = range.getBoundingClientRect();
-          lookup(selectedText, rect.left, rect.bottom);
+          if (rect.width > 0) lookup(selectedText, rect.left, rect.bottom);
         }
-      });
-      document.addEventListener('mousedown', (e) => {
-        if (popup && !popup.contains(e.target) && !e.target.classList.contains('ja-history-btn')) {
-          popup.style.display = 'none';
-        }
-      });
-    },
-    render: () => {
-        // Hàm này có thể để trống hoặc dùng để re-init nếu cần
-    }
-  };
-})();
-
-JapaneseLookup.init();
-export default JapaneseLookup;
+      };

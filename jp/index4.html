@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Japanese Reading Practice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../com/assistive.js"></script>
+  <script src="../com/TTSClient.js"></script>
+  <script type="module" src="../com/japanese-lookup.js"></script>
+  <style>
+    :root { --primary-color: #2563eb; --bg-color: #f8fafc; }
+    body { font-family: system-ui, -apple-system; max-width: 800px; margin: auto; padding: 16px; background: var(--bg-color); color: #1e293b; }
+    
+    /* Header & Menu */
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .menu-container { position: relative; display: inline-block; }
+    .menu-btn { background: white; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 1.2em; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    
+    .menu-content { 
+      display: none; position: absolute; right: 0; top: 100%; width: 220px; 
+      background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+      z-index: 100; padding: 10px; border: 1px solid #f1f5f9;
+    }
+    .menu-content.show { display: block; }
+    .menu-item { width: 100%; text-align: left; padding: 10px; margin: 2px 0; border: none; background: none; border-radius: 8px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+    .menu-item:hover { background: #f1f5f9; }
+    .menu-item.active { background: #eff6ff; color: var(--primary-color); font-weight: bold; }
+    
+    .menu-divider { height: 1px; background: #f1f5f9; margin: 8px 0; }
+    .menu-label { font-size: 11px; text-transform: uppercase; color: #94a3b8; padding: 0 10px; margin-top: 5px; }
+
+    /* Display Area */
+    .single-display { 
+      min-height: 180px; padding: 25px; border-radius: 20px; background: white; 
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #f1f5f9;
+    }
+    .ja-text { font-size: 1.6em; color: #0f172a; margin-bottom: 15px; line-height: 1.6; white-space: pre-wrap; }
+    .vi-text { font-size: 1.1em; color: #64748b; font-style: italic; line-height: 1.5; }
+
+    /* Bottom Navigation */
+    .pagination { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .page-info { font-weight: 600; color: #64748b; }
+    .nav-btn { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; min-width: 80px; }
+    .nav-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+    /* Selects in Menu */
+    .menu-select { width: 100%; padding: 8px; margin: 5px 0; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-content { background: white; padding: 20px; border-radius: 20px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    textarea { width: 100%; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; margin-top: 10px; font-size: 16px; min-height: 120px; resize: vertical; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h3 style="margin:0">📖 Reading</h3>
+  
+  <div class="menu-container">
+    <button class="menu-btn" onclick="toggleMenu(event)">⚙️</button>
+    <div class="menu-content" id="mainMenu">
+      <button class="menu-item" id="btnPlayCur" onclick="playCurrent()">▶️ Phát âm thanh</button>
+      <button class="menu-item" id="btnAudioToggle" onclick="toggleAudio()">🔊 Âm thanh: BẬT</button>
+      
+      <div class="menu-divider"></div>
+      <div class="menu-label">Chế độ lặp</div>
+      <button class="menu-item" id="btnRepeatOne" onclick="toggleRepeatOne()">🔂 Lặp 1 đoạn</button>
+      <button class="menu-item" id="btnRepeatAll" onclick="toggleRepeatAll()">🔁 Tự động chuyển</button>
+      
+      <div class="menu-divider"></div>
+      <div class="menu-label">Cài đặt giọng</div>
+      <div style="padding: 0 10px">
+        <select id="voice" class="menu-select">
+          <option value="ja-JP-NanamiNeural">Nữ – Nanami</option>
+          <option value="ja-JP-KeitaNeural" selected>Nam – Keita</option>
+        </select>
+        <select id="rate" class="menu-select">
+          <option value="0.7">Tốc độ: Rất chậm</option>
+          <option value="0.85">Tốc độ: Chậm</option>
+          <option value="1.0" selected>Tốc độ: Chuẩn</option>
+          <option value="1.25">Tốc độ: Nhanh</option>
+        </select>
+      </div>
+
+      <div class="menu-divider"></div>
+      <button class="menu-item" onclick="openEditor()">✏️ Quản lý / Sửa bài</button>
+    </div>
+  </div>
+</div>
+
+<div class="single-display">
+  <div class="ja-text" id="currentJa">Đang tải...</div>
+  <div class="vi-text" id="currentVi"></div>
+</div>
+
+<div class="pagination">
+  <button class="nav-btn" onclick="prevPage()" id="btnPrev">◀</button>
+  <div class="page-info" id="pageInfo">0 / 0</div>
+  <button class="nav-btn" onclick="nextPage()" id="btnNext">▶</button>
+</div>
+
+<div id="editorModal" class="modal">
+  <div class="modal-content">
+    <h3 style="margin:0">Quản lý nội dung</h3>
+    <textarea id="textInput"></textarea>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+      <button onclick="addText()" style="background: #ecfdf5; color: #059669; border:none; padding:12px; border-radius:10px; font-weight:600;">➕ Thêm</button>
+      <button onclick="updateText()" style="background: #eff6ff; color: #2563eb; border:none; padding:12px; border-radius:10px; font-weight:600;">✏️ Lưu</button>
+      <button onclick="deleteText()" style="color: #dc2626; grid-column: span 2; background: #fff1f2; border:none; padding:10px; border-radius:10px; margin-top:5px;">🗑 Xoá bài này</button>
+      <button onclick="closeEditor()" style="grid-column: span 2; border:1px solid #e2e8f0; padding:10px; border-radius:10px; margin-top:5px;">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- LOGIC GIAO DIỆN MENU ---
+function toggleMenu(e) {
+  e.stopPropagation();
+  document.getElementById("mainMenu").classList.toggle("show");
+}
+
+// Đóng menu khi click ra ngoài
+document.addEventListener("click", function(e) {
+  const menu = document.getElementById("mainMenu");
+  if (!menu.contains(e.target)) menu.classList.remove("show");
+});
+
+// --- GIỮ NGUYÊN TOÀN BỘ LOGIC CỦA BẠN VÀ CẬP NHẬT UI ---
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyNX96iC37hc8AunT8zWlG_yTFB2ipZp90-XivW8hWzVYVne9nftCC3mSFoTk10v93t/exec";
+let texts = [];
+let currentIndex = 0;
+let repeatOne = false;
+let repeatAll = false;
+let isAudioEnabled = true; 
+
+const jaDisplay = document.getElementById("currentJa");
+const viDisplay = document.getElementById("currentVi");
+const pageInfo = document.getElementById("pageInfo");
+
+function loadSettings() {
+  const v = localStorage.getItem("voice"), r = localStorage.getItem("rate");
+  if (v) voiceEl().value = v; if (r) rateEl().value = r;
+  const savedIndex = localStorage.getItem("lastIndex");
+  if (savedIndex !== null) currentIndex = parseInt(savedIndex);
+  const savedAudio = localStorage.getItem("audioEnabled");
+  if (savedAudio !== null) isAudioEnabled = savedAudio === "true";
+  repeatOne = localStorage.getItem("repeatOne") === "true";
+  repeatAll = localStorage.getItem("repeatAll") === "true";
+  updateButtonStates();
+  updateAudioButton();
+}
+
+function updateButtonStates() {
+  document.getElementById("btnRepeatOne").classList.toggle("active", repeatOne);
+  document.getElementById("btnRepeatAll").classList.toggle("active", repeatAll);
+}
+
+function updateAudioButton() {
+  const btn = document.getElementById("btnAudioToggle");
+  btn.textContent = isAudioEnabled ? "🔊 Âm thanh: BẬT" : "🔇 Âm thanh: TẮT";
+  btn.classList.toggle("active", isAudioEnabled);
+}
+
+function toggleAudio() {
+  isAudioEnabled = !isAudioEnabled;
+  localStorage.setItem("audioEnabled", isAudioEnabled);
+  if (!isAudioEnabled) {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (typeof stopAllAudio === "function") stopAllAudio();
+    setPlayBtnActive(false);
+  }
+  updateAudioButton();
+}
+
+function setPlayBtnActive(isActive) { document.getElementById("btnPlayCur").classList.toggle("active", isActive); }
+voiceEl().addEventListener("change", () => localStorage.setItem("voice", voiceEl().value));
+rateEl().addEventListener("change", () => localStorage.setItem("rate", rateEl().value));
+
+function openEditor() { 
+  document.getElementById("textInput").value = texts[currentIndex]?.ja || ""; 
+  document.getElementById("editorModal").style.display = "flex";
+  document.getElementById("mainMenu").classList.remove("show"); // Đóng menu
+}
+function closeEditor() { document.getElementById("editorModal").style.display = "none"; }
+
+async function loadTexts() {
+  try {
+    const res = await fetch(GAS_URL + `?_t=${Date.now()}`);
+    const data = await res.json();
+    texts = Array.isArray(data) ? data.filter(item => item.ja && !item.ja.toString().startsWith("Error:")) : [];
+    if (currentIndex >= texts.length) currentIndex = 0;
+    renderCurrent();
+  } catch (e) { jaDisplay.textContent = "Lỗi kết nối"; }
+}
+
+function renderCurrent() {
+  if (texts.length === 0) { jaDisplay.textContent = "Không có dữ liệu"; return; }
+  jaDisplay.textContent = texts[currentIndex].ja;
+  viDisplay.textContent = texts[currentIndex].vi;
+  pageInfo.textContent = `${currentIndex + 1} / ${texts.length}`;
+  document.getElementById("btnPrev").disabled = (currentIndex <= 0);
+  document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1 && !repeatAll);
+  localStorage.setItem("lastIndex", currentIndex);
+}
+
+function navigate(newIndex) {
+  if (newIndex >= 0 && newIndex < texts.length) {
+    currentIndex = newIndex;
+    renderCurrent();
+    if (isAudioEnabled) playCurrent();
+  } else if (repeatAll && texts.length > 0) {
+    currentIndex = 0;
+    renderCurrent();
+    if (isAudioEnabled) playCurrent();
+  }
+}
+
+function nextPage() { navigate(currentIndex + 1); }
+function prevPage() { navigate(currentIndex - 1); }
+
+async function playCurrent() {
+  const item = texts[currentIndex];
+  if (!item || !item.ja || !isAudioEnabled) return;
+  setPlayBtnActive(true);
+  try {
+    await speakCommon({ 
+      text: item.ja, 
+      voice: voiceEl().value, 
+      rate: rateEl().value, 
+      filename: "japanese_practice" 
+    });
+  } finally {
+    if (isAudioEnabled) onAudioEnded(); else setPlayBtnActive(false);
+  }
+}
+
+function onAudioEnded() {
+  setPlayBtnActive(false);
+  if (!isAudioEnabled) return; 
+  if (repeatOne) {
+    playCurrent();
+  } else if (repeatAll || currentIndex < texts.length - 1) {
+    setTimeout(() => { if (isAudioEnabled) nextPage(); }, 500);
+  }
+}
+
+async function callGas(data) { return fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) }); }
+async function addText() { const v = document.getElementById("textInput").value.trim(); if (!v) return; await callGas({ action: "add", text: v }); setTimeout(loadTexts, 1500); closeEditor(); }
+async function updateText() { if (texts[currentIndex]) { await callGas({ action: "update", index: currentIndex, text: document.getElementById("textInput").value }); setTimeout(loadTexts, 1500); closeEditor(); } }
+async function deleteText() { if (texts[currentIndex] && confirm("Xoá bài này?")) { await callGas({ action: "delete", index: currentIndex }); currentIndex = 0; setTimeout(loadTexts, 1500); closeEditor(); } }
+
+function toggleRepeatOne() { repeatOne = !repeatOne; if(repeatOne) repeatAll = false; localStorage.setItem("repeatOne", repeatOne); localStorage.setItem("repeatAll", repeatAll); updateButtonStates(); }
+function toggleRepeatAll() { repeatAll = !repeatAll; if(repeatAll) repeatOne = false; localStorage.setItem("repeatOne", repeatOne); localStorage.setItem("repeatAll", repeatAll); updateButtonStates(); }
+function voiceEl() { return document.getElementById("voice"); }
+function rateEl() { return document.getElementById("rate"); }
+
+loadSettings();
+loadTexts();
+</script>
+</body>
+</html>

@@ -13,12 +13,22 @@
 
   <style>
     :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
-    body { font-family: system-ui, -apple-system; max-width: 800px; margin: auto; padding: 6px; background: var(--bg); color: var(--text); }
+    body { font-family: system-ui, -apple-system; max-width: 800px; margin: auto; padding: 0 6px 20px 6px; background: var(--bg); color: var(--text); }
     
+    /* --- PHẦN GIỮ CỐ ĐỊNH (STICKY) --- */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      padding-top: 6px;
+      z-index: 1000;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
     .compact-toolbar { 
       background: white; padding: 6px 8px; border-radius: 8px; margin-bottom: 6px; 
       display: flex; justify-content: space-between; align-items: center; gap: 6px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .nav-group, .action-group { display: flex; align-items: center; gap: 4px; }
@@ -30,7 +40,7 @@
     }
     #currentTopic.has-content { display: block; }
 
-    .tabs-container { display: flex; gap: 2px; }
+    .tabs-container { display: flex; gap: 2px; background: var(--bg); }
     .tab-btn { 
       flex: 1; padding: 10px 2px; border: none; background: #e2e8f0; cursor: pointer; 
       border-radius: 6px 6px 0 0; font-size: 12px; font-weight: 600; color: #64748b; 
@@ -38,14 +48,16 @@
     }
     .tab-btn.active { background: white; color: var(--primary); border-bottom: 2px solid var(--primary); }
 
+    /* --- PHẦN NỘI DUNG CUỘN --- */
     .display-box { 
-      background: white; min-height: 300px; padding: 15px; border-radius: 0 0 10px 10px; 
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1.7; font-size: 1.15em;
+      background: white; min-height: 400px; padding: 15px; border-radius: 0 0 10px 10px; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1.8; font-size: 1.2em;
     }
     .content-area { display: none; white-space: pre-wrap; color: #000; }
-    .content-area.active { display: block; animation: fadeIn 0.2s ease-out; }
+    .content-area.active { display: block; }
     .vi-text { color: #475569; font-style: italic; font-size: 0.95em; }
 
+    /* UI Elements */
     button { padding: 4px 8px; border-radius: 5px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 12px; min-height: 30px; display: flex; align-items: center; }
     button.active { background: #dbeafe; border-color: var(--primary); color: var(--primary); font-weight: bold; }
     select { height: 30px; border-radius: 5px; border: 1px solid #cbd5e1; font-size: 11px; background: white; }
@@ -54,33 +66,35 @@
 </head>
 <body>
 
-<div class="compact-toolbar">
-  <div class="nav-group">
-    <button onclick="prevPage()" id="btnPrev">◀</button>
-    <span id="pageInfo">0/0</span>
-    <button onclick="nextPage()" id="btnNext">▶</button>
+<div class="sticky-header">
+  <div class="compact-toolbar">
+    <div class="nav-group">
+      <button onclick="prevPage()" id="btnPrev">◀</button>
+      <span id="pageInfo">0/0</span>
+      <button onclick="nextPage()" id="btnNext">▶</button>
+    </div>
+    <div class="action-group">
+      <button id="btnPlayCur" onclick="playCurrent()">▶️ Nghe</button>
+      <button id="btnRepeatOne" onclick="toggleRepeatOne()">🔂</button>
+      <select id="voice" onchange="saveSettings()">
+        <option value="ja-JP-KeitaNeural">Nam</option>
+        <option value="ja-JP-NanamiNeural">Nữ</option>
+      </select>
+      <select id="rate" onchange="saveSettings()">
+        <option value="0.7">0.7</option>
+        <option value="0.8">0.8</option>
+        <option value="1.0">1.0</option>
+      </select>
+    </div>
   </div>
-  <div class="action-group">
-    <button id="btnPlayCur" onclick="playCurrent()">▶️ Nghe</button>
-    <button id="btnRepeatOne" onclick="toggleRepeatOne()">🔂</button>
-    <select id="voice" onchange="saveSettings()">
-      <option value="ja-JP-KeitaNeural">Nam</option>
-      <option value="ja-JP-NanamiNeural">Nữ</option>
-    </select>
-    <select id="rate" onchange="saveSettings()">
-      <option value="0.7">0.7</option>
-      <option value="0.8">0.8</option>
-      <option value="1.0">1.0</option>
-    </select>
+
+  <div id="currentTopic"></div>
+
+  <div class="tabs-container">
+    <button class="tab-btn" id="tab0" onclick="switchTab(0)">Đoạn văn</button>
+    <button class="tab-btn" id="tab1" onclick="switchTab(1)">Nghĩa TV</button>
+    <button class="tab-btn" id="tab2" onclick="switchTab(2)">Hội thoại</button>
   </div>
-</div>
-
-<div id="currentTopic"></div>
-
-<div class="tabs-container">
-  <button class="tab-btn" id="tab0" onclick="switchTab(0)">Đoạn văn</button>
-  <button class="tab-btn" id="tab1" onclick="switchTab(1)">Nghĩa TV</button>
-  <button class="tab-btn" id="tab2" onclick="switchTab(2)">Hội thoại</button>
 </div>
 
 <div class="display-box">
@@ -93,7 +107,6 @@
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyNX96iC37hc8AunT8zWlG_yTFB2ipZp90-XivW8hWzVYVne9nftCC3mSFoTk10v93t/exec";
 let texts = [], currentIndex = 0, currentTab = 0, repeatOne = false;
 
-// --- Persistence Logic ---
 function saveSettings() {
   localStorage.setItem("lastIndex", currentIndex);
   localStorage.setItem("lastTab", currentTab);
@@ -113,12 +126,10 @@ function loadSettings() {
   const savedRate = localStorage.getItem("rate");
   if (savedRate) document.getElementById("rate").value = savedRate || "0.8";
 
-  // Update UI states
   document.getElementById("btnRepeatOne").classList.toggle("active", repeatOne);
-  switchTab(currentTab, false); // false to avoid redundant render calls during init
+  switchTab(currentTab, false);
 }
 
-// --- App Logic ---
 async function loadTexts() {
   try {
     const res = await fetch(GAS_URL + `?_t=${Date.now()}`);
@@ -184,6 +195,7 @@ function navigate(idx) {
   if (idx >= 0 && idx < texts.length) { 
     currentIndex = idx; 
     renderCurrent(); 
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Cuộn lên đầu nội dung khi đổi trang
   } 
 }
 function nextPage() { navigate(currentIndex + 1); }
@@ -195,7 +207,6 @@ function toggleRepeatOne() {
   saveSettings();
 }
 
-// Khởi tạo
 loadSettings();
 loadTexts();
 </script>

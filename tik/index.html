@@ -3,121 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Dashboard - Vercel Edition</title>
+    <title>TikTok Dashboard - Optimized</title>
     <style>
-        :root { --primary-color: #fe2c55; --bg-dark: #121212; --card-bg: #1e1e1e; }
-        body { font-family: 'Inter', system-ui, sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 20px; }
-        
-        .header { text-align: center; margin-bottom: 40px; }
-        .header h1 { margin: 0; font-size: 2rem; }
-        .status-log { font-size: 12px; color: #666; margin-top: 10px; font-family: monospace; }
+        :root { --primary-color: #fe2c55; --bg-dark: #121212; }
+        body { font-family: sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .status-log { font-size: 12px; color: #666; margin-top: 5px; }
 
         .container { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-            gap: 25px; 
-            max-width: 1400px; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 20px; 
+            max-width: 1600px; 
             margin: 0 auto; 
         }
 
         .video-card {
-            background: var(--card-bg);
-            border-radius: 16px;
+            background: #1e1e1e;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
             border: 1px solid #333;
+            min-height: 500px; /* Giữ khung khi chưa kịp load */
         }
 
-        /* Container cho Iframe TikTok */
         .video-wrapper {
             position: relative;
             width: 100%;
-            padding-top: 177.77%; /* Tỷ lệ 9:16 */
+            padding-top: 177.77%; 
             background: #000;
         }
+
         .video-wrapper iframe {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             border: none;
         }
 
-        .card-content { padding: 15px; background: #1a1a1a; }
-        .timestamp { font-size: 12px; color: #888; margin-bottom: 5px; display: block; }
-        .video-title { font-weight: 600; color: var(--primary-color); font-size: 15px; }
-
-        #error-msg { color: #fe2c55; text-align: center; display: none; padding: 20px; border: 1px dashed #fe2c55; border-radius: 8px; }
+        .card-content { padding: 12px; border-top: 1px solid #333; }
+        .timestamp { font-size: 11px; color: #888; }
+        .video-title { font-weight: 600; color: var(--primary-color); font-size: 14px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>🎬 Danh sách Video TikTok</h1>
-        <div id="status" class="status-log">Đang khởi tạo hệ thống...</div>
+        <div id="status" class="status-log">Đang chuẩn bị dữ liệu...</div>
     </div>
 
-    <div id="error-msg"></div>
     <div id="video-grid" class="container"></div>
 
     <script>
-        // Hàm ghi log tập trung
-        const logger = (msg, isError = false) => {
-            const statusLine = document.getElementById('status');
-            const timestamp = new Date().toLocaleTimeString();
-            const logMsg = `[${timestamp}] ${msg}`;
-            console[isError ? 'error' : 'log'](logMsg);
-            statusLine.innerText = logMsg;
+        const logger = (msg) => {
+            document.getElementById('status').innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            console.log(msg);
         };
 
-        // Hàm chính: Tải dữ liệu từ list.txt
-        async function initDashboard() {
-            logger("Bắt đầu fetch dữ liệu từ list.txt...");
-            
+        async function init() {
             try {
-                // Trên Vercel, fetch('./list.txt') sẽ gọi file nằm cùng thư mục public
-                const response = await fetch('./list.txt');
-                
-                if (!response.ok) {
-                    throw new Error(`Không tìm thấy file list.txt (HTTP ${response.status})`);
-                }
-
-                const data = await response.text();
-                logger("Tải file thành công, đang phân tích dữ liệu...");
-                renderVideos(data);
-
+                logger("Đang tải file list.txt...");
+                const res = await fetch('./list.txt');
+                const text = await res.text();
+                render(text);
             } catch (err) {
-                logger(err.message, true);
-                const errorDiv = document.getElementById('error-msg');
-                errorDiv.innerText = `Lỗi: ${err.message}. Hãy đảm bảo file list.txt nằm cùng thư mục với index.html.`;
-                errorDiv.style.display = 'block';
+                logger("Lỗi tải file: " + err.message);
             }
         }
 
-        function renderVideos(rawData) {
+        function render(rawData) {
             const grid = document.getElementById('video-grid');
-            grid.innerHTML = '';
-
-            // Tách các khối dữ liệu dựa trên dòng trống
             const entries = rawData.trim().split(/\n\s*\n/);
-            
+            logger(`Tìm thấy ${entries.length} mục. Đang tối ưu hiển thị...`);
+
+            const fragment = document.createDocumentFragment();
+
             entries.forEach((entry, index) => {
-                const lines = entry.split('\n');
-                let date = "";
-                let url = "";
+                const urlMatch = entry.match(/Liên kết: (.*)/);
+                const dateMatch = entry.match(/Ngày: (.*)/);
 
-                lines.forEach(line => {
-                    if (line.includes('Ngày:')) date = line.replace('Ngày:', '').trim();
-                    if (line.includes('Liên kết:')) url = line.replace('Liên kết:', '').trim();
-                });
-
-                if (url) {
-                    // Logic lấy Video ID (xử lý cả link tiktokv.com hoặc tiktok.com)
-                    const cleanUrl = url.endsWith('/') ? url.slice(0, -1) : url;
-                    const urlParts = cleanUrl.split('/');
-                    const videoId = urlParts[urlParts.length - 1];
-
-                    logger(`Đang render Video #${index + 1} (ID: ${videoId})`);
+                if (urlMatch) {
+                    const url = urlMatch[1].trim().replace(/\/$/, ""); // Xóa dấu / cuối
+                    const videoId = url.split('/').pop();
 
                     const card = document.createElement('div');
                     card.className = 'video-card';
@@ -127,22 +93,22 @@
                                 src="https://www.tiktok.com/embed/v2/${videoId}" 
                                 allowfullscreen 
                                 scrolling="no"
-                                title="TikTok Video ${videoId}">
-                            </iframe>
+                                loading="lazy"> </iframe>
                         </div>
                         <div class="card-content">
-                            <span class="timestamp">🗓️ ${date}</span>
+                            <span class="timestamp">${dateMatch ? dateMatch[1] : ''}</span>
                             <div class="video-title">Video #${index + 1}</div>
                         </div>
                     `;
-                    grid.appendChild(card);
+                    fragment.appendChild(card);
                 }
             });
-            logger(`Hoàn tất! Đã hiển thị ${entries.length} video.`);
+
+            grid.appendChild(fragment);
+            logger(`Hoàn tất! Đã tải ${entries.length} video.`);
         }
 
-        // Chạy chương trình
-        window.onload = initDashboard;
+        window.onload = init;
     </script>
 </body>
 </html>

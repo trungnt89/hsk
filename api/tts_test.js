@@ -5,7 +5,7 @@ export const config = {
 export default async function handler(req, context) {
   try {
     const fullUrl = new URL(req.url);
-    const text = fullUrl.searchParams.get('text') || '你好';
+    const text = (fullUrl.searchParams.get('text') || '你好').trim();
     const lang = fullUrl.searchParams.get('lang') || 'ja-JP';
     const voice = fullUrl.searchParams.get('voice') || 'ja-JP-KeitaNeural';
     const rate = fullUrl.searchParams.get('rate') || '1.0';
@@ -17,21 +17,36 @@ export default async function handler(req, context) {
     console.log(`\n=== [NEW REQUEST] ===`);
     console.log(`> Text: ${text}`);
 
-    // 2️⃣ CHECK GOOGLE DRIVE
+    // 2️⃣ CHECK GOOGLE DRIVE (Sửa lỗi parse HTML và so khớp chính xác tên)
     try {
       const checkRes = await fetch(`${GAS_URL}?action=check&filename=${encodeURIComponent(filename)}`);
-      const checkData = await checkRes.json();
-      
-      if (checkData.exists && checkData.directLink) {
-        const driveResponse = await fetch(checkData.directLink);
-        if (driveResponse.ok) {
-          const audio = await driveResponse.arrayBuffer();
-          return new Response(audio, {
-            headers: { 'Content-Type': 'audio/mpeg', 'X-Audio-Source': 'Google-Drive' }
-          });
+      const contentType = checkRes.headers.get('content-type');
+
+      // CHỈ parse nếu GAS trả về JSON hợp lệ (tránh lỗi Unexpected token '<')
+      if (checkRes.ok && contentType && contentType.includes('application/json')) {
+        const checkData = await checkRes.json();
+        
+        // Chuẩn hóa tên file trả về để so sánh chính xác
+        const returnedName = checkData.filename ? checkData.filename.replace('.mp3', '').trim() : '';
+
+        // KIỂM TRA CHÍNH XÁC: Tránh lấy nhầm file "我家在后面" khi tìm "后面"
+        if (checkData.exists && returnedName === filename && checkData.directLink) {
+          console.log(`[RESULT] Exact match found on Drive. Serving audio...`);
+          const driveResponse = await fetch(checkData.directLink);
+          if (driveResponse.ok) {
+            const audio = await driveResponse.arrayBuffer();
+            return new Response(audio, {
+              headers: { 'Content-Type': 'audio/mpeg', 'X-Audio-Source': 'Google-Drive' }
+            });
+          }
+        } else if (checkData.exists) {
+          console.log(`[SKIP] Filename mismatch: Got "${returnedName}"`);
         }
+      } else {
+        console.warn(`[GAS_WARNING] GAS returned non-JSON response (HTML or Error).`);
       }
     } catch (driveErr) {
+      // Nếu lỗi parse JSON xảy ra, log lại và vẫn tiếp tục xuống bước Azure
       console.error(`[ERROR] Drive process error: ${driveErr.message}`);
     }
 
@@ -64,10 +79,10 @@ export default async function handler(req, context) {
     const audio = await azureResponse.arrayBuffer();
 
     // 4️⃣ SAVE TO DRIVE (Chạy ngầm với waitUntil)
-    // Tác vụ này sẽ chạy sau khi phản hồi đã được gửi trả cho client
     const saveTask = (async () => {
       if (audio && GAS_URL) {
         try {
+          // Gửi lệnh upload lên GAS
           await fetch(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -77,14 +92,13 @@ export default async function handler(req, context) {
               fileData: Array.from(new Uint8Array(audio)) 
             })
           });
-          console.log(`[GAS_SAVE_RESPONSE]: Success`);
+          console.log(`[GAS_SAVE_RESPONSE]: Success for ${filename}`);
         } catch (e) {
           console.error(`[ASYNC ERROR] Save to Drive failed: ${e.message}`);
         }
       }
     })();
     
-    // Đăng ký tác vụ chạy nền
     context.waitUntil(saveTask);
 
     // 5️⃣ PHẢN HỒI NGAY LẬP TỨC

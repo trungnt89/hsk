@@ -9,126 +9,79 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #2563eb; --success: #10b981; --info: #0ea5e9;
-            --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --warning: #f59e0b;
+            --primary: #2563eb; --success: #10b981; --bg: #f8fafc; --card: #ffffff; --text: #1e293b;
         }
 
         body {
             font-family: 'Montserrat', sans-serif;
             background: var(--bg);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100dvh;
-            overflow: hidden;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            height: 100dvh; overflow: hidden;
             color: var(--text);
         }
 
         header {
-            padding: 15px 15px 5px;
-            text-align: center;
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            flex-shrink: 0;
+            padding: 15px 15px 5px; text-align: center;
+            background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
         }
 
         header h1 { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--primary); }
         header p { margin: 2px 0 0; font-size: 9px; color: #64748b; text-transform: uppercase; }
 
         .dashboard {
-            flex: 1;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            gap: 15px;
-            max-width: 500px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
-            overflow-y: auto;
+            flex: 1; padding: 15px;
+            display: flex; flex-direction: column;
+            gap: 12px; max-width: 500px; margin: 0 auto; width: 100%;
+            box-sizing: border-box; overflow-y: auto;
             padding-bottom: 40px;
         }
 
         .nav-card {
-            background: var(--card);
-            border-radius: 20px;
-            padding: 18px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            border: 1px solid #f1f5f9;
-            flex-shrink: 0;
+            background: var(--card); border-radius: 20px;
+            padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0; flex-shrink: 0;
         }
 
-        /* Nổi bật phần quan trọng */
-        .important-1 { background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%) !important; border: 1.5px solid #bfdbfe !important; }
-        .important-2 { background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%) !important; border: 1.5px solid #bbf7d0 !important; }
+        /* Highlight 2 phần đầu với màu nền rõ rệt */
+        .important-1 { background: #e0f2fe !important; border: 2px solid #7dd3fc !important; }
+        .important-2 { background: #dcfce7 !important; border: 2px solid #86efac !important; }
 
+        .group-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
         .icon-wrapper {
-            width: 36px; height: 36px;
-            border-radius: 10px;
+            width: 32px; height: 32px; border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px; flex-shrink: 0;
+            font-size: 16px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .group-header {
-            display: flex; align-items: center;
-            gap: 12px; margin-bottom: 5px;
-        }
-
-        .group-title { font-size: 15px; font-weight: 800; }
-        .group-desc { font-size: 11px; color: #64748b; }
+        .group-title { font-size: 14px; font-weight: 800; }
+        .group-desc { font-size: 10px; color: #64748b; }
 
         .group-links {
-            margin: 15px 0 0; padding: 0;
-            list-style: none;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* Cố định 2 cột cho cân đối */
-            gap: 12px;
+            margin: 0; padding: 0; list-style: none;
+            display: flex; flex-wrap: wrap; gap: 10px;
         }
 
-        /* Phần hệ thống có 3 nút nên cho phép tự co giãn đều */
-        .group-system .group-links {
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        }
+        .group-links li { flex: 1 1 calc(50% - 10px); }
+        .group-system .group-links li { flex: 1 1 calc(30% - 10px); min-width: 80px; }
+
+        /* Nút đơn hàng (PMP) chiếm 100% chiều ngang */
+        .full-width { flex: 1 1 100% !important; }
 
         .group-links a {
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 10px; 
-            border-radius: 14px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            transition: all 0.2s;
-            text-align: center;
+            text-decoration: none; font-size: 12px; font-weight: 700;
+            color: var(--text); display: flex; align-items: center; justify-content: center;
+            padding: 18px 5px; border-radius: 12px;
+            background: #ffffff; border: 1px solid #e2e8f0;
+            transition: all 0.2s; text-align: center; width: 100%; box-sizing: border-box;
         }
 
-        .group-links a:active { 
-            background: #f1f5f9; 
-            transform: scale(0.95); 
-            border-color: #cbd5e1;
-        }
-
-        .bg-learn { background: #dbeafe; color: var(--primary); }
-        .bg-audio { background: #d1fae5; color: var(--success); }
-        .bg-challenge { background: #ffedd5; color: var(--warning); }
-        .bg-system { background: #f1f5f9; color: #334155; }
+        .group-links a:active { background: #f1f5f9; transform: scale(0.96); }
 
         footer {
-            padding: 12px;
-            text-align: center;
-            font-size: 9px;
-            color: #94a3b8;
-            font-weight: 600;
-            flex-shrink: 0;
-            background: white;
-            border-top: 1px solid #f1f5f9;
+            padding: 10px; text-align: center; font-size: 8px;
+            color: #94a3b8; font-weight: 600; flex-shrink: 0;
+            background: white; border-top: 1px solid #f1f5f9;
         }
     </style>
 </head>
@@ -142,23 +95,23 @@
 <div class="dashboard">
     <div class="nav-card important-1">
         <div class="group-header">
-            <div class="icon-wrapper bg-audio">🏆</div>
+            <div class="icon-wrapper">🏆</div>
             <div>
                 <div class="group-title">Chứng chỉ</div>
-                <div class="group-desc">Học & ôn tập chuyên sâu</div>
+                <div class="group-desc">PMP Exam Preparation</div>
             </div>
         </div>
         <ul class="group-links">
-            <li style="grid-column: span 2;"><a href="pmp/index.html">📘 PMP Exam Prep</a></li>
+            <li class="full-width"><a href="pmp/index.html">📘 PMP Exam Prep</a></li>
         </ul>
     </div>
     
     <div class="nav-card important-2">
         <div class="group-header">
-            <div class="icon-wrapper bg-learn">🎓</div>
+            <div class="icon-wrapper">🎓</div>
             <div>
                 <div class="group-title">Học ngôn ngữ</div>
-                <div class="group-desc">Tiếng Trung & Tiếng Nhật</div>
+                <div class="group-desc">Japanese & Chinese</div>
             </div>
         </div>
         <ul class="group-links">
@@ -169,10 +122,10 @@
 
     <div class="nav-card">
         <div class="group-header">
-            <div class="icon-wrapper bg-challenge">⏱️</div>
+            <div class="icon-wrapper">⏱️</div>
             <div>
                 <div class="group-title">Năng suất</div>
-                <div class="group-desc">Thói quen & quản lý</div>
+                <div class="group-desc">Thói quen & Quản lý</div>
             </div>
         </div>
         <ul class="group-links">
@@ -183,16 +136,16 @@
 
     <div class="nav-card group-system">
         <div class="group-header">
-            <div class="icon-wrapper bg-system">🛠️</div>
+            <div class="icon-wrapper">🛠️</div>
             <div>
                 <div class="group-title">Hệ thống</div>
                 <div class="group-desc">Dữ liệu & Cấu hình</div>
             </div>
         </div>
         <ul class="group-links">
-            <li><a href="sms/index.html">💬 Telegram</a></li>
-            <li><a href="notify/index.html">⏱ Scheduler</a></li>
-            <li><a href="db/index.html">🗄️ Database</a></li>
+            <li><a href="sms/index.html">💬 SMS</a></li>
+            <li><a href="notify/index.html">⏱ Sched.</a></li>
+            <li><a href="db/index.html">🗄️ DB</a></li>
         </ul>
     </div>
 </div>
@@ -202,7 +155,7 @@
 </footer>
 
 <script>
-    console.log("[Log] Style updated: Important sections highlighted, grid alignment fixed.");
+    console.log("[Log] Final layout optimized: Solid colors for priority, Flex-grid for alignment.");
 </script>
 
 </body>

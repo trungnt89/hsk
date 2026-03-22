@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TikTok Dashboard - Swipe Friendly</title>
+    <title>TikTok Dashboard - Shuffle & Swipe</title>
     <style>
         :root { --primary-color: #fe2c55; --bg-dark: #121212; }
         body { 
             font-family: sans-serif; background-color: var(--bg-dark); 
             color: #fff; margin: 0; padding: 0; 
-            overflow: hidden; touch-action: pan-y; /* Cho phép vuốt dọc toàn trang */
+            overflow-y: scroll; /* Cho phép cuộn dọc thực sự */
+            touch-action: pan-y; 
         }
         
         #start-overlay {
@@ -24,86 +25,104 @@
 
         .main-viewer {
             display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100vh; width: 100%;
+            justify-content: center; min-height: 100vh; width: 100%;
+            padding: 20px 0;
         }
 
-        /* Vùng chứa Iframe - Thu nhỏ để lộ lề vuốt */
+        /* Vùng hiển thị video - 90% chiều rộng */
         #video-display-area {
-            width: 90%; /* Chỉ chiếm 90% chiều rộng */
+            width: 90%; 
             height: 75vh; 
             max-width: 400px;
             background: #000; 
             position: relative; 
             border-radius: 15px; 
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
             z-index: 10;
         }
 
         iframe { width: 100%; height: 100%; border: none; }
 
         .controls {
-            margin-top: 20px; display: flex; gap: 15px; align-items: center; z-index: 20;
+            margin-top: 25px; display: flex; gap: 15px; align-items: center; z-index: 20;
         }
         .nav-btn {
             background: #333; color: white; border: 1px solid #444;
             padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold;
-            -webkit-tap-highlight-color: transparent;
         }
         .nav-btn:active { background: var(--primary-color); }
-        .info { font-size: 13px; color: #888; margin-top: 10px; }
 
-        /* Vùng đệm lề hỗ trợ vuốt */
-        .swipe-margin {
-            position: fixed; top: 0; width: 5%; height: 100%; z-index: 5;
-            /* background: rgba(255,255,255,0.05);  Bật cái này nếu muốn nhìn thấy vùng vuốt */
+        .info { font-size: 13px; color: #888; margin-top: 15px; text-align: center; line-height: 1.6; }
+        
+        /* Chỉ dẫn vùng vuốt */
+        .swipe-hint {
+            position: fixed; top: 50%; transform: translateY(-50%);
+            font-size: 10px; color: #333; writing-mode: vertical-rl;
+            pointer-events: none;
         }
-        .left { left: 0; }
-        .right { right: 0; }
     </style>
 </head>
 <body>
 
     <div id="start-overlay">
-        <h2>TikTok Dashboard</h2>
-        <button class="start-btn" onclick="startApp()">BẮT ĐẦU XEM</button>
+        <h2 style="margin-bottom: 20px;">TikTok Random Dashboard</h2>
+        <button class="start-btn" onclick="startApp()">BẮT ĐẦU XEM (MÚC!)</button>
     </div>
 
-    <div class="swipe-margin left"></div>
-    <div class="swipe-margin right"></div>
+    <div class="swipe-hint" style="left: 5px;">⬅ VUỐT Ở ĐÂY ⬅</div>
+    <div class="swipe-hint" style="right: 5px;">➡ VUỐT Ở ĐÂY ➡</div>
 
     <div class="main-viewer">
         <div id="video-display-area">
             <div id="placeholder" style="display:flex; align-items:center; justify-content:center; height:100%; color:#444;">
-                Đang nạp video...
+                Đang nạp video ngẫu nhiên...
             </div>
         </div>
 
         <div class="controls">
-            <button class="nav-btn" onclick="changeVideo(-1)">⬅ TRƯỚC</button>
-            <button class="nav-btn" style="background: var(--primary-color);" onclick="changeVideo(1)">SAU ➡</button>
+            <button class="nav-btn" onclick="changeVideo(-1)">TRƯỚC</button>
+            <button class="nav-btn" style="background: var(--primary-color);" onclick="changeVideo(1)">SAU</button>
         </div>
         
-        <div id="video-info" class="info">Video 0 / 0</div>
+        <div id="video-info" class="info">Đang trộn danh sách...</div>
     </div>
 
     <script>
         let allVideos = [];
         let currentIndex = 0;
 
+        // Hàm trộn ngẫu nhiên mảng (Fisher-Yates Shuffle)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         async function init() {
             try {
                 const res = await fetch('./list.txt');
                 const text = await res.text();
                 const entries = text.trim().split(/\n\s*\n/);
-                allVideos = entries.map((entry, index) => {
+                
+                let rawList = entries.map((entry, index) => {
                     const urlMatch = entry.match(/Liên kết: (.*)/);
                     const dateMatch = entry.match(/Ngày: (.*)/);
                     const url = urlMatch ? urlMatch[1].trim().replace(/\/$/, "") : "";
-                    return { id: url.split('/').pop(), date: dateMatch ? dateMatch[1] : 'N/A' };
+                    return { 
+                        id: url.split('/').pop(), 
+                        date: dateMatch ? dateMatch[1] : 'N/A' 
+                    };
                 }).filter(v => v.id);
-                updateInfo();
-            } catch (err) { console.error(err); }
+
+                // TRỘN NGẪU NHIÊN DANH SÁCH
+                allVideos = shuffleArray(rawList);
+                console.log("[Log] Đã trộn ngẫu nhiên 1683 video.");
+                
+                updateStatus();
+            } catch (err) { console.error("Lỗi dữ liệu:", err); }
         }
 
         function startApp() {
@@ -114,30 +133,30 @@
         function changeVideo(step) {
             let nextIndex = currentIndex + step;
             if (nextIndex >= 0 && nextIndex < allVideos.length) {
-                // Việc bấm nút này chính là tương tác giúp duy trì âm thanh
                 loadVideo(nextIndex);
             }
         }
 
         function loadVideo(index) {
             const displayArea = document.getElementById('video-display-area');
+            // Dọn dẹp tuyệt đối video cũ (tắt âm thanh)
             displayArea.innerHTML = ""; 
             
             currentIndex = index;
             const video = allVideos[index];
 
             const iframe = document.createElement('iframe');
-            // Thêm mute=0 vào src để cố gắng gọi âm thanh
+            // Thêm mute=0 và nạp lại src để tận dụng tương tác click nút "Sau" của người dùng
             iframe.src = `https://www.tiktok.com/embed/v2/${video.id}?autoplay=1&mute=0`;
             iframe.allow = "autoplay; fullscreen";
             
             displayArea.appendChild(iframe);
-            updateInfo();
+            updateStatus();
         }
 
-        function updateInfo() {
-            document.getElementById('video-info').innerText = 
-                `Video ${currentIndex + 1} / ${allVideos.length} | ${allVideos[currentIndex]?.date || ''}`;
+        function updateStatus() {
+            const info = document.getElementById('video-info');
+            info.innerHTML = `Video ${currentIndex + 1} / ${allVideos.length}<br><small>Gốc: ${allVideos[currentIndex]?.date || ''}</small><br>🎲 Đã xáo trộn thứ tự`;
         }
 
         window.onload = init;

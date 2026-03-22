@@ -1,5 +1,5 @@
 /**
- * Japanese Lookup & Vocabulary Manager - iOS Optimized
+ * Japanese Lookup & Vocabulary Manager - iOS Optimized (Fixed Header)
  */
 
 const JapaneseLookup = (() => {
@@ -31,11 +31,23 @@ const JapaneseLookup = (() => {
       background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;
     }
     .ja-modal-content {
-      background: white; width: 95%; max-width: 500px; max-height: 85vh;
-      border-radius: 20px; padding: 20px; overflow-y: auto; position: relative;
+      background: white; width: 95%; max-width: 500px; height: 85vh;
+      border-radius: 20px; padding: 0; overflow: hidden; position: relative;
+      display: flex; flex-direction: column;
+    }
+    .ja-modal-header {
+      padding: 20px 20px 10px 20px;
+      background: white;
+      position: sticky; top: 0; z-index: 10;
+      border-bottom: 2px solid #2563eb;
+    }
+    #ja-word-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 20px 20px 20px;
     }
     .ja-close-modal {
-      position: absolute; top: 15px; right: 15px; width: 32px; height: 32px;
+      position: absolute; top: 18px; right: 15px; width: 32px; height: 32px;
       background: #f1f5f9; border: none; border-radius: 50%; cursor: pointer;
       display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748b;
     }
@@ -71,11 +83,13 @@ const JapaneseLookup = (() => {
     if (!modal) {
       modal = document.createElement('div');
       modal.className = 'ja-modal';
-      modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+      // Đã bỏ modal.onclick để tránh việc click ra ngoài vùng modal làm đóng cửa sổ
       modal.innerHTML = `
         <div class="ja-modal-content">
-          <button class="ja-close-modal" onclick="this.closest('.ja-modal').style.display='none'">✕</button>
-          <h3 style="margin-top:0; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">Từ vựng đã lưu</h3>
+          <div class="ja-modal-header">
+            <button class="ja-close-modal" onclick="this.closest('.ja-modal').style.display='none'">✕</button>
+            <h3 style="margin:0;">Từ vựng đã lưu</h3>
+          </div>
           <div id="ja-word-list">Đang tải dữ liệu...</div>
         </div>`;
       document.body.appendChild(modal);

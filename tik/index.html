@@ -1,133 +1,180 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Dashboard - Audio Optimized</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TikTok Clone - Swipe Mode</title>
     <style>
-        :root { --primary-color: #fe2c55; --bg-dark: #121212; }
-        body { font-family: sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 20px; padding-top: 80px; }
-        
-        /* Thanh điều khiển cố định ở trên cùng */
-        .top-bar {
-            position: fixed; top: 0; left: 0; width: 100%;
-            background: rgba(30, 30, 30, 0.95);
-            padding: 10px 0; z-index: 1000;
-            border-bottom: 1px solid #333;
-            text-align: center;
+        :root { --primary-color: #fe2c55; --bg-dark: #000; }
+        * { box-sizing: border-box; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background-color: var(--bg-dark); overflow: hidden; 
         }
 
-        .container { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-            gap: 20px; max-width: 1600px; margin: 0 auto; 
+        /* Container cuộn dọc */
+        #video-container {
+            width: 100%; height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory; /* Lực hút cuộn dọc */
+            scroll-behavior: smooth;
         }
 
-        .video-card { background: #1e1e1e; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
-        .video-wrapper { position: relative; width: 100%; padding-top: 177.77%; background: #000; }
-
-        .play-placeholder {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 1;
+        .video-section {
+            width: 100%; height: 100vh;
+            scroll-snap-align: start; /* Bắt dính từng khung hình */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
         }
 
-        iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 2; }
-
-        .nav-controls {
-            position: absolute; bottom: 15px; left: 0; width: 100%;
-            display: flex; justify-content: center; gap: 10px; z-index: 10;
-        }
-        
-        .nav-btn {
-            background: var(--primary-color); color: white; border: none;
-            padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;
+        /* Frame video */
+        .tiktok-frame {
+            width: 100%; height: 100%;
+            max-width: 500px; /* Giới hạn chiều rộng trên máy tính */
+            position: relative;
         }
 
-        .card-content { padding: 12px; }
-        .timestamp { font-size: 11px; color: #888; }
+        iframe {
+            width: 100%; height: 100%;
+            border: none;
+        }
+
+        /* Lớp phủ chặn tương tác để ưu tiên vuốt */
+        .touch-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 80%;
+            z-index: 5; /* Để lại phần dưới cho các nút của TikTok nếu cần */
+        }
+
+        /* Nút kích hoạt âm thanh ban đầu */
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: white; text-align: center;
+        }
+        .start-btn {
+            background: var(--primary-color);
+            border: none; color: white;
+            padding: 15px 40px; border-radius: 30px;
+            font-size: 18px; font-weight: bold; cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .info-overlay {
+            position: absolute; bottom: 80px; left: 20px;
+            z-index: 10; color: white; text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <div id="status" style="font-size: 12px; color: #888; margin-bottom: 5px;">Sẵn sàng</div>
-        <div style="font-size: 11px; color: var(--primary-color);">
-            💡 Mẹo: Bấm vào video đầu tiên để "mở khóa" âm thanh cho toàn bộ trang.
-        </div>
+    <div id="start-overlay">
+        <h1>TikTok Dashboard</h1>
+        <p>Nhấn nút bên dưới để bắt đầu và bật âm thanh</p>
+        <button class="start-btn" onclick="startApp()">BẮT ĐẦU XEM</button>
     </div>
 
-    <div id="video-grid" class="container"></div>
+    <div id="video-container">
+        </div>
 
     <script>
         let allVideos = [];
-        let currentPlayingIndex = null;
+        let loadedIndices = new Set();
 
         async function init() {
             try {
                 const res = await fetch('./list.txt');
                 const text = await res.text();
                 const entries = text.trim().split(/\n\s*\n/);
+                
                 allVideos = entries.map((entry, index) => {
                     const urlMatch = entry.match(/Liên kết: (.*)/);
                     const dateMatch = entry.match(/Ngày: (.*)/);
                     const url = urlMatch ? urlMatch[1].trim().replace(/\/$/, "") : "";
-                    return { index, id: url.split('/').pop(), date: dateMatch ? dateMatch[1] : '' };
+                    return {
+                        id: url.split('/').pop(),
+                        date: dateMatch ? dateMatch[1] : 'Không rõ ngày'
+                    };
                 }).filter(v => v.id);
-                render();
-            } catch (err) { console.error(err); }
+
+                renderInitial();
+            } catch (err) {
+                alert("Không thể tải file list.txt");
+            }
         }
 
-        function render() {
-            const grid = document.getElementById('video-grid');
-            const fragment = document.createDocumentFragment();
-            allVideos.forEach((video) => {
-                const card = document.createElement('div');
-                card.className = 'video-card';
-                card.innerHTML = `
-                    <div class="video-wrapper" id="wrapper-${video.index}">
-                        <div class="play-placeholder" onclick="playVideo(${video.index})">
-                            <div style="font-size:40px;">▶</div>
-                            <span>Video #${video.index + 1}</span>
+        function renderInitial() {
+            const container = document.getElementById('video-container');
+            
+            allVideos.forEach((video, index) => {
+                const section = document.createElement('div');
+                section.className = 'video-section';
+                section.id = `section-${index}`;
+                section.innerHTML = `
+                    <div class="tiktok-frame" id="frame-${index}">
+                        <div class="info-overlay">
+                            <b>Video #${index + 1}</b><br>
+                            <small>🗓️ ${video.date}</small>
                         </div>
+                        <div class="touch-overlay"></div>
+                        <div style="color:#333; text-align:center; padding-top:50vh;">Đang chờ vuốt...</div>
                     </div>
-                    <div class="card-content"><span class="timestamp">🗓️ ${video.date}</span></div>
                 `;
-                fragment.appendChild(card);
+                container.appendChild(section);
             });
-            grid.appendChild(fragment);
+
+            // Lắng nghe sự kiện cuộn để load video động
+            container.addEventListener('scroll', handleScroll);
         }
 
-        function playVideo(index) {
+        function handleScroll() {
+            const container = document.getElementById('video-container');
+            const index = Math.round(container.scrollTop / window.innerHeight);
+            
+            if (!loadedIndices.has(index)) {
+                loadIframe(index);
+                // Dọn dẹp các video ở xa để tránh lag (cách 2 slide)
+                unloadFarVideos(index);
+            }
+        }
+
+        function loadIframe(index) {
             if (index < 0 || index >= allVideos.length) return;
-            if (currentPlayingIndex !== null) resetPlaceholder(currentPlayingIndex);
-
-            currentPlayingIndex = index;
+            const frame = document.getElementById(`frame-${index}`);
             const video = allVideos[index];
-            const wrapper = document.getElementById(`wrapper-${index}`);
-
-            // NHÚNG VIDEO: Lưu ý bỏ qua tham số mute nếu trình duyệt đã được kích hoạt
-            wrapper.innerHTML = `
+            
+            frame.innerHTML = `
                 <iframe src="https://www.tiktok.com/embed/v2/${video.id}?autoplay=1" 
                         allow="autoplay; fullscreen" allowfullscreen></iframe>
-                <div class="nav-controls">
-                    <button class="nav-btn" onclick="playVideo(${index - 1})">⬅ Trước</button>
-                    <button class="nav-btn" onclick="playVideo(${index + 1})">Sau ➡</button>
+                <div class="info-overlay">
+                    <b>Video #${index + 1}</b><br>
+                    <small>🗓️ ${video.date}</small>
                 </div>
             `;
-            wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            document.getElementById('status').innerText = `Đang xem: Video #${index + 1} / ${allVideos.length}`;
+            loadedIndices.add(index);
+            console.log(`[Log] Đã nạp video ${index}`);
         }
 
-        function resetPlaceholder(index) {
-            const wrapper = document.getElementById(`wrapper-${index}`);
-            if (wrapper) {
-                wrapper.innerHTML = `
-                    <div class="play-placeholder" onclick="playVideo(${index})">
-                        <div style="font-size:40px;">▶</div>
-                        <span>Video #${index + 1}</span>
-                    </div>`;
-            }
+        function unloadFarVideos(currentIndex) {
+            loadedIndices.forEach(idx => {
+                if (Math.abs(idx - currentIndex) > 2) {
+                    const frame = document.getElementById(`frame-${idx}`);
+                    frame.innerHTML = `<div style="color:#333; text-align:center; padding-top:50vh;">Đã tạm dừng</div>`;
+                    loadedIndices.delete(idx);
+                }
+            });
+        }
+
+        function startApp() {
+            document.getElementById('start-overlay').style.display = 'none';
+            // Load video đầu tiên ngay khi bấm nút
+            loadIframe(0);
         }
 
         window.onload = init;

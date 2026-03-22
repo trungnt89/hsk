@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Dashboard - Click to Play</title>
+    <title>TikTok Dashboard - Anti-Overlap Audio</title>
     <style>
         :root { --primary-color: #fe2c55; --bg-dark: #121212; }
         body { font-family: sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 20px; }
@@ -37,7 +37,6 @@
             justify-content: center;
         }
 
-        /* Nút Play giả lập */
         .play-placeholder {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -85,9 +84,12 @@
             console.log(msg);
         };
 
+        // Lưu trữ ID của video đang phát để quản lý
+        let currentPlayingId = null;
+
         async function init() {
             try {
-                logger("Đang tải list.txt...");
+                logger("Đ đang tải list.txt...");
                 const res = await fetch('./list.txt');
                 if(!res.ok) throw new Error("Không thấy file list.txt");
                 const text = await res.text();
@@ -98,7 +100,25 @@
         }
 
         function loadVideo(container, videoId) {
+            // 1. Tìm và dọn dẹp video đang phát trước đó (nếu có)
+            if (currentPlayingId && currentPlayingId !== videoId) {
+                const oldWrapper = document.getElementById(`wrapper-${currentPlayingId}`);
+                if (oldWrapper) {
+                    console.log(`[LOG] Dừng video cũ: ${currentPlayingId}`);
+                    // Khôi phục lại giao diện Placeholder cho video cũ
+                    oldWrapper.innerHTML = `
+                        <div class="play-placeholder">
+                            <div class="play-icon">▶</div>
+                            <span style="font-size:12px; color:#aaa;">Nhấn để tải video</span>
+                        </div>`;
+                }
+            }
+
+            // 2. Cập nhật ID video hiện tại
+            currentPlayingId = videoId;
             console.log(`[LOG] Đang nạp Iframe cho ID: ${videoId}`);
+
+            // 3. Nạp iframe mới
             container.innerHTML = `
                 <iframe 
                     src="https://www.tiktok.com/embed/v2/${videoId}?autoplay=1" 
@@ -110,7 +130,7 @@
         function render(rawData) {
             const grid = document.getElementById('video-grid');
             const entries = rawData.trim().split(/\n\s*\n/);
-            logger(`Tìm thấy ${entries.length} video. Click vào hình để xem.`);
+            logger(`Tìm thấy ${entries.length} video.`);
 
             const fragment = document.createDocumentFragment();
 
@@ -125,7 +145,6 @@
                     const card = document.createElement('div');
                     card.className = 'video-card';
                     
-                    // Tạo giao diện chờ (Placeholder)
                     card.innerHTML = `
                         <div class="video-wrapper" id="wrapper-${videoId}" onclick="loadVideo(this, '${videoId}')">
                             <div class="play-placeholder">
@@ -143,7 +162,7 @@
             });
 
             grid.appendChild(fragment);
-            logger(`Đã sẵn sàng ${entries.length} video. Chế độ tiết kiệm tài nguyên.`);
+            logger(`Sẵn sàng. Click để xem (Chế độ tự động dọn dẹp âm thanh).`);
         }
 
         window.onload = init;

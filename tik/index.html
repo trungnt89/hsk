@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Dashboard Pro</title>
+    <title>TikTok Dashboard - Manual Navigation</title>
     <style>
         :root { --primary-color: #fe2c55; --bg-dark: #121212; }
         body { font-family: sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 0; overflow: hidden; }
         
+        /* Màn hình chờ kích hoạt âm thanh */
         #start-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999;
@@ -18,41 +19,45 @@
             padding: 15px 40px; border-radius: 30px; font-size: 18px; cursor: pointer;
         }
 
+        /* Khung hiển thị chính */
         .main-viewer {
             display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100vh; width: 100%;
+            justify-content: center; height: 100vh; width: 100%; position: relative;
         }
 
         #video-display-area {
             width: 100%; height: 80vh; max-width: 450px;
-            background: #000; border-radius: 15px; overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
+            background: #000; position: relative; border-radius: 15px; overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
-        /* Quan trọng: Cố định kích thước cho Tiktok Embed */
-        .tiktok-embed { margin: 0 !important; width: 100% !important; height: 100% !important; }
+        iframe { width: 100%; height: 100%; border: none; }
 
-        .controls { margin-top: 15px; display: flex; gap: 15px; align-items: center; }
+        /* Thanh điều khiển */
+        .controls {
+            margin-top: 20px; display: flex; gap: 20px; align-items: center;
+        }
         .nav-btn {
             background: #333; color: white; border: 1px solid #444;
             padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold;
         }
         .nav-btn:hover { background: var(--primary-color); }
-        .info { font-size: 13px; color: #888; margin-top: 8px; }
+        .info { font-size: 14px; color: #888; margin-top: 10px; }
     </style>
-    <script async src="https://www.tiktok.com/embed.js"></script>
 </head>
 <body>
 
     <div id="start-overlay">
-        <h2>TikTok Dashboard</h2>
-        <p style="color: #666;">Nhấn để bắt đầu và giữ âm thanh</p>
-        <button class="start-btn" onclick="startApp()">BẮT ĐẦU</button>
+        <h2 style="margin-bottom: 10px;">TikTok Dashboard</h2>
+        <p style="color: #666; margin-bottom: 20px;">Nhấn để xem và tự động bật âm thanh</p>
+        <button class="start-btn" onclick="startApp()">BẮT ĐẦU XEM</button>
     </div>
 
     <div class="main-viewer">
         <div id="video-display-area">
-            <div id="video-container" style="width: 100%; height: 100%;"></div>
+            <div id="placeholder" style="display:flex; align-items:center; justify-content:center; height:100%; color:#444;">
+                Đang chờ tải video...
+            </div>
         </div>
 
         <div class="controls">
@@ -60,7 +65,7 @@
             <button class="nav-btn" style="background: var(--primary-color);" onclick="changeVideo(1)">SAU ➡</button>
         </div>
         
-        <div id="video-info" class="info">Đang tải...</div>
+        <div id="video-info" class="info">Video 0 / 0</div>
     </div>
 
     <script>
@@ -69,6 +74,7 @@
 
         async function init() {
             try {
+                console.log("[Log] Đang nạp danh sách list.txt...");
                 const res = await fetch('./list.txt');
                 const text = await res.text();
                 const entries = text.trim().split(/\n\s*\n/);
@@ -77,10 +83,16 @@
                     const urlMatch = entry.match(/Liên kết: (.*)/);
                     const dateMatch = entry.match(/Ngày: (.*)/);
                     const url = urlMatch ? urlMatch[1].trim().replace(/\/$/, "") : "";
-                    return { id: url.split('/').pop(), date: dateMatch ? dateMatch[1] : 'N/A' };
+                    return {
+                        id: url.split('/').pop(),
+                        date: dateMatch ? dateMatch[1] : 'N/A'
+                    };
                 }).filter(v => v.id);
-                updateStatus();
-            } catch (err) { console.error("Lỗi nạp file:", err); }
+
+                updateInfo();
+            } catch (err) {
+                console.error("[Log Error] Lỗi fetch:", err);
+            }
         }
 
         function startApp() {
@@ -96,39 +108,28 @@
         }
 
         function loadVideo(index) {
-            currentIndex = index;
-            const container = document.getElementById('video-container');
+            const displayArea = document.getElementById('video-display-area');
             const video = allVideos[index];
+            currentIndex = index;
 
-            console.log(`[Log] Switching to: ${video.id}`);
+            console.log(`[Log] Đang dừng video cũ và nạp Video #${index + 1} (ID: ${video.id})`);
 
-            // Xóa sạch container để ngắt hoàn toàn video cũ
-            container.innerHTML = "";
+            // BƯỚC QUAN TRỌNG: Xóa sạch nội dung cũ trước khi nạp mới để ngắt âm thanh hoàn toàn
+            displayArea.innerHTML = ""; 
 
-            // Tạo thẻ blockquote theo chuẩn SDK của TikTok
-            const blockquote = document.createElement('blockquote');
-            blockquote.className = 'tiktok-embed';
-            blockquote.cite = `https://www.tiktok.com/@v/video/${video.id}`;
-            blockquote.setAttribute('data-video-id', video.id);
-            blockquote.style.width = '100%';
-            blockquote.style.height = '100%';
+            // Tạo Iframe mới
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.tiktok.com/embed/v2/${video.id}?autoplay=1`;
+            iframe.allow = "autoplay; fullscreen";
+            iframe.allowFullscreen = true;
 
-            // Thêm phần thân bắt buộc của SDK
-            blockquote.innerHTML = `<section></section>`;
-
-            container.appendChild(blockquote);
-
-            // GỌI SDK TIKTOK ĐỂ XỬ LÝ (Tăng khả năng giữ âm thanh)
-            if (window.ttEmbedJs) {
-                window.ttEmbedJs.load();
-            }
-
-            updateStatus();
+            displayArea.appendChild(iframe);
+            updateInfo();
         }
 
-        function updateStatus() {
+        function updateInfo() {
             const info = document.getElementById('video-info');
-            info.innerText = `Video ${currentIndex + 1} / ${allVideos.length} | ${allVideos[currentIndex]?.date || ''}`;
+            info.innerText = `Video ${currentIndex + 1} / ${allVideos.length} | Ngày: ${allVideos[currentIndex]?.date || '...'}`;
         }
 
         window.onload = init;

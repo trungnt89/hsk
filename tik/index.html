@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Dashboard - Optimized</title>
+    <title>TikTok Dashboard - Click to Play</title>
     <style>
         :root { --primary-color: #fe2c55; --bg-dark: #121212; }
         body { font-family: sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 20px; }
         .header { text-align: center; margin-bottom: 30px; }
-        .status-log { font-size: 12px; color: #666; margin-top: 5px; }
+        .status-log { font-size: 12px; color: #666; font-family: monospace; }
 
         .container { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
             gap: 20px; 
-            max-width: 1600px; 
-            margin: 0 auto; 
+            max-width: 1600px; margin: 0 auto; 
         }
 
         .video-card {
@@ -23,57 +22,95 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid #333;
-            min-height: 500px; /* Giữ khung khi chưa kịp load */
+            cursor: pointer;
+            transition: border-color 0.3s;
         }
+        .video-card:hover { border-color: var(--primary-color); }
 
         .video-wrapper {
             position: relative;
             width: 100%;
             padding-top: 177.77%; 
             background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .video-wrapper iframe {
+        /* Nút Play giả lập */
+        .play-placeholder {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+        .play-icon {
+            width: 60px; height: 60px;
+            background: rgba(254, 44, 85, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        iframe {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             border: none;
+            z-index: 2;
         }
 
-        .card-content { padding: 12px; border-top: 1px solid #333; }
+        .card-content { padding: 12px; background: #1a1a1a; }
         .timestamp { font-size: 11px; color: #888; }
-        .video-title { font-weight: 600; color: var(--primary-color); font-size: 14px; margin-top: 5px; }
+        .video-title { font-weight: 600; color: #fff; font-size: 14px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>🎬 Danh sách Video TikTok</h1>
-        <div id="status" class="status-log">Đang chuẩn bị dữ liệu...</div>
+        <h1>🎬 TikTok Dashboard (${new Date().getFullYear()})</h1>
+        <div id="status" class="status-log">Đang khởi tạo danh sách...</div>
     </div>
 
     <div id="video-grid" class="container"></div>
 
     <script>
         const logger = (msg) => {
-            document.getElementById('status').innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            document.getElementById('status').innerText = `[LOG] ${msg}`;
             console.log(msg);
         };
 
         async function init() {
             try {
-                logger("Đang tải file list.txt...");
+                logger("Đang tải list.txt...");
                 const res = await fetch('./list.txt');
+                if(!res.ok) throw new Error("Không thấy file list.txt");
                 const text = await res.text();
                 render(text);
             } catch (err) {
-                logger("Lỗi tải file: " + err.message);
+                logger("LỖI: " + err.message);
             }
+        }
+
+        function loadVideo(container, videoId) {
+            console.log(`[LOG] Đang nạp Iframe cho ID: ${videoId}`);
+            container.innerHTML = `
+                <iframe 
+                    src="https://www.tiktok.com/embed/v2/${videoId}?autoplay=1" 
+                    allow="autoplay; fullscreen" 
+                    allowfullscreen>
+                </iframe>`;
         }
 
         function render(rawData) {
             const grid = document.getElementById('video-grid');
             const entries = rawData.trim().split(/\n\s*\n/);
-            logger(`Tìm thấy ${entries.length} mục. Đang tối ưu hiển thị...`);
+            logger(`Tìm thấy ${entries.length} video. Click vào hình để xem.`);
 
             const fragment = document.createDocumentFragment();
 
@@ -82,18 +119,19 @@
                 const dateMatch = entry.match(/Ngày: (.*)/);
 
                 if (urlMatch) {
-                    const url = urlMatch[1].trim().replace(/\/$/, ""); // Xóa dấu / cuối
+                    const url = urlMatch[1].trim().replace(/\/$/, "");
                     const videoId = url.split('/').pop();
 
                     const card = document.createElement('div');
                     card.className = 'video-card';
+                    
+                    // Tạo giao diện chờ (Placeholder)
                     card.innerHTML = `
-                        <div class="video-wrapper">
-                            <iframe 
-                                src="https://www.tiktok.com/embed/v2/${videoId}" 
-                                allowfullscreen 
-                                scrolling="no"
-                                loading="lazy"> </iframe>
+                        <div class="video-wrapper" id="wrapper-${videoId}" onclick="loadVideo(this, '${videoId}')">
+                            <div class="play-placeholder">
+                                <div class="play-icon">▶</div>
+                                <span style="font-size:12px; color:#aaa;">Nhấn để tải video</span>
+                            </div>
                         </div>
                         <div class="card-content">
                             <span class="timestamp">${dateMatch ? dateMatch[1] : ''}</span>
@@ -105,7 +143,7 @@
             });
 
             grid.appendChild(fragment);
-            logger(`Hoàn tất! Đã tải ${entries.length} video.`);
+            logger(`Đã sẵn sàng ${entries.length} video. Chế độ tiết kiệm tài nguyên.`);
         }
 
         window.onload = init;

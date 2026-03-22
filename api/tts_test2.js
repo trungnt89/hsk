@@ -3,7 +3,7 @@ export const config = {
 };
 
 export default async function handler(req, context) {
-  const startTime = Date.now();
+  const startTime = Date.now(); // Ghi nhận thời điểm nhận request
   const GAS_URL = process.env.GAS_URL || 'https://script.google.com/macros/s/AKfycbxUcnkzBAkguAxlZx3Z3R6dcaYapY46FeXAjxqfrweqPFiBsiUvShZp-BnfPyEpzf0/exec';
 
   try {
@@ -15,9 +15,10 @@ export default async function handler(req, context) {
     const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
     const filename = `${voice}_${rate}_${text}`;
+
     console.log(`\n=== [NEW REQUEST: ${text}] ===`);
 
-    // 1️⃣ CHECK DRIVE (Sửa lỗi parse HTML và so khớp chính xác)
+    // 1️⃣ CHECK DRIVE
     try {
       const checkRes = await fetch(`${GAS_URL}?action=check&filename=${encodeURIComponent(filename)}`);
       const contentType = checkRes.headers.get('content-type');
@@ -26,9 +27,9 @@ export default async function handler(req, context) {
         const checkData = await checkRes.json();
         const returnedName = checkData.filename ? checkData.filename.replace('.mp3', '').trim() : '';
 
-        // So khớp tuyệt đối để tránh lấy nhầm câu thoại ngắn trong câu thoại dài
         if (checkData.exists && returnedName === filename && checkData.directLink) {
-          console.log(`[PERF] 🎯 CACHE HIT lúc: ${Date.now() - startTime}ms`);
+          const hitTime = Date.now();
+          console.log(`[PERF] 🎯 CACHE HIT (Drive) lúc: ${hitTime - startTime}ms`);
           return Response.redirect(checkData.directLink);
         }
       }
@@ -46,47 +47,38 @@ export default async function handler(req, context) {
       body: ssml
     });
 
-    if (!azureResponse.ok || !azureResponse.body) return new Response("Azure Failed", { status: 500 });
+    if (!azureResponse.ok) return new Response("Azure Failed", { status: 500 });
+    const audio = await azureResponse.arrayBuffer();
 
-    // ⚡ STREAMING: Sử dụng tee() để nhân đôi luồng dữ liệu
-    const [clientStream, saveStream] = azureResponse.body.tee();
-
-    // 3️⃣ SAVE TO DRIVE (Chạy ngầm)
+    // 3️⃣ SAVE TO DRIVE (Chạy ngầm - Edge sẽ đợi task này hoàn thành sau khi trả audio)
     const saveTask = (async () => {
-      try {
-        const reader = saveStream.getReader();
-        const chunks = [];
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-        }
-        // Gom các mảnh dữ liệu lại thành một Buffer hoàn chỉnh
-        const audioBuffer = new Uint8Array(await new Blob(chunks).arrayBuffer());
-
-        console.log(`[PERF] 🚀 Uploading to Drive... (${audioBuffer.byteLength} bytes)`);
-        await fetch(GAS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            action: "upload", filename: filename, fileData: Array.from(audioBuffer) 
-          })
-        });
-        console.log(`[PERF] ✅ Lưu Drive XONG lúc: ${Date.now() - startTime}ms`);
-      } catch (e) { console.error(`[SAVE ERROR]: ${e.message}`); }
+      const saveStart = Date.now();
+      console.log(`[PERF] 🚀 Bắt đầu gọi lưu Drive lúc: ${saveStart - startTime}ms`);
+      
+      if (audio && GAS_URL) {
+        try {
+          await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              action: "upload", filename: filename, fileData: Array.from(new Uint8Array(audio)) 
+            })
+          });
+          const saveEnd = Date.now();
+          console.log(`[PERF] ✅ Lưu Drive XONG lúc: ${saveEnd - startTime}ms (Tổng thời gian lưu: ${saveEnd - saveStart}ms)`);
+        } catch (e) { console.error(`[SAVE ERROR]: ${e.message}`); }
+      }
     })();
 
+    // Đăng ký tác vụ chạy nền (Cực kỳ quan trọng trên Edge)
     context.waitUntil(saveTask);
 
-    // 4️⃣ PHẢN HỒI STREAMING (Phát nhạc ngay khi có dữ liệu đầu tiên)
-    console.log(`[PERF] ⚡ BẮT ĐẦU STREAM CHO CLIENT LÚC: ${Date.now() - startTime}ms`);
+    // 4️⃣ PHẢN HỒI NGAY
+    const responseTime = Date.now();
+    console.log(`[PERF] ⚡ TRẢ VỀ CLIENT LÚC: ${responseTime - startTime}ms`);
     
-    return new Response(clientStream, {
-      headers: { 
-        'Content-Type': 'audio/mpeg', 
-        'X-Audio-Source': 'Azure-Streaming',
-        'Transfer-Encoding': 'chunked' 
-      }
+    return new Response(audio, {
+      headers: { 'Content-Type': 'audio/mpeg', 'X-Audio-Source': 'Azure-Cloud' }
     });
 
   } catch (e) {

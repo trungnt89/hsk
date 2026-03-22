@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Japanese Practice</title>
+  <title>Japanese Practice Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="../com/assistive.js"></script>
   <script src="../com/TTSClient.js"></script>
@@ -12,69 +12,113 @@
   </script>
 
   <style>
-    body { font-family: system-ui, -apple-system; max-width: 700px; margin: auto; padding: 12px; background: #f1f5f9; color: #1e293b; }
+    :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+    body { font-family: system-ui, -apple-system; max-width: 800px; margin: auto; padding: 8px; background: var(--bg); color: var(--text); }
     
-    /* Toolbar & Nav */
-    .toolbar { background: white; padding: 12px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .nav-top { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 12px; }
-    .controls-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-    
-    /* Topic Header */
-    #currentTopic { background: #1e293b; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 1.1em; min-height: 24px; }
+    /* Toolbar siêu gọn - 1 dòng duy nhất */
+    .compact-toolbar { 
+      background: white; 
+      padding: 6px 8px; 
+      border-radius: 8px; 
+      margin-bottom: 6px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      gap: 6px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
 
-    /* Tabs System */
-    .tabs-container { display: flex; gap: 4px; margin-bottom: 0; }
-    .tab-btn { flex: 1; padding: 12px 5px; border: none; background: #e2e8f0; cursor: pointer; border-radius: 8px 8px 0 0; font-size: 13px; font-weight: 600; color: #64748b; transition: all 0.2s; }
-    .tab-btn.active { background: white; color: #2563eb; border-bottom: 3px solid #2563eb; }
+    .nav-group, .action-group { display: flex; align-items: center; gap: 4px; }
 
-    /* Display Content */
-    .display-box { background: white; min-height: 200px; padding: 20px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); line-height: 1.8; font-size: 1.15em; }
-    .content-area { display: none; white-space: pre-wrap; cursor: pointer; color: #0f172a; }
-    .content-area.active { display: block; animation: fadeIn 0.2s ease-in; }
+    /* Tiêu đề thanh mảnh */
+    #currentTopic { 
+      background: #1e293b; 
+      color: white; 
+      padding: 4px 10px; 
+      border-radius: 4px; 
+      text-align: center; 
+      font-weight: 500; 
+      margin-bottom: 6px; 
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Tabs hệ thống mỏng */
+    .tabs-container { display: flex; gap: 2px; }
+    .tab-btn { 
+      flex: 1; 
+      padding: 8px 2px; 
+      border: none; 
+      background: #e2e8f0; 
+      cursor: pointer; 
+      border-radius: 6px 6px 0 0; 
+      font-size: 12px; 
+      font-weight: 600; 
+      color: #64748b; 
+      transition: 0.2s;
+    }
+    .tab-btn.active { background: white; color: var(--primary); border-bottom: 2px solid var(--primary); }
+
+    /* Nội dung chính hiển thị tối đa */
+    .display-box { 
+      background: white; 
+      min-height: 300px; 
+      padding: 15px; 
+      border-radius: 0 0 10px 10px; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      line-height: 1.7; 
+      font-size: 1.1em;
+    }
+    .content-area { display: none; white-space: pre-wrap; color: #000; }
+    .content-area.active { display: block; animation: fadeIn 0.2s ease-out; }
     .vi-text { color: #475569; font-style: italic; font-size: 0.95em; }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Buttons */
-    button { padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; min-height: 36px; }
-    button:disabled { opacity: 0.3; cursor: not-allowed; }
-    button.active { background: #e0f2fe; border-color: #2563eb; color: #2563eb; font-weight: bold; }
-    select { height: 36px; border-radius: 6px; border: 1px solid #cbd5e1; padding: 0 5px; }
+    /* Form UI nhỏ gọn */
+    button { 
+      padding: 4px 8px; 
+      border-radius: 5px; 
+      border: 1px solid #cbd5e1; 
+      background: #fff; 
+      cursor: pointer; 
+      font-size: 12px;
+      min-height: 30px;
+      display: flex; align-items: center; gap: 3px;
+    }
+    button.active { background: #dbeafe; border-color: var(--primary); color: var(--primary); }
+    button:disabled { opacity: 0.3; }
     
-    .group { display: flex; gap: 5px; border-right: 1px solid #e2e8f0; padding-right: 8px; }
-    .group:last-child { border-right: none; }
-    
-    #pageInfo { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 60px; text-align: center; }
+    select { height: 30px; border-radius: 5px; border: 1px solid #cbd5e1; font-size: 11px; outline: none; }
+    #pageInfo { font-size: 12px; font-weight: 700; min-width: 45px; text-align: center; color: #64748b; }
+
+    /* Custom scroll cho nội dung dài */
+    .display-box { max-height: 70vh; overflow-y: auto; }
   </style>
 </head>
 <body>
 
-<div class="toolbar">
-  <div class="nav-top">
+<div class="compact-toolbar">
+  <div class="nav-group">
     <button onclick="prevPage()" id="btnPrev">◀</button>
-    <span id="pageInfo">0 / 0</span>
+    <span id="pageInfo">0/0</span>
     <button onclick="nextPage()" id="btnNext">▶</button>
   </div>
 
-  <div class="controls-row">
-    <div class="group">
-      <button id="btnPlayCur" onclick="playCurrent()">▶️ Nghe</button>
-    </div>
-    <div class="group">
-      <button id="btnRepeatOne" onclick="toggleRepeatOne()">🔂</button>
-      <button id="btnRepeatAll" onclick="toggleRepeatAll()">🔁</button>
-    </div>
-    <div class="group">
-      <select id="voice">
-        <option value="ja-JP-KeitaNeural">Nam</option>
-        <option value="ja-JP-NanamiNeural">Nữ</option>
-      </select>
-      <select id="rate">
-        <option value="0.7">0.7</option>
-        <option value="0.8" selected>0.8</option>
-        <option value="1.0">1.0</option>
-      </select>
-    </div>
+  <div class="action-group">
+    <button id="btnPlayCur" onclick="playCurrent()">▶️ Nghe</button>
+    <button id="btnRepeatOne" onclick="toggleRepeatOne()" title="Lặp câu">🔂</button>
+    <select id="voice">
+      <option value="ja-JP-KeitaNeural">Nam</option>
+      <option value="ja-JP-NanamiNeural">Nữ</option>
+    </select>
+    <select id="rate">
+      <option value="0.7">0.7</option>
+      <option value="0.8" selected>0.8</option>
+      <option value="1.0">1.0</option>
+    </select>
   </div>
 </div>
 
@@ -100,12 +144,9 @@ let repeatOne = false, repeatAll = false;
 async function loadTexts() {
   try {
     const res = await fetch(GAS_URL + `?_t=${Date.now()}`);
-    const data = await res.json();
-    texts = data;
+    texts = await res.json();
     renderCurrent();
-  } catch (e) { 
-    document.getElementById("currentTopic").textContent = "Lỗi kết nối dữ liệu!";
-  }
+  } catch (e) { document.getElementById("currentTopic").textContent = "Lỗi dữ liệu!"; }
 }
 
 function renderCurrent() {
@@ -113,98 +154,65 @@ function renderCurrent() {
   if (currentIndex >= texts.length) currentIndex = 0;
 
   const item = texts[currentIndex];
-  document.getElementById("currentTopic").textContent = item.topic || "Chủ đề không tên";
+  document.getElementById("currentTopic").textContent = item.topic || "Tiêu đề trống";
   document.getElementById("content-text").textContent = item.content;
   document.getElementById("translate-text").textContent = item.translate;
   document.getElementById("dialog-text").textContent = item.dialog;
 
-  document.getElementById("pageInfo").textContent = `${currentIndex + 1} / ${texts.length}`;
+  document.getElementById("pageInfo").textContent = `${currentIndex + 1}/${texts.length}`;
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1 && !repeatAll);
   
   localStorage.setItem("lastIndex", currentIndex);
-
-  // Kích hoạt Japanese Lookup nếu có
-  if (window.JapaneseLookup && window.JapaneseLookup.render) {
-    setTimeout(() => window.JapaneseLookup.render(), 100);
-  }
+  if (window.JapaneseLookup && window.JapaneseLookup.render) setTimeout(() => window.JapaneseLookup.render(), 50);
 }
 
 function switchTab(index) {
   currentTab = index;
-  const tabs = document.querySelectorAll('.tab-btn');
-  const areas = document.querySelectorAll('.content-area');
-  
-  tabs.forEach((t, i) => t.classList.toggle('active', i === index));
-  areas.forEach((a, i) => a.classList.toggle('active', i === index));
-  
-  // Re-render lookup khi đổi tab
+  document.querySelectorAll('.tab-btn').forEach((t, i) => t.classList.toggle('active', i === index));
+  document.querySelectorAll('.content-area').forEach((a, i) => a.classList.toggle('active', i === index));
   if (window.JapaneseLookup && window.JapaneseLookup.render) window.JapaneseLookup.render();
 }
 
 async function playCurrent() {
   if (!texts[currentIndex]) return;
   const btn = document.getElementById("btnPlayCur");
-  const mode = document.getElementById("voice").value;
-  const rate = document.getElementById("rate").value;
-  
-  // Logic: Nếu đang ở Tab Hội thoại thì đọc Hội thoại, còn lại đọc Đoạn văn
   const textToPlay = (currentTab === 2) ? texts[currentIndex].dialog : texts[currentIndex].content;
   if (!textToPlay) return;
 
   btn.classList.add("active");
   try {
     if (typeof speakCommon !== 'undefined') {
-      await speakCommon({ text: textToPlay, voice: mode, rate: rate });
+      await speakCommon({ 
+        text: textToPlay, 
+        voice: document.getElementById("voice").value, 
+        rate: document.getElementById("rate").value 
+      });
     } else {
       const msg = new SpeechSynthesisUtterance(textToPlay);
       msg.lang = 'ja-JP';
-      msg.rate = parseFloat(rate);
+      msg.rate = parseFloat(document.getElementById("rate").value);
       window.speechSynthesis.speak(msg);
     }
   } finally {
     btn.classList.remove("active");
-    onAudioEnded();
-  }
-}
-
-function onAudioEnded() {
-  if (repeatOne) playCurrent();
-  else if (repeatAll || currentIndex < texts.length - 1) {
-    setTimeout(nextPage, 800);
+    if (repeatOne) playCurrent();
+    else if (repeatAll || currentIndex < texts.length - 1) setTimeout(nextPage, 800);
   }
 }
 
 function navigate(idx) {
-  if (idx >= 0 && idx < texts.length) { 
-    currentIndex = idx; 
-    renderCurrent(); 
-    // Tự động phát nếu muốn (nhưng thường để người dùng bấm Play sẽ tốt hơn trên iPhone)
-  } else if (repeatAll && texts.length > 0) {
-    currentIndex = 0;
-    renderCurrent();
-  }
+  if (idx >= 0 && idx < texts.length) { currentIndex = idx; renderCurrent(); }
+  else if (repeatAll && texts.length > 0) { currentIndex = 0; renderCurrent(); }
 }
-
 function nextPage() { navigate(currentIndex + 1); }
 function prevPage() { navigate(currentIndex - 1); }
 
 function toggleRepeatOne() { 
   repeatOne = !repeatOne; 
-  if(repeatOne) repeatAll = false; 
-  updateRepeatUI(); 
-}
-function toggleRepeatAll() { 
-  repeatAll = !repeatAll; 
-  if(repeatAll) repeatOne = false; 
-  updateRepeatUI(); 
-}
-function updateRepeatUI() {
   document.getElementById("btnRepeatOne").classList.toggle("active", repeatOne);
-  document.getElementById("btnRepeatAll").classList.toggle("active", repeatAll);
 }
 
-// Khởi tạo
 currentIndex = parseInt(localStorage.getItem("lastIndex") || 0);
 loadTexts();
 </script>

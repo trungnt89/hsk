@@ -2,17 +2,20 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TikTok Dashboard - Shuffle & Swipe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TikTok Shuffle - iPhone Optimized</title>
     <style>
-        :root { --primary-color: #fe2c55; --bg-dark: #121212; }
-        body { 
-            font-family: sans-serif; background-color: var(--bg-dark); 
-            color: #fff; margin: 0; padding: 0; 
-            overflow-y: scroll; /* Cho phép cuộn dọc thực sự */
-            touch-action: pan-y; 
-        }
+        :root { --primary-color: #fe2c55; --bg-dark: #000; }
         
+        /* Cấu trúc cho phép cuộn trên iOS */
+        html, body { 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-dark); 
+            color: #fff; font-family: -apple-system, sans-serif;
+            height: 100%; overflow-x: hidden;
+        }
+
+        /* Lớp phủ khởi động */
         #start-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999;
@@ -20,80 +23,94 @@
         }
         .start-btn {
             background: var(--primary-color); border: none; color: white;
-            padding: 15px 40px; border-radius: 30px; font-size: 18px; cursor: pointer;
+            padding: 18px 45px; border-radius: 35px; font-size: 20px; font-weight: bold;
         }
 
-        .main-viewer {
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; min-height: 100vh; width: 100%;
-            padding: 20px 0;
+        /* Container chính có chiều cao lớn để tạo cảm giác cuộn */
+        .scroll-container {
+            height: 200vh; /* Tạo vùng trống để vuốt lên xuống */
+            width: 100%;
+            position: relative;
         }
 
-        /* Vùng hiển thị video - 90% chiều rộng */
-        #video-display-area {
-            width: 90%; 
-            height: 75vh; 
+        /* Khung xem video cố định ở giữa màn hình */
+        .fixed-viewer {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%; /* Để lại 10% lề cho việc vuốt */
+            height: 75vh;
             max-width: 400px;
-            background: #000; 
-            position: relative; 
-            border-radius: 15px; 
-            overflow: hidden;
-            box-shadow: 0 0 30px rgba(0,0,0,0.7);
             z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #video-display-area {
+            width: 100%; height: 100%;
+            background: #111; border-radius: 15px;
+            overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.8);
         }
 
         iframe { width: 100%; height: 100%; border: none; }
 
+        /* Nút bấm điều khiển */
         .controls {
-            margin-top: 25px; display: flex; gap: 15px; align-items: center; z-index: 20;
+            position: fixed; bottom: 30px; 
+            display: flex; gap: 20px; z-index: 20;
         }
         .nav-btn {
-            background: #333; color: white; border: 1px solid #444;
-            padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold;
+            background: rgba(50, 50, 50, 0.9); color: white; border: 1px solid #444;
+            padding: 15px 30px; border-radius: 10px; font-weight: bold;
+            -webkit-tap-highlight-color: transparent;
         }
         .nav-btn:active { background: var(--primary-color); }
 
-        .info { font-size: 13px; color: #888; margin-top: 15px; text-align: center; line-height: 1.6; }
-        
-        /* Chỉ dẫn vùng vuốt */
-        .swipe-hint {
-            position: fixed; top: 50%; transform: translateY(-50%);
-            font-size: 10px; color: #333; writing-mode: vertical-rl;
-            pointer-events: none;
+        .info {
+            position: fixed; top: 20px; width: 100%;
+            text-align: center; font-size: 12px; color: #666; z-index: 20;
+        }
+
+        /* Vùng chỉ dẫn vuốt cho iPhone */
+        .swipe-zone {
+            position: fixed; top: 0; width: 5%; height: 100%; z-index: 5;
+            background: rgba(255,255,255,0.02);
         }
     </style>
 </head>
 <body>
 
     <div id="start-overlay">
-        <h2 style="margin-bottom: 20px;">TikTok Random Dashboard</h2>
-        <button class="start-btn" onclick="startApp()">BẮT ĐẦU XEM (MÚC!)</button>
+        <button class="start-btn" onclick="startApp()">BẤT ĐẦU XEM</button>
+        <p style="color: #444; margin-top: 15px;">Xáo trộn ngẫu nhiên 1683 video</p>
     </div>
 
-    <div class="swipe-hint" style="left: 5px;">⬅ VUỐT Ở ĐÂY ⬅</div>
-    <div class="swipe-hint" style="right: 5px;">➡ VUỐT Ở ĐÂY ➡</div>
+    <div class="swipe-zone" style="left: 0;"></div>
+    <div class="swipe-zone" style="right: 0;"></div>
 
-    <div class="main-viewer">
-        <div id="video-display-area">
-            <div id="placeholder" style="display:flex; align-items:center; justify-content:center; height:100%; color:#444;">
-                Đang nạp video ngẫu nhiên...
+    <div class="scroll-container">
+        <div class="info" id="video-info">Đang chuẩn bị...</div>
+
+        <div class="fixed-viewer">
+            <div id="video-display-area">
+                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#333;">
+                    Chờ nạp...
+                </div>
             </div>
         </div>
 
-        <div class="controls">
+        <div class="controls" style="left: 50%; transform: translateX(-50%);">
             <button class="nav-btn" onclick="changeVideo(-1)">TRƯỚC</button>
             <button class="nav-btn" style="background: var(--primary-color);" onclick="changeVideo(1)">SAU</button>
         </div>
-        
-        <div id="video-info" class="info">Đang trộn danh sách...</div>
     </div>
 
     <script>
         let allVideos = [];
         let currentIndex = 0;
 
-        // Hàm trộn ngẫu nhiên mảng (Fisher-Yates Shuffle)
-        function shuffleArray(array) {
+        function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [array[i], array[j]] = [array[j], array[i]];
@@ -107,22 +124,18 @@
                 const text = await res.text();
                 const entries = text.trim().split(/\n\s*\n/);
                 
-                let rawList = entries.map((entry, index) => {
+                let raw = entries.map(entry => {
                     const urlMatch = entry.match(/Liên kết: (.*)/);
                     const dateMatch = entry.match(/Ngày: (.*)/);
-                    const url = urlMatch ? urlMatch[1].trim().replace(/\/$/, "") : "";
                     return { 
-                        id: url.split('/').pop(), 
-                        date: dateMatch ? dateMatch[1] : 'N/A' 
+                        id: urlMatch ? urlMatch[1].trim().split('/').filter(Boolean).pop() : null,
+                        date: dateMatch ? dateMatch[1] : ''
                     };
                 }).filter(v => v.id);
 
-                // TRỘN NGẪU NHIÊN DANH SÁCH
-                allVideos = shuffleArray(rawList);
-                console.log("[Log] Đã trộn ngẫu nhiên 1683 video.");
-                
-                updateStatus();
-            } catch (err) { console.error("Lỗi dữ liệu:", err); }
+                allVideos = shuffle(raw);
+                document.getElementById('video-info').innerText = `Đã trộn xong ${allVideos.length} video.`;
+            } catch (e) { alert("Lỗi tải danh sách!"); }
         }
 
         function startApp() {
@@ -131,32 +144,28 @@
         }
 
         function changeVideo(step) {
-            let nextIndex = currentIndex + step;
-            if (nextIndex >= 0 && nextIndex < allVideos.length) {
-                loadVideo(nextIndex);
-            }
+            let next = currentIndex + step;
+            if (next >= 0 && next < allVideos.length) loadVideo(next);
         }
 
         function loadVideo(index) {
-            const displayArea = document.getElementById('video-display-area');
-            // Dọn dẹp tuyệt đối video cũ (tắt âm thanh)
-            displayArea.innerHTML = ""; 
+            const area = document.getElementById('video-display-area');
+            // Hủy video cũ để ngắt tiếng hoàn toàn
+            area.innerHTML = ""; 
             
             currentIndex = index;
-            const video = allVideos[index];
+            const v = allVideos[index];
 
-            const iframe = document.createElement('iframe');
-            // Thêm mute=0 và nạp lại src để tận dụng tương tác click nút "Sau" của người dùng
-            iframe.src = `https://www.tiktok.com/embed/v2/${video.id}?autoplay=1&mute=0`;
-            iframe.allow = "autoplay; fullscreen";
+            const ifrm = document.createElement('iframe');
+            // Cấu hình tối ưu cho iPhone: autoplay=1 và mute=0
+            ifrm.src = `https://www.tiktok.com/embed/v2/${v.id}?autoplay=1&mute=0`;
+            ifrm.allow = "autoplay; fullscreen";
             
-            displayArea.appendChild(iframe);
-            updateStatus();
-        }
-
-        function updateStatus() {
-            const info = document.getElementById('video-info');
-            info.innerHTML = `Video ${currentIndex + 1} / ${allVideos.length}<br><small>Gốc: ${allVideos[currentIndex]?.date || ''}</small><br>🎲 Đã xáo trộn thứ tự`;
+            area.appendChild(ifrm);
+            document.getElementById('video-info').innerText = `Video ${index + 1} / ${allVideos.length} (${v.date})`;
+            
+            // Cuộn nhẹ trang về đầu để reset cảm giác vuốt trên iPhone
+            window.scrollTo(0, 0);
         }
 
         window.onload = init;

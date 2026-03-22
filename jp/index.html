@@ -4,170 +4,146 @@
   <meta charset="UTF-8" />
   <title>Japanese Practice Tabs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="../com/assistive.js"></script>
-  <script src="../com/TTSClient.js"></script>
   <style>
-    /* Giữ nguyên CSS cũ của bạn và thêm phần dưới đây */
-    body { font-family: system-ui, -apple-system; max-width: 700px; margin: auto; padding: 12px; background: #fff; color: #333; }
+    body { font-family: system-ui, -apple-system; max-width: 700px; margin: auto; padding: 12px; background: #f8fafc; color: #333; }
     
-    /* Style cho Chủ đề */
-    .topic-header { 
-      background: #f8fafc; 
-      padding: 10px; 
-      border-radius: 8px; 
-      text-align: center; 
-      font-weight: bold; 
-      color: #1e293b; 
-      margin-bottom: 15px; 
-      border: 1px solid #e2e8f0;
-    }
-
-    /* Style cho Tabs */
-    .tabs-container { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
-    .tab-btn { 
-      flex: 1; padding: 10px; border: none; background: none; cursor: pointer; 
-      font-size: 14px; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px;
-    }
-    .tab-btn.active { 
-      color: #2563eb; border-bottom: 2px solid #2563eb; font-weight: bold; 
-    }
-
-    .display-box { min-height: 200px; padding: 15px 5px; }
-    .content-pane { display: none; }
-    .content-pane.active { display: block; }
+    /* Toolbar & Nav */
+    .toolbar { background: white; padding: 15px; border-radius: 12px; shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; }
+    .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .controls-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     
-    /* Tận dụng style cũ của bạn */
-    .ja-text, .vi-text { width: 100%; white-space: pre-wrap; line-height: 1.6; font-size: 1.1em; }
-    .vi-text { color: #666; font-style: italic; }
+    /* Topic Header */
+    .topic-header { background: #2563eb; color: white; padding: 10px 15px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 1.1em; }
 
-    /* Toolbar & Modal giữ nguyên từ code cũ... */
-    .toolbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-    .nav-top { display: flex; justify-content: center; align-items: center; gap: 12px; }
-    .controls-row { display: flex; justify-content: flex-start; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .group { display: flex; align-items: center; gap: 4px; border-right: 1px solid #eee; padding-right: 8px; }
-    button { padding: 4px 10px; border-radius: 6px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
-    button.active { background: #e0f2fe; border-color: #2563eb; color: #2563eb; }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; }
-    .modal-content { background: #fff; padding: 16px; border-radius: 12px; width: 90%; max-width: 450px; }
-    textarea { width: 100%; height: 150px; }
+    /* Tabs System */
+    .tabs-container { display: flex; gap: 5px; margin-bottom: 1px; }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: #e2e8f0; cursor: pointer; border-radius: 8px 8px 0 0; font-size: 13px; font-weight: 600; color: #64748b; transition: 0.3s; }
+    .tab-btn.active { background: white; color: #2563eb; border-bottom: 3px solid #2563eb; }
+
+    /* Display Content */
+    .display-box { background: white; min-height: 250px; padding: 20px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); line-height: 1.8; font-size: 1.1em; }
+    .content-area { display: none; white-space: pre-wrap; }
+    .content-area.active { display: block; animation: fadeIn 0.3s; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Buttons & Controls */
+    button { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
+    button.active { background: #2563eb; color: white; }
+    select { padding: 5px; border-radius: 6px; border: 1px solid #cbd5e1; }
+    
+    .group { display: flex; gap: 4px; padding-right: 8px; border-right: 1px solid #e2e8f0; }
   </style>
 </head>
 <body>
 
-<div id="topicTitle" class="topic-header">Đang tải chủ đề...</div>
-
 <div class="toolbar">
   <div class="nav-top">
-    <button onclick="prevPage()" id="btnPrev">◀</button>
-    <span id="pageInfo" style="font-size: 13px; font-weight: bold; min-width: 50px; text-align: center;">0 / 0</span>
-    <button onclick="nextPage()" id="btnNext">▶</button>
+    <button onclick="prevPage()">◀</button>
+    <span id="pageInfo">0 / 0</span>
+    <button onclick="nextPage()">▶</button>
   </div>
 
   <div class="controls-row">
     <div class="group">
-      <button id="btnPlayCur" onclick="playCurrent()">▶️</button>
-      <button id="btnAudioToggle" onclick="toggleAudio()">🔊</button>
+      <button id="btnPlayCur" onclick="playCurrent()">▶️ Nghe</button>
     </div>
     <div class="group">
-      <select id="voice">
-        <option value="ja-JP-KeitaNeural">Nam</option>
-        <option value="ja-JP-NanamiNeural">Nữ</option>
-      </select>
-      <select id="rate">
-        <option value="0.8">0.8</option>
-        <option value="1.0" selected>1.0</option>
-      </select>
+      <button id="btnRepeatOne" onclick="toggleRepeatOne()">🔂</button>
+      <button id="btnRepeatAll" onclick="toggleRepeatAll()">🔁</button>
     </div>
-    <button onclick="openEditor()">✏️</button>
+    <select id="voice">
+      <option value="ja-JP-KeitaNeural">Nam</option>
+      <option value="ja-JP-NanamiNeural">Nữ</option>
+    </select>
+    <select id="rate">
+      <option value="0.7">0.7</option>
+      <option value="0.8" selected>0.8</option>
+      <option value="1.0">1.0</option>
+    </select>
   </div>
 </div>
 
+<div id="currentTopic" class="topic-header">Chủ đề</div>
+
 <div class="tabs-container">
-  <button class="tab-btn active" onclick="switchTab('ja')">Đoạn văn</button>
-  <button class="tab-btn" onclick="switchTab('vi')">Tiếng Việt</button>
-  <button class="tab-btn" onclick="switchTab('dialog')">Hội thoại</button>
+  <button class="tab-btn active" onclick="switchTab(0)">Đoạn văn</button>
+  <button class="tab-btn" onclick="switchTab(1)">Dịch Việt</button>
+  <button class="tab-btn" onclick="switchTab(2)">Hội thoại</button>
 </div>
 
 <div class="display-box">
-  <div id="pane-ja" class="content-pane active ja-text"></div>
-  <div id="pane-vi" class="content-pane vi-text"></div>
-  <div id="pane-dialog" class="content-pane ja-text"></div>
-</div>
-
-<div id="editorModal" class="modal">
-  <div class="modal-content">
-    <textarea id="textInput"></textarea>
-    <div style="display: flex; gap: 8px; margin-top: 12px;">
-      <button onclick="updateText()" style="flex:1">Lưu</button>
-      <button onclick="closeEditor()">Đóng</button>
-    </div>
-  </div>
+  <div id="content-text" class="content-area active"></div>
+  <div id="translate-text" class="content-area"></div>
+  <div id="dialog-text" class="content-area"></div>
 </div>
 
 <script>
-// --- GIỮ NGUYÊN CẤU HÌNH ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyNX96iC37hc8AunT8zWlG_yTFB2ipZp90-XivW8hWzVYVne9nftCC3mSFoTk10v93t/exec";
-let texts = [], currentIndex = 0, isAudioEnabled = true, currentTab = 'ja';
-
-// --- LOGIC TABS ---
-function switchTab(tabName) {
-  currentTab = tabName;
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  document.querySelectorAll('.content-pane').forEach(pane => pane.classList.remove('active'));
-  
-  event.target.classList.add('active');
-  document.getElementById(`pane-${tabName}`).classList.add('active');
-}
-
-// --- RENDER DỮ LIỆU ---
-function renderCurrent() {
-  if (!texts.length) return;
-  const item = texts[currentIndex];
-  
-  document.getElementById("topicTitle").textContent = item.topic;
-  document.getElementById("pane-ja").textContent = item.ja;
-  document.getElementById("pane-vi").textContent = item.vi;
-  document.getElementById("pane-dialog").textContent = item.dialog;
-
-  document.getElementById("pageInfo").textContent = `${currentIndex + 1} / ${texts.length}`;
-  localStorage.setItem("lastIndex", currentIndex);
-}
+const GAS_URL = "URL_CỦA_BẠN_Ở_ĐÂY";
+let texts = [], currentIndex = 0, currentTab = 0;
 
 async function loadTexts() {
   try {
     const res = await fetch(GAS_URL + `?_t=${Date.now()}`);
     texts = await res.json();
     renderCurrent();
-  } catch (e) { console.error("Data Load Error"); }
+  } catch (e) { alert("Lỗi tải dữ liệu!"); }
 }
 
-async function playCurrent() {
-  if (!texts[currentIndex] || !isAudioEnabled) return;
-  // Mặc định phát âm thanh của nội dung trong Tab đang chọn (hoặc Tab 'ja' nếu muốn cố định)
-  const textToPlay = (currentTab === 'vi') ? texts[currentIndex].ja : document.getElementById(`pane-${currentTab}`).textContent;
+function renderCurrent() {
+  if (!texts.length) return;
+  const item = texts[currentIndex];
   
-  const mode = document.getElementById("voice").value;
-  const btnPlay = document.getElementById("btnPlayCur");
-  btnPlay.classList.add("active");
+  document.getElementById("currentTopic").textContent = item.topic;
+  document.getElementById("content-text").textContent = item.content;
+  document.getElementById("translate-text").textContent = item.translate;
+  document.getElementById("dialog-text").textContent = item.dialog;
 
-  try {
-    await speakCommon({ text: textToPlay, voice: mode, rate: document.getElementById("rate").value });
-  } finally { 
-    btnPlay.classList.remove("active"); 
+  document.getElementById("pageInfo").textContent = `${currentIndex + 1} / ${texts.length}`;
+  localStorage.setItem("lastIndex", currentIndex);
+}
+
+function switchTab(index) {
+  currentTab = index;
+  const tabs = document.querySelectorAll('.tab-btn');
+  const areas = document.querySelectorAll('.content-area');
+  
+  tabs.forEach((t, i) => t.classList.toggle('active', i === index));
+  areas.forEach((a, i) => a.classList.toggle('active', i === index));
+}
+
+function playCurrent() {
+  if (!texts[currentIndex]) return;
+  // Logic chọn văn bản để đọc: Nếu đang ở tab Hội thoại thì đọc hội thoại, còn lại đọc Đoạn văn
+  const textToPlay = (currentTab === 2) ? texts[currentIndex].dialog : texts[currentIndex].content;
+  
+  // Sử dụng hàm speak từ TTSClient của bạn (giả định đã có sẵn như code cũ)
+  if (typeof speakCommon !== 'undefined') {
+    speakCommon({
+      text: textToPlay,
+      voice: document.getElementById("voice").value,
+      rate: document.getElementById("rate").value
+    });
+  } else {
+    const msg = new SpeechSynthesisUtterance(textToPlay);
+    msg.lang = 'ja-JP';
+    msg.rate = parseFloat(document.getElementById("rate").value);
+    window.speechSynthesis.speak(msg);
   }
 }
 
-// Các hàm điều hướng giữ nguyên logic cũ của bạn
-function nextPage() { if(currentIndex < texts.length - 1) { currentIndex++; renderCurrent(); } }
-function prevPage() { if(currentIndex > 0) { currentIndex--; renderCurrent(); } }
-
-function openEditor() { 
-  const cur = texts[currentIndex];
-  document.getElementById("textInput").value = cur ? `${cur.topic} | ${cur.ja} | ${cur.vi} | ${cur.dialog}` : ""; 
-  document.getElementById("editorModal").style.display = "flex"; 
+function navigate(idx) {
+  if (idx >= 0 && idx < texts.length) { 
+    currentIndex = idx; 
+    renderCurrent(); 
+  }
 }
-function closeEditor() { document.getElementById("editorModal").style.display = "none"; }
 
+function nextPage() { navigate(currentIndex + 1); }
+function prevPage() { navigate(currentIndex - 1); }
+
+// Khởi tạo
+currentIndex = parseInt(localStorage.getItem("lastIndex") || 0);
 loadTexts();
 </script>
 </body>

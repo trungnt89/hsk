@@ -3,166 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Dashboard - Anti-Overlap Audio</title>
+    <title>TikTok Dashboard - Audio Optimized</title>
     <style>
         :root { --primary-color: #fe2c55; --bg-dark: #121212; }
-        body { font-family: sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .status-log { font-size: 12px; color: #666; font-family: monospace; }
+        body { font-family: sans-serif; background-color: var(--bg-dark); color: #fff; margin: 0; padding: 20px; padding-top: 80px; }
+        
+        /* Thanh điều khiển cố định ở trên cùng */
+        .top-bar {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: rgba(30, 30, 30, 0.95);
+            padding: 10px 0; z-index: 1000;
+            border-bottom: 1px solid #333;
+            text-align: center;
+        }
 
         .container { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-            gap: 20px; 
-            max-width: 1600px; margin: 0 auto; 
+            gap: 20px; max-width: 1600px; margin: 0 auto; 
         }
 
-        .video-card {
-            background: #1e1e1e;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #333;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-        .video-card:hover { border-color: var(--primary-color); }
-
-        .video-wrapper {
-            position: relative;
-            width: 100%;
-            padding-top: 177.77%; 
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .video-card { background: #1e1e1e; border-radius: 12px; overflow: hidden; border: 1px solid #333; }
+        .video-wrapper { position: relative; width: 100%; padding-top: 177.77%; background: #000; }
 
         .play-placeholder {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1;
-        }
-        .play-icon {
-            width: 60px; height: 60px;
-            background: rgba(254, 44, 85, 0.8);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            margin-bottom: 10px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 1;
         }
 
-        iframe {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            border: none;
-            z-index: 2;
+        iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 2; }
+
+        .nav-controls {
+            position: absolute; bottom: 15px; left: 0; width: 100%;
+            display: flex; justify-content: center; gap: 10px; z-index: 10;
+        }
+        
+        .nav-btn {
+            background: var(--primary-color); color: white; border: none;
+            padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;
         }
 
-        .card-content { padding: 12px; background: #1a1a1a; }
+        .card-content { padding: 12px; }
         .timestamp { font-size: 11px; color: #888; }
-        .video-title { font-weight: 600; color: #fff; font-size: 14px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>🎬 TikTok Dashboard (${new Date().getFullYear()})</h1>
-        <div id="status" class="status-log">Đang khởi tạo danh sách...</div>
+    <div class="top-bar">
+        <div id="status" style="font-size: 12px; color: #888; margin-bottom: 5px;">Sẵn sàng</div>
+        <div style="font-size: 11px; color: var(--primary-color);">
+            💡 Mẹo: Bấm vào video đầu tiên để "mở khóa" âm thanh cho toàn bộ trang.
+        </div>
     </div>
 
     <div id="video-grid" class="container"></div>
 
     <script>
-        const logger = (msg) => {
-            document.getElementById('status').innerText = `[LOG] ${msg}`;
-            console.log(msg);
-        };
-
-        // Lưu trữ ID của video đang phát để quản lý
-        let currentPlayingId = null;
+        let allVideos = [];
+        let currentPlayingIndex = null;
 
         async function init() {
             try {
-                logger("Đ đang tải list.txt...");
                 const res = await fetch('./list.txt');
-                if(!res.ok) throw new Error("Không thấy file list.txt");
                 const text = await res.text();
-                render(text);
-            } catch (err) {
-                logger("LỖI: " + err.message);
-            }
+                const entries = text.trim().split(/\n\s*\n/);
+                allVideos = entries.map((entry, index) => {
+                    const urlMatch = entry.match(/Liên kết: (.*)/);
+                    const dateMatch = entry.match(/Ngày: (.*)/);
+                    const url = urlMatch ? urlMatch[1].trim().replace(/\/$/, "") : "";
+                    return { index, id: url.split('/').pop(), date: dateMatch ? dateMatch[1] : '' };
+                }).filter(v => v.id);
+                render();
+            } catch (err) { console.error(err); }
         }
 
-        function loadVideo(container, videoId) {
-            // 1. Tìm và dọn dẹp video đang phát trước đó (nếu có)
-            if (currentPlayingId && currentPlayingId !== videoId) {
-                const oldWrapper = document.getElementById(`wrapper-${currentPlayingId}`);
-                if (oldWrapper) {
-                    console.log(`[LOG] Dừng video cũ: ${currentPlayingId}`);
-                    // Khôi phục lại giao diện Placeholder cho video cũ
-                    oldWrapper.innerHTML = `
-                        <div class="play-placeholder">
-                            <div class="play-icon">▶</div>
-                            <span style="font-size:12px; color:#aaa;">Nhấn để tải video</span>
-                        </div>`;
-                }
-            }
-
-            // 2. Cập nhật ID video hiện tại
-            currentPlayingId = videoId;
-            console.log(`[LOG] Đang nạp Iframe cho ID: ${videoId}`);
-
-            // 3. Nạp iframe mới
-            container.innerHTML = `
-                <iframe 
-                    src="https://www.tiktok.com/embed/v2/${videoId}?autoplay=1" 
-                    allow="autoplay; fullscreen" 
-                    allowfullscreen>
-                </iframe>`;
-        }
-
-        function render(rawData) {
+        function render() {
             const grid = document.getElementById('video-grid');
-            const entries = rawData.trim().split(/\n\s*\n/);
-            logger(`Tìm thấy ${entries.length} video.`);
-
             const fragment = document.createDocumentFragment();
-
-            entries.forEach((entry, index) => {
-                const urlMatch = entry.match(/Liên kết: (.*)/);
-                const dateMatch = entry.match(/Ngày: (.*)/);
-
-                if (urlMatch) {
-                    const url = urlMatch[1].trim().replace(/\/$/, "");
-                    const videoId = url.split('/').pop();
-
-                    const card = document.createElement('div');
-                    card.className = 'video-card';
-                    
-                    card.innerHTML = `
-                        <div class="video-wrapper" id="wrapper-${videoId}" onclick="loadVideo(this, '${videoId}')">
-                            <div class="play-placeholder">
-                                <div class="play-icon">▶</div>
-                                <span style="font-size:12px; color:#aaa;">Nhấn để tải video</span>
-                            </div>
+            allVideos.forEach((video) => {
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.innerHTML = `
+                    <div class="video-wrapper" id="wrapper-${video.index}">
+                        <div class="play-placeholder" onclick="playVideo(${video.index})">
+                            <div style="font-size:40px;">▶</div>
+                            <span>Video #${video.index + 1}</span>
                         </div>
-                        <div class="card-content">
-                            <span class="timestamp">${dateMatch ? dateMatch[1] : ''}</span>
-                            <div class="video-title">Video #${index + 1}</div>
-                        </div>
-                    `;
-                    fragment.appendChild(card);
-                }
+                    </div>
+                    <div class="card-content"><span class="timestamp">🗓️ ${video.date}</span></div>
+                `;
+                fragment.appendChild(card);
             });
-
             grid.appendChild(fragment);
-            logger(`Sẵn sàng. Click để xem (Chế độ tự động dọn dẹp âm thanh).`);
+        }
+
+        function playVideo(index) {
+            if (index < 0 || index >= allVideos.length) return;
+            if (currentPlayingIndex !== null) resetPlaceholder(currentPlayingIndex);
+
+            currentPlayingIndex = index;
+            const video = allVideos[index];
+            const wrapper = document.getElementById(`wrapper-${index}`);
+
+            // NHÚNG VIDEO: Lưu ý bỏ qua tham số mute nếu trình duyệt đã được kích hoạt
+            wrapper.innerHTML = `
+                <iframe src="https://www.tiktok.com/embed/v2/${video.id}?autoplay=1" 
+                        allow="autoplay; fullscreen" allowfullscreen></iframe>
+                <div class="nav-controls">
+                    <button class="nav-btn" onclick="playVideo(${index - 1})">⬅ Trước</button>
+                    <button class="nav-btn" onclick="playVideo(${index + 1})">Sau ➡</button>
+                </div>
+            `;
+            wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.getElementById('status').innerText = `Đang xem: Video #${index + 1} / ${allVideos.length}`;
+        }
+
+        function resetPlaceholder(index) {
+            const wrapper = document.getElementById(`wrapper-${index}`);
+            if (wrapper) {
+                wrapper.innerHTML = `
+                    <div class="play-placeholder" onclick="playVideo(${index})">
+                        <div style="font-size:40px;">▶</div>
+                        <span>Video #${index + 1}</span>
+                    </div>`;
+            }
         }
 
         window.onload = init;

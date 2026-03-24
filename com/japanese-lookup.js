@@ -1,10 +1,10 @@
 /**
- * Japanese Lookup & Vocabulary Manager - SPA & AJAX Support
+ * Japanese Lookup & Vocabulary Manager - Mazii API Integrated
  */
 
 const JapaneseLookup = (() => {
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxRsR4M3R0rjz3i0u2kz6Pg-ME3IeDYs8-7GE0MrjRaakfxQBory3JMtjjgVw3lTbqI/exec";
-  const TRANSLATE_API = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=vi&dt=t&dt=rm&q=";
+  const MAZII_API = "https://api.mazii.net/api/gtrans";
   
   const style = document.createElement('style');
   style.textContent = `
@@ -14,8 +14,7 @@ const JapaneseLookup = (() => {
       font-family: system-ui, -apple-system; width: 220px; pointer-events: auto;
     }
     .ja-lookup-word { color: #1e40af; font-size: 1.2em; font-weight: bold; display: block; }
-    .ja-lookup-romaji { color: #64748b; font-size: 0.9em; font-style: italic; display: block; margin-bottom: 5px; }
-    .ja-lookup-meaning { color: #0f172a; font-size: 1em; border-top: 1px solid #eee; padding-top: 5px; }
+    .ja-lookup-meaning { color: #0f172a; font-size: 1em; border-top: 1px solid #eee; padding-top: 5px; margin-top: 5px; }
     .ja-history-btn {
       position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px;
       background: #2563eb; color: white; border-radius: 50%; border: none;
@@ -78,32 +77,25 @@ const JapaneseLookup = (() => {
 
   function highlightSavedWords(targetNode = document.body) {
     if (!globalSavedWords || globalSavedWords.length === 0) return;
-    
     const sortedWords = [...new Set(globalSavedWords.map(item => item.word))].sort((a, b) => b.length - a.length);
     const walker = document.createTreeWalker(targetNode, NodeFilter.SHOW_TEXT, null, false);
     const nodes = [];
-    
     while (walker.nextNode()) {
       const node = walker.currentNode;
-      // Bỏ qua các thành phần UI và các thẻ nhập liệu
       if (node.parentElement.closest('.ja-lookup-popup, .ja-modal, .ja-history-btn, script, style, .ja-highlight, textarea, input')) continue;
       nodes.push(node);
     }
-
     nodes.forEach(node => {
       let text = node.nodeValue;
       if (!text || !text.trim()) return;
       let changed = false;
-      
       sortedWords.forEach(word => {
         if (text.includes(word)) {
-          // Chỉ replace nếu node cha chưa phải là highlight (tránh lặp)
           const regex = new RegExp(word, 'g');
           text = text.replace(regex, `<span class="ja-highlight">${word}</span>`);
           changed = true;
         }
       });
-
       if (changed) {
         const span = document.createElement('span');
         span.innerHTML = text;
@@ -159,21 +151,27 @@ const JapaneseLookup = (() => {
     if (!text) return;
     createUI();
     popup.style.display = 'block';
-    popup.innerHTML = "Loading...";
+    popup.innerHTML = "Đang tra Mazii...";
     const scrollX = window.scrollX || window.pageXOffset;
     const scrollY = window.scrollY || window.pageYOffset;
     popup.style.left = `${Math.min(x + scrollX, window.innerWidth - 240)}px`;
     popup.style.top = `${y + scrollY + 20}px`;
 
     try {
-      const res = await fetch(TRANSLATE_API + encodeURIComponent(text));
+      const res = await fetch(MAZII_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text, source: "ja", target: "vi" })
+      });
       const data = await res.json();
-      const meaning = data[0][0][0];
-      let romaji = (data[0].find(i => i[3]))?.[3] || "";
-      popup.innerHTML = `<b class="ja-lookup-word">${text}</b><i>${romaji}</i><div>${meaning}</div>`;
-      callGAS({ action: "saveWord", word: text, romaji: romaji, meaning: meaning });
+      const meaning = data.data || "Không có kết quả";
+
+      popup.innerHTML = `
+        <b class="ja-lookup-word">${text}</b>
+        <div class="ja-lookup-meaning">🇲🇿 ${meaning}</div>`;
+
+      callGAS({ action: "saveWord", word: text, romaji: "", meaning: meaning });
       
-      // Cập nhật list từ vựng local để highlight ngay lập tức (không chờ load lại trang)
       if (!globalSavedWords.some(w => w.word === text)) {
          globalSavedWords.push({ word: text });
          highlightSavedWords(document.body);
@@ -188,17 +186,13 @@ const JapaneseLookup = (() => {
         const res = await fetch(GAS_URL + "?type=words&_t=" + Date.now());
         globalSavedWords = await res.json();
         highlightSavedWords(document.body);
-
         let debounceTimer = null;
-        const observer = new MutationObserver((mutations) => {
+        const observer = new MutationObserver(() => {
           if (debounceTimer) clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(() => {
-            console.log("[Log] Nội dung thay đổi, quét highlight...");
-            highlightSavedWords(document.body);
-          }, 800); // 0.8s sau khi DOM dừng thay đổi
+          debounceTimer = setTimeout(() => highlightSavedWords(document.body), 800);
         });
         observer.observe(document.body, { childList: true, subtree: true });
-      } catch (e) { console.error("[Log] Lỗi khởi tạo:", e); }
+      } catch (e) { console.error(e); }
 
       const handleSelection = () => {
         setTimeout(() => {

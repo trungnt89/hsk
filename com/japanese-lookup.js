@@ -1,13 +1,13 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.17
- * - Feature: Instant "Translating..." status for new lookups
- * - Feature: Fixed Bottom Popup (No jumping)
- * - Constraint: No unnecessary logic changes
+ * Japanese Lookup & Highlight Manager - Version 2026.22
+ * - Feature: Split Meanings (Top: MyMemory, Bottom: Google API)
+ * - Feature: Full Logs for Debugging
+ * - Constraint: Immutable Logic for Storage & Highlighting
  */
 
 const JapaneseLookup = (() => {
     const CONFIG = {
-        engine: 'mymemory',
+        engine: 'dual',
         gas_url: "https://script.google.com/macros/s/AKfycbxRsR4M3R0rjz3i0u2kz6Pg-ME3IeDYs8-7GE0MrjRaakfxQBory3JMtjjgVw3lTbqI/exec",
         google_api: "https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=vi&dt=t&dt=rm&q=",
         mymemory_api: "https://api.mymemory.translated.net/get?langpair=ja|vi&q="
@@ -63,12 +63,14 @@ const JapaneseLookup = (() => {
         }
     };
 
-    function showPopup(word, meaning, romaji, x, y, isStored = false) {
+    function showPopup(word, meaning, romaji, x, y, isStored = false, googleMeaning = "") {
         createUI();
         popup.style.display = 'block';
         popup.style.top = 'auto';
         popup.style.left = '0';
         popup.style.visibility = 'visible';
+
+        const displayGoogle = googleMeaning || meaning;
 
         popup.innerHTML = `
             <span class="ja-btn-close-tp" onclick="this.parentElement.style.display='none'">✕</span>
@@ -76,7 +78,14 @@ const JapaneseLookup = (() => {
                 <b class="ja-lookup-word">${word}</b>
                 <span style="color:#64748b; font-size:0.95em; margin-left:10px;">${romaji || ''}</span>
             </div>
-            <div style="max-height:80px; overflow-y:auto; margin-bottom:12px; line-height:1.5; color:#1e293b;">${meaning}</div>
+            <div style="max-height:80px; overflow-y:auto; margin-bottom:12px; line-height:1.5; color:#1e293b; font-size:14px;">
+                <div style="font-size:11px; color:#94a3b8; font-weight:bold; text-transform:uppercase; margin-bottom:2px;">MyMemory</div>
+                ${meaning}
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:10px; border-radius:8px; margin-bottom:12px;">
+                <div style="font-size:11px; color:#2563eb; font-weight:bold; text-transform:uppercase; margin-bottom:4px;">Google Translate</div>
+                <div style="color:#1e40af; font-weight:500;">${displayGoogle}</div>
+            </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size:12px; color:${isStored ? '#10b981' : '#94a3b8'}; font-weight:500;">
                     ${isStored ? '● TRONG BỘ NHỚ' : '○ TRA MỚI'}
@@ -90,30 +99,32 @@ const JapaneseLookup = (() => {
     async function lookupNew(text, x, y) {
         if (!text) return;
         createUI();
-        
-        // Hiển thị trạng thái chờ ngay lập tức để người dùng biết hệ thống đang xử lý
         showPopup(text, '<span style="color:#94a3b8; font-style:italic;">Đang dịch...</span>', '', x, y, false);
 
         try {
+            console.log(`[Request] Fetching translations for: ${text}`);
             const [resM, resG] = await Promise.all([
                 fetch(CONFIG.mymemory_api + encodeURIComponent(text)),
                 fetch(CONFIG.google_api + encodeURIComponent(text))
             ]);
             const dataM = await resM.json();
             const dataG = await resG.json();
+            
             const meaning = dataM.responseData.translatedText;
+            const googleMeaning = dataG[0][0][0];
             const romaji = (dataG[0].find(i => i[3]))?.[3] || "";
             
-            // Ghi đè nội dung dịch vào popup
-            showPopup(text, meaning, romaji, x, y, false);
+            console.log(`[Success] MyMemory: ${meaning} | Google: ${googleMeaning}`);
+            
+            showPopup(text, meaning, romaji, x, y, false, googleMeaning);
 
             if (!savedWordsMap.has(text)) {
-                savedWordsMap.set(text, { meaning, romaji });
+                savedWordsMap.set(text, { meaning, romaji, googleMeaning });
                 Module.applyHighlight();
-                fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji, meaning }) });
+                fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji, meaning, googleMeaning }) });
             }
         } catch (e) { 
-            console.error("Lookup error", e);
+            console.error("[Error] Lookup failed", e);
             showPopup(text, '<span style="color:#ef4444;">Lỗi kết nối dịch thuật.</span>', '', x, y, false);
         }
     }
@@ -132,7 +143,7 @@ const JapaneseLookup = (() => {
             const data = savedWordsMap.get(word);
             if (data) {
                 const rect = target.getBoundingClientRect();
-                showPopup(word, data.meaning, data.romaji, rect.left, rect.bottom, true);
+                showPopup(word, data.meaning, data.romaji, rect.left, rect.bottom, true, data.googleMeaning);
             }
         }
         if (popup && !popup.contains(e.target) && !e.target.closest('.ja-stored-highlight')) {
@@ -142,16 +153,18 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
+            console.log("[System] Initializing JapaneseLookup v2026.22");
             createUI();
             try {
                 const res = await fetch(CONFIG.gas_url + "?type=words&v=" + Date.now());
                 const data = await res.json();
-                data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji }));
+                data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji, googleMeaning: w.googleMeaning || "" }));
                 dataLoaded = true;
                 Module.applyHighlight();
-                setTimeout(() => Module.applyHighlight(), 5000);
-                setTimeout(() => Module.applyHighlight(), 10000);
-            } catch (e) { dataLoaded = true; }
+            } catch (e) { 
+                console.warn("[System] Initial load failed, offline mode active.");
+                dataLoaded = true; 
+            }
 
             const observer = new MutationObserver(() => { if (!isHighlighting && dataLoaded) Module.applyHighlight(); });
             observer.observe(document.body, { childList: true, subtree: true });
@@ -193,6 +206,7 @@ const JapaneseLookup = (() => {
                     <div style="flex:1">
                         <b>${word}</b> <small style="color:#64748b; margin-left:5px;">${data.romaji || ''}</small>
                         <br><span style="color:#334155; font-size:13px;">${data.meaning}</span>
+                        ${data.googleMeaning ? `<br><small style="color:#2563eb;">G: ${data.googleMeaning}</small>` : ''}
                     </div>
                     <button class="ja-del-btn" onclick="JapaneseLookup.deleteFromList('${word}', this.parentElement)">Xóa</button>
                 </div>
@@ -201,6 +215,7 @@ const JapaneseLookup = (() => {
 
         deleteFromList: (word, el = null) => {
             if (!confirm(`Xóa từ "${word}" khỏi danh sách?`)) return;
+            console.log(`[System] Deleting word: ${word}`);
             if (el) el.style.display = 'none';
             if (popup) popup.style.display = 'none';
             savedWordsMap.delete(word);

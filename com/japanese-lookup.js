@@ -1,6 +1,7 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.22
+ * Japanese Lookup & Highlight Manager - Version 2026.23
  * - Feature: Split Meanings (Top: MyMemory, Bottom: Google API)
+ * - Feature: Auto-highlight check at 5s and 10s after load
  * - Feature: Full Logs for Debugging
  * - Constraint: Immutable Logic for Storage & Highlighting
  */
@@ -153,14 +154,28 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
-            console.log("[System] Initializing JapaneseLookup v2026.22");
+            console.log("[System] Initializing JapaneseLookup v2026.23");
             createUI();
             try {
                 const res = await fetch(CONFIG.gas_url + "?type=words&v=" + Date.now());
                 const data = await res.json();
                 data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji, googleMeaning: w.googleMeaning || "" }));
                 dataLoaded = true;
+                
+                // Initial highlight
                 Module.applyHighlight();
+                
+                // Supplementary highlights at 5s and 10s
+                console.log("[System] Scheduling supplementary highlights at 5s and 10s...");
+                setTimeout(() => {
+                    console.log("[System] 5s check: Triggering highlight...");
+                    Module.applyHighlight();
+                }, 5000);
+                setTimeout(() => {
+                    console.log("[System] 10s check: Triggering highlight...");
+                    Module.applyHighlight();
+                }, 10000);
+
             } catch (e) { 
                 console.warn("[System] Initial load failed, offline mode active.");
                 dataLoaded = true; 
@@ -174,6 +189,7 @@ const JapaneseLookup = (() => {
 
         applyHighlight: () => {
             if (savedWordsMap.size === 0 || isHighlighting) return;
+            console.log(`[System] Running highlight for ${savedWordsMap.size} words.`);
             isHighlighting = true;
             const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
             let node;

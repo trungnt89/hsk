@@ -1,7 +1,7 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.8
- * - Feature: Click highlighted word to show lookup
- * - Fix: Mutation Lock for stable highlighting
+ * Japanese Lookup & Highlight Manager - Version 2026.9
+ * - Smart Lookup: API for new words, Local Cache for highlighted words.
+ * - No Ajax for stored words on click.
  */
 
 const JapaneseLookup = (() => {
@@ -23,25 +23,23 @@ const JapaneseLookup = (() => {
         .ja-lookup-word { color: #1e40af; font-size: 1.1em; font-weight: bold; display: block; }
         .ja-stored-highlight { 
             color: #2563eb !important; border-bottom: 1px dashed #2563eb; 
-            cursor: pointer; background: none !important; text-decoration: none;
+            cursor: pointer; background: none !important;
         }
-        .ja-stored-highlight:hover { color: #dc2626 !important; border-bottom-color: #dc2626; }
         .ja-history-btn { 
             position: fixed; bottom: 80px; right: 20px; width: 45px; height: 45px; 
             background: #2563eb; color: white; border-radius: 50%; border: none; 
-            cursor: pointer; z-index: 1000002; font-size: 20px; 
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000002; font-size: 20px; display: flex; align-items: center; justify-content: center;
         }
         .ja-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000003; align-items: center; justify-content: center; }
         .ja-modal-content { background: white; width: 90%; max-width: 400px; height: 70vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         .ja-word-item { padding: 10px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-        .ja-del-btn { color: #ef4444; background: none; border: none; cursor: pointer; font-size: 14px; }
+        .ja-del-btn { color: #ef4444; background: none; border: none; cursor: pointer; }
     `;
     document.head.appendChild(style);
 
     let popup = null, isHighlighting = false;
-    let savedWordsSet = new Set();
+    // Map lưu trữ: word -> {meaning, romaji}
+    let savedWordsMap = new Map();
 
     const createUI = () => {
         if (!document.querySelector('.ja-lookup-popup')) {
@@ -51,19 +49,41 @@ const JapaneseLookup = (() => {
         }
         if (!document.querySelector('.ja-history-btn')) {
             const btn = document.createElement('button');
-            btn.className = 'ja-history-btn';
-            btn.innerHTML = '📚';
-            btn.onclick = (e) => { e.preventDefault(); Module.openManager(); };
+            btn.className = 'ja-history-btn'; btn.innerHTML = '📚';
+            btn.onclick = () => Module.openManager();
             document.body.appendChild(btn);
         }
     };
+
+    // Hiển thị Popup từ dữ liệu CÓ SẴN (Không gọi API)
+    function showLocalLookup(word, x, y) {
+        const data = savedWordsMap.get(word);
+        if (!data) return;
+
+        createUI();
+        popup.style.display = 'block';
+        let posX = Math.max(5, Math.min(x, window.innerWidth - 190));
+        let posY = (y + 130 > window.innerHeight) ? (y - 120) : (y + 10);
+        popup.style.left = `${posX}px`; popup.style.top = `${posY}px`;
+        popup.style.visibility = 'visible';
+
+        popup.innerHTML = `
+            <span class="ja-btn-close-tp" onclick="this.parentElement.style.display='none'">✕</span>
+            <b class="ja-lookup-word">${word}</b>
+            <i style="color:#64748b; font-size:0.8em;">${data.romaji || ''}</i>
+            <div style="margin-top:4px;">${data.meaning}</div>
+            <div style="text-align:right; margin-top:5px; font-size:10px; color:#94a3b8;">(Đã lưu)</div>
+            <div style="text-align:right;"><button class="ja-del-btn" id="btn-del-now">🗑 Xóa</button></div>
+        `;
+        document.getElementById('btn-del-now').onclick = () => deleteWord(word);
+    }
 
     async function deleteWord(word, element = null) {
         if (!confirm(`Xóa từ "${word}"?`)) return;
         if (element) element.style.display = 'none';
         if (popup) popup.style.display = 'none';
         
-        savedWordsSet.delete(word);
+        savedWordsMap.delete(word);
         isHighlighting = true; 
         Module.removeHighlight(word);
         setTimeout(() => { isHighlighting = false; }, 500);
@@ -76,7 +96,8 @@ const JapaneseLookup = (() => {
         } catch (e) { if (element) element.style.display = 'flex'; }
     }
 
-    async function lookup(text, x, y) {
+    // Tra từ MỚI (Có gọi API)
+    async function lookupNew(text, x, y) {
         if (!text) return;
         createUI();
         popup.style.display = 'block';
@@ -106,8 +127,8 @@ const JapaneseLookup = (() => {
             `;
             document.getElementById('btn-del-now').onclick = () => deleteWord(text);
 
-            if (!savedWordsSet.has(text)) {
-                savedWordsSet.add(text);
+            if (!savedWordsMap.has(text)) {
+                savedWordsMap.set(text, { meaning, romaji });
                 Module.applyHighlight();
                 fetch(CONFIG.gas_url, { 
                     method: "POST", mode: "no-cors", 
@@ -123,34 +144,28 @@ const JapaneseLookup = (() => {
             try {
                 const res = await fetch(CONFIG.gas_url + "?type=words");
                 const data = await res.json();
-                savedWordsSet = new Set(data.map(w => w.word));
+                data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji }));
                 Module.applyHighlight();
-            } catch (e) { console.log("Empty data"); }
+            } catch (e) { console.log("Map empty"); }
 
-            // Quan sát thay đổi DOM
-            const observer = new MutationObserver(() => {
-                if (!isHighlighting) Module.applyHighlight();
-            });
+            const observer = new MutationObserver(() => { if (!isHighlighting) Module.applyHighlight(); });
             observer.observe(document.body, { childList: true, subtree: true });
 
-            // Sự kiện MouseUp để tra từ mới (bôi đen)
             document.addEventListener('mouseup', (e) => {
-                // Nếu click vào từ đã highlight thì bỏ qua MouseUp để tránh xung đột
                 if (e.target.classList.contains('ja-stored-highlight')) return;
-
                 const sel = window.getSelection();
                 const text = sel.toString().trim();
                 if (text && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)) {
                     const rect = sel.getRangeAt(0).getBoundingClientRect();
-                    lookup(text, rect.left, rect.bottom);
+                    lookupNew(text, rect.left, rect.bottom);
                 }
             });
 
-            // Sự kiện Click vào từ đã Highlight
             document.addEventListener('click', (e) => {
                 if (e.target.classList.contains('ja-stored-highlight')) {
                     const rect = e.target.getBoundingClientRect();
-                    lookup(e.target.textContent, rect.left, rect.bottom);
+                    // GỌI HÀM LOCAL: Không tốn băng thông/thời gian chờ
+                    showLocalLookup(e.target.textContent, rect.left, rect.bottom);
                 }
                 if (popup && !popup.contains(e.target) && !e.target.classList.contains('ja-del-btn') && !e.target.classList.contains('ja-stored-highlight')) {
                     popup.style.display = 'none';
@@ -159,17 +174,15 @@ const JapaneseLookup = (() => {
         },
 
         applyHighlight: () => {
-            if (savedWordsSet.size === 0 || isHighlighting) return;
+            if (savedWordsMap.size === 0 || isHighlighting) return;
             isHighlighting = true;
-            
             const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
             let node;
-            const words = Array.from(savedWordsSet).sort((a, b) => b.length - a.length);
+            const words = Array.from(savedWordsMap.keys()).sort((a, b) => b.length - a.length);
             const regex = new RegExp(`(${words.join('|')})`, 'g');
 
             while (node = walker.nextNode()) {
                 if (node.parentElement.closest('.ja-stored-highlight, .ja-lookup-popup, .ja-modal, .ja-history-btn, SCRIPT, STYLE, TEXTAREA, INPUT, BUTTON')) continue;
-                
                 if (regex.test(node.nodeValue)) {
                     const span = document.createElement('span');
                     span.innerHTML = node.nodeValue.replace(regex, '<span class="ja-stored-highlight">$1</span>');
@@ -180,12 +193,11 @@ const JapaneseLookup = (() => {
         },
 
         removeHighlight: (word) => {
-            const highlights = document.querySelectorAll('.ja-stored-highlight');
-            highlights.forEach(el => {
+            document.querySelectorAll('.ja-stored-highlight').forEach(el => {
                 if (el.textContent === word) {
-                    const parent = el.parentNode;
-                    parent.replaceChild(document.createTextNode(el.textContent), el);
-                    parent.normalize(); 
+                    const p = el.parentNode;
+                    p.replaceChild(document.createTextNode(el.textContent), el);
+                    p.normalize();
                 }
             });
         },
@@ -199,17 +211,12 @@ const JapaneseLookup = (() => {
             }
             m.style.display = 'flex';
             const list = document.getElementById('ja-word-list');
-            list.innerHTML = "Đang tải...";
-            try {
-                const res = await fetch(CONFIG.gas_url + "?type=words&_t=" + Date.now());
-                const data = await res.json();
-                list.innerHTML = data.reverse().map(w => `
-                    <div class="ja-word-item">
-                        <div style="flex:1"><b>${w.word}</b><br><small>${w.meaning}</small></div>
-                        <button class="ja-del-btn" onclick="JapaneseLookup.deleteFromList('${w.word}', this.parentElement)">🗑</button>
-                    </div>
-                `).join('');
-            } catch (e) { list.innerHTML = "Lỗi!"; }
+            list.innerHTML = Array.from(savedWordsMap.entries()).reverse().map(([word, data]) => `
+                <div class="ja-word-item">
+                    <div style="flex:1"><b>${word}</b><br><small>${data.meaning}</small></div>
+                    <button class="ja-del-btn" onclick="JapaneseLookup.deleteFromList('${word}', this.parentElement)">🗑</button>
+                </div>
+            `).join('') || "Chưa có từ nào.";
         },
         deleteFromList: (word, el) => deleteWord(word, el)
     };

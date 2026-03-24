@@ -1,8 +1,7 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.5
- * - Auto-highlight: Scan body & Ajax content
- * - Optimistic Delete: Hide immediately, then sync
- * - Module: ES6 Export Default
+ * Japanese Lookup & Highlight Manager - Version 2026.6
+ * - Style: Text color & Underline (No Background)
+ * - Feature: Instant Un-highlight on Delete
  */
 
 const JapaneseLookup = (() => {
@@ -23,7 +22,16 @@ const JapaneseLookup = (() => {
         .ja-btn-close-tp { position: absolute; top: 2px; right: 6px; cursor: pointer; color: #94a3b8; }
         .ja-lookup-word { color: #1e40af; font-size: 1.1em; font-weight: bold; display: block; }
         .ja-lookup-meaning { color: #0f172a; border-top: 1px solid #eee; margin-top: 4px; padding-top: 4px; }
-        .ja-stored-highlight { background-color: #fef08a !important; color: #b45309 !important; border-bottom: 1px dashed #b45309; cursor: help; border-radius: 2px; }
+        
+        /* Highlight chỉ đổi màu chữ và gạch chân, không tô nền */
+        .ja-stored-highlight { 
+            color: #2563eb !important; 
+            border-bottom: 1px dashed #2563eb; 
+            cursor: help; 
+            background: none !important; 
+            text-decoration: none;
+        }
+
         .ja-history-btn { position: fixed; bottom: 80px; right: 20px; width: 45px; height: 45px; background: #2563eb; color: white; border-radius: 50%; border: none; cursor: pointer; z-index: 9999; font-size: 20px; display: flex; align-items: center; justify-content: center; }
         .ja-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000001; align-items: center; justify-content: center; }
         .ja-modal-content { background: white; width: 90%; max-width: 400px; height: 70vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
@@ -42,28 +50,24 @@ const JapaneseLookup = (() => {
             popup.className = 'ja-lookup-popup';
             document.body.appendChild(popup);
         }
-        if (!document.querySelector('.ja-history-btn')) {
-            const btn = document.createElement('button');
-            btn.className = 'ja-history-btn'; btn.innerHTML = '📚';
-            btn.onclick = () => Module.openManager();
-            document.body.appendChild(btn);
-        }
     };
 
-    // Xóa từ: Ẩn UI ngay lập tức (Optimistic Update)
     async function deleteWord(word, element = null) {
         if (!confirm(`Xóa từ "${word}"?`)) return;
         
+        // Optimistic UI: Ẩn ngay lập tức
         if (element) element.style.display = 'none';
         if (popup) popup.style.display = 'none';
         savedWordsSet.delete(word);
         
+        // Gỡ bỏ highlight ngay lập tức trên giao diện
+        Module.removeHighlight(word);
+
         try {
             await fetch(CONFIG.gas_url, {
                 method: "POST", mode: "no-cors",
                 body: JSON.stringify({ action: "deleteWord", word: word })
             });
-            Module.applyHighlight(); // Cập nhật lại highlight trên trang
         } catch (e) {
             if (element) element.style.display = 'flex';
             alert("Lỗi kết nối!");
@@ -101,7 +105,6 @@ const JapaneseLookup = (() => {
                 `;
                 document.getElementById('btn-del-now').onclick = () => deleteWord(text);
 
-                // Lưu và cập nhật highlight
                 if (!savedWordsSet.has(text)) {
                     savedWordsSet.add(text);
                     Module.applyHighlight();
@@ -117,15 +120,13 @@ const JapaneseLookup = (() => {
     const Module = {
         init: async () => {
             createUI();
-            // Tải danh sách từ đã lưu để highlight
             try {
                 const res = await fetch(CONFIG.gas_url + "?type=words");
                 const data = await res.json();
                 savedWordsSet = new Set(data.map(w => w.word));
                 Module.applyHighlight();
-            } catch (e) { console.log("Chưa có data highlight"); }
+            } catch (e) { console.log("Init highlight empty"); }
 
-            // Quan sát Ajax/DOM thay đổi
             const observer = new MutationObserver(() => Module.applyHighlight());
             observer.observe(document.body, { childList: true, subtree: true });
 
@@ -152,7 +153,7 @@ const JapaneseLookup = (() => {
 
             while (node = walker.nextNode()) {
                 if (node.parentElement.classList.contains('ja-stored-highlight') || 
-                    ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT'].includes(node.parentElement.tagName)) continue;
+                    ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'BUTTON'].includes(node.parentElement.tagName)) continue;
                 
                 if (regex.test(node.nodeValue)) {
                     const span = document.createElement('span');
@@ -162,11 +163,24 @@ const JapaneseLookup = (() => {
             }
         },
 
+        // Hàm xóa highlight cụ thể khỏi trang
+        removeHighlight: (word) => {
+            const highlights = document.querySelectorAll('.ja-stored-highlight');
+            highlights.forEach(el => {
+                if (el.textContent === word) {
+                    const textNode = document.createTextNode(el.textContent);
+                    el.parentNode.replaceChild(textNode, el);
+                }
+            });
+            // Hợp nhất các text node bị chia cắt
+            document.body.normalize();
+        },
+
         openManager: async () => {
             let m = document.querySelector('.ja-modal');
             if (!m) {
                 m = document.createElement('div'); m.className = 'ja-modal';
-                m.innerHTML = `<div class="ja-modal-content"><div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between"><h3>Lịch sử</h3><button onclick="this.closest('.ja-modal').style.display='none'">✕</button></div><div id="ja-word-list"></div></div>`;
+                m.innerHTML = `<div class="ja-modal-content"><div style="padding:12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between"><h3>Lịch sử</h3><button onclick="this.closest('.ja-modal').style.display='none'">✕</button></div><div id="ja-word-list"></div></div>`;
                 document.body.appendChild(m);
             }
             m.style.display = 'flex';

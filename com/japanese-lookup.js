@@ -1,8 +1,8 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.13
- * - iOS/iPhone Optimized: Handlers for Touch events
- * - Feature: Triple-scan (0s, 5s, 10s) to ensure highlighting
- * - Fix: Overriding iOS system lookup menu
+ * Japanese Lookup & Highlight Manager - Version 2026.14
+ * - Fix: ReferenceError deleteWord (Scope issue)
+ * - Optimized: iOS Touch & PC Click coordination
+ * - Feature: Triple-scan for slow-loading pages
  */
 
 const JapaneseLookup = (() => {
@@ -19,25 +19,24 @@ const JapaneseLookup = (() => {
             position: fixed; z-index: 2147483647; background: #fff; border: 1px solid #2563eb;
             border-radius: 12px; padding: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
             font-family: -apple-system, system-ui, sans-serif; width: 220px; display: none; font-size: 14px;
-            -webkit-user-select: none; /* Tránh bôi đen text trong popup trên iPhone */
         }
-        .ja-btn-close-tp { position: absolute; top: 4px; right: 8px; cursor: pointer; color: #94a3b8; font-size: 18px; }
+        .ja-btn-close-tp { position: absolute; top: 4px; right: 8px; cursor: pointer; color: #94a3b8; font-size: 18px; font-weight: bold; }
         .ja-lookup-word { color: #1e40af; font-size: 1.2em; font-weight: bold; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; }
         .ja-stored-highlight { 
             color: #2563eb !important; border-bottom: 1.5px dashed #2563eb !important; 
             background: none !important; display: inline !important;
-            -webkit-tap-highlight-color: transparent; /* Tắt màu đen khi chạm trên iPhone */
+            -webkit-tap-highlight-color: transparent;
         }
         .ja-history-btn { 
             position: fixed; bottom: 100px; right: 20px; width: 50px; height: 50px; 
             background: #2563eb; color: white; border-radius: 50%; border: none; 
             z-index: 1000002; font-size: 24px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4); cursor: pointer;
         }
         .ja-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000003; align-items: center; justify-content: center; }
         .ja-modal-content { background: white; width: 95%; max-width: 400px; height: 80vh; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; }
         .ja-word-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .ja-del-btn { color: #ef4444; background: #fee2e2; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; }
+        .ja-del-btn { color: #ef4444; background: #fee2e2; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
     `;
     document.head.appendChild(style);
 
@@ -72,13 +71,14 @@ const JapaneseLookup = (() => {
             <span class="ja-btn-close-tp" onclick="this.parentElement.style.display='none'">✕</span>
             <b class="ja-lookup-word">${word}</b>
             <i style="color:#64748b; font-size:0.9em; display:block; margin-bottom:5px;">${romaji || ''}</i>
-            <div style="max-height:100px; overflow-y:auto; margin-bottom:10px;">${meaning}</div>
+            <div style="max-height:100px; overflow-y:auto; margin-bottom:10px; line-height:1.4;">${meaning}</div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size:11px; color:${isStored ? '#10b981' : '#94a3b8'};">${isStored ? '● Đã lưu' : '○ Mới'}</span>
                 <button class="ja-del-btn" id="btn-del-now">Xóa</button>
             </div>
         `;
-        document.getElementById('btn-del-now').onclick = () => deleteWord(word);
+        // FIX: Gọi qua Module để tránh lỗi ReferenceError
+        document.getElementById('btn-del-now').onclick = () => Module.deleteFromList(word);
     }
 
     async function lookupNew(text, x, y) {
@@ -95,27 +95,27 @@ const JapaneseLookup = (() => {
             const dataG = await resG.json();
             const meaning = dataM.responseData.translatedText;
             const romaji = (dataG[0].find(i => i[3]))?.[3] || "";
+            
             showPopup(text, meaning, romaji, x, y, false);
+
             if (!savedWordsMap.has(text)) {
                 savedWordsMap.set(text, { meaning, romaji });
                 Module.applyHighlight();
                 fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji, meaning }) });
             }
-        } catch (e) { popup.style.display = 'none'; }
+        } catch (e) { console.error("Lookup error", e); }
     }
 
     const handleAction = (e) => {
         const sel = window.getSelection();
         const text = sel.toString().trim();
 
-        // 1. Nếu bôi đen -> Dịch mới
         if (text && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)) {
             const rect = sel.getRangeAt(0).getBoundingClientRect();
             lookupNew(text, rect.left, rect.bottom);
             return;
         }
 
-        // 2. Nếu chạm vào từ đã highlight
         const target = e.target.closest('.ja-stored-highlight');
         if (target && !text) {
             const word = target.textContent;
@@ -126,7 +126,6 @@ const JapaneseLookup = (() => {
             }
         }
 
-        // 3. Đóng popup nếu chạm ra ngoài
         if (popup && !popup.contains(e.target) && !e.target.closest('.ja-stored-highlight')) {
             popup.style.display = 'none';
         }
@@ -141,7 +140,6 @@ const JapaneseLookup = (() => {
                 data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji }));
                 dataLoaded = true;
                 
-                // Scan 3 lần để đảm bảo iPhone load xong Ajax
                 Module.applyHighlight();
                 setTimeout(() => Module.applyHighlight(), 5000);
                 setTimeout(() => Module.applyHighlight(), 10000);
@@ -150,8 +148,7 @@ const JapaneseLookup = (() => {
             const observer = new MutationObserver(() => { if (!isHighlighting && dataLoaded) Module.applyHighlight(); });
             observer.observe(document.body, { childList: true, subtree: true });
 
-            // Hỗ trợ cả Touch (iPhone) và Mouse (PC)
-            document.addEventListener('touchend', (e) => handleAction(e), { passive: false });
+            document.addEventListener('touchend', (e) => handleAction(e));
             document.addEventListener('mouseup', (e) => handleAction(e));
         },
 
@@ -173,11 +170,11 @@ const JapaneseLookup = (() => {
             setTimeout(() => { isHighlighting = false; }, 300);
         },
 
-        openManager: async () => {
+        openManager: () => {
             let m = document.querySelector('.ja-modal');
             if (!m) {
                 m = document.createElement('div'); m.className = 'ja-modal';
-                m.innerHTML = `<div class="ja-modal-content"><div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;"><h3>Sổ từ vựng</h3><button onclick="this.closest('.ja-modal').style.display='none'" style="font-size:20px; border:none; background:none;">✕</button></div><div id="ja-word-list" style="overflow-y:auto; flex:1;"></div></div>`;
+                m.innerHTML = `<div class="ja-modal-content"><div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;"><h3>Sổ từ vựng</h3><button onclick="this.closest('.ja-modal').style.display='none'" style="font-size:24px; border:none; background:none; cursor:pointer;">✕</button></div><div id="ja-word-list" style="overflow-y:auto; flex:1;"></div></div>`;
                 document.body.appendChild(m);
             }
             m.style.display = 'flex';
@@ -190,21 +187,23 @@ const JapaneseLookup = (() => {
             `).join('') || '<div style="padding:20px; text-align:center;">Trống.</div>';
         },
 
-        deleteFromList: (word, el) => {
-            if (confirm(`Xóa "${word}"?`)) {
-                if (el) el.style.display = 'none';
-                savedWordsMap.delete(word);
-                isHighlighting = true;
-                document.querySelectorAll('.ja-stored-highlight').forEach(s => {
-                    if (s.textContent === word) {
-                        const p = s.parentNode;
-                        p.replaceChild(document.createTextNode(s.textContent), s);
-                        p.normalize();
-                    }
-                });
-                setTimeout(() => isHighlighting = false, 400);
-                fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "deleteWord", word: word }) });
-            }
+        deleteFromList: (word, el = null) => {
+            if (!confirm(`Xóa từ "${word}" khỏi danh sách?`)) return;
+            
+            if (el) el.style.display = 'none'; // Ẩn item trong danh sách
+            if (popup) popup.style.display = 'none'; // Ẩn popup nếu đang mở
+            
+            savedWordsMap.delete(word);
+            isHighlighting = true;
+            document.querySelectorAll('.ja-stored-highlight').forEach(s => {
+                if (s.textContent === word) {
+                    const p = s.parentNode;
+                    p.replaceChild(document.createTextNode(s.textContent), s);
+                    p.normalize();
+                }
+            });
+            setTimeout(() => isHighlighting = false, 400);
+            fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "deleteWord", word: word }) });
         }
     };
 

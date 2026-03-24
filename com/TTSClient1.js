@@ -5,7 +5,7 @@
     let ttsDb;
     let globalAudio = null;
 
-    // Khởi tạo IndexedDB
+    // Khởi tạo IndexedDB ngay khi nạp file
     const ttsDbReq = indexedDB.open(DB_NAME, 2);
     ttsDbReq.onupgradeneeded = (e) => {
         if (!e.target.result.objectStoreNames.contains(DB_STORE)) {
@@ -25,10 +25,6 @@
 
     function playAudio(url, audioControl) {
         return new Promise(res => {
-            // FIX: Dừng mọi âm thanh đang phát trước khi chạy âm thanh mới
-            audioControl.pause();
-            audioControl.currentTime = 0;
-            
             audioControl.src = url;
             audioControl.onended = res;
             audioControl.play().catch(err => {
@@ -40,6 +36,7 @@
 
     /**
      * Hàm gọi chính - Xuất ra phạm vi toàn cục (window)
+     * config: { text, voice, lang, rate, audioControl, filename }
      */
     window.speakCommon = async function(config = {}) {
         const { 
@@ -51,24 +48,24 @@
         
         const lang = config.lang || (voice.includes('-') ? voice.substring(0, 5) : "zh-CN");
 
+        // Logic tự động quản lý thẻ Audio nếu đầu vào trống
         let audioControl = config.audioControl;
-        
+		console.log(config);
         if (!audioControl) {
             if (!globalAudio) {
                 globalAudio = document.createElement('audio');
                 globalAudio.id = "tts-auto-audio";
-                // FIX: Hiển thị bộ điều khiển âm thanh để người dùng có thể tắt thủ công
-                globalAudio.controls = true;
-                globalAudio.style.cssText = "position:fixed; bottom:10px; right:10px; z-index:9999; width:220px; height:35px; background:#fff; border-radius:50px; box-shadow:0 4px 15px rgba(0,0,0,0.3);";
+                globalAudio.style.cssText = "position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;bottom:0;left:0;";
                 document.body.appendChild(globalAudio);
-                console.log("[TTS Log] Visible Audio Player Created");
+                console.log("[TTS Log] Auto Audio Element Created (1px)");
             }
             audioControl = globalAudio;
         }
 
         if (!text) return;
+        console.log(`[TTS Request] ${new Date().toLocaleTimeString()} | Text: ${text}`);
 
-        // Cấu hình MediaSession (Điều khiển trên màn hình khóa/thông báo)
+        // Tích hợp MediaSession hiển thị thông tin khi tắt màn hình
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: text,
@@ -76,9 +73,6 @@
                 album: filename,
                 artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/3039/3039387.png', sizes: '512x512', type: 'image/png' }]
             });
-            // Cho phép dừng từ thanh thông báo điện thoại
-            navigator.mediaSession.setActionHandler('pause', () => { audioControl.pause(); });
-            navigator.mediaSession.setActionHandler('stop', () => { audioControl.pause(); audioControl.currentTime = 0; });
         }
 
         const cacheKey = `${voice}_${rate}_${text}`;
@@ -94,10 +88,11 @@
         });
 
         if (cachedBlob) {
+            console.log(`[TTS Local] Play Audio cache: ${text}`);
             return playAudio(URL.createObjectURL(cachedBlob), audioControl);
         }
 
-        // 2. Gọi API TTS (Sử dụng link Streaming đã tối ưu của bạn)
+        // 2. Gọi API TTS
         const url = `https://hsk-gilt.vercel.app/api/tts_test?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
         
         try {

@@ -1,7 +1,7 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.16
+ * Japanese Lookup & Highlight Manager - Version 2026.17
+ * - Feature: Instant "Translating..." status for new lookups
  * - Feature: Fixed Bottom Popup (No jumping)
- * - Feature: Vocabulary list with Romaji/Hiragana info
  * - Constraint: No unnecessary logic changes
  */
 
@@ -90,8 +90,10 @@ const JapaneseLookup = (() => {
     async function lookupNew(text, x, y) {
         if (!text) return;
         createUI();
-        popup.style.display = 'block';
-        popup.style.visibility = 'hidden';
+        
+        // Hiển thị trạng thái chờ ngay lập tức để người dùng biết hệ thống đang xử lý
+        showPopup(text, '<span style="color:#94a3b8; font-style:italic;">Đang dịch...</span>', '', x, y, false);
+
         try {
             const [resM, resG] = await Promise.all([
                 fetch(CONFIG.mymemory_api + encodeURIComponent(text)),
@@ -102,6 +104,7 @@ const JapaneseLookup = (() => {
             const meaning = dataM.responseData.translatedText;
             const romaji = (dataG[0].find(i => i[3]))?.[3] || "";
             
+            // Ghi đè nội dung dịch vào popup
             showPopup(text, meaning, romaji, x, y, false);
 
             if (!savedWordsMap.has(text)) {
@@ -109,7 +112,10 @@ const JapaneseLookup = (() => {
                 Module.applyHighlight();
                 fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji, meaning }) });
             }
-        } catch (e) { console.error("Lookup error", e); }
+        } catch (e) { 
+            console.error("Lookup error", e);
+            showPopup(text, '<span style="color:#ef4444;">Lỗi kết nối dịch thuật.</span>', '', x, y, false);
+        }
     }
 
     const handleAction = (e) => {

@@ -1,7 +1,7 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.15
- * - Feature: Vocabulary list with Total count and Index (No.)
- * - Feature: Smart Tooltip positioning (Avoid edge overflow)
+ * Japanese Lookup & Highlight Manager - Version 2026.16
+ * - Feature: Fixed Bottom Popup (No jumping)
+ * - Feature: Vocabulary list with Romaji/Hiragana info
  * - Constraint: No unnecessary logic changes
  */
 
@@ -16,19 +16,25 @@ const JapaneseLookup = (() => {
     const style = document.createElement('style');
     style.textContent = `
         .ja-lookup-popup {
-            position: fixed; z-index: 2147483647; background: #fff; border: 1px solid #2563eb;
-            border-radius: 12px; padding: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-            font-family: -apple-system, system-ui, sans-serif; width: 220px; display: none; font-size: 14px;
+            position: fixed; z-index: 2147483647; background: #fff; 
+            border-top: 3px solid #2563eb;
+            bottom: 0; left: 0; width: 100%; 
+            padding: 15px 15px 25px 15px; 
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            font-family: -apple-system, system-ui, sans-serif; 
+            display: none; font-size: 15px;
+            box-sizing: border-box;
+            transition: transform 0.2s ease-out;
         }
-        .ja-btn-close-tp { position: absolute; top: 4px; right: 8px; cursor: pointer; color: #94a3b8; font-size: 18px; font-weight: bold; }
-        .ja-lookup-word { color: #1e40af; font-size: 1.2em; font-weight: bold; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; }
+        .ja-btn-close-tp { position: absolute; top: 8px; right: 15px; cursor: pointer; color: #94a3b8; font-size: 22px; font-weight: bold; }
+        .ja-lookup-word { color: #1e40af; font-size: 1.25em; font-weight: bold; display: inline-block; margin-bottom: 5px; border-bottom: 1px solid #eee; }
         .ja-stored-highlight { 
             color: #2563eb !important; border-bottom: 1.5px dashed #2563eb !important; 
             background: none !important; display: inline !important;
             -webkit-tap-highlight-color: transparent;
         }
         .ja-history-btn { 
-            position: fixed; bottom: 100px; right: 20px; width: 50px; height: 50px; 
+            position: fixed; bottom: 120px; right: 20px; width: 50px; height: 50px; 
             background: #2563eb; color: white; border-radius: 50%; border: none; 
             z-index: 1000002; font-size: 24px; display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4); cursor: pointer;
@@ -60,26 +66,22 @@ const JapaneseLookup = (() => {
     function showPopup(word, meaning, romaji, x, y, isStored = false) {
         createUI();
         popup.style.display = 'block';
-        
-        // Smart Positioning Logic
-        const popupWidth = 220;
-        const popupHeight = 160; 
-        let posX = Math.max(10, Math.min(x, window.innerWidth - popupWidth - 10));
-        let posY = (y + popupHeight > window.innerHeight) ? (y - popupHeight - 15) : (y + 15);
-        if (posY < 10) posY = 10; // Cản mép trên
-
-        popup.style.left = `${posX}px`;
-        popup.style.top = `${posY}px`;
+        popup.style.top = 'auto';
+        popup.style.left = '0';
         popup.style.visibility = 'visible';
 
         popup.innerHTML = `
             <span class="ja-btn-close-tp" onclick="this.parentElement.style.display='none'">✕</span>
-            <b class="ja-lookup-word">${word}</b>
-            <i style="color:#64748b; font-size:0.9em; display:block; margin-bottom:5px;">${romaji || ''}</i>
-            <div style="max-height:100px; overflow-y:auto; margin-bottom:10px; line-height:1.4;">${meaning}</div>
+            <div style="margin-bottom:8px;">
+                <b class="ja-lookup-word">${word}</b>
+                <span style="color:#64748b; font-size:0.95em; margin-left:10px;">${romaji || ''}</span>
+            </div>
+            <div style="max-height:80px; overflow-y:auto; margin-bottom:12px; line-height:1.5; color:#1e293b;">${meaning}</div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:11px; color:${isStored ? '#10b981' : '#94a3b8'};">${isStored ? '● Đã lưu' : '○ Mới'}</span>
-                <button class="ja-del-btn" id="btn-del-now">Xóa</button>
+                <span style="font-size:12px; color:${isStored ? '#10b981' : '#94a3b8'}; font-weight:500;">
+                    ${isStored ? '● TRONG BỘ NHỚ' : '○ TRA MỚI'}
+                </span>
+                <button class="ja-del-btn" id="btn-del-now">🗑 Xóa từ</button>
             </div>
         `;
         document.getElementById('btn-del-now').onclick = () => Module.deleteFromList(word);
@@ -181,8 +183,11 @@ const JapaneseLookup = (() => {
             const list = document.getElementById('ja-word-list');
             list.innerHTML = Array.from(savedWordsMap.entries()).reverse().map(([word, data], index) => `
                 <div class="ja-word-item">
-                    <div style="margin-right:10px; color:#94a3b8; font-size:12px;">${savedWordsMap.size - index}.</div>
-                    <div style="flex:1"><b>${word}</b><br><small style="color:#666">${data.meaning}</small></div>
+                    <div style="margin-right:12px; color:#94a3b8; font-size:12px;">${savedWordsMap.size - index}.</div>
+                    <div style="flex:1">
+                        <b>${word}</b> <small style="color:#64748b; margin-left:5px;">${data.romaji || ''}</small>
+                        <br><span style="color:#334155; font-size:13px;">${data.meaning}</span>
+                    </div>
                     <button class="ja-del-btn" onclick="JapaneseLookup.deleteFromList('${word}', this.parentElement)">Xóa</button>
                 </div>
             `).join('') || '<div style="padding:20px; text-align:center;">Trống.</div>';
@@ -193,7 +198,8 @@ const JapaneseLookup = (() => {
             if (el) el.style.display = 'none';
             if (popup) popup.style.display = 'none';
             savedWordsMap.delete(word);
-            document.getElementById('ja-total-count').textContent = savedWordsMap.size;
+            const counter = document.getElementById('ja-total-count');
+            if(counter) counter.textContent = savedWordsMap.size;
             isHighlighting = true;
             document.querySelectorAll('.ja-stored-highlight').forEach(s => {
                 if (s.textContent === word) {

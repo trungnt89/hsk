@@ -1,5 +1,5 @@
 /**
- * Japanese Lookup & Vocabulary Manager - iOS Optimized (Fixed Header)
+ * Japanese Lookup & Vocabulary Manager - AJAX & Mobile Optimized
  */
 
 const JapaneseLookup = (() => {
@@ -12,56 +12,31 @@ const JapaneseLookup = (() => {
       position: absolute; z-index: 99999; background: #fff; border: 1px solid #2563eb;
       border-radius: 12px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
       font-family: system-ui, -apple-system; width: 220px; pointer-events: auto;
-      -webkit-user-select: none; user-select: none;
     }
     .ja-lookup-word { color: #1e40af; font-size: 1.2em; font-weight: bold; display: block; }
     .ja-lookup-romaji { color: #64748b; font-size: 0.9em; font-style: italic; display: block; margin-bottom: 5px; }
     .ja-lookup-meaning { color: #0f172a; font-size: 1em; border-top: 1px solid #eee; padding-top: 5px; }
-
     .ja-history-btn {
       position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px;
       background: #2563eb; color: white; border-radius: 50%; border: none;
       cursor: pointer; z-index: 9999; font-size: 24px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
       display: flex; align-items: center; justify-content: center;
-      -webkit-tap-highlight-color: transparent;
     }
-
     .ja-modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center;
     }
     .ja-modal-content {
       background: white; width: 95%; max-width: 500px; height: 85vh;
-      border-radius: 20px; padding: 0; overflow: hidden; position: relative;
-      display: flex; flex-direction: column;
+      border-radius: 20px; display: flex; flex-direction: column; overflow: hidden;
     }
-    .ja-modal-header {
-      padding: 20px 20px 10px 20px;
-      background: white;
-      position: sticky; top: 0; z-index: 10;
-      border-bottom: 2px solid #2563eb;
-    }
-    #ja-word-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0 20px 20px 20px;
-    }
-    .ja-close-modal {
-      position: absolute; top: 18px; right: 15px; width: 32px; height: 32px;
-      background: #f1f5f9; border: none; border-radius: 50%; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748b;
-    }
-    .ja-close-modal:hover { background: #e2e8f0; color: #0f172a; }
-
-    .ja-word-item {
-      padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex;
-      justify-content: space-between; align-items: center; gap: 10px;
-    }
-    .ja-btn-group { display: flex; gap: 8px; flex-shrink: 0; }
-    .ja-btn-sm { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-size: 12px; background: #fff; }
-    .ja-edit-input { width: 100%; padding: 8px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    .ja-modal-header { padding: 20px; border-bottom: 2px solid #2563eb; position: relative; }
+    #ja-word-list { flex: 1; overflow-y: auto; padding: 20px; }
+    .ja-close-modal { position: absolute; top: 18px; right: 15px; border: none; background: #f1f5f9; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; }
     .ja-highlight { color: #dc2626 !important; font-weight: bold; border-bottom: 1px dashed #dc2626; }
-    button, .ja-history-btn { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .ja-word-item { padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+    .ja-edit-input { width: 100%; padding: 8px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    .ja-btn-sm { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
   `;
   document.head.appendChild(style);
 
@@ -97,23 +72,20 @@ const JapaneseLookup = (() => {
   };
 
   async function callGAS(data) {
-    console.log("[Log] Gửi dữ liệu tới GAS:", data.action);
+    console.log("[Log] GAS Action:", data.action);
     return fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
   }
 
-  function highlightSavedWords(words) {
-    console.log("[Log] Bắt đầu highlight từ vựng đã lưu...");
+  function highlightSavedWords(words, targetNode = document.body) {
     if (!words || words.length === 0) return;
     
-    // Lấy danh sách từ duy nhất và sắp xếp theo độ dài giảm dần
     const sortedWords = [...new Set(words.map(item => item.word))].sort((a, b) => b.length - a.length);
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    const walker = document.createTreeWalker(targetNode, NodeFilter.SHOW_TEXT, null, false);
     const nodes = [];
     
     while (walker.nextNode()) {
       const node = walker.currentNode;
-      // Bỏ qua các node nằm trong UI của tool
-      if (node.parentElement.closest('.ja-lookup-popup, .ja-modal, .ja-history-btn, script, style')) continue;
+      if (node.parentElement.closest('.ja-lookup-popup, .ja-modal, .ja-history-btn, script, style, .ja-highlight')) continue;
       nodes.push(node);
     }
 
@@ -132,80 +104,50 @@ const JapaneseLookup = (() => {
       if (changed) {
         const span = document.createElement('span');
         span.innerHTML = text;
-        node.parentNode.replaceChild(span, node);
+        if (node.parentNode) node.parentNode.replaceChild(span, node);
       }
     });
-    console.log("[Log] Hoàn tất quét và highlight.");
   }
 
   async function openManager() {
     createUI();
     modal.style.display = 'flex';
     const list = document.getElementById('ja-word-list');
-    list.innerHTML = "Đang đồng bộ với Cloud...";
+    list.innerHTML = "Đang đồng bộ...";
     try {
       const res = await fetch(GAS_URL + "?type=words&_t=" + Date.now());
       const words = await res.json();
-      if (!words || words.length === 0) {
-        list.innerHTML = "Chưa có từ vựng nào được lưu.";
-        return;
-      }
+      if (!words || words.length === 0) { list.innerHTML = "Trống."; return; }
       list.innerHTML = words.reverse().map(item => `
         <div class="ja-word-item" id="word-row-${item.id}">
           <div style="flex:1">
-            <strong style="color:#1e40af; font-size: 1.1em;">${item.word}</strong> 
-            <span style="color:#64748b; font-size: 0.85em;">${item.romaji ? `[${item.romaji}]` : ''}</span>
-            <div style="font-size:0.95em; color:#334155; margin-top: 3px;">${item.meaning}</div>
+            <strong style="color:#1e40af;">${item.word}</strong> 
+            <small style="color:#64748b;">${item.romaji ? `[${item.romaji}]` : ''}</small>
+            <div style="font-size:0.9em;">${item.meaning}</div>
           </div>
-          <div class="ja-btn-group">
+          <div style="display:flex; gap:5px;">
             <button class="ja-btn-sm" onclick="JapaneseLookup.editWord(${item.id}, \`${item.word}\`, \`${item.romaji}\`, \`${item.meaning}\`)">✏️</button>
-            <button class="ja-btn-sm" style="color:#dc2626" onclick="JapaneseLookup.deleteWord(${item.id})">🗑</button>
+            <button class="ja-btn-sm" style="color:red" onclick="JapaneseLookup.deleteWord(${item.id})">🗑</button>
           </div>
         </div>
       `).join('');
-    } catch (e) { 
-      list.innerHTML = "Lỗi kết nối server hoặc chưa có dữ liệu."; 
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   }
 
   window.JapaneseLookup = {
     deleteWord: async (id) => {
-      const row = document.getElementById(`word-row-${id}`);
-      if (!row) return;
-      if (!confirm("Xóa từ này khỏi danh sách?")) return;
-      row.style.transition = 'all 0.4s ease';
-      row.style.opacity = '0';
-      row.style.transform = 'translateX(30px)';
-      setTimeout(() => {
-        row.remove();
-        const list = document.getElementById('ja-word-list');
-        if (list && list.children.length === 0) list.innerHTML = "Chưa có từ vựng nào được lưu.";
-      }, 400);
-      callGAS({ action: "deleteWord", id: id }).catch(err => console.error(err));
+      if (!confirm("Xóa?")) return;
+      document.getElementById(`word-row-${id}`)?.remove();
+      callGAS({ action: "deleteWord", id: id });
     },
     editWord: (id, word, romaji, meaning) => {
       const row = document.getElementById(`word-row-${id}`);
-      row.innerHTML = `
-        <div style="width:100%">
-          <input id="edit-w-${id}" class="ja-edit-input" value="${word}" placeholder="Từ gốc">
-          <input id="edit-r-${id}" class="ja-edit-input" value="${romaji}" placeholder="Phiên âm">
-          <input id="edit-m-${id}" class="ja-edit-input" value="${meaning}" placeholder="Nghĩa">
-          <div style="display:flex; gap:5px; margin-top:5px">
-            <button class="ja-btn-sm" style="background:#2563eb; color:white; border:none; flex:1" onclick="JapaneseLookup.saveEdit(${id})">Lưu</button>
-            <button class="ja-btn-sm" style="flex:1" onclick="JapaneseLookup.openManager()">Hủy</button>
-          </div>
-        </div>`;
+      row.innerHTML = `<div style="width:100%"><input id="edit-w-${id}" class="ja-edit-input" value="${word}"><input id="edit-r-${id}" class="ja-edit-input" value="${romaji}"><input id="edit-m-${id}" class="ja-edit-input" value="${meaning}"><button onclick="JapaneseLookup.saveEdit(${id})">Lưu</button></div>`;
     },
     saveEdit: async (id) => {
-      const data = {
-        action: "updateWord", id: id,
-        word: document.getElementById(`edit-w-${id}`).value,
-        romaji: document.getElementById(`edit-r-${id}`).value,
-        meaning: document.getElementById(`edit-m-${id}`).value
-      };
+      const data = { action: "updateWord", id: id, word: document.getElementById(`edit-w-${id}`).value, romaji: document.getElementById(`edit-r-${id}`).value, meaning: document.getElementById(`edit-m-${id}`).value };
       await callGAS(data);
-      setTimeout(openManager, 800);
+      openManager();
     },
     openManager: openManager
   };
@@ -213,9 +155,8 @@ const JapaneseLookup = (() => {
   async function lookup(text, x, y) {
     if (!text) return;
     createUI();
-    popup.innerHTML = `<div style="font-size: 12px; color: #666;">Đang dịch...</div>`;
     popup.style.display = 'block';
-    
+    popup.innerHTML = "Loading...";
     const scrollX = window.scrollX || window.pageXOffset;
     const scrollY = window.scrollY || window.pageYOffset;
     popup.style.left = `${Math.min(x + scrollX, window.innerWidth - 240)}px`;
@@ -226,48 +167,41 @@ const JapaneseLookup = (() => {
       const data = await res.json();
       const meaning = data[0][0][0];
       let romaji = (data[0].find(i => i[3]))?.[3] || "";
-
-      popup.innerHTML = `
-        <span class="ja-lookup-word">${text}</span>
-        <span class="ja-lookup-romaji">${romaji ? `[ ${romaji} ]` : ''}</span>
-        <div class="ja-lookup-meaning">🇻🇳 ${meaning}</div>`;
-
-      callGAS({ action: "saveWord", word: text, romaji: romaji, meaning: meaning, source: window.location.pathname.split('/').pop() });
-    } catch (e) { 
-      popup.style.display = 'none'; 
-    }
+      popup.innerHTML = `<b class="ja-lookup-word">${text}</b><i>${romaji}</i><div>${meaning}</div>`;
+      callGAS({ action: "saveWord", word: text, romaji: romaji, meaning: meaning });
+    } catch (e) { popup.style.display = 'none'; }
   }
 
   return {
     init: async () => {
       createUI();
-      
-      // Load dữ liệu ban đầu để highlight
+      let savedWords = [];
       try {
         const res = await fetch(GAS_URL + "?type=words&_t=" + Date.now());
-        const words = await res.json();
-        highlightSavedWords(words);
-      } catch (e) { console.error("[Log] Lỗi khởi tạo highlight:", e); }
+        savedWords = await res.json();
+        highlightSavedWords(savedWords);
+
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach(m => m.addedNodes.forEach(node => {
+            if (node.nodeType === 1) highlightSavedWords(savedWords, node);
+          }));
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      } catch (e) { console.error(e); }
 
       const handleSelection = () => {
         setTimeout(() => {
           const sel = window.getSelection();
-          const selectedText = sel.toString().trim();
-          if (selectedText && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(selectedText)) {
-            const range = sel.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-            lookup(selectedText, rect.left, rect.bottom);
+          const text = sel.toString().trim();
+          if (text && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)) {
+            const rect = sel.getRangeAt(0).getBoundingClientRect();
+            lookup(text, rect.left, rect.bottom);
           }
         }, 150);
       };
-
-      document.addEventListener('mouseup', handleSelection);
       document.addEventListener('touchend', handleSelection);
-      document.addEventListener('mousedown', (e) => {
-        if (popup && !popup.contains(e.target) && !e.target.classList.contains('ja-history-btn')) {
-          popup.style.display = 'none';
-        }
-      });
+      document.addEventListener('mouseup', handleSelection);
+      document.addEventListener('mousedown', (e) => { if (popup && !popup.contains(e.target)) popup.style.display = 'none'; });
     }
   };
 })();

@@ -1,71 +1,59 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Mazii API</title>
+    <title>Test Mazii API v2</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        #result { 
-            margin-top: 20px; padding: 15px; border: 1px solid #ccc; 
-            background: #f9f9f9; min-height: 50px; border-radius: 8px;
-        }
-        .error { color: red; font-weight: bold; }
-        .success { color: green; font-weight: bold; }
-        input { padding: 10px; width: 250px; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        body { font-family: sans-serif; padding: 20px; }
+        #result { border: 1px solid #ddd; padding: 15px; margin-top: 10px; background: #f0f7ff; border-radius: 8px; white-space: pre-wrap; }
+        .info { color: #666; font-size: 0.9em; }
     </style>
 </head>
 <body>
-
-    <h2>Kiểm tra kết nối Mazii API</h2>
-    <p>Nhập từ tiếng Nhật để test:</p>
-    <input type="text" id="jaText" value="こんにちは">
-    <button onclick="testMazii()">Dịch thử</button>
-
-    <div id="result">Kết quả sẽ hiển thị ở đây...</div>
+    <h3>Kiểm tra Mazii API (Search Mode)</h3>
+    <input type="text" id="word" value="食べる">
+    <button onclick="testMazii()">Tra cứu</button>
+    <div id="result">Kết quả...</div>
 
     <script>
         async function testMazii() {
-            const text = document.getElementById('jaText').value;
+            const word = document.getElementById('word').value;
             const resDiv = document.getElementById('result');
-            const MAZII_API = "https://api.mazii.net/api/gtrans";
-
-            resDiv.innerHTML = " đang gửi yêu cầu...";
-            console.log("[Log] Đang gọi Mazii cho từ:", text);
+            resDiv.innerText = "Đang tra cứu...";
 
             try {
-                const response = await fetch(MAZII_API, {
+                // Endpoint search của Mazii
+                const response = await fetch("https://api.mazii.net/api/search", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        content: text,
-                        source: "ja",
-                        target: "vi"
+                        "dict": "javi",
+                        "type": "word",
+                        "query": word
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error("Lỗi HTTP: " + response.status);
 
                 const data = await response.json();
-                console.log("[Log] Dữ liệu nhận được:", data);
+                console.log("Data:", data);
 
-                resDiv.innerHTML = `
-                    <p class="success">Kết nối thành công!</p>
-                    <p><b>Từ gốc:</b> ${text}</p>
-                    <p><b>Nghĩa (Mazii):</b> ${data.data || "Không thấy data"}</p>
-                `;
-            } catch (error) {
-                console.error("[Error]:", error);
-                resDiv.innerHTML = `
-                    <p class="error">Lỗi kết nối hoặc lỗi CORS!</p>
-                    <p style="font-size: 12px; color: #666;">Chi tiết: ${error.message}</p>
-                    <p><i>Lưu ý: Nếu lỗi "Failed to fetch", Mazii có thể đang chặn request từ trình duyệt (CORS).</i></p>
-                `;
+                if (data.data && data.data.length > 0) {
+                    const firstResult = data.data[0];
+                    const meaning = firstResult.short_mean || firstResult.means[0].mean;
+                    const phonetic = firstResult.phonetic || "";
+                    
+                    resDiv.innerHTML = `
+                        <b style="color:blue; font-size: 1.2em;">${word}</b> [${phonetic}]<br>
+                        <hr>
+                        <b>Nghĩa:</b> ${meaning}
+                    `;
+                } else {
+                    resDiv.innerText = "Không tìm thấy từ này trong từ điển Mazii.";
+                }
+            } catch (err) {
+                resDiv.innerHTML = `<span style="color:red">Thất bại: ${err.message}</span><br>
+                <small class="info">Nếu vẫn lỗi 404, có thể Mazii đã chặn IP hoặc yêu cầu Token.</small>`;
             }
         }
     </script>

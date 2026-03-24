@@ -1,8 +1,8 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.10
- * - Fix: Ensure highlighting after data is loaded from GAS
- * - Fix: Reliable Click detection for highlighted words
- * - Feature: Zero-latency lookup for stored words
+ * Japanese Lookup & Highlight Manager - Version 2026.11
+ * - Fix: Highlighting and Selection conflict
+ * - Fix: Instant display for stored words on click
+ * - Fix: Selection lookup (Bôi đen) always works
  */
 
 const JapaneseLookup = (() => {
@@ -16,12 +16,13 @@ const JapaneseLookup = (() => {
     const style = document.createElement('style');
     style.textContent = `
         .ja-lookup-popup {
-            position: fixed; z-index: 1000000; background: #fff; border: 1px solid #2563eb;
-            border-radius: 8px; padding: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            font-family: system-ui, sans-serif; width: 180px; display: none; font-size: 13px;
+            position: fixed; z-index: 2147483647; background: #fff; border: 1px solid #2563eb;
+            border-radius: 8px; padding: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-family: system-ui, -apple-system, sans-serif; width: 180px; display: none; font-size: 13px;
+            pointer-events: auto;
         }
         .ja-btn-close-tp { position: absolute; top: 2px; right: 6px; cursor: pointer; color: #94a3b8; font-weight:bold; }
-        .ja-lookup-word { color: #1e40af; font-size: 1.1em; font-weight: bold; display: block; }
+        .ja-lookup-word { color: #1e40af; font-size: 1.1em; font-weight: bold; display: block; border-bottom: 1px solid #eee; margin-bottom: 4px; }
         .ja-stored-highlight { 
             color: #2563eb !important; border-bottom: 1px dashed #2563eb !important; 
             cursor: pointer !important; background: none !important; display: inline !important;
@@ -35,7 +36,7 @@ const JapaneseLookup = (() => {
         .ja-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000003; align-items: center; justify-content: center; }
         .ja-modal-content { background: white; width: 90%; max-width: 400px; height: 70vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
         .ja-word-item { padding: 10px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-        .ja-del-btn { color: #ef4444; background: none; border: none; cursor: pointer; padding: 5px; }
+        .ja-del-btn { color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px; font-size: 12px; }
     `;
     document.head.appendChild(style);
 
@@ -56,21 +57,25 @@ const JapaneseLookup = (() => {
         }
     };
 
-    function showLocalLookup(word, x, y) {
-        const data = savedWordsMap.get(word);
-        if (!data) return;
+    function showPopup(word, meaning, romaji, x, y, isStored = false) {
         createUI();
         popup.style.display = 'block';
         let posX = Math.max(5, Math.min(x, window.innerWidth - 190));
         let posY = (y + 130 > window.innerHeight) ? (y - 120) : (y + 10);
-        popup.style.left = `${posX}px`; popup.style.top = `${posY}px`;
+        
+        popup.style.left = `${posX}px`;
+        popup.style.top = `${posY}px`;
         popup.style.visibility = 'visible';
+
         popup.innerHTML = `
             <span class="ja-btn-close-tp" onclick="this.parentElement.style.display='none'">✕</span>
             <b class="ja-lookup-word">${word}</b>
-            <i style="color:#64748b; font-size:0.8em;">${data.romaji || ''}</i>
-            <div style="margin-top:4px;">${data.meaning}</div>
-            <div style="text-align:right; margin-top:5px;"><button class="ja-del-btn" id="btn-del-now">🗑 Xóa</button></div>
+            <i style="color:#64748b; font-size:0.85em; display:block; margin-bottom:4px;">${romaji || ''}</i>
+            <div class="ja-meaning-text">${meaning}</div>
+            <div style="text-align:right; margin-top:8px;">
+                ${isStored ? '<span style="font-size:10px; color:green; margin-right:10px;">✔ Đã lưu</span>' : ''}
+                <button class="ja-del-btn" id="btn-del-now">🗑 Xóa</button>
+            </div>
         `;
         document.getElementById('btn-del-now').onclick = () => deleteWord(word);
     }
@@ -79,10 +84,12 @@ const JapaneseLookup = (() => {
         if (!confirm(`Xóa từ "${word}"?`)) return;
         if (element) element.style.display = 'none';
         if (popup) popup.style.display = 'none';
+        
         savedWordsMap.delete(word);
         isHighlighting = true; 
         Module.removeHighlight(word);
-        setTimeout(() => { isHighlighting = false; }, 500);
+        setTimeout(() => { isHighlighting = false; }, 400);
+
         try {
             await fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "deleteWord", word: word }) });
         } catch (e) { if (element) element.style.display = 'flex'; }
@@ -93,6 +100,8 @@ const JapaneseLookup = (() => {
         createUI();
         popup.style.display = 'block';
         popup.style.visibility = 'hidden';
+        popup.innerHTML = '<div style="font-size:11px; color:#666;">Đang dịch...</div>';
+
         try {
             const [resM, resG] = await Promise.all([
                 fetch(CONFIG.mymemory_api + encodeURIComponent(text)),
@@ -102,65 +111,58 @@ const JapaneseLookup = (() => {
             const dataG = await resG.json();
             const meaning = dataM.responseData.translatedText;
             const romaji = (dataG[0].find(i => i[3]))?.[3] || "";
-            let posX = Math.max(5, Math.min(x, window.innerWidth - 190));
-            let posY = (y + 130 > window.innerHeight) ? (y - 120) : (y + 10);
-            popup.style.left = `${posX}px`; popup.style.top = `${posY}px`;
-            popup.style.visibility = 'visible';
-            popup.innerHTML = `
-                <span class="ja-btn-close-tp" onclick="this.parentElement.style.display='none'">✕</span>
-                <b class="ja-lookup-word">${text}</b>
-                <i style="color:#64748b; font-size:0.8em;">${romaji}</i>
-                <div style="margin-top:4px;">${meaning}</div>
-                <div style="text-align:right;"><button class="ja-del-btn" id="btn-del-now">🗑 Xóa</button></div>
-            `;
-            document.getElementById('btn-del-now').onclick = () => deleteWord(text);
+
+            showPopup(text, meaning, romaji, x, y, false);
+
             if (!savedWordsMap.has(text)) {
                 savedWordsMap.set(text, { meaning, romaji });
                 Module.applyHighlight();
                 fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji, meaning }) });
             }
-        } catch (e) { popup.innerHTML = "Lỗi!"; }
+        } catch (e) { popup.innerHTML = "Lỗi kết nối!"; }
     }
 
     const Module = {
         init: async () => {
             createUI();
-            // 1. Tải dữ liệu trước
             try {
-                const res = await fetch(CONFIG.gas_url + "?type=words&_t=" + Date.now());
+                const res = await fetch(CONFIG.gas_url + "?type=words&v=" + Date.now());
                 const data = await res.json();
                 data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji }));
                 dataLoaded = true;
-                Module.applyHighlight(); // Highlight sau khi có data
-                console.log("[Log] Dữ liệu đã tải xong và Highlight.");
-            } catch (e) { console.error("Lỗi tải data ban đầu"); dataLoaded = true; }
+                Module.applyHighlight();
+            } catch (e) { dataLoaded = true; }
 
-            // 2. Theo dõi DOM thay đổi (Ajax)
             const observer = new MutationObserver(() => { if (!isHighlighting && dataLoaded) Module.applyHighlight(); });
             observer.observe(document.body, { childList: true, subtree: true });
 
-            // 3. Event Delegation cho Click (Quan trọng nhất)
-            document.addEventListener('click', (e) => {
-                const target = e.target.closest('.ja-stored-highlight');
-                if (target) {
-                    e.preventDefault(); e.stopPropagation();
-                    const rect = target.getBoundingClientRect();
-                    showLocalLookup(target.textContent, rect.left, rect.bottom);
-                    return;
-                }
+            // Xử lý Click & Selection
+            document.addEventListener('mousedown', (e) => {
                 if (popup && !popup.contains(e.target) && !e.target.classList.contains('ja-del-btn')) {
                     popup.style.display = 'none';
                 }
             });
 
-            // 4. MouseUp cho tra từ mới
             document.addEventListener('mouseup', (e) => {
-                if (e.target.closest('.ja-stored-highlight, .ja-lookup-popup')) return;
                 const sel = window.getSelection();
                 const text = sel.toString().trim();
+
+                // Trường hợp 1: Có bôi đen -> Tra từ mới
                 if (text && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)) {
                     const rect = sel.getRangeAt(0).getBoundingClientRect();
                     lookupNew(text, rect.left, rect.bottom);
+                    return;
+                }
+
+                // Trường hợp 2: Click vào từ đã highlight (không bôi đen)
+                const target = e.target.closest('.ja-stored-highlight');
+                if (target && !text) {
+                    const word = target.textContent;
+                    const data = savedWordsMap.get(word);
+                    if (data) {
+                        const rect = target.getBoundingClientRect();
+                        showPopup(word, data.meaning, data.romaji, rect.left, rect.bottom, true);
+                    }
                 }
             });
         },
@@ -172,6 +174,7 @@ const JapaneseLookup = (() => {
             let node;
             const words = Array.from(savedWordsMap.keys()).sort((a, b) => b.length - a.length);
             const regex = new RegExp(`(${words.join('|')})`, 'g');
+
             while (node = walker.nextNode()) {
                 if (node.parentElement.closest('.ja-stored-highlight, .ja-lookup-popup, .ja-modal, .ja-history-btn, SCRIPT, STYLE, TEXTAREA, INPUT, BUTTON')) continue;
                 if (regex.test(node.nodeValue)) {
@@ -180,7 +183,7 @@ const JapaneseLookup = (() => {
                     node.parentNode.replaceChild(span, node);
                 }
             }
-            setTimeout(() => { isHighlighting = false; }, 200);
+            setTimeout(() => { isHighlighting = false; }, 250);
         },
 
         removeHighlight: (word) => {
@@ -197,17 +200,17 @@ const JapaneseLookup = (() => {
             let m = document.querySelector('.ja-modal');
             if (!m) {
                 m = document.createElement('div'); m.className = 'ja-modal';
-                m.innerHTML = `<div class="ja-modal-content"><div style="padding:12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between"><h3>Lịch sử</h3><button onclick="this.closest('.ja-modal').style.display='none'">✕</button></div><div id="ja-word-list" style="overflow-y:auto"></div></div>`;
+                m.innerHTML = `<div class="ja-modal-content"><div style="padding:12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;"><h3>Từ vựng (${savedWordsMap.size})</h3><button onclick="this.closest('.ja-modal').style.display='none'">✕</button></div><div id="ja-word-list" style="overflow-y:auto"></div></div>`;
                 document.body.appendChild(m);
             }
             m.style.display = 'flex';
             const list = document.getElementById('ja-word-list');
             list.innerHTML = Array.from(savedWordsMap.entries()).reverse().map(([word, data]) => `
                 <div class="ja-word-item">
-                    <div style="flex:1"><b>${word}</b><br><small>${data.meaning}</small></div>
+                    <div style="flex:1"><b>${word}</b><br><small style="color:#666">${data.meaning}</small></div>
                     <button class="ja-del-btn" onclick="JapaneseLookup.deleteFromList('${word}', this.parentElement)">🗑</button>
                 </div>
-            `).join('') || "Chưa có từ nào.";
+            `).join('') || '<div style="padding:20px; text-align:center;">Chưa có dữ liệu.</div>';
         },
         deleteFromList: (word, el) => deleteWord(word, el)
     };

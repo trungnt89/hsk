@@ -1,7 +1,7 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.7
- * - Fix: Persistent History Button
- * - Fix: No Re-highlighting after delete (Mutation Lock)
+ * Japanese Lookup & Highlight Manager - Version 2026.8
+ * - Feature: Click highlighted word to show lookup
+ * - Fix: Mutation Lock for stable highlighting
  */
 
 const JapaneseLookup = (() => {
@@ -23,8 +23,9 @@ const JapaneseLookup = (() => {
         .ja-lookup-word { color: #1e40af; font-size: 1.1em; font-weight: bold; display: block; }
         .ja-stored-highlight { 
             color: #2563eb !important; border-bottom: 1px dashed #2563eb; 
-            cursor: help; background: none !important; text-decoration: none;
+            cursor: pointer; background: none !important; text-decoration: none;
         }
+        .ja-stored-highlight:hover { color: #dc2626 !important; border-bottom-color: #dc2626; }
         .ja-history-btn { 
             position: fixed; bottom: 80px; right: 20px; width: 45px; height: 45px; 
             background: #2563eb; color: white; border-radius: 50%; border: none; 
@@ -39,7 +40,7 @@ const JapaneseLookup = (() => {
     `;
     document.head.appendChild(style);
 
-    let popup = null, observer = null, isHighlighting = false;
+    let popup = null, isHighlighting = false;
     let savedWordsSet = new Set();
 
     const createUI = () => {
@@ -59,15 +60,10 @@ const JapaneseLookup = (() => {
 
     async function deleteWord(word, element = null) {
         if (!confirm(`Xóa từ "${word}"?`)) return;
-        
-        // Optimistic UI
         if (element) element.style.display = 'none';
         if (popup) popup.style.display = 'none';
         
-        // 1. Xóa khỏi Set dữ liệu
         savedWordsSet.delete(word);
-        
-        // 2. Gỡ highlight và KHÓA MutationObserver
         isHighlighting = true; 
         Module.removeHighlight(word);
         setTimeout(() => { isHighlighting = false; }, 500);
@@ -77,10 +73,7 @@ const JapaneseLookup = (() => {
                 method: "POST", mode: "no-cors",
                 body: JSON.stringify({ action: "deleteWord", word: word })
             });
-        } catch (e) {
-            if (element) element.style.display = 'flex';
-            alert("Lỗi server!");
-        }
+        } catch (e) { if (element) element.style.display = 'flex'; }
     }
 
     async function lookup(text, x, y) {
@@ -100,7 +93,7 @@ const JapaneseLookup = (() => {
             const romaji = (dataG[0].find(i => i[3]))?.[3] || "";
 
             let posX = Math.max(5, Math.min(x, window.innerWidth - 190));
-            let posY = (y + 120 > window.innerHeight) ? (y - 110) : (y + 10);
+            let posY = (y + 130 > window.innerHeight) ? (y - 120) : (y + 10);
             popup.style.left = `${posX}px`; popup.style.top = `${posY}px`;
             popup.style.visibility = 'visible';
 
@@ -132,15 +125,19 @@ const JapaneseLookup = (() => {
                 const data = await res.json();
                 savedWordsSet = new Set(data.map(w => w.word));
                 Module.applyHighlight();
-            } catch (e) { console.log("Data empty"); }
+            } catch (e) { console.log("Empty data"); }
 
-            // Quan sát thay đổi DOM nhưng có biến Lock (isHighlighting)
-            observer = new MutationObserver(() => {
+            // Quan sát thay đổi DOM
+            const observer = new MutationObserver(() => {
                 if (!isHighlighting) Module.applyHighlight();
             });
             observer.observe(document.body, { childList: true, subtree: true });
 
-            document.addEventListener('mouseup', () => {
+            // Sự kiện MouseUp để tra từ mới (bôi đen)
+            document.addEventListener('mouseup', (e) => {
+                // Nếu click vào từ đã highlight thì bỏ qua MouseUp để tránh xung đột
+                if (e.target.classList.contains('ja-stored-highlight')) return;
+
                 const sel = window.getSelection();
                 const text = sel.toString().trim();
                 if (text && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)) {
@@ -148,15 +145,22 @@ const JapaneseLookup = (() => {
                     lookup(text, rect.left, rect.bottom);
                 }
             });
-            document.addEventListener('mousedown', (e) => {
-                if (popup && !popup.contains(e.target) && !e.target.classList.contains('ja-del-btn')) 
+
+            // Sự kiện Click vào từ đã Highlight
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('ja-stored-highlight')) {
+                    const rect = e.target.getBoundingClientRect();
+                    lookup(e.target.textContent, rect.left, rect.bottom);
+                }
+                if (popup && !popup.contains(e.target) && !e.target.classList.contains('ja-del-btn') && !e.target.classList.contains('ja-stored-highlight')) {
                     popup.style.display = 'none';
+                }
             });
         },
 
         applyHighlight: () => {
             if (savedWordsSet.size === 0 || isHighlighting) return;
-            isHighlighting = true; // Khóa tạm thời để tránh loop vô tận
+            isHighlighting = true;
             
             const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
             let node;

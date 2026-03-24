@@ -3,132 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Dict Style - Advanced Test</title>
+    <title>Google Search Logic Test</title>
     <style>
-        body { font-family: 'arial', sans-serif; background: #f1f3f4; padding: 20px; color: #202124; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .sample-text { font-size: 1.5rem; line-height: 2; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-top: 20px; }
+        body { font-family: 'arial', sans-serif; background: #f1f3f4; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 10px; border: 1px solid #dfe1e5; border-radius: 24px; outline: none; padding-left: 20px; }
+        button { padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 24px; cursor: pointer; }
         
-        /* Popup Style */
-        .dict-popup {
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: white; border-top: 1px solid #dadce0;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
-            display: none; z-index: 9999;
-            padding: 20px; box-sizing: border-box;
-            animation: slideUp 0.3s ease-out;
+        /* Giao diện Popup giả lập */
+        #result-box {
+            border-top: 1px solid #dadce0;
+            margin-top: 20px;
+            display: none;
+            padding-top: 15px;
         }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        .word-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .word-kanji { font-size: 24px; color: #202124; }
-        .word-reading { font-size: 16px; color: #70757a; }
-        .audio-btn { 
-            background: #e8f0fe; color: #1a73e8; border: none; 
-            width: 35px; height: 35px; border-radius: 50%; cursor: pointer; 
+        .word-title { font-size: 24px; margin-bottom: 5px; }
+        .source-tag { font-size: 11px; color: #70757a; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+        .snippet-content { 
+            font-size: 14px; line-height: 1.6; color: #3c4043; 
+            background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ebebeb;
         }
-
-        .section-title { font-size: 13px; font-weight: bold; color: #70757a; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; }
-        .definition-item { font-size: 14px; margin-bottom: 8px; line-height: 1.5; color: #3c4043; }
-        
-        .translate-box { 
-            background: #f8f9fa; border: 1px solid #dfe1e5; 
-            padding: 12px; border-radius: 8px; margin-top: 15px;
-        }
-        .vi-meaning { color: #1967d2; font-weight: 500; font-size: 16px; }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 20px; cursor: pointer; color: #70757a; }
+        .status { font-size: 12px; color: #1a73e8; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Google Dictionary Clone</h2>
-    <p>Bôi đen từ bên dưới để trải nghiệm:</p>
-    <div class="sample-text">
-        新しい<b>物語</b>を書きましょう。日本語の<b>勉強</b>は<b>面白い</b>ですね。
-    </div>
-</div>
-
-<div id="popup" class="dict-popup">
-    <span class="close-btn" onclick="document.getElementById('popup').style.display='none'">✕</span>
+    <h3>Google Search Logic Test</h3>
+    <p style="font-size: 13px; color: #5f6368;">Nhập từ tiếng Nhật (ví dụ: 物語), hệ thống sẽ tự thêm "とは" để tra cứu nghĩa chuyên sâu.</p>
     
-    <div class="word-header">
-        <span id="p-kanji" class="word-kanji">...</span>
-        <span id="p-reading" class="word-reading">...</span>
-        <button class="audio-btn" id="p-audio">▶</button>
+    <div class="input-group">
+        <input type="text" id="word-input" placeholder="Nhập từ cần tra..." value="物語">
+        <button onclick="startSearch()">Tra cứu</button>
     </div>
 
-    <div>
-        <div class="section-title">Định nghĩa / Ý nghĩa</div>
-        <div id="p-definitions"></div>
-    </div>
+    <div id="status" class="status"></div>
 
-    <div class="translate-box">
-        <div class="section-title" style="margin-top:0">Bản dịch tiếng Việt</div>
-        <div id="p-vi" class="vi-meaning">Đang dịch...</div>
+    <div id="result-box">
+        <div class="word-title" id="display-word">...</div>
+        <div class="source-tag">Định nghĩa từ Google Search (Snippet)</div>
+        <div class="snippet-content" id="display-snippet">
+            Đang bóc tách dữ liệu...
+        </div>
+        <div style="margin-top:15px; font-size:12px; color:#1a73e8; cursor:pointer;" onclick="openGoogle()">
+            Xem kết quả gốc trên Google →
+        </div>
     </div>
 </div>
 
 <script>
-    const popup = document.getElementById('popup');
+    async function startSearch() {
+        const word = document.getElementById('word-input').value.trim();
+        if (!word) return;
 
-    async function handleLookup() {
-        const selection = window.getSelection();
-        const text = selection.toString().trim();
+        const statusEl = document.getElementById('status');
+        const resultBox = document.getElementById('result-box');
+        const snippetEl = document.getElementById('display-snippet');
+        
+        statusEl.innerText = "🔍 Đang kết nối tới Google qua Proxy...";
+        resultBox.style.display = 'block';
+        document.getElementById('display-word').innerText = word;
+        snippetEl.innerText = "Đang tải...";
 
-        if (text && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)) {
-            popup.style.display = 'block';
-            resetPopup(text);
+        // Sử dụng AllOrigins Proxy để vượt lỗi CORS (Chạy trực tiếp trên trình duyệt)
+        const searchQuery = encodeURIComponent(word + " とは");
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://www.google.com/search?q=' + searchQuery + '&hl=ja')}`;
 
-            try {
-                // 1. Gọi Jisho API (Lấy Hiragana & Nghĩa chi tiết)
-                const jishoPromise = fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://jisho.org/api/v1/search/words?keyword=' + text)}`)
-                    .then(res => res.json())
-                    .then(data => JSON.parse(data.contents));
+        try {
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+            const htmlString = data.contents;
 
-                // 2. Gọi Google Translate API (Qua gtx để test nhanh)
-                const googlePromise = fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=vi&dt=t&q=${encodeURIComponent(text)}`)
-                    .then(res => res.json());
+            // PHƯƠNG PHÁP BÓC TÁCH (PARSING):
+            // Chúng ta tìm đoạn nội dung trong thẻ meta description hoặc các đoạn text tiêu biểu
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlString, 'text/html');
+            
+            // 1. Thử lấy từ Meta Description (thường chứa định nghĩa gọn nhất)
+            const metaDesc = doc.querySelector('meta[name="description"]');
+            let snippet = metaDesc ? metaDesc.getAttribute('content') : "";
 
-                const [jishoData, googleData] = await Promise.all([jishoPromise, googlePromise]);
-
-                // Hiển thị dữ liệu Jisho
-                if (jishoData.data.length > 0) {
-                    const entry = jishoData.data[0];
-                    document.getElementById('p-reading').innerText = `【${entry.japanese[0].reading || ''}】`;
-                    
-                    const defs = entry.senses.slice(0, 3).map((s, i) => 
-                        `<div class="definition-item">${i+1}. ${s.english_definitions.join(', ')}</div>`
-                    ).join('');
-                    document.getElementById('p-definitions').innerHTML = defs;
-                }
-
-                // Hiển thị dữ liệu Google
-                document.getElementById('p-vi').innerText = googleData[0][0][0];
-
-                // Audio
-                document.getElementById('p-audio').onclick = () => {
-                    const ut = new SpeechSynthesisUtterance(text);
-                    ut.lang = 'ja-JP';
-                    window.speechSynthesis.speak(ut);
-                };
-
-            } catch (err) {
-                console.error(err);
-                document.getElementById('p-vi').innerText = "Lỗi kết nối API.";
+            // 2. Nếu meta trống, thử lấy từ các thẻ <span> phổ biến trong kết quả tìm kiếm
+            if (!snippet || snippet.length < 20) {
+                const spans = Array.from(doc.querySelectorAll('span'));
+                const longSpan = spans.find(s => s.innerText.length > 50);
+                snippet = longSpan ? longSpan.innerText : "Không tìm thấy đoạn trích dẫn phù hợp.";
             }
+
+            // Làm sạch dữ liệu (loại bỏ các đoạn "Translate this page" hoặc ngày tháng)
+            snippet = snippet.replace(/·/g, '').trim();
+
+            snippetEl.innerText = snippet;
+            statusEl.innerText = "✅ Đã bóc tách thành công.";
+
+        } catch (error) {
+            console.error(error);
+            statusEl.innerText = "❌ Lỗi kết nối hoặc Proxy bị chặn.";
+            snippetEl.innerText = "Không thể lấy dữ liệu. Google có thể đã chặn yêu cầu tự động này.";
         }
     }
 
-    function resetPopup(text) {
-        document.getElementById('p-kanji').innerText = text;
-        document.getElementById('p-reading').innerText = "Loading...";
-        document.getElementById('p-definitions').innerHTML = "Đang tải định nghĩa...";
-        document.getElementById('p-vi').innerText = "Đang dịch...";
+    function openGoogle() {
+        const word = document.getElementById('word-input').value;
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(word + " とは")}&hl=ja`, '_blank');
     }
-
-    document.addEventListener('mouseup', handleLookup);
-    document.addEventListener('touchend', handleLookup);
 </script>
 
 </body>

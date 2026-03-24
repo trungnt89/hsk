@@ -3,119 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mazii API Encrypted Test</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <title>Japan Translate Test - 姿勢</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; background: #f4f4f9; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        textarea { width: 100%; height: 100px; margin-top: 10px; font-family: monospace; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
-        button:hover { background: #0056b3; }
-        .result-box { margin-top: 20px; padding: 15px; border: 1px solid #ddd; background: #fafafa; overflow-x: auto; }
-        .log-box { font-size: 12px; color: #666; margin-top: 10px; border-left: 3px solid #007bff; padding-left: 10px; }
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f9; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        textarea { width: 100%; height: 100px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: none; }
+        button { width: 100%; padding: 10px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1d4ed8; }
+        .result-box { margin-top: 20px; padding: 15px; background: #eef2ff; border-left: 4px solid #2563eb; min-height: 50px; }
+        .log-box { margin-top: 20px; font-size: 12px; color: #666; background: #eee; padding: 10px; max-height: 150px; overflow-y: auto; white-space: pre-wrap; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Mazii API Test (Encrypted Data)</h2>
+    <h3>Dịch Tiếng Nhật (Test: 姿勢)</h3>
+    <textarea id="inputText" placeholder="Nhập tiếng Nhật tại đây...">姿勢</textarea>
+    <button id="translateBtn">Dịch Sang Tiếng Việt</button>
+
+    <div class="result-box" id="resultText">Kết quả sẽ hiển thị ở đây...</div>
     
-    <label>Nhập từ cần tra:</label><br>
-    <input type="text" id="wordInput" value="マックス" style="padding: 8px; width: 200px;">
-    <button onclick="fetchMazii()">Gửi Request (CURL logic)</button>
-
-    <div id="logs" class="log-box"></div>
-
-    <h3>1. Raw Response (Từ API):</h3>
-    <textarea id="rawResponse" readonly></textarea>
-
-    <h3>2. Giải mã (Nếu có Key):</h3>
-    <label>Secret Key (Nếu tìm được):</label>
-    <input type="text" id="secretKey" placeholder="Nhập key để giải mã..." style="width: 100%; padding: 5px; margin-bottom: 10px;">
-    <div id="decryptedResult" class="result-box">Chưa có dữ liệu giải mã.</div>
+    <div class="log-box" id="logConsole">-- Hệ thống Log --</div>
 </div>
 
 <script>
-    // Hàm ghi log theo yêu cầu của bạn
-    function addLog(msg) {
-        const logDiv = document.getElementById('logs');
+    const logConsole = document.getElementById('logConsole');
+    const resultText = document.getElementById('resultText');
+    const inputText = document.getElementById('inputText');
+    const translateBtn = document.getElementById('translateBtn');
+
+    // Hàm ghi log theo yêu cầu
+    function addLog(message) {
         const time = new Date().toLocaleTimeString();
-        logDiv.innerHTML += `<div>[${time}] ${msg}</div>`;
-        console.log(`[${time}] ${msg}`);
+        const logEntry = `[${time}] ${message}\n`;
+        logConsole.innerText += logEntry;
+        logConsole.scrollTop = logConsole.scrollHeight;
+        console.log(logEntry);
     }
 
-    async function fetchMazii() {
-        const word = document.getElementById('wordInput').value;
-        addLog(`Bắt đầu fetch từ cho từ: ${word}`);
-
-        const url = 'https://api.mazii.net/api/get-mean';
-        const payload = {
-            "wordId": 206724,
-            "type": "word",
-            "dict": "javi",
-            "word": word
-        };
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'accept': 'application/json, text/plain, */*',
-                    'content-type': 'application/json',
-                    'origin': 'https://mazii.net',
-                    'referer': 'https://mazii.net/'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-            document.getElementById('rawResponse').value = JSON.stringify(data, null, 2);
-            addLog("Đã nhận phản hồi từ API.");
-
-            if (data.encryptedData) {
-                addLog("CẢNH BÁO: Dữ liệu bị mã hóa (EncryptedData detected).");
-                attemptDecrypt(data.encryptedData);
-            } else {
-                addLog("Dữ liệu thô (Raw) đã sẵn sàng.");
-                document.getElementById('decryptedResult').innerText = JSON.stringify(data, null, 2);
-            }
-
-        } catch (error) {
-            addLog(`LỖI: ${error.message}`);
-        }
-    }
-
-    function attemptDecrypt(encryptedStr) {
-        const key = document.getElementById('secretKey').value;
-        if (!key) {
-            addLog("Không thể giải mã: Thiếu Secret Key.");
+    async function translateJPtoVN() {
+        const text = inputText.value.trim();
+        if (!text) {
+            addLog("LỖI: Nội dung trống.");
             return;
         }
 
+        addLog(`BẮT ĐẦU: Dịch từ "${text}"`);
+        resultText.innerText = "Đang xử lý...";
+        
         try {
-            // Tách IV và Ciphertext (ngăn cách bởi dấu :)
-            const parts = encryptedStr.split(':');
-            const iv = CryptoJS.enc.Base64.parse(parts[0]);
-            const ciphertext = parts[1];
+            // Sử dụng MyMemory API (Miễn phí, không cần Key cho nhu cầu test)
+            const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ja|vi`;
             
-            // Cấu hình giải mã AES-CBC
-            const decrypted = CryptoJS.AES.decrypt(ciphertext, CryptoJS.enc.Utf8.parse(key), {
-                iv: iv,
-                mode: CryptoJS.mode.CBC,
-                padding: CryptoJS.pad.Pkcs7
-            });
+            addLog(`CALL API: ${apiUrl}`);
+            const response = await fetch(apiUrl);
+            const data = await response.json();
 
-            const resultText = decrypted.toString(CryptoJS.enc.Utf8);
-            if (resultText) {
-                document.getElementById('decryptedResult').innerHTML = `<b>Thành công:</b><br><pre>${resultText}</pre>`;
-                addLog("Giải mã thành công!");
+            if (data.responseData) {
+                const translated = data.responseData.translatedText;
+                resultText.innerHTML = `<strong>Kết quả:</strong> ${translated}`;
+                addLog(`THÀNH CÔNG: Đã nhận dữ liệu dịch.`);
             } else {
-                throw new Error("Key sai hoặc dữ liệu lỗi.");
+                throw new Error("Không có dữ liệu trả về.");
             }
-        } catch (e) {
-            addLog(`Giải mã thất bại: ${e.message}`);
+        } catch (error) {
+            resultText.innerText = "Có lỗi xảy ra khi gọi API.";
+            addLog(`LỖI API: ${error.message}`);
         }
     }
+
+    translateBtn.addEventListener('click', translateJPtoVN);
+
+    // Tự động log khi load trang
+    addLog("Ứng dụng đã sẵn sàng.");
 </script>
 
 </body>

@@ -1,7 +1,6 @@
 /**
- * Japanese Lookup & Vocabulary Manager - SPA & AJAX Support
+ * Japanese Lookup & Vocabulary Manager - Fixed Popup Position
  */
-
 const JapaneseLookup = (() => {
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxRsR4M3R0rjz3i0u2kz6Pg-ME3IeDYs8-7GE0MrjRaakfxQBory3JMtjjgVw3lTbqI/exec";
   const TRANSLATE_API = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=vi&dt=t&dt=rm&q=";
@@ -9,9 +8,10 @@ const JapaneseLookup = (() => {
   const style = document.createElement('style');
   style.textContent = `
     .ja-lookup-popup {
-      position: absolute; z-index: 99999; background: #fff; border: 1px solid #2563eb;
+      position: fixed; z-index: 99999; background: #fff; border: 1px solid #2563eb;
       border-radius: 12px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      font-family: system-ui, -apple-system; width: 220px; pointer-events: auto;
+      font-family: system-ui, -apple-system; width: 240px; pointer-events: auto;
+      max-height: 250px; overflow-y: auto; transition: opacity 0.2s;
     }
     .ja-lookup-word { color: #1e40af; font-size: 1.2em; font-weight: bold; display: block; }
     .ja-lookup-romaji { color: #64748b; font-size: 0.9em; font-style: italic; display: block; margin-bottom: 5px; }
@@ -73,37 +73,31 @@ const JapaneseLookup = (() => {
   };
 
   async function callGAS(data) {
+    console.log("[Log] Gửi dữ liệu đến GAS:", data);
     return fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
   }
 
   function highlightSavedWords(targetNode = document.body) {
     if (!globalSavedWords || globalSavedWords.length === 0) return;
-    
     const sortedWords = [...new Set(globalSavedWords.map(item => item.word))].sort((a, b) => b.length - a.length);
     const walker = document.createTreeWalker(targetNode, NodeFilter.SHOW_TEXT, null, false);
     const nodes = [];
-    
     while (walker.nextNode()) {
       const node = walker.currentNode;
-      // Bỏ qua các thành phần UI và các thẻ nhập liệu
       if (node.parentElement.closest('.ja-lookup-popup, .ja-modal, .ja-history-btn, script, style, .ja-highlight, textarea, input')) continue;
       nodes.push(node);
     }
-
     nodes.forEach(node => {
       let text = node.nodeValue;
       if (!text || !text.trim()) return;
       let changed = false;
-      
       sortedWords.forEach(word => {
         if (text.includes(word)) {
-          // Chỉ replace nếu node cha chưa phải là highlight (tránh lặp)
           const regex = new RegExp(word, 'g');
           text = text.replace(regex, `<span class="ja-highlight">${word}</span>`);
           changed = true;
         }
       });
-
       if (changed) {
         const span = document.createElement('span');
         span.innerHTML = text;
@@ -137,6 +131,54 @@ const JapaneseLookup = (() => {
     } catch (e) { console.error(e); }
   }
 
+  async function lookup(text, x, y) {
+    if (!text) return;
+    createUI();
+
+    // 1. Hiển thị ẩn để tính toán kích thước
+    popup.style.visibility = 'hidden';
+    popup.style.display = 'block';
+    popup.innerHTML = "Loading...";
+
+    const popupWidth = popup.offsetWidth;
+    const popupHeight = popup.offsetHeight;
+    
+    // 2. Xử lý tọa độ X (Ngang)
+    let posX = x;
+    if (posX + popupWidth > window.innerWidth) {
+        posX = window.innerWidth - popupWidth - 15;
+    }
+    if (posX < 10) posX = 10;
+
+    // 3. Xử lý tọa độ Y (Dọc)
+    let posY = y + 10; 
+    if (posY + popupHeight > window.innerHeight) {
+        posY = y - popupHeight - 10; // Đẩy lên trên nếu không đủ chỗ ở dưới
+    }
+
+    popup.style.left = `${posX}px`;
+    popup.style.top = `${posY}px`;
+    popup.style.visibility = 'visible';
+
+    try {
+      const res = await fetch(TRANSLATE_API + encodeURIComponent(text));
+      const data = await res.json();
+      const meaning = data[0][0][0];
+      let romaji = (data[0].find(i => i[3]))?.[3] || "";
+      popup.innerHTML = `<b class="ja-lookup-word">${text}</b><i>${romaji}</i><div class="ja-lookup-meaning">${meaning}</div>`;
+      
+      callGAS({ action: "saveWord", word: text, romaji: romaji, meaning: meaning });
+      
+      if (!globalSavedWords.some(w => w.word === text)) {
+         globalSavedWords.push({ word: text });
+         highlightSavedWords(document.body);
+      }
+    } catch (e) { 
+        console.error("[Log] Lỗi Lookup:", e);
+        popup.style.display = 'none'; 
+    }
+  }
+
   window.JapaneseLookup = {
     deleteWord: async (id) => {
       if (!confirm("Xóa từ này?")) return;
@@ -155,32 +197,6 @@ const JapaneseLookup = (() => {
     openManager: openManager
   };
 
-  async function lookup(text, x, y) {
-    if (!text) return;
-    createUI();
-    popup.style.display = 'block';
-    popup.innerHTML = "Loading...";
-    const scrollX = window.scrollX || window.pageXOffset;
-    const scrollY = window.scrollY || window.pageYOffset;
-    popup.style.left = `${Math.min(x + scrollX, window.innerWidth - 240)}px`;
-    popup.style.top = `${y + scrollY + 20}px`;
-
-    try {
-      const res = await fetch(TRANSLATE_API + encodeURIComponent(text));
-      const data = await res.json();
-      const meaning = data[0][0][0];
-      let romaji = (data[0].find(i => i[3]))?.[3] || "";
-      popup.innerHTML = `<b class="ja-lookup-word">${text}</b><i>${romaji}</i><div>${meaning}</div>`;
-      callGAS({ action: "saveWord", word: text, romaji: romaji, meaning: meaning });
-      
-      // Cập nhật list từ vựng local để highlight ngay lập tức (không chờ load lại trang)
-      if (!globalSavedWords.some(w => w.word === text)) {
-         globalSavedWords.push({ word: text });
-         highlightSavedWords(document.body);
-      }
-    } catch (e) { popup.style.display = 'none'; }
-  }
-
   return {
     init: async () => {
       createUI();
@@ -190,29 +206,30 @@ const JapaneseLookup = (() => {
         highlightSavedWords(document.body);
 
         let debounceTimer = null;
-        const observer = new MutationObserver((mutations) => {
+        const observer = new MutationObserver(() => {
           if (debounceTimer) clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
-            console.log("[Log] Nội dung thay đổi, quét highlight...");
             highlightSavedWords(document.body);
-          }, 800); // 0.8s sau khi DOM dừng thay đổi
+          }, 800);
         });
         observer.observe(document.body, { childList: true, subtree: true });
       } catch (e) { console.error("[Log] Lỗi khởi tạo:", e); }
 
-      const handleSelection = () => {
-        setTimeout(() => {
-          const sel = window.getSelection();
-          const text = sel.toString().trim();
-          if (text && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)) {
-            const rect = sel.getRangeAt(0).getBoundingClientRect();
-            lookup(text, rect.left, rect.bottom);
-          }
-        }, 150);
+      const handleSelection = (e) => {
+        const sel = window.getSelection();
+        const text = sel.toString().trim();
+        if (text && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)) {
+          const rect = sel.getRangeAt(0).getBoundingClientRect();
+          // Lấy tọa độ chuột hoặc chạm nếu có để chính xác hơn, 
+          // nhưng rect là chuẩn nhất cho selection
+          lookup(text, rect.left, rect.bottom);
+        }
       };
       document.addEventListener('touchend', handleSelection);
       document.addEventListener('mouseup', handleSelection);
-      document.addEventListener('mousedown', (e) => { if (popup && !popup.contains(e.target)) popup.style.display = 'none'; });
+      document.addEventListener('mousedown', (e) => { 
+        if (popup && !popup.contains(e.target)) popup.style.display = 'none'; 
+      });
     }
   };
 })();

@@ -1,13 +1,13 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.21
- * - Feature: Primary Translation from Google Translate API
- * - Feature: Fixed Bottom Popup with Audio & Google UI
- * - Constraint: No unnecessary logic changes, Immutable Storage logic
+ * Japanese Lookup & Highlight Manager - Version 2026.17
+ * - Feature: Instant "Translating..." status for new lookups
+ * - Feature: Fixed Bottom Popup (No jumping)
+ * - Constraint: No unnecessary logic changes
  */
 
 const JapaneseLookup = (() => {
     const CONFIG = {
-        engine: 'google',
+        engine: 'mymemory',
         gas_url: "https://script.google.com/macros/s/AKfycbxRsR4M3R0rjz3i0u2kz6Pg-ME3IeDYs8-7GE0MrjRaakfxQBory3JMtjjgVw3lTbqI/exec",
         google_api: "https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=vi&dt=t&dt=rm&q=",
         mymemory_api: "https://api.mymemory.translated.net/get?langpair=ja|vi&q="
@@ -27,7 +27,7 @@ const JapaneseLookup = (() => {
             transition: transform 0.2s ease-out;
         }
         .ja-btn-close-tp { position: absolute; top: 8px; right: 15px; cursor: pointer; color: #94a3b8; font-size: 22px; font-weight: bold; }
-        .ja-lookup-word { color: #1e40af; font-size: 1.25em; font-weight: bold; display: inline-block; margin-bottom: 5px; }
+        .ja-lookup-word { color: #1e40af; font-size: 1.25em; font-weight: bold; display: inline-block; margin-bottom: 5px; border-bottom: 1px solid #eee; }
         .ja-stored-highlight { 
             color: #2563eb !important; border-bottom: 1.5px dashed #2563eb !important; 
             background: none !important; display: inline !important;
@@ -72,57 +72,49 @@ const JapaneseLookup = (() => {
 
         popup.innerHTML = `
             <span class="ja-btn-close-tp" onclick="this.parentElement.style.display='none'">✕</span>
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                <b class="ja-lookup-word" style="margin-bottom:0;">${word}</b>
-                <span style="color:#64748b; font-size:0.9em;">【${romaji || '...'}】</span>
-                <button id="ja-audio-btn" style="border:none; background:#e8f0fe; color:#2563eb; border-radius:50%; width:30px; height:30px; cursor:pointer; display:flex; align-items:center; justify-content:center;">▶</button>
+            <div style="margin-bottom:8px;">
+                <b class="ja-lookup-word">${word}</b>
+                <span style="color:#64748b; font-size:0.95em; margin-left:10px;">${romaji || ''}</span>
             </div>
-            <div style="max-height:80px; overflow-y:auto; margin-bottom:12px; line-height:1.5; color:#1e293b; font-size:14px; padding-left:5px; border-left:2px solid #e2e8f0;">${meaning}</div>
-            
-            <div style="margin-top:12px; padding:12px; background:#f1f5f9; border-radius:10px; border:1px solid #e2e8f0;">
-                <div style="font-size:10px; color:#64748b; font-weight:bold; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Google Translate (Vietnamese)</div>
-                <div style="color:#1e40af; font-weight:600; font-size:16px;">${meaning}</div>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px;">
-                <span style="font-size:11px; color:${isStored ? '#10b981' : '#94a3b8'}; font-weight:bold;">
-                    ${isStored ? '✓ SAVED' : '+ NEW WORD'}
+            <div style="max-height:80px; overflow-y:auto; margin-bottom:12px; line-height:1.5; color:#1e293b;">${meaning}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; color:${isStored ? '#10b981' : '#94a3b8'}; font-weight:500;">
+                    ${isStored ? '● TRONG BỘ NHỚ' : '○ TRA MỚI'}
                 </span>
-                <button class="ja-del-btn" id="btn-del-now">🗑 Delete</button>
+                <button class="ja-del-btn" id="btn-del-now">🗑 Xóa từ</button>
             </div>
         `;
-        document.getElementById('ja-audio-btn').onclick = () => {
-            window.speechSynthesis.cancel();
-            const ut = new SpeechSynthesisUtterance(word);
-            ut.lang = 'ja-JP';
-            window.speechSynthesis.speak(ut);
-        };
         document.getElementById('btn-del-now').onclick = () => Module.deleteFromList(word);
     }
 
     async function lookupNew(text, x, y) {
         if (!text) return;
         createUI();
-        showPopup(text, '<span style="color:#94a3b8; font-style:italic;">Translating...</span>', '', x, y, false);
+        
+        // Hiển thị trạng thái chờ ngay lập tức để người dùng biết hệ thống đang xử lý
+        showPopup(text, '<span style="color:#94a3b8; font-style:italic;">Đang dịch...</span>', '', x, y, false);
 
         try {
-            const resG = await fetch(CONFIG.google_api + encodeURIComponent(text));
+            const [resM, resG] = await Promise.all([
+                fetch(CONFIG.mymemory_api + encodeURIComponent(text)),
+                fetch(CONFIG.google_api + encodeURIComponent(text))
+            ]);
+            const dataM = await resM.json();
             const dataG = await resG.json();
-            
-            // Lấy nghĩa chuẩn xác từ Google
-            const googleMeaning = dataG[0][0][0];
+            const meaning = dataM.responseData.translatedText;
             const romaji = (dataG[0].find(i => i[3]))?.[3] || "";
             
-            showPopup(text, googleMeaning, romaji, x, y, false);
+            // Ghi đè nội dung dịch vào popup
+            showPopup(text, meaning, romaji, x, y, false);
 
             if (!savedWordsMap.has(text)) {
-                savedWordsMap.set(text, { meaning: googleMeaning, romaji });
+                savedWordsMap.set(text, { meaning, romaji });
                 Module.applyHighlight();
-                fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji, meaning: googleMeaning }) });
+                fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji, meaning }) });
             }
         } catch (e) { 
             console.error("Lookup error", e);
-            showPopup(text, '<span style="color:#ef4444;">Connection error.</span>', '', x, y, false);
+            showPopup(text, '<span style="color:#ef4444;">Lỗi kết nối dịch thuật.</span>', '', x, y, false);
         }
     }
 
@@ -157,6 +149,8 @@ const JapaneseLookup = (() => {
                 data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji }));
                 dataLoaded = true;
                 Module.applyHighlight();
+                setTimeout(() => Module.applyHighlight(), 5000);
+                setTimeout(() => Module.applyHighlight(), 10000);
             } catch (e) { dataLoaded = true; }
 
             const observer = new MutationObserver(() => { if (!isHighlighting && dataLoaded) Module.applyHighlight(); });
@@ -195,6 +189,7 @@ const JapaneseLookup = (() => {
             const list = document.getElementById('ja-word-list');
             list.innerHTML = Array.from(savedWordsMap.entries()).reverse().map(([word, data], index) => `
                 <div class="ja-word-item">
+                    <div style="margin-right:12px; color:#94a3b8; font-size:12px;">${savedWordsMap.size - index}.</div>
                     <div style="flex:1">
                         <b>${word}</b> <small style="color:#64748b; margin-left:5px;">${data.romaji || ''}</small>
                         <br><span style="color:#334155; font-size:13px;">${data.meaning}</span>

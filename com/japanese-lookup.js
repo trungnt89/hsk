@@ -1,5 +1,5 @@
 /**
- * Japanese Lookup & Vocabulary Manager - AJAX & Mobile Optimized
+ * Japanese Lookup & Vocabulary Manager - SPA & AJAX Support
  */
 
 const JapaneseLookup = (() => {
@@ -33,7 +33,7 @@ const JapaneseLookup = (() => {
     .ja-modal-header { padding: 20px; border-bottom: 2px solid #2563eb; position: relative; }
     #ja-word-list { flex: 1; overflow-y: auto; padding: 20px; }
     .ja-close-modal { position: absolute; top: 18px; right: 15px; border: none; background: #f1f5f9; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; }
-    .ja-highlight { color: #dc2626 !important; font-weight: bold; border-bottom: 1px dashed #dc2626; }
+    .ja-highlight { color: #dc2626 !important; font-weight: bold; border-bottom: 1px dashed #dc2626; cursor: help; }
     .ja-word-item { padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
     .ja-edit-input { width: 100%; padding: 8px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
     .ja-btn-sm { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
@@ -41,6 +41,7 @@ const JapaneseLookup = (() => {
   document.head.appendChild(style);
 
   let popup = null, modal = null;
+  let globalSavedWords = [];
 
   const createUI = () => {
     if (!popup) {
@@ -72,29 +73,31 @@ const JapaneseLookup = (() => {
   };
 
   async function callGAS(data) {
-    console.log("[Log] GAS Action:", data.action);
     return fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
   }
 
-  function highlightSavedWords(words, targetNode = document.body) {
-    if (!words || words.length === 0) return;
+  function highlightSavedWords(targetNode = document.body) {
+    if (!globalSavedWords || globalSavedWords.length === 0) return;
     
-    const sortedWords = [...new Set(words.map(item => item.word))].sort((a, b) => b.length - a.length);
+    const sortedWords = [...new Set(globalSavedWords.map(item => item.word))].sort((a, b) => b.length - a.length);
     const walker = document.createTreeWalker(targetNode, NodeFilter.SHOW_TEXT, null, false);
     const nodes = [];
     
     while (walker.nextNode()) {
       const node = walker.currentNode;
-      if (node.parentElement.closest('.ja-lookup-popup, .ja-modal, .ja-history-btn, script, style, .ja-highlight')) continue;
+      // Bỏ qua các thành phần UI và các thẻ nhập liệu
+      if (node.parentElement.closest('.ja-lookup-popup, .ja-modal, .ja-history-btn, script, style, .ja-highlight, textarea, input')) continue;
       nodes.push(node);
     }
 
     nodes.forEach(node => {
       let text = node.nodeValue;
+      if (!text || !text.trim()) return;
       let changed = false;
       
       sortedWords.forEach(word => {
         if (text.includes(word)) {
+          // Chỉ replace nếu node cha chưa phải là highlight (tránh lặp)
           const regex = new RegExp(word, 'g');
           text = text.replace(regex, `<span class="ja-highlight">${word}</span>`);
           changed = true;
@@ -116,9 +119,9 @@ const JapaneseLookup = (() => {
     list.innerHTML = "Đang đồng bộ...";
     try {
       const res = await fetch(GAS_URL + "?type=words&_t=" + Date.now());
-      const words = await res.json();
-      if (!words || words.length === 0) { list.innerHTML = "Trống."; return; }
-      list.innerHTML = words.reverse().map(item => `
+      globalSavedWords = await res.json();
+      if (!globalSavedWords || globalSavedWords.length === 0) { list.innerHTML = "Trống."; return; }
+      list.innerHTML = globalSavedWords.slice().reverse().map(item => `
         <div class="ja-word-item" id="word-row-${item.id}">
           <div style="flex:1">
             <strong style="color:#1e40af;">${item.word}</strong> 
@@ -136,7 +139,7 @@ const JapaneseLookup = (() => {
 
   window.JapaneseLookup = {
     deleteWord: async (id) => {
-      if (!confirm("Xóa?")) return;
+      if (!confirm("Xóa từ này?")) return;
       document.getElementById(`word-row-${id}`)?.remove();
       callGAS({ action: "deleteWord", id: id });
     },
@@ -169,25 +172,33 @@ const JapaneseLookup = (() => {
       let romaji = (data[0].find(i => i[3]))?.[3] || "";
       popup.innerHTML = `<b class="ja-lookup-word">${text}</b><i>${romaji}</i><div>${meaning}</div>`;
       callGAS({ action: "saveWord", word: text, romaji: romaji, meaning: meaning });
+      
+      // Cập nhật list từ vựng local để highlight ngay lập tức (không chờ load lại trang)
+      if (!globalSavedWords.some(w => w.word === text)) {
+         globalSavedWords.push({ word: text });
+         highlightSavedWords(document.body);
+      }
     } catch (e) { popup.style.display = 'none'; }
   }
 
   return {
     init: async () => {
       createUI();
-      let savedWords = [];
       try {
         const res = await fetch(GAS_URL + "?type=words&_t=" + Date.now());
-        savedWords = await res.json();
-        highlightSavedWords(savedWords);
+        globalSavedWords = await res.json();
+        highlightSavedWords(document.body);
 
+        let debounceTimer = null;
         const observer = new MutationObserver((mutations) => {
-          mutations.forEach(m => m.addedNodes.forEach(node => {
-            if (node.nodeType === 1) highlightSavedWords(savedWords, node);
-          }));
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            console.log("[Log] Nội dung thay đổi, quét highlight...");
+            highlightSavedWords(document.body);
+          }, 800); // 0.8s sau khi DOM dừng thay đổi
         });
         observer.observe(document.body, { childList: true, subtree: true });
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error("[Log] Lỗi khởi tạo:", e); }
 
       const handleSelection = () => {
         setTimeout(() => {

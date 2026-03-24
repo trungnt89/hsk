@@ -60,7 +60,6 @@ const JapaneseLookup = (() => {
     .ja-btn-group { display: flex; gap: 8px; flex-shrink: 0; }
     .ja-btn-sm { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-size: 12px; background: #fff; }
     .ja-edit-input { width: 100%; padding: 8px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-    .ja-highlight { color: #dc2626 !important; font-weight: bold; border-bottom: 1px dashed #dc2626; }
     button, .ja-history-btn { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   `;
   document.head.appendChild(style);
@@ -84,6 +83,7 @@ const JapaneseLookup = (() => {
     if (!modal) {
       modal = document.createElement('div');
       modal.className = 'ja-modal';
+      // Đã bỏ modal.onclick để tránh việc click ra ngoài vùng modal làm đóng cửa sổ
       modal.innerHTML = `
         <div class="ja-modal-content">
           <div class="ja-modal-header">
@@ -97,45 +97,7 @@ const JapaneseLookup = (() => {
   };
 
   async function callGAS(data) {
-    console.log("[Log] Gửi dữ liệu tới GAS:", data.action);
     return fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
-  }
-
-  function highlightSavedWords(words) {
-    console.log("[Log] Bắt đầu highlight từ vựng đã lưu...");
-    if (!words || words.length === 0) return;
-    
-    // Lấy danh sách từ duy nhất và sắp xếp theo độ dài giảm dần
-    const sortedWords = [...new Set(words.map(item => item.word))].sort((a, b) => b.length - a.length);
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-    const nodes = [];
-    
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      // Bỏ qua các node nằm trong UI của tool
-      if (node.parentElement.closest('.ja-lookup-popup, .ja-modal, .ja-history-btn, script, style')) continue;
-      nodes.push(node);
-    }
-
-    nodes.forEach(node => {
-      let text = node.nodeValue;
-      let changed = false;
-      
-      sortedWords.forEach(word => {
-        if (text.includes(word)) {
-          const regex = new RegExp(word, 'g');
-          text = text.replace(regex, `<span class="ja-highlight">${word}</span>`);
-          changed = true;
-        }
-      });
-
-      if (changed) {
-        const span = document.createElement('span');
-        span.innerHTML = text;
-        node.parentNode.replaceChild(span, node);
-      }
-    });
-    console.log("[Log] Hoàn tất quét và highlight.");
   }
 
   async function openManager() {
@@ -239,16 +201,8 @@ const JapaneseLookup = (() => {
   }
 
   return {
-    init: async () => {
+    init: () => {
       createUI();
-      
-      // Load dữ liệu ban đầu để highlight
-      try {
-        const res = await fetch(GAS_URL + "?type=words&_t=" + Date.now());
-        const words = await res.json();
-        highlightSavedWords(words);
-      } catch (e) { console.error("[Log] Lỗi khởi tạo highlight:", e); }
-
       const handleSelection = () => {
         setTimeout(() => {
           const sel = window.getSelection();

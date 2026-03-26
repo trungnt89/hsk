@@ -17,7 +17,6 @@
     :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
     body { font-family: system-ui, -apple-system; max-width: 800px; margin: auto; padding: 0 6px 20px 6px; background: var(--bg); color: var(--text); }
     
-    /* --- PHẦN GIỮ CỐ ĐỊNH (STICKY) --- */
     .sticky-header {
       position: sticky;
       top: 0;
@@ -50,26 +49,32 @@
     }
     .tab-btn.active { background: white; color: var(--primary); border-bottom: 2px solid var(--primary); }
 
-    /* --- PHẦN NỘI DUNG CUỘN (3 DÒNG) --- */
+    /* --- PHẦN NỘI DUNG HIỂN THỊ CŨ --- */
     .display-box { 
       background: white; min-height: 400px; padding: 15px; border-radius: 0 0 10px 10px; 
       box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1.8; font-size: 1.2em;
     }
-    .content-area { 
-      display: none; color: #000; 
-      max-height: calc(1.8em * 3); overflow-y: auto; scroll-behavior: smooth;
-    }
+    .content-area { display: none; white-space: pre-wrap; color: #000; }
     .content-area.active { display: block; }
     .word-span { transition: all 0.2s; }
     .word-span.highlight { background: #fde047; color: #000; font-weight: bold; border-radius: 2px; }
-    .vi-text { color: #475569; font-style: italic; font-size: 0.95em; max-height: none; overflow: visible; }
+    .vi-text { color: #475569; font-style: italic; font-size: 0.95em; }
 
-    /* Game Panel UI */
-    .game-panel { background: #1e293b; color: white; padding: 8px 12px; display: none; border-radius: 8px; margin-bottom: 6px; flex-direction: column; gap: 4px; }
+    /* Game Panel & Khu vực văn bản nhận diện 3 dòng */
+    .game-panel { 
+      background: #1e293b; color: white; padding: 8px 12px; display: none; 
+      border-radius: 8px; margin-bottom: 6px; flex-direction: column; gap: 4px; 
+    }
+    #gameInterim { 
+      font-size: 13px; color: #94a3b8; font-style: italic;
+      max-height: calc(1.5em * 3); /* HIỂN THỊ TỐI ĐA 3 DÒNG */
+      overflow-y: auto; 
+      line-height: 1.5;
+      scroll-behavior: smooth;
+    }
     .score-badge { font-size: 22px; font-weight: 800; color: #4ade80; }
     #btnMic.listening { background: #ef4444; color: white; border-color: #ef4444; }
 
-    /* UI Elements */
     button { padding: 4px 8px; border-radius: 5px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 12px; min-height: 30px; display: flex; align-items: center; }
     button.active { background: #dbeafe; border-color: var(--primary); color: var(--primary); font-weight: bold; }
     select { height: 30px; border-radius: 5px; border: 1px solid #cbd5e1; font-size: 11px; background: white; }
@@ -106,7 +111,7 @@
       <span style="font-size:12px; color:#94a3b8">Chính xác:</span>
       <div id="gameScore" class="score-badge">0%</div>
     </div>
-    <div id="gameInterim" style="font-size:13px; color:#94a3b8; font-style:italic">...</div>
+    <div id="gameInterim">Sẵn sàng nghe...</div>
   </div>
 
   <div id="currentTopic"></div>
@@ -140,13 +145,10 @@ function loadSettings() {
   currentIndex = parseInt(localStorage.getItem("lastIndex") || 0);
   currentTab = parseInt(localStorage.getItem("lastTab") || 0);
   repeatOne = localStorage.getItem("repeatOne") === "true";
-  
   const savedVoice = localStorage.getItem("voice");
   if (savedVoice) document.getElementById("voice").value = savedVoice;
-  
   const savedRate = localStorage.getItem("rate");
   if (savedRate) document.getElementById("rate").value = savedRate || "0.8";
-
   document.getElementById("btnRepeatOne").classList.toggle("active", repeatOne);
   switchTab(currentTab, false);
 }
@@ -162,7 +164,6 @@ async function loadTexts() {
 function renderCurrent() {
   if (!texts.length) return;
   if (currentIndex >= texts.length) currentIndex = 0;
-  
   const item = texts[currentIndex];
   const topicEl = document.getElementById("currentTopic");
   
@@ -190,7 +191,6 @@ function switchTab(index, shouldRender = true) {
   currentTab = index;
   document.querySelectorAll('.tab-btn').forEach((t, i) => t.classList.toggle('active', i === index));
   document.querySelectorAll('.content-area').forEach((a, i) => a.classList.toggle('active', i === index));
-  
   if (shouldRender) {
     saveSettings();
     if (window.JapaneseLookup?.render) window.JapaneseLookup.render();

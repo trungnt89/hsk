@@ -1,19 +1,17 @@
 /**
- * ShadowGame Module - Full Standalone Version
- * Tích hợp nhận diện giọng nói và logic lọc trùng văn bản.
+ * ShadowGame Module - Fix Lỗi Lặp Từ & Tự nạp Window
+ * Giải quyết lỗi: Hiện tại -> Hiện tại xã hội
  */
-const ShadowGame = {
+export const ShadowGame = {
     isListening: false,
     history: [],
     recognition: null,
 
-    // Khởi tạo Speech Recognition
     init() {
         if (this.recognition) return;
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            console.error("LOG: [ShadowGame] Trình duyệt không hỗ trợ Web Speech API.");
-            alert("Trình duyệt không hỗ trợ nhận diện giọng nói.");
+            console.error("LOG: [ShadowGame] Trình duyệt không hỗ trợ Speech API.");
             return;
         }
         this.recognition = new SpeechRecognition();
@@ -26,7 +24,6 @@ const ShadowGame = {
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 const transcript = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
-                    console.log("LOG: [Final Result]", transcript);
                     this.handleVoiceInput(transcript, true);
                 } else {
                     interimTranscript += transcript;
@@ -36,39 +33,30 @@ const ShadowGame = {
         };
 
         this.recognition.onerror = (e) => {
-            console.error("LOG: [Speech Error]", e.error);
+            if (e.error !== 'aborted') console.error("LOG: [Speech Error]", e.error);
         };
 
         this.recognition.onend = () => {
             if (this.isListening) {
-                console.log("LOG: [ShadowGame] Tự động khởi động lại nhận diện...");
-                this.recognition.start();
+                try { this.recognition.start(); } catch(e) {}
             }
         };
     },
 
-    // Hàm điều khiển chính
     toggle() {
-        console.log("LOG: [ShadowGame] Nút Luyện được bấm. Trạng thái:", this.isListening);
-        if (!this.isListening) {
-            this.start();
-        } else {
-            this.stop();
-        }
+        console.log("LOG: [ShadowGame] Toggle. Trạng thái hiện tại:", this.isListening);
+        if (!this.isListening) this.start();
+        else this.stop();
     },
 
     start() {
         this.init();
-        if (!this.recognition) return;
-
         this.isListening = true;
-        this.history = []; // Reset lịch sử mỗi lần bắt đầu mới
+        this.history = []; 
         
-        // Hiển thị UI
         const panel = document.getElementById('gamePanel');
         const btn = document.getElementById('btnMic');
         const interim = document.getElementById('gameInterim');
-        const score = document.getElementById('gameScore');
 
         if (panel) panel.style.display = 'flex';
         if (btn) {
@@ -76,13 +64,9 @@ const ShadowGame = {
             btn.classList.add('listening');
         }
         if (interim) interim.innerText = "Đang lắng nghe...";
-        if (score) score.innerText = "0%";
-
-        try {
-            this.recognition.start();
-            console.log("LOG: [ShadowGame] Hệ thống đã sẵn sàng nhận diện.");
-        } catch (e) {
-            console.warn("LOG: [ShadowGame] Recognition đã chạy từ trước.");
+        
+        try { this.recognition.start(); } catch(e) {
+            console.warn("LOG: Recognition đã chạy.");
         }
     },
 
@@ -93,48 +77,40 @@ const ShadowGame = {
             btn.innerHTML = '🎤 Luyện';
             btn.classList.remove('listening');
         }
-        
-        if (this.recognition) {
-            this.recognition.stop();
-            console.log("LOG: [ShadowGame] Đã dừng nhận diện.");
-        }
+        if (this.recognition) this.recognition.stop();
+        console.log("LOG: [ShadowGame] Đã dừng.");
     },
 
     /**
-     * LOGIC QUAN TRỌNG: Lọc trùng và bồi đắp văn bản
-     * Giải quyết lỗi lặp từ: Hiện tại xã hội -> Hiện tại xã hộiにおいて
+     * LOGIC FIX LẶP TỪ
      */
     handleVoiceInput(text, isFinal) {
         const input = text ? text.trim() : "";
         if (!input) return;
 
-        console.log(`LOG: [Input] ${isFinal ? 'Final' : 'Interim'}: "${input}"`);
-
         let lastIdx = this.history.length - 1;
         let lastItem = lastIdx >= 0 ? this.history[lastIdx] : null;
 
-        // Nếu câu mới bắt đầu bằng câu cũ (đang bồi đắp thêm từ)
+        // Kiểm tra nếu input mới là bản bồi đắp của câu cũ
+        // Ví dụ: lastItem = "Hiện tại", input = "Hiện tại xã hội"
         if (lastItem && (input.startsWith(lastItem) || lastItem.startsWith(input))) {
             if (input.length > lastItem.length) {
                 this.history[lastIdx] = input; // Ghi đè câu cũ bằng bản dài hơn
             }
         } else {
-            // Nếu là cụm từ mới hoàn toàn, thêm vào history
+            // Nếu là cụm từ mới hoàn toàn hoặc quãng nghỉ mới
             if (lastItem !== input) {
                 this.history.push(input);
             }
         }
 
         this.updateUI();
-        if (isFinal) {
-            this.calculateScore();
-        }
+        if (isFinal) this.calculateScore();
     },
 
     updateUI() {
         const el = document.getElementById('gameInterim');
         if (el) {
-            // Nối các cụm từ bằng mũi tên
             el.innerText = this.history.join(" → ");
             el.scrollTop = el.scrollHeight;
         }
@@ -146,26 +122,22 @@ const ShadowGame = {
         if (!targetEl || !scoreEl) return;
 
         const target = targetEl.textContent.trim();
-        const spoken = this.history.join(""); // Lấy toàn bộ text đã lọc trùng
+        const spoken = this.history.join("");
         
-        // Làm sạch văn bản để so sánh chính xác hơn
         const clean = (s) => s.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()？、。]/g, "").replace(/\s/g, "");
         const t = clean(target);
         const s = clean(spoken);
         
-        if (t.length === 0) return;
-
+        if (!t) return;
         let matches = 0;
-        // Kiểm tra xem các ký tự trong chuỗi đọc có nằm trong chuỗi gốc không
-        for (let char of s) {
-            if (t.includes(char)) matches++;
-        }
+        for (let char of s) { if (t.includes(char)) matches++; }
         
         const result = Math.min(100, Math.round((matches / t.length) * 100));
         scoreEl.innerText = `${result}%`;
-        console.log(`LOG: [Score] Accuracy: ${result}%`);
     }
 };
 
-// Đưa ra window để HTML có thể gọi trực tiếp qua onclick
-window.ShadowGame = ShadowGame;
+// ĐƯA VÀO WINDOW ĐỂ HTML GỌI ĐƯỢC NGAY
+if (typeof window !== 'undefined') {
+    window.ShadowGame = ShadowGame;
+}

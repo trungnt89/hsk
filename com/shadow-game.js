@@ -1,5 +1,6 @@
 /**
- * ShadowGame Module - Top-Aligned 2-Line UI
+ * ShadowGame Module - Sticky Top-Aligned 2-Line UI
+ * Luôn cố định trên cùng khi cuộn trang.
  */
 export const ShadowGame = {
     isListening: false,
@@ -10,7 +11,7 @@ export const ShadowGame = {
 
     getEl(id) { return document.getElementById(id); },
 
-    // Luôn nhắm tới đầu display-box để nằm trên top
+    // Luôn nhắm tới đầu display-box để nằm trên top vùng nội dung
     findBestAnchor() {
         return document.querySelector('.display-box');
     },
@@ -27,7 +28,8 @@ export const ShadowGame = {
         this.anchor = target;
         const wrapper = document.createElement('div');
         wrapper.id = "shadow-game-wrapper";
-        wrapper.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 10px; min-height: 42px; width: 100%; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;";
+        // Sticky: bám dính, Z-index: ưu tiên hiển thị lớp trên
+        wrapper.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 10px; min-height: 42px; width: 100%; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; position: sticky; top: 0; background: white; z-index: 100;";
         
         wrapper.innerHTML = `
             <button id="btnMic" title="Bắt đầu Shadowing" style="width: 38px; height: 38px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 0;">
@@ -45,6 +47,11 @@ export const ShadowGame = {
         `;
 
         target.prepend(wrapper);
+        
+        // Tính toán vị trí bám dính dựa trên Header của app (nếu có)
+        const header = document.querySelector('.sticky-header');
+        if (header) wrapper.style.top = header.offsetHeight + "px";
+
         this.getEl('btnMic').onclick = () => this.toggle();
     },
 

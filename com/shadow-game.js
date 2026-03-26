@@ -1,15 +1,15 @@
 /**
- * ShadowGame Module - Fixed Display Issue
+ * ShadowGame Module - Debug Version
+ * Luôn ghi log đầy đủ theo yêu cầu người dùng
  */
 export const ShadowGame = {
     isListening: false,
     history: [],
     
-    // Helper để lấy Element nhanh và chính xác
     getEl(id) { return document.getElementById(id); },
 
     toggle() {
-        console.log("ShadowGame: Toggle clicked, current state:", this.isListening);
+        console.log("LOG: [ShadowGame] Toggle. Trạng thái hiện tại:", this.isListening);
         if (!this.isListening) this.start();
         else this.stop();
     },
@@ -22,22 +22,24 @@ export const ShadowGame = {
         const btn = this.getEl('btnMic');
         const interim = this.getEl('gameInterim');
 
-        // HIỂN THỊ UI
         if (panel) panel.style.display = 'flex';
         if (btn) {
             btn.classList.add('listening');
             btn.innerHTML = '🛑 Dừng';
         }
-        if (interim) interim.innerText = "Đang lắng nghe...";
+        if (interim) interim.innerText = "Hệ thống đang chờ giọng nói...";
 
-        console.log("ShadowGame: UI initialized, calling VoiceRecorder");
+        console.log("LOG: [ShadowGame] Bắt đầu phiên luyện tập.");
 
         if (window.VoiceRecorder) {
+            console.log("LOG: [ShadowGame] Gọi VoiceRecorder.start()");
             window.VoiceRecorder.start((text, isFinal) => {
+                // ĐÂY LÀ DÒNG QUAN TRỌNG NHẤT ĐỂ KIỂM TRA TEXT
+                console.log(`LOG: [ShadowGame] Nhận text từ Mic: "${text}" | isFinal: ${isFinal}`);
                 this.handleVoiceInput(text, isFinal);
             });
         } else {
-            console.error("ShadowGame: VoiceRecorder module not found!");
+            console.error("LOG: [ShadowGame] THẤT BẠI: window.VoiceRecorder không tồn tại.");
         }
     },
 
@@ -48,52 +50,60 @@ export const ShadowGame = {
             btn.classList.remove('listening');
             btn.innerHTML = '🎤 Luyện';
         }
-        
-        if (window.VoiceRecorder) window.VoiceRecorder.stop();
-        console.log("ShadowGame: Stopped");
+        if (window.VoiceRecorder) {
+            window.VoiceRecorder.stop();
+            console.log("LOG: [ShadowGame] Đã dừng VoiceRecorder.");
+        }
     },
 
     handleVoiceInput(text, isFinal) {
         const input = text ? text.trim() : "";
-        if (!input) return;
-
-        console.log(`ShadowGame: Received input [${isFinal ? 'Final' : 'Interim'}]:`, input);
+        if (!input) {
+            console.log("LOG: [ShadowGame] Nhận text rỗng, bỏ qua.");
+            return;
+        }
 
         const lastItem = this.history[this.history.length - 1];
 
-        // LOGIC LỌC TRÙNG & BỒI ĐẮP
+        // Xử lý lọc trùng thông minh
         if (lastItem && (input.startsWith(lastItem) || lastItem.startsWith(input))) {
             if (input.length > lastItem.length) {
+                console.log(`LOG: [ShadowGame] Bồi đắp câu: "${lastItem}" -> "${input}"`);
                 this.history[this.history.length - 1] = input;
+            } else {
+                console.log("LOG: [ShadowGame] Text mới ngắn hơn hoặc bằng text cũ, bỏ qua.");
             }
         } else {
             if (lastItem !== input) {
+                console.log(`LOG: [ShadowGame] Thêm câu mới vào lịch sử: "${input}"`);
                 this.history.push(input);
             }
         }
 
         this.updateUI();
-        if (isFinal) this.calculateScore();
+        if (isFinal) {
+            console.log("LOG: [ShadowGame] Câu đã hoàn tất (isFinal=true), tính điểm...");
+            this.calculateScore();
+        }
     },
 
     updateUI() {
         const interim = this.getEl('gameInterim');
         if (interim) {
-            // Nối các câu bằng dấu → để tránh cảm giác lặp từ
-            interim.innerText = this.history.join(" → ");
+            const displayStr = this.history.join(" → ");
+            interim.innerText = displayStr;
             interim.scrollTop = interim.scrollHeight;
+            console.log("LOG: [ShadowGame] Cập nhật giao diện:", displayStr);
         }
     },
 
     resetUI() {
+        console.log("LOG: [ShadowGame] Reset UI.");
         this.history = [];
         const interim = this.getEl('gameInterim');
         const score = this.getEl('gameScore');
-        const panel = this.getEl('gamePanel');
-        
         if (interim) interim.innerText = "";
         if (score) score.innerText = "0%";
-        if (panel) panel.style.display = 'none';
     },
 
     calculateScore() {
@@ -106,7 +116,7 @@ export const ShadowGame = {
         
         const score = this.simpleMatch(target, spoken);
         scoreEl.innerText = `${score}%`;
-        console.log(`ShadowGame: Score calculated: ${score}%`);
+        console.log(`LOG: [ShadowGame] Độ chính xác: ${score}% | Spoken: ${spoken}`);
     },
 
     simpleMatch(target, speech) {
@@ -116,10 +126,10 @@ export const ShadowGame = {
         if (!t) return 0;
         
         let matches = 0;
-        for (let i = 0; i < s.length; i++) {
-            if (t.includes(s[i])) matches++;
+        const setT = new Set(t.split(''));
+        for (let char of s) {
+            if (setT.has(char)) matches++;
         }
-        const result = Math.round((matches / t.length) * 100);
-        return result > 100 ? 100 : result;
+        return Math.min(100, Math.round((matches / t.length) * 100));
     }
 };

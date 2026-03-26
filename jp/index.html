@@ -49,28 +49,27 @@
     }
     .tab-btn.active { background: white; color: var(--primary); border-bottom: 2px solid var(--primary); }
 
-    /* --- PHẦN NỘI DUNG HIỂN THỊ CŨ --- */
+    /* --- PHẦN NỘI DUNG HIỂN THỊ GỐC (KHÔNG GIỚI HẠN DÒNG) --- */
     .display-box { 
       background: white; min-height: 400px; padding: 15px; border-radius: 0 0 10px 10px; 
       box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1.8; font-size: 1.2em;
     }
     .content-area { display: none; white-space: pre-wrap; color: #000; }
     .content-area.active { display: block; }
-    .word-span { transition: all 0.2s; }
-    .word-span.highlight { background: #fde047; color: #000; font-weight: bold; border-radius: 2px; }
     .vi-text { color: #475569; font-style: italic; font-size: 0.95em; }
 
-    /* Game Panel & Khu vực văn bản nhận diện 3 dòng */
+    /* Game Panel: Kết quả giọng nói ghi đè liên tục, giới hạn 3 dòng hiển thị */
     .game-panel { 
       background: #1e293b; color: white; padding: 8px 12px; display: none; 
       border-radius: 8px; margin-bottom: 6px; flex-direction: column; gap: 4px; 
     }
     #gameInterim { 
       font-size: 13px; color: #94a3b8; font-style: italic;
-      max-height: calc(1.5em * 3); /* HIỂN THỊ TỐI ĐA 3 DÒNG */
+      max-height: calc(1.5em * 3); 
       overflow-y: auto; 
       line-height: 1.5;
       scroll-behavior: smooth;
+      word-break: break-all;
     }
     .score-badge { font-size: 22px; font-weight: 800; color: #4ade80; }
     #btnMic.listening { background: #ef4444; color: white; border-color: #ef4444; }
@@ -111,7 +110,7 @@
       <span style="font-size:12px; color:#94a3b8">Chính xác:</span>
       <div id="gameScore" class="score-badge">0%</div>
     </div>
-    <div id="gameInterim">Sẵn sàng nghe...</div>
+    <div id="gameInterim">Đang đợi giọng nói...</div>
   </div>
 
   <div id="currentTopic"></div>
@@ -174,10 +173,9 @@ function renderCurrent() {
     topicEl.classList.remove("has-content");
   }
 
-  const fmt = (t) => t ? t.split('').map(c => `<span class="word-span">${c}</span>`).join('') : "";
-  document.getElementById("content-text").innerHTML = fmt(item.content);
+  document.getElementById("content-text").textContent = item.content;
   document.getElementById("translate-text").textContent = item.translate;
-  document.getElementById("dialog-text").innerHTML = fmt(item.dialog);
+  document.getElementById("dialog-text").textContent = item.dialog;
   document.getElementById("pageInfo").textContent = `${currentIndex + 1}/${texts.length}`;
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1);

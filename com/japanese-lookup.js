@@ -1,6 +1,7 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.23
- * - Feature: Split Meanings (Top: MyMemory, Bottom: Google API)
+ * Japanese Lookup & Highlight Manager - Version 2026.24
+ * - Feature: Filter length (<= 5 chars)
+ * - Feature: Single char must be Kanji to translate
  * - Feature: Auto-highlight check at 5s and 10s after load
  * - Feature: Full Logs for Debugging
  * - Constraint: Immutable Logic for Storage & Highlighting
@@ -99,6 +100,14 @@ const JapaneseLookup = (() => {
 
     async function lookupNew(text, x, y) {
         if (!text) return;
+
+        // Constraint: Only translate if length <= 5. If length == 1, must be Kanji.
+        const isKanji = /[\u4e00-\u9faf]/.test(text);
+        if (text.length > 5 || (text.length === 1 && !isKanji)) {
+            console.log(`[System] Filtered: "${text}" (Length: ${text.length}, Kanji: ${isKanji}). Skip translation.`);
+            return;
+        }
+
         createUI();
         showPopup(text, '<span style="color:#94a3b8; font-style:italic;">Đang dịch...</span>', '', x, y, false);
 
@@ -154,7 +163,7 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
-            console.log("[System] Initializing JapaneseLookup v2026.23");
+            console.log("[System] Initializing JapaneseLookup v2026.24");
             createUI();
             try {
                 const res = await fetch(CONFIG.gas_url + "?type=words&v=" + Date.now());
@@ -162,10 +171,8 @@ const JapaneseLookup = (() => {
                 data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji, googleMeaning: w.googleMeaning || "" }));
                 dataLoaded = true;
                 
-                // Initial highlight
                 Module.applyHighlight();
                 
-                // Supplementary highlights at 5s and 10s
                 console.log("[System] Scheduling supplementary highlights at 5s and 10s...");
                 setTimeout(() => {
                     console.log("[System] 5s check: Triggering highlight...");

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Japanese Learning: Real-time STT</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f4f7f6; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .section { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #2196F3; }
+        
+        /* Hiển thị văn bản real-time */
+        #textInput { width: 100%; height: 120px; margin: 10px 0; padding: 12px; border: 2px solid #2196F3; border-radius: 6px; font-size: 18px; line-height: 1.5; overflow-y: auto; background: #fff; }
+        .interim { color: #999; font-style: italic; } /* Chữ đang xử lý */
+        .final { color: #000; font-weight: 500; }     /* Chữ đã xác nhận */
+
+        .mapping-table { width: 100%; border-collapse: collapse; margin: 15px 0; background: #fafafa; }
+        .mapping-table td { border: 1px solid #ddd; padding: 12px; }
+        .controls { display: flex; gap: 10px; }
+        button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; }
+        #micBtn { background-color: #4CAF50; color: white; flex: 2; }
+        #micBtn.listening { background-color: #f44336; box-shadow: 0 0 10px rgba(244,67,54,0.5); }
+        #scoreDisplay { font-size: 32px; text-align: center; color: #1565c0; font-weight: bold; margin: 10px 0; }
+        #log { background: #263238; color: #81c784; padding: 10px; font-size: 11px; height: 80px; overflow-y: auto; margin-top: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Nhận diện Real-time & Chấm điểm</h2>
+
+    <div class="section">
+        <strong>Câu mẫu mục tiêu:</strong>
+        <select id="sampleSelect" onchange="updateSample()" style="width: 100%; padding: 8px; margin-top: 5px;">
+            <option value="こんにちは、一緒に日本語を練習しましょう。">こんにちは core (Chào hỏi & Luyện tập)</option>
+            <option value="すいませn、駅はどこですか？">すいません、駅はどこですか？ (Hỏi đường)</option>
+        </select>
+        <div style="margin-top:10px;">
+            <input type="text" id="customInput" placeholder="Hoặc tự nhập câu mới tại đây..." style="width:70%; padding:8px;">
+            <button onclick="addCustom()" style="background:#0288d1; color:white; padding:8px;">Thêm</button>
+        </div>
+    </div>
+
+    <div id="scoreDisplay">Điểm: --%</div>
+
+    <table class="mapping-table">
+        <tr><td width="20%">Mẫu</td><td id="targetCell" style="font-weight:bold; color:#1565c0;">-</td></tr>
+        <tr><td>Bạn nói</td><td><div id="textInput"></div></td></tr>
+    </table>
+    
+    <div class="controls">
+        <button id="micBtn" onclick="toggleListening()">Bắt đầu nói (STT)</button>
+        <button onclick="clearAll()" style="background:#9e9e9e; color:white;">Xóa hết</button>
+    </div>
+
+    <div id="log"></div>
+</div>
+
+<script>
+    let isListening = false;
+    let currentSample = "";
+    let finalTranscript = ""; // Lưu trữ những gì đã xác nhận
+
+    function addLog(msg) {
+        const div = document.getElementById('log');
+        const entry = document.createElement('div');
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        div.prepend(entry);
+        console.log(`[LOG] ${msg}`);
+    }
+
+    function updateSample() {
+        currentSample = document.getElementById('sampleSelect').value;
+        document.getElementById('targetCell').textContent = currentSample;
+        addLog(`Mục tiêu: ${currentSample}`);
+    }
+
+    function addCustom() {
+        const val = document.getElementById('customInput').value.trim();
+        if(!val) return;
+        const sel = document.getElementById('sampleSelect');
+        const opt = document.createElement('option');
+        opt.value = val; opt.textContent = val;
+        sel.appendChild(opt); sel.value = val;
+        updateSample();
+        document.getElementById('customInput').value = "";
+    }
+
+    // Thuật toán Levenshtein
+    function getScore(s1, s2) {
+        const a = s1.replace(/[、。！？\s]/g, "");
+        const b = s2.replace(/[、。！？\s]/g, "");
+        if(!b) return 0;
+        const tmp = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+        for(let i=0; i<=a.length; i++) tmp[0][i]=i;
+        for(let j=0; j<=b.length; j++) tmp[j][0]=j;
+        for(let j=1; j<=b.length; j++){
+            for(let i=1; i<=a.length; i++){
+                const sub = a[i-1] === b[j-1] ? 0 : 1;
+                tmp[j][i] = Math.min(tmp[j][i-1]+1, tmp[j-1][i]+1, tmp[j-1][i-1]+sub);
+            }
+        }
+        const dist = tmp[b.length][a.length];
+        const max = Math.max(a.length, b.length);
+        return Math.floor(((max - dist) / max) * 100);
+    }
+
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRec();
+    recognition.lang = 'ja-JP';
+    recognition.continuous = true;
+    recognition.interimResults = true; // Bật chế độ hiển thị tạm thời
+
+    recognition.onresult = (event) => {
+        let interimTranscript = "";
+        
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
+        }
+
+        // Hiển thị kết hợp: Final (đen) + Interim (xám)
+        const displayArea = document.getElementById('textInput');
+        displayArea.innerHTML = `<span class="final">${finalTranscript}</span><span class="interim">${interimTranscript}</span>`;
+        
+        // Cuộn xuống cuối
+        displayArea.scrollTop = displayArea.scrollHeight;
+
+        // Chấm điểm dựa trên những gì đã nói xong (final)
+        if (finalTranscript) {
+            const score = getScore(currentSample, finalTranscript);
+            document.getElementById('scoreDisplay').textContent = `Điểm: ${score}%`;
+        }
+    };
+
+    recognition.onend = () => { if (isListening) recognition.start(); };
+
+    function toggleListening() {
+        if (!isListening) {
+            isListening = true;
+            finalTranscript = ""; // Reset khi bắt đầu lượt mới
+            recognition.start();
+            document.getElementById('micBtn').textContent = "Dừng & Chốt kết quả";
+            document.getElementById('micBtn').classList.add('listening');
+            addLog("Đang lắng nghe real-time...");
+        } else {
+            isListening = false;
+            recognition.stop();
+            document.getElementById('micBtn').textContent = "Bắt đầu nói (STT)";
+            document.getElementById('micBtn').classList.remove('listening');
+            addLog("Đã chốt văn bản.");
+        }
+    }
+
+    function clearAll() {
+        finalTranscript = "";
+        document.getElementById('textInput').innerHTML = "";
+        document.getElementById('scoreDisplay').textContent = "Điểm: --%";
+        addLog("Đã xóa dữ liệu.");
+    }
+
+    updateSample();
+</script>
+</body>
+</html>

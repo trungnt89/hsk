@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Shadowing Pro Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f1f5f9; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        
+        /* Hiển thị văn bản cần luyện */
+        #content-text { 
+            background: #f8fafc; padding: 15px; border-left: 4px solid #3b82f6; 
+            margin-bottom: 20px; font-size: 18px; line-height: 1.6; 
+        }
+
+        /* Bảng điều khiển nhận diện */
+        #gamePanel { 
+            background: #1e293b; color: #f8fafc; padding: 15px; border-radius: 8px; 
+            margin-top: 15px; display: none; flex-direction: column; gap: 10px;
+        }
+        #gameInterim { color: #94a3b8; font-style: italic; font-size: 14px; min-height: 24px; word-break: break-all; }
+        #gameScore { font-size: 32px; font-weight: bold; color: #4ade80; text-align: right; }
+
+        button { 
+            width: 100%; padding: 12px; font-size: 16px; font-weight: bold; 
+            border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;
+        }
+        #btnMic { background: #3b82f6; color: white; }
+        #btnMic.listening { background: #ef4444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>Luyện Shadowing Nhật Ngữ</h3>
+    
+    <div id="content-text">現代社会において、ストレスを完全になくすことはほぼ不可能です。</div>
+
+    <button id="btnMic" onclick="ShadowGame.toggle()">🎤 Luyện Shadowing</button>
+
+    <div id="gamePanel">
+        <div id="gameInterim">Đang sẵn sàng...</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: #64748b;">KẾT QUẢ NHẬN DIỆN</span>
+            <div id="gameScore">0%</div>
+        </div>
+    </div>
+</div>
+
+<script src="./shadow-game.js?v=1"></script>
+
+</body>
+</html>

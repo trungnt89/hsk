@@ -57,20 +57,13 @@
     .content-area.active { display: block; }
     .vi-text { color: #475569; font-style: italic; font-size: 0.95em; }
 
-    /* Game Panel: Văn bản nhận diện 3 dòng có cuộn */
     .game-panel { 
-      background: #1e293b; color: white; padding: 8px 12px; display: none; 
-      border-radius: 8px; margin-bottom: 6px; flex-direction: column; gap: 4px; 
+      background: #1e293b; color: white; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; display: none; flex-direction: column; gap: 4px; 
     }
     #gameInterim { 
       font-size: 13px; color: #94a3b8; font-style: italic;
-      max-height: 70px; /* Cố định khoảng 3 dòng */
-      overflow-y: auto; 
-      line-height: 1.5;
-      scroll-behavior: smooth;
-      display: block;
-      white-space: normal;
-      word-break: break-all;
+      max-height: 80px; overflow-y: auto; line-height: 1.6;
+      scroll-behavior: smooth; display: block; white-space: normal; word-break: break-all;
     }
     .score-badge { font-size: 22px; font-weight: 800; color: #4ade80; }
     #btnMic.listening { background: #ef4444; color: white; border-color: #ef4444; }
@@ -130,23 +123,36 @@
 </div>
 
 <script>
-// Mẹo: Đánh chặn hành vi gán text của module để ép nó ghi nối tiếp
+// Logic đánh chặn thông minh: Chỉ ghi nhận câu mới, bỏ qua lặp interim
 (function interceptModule() {
   const el = document.getElementById('gameInterim');
-  let fullText = "";
+  let history = []; 
   
-  // Định nghĩa lại setter cho innerHTML và textContent
   Object.defineProperty(el, 'textContent', {
     set: function(val) {
-      if (val === "" || val === "Sẵn sàng..." || val === "Đang đợi...") {
-        fullText = ""; // Reset khi module reset
-      } else {
-        fullText += (fullText ? " " : "") + val;
+      const cleanVal = val ? val.trim() : "";
+      
+      // Nếu reset hoặc chuỗi rỗng thì xóa lịch sử
+      if (cleanVal === "" || cleanVal.includes("Sẵn sàng")) {
+        history = [];
+        this.innerText = "";
+        return;
       }
-      this.innerText = fullText; 
-      this.scrollTop = this.scrollHeight; // Tự động cuộn
+
+      // Chỉ thêm nếu câu này không giống hệt câu cuối cùng vừa nhận được
+      if (history.length === 0 || history[history.length - 1] !== cleanVal) {
+        // Kiểm tra xem câu mới có phải là bản nối dài của câu cũ không (interim)
+        if (history.length > 0 && cleanVal.startsWith(history[history.length - 1])) {
+            history[history.length - 1] = cleanVal; // Cập nhật câu cũ bằng câu dài hơn
+        } else {
+            history.push(cleanVal); // Thêm câu hoàn toàn mới
+        }
+      }
+      
+      this.innerText = history.join("... "); 
+      this.scrollTop = this.scrollHeight;
     },
-    get: function() { return fullText; }
+    get: function() { return history.join(" "); }
   });
 })();
 

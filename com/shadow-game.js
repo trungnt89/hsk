@@ -1,6 +1,6 @@
 /**
- * ShadowGame Module - Standalone & Auto-UI
- * Chỉ cần 1 thẻ H3, module tự xử lý Button, Panel, 3 dòng text & Scroll.
+ * ShadowGame Module - Autonomous UI Injection
+ * Tự động tìm vị trí chèn UI mà không cần can thiệp vào HTML chính.
  */
 export const ShadowGame = {
     isListening: false,
@@ -10,38 +10,60 @@ export const ShadowGame = {
 
     getEl(id) { return document.getElementById(id); },
 
-    // Tự động xây dựng UI ngay sau thẻ h3
-    buildUI(anchorEl) {
-        if (this.getEl('gamePanel')) return;
-        this.anchor = anchorEl;
-        
+    // Tự động tìm điểm chèn tốt nhất trên trang
+    findBestAnchor() {
+        // Ưu tiên 1: Thẻ h3 trong vùng nội dung
+        // Ưu tiên 2: Vùng hiển thị văn bản chính
+        // Ưu tiên 3: Cuối thanh toolbar
+        return document.querySelector('#content-text h3') || 
+               document.querySelector('.display-box') || 
+               document.querySelector('.compact-toolbar');
+    },
+
+    buildUI() {
+        if (this.getEl('btnMic')) return; // Tránh chèn trùng lặp
+
+        const target = this.findBestAnchor();
+        if (!target) {
+            console.warn("LOG: [ShadowGame] Chưa tìm thấy điểm neo, đang thử lại...");
+            setTimeout(() => this.buildUI(), 500);
+            return;
+        }
+
+        this.anchor = target;
         const wrapper = document.createElement('div');
-        wrapper.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+        wrapper.id = "shadow-game-wrapper";
+        wrapper.style.margin = "10px 0";
         wrapper.innerHTML = `
-            <button id="btnMic" style="margin-top:12px; padding:10px 20px; border-radius:8px; border:1px solid #d1d5db; background:#ffffff; cursor:pointer; font-size:15px; transition: all 0.2s;">🎤 Luyện Shadowing</button>
-            <div id="gamePanel" style="display:none; background:#f9fafb; border:1px solid #e5e7eb; padding:15px; margin-top:12px; border-radius:10px;">
-                <div id="gameInterim" style="max-height:4.5em; line-height:1.5em; overflow-y:auto; font-size:16px; color:#374151; white-space:pre-wrap; word-break: break-all;"></div>
-                <div style="text-align:right; margin-top:10px; font-size:14px; color:#4b5563;">
-                    Tiến độ: <span id="gameScore" style="font-weight:bold; color:#1d4ed8; font-size:18px;">0%</span>
+            <button id="btnMic" style="padding:8px 16px; border-radius:6px; border:1px solid #cbd5e1; background:#fff; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; gap:5px;">
+                <span>🎤</span> Luyện Shadowing
+            </button>
+            <div id="gamePanel" style="display:none; background:#1e293b; color:#f1f5f9; padding:12px; margin-top:8px; border-radius:8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <div id="gameInterim" style="max-height:80px; overflow-y:auto; font-size:15px; line-height:1.5; margin-bottom:8px; color:#cbd5e1;"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #334155; pt-8">
+                    <span style="font-size:11px; color:#94a3b8;">Tiến độ nhận diện:</span>
+                    <span id="gameScore" style="font-weight:bold; color:#4ade80; font-size:16px;">0%</span>
                 </div>
             </div>
         `;
-        anchorEl.insertAdjacentElement('afterend', wrapper);
+
+        // Chèn vào trang: Nếu là h3 thì chèn sau, nếu là box thì chèn vào đầu
+        if (target.tagName === 'H3') {
+            target.insertAdjacentElement('afterend', wrapper);
+        } else {
+            target.prepend(wrapper);
+        }
         
         this.getEl('btnMic').onclick = () => this.toggle();
-        console.log("LOG: [ShadowGame] UI components created.");
+        console.log("LOG: [ShadowGame] UI injected successfully.");
     },
 
-    init(anchorEl) {
-        if (anchorEl) this.buildUI(anchorEl);
+    init() {
+        this.buildUI();
         if (this.recognition) return;
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            console.error("LOG: [Error] Web Speech API not supported.");
-            alert("Trình duyệt không hỗ trợ nhận diện giọng nói.");
-            return;
-        }
+        if (!SpeechRecognition) return;
 
         this.recognition = new SpeechRecognition();
         this.recognition.continuous = true;
@@ -53,7 +75,6 @@ export const ShadowGame = {
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 const transcript = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
-                    console.log("LOG: [Recognition Final]", transcript);
                     this.handleVoiceInput(transcript, true);
                 } else {
                     interimTranscript += transcript;
@@ -62,60 +83,63 @@ export const ShadowGame = {
             }
         };
 
-        this.recognition.onerror = (e) => console.error("LOG: [Recognition Error]", e.error);
         this.recognition.onend = () => {
-            if (this.isListening) {
-                console.log("LOG: [ShadowGame] Restarting recognition...");
-                this.recognition.start();
-            }
+            if (this.isListening) this.recognition.start();
         };
+
+        // Lắng nghe sự kiện đổi trang để xóa dữ liệu cũ
+        window.addEventListener('renderFinished', () => this.resetUI());
     },
 
     toggle() {
-        if (!this.isListening) this.start();
-        else this.stop();
+        this.isListening ? this.stop() : this.start();
     },
 
     start() {
         this.isListening = true;
         this.history = [];
-        this.getEl('gamePanel').style.display = 'block';
-        this.getEl('btnMic').innerHTML = '🛑 Dừng';
-        this.getEl('btnMic').style.borderColor = '#ef4444';
-        this.getEl('gameInterim').innerText = "Đang lắng nghe...";
-        this.getEl('gameScore').innerText = "0%";
-
-        if (!this.recognition) this.init();
-        try {
-            this.recognition.start();
-            console.log("LOG: [ShadowGame] Started listening.");
-        } catch (e) {
-            console.warn("LOG: [ShadowGame] Already started.");
+        const panel = this.getEl('gamePanel');
+        const btn = this.getEl('btnMic');
+        if (panel) panel.style.display = 'block';
+        if (btn) {
+            btn.style.background = '#fee2e2';
+            btn.style.borderColor = '#ef4444';
+            btn.innerHTML = '🛑 Dừng nhận diện';
         }
+        this.getEl('gameInterim').innerText = "Đang lắng nghe...";
+        this.recognition.start();
     },
 
     stop() {
         this.isListening = false;
-        this.getEl('btnMic').innerHTML = '🎤 Luyện Shadowing';
-        this.getEl('btnMic').style.borderColor = '#d1d5db';
+        const btn = this.getEl('btnMic');
+        if (btn) {
+            btn.style.background = '#fff';
+            btn.style.borderColor = '#cbd5e1';
+            btn.innerHTML = '<span>🎤</span> Luyện Shadowing';
+        }
         if (this.recognition) this.recognition.stop();
-        console.log("LOG: [ShadowGame] Stopped.");
+    },
+
+    resetUI() {
+        this.history = [];
+        const interim = this.getEl('gameInterim');
+        const score = this.getEl('gameScore');
+        if (interim) interim.innerText = "";
+        if (score) score.innerText = "0%";
+        // Nếu chuyển trang mà UI bị mất (do innerHTML của cha), tự vẽ lại
+        if (!this.getEl('btnMic')) this.buildUI();
     },
 
     handleVoiceInput(text, isFinal) {
-        const input = text ? text.trim() : "";
+        const input = text.trim();
         if (!input) return;
-
         const lastIdx = this.history.length - 1;
-        const lastItem = this.history[lastIdx];
-
-        // Lọc trùng lắp do interimResults của Chrome
-        if (lastItem && (input.includes(lastItem) || lastItem.includes(input))) {
-            if (input.length > lastItem.length) this.history[lastIdx] = input;
+        if (this.history[lastIdx] && (input.includes(this.history[lastIdx]))) {
+            this.history[lastIdx] = input;
         } else {
             this.history.push(input);
         }
-
         this.updateUI();
         if (isFinal) this.calculateScore();
     },
@@ -124,18 +148,21 @@ export const ShadowGame = {
         const el = this.getEl('gameInterim');
         if (el) {
             el.innerText = this.history.join(" ");
-            el.scrollTop = el.scrollHeight; // Tự động cuộn xuống khi vượt quá 3 dòng
+            el.scrollTop = el.scrollHeight;
         }
     },
 
     calculateScore() {
-        // Lấy text từ chính thẻ anchor (h3)
-        const targetText = this.anchor ? this.anchor.textContent.trim() : "";
+        // Tự động tìm text mục tiêu từ vùng hiển thị
+        const targetEl = document.querySelector('.content-area.active');
+        const targetText = targetEl ? targetEl.textContent.replace(/🎤 Luyện Shadowing.*/s, '').trim() : "";
         const spoken = this.history.join("");
         if (!targetText) return;
 
         const score = Math.min(100, Math.round((spoken.length / targetText.length) * 100));
         this.getEl('gameScore').innerText = `${score}%`;
-        console.log(`LOG: [ShadowGame] Progress: ${score}%`);
     }
 };
+
+// Tự kích hoạt khi module được import
+ShadowGame.init();

@@ -8,7 +8,13 @@
   <script src="../com/TTSClient.js"></script>
   <script type="module">
     import JapaneseLookup from '../com/japanese-lookup.js?v=1';
-    // Đã xóa import VoiceRecorder và ShadowGame
+    import { ShadowGame } from '../com/shadow-game.js?v=1';
+
+    // Đăng ký global và tự động khởi tạo module
+    window.ShadowGame = ShadowGame;
+    document.addEventListener('DOMContentLoaded', () => {
+        if (ShadowGame.init) ShadowGame.init();
+    });
   </script>
 
   <style>
@@ -148,6 +154,9 @@ function renderCurrent() {
   document.getElementById("pageInfo").textContent = `${currentIndex + 1}/${texts.length}`;
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1);
+  
+  // Reset ShadowGame khi đổi trang
+  if (window.ShadowGame?.resetUI) window.ShadowGame.resetUI();
   
   saveSettings();
   if (window.JapaneseLookup?.render) setTimeout(() => window.JapaneseLookup.render(), 50);

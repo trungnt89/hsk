@@ -7,10 +7,17 @@
   <script src="../com/assistive.js"></script>
   <script src="../com/TTSClient.js"></script>
   
-  <script type="module" src="../com/shadow-game.js?v=1"></script>
-
   <script type="module">
     import JapaneseLookup from '../com/japanese-lookup.js?v=1';
+    import { ShadowGame } from '../com/shadow-game.js?v=1';
+
+    window.ShadowGame = ShadowGame;
+
+    // Khởi tạo ShadowGame khi dữ liệu đã sẵn sàng
+    window.addEventListener('contentRendered', () => {
+      const anchor = document.querySelector('#content-text h3') || document.querySelector('#content-text');
+      if (anchor) ShadowGame.init(anchor);
+    });
   </script>
 
   <style>
@@ -107,8 +114,8 @@ function renderCurrent() {
   if (!texts.length) return;
   if (currentIndex >= texts.length) currentIndex = 0;
   const item = texts[currentIndex];
-  const topicEl = document.getElementById("currentTopic");
   
+  const topicEl = document.getElementById("currentTopic");
   if (item.topic && item.topic.trim() !== "" && item.topic !== "Tiêu đề trống") {
     topicEl.textContent = item.topic;
     topicEl.classList.add("has-content");
@@ -116,16 +123,18 @@ function renderCurrent() {
     topicEl.classList.remove("has-content");
   }
 
-  document.getElementById("content-text").textContent = item.content;
+  // Render HTML thay vì textContent để Module có thể tìm thấy thẻ h3
+  document.getElementById("content-text").innerHTML = item.content; 
   document.getElementById("translate-text").textContent = item.translate;
-  document.getElementById("dialog-text").textContent = item.dialog;
+  document.getElementById("dialog-text").innerHTML = item.dialog;
+  
   document.getElementById("pageInfo").textContent = `${currentIndex + 1}/${texts.length}`;
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1);
   
-  // Tự động thông báo cho module reset (Module sẽ lắng nghe biến currentIndex hoặc gọi hàm này)
-  window.dispatchEvent(new CustomEvent('pageChanged'));
-
+  // Phát sự kiện thông báo dữ liệu đã render xong
+  window.dispatchEvent(new CustomEvent('contentRendered'));
+  
   saveSettings();
   if (window.JapaneseLookup?.render) setTimeout(() => window.JapaneseLookup.render(), 50);
 }
@@ -134,6 +143,10 @@ function switchTab(index, shouldRender = true) {
   currentTab = index;
   document.querySelectorAll('.tab-btn').forEach((t, i) => t.classList.toggle('active', i === index));
   document.querySelectorAll('.content-area').forEach((a, i) => a.classList.toggle('active', i === index));
+  
+  // Khi chuyển tab cũng cần thông báo để module gắn lại anchor nếu cần
+  window.dispatchEvent(new CustomEvent('contentRendered'));
+
   if (shouldRender) {
     saveSettings();
     if (window.JapaneseLookup?.render) window.JapaneseLookup.render();
@@ -141,8 +154,9 @@ function switchTab(index, shouldRender = true) {
 }
 
 async function playCurrent() {
-  const text = (currentTab === 2) ? texts[currentIndex].dialog : texts[currentIndex].content;
-  if (!text) return;
+  const activeContent = document.querySelector('.content-area.active');
+  if (!activeContent) return;
+  const text = activeContent.textContent;
   const btn = document.getElementById("btnPlayCur");
   btn.classList.add("active");
   try {

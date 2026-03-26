@@ -1,6 +1,6 @@
 /**
- * ShadowGame Module - Sticky Top-Aligned 2-Line UI
- * Luôn cố định trên cùng khi cuộn trang.
+ * ShadowGame Module - Fixed Top Navigation Edition
+ * Cố định tại vùng khoanh đỏ, không bị trôi khi cuộn.
  */
 export const ShadowGame = {
     isListening: false,
@@ -11,9 +11,11 @@ export const ShadowGame = {
 
     getEl(id) { return document.getElementById(id); },
 
-    // Luôn nhắm tới đầu display-box để nằm trên top vùng nội dung
+    // Tìm vùng điều hướng trên cùng
     findBestAnchor() {
-        return document.querySelector('.display-box');
+        return document.querySelector('.compact-toolbar') || 
+               document.querySelector('.nav-header') || 
+               document.querySelector('.display-box');
     },
 
     buildUI() {
@@ -28,29 +30,40 @@ export const ShadowGame = {
         this.anchor = target;
         const wrapper = document.createElement('div');
         wrapper.id = "shadow-game-wrapper";
-        // Sticky: bám dính, Z-index: ưu tiên hiển thị lớp trên
-        wrapper.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 10px; min-height: 42px; width: 100%; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; position: sticky; top: 0; background: white; z-index: 100;";
+        // position: sticky và top: 0 để luôn dính chặt ở đỉnh vùng khoanh đỏ
+        wrapper.style.cssText = `
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            padding: 6px 12px; 
+            min-height: 48px; 
+            width: 100%; 
+            position: sticky; 
+            top: 0; 
+            background: #ffffff; 
+            z-index: 9999; 
+            border-bottom: 2px solid #cbd5e1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+        `;
         
         wrapper.innerHTML = `
-            <button id="btnMic" title="Bắt đầu Shadowing" style="width: 38px; height: 38px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 0;">
+            <button id="btnMic" title="Bắt đầu Shadowing" style="width: 38px; height: 38px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 0; transition: all 0.2s;">
                 🎤
             </button>
-            <div id="gamePanel" style="display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 4px 12px; border-radius: 12px; align-items: center; gap: 8px; overflow: hidden; border: 1px solid #334155;">
+            <div id="gamePanel" style="display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 4px 14px; border-radius: 10px; align-items: center; gap: 10px; overflow: hidden; border: 1px solid #334155;">
                 <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
-                    <div id="gameHistory" style="font-size: 10px; color:#94a3b8; white-space: nowrap; overflow-x: auto; scrollbar-width: none; min-height: 12px;"></div>
-                    <div id="gameCurrent" style="font-size: 13px; font-weight: 500; color:#4ade80; white-space: nowrap; overflow-x: auto; scrollbar-width: none; min-height: 16px;"></div>
+                    <div id="gameHistory" style="font-size: 10px; color:#94a3b8; white-space: nowrap; overflow-x: auto; scrollbar-width: none; min-height: 12px; opacity: 0.8;"></div>
+                    <div id="gameCurrent" style="font-size: 13px; font-weight: 600; color:#4ade80; white-space: nowrap; overflow-x: auto; scrollbar-width: none; min-height: 18px;"></div>
                 </div>
-                <div style="border-left: 1px solid #334155; padding-left: 8px; display: flex; align-items: center; flex-shrink: 0;">
-                    <span id="gameScore" style="font-weight:bold; color:#4ade80; font-size: 13px;">0%</span>
+                <div style="border-left: 1px solid #475569; padding-left: 10px; display: flex; align-items: center; flex-shrink: 0;">
+                    <span id="gameScore" style="font-weight:bold; color:#4ade80; font-size: 14px;">0%</span>
                 </div>
             </div>
         `;
 
-        target.prepend(wrapper);
-        
-        // Tính toán vị trí bám dính dựa trên Header của app (nếu có)
-        const header = document.querySelector('.sticky-header');
-        if (header) wrapper.style.top = header.offsetHeight + "px";
+        // Chèn vào đầu trang (phía trên toolbar hiện tại)
+        target.parentElement.prepend(wrapper);
 
         this.getEl('btnMic').onclick = () => this.toggle();
     },
@@ -88,16 +101,17 @@ export const ShadowGame = {
         this.isListening = true;
         this.history = [];
         this.currentInterim = "";
-        this.getEl('gamePanel').style.display = 'flex';
+        const panel = this.getEl('gamePanel');
         const btn = this.getEl('btnMic');
+        if (panel) panel.style.display = 'flex';
         if (btn) {
             btn.style.background = '#fee2e2';
             btn.style.borderColor = '#ef4444';
             btn.innerHTML = '🛑';
         }
-        this.getEl('gameCurrent').innerText = "Listening...";
+        this.getEl('gameCurrent').innerText = "Đang lắng nghe...";
         this.getEl('gameHistory').innerText = "";
-        try { this.recognition.start(); } catch(e) {}
+        try { this.recognition.start(); } catch(e) { console.error("Mic error:", e); }
     },
 
     stop() {

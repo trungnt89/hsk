@@ -2,25 +2,21 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Shadow Test - No Extra Module</title>
-    <script type="module">
-        import { ShadowGame } from '../com/shadow-game.js?v=1';
-        window.ShadowGame = ShadowGame; // Chỉ cần gán ShadowGame là đủ
-    </script>
-    <style>
-        #gamePanel { background: #1e293b; color: white; padding: 15px; display: none; margin-top: 10px; }
-        #gameInterim { color: #94a3b8; font-style: italic; }
-        #btnMic.active { background: red; color: white; }
-    </style>
+    <title>Shadowing Minimal</title>
 </head>
 <body>
-    <div id="content-text">現代社会において、ストレスを完全になくすことはほぼ不可能です。</div>
-    
-    <button id="btnMic" onclick="window.ShadowGame.toggle()">🎤 Luyện Shadowing</button>
 
-    <div id="gamePanel">
-        <div id="gameInterim"></div>
-        <div id="gameScore" style="text-align:right; font-size:20px;">0%</div>
-    </div>
+    <h3 id="target-text">石の上にも三年。継続は力なり。</h3>
+
+    <script type="module">
+        import { ShadowGame } from './shadow-game.js';
+        
+        // Khởi tạo và gắn vào dưới thẻ h3
+        const target = document.querySelector('h3');
+        ShadowGame.init(target);
+        
+        // Gán vào window nếu muốn gọi từ console hoặc nơi khác
+        window.ShadowGame = ShadowGame;
+    </script>
 </body>
 </html>

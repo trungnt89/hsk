@@ -1,8 +1,8 @@
 /**
- * ShadowGame Module - Fix Lỗi Lặp Từ & Tự nạp Window
- * Giải quyết lỗi: Hiện tại -> Hiện tại xã hội
+ * ShadowGame - Bản hoàn chỉnh (Non-Module)
+ * Tự động gán vào window để HTML gọi được ngay.
  */
-export const ShadowGame = {
+const ShadowGame = {
     isListening: false,
     history: [],
     recognition: null,
@@ -24,6 +24,7 @@ export const ShadowGame = {
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 const transcript = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
+                    console.log("LOG: [Final]", transcript);
                     this.handleVoiceInput(transcript, true);
                 } else {
                     interimTranscript += transcript;
@@ -32,19 +33,19 @@ export const ShadowGame = {
             }
         };
 
-        this.recognition.onerror = (e) => {
-            if (e.error !== 'aborted') console.error("LOG: [Speech Error]", e.error);
-        };
-
         this.recognition.onend = () => {
             if (this.isListening) {
                 try { this.recognition.start(); } catch(e) {}
             }
         };
+        
+        this.recognition.onerror = (e) => {
+            if (e.error !== 'aborted') console.error("LOG: [Speech Error]", e.error);
+        };
     },
 
     toggle() {
-        console.log("LOG: [ShadowGame] Toggle. Trạng thái hiện tại:", this.isListening);
+        console.log("LOG: [ShadowGame] Toggle. Trạng thái:", this.isListening);
         if (!this.isListening) this.start();
         else this.stop();
     },
@@ -52,38 +53,22 @@ export const ShadowGame = {
     start() {
         this.init();
         this.isListening = true;
-        this.history = []; 
+        this.history = [];
+        document.getElementById('gamePanel').style.display = 'flex';
+        document.getElementById('btnMic').innerHTML = '🛑 Dừng';
+        document.getElementById('btnMic').classList.add('listening');
+        document.getElementById('gameInterim').innerText = "Đang lắng nghe...";
         
-        const panel = document.getElementById('gamePanel');
-        const btn = document.getElementById('btnMic');
-        const interim = document.getElementById('gameInterim');
-
-        if (panel) panel.style.display = 'flex';
-        if (btn) {
-            btn.innerHTML = '🛑 Dừng';
-            btn.classList.add('listening');
-        }
-        if (interim) interim.innerText = "Đang lắng nghe...";
-        
-        try { this.recognition.start(); } catch(e) {
-            console.warn("LOG: Recognition đã chạy.");
-        }
+        try { this.recognition.start(); } catch(e) {}
     },
 
     stop() {
         this.isListening = false;
-        const btn = document.getElementById('btnMic');
-        if (btn) {
-            btn.innerHTML = '🎤 Luyện';
-            btn.classList.remove('listening');
-        }
+        document.getElementById('btnMic').innerHTML = '🎤 Luyện';
+        document.getElementById('btnMic').classList.remove('listening');
         if (this.recognition) this.recognition.stop();
-        console.log("LOG: [ShadowGame] Đã dừng.");
     },
 
-    /**
-     * LOGIC FIX LẶP TỪ
-     */
     handleVoiceInput(text, isFinal) {
         const input = text ? text.trim() : "";
         if (!input) return;
@@ -91,14 +76,12 @@ export const ShadowGame = {
         let lastIdx = this.history.length - 1;
         let lastItem = lastIdx >= 0 ? this.history[lastIdx] : null;
 
-        // Kiểm tra nếu input mới là bản bồi đắp của câu cũ
-        // Ví dụ: lastItem = "Hiện tại", input = "Hiện tại xã hội"
+        // LOGIC FIX LẶP TỪ: Nếu câu mới là bản dài hơn của câu cũ -> Ghi đè
         if (lastItem && (input.startsWith(lastItem) || lastItem.startsWith(input))) {
             if (input.length > lastItem.length) {
-                this.history[lastIdx] = input; // Ghi đè câu cũ bằng bản dài hơn
+                this.history[lastIdx] = input;
             }
         } else {
-            // Nếu là cụm từ mới hoàn toàn hoặc quãng nghỉ mới
             if (lastItem !== input) {
                 this.history.push(input);
             }
@@ -137,7 +120,5 @@ export const ShadowGame = {
     }
 };
 
-// ĐƯA VÀO WINDOW ĐỂ HTML GỌI ĐƯỢC NGAY
-if (typeof window !== 'undefined') {
-    window.ShadowGame = ShadowGame;
-}
+// Gán trực tiếp vào window để tránh lỗi "not a function"
+window.ShadowGame = ShadowGame;

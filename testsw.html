@@ -2,25 +2,44 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Shadow Test - No Extra Module</title>
-    <script type="module">
-        import { ShadowGame } from '../com/shadow-game.js?v=1';
-        window.ShadowGame = ShadowGame; // Chỉ cần gán ShadowGame là đủ
-    </script>
+    <title>Shadowing Practice</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        #gamePanel { background: #1e293b; color: white; padding: 15px; display: none; margin-top: 10px; }
-        #gameInterim { color: #94a3b8; font-style: italic; }
-        #btnMic.active { background: red; color: white; }
+        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f8fafc; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        #content-text { font-size: 1.1em; line-height: 1.6; margin-bottom: 20px; color: #1e293b; }
+        
+        .game-panel { 
+            background: #1e293b; color: white; padding: 15px; border-radius: 8px; 
+            display: none; flex-direction: column; gap: 10px; margin-top: 15px;
+        }
+        #gameInterim { color: #94a3b8; font-style: italic; font-size: 0.9em; min-height: 20px; }
+        #gameScore { font-size: 1.5em; font-weight: bold; color: #4ade80; text-align: right; }
+        
+        .btn-mic { 
+            width: 100%; padding: 12px; border: none; border-radius: 8px; 
+            background: #2563eb; color: white; font-weight: bold; cursor: pointer;
+        }
+        .btn-mic.listening { background: #ef4444; }
     </style>
 </head>
 <body>
-    <div id="content-text">現代社会において、ストレスを完全になくすことはほぼ不可能です。</div>
-    
-    <button id="btnMic" onclick="window.ShadowGame.toggle()">🎤 Luyện Shadowing</button>
 
-    <div id="gamePanel">
-        <div id="gameInterim"></div>
-        <div id="gameScore" style="text-align:right; font-size:20px;">0%</div>
+<div class="card">
+    <div id="content-text">現代社会において、ストレスを完全になくすことはほぼ不可能です。</div>
+
+    <button id="btnMic" class="btn-mic" onclick="ShadowGame.toggle()">🎤 Luyện Shadowing</button>
+
+    <div id="gamePanel" class="game-panel">
+        <div id="gameInterim">Sẵn sàng...</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.8em; color:#64748b;">Độ chính xác:</span>
+            <div id="gameScore">0%</div>
+        </div>
     </div>
+</div>
+
+<script src="./shadow-game.js?v=1"></script>
+
 </body>
 </html>

@@ -18,60 +18,39 @@
     body { font-family: system-ui, -apple-system; max-width: 800px; margin: auto; padding: 0 6px 20px 6px; background: var(--bg); color: var(--text); }
     
     .sticky-header {
-      position: sticky;
-      top: 0;
-      background: var(--bg);
-      padding-top: 6px;
-      z-index: 1000;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
+      position: sticky; top: 0; background: var(--bg); padding-top: 6px; z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.05);
     }
-
     .compact-toolbar { 
       background: white; padding: 6px 8px; border-radius: 8px; margin-bottom: 6px; 
       display: flex; justify-content: space-between; align-items: center; gap: 6px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-
     .nav-group, .action-group { display: flex; align-items: center; gap: 4px; }
-
     #currentTopic { 
-      background: #1e293b; color: white; padding: 4px 10px; border-radius: 4px; 
-      text-align: center; font-weight: 500; margin-bottom: 6px; font-size: 13px;
-      display: none;
+      background: #1e293b; color: white; padding: 4px 10px; border-radius: 4px; text-align: center; font-weight: 500; margin-bottom: 6px; font-size: 13px; display: none;
     }
     #currentTopic.has-content { display: block; }
-
-    .tabs-container { display: flex; gap: 2px; background: var(--bg); }
+    .tabs-container { display: flex; gap: 2px; }
     .tab-btn { 
-      flex: 1; padding: 10px 2px; border: none; background: #e2e8f0; cursor: pointer; 
-      border-radius: 6px 6px 0 0; font-size: 12px; font-weight: 600; color: #64748b; 
-      display: flex; align-items: center; justify-content: center;
+      flex: 1; padding: 10px 2px; border: none; background: #e2e8f0; border-radius: 6px 6px 0 0; font-size: 12px; font-weight: 600; color: #64748b; 
     }
     .tab-btn.active { background: white; color: var(--primary); border-bottom: 2px solid var(--primary); }
 
     .display-box { 
-      background: white; min-height: 400px; padding: 15px; border-radius: 0 0 10px 10px; 
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1.8; font-size: 1.2em;
+      background: white; min-height: 400px; padding: 15px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1.8; font-size: 1.2em;
     }
     .content-area { display: none; white-space: pre-wrap; color: #000; }
     .content-area.active { display: block; }
-    .vi-text { color: #475569; font-style: italic; font-size: 0.95em; }
 
-    .game-panel { 
-      background: #1e293b; color: white; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; display: none; flex-direction: column; gap: 4px; 
-    }
+    .game-panel { background: #1e293b; color: white; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; display: none; flex-direction: column; gap: 4px; }
     #gameInterim { 
-      font-size: 13px; color: #94a3b8; font-style: italic;
-      max-height: 80px; overflow-y: auto; line-height: 1.6;
-      scroll-behavior: smooth; display: block; white-space: normal; word-break: break-all;
+      font-size: 13px; color: #94a3b8; font-style: italic; max-height: 75px; overflow-y: auto; line-height: 1.5; scroll-behavior: smooth; word-break: break-all;
     }
     .score-badge { font-size: 22px; font-weight: 800; color: #4ade80; }
-    #btnMic.listening { background: #ef4444; color: white; border-color: #ef4444; }
-
-    button { padding: 4px 8px; border-radius: 5px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 12px; min-height: 30px; display: flex; align-items: center; }
-    button.active { background: #dbeafe; border-color: var(--primary); color: var(--primary); font-weight: bold; }
-    select { height: 30px; border-radius: 5px; border: 1px solid #cbd5e1; font-size: 11px; background: white; }
-    #pageInfo { font-size: 12px; font-weight: 700; min-width: 45px; text-align: center; }
+    
+    button { padding: 4px 8px; border-radius: 5px; border: 1px solid #cbd5e1; background: #fff; font-size: 12px; min-height: 30px; }
+    button.active { background: #dbeafe; color: var(--primary); font-weight: bold; }
+    select { height: 30px; border-radius: 5px; border: 1px solid #cbd5e1; font-size: 11px; }
   </style>
 </head>
 <body>
@@ -80,35 +59,27 @@
   <div class="compact-toolbar">
     <div class="nav-group">
       <button onclick="prevPage()" id="btnPrev">◀</button>
-      <span id="pageInfo">0/0</span>
+      <span id="pageInfo" style="font-weight:700; font-size:12px">0/0</span>
       <button onclick="nextPage()" id="btnNext">▶</button>
     </div>
     <div class="action-group">
       <button id="btnMic" onclick="window.ShadowGame.toggle()">🎤 Luyện</button>
       <button id="btnPlayCur" onclick="playCurrent()">▶️ Nghe</button>
       <button id="btnRepeatOne" onclick="toggleRepeatOne()">🔂</button>
-      <select id="voice" onchange="saveSettings()">
-        <option value="ja-JP-KeitaNeural">Nam</option>
-        <option value="ja-JP-NanamiNeural">Nữ</option>
-      </select>
-      <select id="rate" onchange="saveSettings()">
-        <option value="0.7">0.7</option>
-        <option value="0.8">0.8</option>
-        <option value="1.0">1.0</option>
-      </select>
+      <select id="voice" onchange="saveSettings()"><option value="ja-JP-KeitaNeural">Nam</option><option value="ja-JP-NanamiNeural">Nữ</option></select>
+      <select id="rate" onchange="saveSettings()"><option value="0.7">0.7</option><option value="0.8">0.8</option><option value="1.0">1.0</option></select>
     </div>
   </div>
 
   <div id="gamePanel" class="game-panel">
     <div style="display:flex; justify-content:space-between; align-items:center">
-      <span style="font-size:12px; color:#94a3b8">Chính xác:</span>
+      <span style="font-size:11px; color:#94a3b8">Kết quả nhận diện:</span>
       <div id="gameScore" class="score-badge">0%</div>
     </div>
     <div id="gameInterim"></div>
   </div>
 
   <div id="currentTopic"></div>
-
   <div class="tabs-container">
     <button class="tab-btn" id="tab0" onclick="switchTab(0)">Đoạn văn</button>
     <button class="tab-btn" id="tab1" onclick="switchTab(1)">Nghĩa TV</button>
@@ -118,38 +89,41 @@
 
 <div class="display-box">
   <div id="content-text" class="content-area"></div>
-  <div id="translate-text" class="content-area vi-text"></div>
+  <div id="translate-text" class="content-area" style="color:#475569; font-style:italic; font-size:0.95em"></div>
   <div id="dialog-text" class="content-area"></div>
 </div>
 
 <script>
-// Logic đánh chặn thông minh: Chỉ ghi nhận câu mới, bỏ qua lặp interim
+// --- ĐÁNH CHẶN LỌC TRÙNG CÂU CUỐI ---
 (function interceptModule() {
   const el = document.getElementById('gameInterim');
   let history = []; 
   
   Object.defineProperty(el, 'textContent', {
     set: function(val) {
-      const cleanVal = val ? val.trim() : "";
+      const input = val ? val.trim() : "";
       
-      // Nếu reset hoặc chuỗi rỗng thì xóa lịch sử
-      if (cleanVal === "" || cleanVal.includes("Sẵn sàng")) {
-        history = [];
-        this.innerText = "";
-        return;
+      // Reset khi module yêu cầu hoặc rỗng
+      if (!input || input.includes("Sẵn sàng")) {
+        history = []; this.innerText = ""; return;
       }
+      
+      const lastItem = history[history.length - 1];
 
-      // Chỉ thêm nếu câu này không giống hệt câu cuối cùng vừa nhận được
-      if (history.length === 0 || history[history.length - 1] !== cleanVal) {
-        // Kiểm tra xem câu mới có phải là bản nối dài của câu cũ không (interim)
-        if (history.length > 0 && cleanVal.startsWith(history[history.length - 1])) {
-            history[history.length - 1] = cleanVal; // Cập nhật câu cũ bằng câu dài hơn
-        } else {
-            history.push(cleanVal); // Thêm câu hoàn toàn mới
-        }
+      // 1. Nếu trùng hệt câu vừa thêm cuối cùng -> Bỏ qua
+      if (lastItem === input) return;
+
+      // 2. Nếu câu mới là bản mở rộng của câu cũ, hoặc ngược lại (do interim result)
+      if (lastItem && (lastItem.includes(input) || input.includes(lastItem))) {
+        // Cập nhật câu dài hơn vào vị trí cuối
+        history[history.length - 1] = input.length > lastItem.length ? input : lastItem;
+      } else {
+        // 3. Nếu là câu hoàn toàn mới thì mới push vào history
+        history.push(input);
       }
       
-      this.innerText = history.join("... "); 
+      // Hiển thị nối tiếp, phân tách bằng dấu mũi tên
+      this.innerText = history.join(" → "); 
       this.scrollTop = this.scrollHeight;
     },
     get: function() { return history.join(" "); }
@@ -194,8 +168,7 @@ function renderCurrent() {
   const topicEl = document.getElementById("currentTopic");
   
   if (item.topic && item.topic.trim() !== "" && item.topic !== "Tiêu đề trống") {
-    topicEl.textContent = item.topic;
-    topicEl.classList.add("has-content");
+    topicEl.textContent = item.topic; topicEl.classList.add("has-content");
   } else {
     topicEl.classList.remove("has-content");
   }
@@ -203,10 +176,7 @@ function renderCurrent() {
   document.getElementById("content-text").textContent = item.content;
   document.getElementById("translate-text").textContent = item.translate;
   document.getElementById("dialog-text").textContent = item.dialog;
-  
   document.getElementById("pageInfo").textContent = `${currentIndex + 1}/${texts.length}`;
-  document.getElementById("btnPrev").disabled = (currentIndex <= 0);
-  document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1);
   
   if (window.ShadowGame) window.ShadowGame.resetUI();
   saveSettings();
@@ -217,10 +187,7 @@ function switchTab(index, shouldRender = true) {
   currentTab = index;
   document.querySelectorAll('.tab-btn').forEach((t, i) => t.classList.toggle('active', i === index));
   document.querySelectorAll('.content-area').forEach((a, i) => a.classList.toggle('active', i === index));
-  if (shouldRender) {
-    saveSettings();
-    if (window.JapaneseLookup?.render) window.JapaneseLookup.render();
-  }
+  if (shouldRender) saveSettings();
 }
 
 async function playCurrent() {
@@ -229,11 +196,7 @@ async function playCurrent() {
   const btn = document.getElementById("btnPlayCur");
   btn.classList.add("active");
   try {
-    await speakCommon({ 
-      text, 
-      voice: document.getElementById("voice").value, 
-      rate: document.getElementById("rate").value 
-    });
+    await speakCommon({ text, voice: document.getElementById("voice").value, rate: document.getElementById("rate").value });
   } finally {
     btn.classList.remove("active");
     if (repeatOne) playCurrent();
@@ -241,23 +204,15 @@ async function playCurrent() {
 }
 
 function navigate(idx) { 
-  if (idx >= 0 && idx < texts.length) { 
-    currentIndex = idx; 
-    renderCurrent(); 
-    window.scrollTo({ top: 0, behavior: 'smooth' }); 
-  } 
+  if (idx >= 0 && idx < texts.length) { currentIndex = idx; renderCurrent(); window.scrollTo({ top: 0, behavior: 'smooth' }); } 
 }
 function nextPage() { navigate(currentIndex + 1); }
 function prevPage() { navigate(currentIndex - 1); }
-
 function toggleRepeatOne() { 
-  repeatOne = !repeatOne; 
-  document.getElementById("btnRepeatOne").classList.toggle("active", repeatOne); 
-  saveSettings();
+  repeatOne = !repeatOne; document.getElementById("btnRepeatOne").classList.toggle("active", repeatOne); saveSettings();
 }
 
-loadSettings();
-loadTexts();
+loadSettings(); loadTexts();
 </script>
 </body>
 </html>

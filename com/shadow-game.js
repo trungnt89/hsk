@@ -1,6 +1,6 @@
 /**
  * ShadowGame Module - Fixed Top Navigation Edition
- * Cố định tại vùng khoanh đỏ, không bị trôi khi cuộn.
+ * Cố định tại vùng điều hướng và hỗ trợ Highlight nội dung đã đọc.
  */
 export const ShadowGame = {
     isListening: false,
@@ -11,7 +11,6 @@ export const ShadowGame = {
 
     getEl(id) { return document.getElementById(id); },
 
-    // Tìm vùng điều hướng trên cùng
     findBestAnchor() {
         return document.querySelector('.compact-toolbar') || 
                document.querySelector('.nav-header') || 
@@ -30,7 +29,6 @@ export const ShadowGame = {
         this.anchor = target;
         const wrapper = document.createElement('div');
         wrapper.id = "shadow-game-wrapper";
-        // position: sticky và top: 0 để luôn dính chặt ở đỉnh vùng khoanh đỏ
         wrapper.style.cssText = `
             display: flex; 
             align-items: center; 
@@ -62,9 +60,7 @@ export const ShadowGame = {
             </div>
         `;
 
-        // Chèn vào đầu trang (phía trên toolbar hiện tại)
         target.parentElement.prepend(wrapper);
-
         this.getEl('btnMic').onclick = () => this.toggle();
     },
 
@@ -132,6 +128,11 @@ export const ShadowGame = {
         if (this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = "";
         if (this.getEl('gameScore')) this.getEl('gameScore').innerText = "0%";
         if (this.getEl('gamePanel') && !this.isListening) this.getEl('gamePanel').style.display = 'none';
+        
+        // Dọn dẹp highlight cũ khi reset bài
+        const active = document.querySelector('.content-area.active');
+        if (active) active.querySelectorAll('.shadow-highlight').forEach(el => el.replaceWith(el.innerText));
+
         if (!this.getEl('shadow-game-wrapper')) this.buildUI();
     },
 
@@ -139,11 +140,39 @@ export const ShadowGame = {
         const input = text.trim();
         if (!input) return;
         if (isFinal) {
+            this.highlightInBody(input);
             this.history.push(input);
             this.calculateScore();
         }
         this.currentInterim = input;
         this.updateUI();
+    },
+
+    highlightInBody(text) {
+        const targetArea = document.querySelector('.content-area.active') || document.body;
+        if (!targetArea || !text) return;
+
+        // Xóa highlight cũ của câu trước đó
+        targetArea.querySelectorAll('.shadow-highlight').forEach(el => {
+            el.replaceWith(el.innerText);
+        });
+
+        const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedText})`, 'gi');
+
+        // Duyệt các text node để tránh hỏng cấu trúc HTML phức tạp
+        const walk = document.createTreeWalker(targetArea, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        const nodesToReplace = [];
+        while(node = walk.nextNode()) {
+            if (regex.test(node.textContent)) nodesToReplace.push(node);
+        }
+
+        nodesToReplace.forEach(node => {
+            const span = document.createElement('span');
+            span.innerHTML = node.textContent.replace(regex, '<span class="shadow-highlight" style="background-color: #fef08a; color: #1e293b; padding: 0 2px; border-radius: 2px; font-weight: bold;">$1</span>');
+            node.replaceWith(span);
+        });
     },
 
     updateUI() {

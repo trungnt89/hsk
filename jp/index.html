@@ -9,6 +9,8 @@
   <script type="module">
     import JapaneseLookup from '../com/japanese-lookup.js?v=1';
     import VoiceRecorder from '../com/voice-recorder.js?v=1';
+    import { ShadowGame } from '../com/shadow-game.js?v=1';
+    window.ShadowGame = ShadowGame;
   </script>
 
   <style>
@@ -48,14 +50,24 @@
     }
     .tab-btn.active { background: white; color: var(--primary); border-bottom: 2px solid var(--primary); }
 
-    /* --- PHẦN NỘI DUNG CUỘN --- */
+    /* --- PHẦN NỘI DUNG CUỘN (3 DÒNG) --- */
     .display-box { 
       background: white; min-height: 400px; padding: 15px; border-radius: 0 0 10px 10px; 
       box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1.8; font-size: 1.2em;
     }
-    .content-area { display: none; white-space: pre-wrap; color: #000; }
+    .content-area { 
+      display: none; color: #000; 
+      max-height: calc(1.8em * 3); overflow-y: auto; scroll-behavior: smooth;
+    }
     .content-area.active { display: block; }
-    .vi-text { color: #475569; font-style: italic; font-size: 0.95em; }
+    .word-span { transition: all 0.2s; }
+    .word-span.highlight { background: #fde047; color: #000; font-weight: bold; border-radius: 2px; }
+    .vi-text { color: #475569; font-style: italic; font-size: 0.95em; max-height: none; overflow: visible; }
+
+    /* Game Panel UI */
+    .game-panel { background: #1e293b; color: white; padding: 8px 12px; display: none; border-radius: 8px; margin-bottom: 6px; flex-direction: column; gap: 4px; }
+    .score-badge { font-size: 22px; font-weight: 800; color: #4ade80; }
+    #btnMic.listening { background: #ef4444; color: white; border-color: #ef4444; }
 
     /* UI Elements */
     button { padding: 4px 8px; border-radius: 5px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 12px; min-height: 30px; display: flex; align-items: center; }
@@ -74,6 +86,7 @@
       <button onclick="nextPage()" id="btnNext">▶</button>
     </div>
     <div class="action-group">
+      <button id="btnMic" onclick="window.ShadowGame.toggle()">🎤 Luyện</button>
       <button id="btnPlayCur" onclick="playCurrent()">▶️ Nghe</button>
       <button id="btnRepeatOne" onclick="toggleRepeatOne()">🔂</button>
       <select id="voice" onchange="saveSettings()">
@@ -86,6 +99,14 @@
         <option value="1.0">1.0</option>
       </select>
     </div>
+  </div>
+
+  <div id="gamePanel" class="game-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center">
+      <span style="font-size:12px; color:#94a3b8">Chính xác:</span>
+      <div id="gameScore" class="score-badge">0%</div>
+    </div>
+    <div id="gameInterim" style="font-size:13px; color:#94a3b8; font-style:italic">...</div>
   </div>
 
   <div id="currentTopic"></div>
@@ -152,13 +173,15 @@ function renderCurrent() {
     topicEl.classList.remove("has-content");
   }
 
-  document.getElementById("content-text").textContent = item.content;
+  const fmt = (t) => t ? t.split('').map(c => `<span class="word-span">${c}</span>`).join('') : "";
+  document.getElementById("content-text").innerHTML = fmt(item.content);
   document.getElementById("translate-text").textContent = item.translate;
-  document.getElementById("dialog-text").textContent = item.dialog;
+  document.getElementById("dialog-text").innerHTML = fmt(item.dialog);
   document.getElementById("pageInfo").textContent = `${currentIndex + 1}/${texts.length}`;
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1);
   
+  if (window.ShadowGame) window.ShadowGame.resetUI();
   saveSettings();
   if (window.JapaneseLookup?.render) setTimeout(() => window.JapaneseLookup.render(), 50);
 }
@@ -195,7 +218,7 @@ function navigate(idx) {
   if (idx >= 0 && idx < texts.length) { 
     currentIndex = idx; 
     renderCurrent(); 
-    window.scrollTo({ top: 0, behavior: 'smooth' }); // Cuộn lên đầu nội dung khi đổi trang
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
   } 
 }
 function nextPage() { navigate(currentIndex + 1); }

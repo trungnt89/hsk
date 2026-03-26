@@ -57,16 +57,20 @@
     .content-area.active { display: block; }
     .vi-text { color: #475569; font-style: italic; font-size: 0.95em; }
 
+    /* Game Panel: Văn bản nhận diện 3 dòng có cuộn */
     .game-panel { 
       background: #1e293b; color: white; padding: 8px 12px; display: none; 
       border-radius: 8px; margin-bottom: 6px; flex-direction: column; gap: 4px; 
     }
     #gameInterim { 
       font-size: 13px; color: #94a3b8; font-style: italic;
-      max-height: calc(1.5em * 3); 
+      max-height: 70px; /* Cố định khoảng 3 dòng */
       overflow-y: auto; 
       line-height: 1.5;
       scroll-behavior: smooth;
+      display: block;
+      white-space: normal;
+      word-break: break-all;
     }
     .score-badge { font-size: 22px; font-weight: 800; color: #4ade80; }
     #btnMic.listening { background: #ef4444; color: white; border-color: #ef4444; }
@@ -107,7 +111,7 @@
       <span style="font-size:12px; color:#94a3b8">Chính xác:</span>
       <div id="gameScore" class="score-badge">0%</div>
     </div>
-    <div id="gameInterim">Sẵn sàng...</div>
+    <div id="gameInterim"></div>
   </div>
 
   <div id="currentTopic"></div>
@@ -126,6 +130,26 @@
 </div>
 
 <script>
+// Mẹo: Đánh chặn hành vi gán text của module để ép nó ghi nối tiếp
+(function interceptModule() {
+  const el = document.getElementById('gameInterim');
+  let fullText = "";
+  
+  // Định nghĩa lại setter cho innerHTML và textContent
+  Object.defineProperty(el, 'textContent', {
+    set: function(val) {
+      if (val === "" || val === "Sẵn sàng..." || val === "Đang đợi...") {
+        fullText = ""; // Reset khi module reset
+      } else {
+        fullText += (fullText ? " " : "") + val;
+      }
+      this.innerText = fullText; 
+      this.scrollTop = this.scrollHeight; // Tự động cuộn
+    },
+    get: function() { return fullText; }
+  });
+})();
+
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyNX96iC37hc8AunT8zWlG_yTFB2ipZp90-XivW8hWzVYVne9nftCC3mSFoTk10v93t/exec";
 let texts = [], currentIndex = 0, currentTab = 0, repeatOne = false;
 
@@ -170,7 +194,6 @@ function renderCurrent() {
     topicEl.classList.remove("has-content");
   }
 
-  // Khôi phục hiển thị văn bản thuần túy, không highlight
   document.getElementById("content-text").textContent = item.content;
   document.getElementById("translate-text").textContent = item.translate;
   document.getElementById("dialog-text").textContent = item.dialog;
@@ -179,10 +202,7 @@ function renderCurrent() {
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1);
   
-  if (window.ShadowGame && typeof window.ShadowGame.resetUI === 'function') {
-    window.ShadowGame.resetUI();
-  }
-
+  if (window.ShadowGame) window.ShadowGame.resetUI();
   saveSettings();
   if (window.JapaneseLookup?.render) setTimeout(() => window.JapaneseLookup.render(), 50);
 }

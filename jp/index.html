@@ -6,60 +6,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="../com/assistive.js"></script>
   <script src="../com/TTSClient.js"></script>
+  
+  <script type="module" src="../com/shadow-game.js?v=1"></script>
+
   <script type="module">
     import JapaneseLookup from '../com/japanese-lookup.js?v=1';
-    import { ShadowGame } from '../com/shadow-game.js?v=1';
-
-    // Đăng ký global và tự động khởi tạo module
-    window.ShadowGame = ShadowGame;
-    document.addEventListener('DOMContentLoaded', () => {
-        if (ShadowGame.init) ShadowGame.init();
-    });
   </script>
 
   <style>
     :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
     body { font-family: system-ui, -apple-system; max-width: 800px; margin: auto; padding: 0 6px 20px 6px; background: var(--bg); color: var(--text); }
-    
-    .sticky-header { 
-      position: sticky; top: 0; background: var(--bg); padding-top: 6px; z-index: 1000; 
-      border-bottom: 1px solid rgba(0,0,0,0.05); 
-    }
-    .compact-toolbar { 
-      background: white; padding: 6px 8px; border-radius: 8px; margin-bottom: 6px; 
-      display: flex; justify-content: space-between; align-items: center; gap: 6px; 
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-    }
+    .sticky-header { position: sticky; top: 0; background: var(--bg); padding-top: 6px; z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .compact-toolbar { background: white; padding: 6px 8px; border-radius: 8px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .nav-group, .action-group { display: flex; align-items: center; gap: 4px; }
-
-    #currentTopic { 
-      background: #1e293b; color: white; padding: 4px 10px; border-radius: 4px; 
-      text-align: center; font-weight: 500; margin-bottom: 6px; font-size: 13px; display: none; 
-    }
+    #currentTopic { background: #1e293b; color: white; padding: 4px 10px; border-radius: 4px; text-align: center; font-weight: 500; margin-bottom: 6px; font-size: 13px; display: none; }
     #currentTopic.has-content { display: block; }
-
     .tabs-container { display: flex; gap: 2px; background: var(--bg); }
-    .tab-btn { 
-      flex: 1; padding: 10px 2px; border: none; background: #e2e8f0; cursor: pointer; 
-      border-radius: 6px 6px 0 0; font-size: 12px; font-weight: 600; color: #64748b; 
-      display: flex; align-items: center; justify-content: center; 
-    }
+    .tab-btn { flex: 1; padding: 10px 2px; border: none; background: #e2e8f0; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 12px; font-weight: 600; color: #64748b; display: flex; align-items: center; justify-content: center; }
     .tab-btn.active { background: white; color: var(--primary); border-bottom: 2px solid var(--primary); }
-
-    .display-box { 
-      background: white; min-height: 400px; padding: 15px; border-radius: 0 0 10px 10px; 
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1.8; font-size: 1.2em; 
-    }
+    .display-box { background: white; min-height: 400px; padding: 15px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); line-height: 1.8; font-size: 1.2em; }
     .content-area { display: none; white-space: pre-wrap; color: #000; }
     .content-area.active { display: block; }
     .vi-text { color: #475569; font-style: italic; font-size: 0.95em; }
-
-    button { 
-      padding: 4px 8px; border-radius: 5px; border: 1px solid #cbd5e1; background: #fff; 
-      cursor: pointer; font-size: 12px; min-height: 30px; display: flex; align-items: center; 
-    }
+    button { padding: 4px 8px; border-radius: 5px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 12px; min-height: 30px; display: flex; align-items: center; }
     button.active { background: #dbeafe; border-color: var(--primary); color: var(--primary); font-weight: bold; }
-    
     select { height: 30px; border-radius: 5px; border: 1px solid #cbd5e1; font-size: 11px; background: white; }
     #pageInfo { font-size: 12px; font-weight: 700; min-width: 45px; text-align: center; }
   </style>
@@ -87,9 +57,7 @@
       </select>
     </div>
   </div>
-
   <div id="currentTopic"></div>
-
   <div class="tabs-container">
     <button class="tab-btn" id="tab0" onclick="switchTab(0)">Đoạn văn</button>
     <button class="tab-btn" id="tab1" onclick="switchTab(1)">Nghĩa TV</button>
@@ -155,9 +123,9 @@ function renderCurrent() {
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1);
   
-  // Reset ShadowGame khi đổi trang
-  if (window.ShadowGame?.resetUI) window.ShadowGame.resetUI();
-  
+  // Tự động thông báo cho module reset (Module sẽ lắng nghe biến currentIndex hoặc gọi hàm này)
+  window.dispatchEvent(new CustomEvent('pageChanged'));
+
   saveSettings();
   if (window.JapaneseLookup?.render) setTimeout(() => window.JapaneseLookup.render(), 50);
 }

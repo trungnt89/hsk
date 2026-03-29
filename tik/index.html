@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GAS Drive Auto-Next Player</title>
+    <title>Full-Stack Auto-Next Player</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -111,7 +111,7 @@
 <body>
 
 <div class="container">
-    <h1>Hệ Thống Tự Động Chuyển Video (Sử Dụng GAS)</h1>
+    <h1>Hệ Thống Tự Động Chuyển Video (Full-Stack Tối Ưu)</h1>
     <div class="main-layout">
         <div class="player-section">
             <div class="video-wrapper">
@@ -137,9 +137,6 @@
         console.log(`[FRONTEND][${timestamp}] ${message}`, data);
     }
 
-    // ⚠️ DÁN LINK GAS CỦA BẠN VÀO ĐÂY
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby0kzPC-MjF90ATSyYAvoSNlJRlY0hKNXrlKJbRFb_z_5ZqpYIGHI18In4Eu3yQmmrq_A/exec";
-
     let playlist = [];
     let currentVideoIndex = 0;
     
@@ -149,26 +146,26 @@
     const errorMsg = document.getElementById('error-msg');
     const nextBtn = document.getElementById('next-btn');
 
-    // Gọi GAS để lấy danh sách
-    async function loadPlaylistFromGAS() {
-        logEvent('Đang gửi yêu cầu lấy danh sách tới GAS...');
-        playingTitle.textContent = 'Đang quét thư mục Drive...';
+    // Bước 1: Gọi API Vercel để lấy danh sách (Không truyền tham số id)
+    async function loadPlaylist() {
+        logEvent('Đang gửi yêu cầu lấy danh sách tới Backend Vercel...');
+        playingTitle.textContent = 'Đang nạp playlist...';
         
         try {
-            const response = await fetch(GAS_API_URL);
+            const response = await fetch('/api/video'); // Gọi tới file video.js đã gộp
             const result = await response.json();
             
             if (result.success && result.data.length > 0) {
                 playlist = result.data;
-                logEvent(`Đã lấy thành công ${playlist.length} video.`);
+                logEvent(`Đã nạp thành công ${playlist.length} video.`);
                 initPlaylist();
                 playVideoAtIndex(0);
             } else {
-                throw new Error(result.message || 'Thư mục trống hoặc lỗi kết nối.');
+                throw new Error(result.message || 'Thư mục trống.');
             }
         } catch (error) {
             logEvent('LỖI không nạp được danh sách:', error.message);
-            errorMsg.textContent = 'Không thể kết nối tới Google Apps Script. Hãy kiểm tra lại URL hoặc phân quyền GAS.';
+            errorMsg.textContent = 'Lỗi kết nối từ Backend!';
             errorMsg.style.display = 'block';
             playingTitle.textContent = 'Lỗi kết nối!';
         }
@@ -187,10 +184,7 @@
 
     function playVideoAtIndex(index) {
         if (playlist.length === 0) return;
-        if (index >= playlist.length) { 
-            logEvent('Hết danh sách, quay lại đầu.'); 
-            index = 0; 
-        }
+        if (index >= playlist.length) { index = 0; }
         
         currentVideoIndex = index;
         const videoData = playlist[index];
@@ -200,9 +194,9 @@
         initPlaylist();
         playingTitle.textContent = `Đang phát: ${videoData.title}`;
         
-        // Nạp thẳng link bypass đã được GAS xử lý sẵn
-        player.src = videoData.src;
-        player.play().catch(e => logEvent('Tự động phát bị chặn (Cần click tương tác):', e));
+        // Gọi thẳng vào Backend Vercel và truyền kèm tham số ?id=...
+        player.src = `/api/video?id=${videoData.id}`;
+        player.play().catch(e => logEvent('Tự động phát bị chặn (Cần click):', e));
     }
 
     // Sự kiện TỰ ĐỘNG CHUYỂN BÀI khi hết video
@@ -218,13 +212,12 @@
     });
 
     player.onerror = () => {
-        logEvent('LỖI nạp luồng video từ Google Drive.');
-        errorMsg.textContent = 'Lỗi nạp video! Vui lòng kiểm tra quyền chia sẻ công khai của file trên Google Drive.';
+        logEvent('LỖI nạp luồng video.');
+        errorMsg.textContent = 'Lỗi nạp video! Vui lòng kiểm tra quyền file trên Drive.';
         errorMsg.style.display = 'block';
     };
 
-    // Khởi chạy
-    loadPlaylistFromGAS();
+    loadPlaylist();
 </script>
 </body>
 </html>

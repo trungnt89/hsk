@@ -2,173 +2,229 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TikTok Shuffle - iPhone Optimized</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAS Drive Auto-Next Player</title>
     <style>
-        :root { --primary-color: #fe2c55; --bg-dark: #000; }
-        
-        /* Cấu trúc cho phép cuộn trên iOS */
-        html, body { 
-            margin: 0; padding: 0; 
-            background-color: var(--bg-dark); 
-            color: #fff; font-family: -apple-system, sans-serif;
-            height: 100%; overflow-x: hidden;
+        :root {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #00ff88;
+            --error-color: #cf6679;
         }
-
-        /* Lớp phủ khởi động */
-        #start-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color); 
+            color: var(--text-color);
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
         }
-        .start-btn {
-            background: var(--primary-color); border: none; color: white;
-            padding: 18px 45px; border-radius: 35px; font-size: 20px; font-weight: bold;
+        .container { 
+            width: 90%; 
+            max-width: 900px; 
+            background-color: var(--container-bg); 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
         }
-
-        /* Container chính có chiều cao lớn để tạo cảm giác cuộn */
-        .scroll-container {
-            height: 200vh; /* Tạo vùng trống để vuốt lên xuống */
-            width: 100%;
-            position: relative;
+        h1 { 
+            text-align: center; 
+            font-size: 1.4rem; 
+            margin-top: 0; 
+            color: var(--accent-color); 
         }
-
-        /* Khung xem video cố định ở giữa màn hình */
-        .fixed-viewer {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%; /* Để lại 10% lề cho việc vuốt */
-            height: 75vh;
-            max-width: 400px;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .main-layout { 
+            display: flex; 
+            gap: 15px; 
+            flex-direction: column; 
         }
-
-        #video-display-area {
-            width: 100%; height: 100%;
-            background: #111; border-radius: 15px;
-            overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        @media (min-width: 600px) { 
+            .main-layout { flex-direction: row; } 
         }
-
-        iframe { width: 100%; height: 100%; border: none; }
-
-        /* Nút bấm điều khiển */
-        .controls {
-            position: fixed; bottom: 30px; 
-            display: flex; gap: 20px; z-index: 20;
+        .player-section { flex: 2; }
+        .playlist-section { 
+            flex: 1; 
+            background-color: #2c2c2c; 
+            padding: 10px; 
+            border-radius: 8px; 
+            max-height: 400px; 
+            overflow-y: auto; 
         }
-        .nav-btn {
-            background: rgba(50, 50, 50, 0.9); color: white; border: 1px solid #444;
-            padding: 15px 30px; border-radius: 10px; font-weight: bold;
-            -webkit-tap-highlight-color: transparent;
+        .video-wrapper { 
+            position: relative; 
+            padding-bottom: 56.25%; 
+            height: 0; 
+            background-color: #000; 
+            border-radius: 8px; 
+            overflow: hidden; 
         }
-        .nav-btn:active { background: var(--primary-color); }
-
-        .info {
-            position: fixed; top: 20px; width: 100%;
-            text-align: center; font-size: 12px; color: #666; z-index: 20;
+        video { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            outline: none; 
         }
-
-        /* Vùng chỉ dẫn vuốt cho iPhone */
-        .swipe-zone {
-            position: fixed; top: 0; width: 5%; height: 100%; z-index: 5;
-            background: rgba(255,255,255,0.02);
+        .playlist-item { 
+            padding: 10px; 
+            background-color: #1e1e1e; 
+            margin-bottom: 8px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 13px; 
+            transition: background 0.2s; 
+            border: 1px solid transparent; 
+        }
+        .playlist-item:hover { background-color: #3a3a3a; }
+        .playlist-item.active { 
+            border-color: var(--accent-color); 
+            background-color: #25382c; 
+        }
+        .controls { 
+            margin-top: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        button { 
+            padding: 10px 15px; 
+            border-radius: 6px; 
+            border: none; 
+            background-color: var(--accent-color); 
+            color: #000; 
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+        button:hover { opacity: 0.9; }
+        #error-msg { 
+            color: var(--error-color); 
+            font-size: 13px; 
+            margin-top: 10px; 
+            display: none; 
         }
     </style>
 </head>
 <body>
 
-    <div id="start-overlay">
-        <button class="start-btn" onclick="startApp()">BẤT ĐẦU XEM</button>
-        <p style="color: #444; margin-top: 15px;">Xáo trộn ngẫu nhiên 1683 video</p>
-    </div>
-
-    <div class="swipe-zone" style="left: 0;"></div>
-    <div class="swipe-zone" style="right: 0;"></div>
-
-    <div class="scroll-container">
-        <div class="info" id="video-info">Đang chuẩn bị...</div>
-
-        <div class="fixed-viewer">
-            <div id="video-display-area">
-                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#333;">
-                    Chờ nạp...
-                </div>
+<div class="container">
+    <h1>Hệ Thống Tự Động Chuyển Video (Sử Dụng GAS)</h1>
+    <div class="main-layout">
+        <div class="player-section">
+            <div class="video-wrapper">
+                <video id="main-player" controls autoplay muted preload="auto">Trình duyệt không hỗ trợ thẻ video.</video>
             </div>
+            <div class="controls">
+                <span id="playing-title" style="font-size:14px; color: #aaa;">Đang nạp dữ liệu...</span>
+                <button id="next-btn">Bài Tiếp Theo ⏭️</button>
+            </div>
+            <div id="error-msg"></div>
         </div>
-
-        <div class="controls" style="left: 50%; transform: translateX(-50%);">
-            <button class="nav-btn" onclick="changeVideo(-1)">TRƯỚC</button>
-            <button class="nav-btn" style="background: var(--primary-color);" onclick="changeVideo(1)">SAU</button>
+        <div class="playlist-section">
+            <h3 style="margin-top:0; font-size:14px; color: var(--accent-color);">Danh sách phát</h3>
+            <div id="playlist-container"></div>
         </div>
     </div>
+</div>
 
-    <script>
-        let allVideos = [];
-        let currentIndex = 0;
+<script>
+    // Hàm ghi log Frontend đúng quy chuẩn yêu cầu
+    function logEvent(message, data = '') {
+        const timestamp = new Date().toISOString();
+        console.log(`[FRONTEND][${timestamp}] ${message}`, data);
+    }
 
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+    // ⚠️ DÁN LINK GAS CỦA BẠN VÀO ĐÂY
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby0kzPC-MjF90ATSyYAvoSNlJRlY0hKNXrlKJbRFb_z_5ZqpYIGHI18In4Eu3yQmmrq_A/exec";
+
+    let playlist = [];
+    let currentVideoIndex = 0;
+    
+    const player = document.getElementById('main-player');
+    const playlistContainer = document.getElementById('playlist-container');
+    const playingTitle = document.getElementById('playing-title');
+    const errorMsg = document.getElementById('error-msg');
+    const nextBtn = document.getElementById('next-btn');
+
+    // Gọi GAS để lấy danh sách
+    async function loadPlaylistFromGAS() {
+        logEvent('Đang gửi yêu cầu lấy danh sách tới GAS...');
+        playingTitle.textContent = 'Đang quét thư mục Drive...';
+        
+        try {
+            const response = await fetch(GAS_API_URL);
+            const result = await response.json();
+            
+            if (result.success && result.data.length > 0) {
+                playlist = result.data;
+                logEvent(`Đã lấy thành công ${playlist.length} video.`);
+                initPlaylist();
+                playVideoAtIndex(0);
+            } else {
+                throw new Error(result.message || 'Thư mục trống hoặc lỗi kết nối.');
             }
-            return array;
+        } catch (error) {
+            logEvent('LỖI không nạp được danh sách:', error.message);
+            errorMsg.textContent = 'Không thể kết nối tới Google Apps Script. Hãy kiểm tra lại URL hoặc phân quyền GAS.';
+            errorMsg.style.display = 'block';
+            playingTitle.textContent = 'Lỗi kết nối!';
         }
+    }
 
-        async function init() {
-            try {
-                const res = await fetch('./list.txt');
-                const text = await res.text();
-                const entries = text.trim().split(/\n\s*\n/);
-                
-                let raw = entries.map(entry => {
-                    const urlMatch = entry.match(/Liên kết: (.*)/);
-                    const dateMatch = entry.match(/Ngày: (.*)/);
-                    return { 
-                        id: urlMatch ? urlMatch[1].trim().split('/').filter(Boolean).pop() : null,
-                        date: dateMatch ? dateMatch[1] : ''
-                    };
-                }).filter(v => v.id);
+    function initPlaylist() {
+        playlistContainer.innerHTML = '';
+        playlist.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = `playlist-item ${index === currentVideoIndex ? 'active' : ''}`;
+            div.textContent = `${index + 1}. ${item.title}`;
+            div.onclick = () => playVideoAtIndex(index);
+            playlistContainer.appendChild(div);
+        });
+    }
 
-                allVideos = shuffle(raw);
-                document.getElementById('video-info').innerText = `Đã trộn xong ${allVideos.length} video.`;
-            } catch (e) { alert("Lỗi tải danh sách!"); }
+    function playVideoAtIndex(index) {
+        if (playlist.length === 0) return;
+        if (index >= playlist.length) { 
+            logEvent('Hết danh sách, quay lại đầu.'); 
+            index = 0; 
         }
+        
+        currentVideoIndex = index;
+        const videoData = playlist[index];
+        errorMsg.style.display = 'none';
+        
+        logEvent(`Đang nạp video:`, videoData.title);
+        initPlaylist();
+        playingTitle.textContent = `Đang phát: ${videoData.title}`;
+        
+        // Nạp thẳng link bypass đã được GAS xử lý sẵn
+        player.src = videoData.src;
+        player.play().catch(e => logEvent('Tự động phát bị chặn (Cần click tương tác):', e));
+    }
 
-        function startApp() {
-            document.getElementById('start-overlay').style.display = 'none';
-            loadVideo(0);
-        }
+    // Sự kiện TỰ ĐỘNG CHUYỂN BÀI khi hết video
+    player.onended = () => {
+        logEvent('Hết video, tự động chuyển bài.');
+        playVideoAtIndex(currentVideoIndex + 1);
+    };
 
-        function changeVideo(step) {
-            let next = currentIndex + step;
-            if (next >= 0 && next < allVideos.length) loadVideo(next);
-        }
+    // Sự kiện nút Bấm Next thủ công
+    nextBtn.addEventListener('click', () => {
+        logEvent('Bấm Next thủ công.');
+        playVideoAtIndex(currentVideoIndex + 1);
+    });
 
-        function loadVideo(index) {
-            const area = document.getElementById('video-display-area');
-            // Hủy video cũ để ngắt tiếng hoàn toàn
-            area.innerHTML = ""; 
-            
-            currentIndex = index;
-            const v = allVideos[index];
+    player.onerror = () => {
+        logEvent('LỖI nạp luồng video từ Google Drive.');
+        errorMsg.textContent = 'Lỗi nạp video! Vui lòng kiểm tra quyền chia sẻ công khai của file trên Google Drive.';
+        errorMsg.style.display = 'block';
+    };
 
-            const ifrm = document.createElement('iframe');
-            // Cấu hình tối ưu cho iPhone: autoplay=1 và mute=0
-            ifrm.src = `https://www.tiktok.com/embed/v2/${v.id}?autoplay=1&mute=0`;
-            ifrm.allow = "autoplay; fullscreen";
-            
-            area.appendChild(ifrm);
-            document.getElementById('video-info').innerText = `Video ${index + 1} / ${allVideos.length} (${v.date})`;
-            
-            // Cuộn nhẹ trang về đầu để reset cảm giác vuốt trên iPhone
-            window.scrollTo(0, 0);
-        }
-
-        window.onload = init;
-    </script>
+    // Khởi chạy
+    loadPlaylistFromGAS();
+</script>
 </body>
 </html>

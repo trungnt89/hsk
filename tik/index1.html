@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TikTok Shuffle - iPhone Optimized</title>
+    <style>
+        :root { --primary-color: #fe2c55; --bg-dark: #000; }
+        
+        /* Cấu trúc cho phép cuộn trên iOS */
+        html, body { 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-dark); 
+            color: #fff; font-family: -apple-system, sans-serif;
+            height: 100%; overflow-x: hidden;
+        }
+
+        /* Lớp phủ khởi động */
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .start-btn {
+            background: var(--primary-color); border: none; color: white;
+            padding: 18px 45px; border-radius: 35px; font-size: 20px; font-weight: bold;
+        }
+
+        /* Container chính có chiều cao lớn để tạo cảm giác cuộn */
+        .scroll-container {
+            height: 200vh; /* Tạo vùng trống để vuốt lên xuống */
+            width: 100%;
+            position: relative;
+        }
+
+        /* Khung xem video cố định ở giữa màn hình */
+        .fixed-viewer {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%; /* Để lại 10% lề cho việc vuốt */
+            height: 75vh;
+            max-width: 400px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #video-display-area {
+            width: 100%; height: 100%;
+            background: #111; border-radius: 15px;
+            overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* Nút bấm điều khiển */
+        .controls {
+            position: fixed; bottom: 30px; 
+            display: flex; gap: 20px; z-index: 20;
+        }
+        .nav-btn {
+            background: rgba(50, 50, 50, 0.9); color: white; border: 1px solid #444;
+            padding: 15px 30px; border-radius: 10px; font-weight: bold;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .nav-btn:active { background: var(--primary-color); }
+
+        .info {
+            position: fixed; top: 20px; width: 100%;
+            text-align: center; font-size: 12px; color: #666; z-index: 20;
+        }
+
+        /* Vùng chỉ dẫn vuốt cho iPhone */
+        .swipe-zone {
+            position: fixed; top: 0; width: 5%; height: 100%; z-index: 5;
+            background: rgba(255,255,255,0.02);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <button class="start-btn" onclick="startApp()">BẤT ĐẦU XEM</button>
+        <p style="color: #444; margin-top: 15px;">Xáo trộn ngẫu nhiên 1683 video</p>
+    </div>
+
+    <div class="swipe-zone" style="left: 0;"></div>
+    <div class="swipe-zone" style="right: 0;"></div>
+
+    <div class="scroll-container">
+        <div class="info" id="video-info">Đang chuẩn bị...</div>
+
+        <div class="fixed-viewer">
+            <div id="video-display-area">
+                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#333;">
+                    Chờ nạp...
+                </div>
+            </div>
+        </div>
+
+        <div class="controls" style="left: 50%; transform: translateX(-50%);">
+            <button class="nav-btn" onclick="changeVideo(-1)">TRƯỚC</button>
+            <button class="nav-btn" style="background: var(--primary-color);" onclick="changeVideo(1)">SAU</button>
+        </div>
+    </div>
+
+    <script>
+        let allVideos = [];
+        let currentIndex = 0;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        async function init() {
+            try {
+                const res = await fetch('./list.txt');
+                const text = await res.text();
+                const entries = text.trim().split(/\n\s*\n/);
+                
+                let raw = entries.map(entry => {
+                    const urlMatch = entry.match(/Liên kết: (.*)/);
+                    const dateMatch = entry.match(/Ngày: (.*)/);
+                    return { 
+                        id: urlMatch ? urlMatch[1].trim().split('/').filter(Boolean).pop() : null,
+                        date: dateMatch ? dateMatch[1] : ''
+                    };
+                }).filter(v => v.id);
+
+                allVideos = shuffle(raw);
+                document.getElementById('video-info').innerText = `Đã trộn xong ${allVideos.length} video.`;
+            } catch (e) { alert("Lỗi tải danh sách!"); }
+        }
+
+        function startApp() {
+            document.getElementById('start-overlay').style.display = 'none';
+            loadVideo(0);
+        }
+
+        function changeVideo(step) {
+            let next = currentIndex + step;
+            if (next >= 0 && next < allVideos.length) loadVideo(next);
+        }
+
+        function loadVideo(index) {
+            const area = document.getElementById('video-display-area');
+            // Hủy video cũ để ngắt tiếng hoàn toàn
+            area.innerHTML = ""; 
+            
+            currentIndex = index;
+            const v = allVideos[index];
+
+            const ifrm = document.createElement('iframe');
+            // Cấu hình tối ưu cho iPhone: autoplay=1 và mute=0
+            ifrm.src = `https://www.tiktok.com/embed/v2/${v.id}?autoplay=1&mute=0`;
+            ifrm.allow = "autoplay; fullscreen";
+            
+            area.appendChild(ifrm);
+            document.getElementById('video-info').innerText = `Video ${index + 1} / ${allVideos.length} (${v.date})`;
+            
+            // Cuộn nhẹ trang về đầu để reset cảm giác vuốt trên iPhone
+            window.scrollTo(0, 0);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

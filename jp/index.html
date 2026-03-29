@@ -66,16 +66,16 @@
   </div>
   <div id="currentTopic"></div>
   <div class="tabs-container">
-    <button class="tab-btn" id="tab0" onclick="switchTab(0)">Đoạn văn</button>
+    <button class="tab-btn" id="tab0" onclick="switchTab(0)">Hội thoại</button>
     <button class="tab-btn" id="tab1" onclick="switchTab(1)">Nghĩa TV</button>
-    <button class="tab-btn" id="tab2" onclick="switchTab(2)">Hội thoại</button>
+    <button class="tab-btn" id="tab2" onclick="switchTab(2)">Đoạn văn</button>
   </div>
 </div>
 
 <div class="display-box">
-  <div id="content-text" class="content-area"></div>
-  <div id="translate-text" class="content-area vi-text"></div>
   <div id="dialog-text" class="content-area"></div>
+  <div id="translate-text" class="content-area vi-text"></div>
+  <div id="content-text" class="content-area"></div>
 </div>
 
 <script>
@@ -123,16 +123,14 @@ function renderCurrent() {
     topicEl.classList.remove("has-content");
   }
 
-  // Render HTML thay vì textContent để Module có thể tìm thấy thẻ h3
-  document.getElementById("content-text").innerHTML = item.content; 
-  document.getElementById("translate-text").textContent = item.translate;
   document.getElementById("dialog-text").innerHTML = item.dialog;
+  document.getElementById("translate-text").textContent = item.translate;
+  document.getElementById("content-text").innerHTML = item.content; 
   
   document.getElementById("pageInfo").textContent = `${currentIndex + 1}/${texts.length}`;
   document.getElementById("btnPrev").disabled = (currentIndex <= 0);
   document.getElementById("btnNext").disabled = (currentIndex >= texts.length - 1);
   
-  // Phát sự kiện thông báo dữ liệu đã render xong
   window.dispatchEvent(new CustomEvent('contentRendered'));
   
   saveSettings();
@@ -144,7 +142,6 @@ function switchTab(index, shouldRender = true) {
   document.querySelectorAll('.tab-btn').forEach((t, i) => t.classList.toggle('active', i === index));
   document.querySelectorAll('.content-area').forEach((a, i) => a.classList.toggle('active', i === index));
   
-  // Khi chuyển tab cũng cần thông báo để module gắn lại anchor nếu cần
   window.dispatchEvent(new CustomEvent('contentRendered'));
 
   if (shouldRender) {

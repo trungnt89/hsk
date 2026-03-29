@@ -7,11 +7,8 @@ function logBackend(message, data = '') {
 export default async function handler(req, res) {
     const { id } = req.query;
     
-    // ----------------------------------------------------------------
     // TRƯỜNG HỢP 1: KHÔNG TRUYỀN ID -> THỰC HIỆN LẤY DANH SÁCH PLAYLIST
-    // ----------------------------------------------------------------
     if (!id) {
-        // ⚠️ DÁN LINK GOOGLE APPS SCRIPT CỦA BẠN VÀO ĐÂY
         const GAS_URL = "https://script.google.com/macros/s/AKfycby0kzPC-MjF90ATSyYAvoSNlJRlY0hKNXrlKJbRFb_z_5ZqpYIGHI18In4Eu3yQmmrq_A/exec";
 
         logBackend('Đang gọi sang GAS để lấy danh sách file...');
@@ -28,9 +25,7 @@ export default async function handler(req, res) {
         }
     }
 
-    // ----------------------------------------------------------------
-    // TRƯỜNG HỢP 2: CÓ TRUYỀN ID -> THỰC HIỆN XỬ LÝ STREAM VIDEO
-    // ----------------------------------------------------------------
+    // TRƯỜP HỢP 2: CÓ TRUYỀN ID -> THỰC HIỆN XỬ LÝ STREAM VIDEO
     logBackend('Đang xử lý tạo link stream cho ID:', id);
 
     try {

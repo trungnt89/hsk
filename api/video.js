@@ -9,8 +9,7 @@ export default async function handler(req, res) {
     
     // TRƯỜNG HỢP 1: KHÔNG TRUYỀN ID -> THỰC HIỆN LẤY DANH SÁCH PLAYLIST
     if (!id) {
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby0kzPC-MjF90ATSyYAvoSNlJRlY0hKNXrlKJbRFb_z_5ZqpYIGHI18In4Eu3yQmmrq_A/exec";
-
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxCz3Ubtqok3fm0VYOJtwnvO5a39gKRPKEi2WvCM_bzV8Ami6b2c2IFbwFIF9EDwcxGsQ/exec";
         logBackend('Đang gọi sang GAS để lấy danh sách file...');
 
         try {

@@ -131,7 +131,6 @@
 </div>
 
 <script>
-    // Hàm ghi log Frontend đúng quy chuẩn yêu cầu
     function logEvent(message, data = '') {
         const timestamp = new Date().toISOString();
         console.log(`[FRONTEND][${timestamp}] ${message}`, data);
@@ -146,13 +145,12 @@
     const errorMsg = document.getElementById('error-msg');
     const nextBtn = document.getElementById('next-btn');
 
-    // Bước 1: Gọi API Vercel để lấy danh sách (Không truyền tham số id)
     async function loadPlaylist() {
         logEvent('Đang gửi yêu cầu lấy danh sách tới Backend Vercel...');
         playingTitle.textContent = 'Đang nạp playlist...';
         
         try {
-            const response = await fetch('/api/video'); // Gọi tới file video.js đã gộp
+            const response = await fetch('/api/video');
             const result = await response.json();
             
             if (result.success && result.data.length > 0) {
@@ -194,7 +192,6 @@
         initPlaylist();
         playingTitle.textContent = `Đang phát: ${videoData.title}`;
         
-        // Gọi thẳng vào Backend Vercel và truyền kèm tham số ?id=...
         player.src = `/api/video?id=${videoData.id}`;
         player.play().catch(e => logEvent('Tự động phát bị chặn (Cần click):', e));
     }

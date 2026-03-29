@@ -192,7 +192,11 @@
         initPlaylist();
         playingTitle.textContent = `Đang phát: ${videoData.title}`;
         
-        player.src = `/api/video?id=${videoData.id}`;
+        // FIX LỖI: Ép kiểu ID về dạng chuỗi thuần túy để không bị rớt ký tự
+        const safeId = String(videoData.id).trim();
+        logEvent(`Đang nạp file với ID an toàn:`, safeId);
+
+        player.src = `/api/video?id=${safeId}`;
         player.play().catch(e => logEvent('Tự động phát bị chặn (Cần click):', e));
     }
 

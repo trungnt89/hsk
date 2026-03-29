@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     const { id } = req.query;
     
     // Thay URL GAS của bạn vào đây
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCz3Ubtqok3fm0VYOJtwnvO5a39gKRPKEi2WvCM_bzV8Ami6b2c2IFbwFIF9EDwcxGsQ/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycby0kzPC-MjF90ATSyYAvoSNlJRlY0hKNXrlKJbRFb_z_5ZqpYIGHI18In4Eu3yQmmrq_A/exec';
 
     // TRƯỜNG HỢP 1: KHÔNG TRUYỀN ID -> THỰC HIỆN LẤY DANH SÁCH PLAYLIST
     if (!id) {

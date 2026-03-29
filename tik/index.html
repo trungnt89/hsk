@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Full-Stack Auto-Next Player</title>
+    <title>Auto-Next Player (Thẻ Video Chuẩn)</title>
     <style>
         :root {
             --bg-color: #121212;
             --container-bg: #1e1e1e;
             --text-color: #e0e0e0;
             --accent-color: #00ff88;
-            --error-color: #cf6679;
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -28,22 +27,10 @@
             background-color: var(--container-bg); 
             padding: 20px; 
             border-radius: 12px; 
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
         }
-        h1 { 
-            text-align: center; 
-            font-size: 1.4rem; 
-            margin-top: 0; 
-            color: var(--accent-color); 
-        }
-        .main-layout { 
-            display: flex; 
-            gap: 15px; 
-            flex-direction: column; 
-        }
-        @media (min-width: 600px) { 
-            .main-layout { flex-direction: row; } 
-        }
+        h1 { text-align: center; font-size: 1.4rem; color: var(--accent-color); }
+        .main-layout { display: flex; gap: 15px; flex-direction: column; }
+        @media (min-width: 600px) { .main-layout { flex-direction: row; } }
         .player-section { flex: 2; }
         .playlist-section { 
             flex: 1; 
@@ -76,12 +63,9 @@
             border-radius: 6px; 
             cursor: pointer; 
             font-size: 13px; 
-            transition: background 0.2s; 
-            border: 1px solid transparent; 
         }
-        .playlist-item:hover { background-color: #3a3a3a; }
         .playlist-item.active { 
-            border-color: var(--accent-color); 
+            border: 1px solid var(--accent-color); 
             background-color: #25382c; 
         }
         .controls { 
@@ -99,19 +83,12 @@
             font-weight: bold; 
             cursor: pointer; 
         }
-        button:hover { opacity: 0.9; }
-        #error-msg { 
-            color: var(--error-color); 
-            font-size: 13px; 
-            margin-top: 10px; 
-            display: none; 
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Hệ Thống Tự Động Chuyển Video (Full-Stack Tối Ưu)</h1>
+    <h1>Hệ Thống Tự Động Chuyển Video (Direct Stream)</h1>
     <div class="main-layout">
         <div class="player-section">
             <div class="video-wrapper">
@@ -121,7 +98,6 @@
                 <span id="playing-title" style="font-size:14px; color: #aaa;">Đang nạp dữ liệu...</span>
                 <button id="next-btn">Bài Tiếp Theo ⏭️</button>
             </div>
-            <div id="error-msg"></div>
         </div>
         <div class="playlist-section">
             <h3 style="margin-top:0; font-size:14px; color: var(--accent-color);">Danh sách phát</h3>
@@ -131,40 +107,26 @@
 </div>
 
 <script>
-    function logEvent(message, data = '') {
-        const timestamp = new Date().toISOString();
-        console.log(`[FRONTEND][${timestamp}] ${message}`, data);
-    }
-
     let playlist = [];
     let currentVideoIndex = 0;
     
     const player = document.getElementById('main-player');
     const playlistContainer = document.getElementById('playlist-container');
     const playingTitle = document.getElementById('playing-title');
-    const errorMsg = document.getElementById('error-msg');
     const nextBtn = document.getElementById('next-btn');
 
     async function loadPlaylist() {
-        logEvent('Đang gửi yêu cầu lấy danh sách tới Backend Vercel...');
         playingTitle.textContent = 'Đang nạp playlist...';
-        
         try {
             const response = await fetch('/api/video');
             const result = await response.json();
             
             if (result.success && result.data.length > 0) {
                 playlist = result.data;
-                logEvent(`Đã nạp thành công ${playlist.length} video.`);
                 initPlaylist();
                 playVideoAtIndex(0);
-            } else {
-                throw new Error(result.message || 'Thư mục trống.');
             }
         } catch (error) {
-            logEvent('LỖI không nạp được danh sách:', error.message);
-            errorMsg.textContent = 'Lỗi kết nối từ Backend!';
-            errorMsg.style.display = 'block';
             playingTitle.textContent = 'Lỗi kết nối!';
         }
     }
@@ -186,37 +148,24 @@
         
         currentVideoIndex = index;
         const videoData = playlist[index];
-        errorMsg.style.display = 'none';
         
-        logEvent(`Đang nạp video:`, videoData.title);
         initPlaylist();
         playingTitle.textContent = `Đang phát: ${videoData.title}`;
         
-        // FIX LỖI: Ép kiểu ID về dạng chuỗi thuần túy để không bị rớt ký tự
         const safeId = String(videoData.id).trim();
-        logEvent(`Đang nạp file với ID an toàn:`, safeId);
-
         player.src = `/api/video?id=${safeId}`;
-        player.play().catch(e => logEvent('Tự động phát bị chặn (Cần click):', e));
+        player.play().catch(e => console.log('Tự động phát bị chặn (Cần click):', e));
     }
 
-    // Sự kiện TỰ ĐỘNG CHUYỂN BÀI khi hết video
+    // 🌟 ĐÂY LÀ TÍNH NĂNG BẠN CẦN: Tự động chuyển bài khi hết video
     player.onended = () => {
-        logEvent('Hết video, tự động chuyển bài.');
+        console.log('Hết video, tự động chuyển bài.');
         playVideoAtIndex(currentVideoIndex + 1);
     };
 
-    // Sự kiện nút Bấm Next thủ công
     nextBtn.addEventListener('click', () => {
-        logEvent('Bấm Next thủ công.');
         playVideoAtIndex(currentVideoIndex + 1);
     });
-
-    player.onerror = () => {
-        logEvent('LỖI nạp luồng video.');
-        errorMsg.textContent = 'Lỗi nạp video! Vui lòng kiểm tra quyền file trên Drive.';
-        errorMsg.style.display = 'block';
-    };
 
     loadPlaylist();
 </script>

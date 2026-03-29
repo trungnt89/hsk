@@ -192,6 +192,7 @@
         initPlaylist();
         playingTitle.textContent = `Đang phát: ${videoData.title}`;
         
+        // FIX LỖI: Ép kiểu ID về dạng chuỗi thuần túy để không bị rớt ký tự
         const safeId = String(videoData.id).trim();
         logEvent(`Đang nạp file với ID an toàn:`, safeId);
 
@@ -199,11 +200,13 @@
         player.play().catch(e => logEvent('Tự động phát bị chặn (Cần click):', e));
     }
 
+    // Sự kiện TỰ ĐỘNG CHUYỂN BÀI khi hết video
     player.onended = () => {
         logEvent('Hết video, tự động chuyển bài.');
         playVideoAtIndex(currentVideoIndex + 1);
     };
 
+    // Sự kiện nút Bấm Next thủ công
     nextBtn.addEventListener('click', () => {
         logEvent('Bấm Next thủ công.');
         playVideoAtIndex(currentVideoIndex + 1);

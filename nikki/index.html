@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhật Ký Của Tôi</title>
+    <style>
+        /* === RESET & BASE STYLES === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --bg-color: #f5f7fb;
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --text-color: #2d3436;
+            --text-light: #636e72;
+            --card-bg: #ffffff;
+            --danger-color: #ff7675;
+            --edit-color: #0984e3;
+            --success-color: #2ecc71;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* === HEADER === */
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* === MAIN CONTENT AREA === */
+        main {
+            flex: 1;
+            overflow: hidden; 
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Thẻ viết nhật ký mới */
+        .write-card {
+            background: var(--card-bg);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            flex-shrink: 0; 
+        }
+
+        .write-card textarea {
+            width: 100%;
+            border: 1px solid #dfe6e9;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.9rem;
+            resize: none;
+            height: 100px; 
+            outline: none;
+            transition: border 0.3s ease;
+        }
+
+        .write-card textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        .action-area {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 5px;
+            gap: 8px;
+        }
+
+        .btn-save {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(108, 92, 231, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .btn-save:active {
+            transform: scale(0.95);
+        }
+
+        .btn-cancel {
+            background-color: #b2bec3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: none; 
+        }
+
+        /* Danh sách các bài nhật ký cũ */
+        .diary-list {
+            flex: 1;
+            overflow-y: auto; 
+            padding-bottom: 60px; 
+        }
+
+        .diary-list h2 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            color: var(--text-light);
+            position: sticky; 
+            top: 0;
+            background: var(--bg-color);
+            padding-bottom: 5px;
+            z-index: 5;
+        }
+
+        .diary-item {
+            background: var(--card-bg);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            margin-bottom: 8px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .diary-date {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .diary-content {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            white-space: pre-wrap; 
+        }
+
+        .actions-right {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .item-action-btn {
+            background: none;
+            border: none;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .edit-btn { color: var(--edit-color); }
+        .delete-btn { color: var(--danger-color); }
+
+        /* === TOAST NOTIFICATION === */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.loading { background: var(--primary-color); }
+        .toast.success { background: var(--success-color); }
+
+        /* === LOCK INTERACTION === */
+        .loading-lock { pointer-events: none; opacity: 0.7; }
+        .loading-lock .actions-right { display: none !important; } /* Ẩn nút sửa/xóa khi đang lưu */
+
+        /* === BOTTOM NAVIGATION === */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 50px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            z-index: 10;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-light);
+            font-size: 0.75rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Nhật Ký Của Tôi</h1>
+    </header>
+
+    <main>
+        <div class="write-card">
+            <textarea id="diaryInput" placeholder="Hôm nay của bạn thế nào?..."></textarea>
+            <div class="action-area">
+                <button id="cancelBtn" class="btn-cancel">Hủy</button>
+                <button id="saveBtn" class="btn-save">Lưu lại</button>
+            </div>
+        </div>
+
+        <div class="diary-list">
+            <h2>Các dòng nhật ký</h2>
+            <div id="diaryContainer">
+                <p style="color: #636e72; text-align: center; margin-top: 10px; font-size: 0.85rem;">Đang tải dữ liệu...</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast">Đang lưu...</div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active">
+            <div class="nav-icon">📝</div>
+            <span>Nhật ký</span>
+        </div>
+        <div class="nav-item" onclick="alert('Tính năng đang phát triển!')">
+            <div class="nav-icon">📅</div>
+            <span>Lịch</span>
+        </div>
+        <div class="nav-item" onclick="alert('Tính năng đang phát triển!')">
+            <div class="nav-icon">⚙️</div>
+            <span>Cài đặt</span>
+        </div>
+    </div>
+
+    <script>
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
+
+        let editingId = null; 
+        let currentDiaries = []; // Biến cục bộ giữ danh sách hiện tại để render nhanh
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[LOG] Khởi tạo ứng dụng nhật ký kết nối GAS.');
+            loadDiaries();
+
+            // Đăng ký sự kiện click cho các nút thay vì dùng onclick ở HTML
+            document.getElementById('saveBtn').addEventListener('click', handleSubmit);
+            document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
+
+            const diaryInput = document.getElementById('diaryInput');
+            diaryInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    console.log('[LOG] Nhấn Enter thuần túy - mặc định tự do xuống dòng.');
+                }
+            });
+        });
+
+        function handleSubmit() {
+            if (editingId) {
+                updateDiary();
+            } else {
+                saveDiary();
+            }
+        }
+
+        // Tạo mới nhật ký
+        function saveDiary() {
+            const textarea = document.getElementById('diaryInput');
+            const content = textarea.value.trim();
+            if (!content) return;
+
+            const now = new Date();
+            const dateStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} - ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+            const id = Date.now().toString();
+
+            const payload = { action: 'create', id: id, date: dateStr, text: content };
+
+            // Render ảo lên giao diện ngay lập tức để không phải chờ
+            const newEntry = { id: id, date: dateStr, text: content, isFake: true };
+            currentDiaries.unshift(newEntry);
+            renderList(currentDiaries);
+
+            // Xóa rỗng ô nhập liệu
+            textarea.value = '';
+
+            // Gọi AJAX ngầm phía dưới
+            callGAS(payload, 'Thêm mới', id);
+        }
+
+        // Vào trạng thái sửa bài viết
+        function startEdit(id, text) {
+            console.log(`[LOG] Bắt đầu sửa bài viết ID: ${id}`);
+            editingId = id;
+            document.getElementById('diaryInput').value = text;
+            document.getElementById('diaryInput').focus();
+            document.getElementById('saveBtn').innerText = 'Cập nhật';
+            document.getElementById('cancelBtn').style.display = 'inline-block';
+        }
+
+        // Cập nhật nhật ký đã sửa
+        function updateDiary() {
+            const textarea = document.getElementById('diaryInput');
+            const content = textarea.value.trim();
+            if (!content || !editingId) return;
+
+            const payload = { action: 'update', id: editingId, text: content };
+
+            // Cập nhật ảo trên giao diện trước
+            const index = currentDiaries.findIndex(item => item.id.toString() === editingId.toString());
+            if (index !== -1) {
+                currentDiaries[index].text = content;
+                currentDiaries[index].isFake = true; 
+                renderList(currentDiaries);
+            }
+
+            const tempId = editingId;
+            clearEditMode();
+
+            // Gọi AJAX ngầm
+            callGAS(payload, 'Cập nhật', tempId);
+        }
+
+        function clearEditMode() {
+            editingId = null;
+            document.getElementById('diaryInput').value = '';
+            document.getElementById('saveBtn').innerText = 'Lưu lại';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        // Xóa nhật ký
+        function deleteDiary(id) {
+            if (!confirm('Bạn có chắc muốn xóa dòng nhật ký này không?')) return;
+            const payload = { action: 'delete', id: id.toString() };
+            
+            // Xóa ảo trên giao diện trước
+            currentDiaries = currentDiaries.filter(item => item.id.toString() !== id.toString());
+            renderList(currentDiaries);
+
+            callGAS(payload, 'Xóa', null);
+        }
+
+        // Tải danh sách nhật ký
+        function loadDiaries() {
+            fetch(GAS_WEB_APP_URL)
+                .then(res => res.json())
+                .then(res => {
+                    console.log(`[LOG] Đã lấy dữ liệu từ GAS thành công.`);
+                    if (res.status === 'success') {
+                        currentDiaries = res.data; // Đồng bộ lại list chuẩn từ Server
+                        renderList(currentDiaries);
+                    }
+                })
+                .catch(err => console.error('[LOG LỖI] Không thể load dữ liệu:', err));
+        }
+
+        // Render List & khóa tương tác với thẻ đang loading
+        function renderList(diaries) {
+            const container = document.getElementById('diaryContainer');
+            if (!diaries || diaries.length === 0) {
+                container.innerHTML = '<p style="color: #636e72; text-align: center; margin-top: 10px; font-size: 0.85rem;">Chưa có dòng nhật ký nào. Hãy viết gì đó nhé!</p>';
+                return;
+            }
+            container.innerHTML = '';
+            diaries.forEach(item => {
+                const itemDiv = document.createElement('div');
+                // Nếu là thẻ đang chờ Server xử lý thì thêm class 'loading-lock' (khóa click sửa/xóa)
+                itemDiv.className = `diary-item ${item.isFake ? 'loading-lock' : ''}`;
+                itemDiv.id = `item-${item.id}`;
+                itemDiv.innerHTML = `
+                    <div class="diary-date">${item.date} ${item.isFake ? '<span style="color:var(--primary-color)">- Đang lưu...</span>' : ''}</div>
+                    <div class="diary-content">${escapeHtml(item.text)}</div>
+                    <div class="actions-right">
+                        <button class="item-action-btn edit-btn" onclick="startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">Sửa</button>
+                        <button class="item-action-btn delete-btn" onclick="deleteDiary('${item.id}')">Xóa</button>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        // Hàm gọi fetch ngầm trợ giúp CORS
+        function callGAS(payload, actionName, targetId) {
+            console.log(`[LOG] Đang gửi yêu cầu ${actionName} tới GAS...`);
+            
+            // Hiện Toast "Đang lưu"
+            showToast('Đang lưu...', 'loading');
+
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                console.log(`[LOG] Đã hoàn tất yêu cầu ${actionName} ngầm.`);
+                
+                // Đổi Toast sang "Thành công" rồi ẩn đi
+                showToast('Thành công!', 'success');
+                setTimeout(hideToast, 1500);
+
+                // Mở khóa UI của thẻ vừa xử lý xong sau 1 giây
+                setTimeout(() => {
+                    if (targetId) {
+                        const targetElement = document.getElementById(`item-${targetId}`);
+                        if (targetElement) {
+                            targetElement.classList.remove('loading-lock');
+                            // Xóa chữ "Đang lưu" trên thanh tiêu đề ngày tháng
+                            const dateDiv = targetElement.querySelector('.diary-date');
+                            if (dateDiv) dateDiv.innerHTML = dateDiv.innerHTML.split(' <span')[0];
+                        }
+                        // Gỡ trạng thái ảo trong mảng
+                        const index = currentDiaries.findIndex(item => item.id.toString() === targetId.toString());
+                        if (index !== -1) delete currentDiaries[index].isFake;
+                    } else {
+                        // Nếu là xóa hoặc thao tác khác thì cứ nạp lại cho chắc
+                        loadDiaries();
+                    }
+                }, 1000);
+            })
+            .catch(err => {
+                console.error(`[LOG LỖI] Thao tác ${actionName} thất bại:`, err);
+                showToast('Lỗi đường truyền!', 'loading');
+                setTimeout(hideToast, 2000);
+            });
+        }
+
+        // Hàm điều khiển Toast
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.className = `toast show ${type}`;
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('toast');
+            toast.className = 'toast';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

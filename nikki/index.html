@@ -2,10 +2,9 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nhật Ký Của Tôi</title>
-    <script src="../com/assistive.js"></script>
-	<style>
+    <style>
         /* === RESET & BASE STYLES === */
         * {
             margin: 0;
@@ -73,7 +72,7 @@
             border: 1px solid #dfe6e9;
             border-radius: 8px;
             padding: 8px;
-            font-size: 0.9rem;
+            font-size: 16px; /* Tối thiểu 16px để iOS Safari không tự động zoom */
             resize: none;
             height: 100px; 
             outline: none;
@@ -186,30 +185,32 @@
         .edit-btn { color: var(--edit-color); }
         .delete-btn { color: var(--danger-color); }
 
-        /* === TOAST NOTIFICATION === */
+        /* === TOAST NOTIFICATION (Đã ẩn hoàn toàn) === */
         .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.3s ease;
-            pointer-events: none;
+            display: none;
         }
-        .toast.show { opacity: 1; transform: translateY(0); }
-        .toast.loading { background: var(--primary-color); }
-        .toast.success { background: var(--success-color); }
 
-        /* === LOCK INTERACTION === */
-        .loading-lock { pointer-events: none; opacity: 0.7; }
-        .loading-lock .actions-right { display: none !important; } /* Ẩn nút sửa/xóa khi đang lưu */
+        /* === LOCK INTERACTION & SHIMMER EFFECT === */
+        .loading-lock { 
+            pointer-events: none; 
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(108, 92, 231, 0.2); /* Bo viền nhẹ bài đang lưu */
+        }
+        .loading-lock .actions-right { display: none !important; } /* Khóa nút sửa/xóa */
+
+        /* Hiệu ứng dải sáng quét qua mượt mà đánh lừa thị giác */
+        .loading-lock::after {
+            content: "";
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: linear-gradient(90deg, transparent, rgba(108, 92, 231, 0.1), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
 
         /* === BOTTOM NAVIGATION === */
         .bottom-nav {
@@ -292,13 +293,12 @@
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
 
         let editingId = null; 
-        let currentDiaries = []; // Biến cục bộ giữ danh sách hiện tại để render nhanh
+        let currentDiaries = []; 
 
         document.addEventListener('DOMContentLoaded', () => {
             console.log('[LOG] Khởi tạo ứng dụng nhật ký kết nối GAS.');
             loadDiaries();
 
-            // Đăng ký sự kiện click cho các nút thay vì dùng onclick ở HTML
             document.getElementById('saveBtn').addEventListener('click', handleSubmit);
             document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
 
@@ -318,7 +318,6 @@
             }
         }
 
-        // Tạo mới nhật ký
         function saveDiary() {
             const textarea = document.getElementById('diaryInput');
             const content = textarea.value.trim();
@@ -330,19 +329,18 @@
 
             const payload = { action: 'create', id: id, date: dateStr, text: content };
 
-            // Render ảo lên giao diện ngay lập tức để không phải chờ
+            // Render "lạc quan" bài viết lên giao diện ngay lập tức
             const newEntry = { id: id, date: dateStr, text: content, isFake: true };
             currentDiaries.unshift(newEntry);
             renderList(currentDiaries);
 
-            // Xóa rỗng ô nhập liệu
+            // Xóa rỗng ô nhập liệu ngay lập tức tạo cảm giác siêu nhanh
             textarea.value = '';
 
             // Gọi AJAX ngầm phía dưới
             callGAS(payload, 'Thêm mới', id);
         }
 
-        // Vào trạng thái sửa bài viết
         function startEdit(id, text) {
             console.log(`[LOG] Bắt đầu sửa bài viết ID: ${id}`);
             editingId = id;
@@ -352,7 +350,6 @@
             document.getElementById('cancelBtn').style.display = 'inline-block';
         }
 
-        // Cập nhật nhật ký đã sửa
         function updateDiary() {
             const textarea = document.getElementById('diaryInput');
             const content = textarea.value.trim();
@@ -360,7 +357,7 @@
 
             const payload = { action: 'update', id: editingId, text: content };
 
-            // Cập nhật ảo trên giao diện trước
+            // Cập nhật "lạc quan" trên giao diện trước
             const index = currentDiaries.findIndex(item => item.id.toString() === editingId.toString());
             if (index !== -1) {
                 currentDiaries[index].text = content;
@@ -370,8 +367,6 @@
 
             const tempId = editingId;
             clearEditMode();
-
-            // Gọi AJAX ngầm
             callGAS(payload, 'Cập nhật', tempId);
         }
 
@@ -382,7 +377,6 @@
             document.getElementById('cancelBtn').style.display = 'none';
         }
 
-        // Xóa nhật ký
         function deleteDiary(id) {
             if (!confirm('Bạn có chắc muốn xóa dòng nhật ký này không?')) return;
             const payload = { action: 'delete', id: id.toString() };
@@ -394,21 +388,19 @@
             callGAS(payload, 'Xóa', null);
         }
 
-        // Tải danh sách nhật ký
         function loadDiaries() {
             fetch(GAS_WEB_APP_URL)
                 .then(res => res.json())
                 .then(res => {
                     console.log(`[LOG] Đã lấy dữ liệu từ GAS thành công.`);
                     if (res.status === 'success') {
-                        currentDiaries = res.data; // Đồng bộ lại list chuẩn từ Server
+                        currentDiaries = res.data; 
                         renderList(currentDiaries);
                     }
                 })
                 .catch(err => console.error('[LOG LỖI] Không thể load dữ liệu:', err));
         }
 
-        // Render List & khóa tương tác với thẻ đang loading
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
             if (!diaries || diaries.length === 0) {
@@ -418,11 +410,10 @@
             container.innerHTML = '';
             diaries.forEach(item => {
                 const itemDiv = document.createElement('div');
-                // Nếu là thẻ đang chờ Server xử lý thì thêm class 'loading-lock' (khóa click sửa/xóa)
                 itemDiv.className = `diary-item ${item.isFake ? 'loading-lock' : ''}`;
                 itemDiv.id = `item-${item.id}`;
                 itemDiv.innerHTML = `
-                    <div class="diary-date">${item.date} ${item.isFake ? '<span style="color:var(--primary-color)">- Đang lưu...</span>' : ''}</div>
+                    <div class="diary-date">${item.date}</div>
                     <div class="diary-content">${escapeHtml(item.text)}</div>
                     <div class="actions-right">
                         <button class="item-action-btn edit-btn" onclick="startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">Sửa</button>
@@ -433,12 +424,8 @@
             });
         }
 
-        // Hàm gọi fetch ngầm trợ giúp CORS
         function callGAS(payload, actionName, targetId) {
             console.log(`[LOG] Đang gửi yêu cầu ${actionName} tới GAS...`);
-            
-            // Hiện Toast "Đang lưu"
-            showToast('Đang lưu...', 'loading');
 
             fetch(GAS_WEB_APP_URL, {
                 method: 'POST',
@@ -448,47 +435,25 @@
             })
             .then(() => {
                 console.log(`[LOG] Đã hoàn tất yêu cầu ${actionName} ngầm.`);
-                
-                // Đổi Toast sang "Thành công" rồi ẩn đi
-                showToast('Thành công!', 'success');
-                setTimeout(hideToast, 1500);
 
-                // Mở khóa UI của thẻ vừa xử lý xong sau 1 giây
+                // Gỡ bỏ hiệu ứng dải sáng (Shimmer) khi đã thành công
                 setTimeout(() => {
                     if (targetId) {
                         const targetElement = document.getElementById(`item-${targetId}`);
                         if (targetElement) {
                             targetElement.classList.remove('loading-lock');
-                            // Xóa chữ "Đang lưu" trên thanh tiêu đề ngày tháng
-                            const dateDiv = targetElement.querySelector('.diary-date');
-                            if (dateDiv) dateDiv.innerHTML = dateDiv.innerHTML.split(' <span')[0];
+                            targetElement.style.border = 'none'; // Gỡ viền nhạt
                         }
-                        // Gỡ trạng thái ảo trong mảng
                         const index = currentDiaries.findIndex(item => item.id.toString() === targetId.toString());
                         if (index !== -1) delete currentDiaries[index].isFake;
-                    } else {
-                        // Nếu là xóa hoặc thao tác khác thì cứ nạp lại cho chắc
-                        loadDiaries();
                     }
-                }, 1000);
+                }, 500); // Giữ hiệu ứng 0.5s cho mượt mắt
             })
             .catch(err => {
                 console.error(`[LOG LỖI] Thao tác ${actionName} thất bại:`, err);
-                showToast('Lỗi đường truyền!', 'loading');
-                setTimeout(hideToast, 2000);
+                // Nếu lỗi thì nạp lại để đảm bảo dữ liệu chuẩn
+                loadDiaries();
             });
-        }
-
-        // Hàm điều khiển Toast
-        function showToast(message, type) {
-            const toast = document.getElementById('toast');
-            toast.innerText = message;
-            toast.className = `toast show ${type}`;
-        }
-
-        function hideToast() {
-            const toast = document.getElementById('toast');
-            toast.className = 'toast';
         }
 
         function escapeHtml(text) {

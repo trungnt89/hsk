@@ -74,7 +74,7 @@
             padding: 8px;
             font-size: 16px; /* Tối thiểu 16px để iOS Safari không tự động zoom */
             resize: none;
-            height: 100px; 
+            height: 200px; /* Đã tăng gấp đôi từ 100px lên 200px */
             outline: none;
             transition: border 0.3s ease;
         }
@@ -195,11 +195,10 @@
             pointer-events: none; 
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(108, 92, 231, 0.2); /* Bo viền nhẹ bài đang lưu */
+            border: 1px solid rgba(108, 92, 231, 0.2);
         }
-        .loading-lock .actions-right { display: none !important; } /* Khóa nút sửa/xóa */
+        .loading-lock .actions-right { display: none !important; }
 
-        /* Hiệu ứng dải sáng quét qua mượt mà đánh lừa thị giác */
         .loading-lock::after {
             content: "";
             position: absolute;
@@ -329,15 +328,12 @@
 
             const payload = { action: 'create', id: id, date: dateStr, text: content };
 
-            // Render "lạc quan" bài viết lên giao diện ngay lập tức
             const newEntry = { id: id, date: dateStr, text: content, isFake: true };
             currentDiaries.unshift(newEntry);
             renderList(currentDiaries);
 
-            // Xóa rỗng ô nhập liệu ngay lập tức tạo cảm giác siêu nhanh
             textarea.value = '';
 
-            // Gọi AJAX ngầm phía dưới
             callGAS(payload, 'Thêm mới', id);
         }
 
@@ -357,7 +353,6 @@
 
             const payload = { action: 'update', id: editingId, text: content };
 
-            // Cập nhật "lạc quan" trên giao diện trước
             const index = currentDiaries.findIndex(item => item.id.toString() === editingId.toString());
             if (index !== -1) {
                 currentDiaries[index].text = content;
@@ -381,7 +376,6 @@
             if (!confirm('Bạn có chắc muốn xóa dòng nhật ký này không?')) return;
             const payload = { action: 'delete', id: id.toString() };
             
-            // Xóa ảo trên giao diện trước
             currentDiaries = currentDiaries.filter(item => item.id.toString() !== id.toString());
             renderList(currentDiaries);
 
@@ -436,22 +430,20 @@
             .then(() => {
                 console.log(`[LOG] Đã hoàn tất yêu cầu ${actionName} ngầm.`);
 
-                // Gỡ bỏ hiệu ứng dải sáng (Shimmer) khi đã thành công
                 setTimeout(() => {
                     if (targetId) {
                         const targetElement = document.getElementById(`item-${targetId}`);
                         if (targetElement) {
                             targetElement.classList.remove('loading-lock');
-                            targetElement.style.border = 'none'; // Gỡ viền nhạt
+                            targetElement.style.border = 'none';
                         }
                         const index = currentDiaries.findIndex(item => item.id.toString() === targetId.toString());
                         if (index !== -1) delete currentDiaries[index].isFake;
                     }
-                }, 500); // Giữ hiệu ứng 0.5s cho mượt mắt
+                }, 500); 
             })
             .catch(err => {
                 console.error(`[LOG LỖI] Thao tác ${actionName} thất bại:`, err);
-                // Nếu lỗi thì nạp lại để đảm bảo dữ liệu chuẩn
                 loadDiaries();
             });
         }

@@ -148,11 +148,12 @@
 <div id="toast-msg">Cloud Synced</div>
 
 <script>
+// --- LOGIC HỆ THỐNG & API ---
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyHlwz0I6vqBann9-wcnzW-9m_QTc-N9PH5dT94Ygtjrf2iJe1C_0UyJVZ-DNqvYr4hMg/exec";
 
 const DB_NAME = "JP_MASTER_LOCAL_DB";
 const STORE_NAME = "sheets_data";
-const DB_VERSION = 2; // Tăng version để tạo thêm store cache âm thanh
+const DB_VERSION = 1;
 
 let page = 1, isShuffle = false, isPlaying = false, showInfo = true;
 let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
@@ -162,10 +163,13 @@ let db;
 
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
+// 1. Khởi tạo IndexedDB
 window.onload = function() {
+    console.log("[SYSTEM] Đang khởi tạo cơ sở dữ liệu IndexedDB...");
     initIndexedDB().then(() => {
         fetchSheetsList();
     }).catch(err => {
+        console.error("[ERROR] Không thể khởi tạo IndexedDB!", err);
         showToast("Lỗi khởi tạo DB!");
     });
 };
@@ -177,11 +181,7 @@ function initIndexedDB() {
             const database = e.target.result;
             if (!database.objectStoreNames.contains(STORE_NAME)) {
                 database.createObjectStore(STORE_NAME, { keyPath: "sheetName" });
-            }
-            // Khởi tạo bảng lưu cache âm thanh offline
-            if (!database.objectStoreNames.contains("AUDIO_DATA_CACHE")) {
-                database.createObjectStore("AUDIO_DATA_CACHE", { keyPath: "id" });
-                console.log("[DB] Đã tạo bảng AUDIO_DATA_CACHE thành công.");
+                console.log("[DB] Đã tạo Object Store mới: sheets_data");
             }
         };
         request.onsuccess = (e) => { db = e.target.result; resolve(); };
@@ -189,6 +189,7 @@ function initIndexedDB() {
     });
 }
 
+// 2. Lấy danh sách Sheet
 function fetchSheetsList() {
     fetch(`${GAS_API_URL}?action=getSheetsInfo`)
         .then(res => res.json())
@@ -200,6 +201,7 @@ function fetchSheetsList() {
         .catch(err => handleError(err));
 }
 
+// 3. Logic Đọc dữ liệu: Ưu tiên Local -> Ko có thì nạp Cloud
 async function loadAppData() {
     const selectedSheet = document.getElementById("sheet-select").value;
     showToast("Đang kiểm tra bộ nhớ máy...");
@@ -207,6 +209,7 @@ async function loadAppData() {
     const localData = await getDataFromIndexedDB(selectedSheet);
 
     if (localData && localData.data.length > 0) {
+        console.log(`[DB] Đã tìm thấy dữ liệu Local cho sheet "${selectedSheet}".`);
         rawData = localData.data;
         detectColumns(rawData[0]);
         page = 1; render();
@@ -233,36 +236,48 @@ function fetchDataFromCloud(sheetName) {
 function changeSheet() { page = 1; currentIndex = -1; if(isPlaying) stopLoop(); loadAppData(); }
 function forceReloadFromCloud() { const selectedSheet = document.getElementById("sheet-select").value; fetchDataFromCloud(selectedSheet); }
 
+// 4. LOGIC GHI DỮ LIỆU: CẬP NHẬT CẢ LOCAL VÀ BẮT BUỘC ĐỒNG BỘ LÊN SHEET
 async function toggleMaster(rowNumber, statusValue, elementIdx) {
     const selectedSheet = document.getElementById("sheet-select").value;
     const card = document.getElementById(`card-${elementIdx}`);
     
+    // BƯỚC 1: LƯU TRẠNG THÁI VÀO BỘ NHỚ MÁY (INDEXEDDB) ĐỂ HIỂN THỊ TỨC THÌ
     if (card) card.classList.add('card-syncing');
     
+    // Cập nhật mảng RAM
     const item = rawData.find(r => r["_rowNumber"] === rowNumber);
     if (item) item["Trạng thái"] = statusValue;
 
+    // Lưu đè mảng RAM mới vào IndexedDB
     await saveDataToIndexedDB(selectedSheet, rawData);
     
+    // Tạo hiệu ứng thu nhỏ ẩn dần và vẽ lại màn hình
     if (card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
     showToast("✓ Đã lưu vào máy");
     
     setTimeout(() => render(true), 250);
 
+    // BƯỚC 2: BẮT BUỘC ĐỒNG BỘ TRỰC TIẾP LÊN FILE GOOGLE SHEET
+    console.log(`[CLOUD-SYNC] Đang ghi trạng thái dòng ${rowNumber} lên Google Sheet...`);
+    
     fetch(`${GAS_API_URL}?action=updateStatus&sheetName=${encodeURIComponent(selectedSheet)}&rowId=${rowNumber}&statusValue=${encodeURIComponent(statusValue)}`)
         .then(res => res.json())
         .then(result => {
             if (result.success) {
+                console.log(`[CLOUD-SUCCESS] Tuyệt vời! Đã cập nhật xong lên Google Sheet cho dòng ${rowNumber}.`);
                 setTimeout(() => showToast("☁ Đã lưu lên Sheet"), 500); 
             } else {
+                console.warn("[CLOUD-FAIL] Cloud báo thất bại nhưng đã lưu ở máy.");
                 showToast("⚠️ Chưa lên được Sheet!");
             }
         })
         .catch(e => {
+            console.error("[CLOUD-ERROR] Không thể kết nối tới Google Sheet:", e);
             showToast("❌ Lỗi mạng: Chưa lên Sheet");
         });
 }
 
+// Các hàm Helper cho IndexedDB
 function saveDataToIndexedDB(sheetName, data) {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction([STORE_NAME], "readwrite");
@@ -285,6 +300,7 @@ function getDataFromIndexedDB(sheetName) {
 
 function detectColumns(firstRow) {
     const keys = Object.keys(firstRow).filter(k => k !== "_rowNumber" && k !== "Trạng thái");
+    
     colKanji = keys.find(k => k.toLowerCase() === "kanji" || k.toLowerCase().includes("từ")) || keys[1] || "";
     colHira = keys.find(k => k.toLowerCase() === "hira" || k.toLowerCase().includes("yomi")) || keys[2] || "";
 }
@@ -367,49 +383,10 @@ async function select(i) {
     }
 }
 
-// HÀM SPEAK MỚI: Bọc cơ chế Cache Offline + Dùng speakCommon
 async function speak(text) {
     if (!text) return;
     const voice = document.getElementById("voice-select").value;
-    const cacheKey = `${voice}_${text}`;
-    
-    try {
-        const transaction = db.transaction(["AUDIO_DATA_CACHE"], "readonly");
-        const store = transaction.objectStore("AUDIO_DATA_CACHE");
-        const cachedItem = await new Promise((resolve) => {
-            const req = store.get(cacheKey);
-            req.onsuccess = (e) => resolve(e.target.result);
-            req.onerror = () => resolve(null);
-        });
-
-        if (cachedItem && cachedItem.blob) {
-            console.log(`[TTS] Phát âm thanh từ cache Offline cho: ${text}`);
-            const audioUrl = URL.createObjectURL(cachedItem.blob);
-            await speakCommon({ audioSrc: audioUrl }); 
-            URL.revokeObjectURL(audioUrl); 
-            return;
-        }
-    } catch (e) {
-        console.log("[TTS] Đang nạp hoặc bảng cache chưa sẵn sàng.");
-    }
-
-    console.log(`[TTS] Gọi Cloud API cho từ: ${text}`);
-    const ttsUrl = `https://hsk-gilt.vercel.app/api/tts_test?text=${encodeURIComponent(text)}&lang=ja-JP&voice=${voice}&rate=1.0`;
-    
-    // Gọi phương thức speakCommon chính từ TTSClient.js đã nhúng
     await speakCommon({ text: text, voice: voice, rate: "1.0" });
-
-    // Tải file về và đẩy âm thanh vào IndexedDB
-    fetch(ttsUrl)
-        .then(res => res.blob())
-        .then(blob => {
-            const transaction = db.transaction(["AUDIO_DATA_CACHE"], "readwrite");
-            const store = transaction.objectStore("AUDIO_DATA_CACHE");
-            store.put({ id: cacheKey, blob: blob });
-            console.log(`[TTS] Đã lưu cache offline cho: ${text}`);
-        }).catch(err => {
-            console.warn("[TTS] Lỗi ko nạp được file vào cache:", err);
-        });
 }
 
 function togglePlay() {

@@ -253,7 +253,7 @@ async function toggleMaster(rowNumber, statusValue, elementIdx) {
     
     // Tạo hiệu ứng thu nhỏ ẩn dần và vẽ lại màn hình
     if (card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
-    showToast("✓ Đã lưu vào máy"); // <--- Toast 1
+    showToast("✓ Đã lưu vào máy");
     
     setTimeout(() => render(true), 250);
 
@@ -265,7 +265,6 @@ async function toggleMaster(rowNumber, statusValue, elementIdx) {
         .then(result => {
             if (result.success) {
                 console.log(`[CLOUD-SUCCESS] Tuyệt vời! Đã cập nhật xong lên Google Sheet cho dòng ${rowNumber}.`);
-                // Hiển thị Toast thứ 2 báo đã đẩy Cloud thành công
                 setTimeout(() => showToast("☁ Đã lưu lên Sheet"), 500); 
             } else {
                 console.warn("[CLOUD-FAIL] Cloud báo thất bại nhưng đã lưu ở máy.");
@@ -299,13 +298,11 @@ function getDataFromIndexedDB(sheetName) {
     });
 }
 
-// --- GIỮ NGUYÊN TOÀN BỘ LOGIC CỦA BẠN ĐỂ BẢO TOÀN TÍNH NĂNG ---
 function detectColumns(firstRow) {
     const keys = Object.keys(firstRow).filter(k => k !== "_rowNumber" && k !== "Trạng thái");
-    colHira = keys.find(k => k.toLowerCase().includes("hira") || k.toLowerCase().includes("yomi") || k.toLowerCase().includes("kana")) || "";
-    colKanji = keys.find(k => k.toLowerCase().includes("kanji") || k.toLowerCase().includes("từ") || k.toLowerCase().includes("word")) || "";
-    if (!colKanji && keys.length > 0) colKanji = keys[0];
-    if (!colHira && keys.length > 1) colHira = keys[1];
+    
+    colKanji = keys.find(k => k.toLowerCase() === "kanji" || k.toLowerCase().includes("từ")) || keys[1] || "";
+    colHira = keys.find(k => k.toLowerCase() === "hira" || k.toLowerCase().includes("yomi")) || keys[2] || "";
 }
 
 function updateStats() {
@@ -347,7 +344,7 @@ function render(keepShuffle = false) {
     }
 
     const keys = Object.keys(rawData[0]).filter(k => k !== "_rowNumber" && k !== "Trạng thái");
-    const viKey = keys.find(k => k.toLowerCase().includes("nghĩa") || k.toLowerCase().includes("vi") || k.toLowerCase().includes("mean")) || keys[2] || "";
+    const colNghia = keys.find(k => k.toLowerCase() === "nghia" || k.toLowerCase().includes("nghĩa")) || "Nghia";
 
     currentList.forEach((item, i) => {
         const status = item["Trạng thái"] || "Chưa thuộc";
@@ -363,7 +360,7 @@ function render(keepShuffle = false) {
                 <div class="hz-column">${item[colKanji] || ""}</div>
                 <div class="info-column ${!showInfo ? 'hide-info' : ''}">
                     <div class="pinyin">${item[colHira] || ""}</div>
-                    <div class="meaning">${item[viKey] || ""}</div>
+                    <div class="meaning">${item[colNghia] || ""}</div>
                 </div>
             </div>
             <button class="master-btn ${isM ? 'is-mastered' : ''}" onclick="event.stopPropagation(); toggleMaster(${item["_rowNumber"]}, '${isM ? 'Chưa thuộc' : 'Đã thuộc'}', ${i})">

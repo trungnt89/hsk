@@ -17,7 +17,7 @@ export default async function handler(req, context) {
     const filename = `${voice}_${rate}_${text}`;
     console.log(`\n=== [NEW REQUEST: ${text}] ===`);
 
-    // 1️⃣ CHECK DRIVE & TRẢ FILE (Sửa lỗi CORS do redirect)
+    // 1️⃣ CHECK DRIVE (Sửa lỗi parse HTML và so khớp chính xác)
     try {
       const checkRes = await fetch(`${GAS_URL}?action=check&filename=${encodeURIComponent(filename)}`);
       const contentType = checkRes.headers.get('content-type');
@@ -26,51 +26,32 @@ export default async function handler(req, context) {
         const checkData = await checkRes.json();
         const returnedName = checkData.filename ? checkData.filename.replace('.mp3', '').trim() : '';
 
+        // So khớp tuyệt đối để tránh lấy nhầm câu thoại ngắn trong câu thoại dài
         if (checkData.exists && returnedName === filename && checkData.directLink) {
-          console.log(`[PERF] 🎯 CACHE HIT! Đang proxy file từ Drive thay vì redirect...`);
-          
-          // Tuyệt đối không Response.redirect nữa để tránh lỗi CORS
-          const driveFileRes = await fetch(checkData.directLink);
-          if (driveFileRes.ok) {
-            console.log(`[PERF] ⚡ Lấy file từ Drive thành công lúc: ${Date.now() - startTime}ms`);
-            return new Response(driveFileRes.body, {
-              headers: { 
-                'Content-Type': 'audio/mpeg',
-                'X-Audio-Source': 'Google-Drive-Cache'
-              }
-            });
-          }
+          console.log(`[PERF] 🎯 CACHE HIT lúc: ${Date.now() - startTime}ms`);
+          return Response.redirect(checkData.directLink);
         }
       }
-    } catch (e) { console.warn("[Drive Check/Proxy Error]", e.message); }
+    } catch (e) { console.warn("[Drive Check Error]", e.message); }
 
     // 2️⃣ AZURE TTS
     const endpoint = process.env.AZURE_TTS_ENDPOINT;
     const key = process.env.AZURE_TTS_KEY;
-    
-    // Chuẩn hóa URL an toàn
     const ttsUrl = `${endpoint.replace(/\/$/, '')}/cognitiveservices/v1`;
     const ssml = `<speak version="1.0" xml:lang="${lang}"><voice name="${voice}"><prosody rate="${rate}">${text.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]))}</prosody></voice></speak>`;
 
     const azureResponse = await fetch(ttsUrl, {
       method: 'POST',
-      headers: { 
-        'Ocp-Apim-Subscription-Key': key, 
-        'Content-Type': 'application/ssml+xml', 
-        'X-Microsoft-OutputFormat': format 
-      },
+      headers: { 'Ocp-Apim-Subscription-Key': key, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': format },
       body: ssml
     });
 
-    if (!azureResponse.ok || !azureResponse.body) {
-      console.error(`[Azure Error] Status: ${azureResponse.status}`);
-      return new Response("Azure Failed", { status: 500 });
-    }
+    if (!azureResponse.ok || !azureResponse.body) return new Response("Azure Failed", { status: 500 });
 
-    // Nhân đôi luồng dữ liệu
+    // ⚡ STREAMING: Sử dụng tee() để nhân đôi luồng dữ liệu
     const [clientStream, saveStream] = azureResponse.body.tee();
 
-    // 3️⃣ SAVE TO DRIVE (Chuyển sang dùng Base64 để chống sập RAM Edge 500)
+    // 3️⃣ SAVE TO DRIVE (Chạy ngầm)
     const saveTask = (async () => {
       try {
         const reader = saveStream.getReader();
@@ -80,20 +61,15 @@ export default async function handler(req, context) {
           if (done) break;
           chunks.push(value);
         }
-        
+        // Gom các mảnh dữ liệu lại thành một Buffer hoàn chỉnh
         const audioBuffer = new Uint8Array(await new Blob(chunks).arrayBuffer());
-        console.log(`[PERF] 🚀 Uploading to Drive... (${audioBuffer.byteLength} bytes)`);
-        
-        // Chuyển đổi sang Base64 thay vì Array.from truyền thống gây nặng RAM
-        const base64Data = btoa(String.fromCharCode.apply(null, audioBuffer));
 
+        console.log(`[PERF] 🚀 Uploading to Drive... (${audioBuffer.byteLength} bytes)`);
         await fetch(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            action: "upload", 
-            filename: filename, 
-            fileDataBase64: base64Data // Truyền bằng chuỗi Base64
+            action: "upload", filename: filename, fileData: Array.from(audioBuffer) 
           })
         });
         console.log(`[PERF] ✅ Lưu Drive XONG lúc: ${Date.now() - startTime}ms`);
@@ -102,7 +78,7 @@ export default async function handler(req, context) {
 
     context.waitUntil(saveTask);
 
-    // 4️⃣ PHẢN HỒI STREAMING
+    // 4️⃣ PHẢN HỒI STREAMING (Phát nhạc ngay khi có dữ liệu đầu tiên)
     console.log(`[PERF] ⚡ BẮT ĐẦU STREAM CHO CLIENT LÚC: ${Date.now() - startTime}ms`);
     
     return new Response(clientStream, {
@@ -114,7 +90,6 @@ export default async function handler(req, context) {
     });
 
   } catch (e) {
-    console.error("[Fatal Error]", e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
 }

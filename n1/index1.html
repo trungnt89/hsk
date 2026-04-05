@@ -201,50 +201,40 @@ function fetchSheetsList() {
         .catch(err => handleError(err));
 }
 
-// 3. Logic Đọc dữ liệu: AJAX gọi file JSON trực tiếp
+// 3. Logic Đọc dữ liệu: Ưu tiên Local -> Ko có thì nạp Cloud
 async function loadAppData() {
     const selectedSheet = document.getElementById("sheet-select").value;
-    console.log(`[SYSTEM] Bắt đầu xử lý dữ liệu cho file JSON n1/MimikaraN1.json`);
-    showToast("Đang nạp từ file JSON...");
+    showToast("Đang kiểm tra bộ nhớ máy...");
 
-    try {
-        const jsonPath = 'n1/MimikaraN1.json';
-        console.log(`[AJAX] Đang gọi fetch tới đường dẫn: ${jsonPath}`);
-        const response = await fetch(jsonPath);
-        
-        if (!response.ok) {
-            throw new Error(`Không tìm thấy hoặc không thể đọc file ${jsonPath}`);
-        }
-        
-        const jsonData = await response.json();
-        console.log(`[AJAX-SUCCESS] Đọc thành công file JSON. Tổng số từ: ${jsonData.length}`);
-        
-        // Map lại cấu trúc của JSON cho khớp với logic cũ của App
-        rawData = jsonData.map(item => ({
-            "_rowNumber": item.id, // Dùng ID trong JSON đại diện cho rowID trên Sheet
-            "Kanji": item.word,
-            "Hira": item.reading,
-            "Nghia": item.meaning,
-            "Trạng thái": "Chưa thuộc" // Mặc định từ JSON là chưa thuộc
-        }));
-        
+    const localData = await getDataFromIndexedDB(selectedSheet);
+
+    if (localData && localData.data.length > 0) {
+        console.log(`[DB] Đã tìm thấy dữ liệu Local cho sheet "${selectedSheet}".`);
+        rawData = localData.data;
         detectColumns(rawData[0]);
-        page = 1; 
-        render();
-        showToast("✓ Đã nạp JSON thành công");
-    } catch (err) {
-        console.error("[AJAX-ERROR] Lỗi khi nạp file JSON!", err);
-        handleError(err);
+        page = 1; render();
+        showToast("✓ Đã nạp từ máy");
+    } else {
+        fetchDataFromCloud(selectedSheet);
     }
 }
 
 function fetchDataFromCloud(sheetName) {
-    // Hàm này giữ nguyên nhưng tạm thời không dùng đến do đã nạp file JSON
-    console.log("[SYSTEM] Đọc file local JSON, bỏ qua Cloud nạp từ.");
+    showToast("Tải dữ liệu từ Cloud...");
+    fetch(`${GAS_API_URL}?action=readSheet&sheetName=${encodeURIComponent(sheetName)}`)
+        .then(res => res.json())
+        .then(async (data) => {
+            rawData = data;
+            await saveDataToIndexedDB(sheetName, data);
+            if (data.length > 0) detectColumns(data[0]);
+            page = 1; render();
+            showToast("✓ Đã đồng bộ máy");
+        })
+        .catch(err => handleError(err));
 }
 
 function changeSheet() { page = 1; currentIndex = -1; if(isPlaying) stopLoop(); loadAppData(); }
-function forceReloadFromCloud() { loadAppData(); }
+function forceReloadFromCloud() { const selectedSheet = document.getElementById("sheet-select").value; fetchDataFromCloud(selectedSheet); }
 
 // 4. LOGIC GHI DỮ LIỆU: CẬP NHẬT CẢ LOCAL VÀ BẮT BUỘC ĐỒNG BỘ LÊN SHEET
 async function toggleMaster(rowNumber, statusValue, elementIdx) {

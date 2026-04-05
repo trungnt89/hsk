@@ -133,7 +133,7 @@
 
 <div class="controls-bar">
     <div class="ctrl-group">
-        <button class="btn-nav" id="shuffle-btn" onclick="haptic(); toggleShuffle()"><i>🔁</i><small>Xáo</small></button>
+        <button class="btn-nav" id="mode-btn" onclick="haptic(); toggleDisplayMode()"><i>📖</i><small id="mode-txt">Từ</small></button>
         <button class="btn-nav" id="prev-btn" onclick="haptic(); prevPage()"><i>⏮</i><small>Trước</small></button>
     </div>
     
@@ -141,6 +141,7 @@
     
     <div class="ctrl-group">
         <button class="btn-nav" id="next-btn" onclick="haptic(); nextPage()"><i>⏭</i><small>Sau</small></button>
+        <button class="btn-nav" id="shuffle-btn" onclick="haptic(); toggleShuffle()"><i>🔁</i><small>Xáo</small></button>
         <button class="btn-nav" id="info-btn" onclick="haptic(); toggleInfo()"><i>👁️</i><small id="info-txt">Hiện</small></button>
     </div>
 </div>
@@ -156,6 +157,7 @@ const STORE_NAME = "sheets_data";
 const DB_VERSION = 1;
 
 let page = 1, isShuffle = false, isPlaying = false, showInfo = true;
+let displayMode = 'word'; // Trạng thái: 'word' (hiển thị Từ) hoặc 'example' (hiển thị Ví dụ)
 let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 let rawData = []; 
 let colHira = "", colKanji = "";
@@ -191,7 +193,7 @@ function initIndexedDB() {
 
 // 3. Logic Đọc dữ liệu: AJAX gọi file JSON trực tiếp và quét Unit
 async function loadAppData() {
-    console.log(`[SYSTEM] Bắt đầu xử lý dữ liệu cho file JSON n1/MimikaraN1.json`);
+    console.log(`[SYSTEM] Bắt đầu xử lý dữ liệu cho file JSON MimikaraN1.json`);
     showToast("Đang nạp từ file JSON...");
 
     try {
@@ -221,6 +223,7 @@ async function loadAppData() {
             "Hira": item.reading,
             "Nghia": item.meaning,
             "unit": item.unit, // Giữ lại thuộc tính unit để lọc dữ liệu
+            "examples": item.examples || [], // Giữ lại mảng ví dụ để phục vụ chế độ hiển thị Ví dụ
             "Trạng thái": "Chưa thuộc" // Mặc định từ JSON là chưa thuộc
         }));
         
@@ -285,10 +288,19 @@ async function toggleMaster(rowNumber, statusValue, elementIdx) {
 }
 
 function detectColumns(firstRow) {
-    const keys = Object.keys(firstRow).filter(k => k !== "_rowNumber" && k !== "Trạng thái" && k !== "unit");
+    const keys = Object.keys(firstRow).filter(k => k !== "_rowNumber" && k !== "Trạng thái" && k !== "unit" && k !== "examples");
     
     colKanji = keys.find(k => k.toLowerCase() === "kanji" || k.toLowerCase().includes("từ")) || keys[1] || "";
     colHira = keys.find(k => k.toLowerCase() === "hira" || k.toLowerCase().includes("yomi")) || keys[2] || "";
+}
+
+// Hàm chuyển đổi Từ / Ví dụ
+function toggleDisplayMode() {
+    displayMode = (displayMode === 'word') ? 'example' : 'word';
+    document.getElementById('mode-txt').innerText = (displayMode === 'word') ? "Từ" : "Ví dụ";
+    document.getElementById('mode-btn').classList.toggle('active-blue', displayMode === 'example');
+    showToast(`Chuyển sang xem ${displayMode === 'word' ? 'Từ' : 'Ví dụ'}`);
+    render(true);
 }
 
 function updateStats() {
@@ -335,7 +347,7 @@ function render(keepShuffle = false) {
         return;
     }
 
-    const keys = Object.keys(rawData[0]).filter(k => k !== "_rowNumber" && k !== "Trạng thái" && k !== "unit");
+    const keys = Object.keys(rawData[0]).filter(k => k !== "_rowNumber" && k !== "Trạng thái" && k !== "unit" && k !== "examples");
     const colNghia = keys.find(k => k.toLowerCase() === "nghia" || k.toLowerCase().includes("nghĩa")) || "Nghia";
 
     currentList.forEach((item, i) => {
@@ -346,13 +358,25 @@ function render(keepShuffle = false) {
         card.id = `card-${i}`;
         card.onclick = () => { select(i); if(isPlaying) stopLoop(); };
         
+        let col1Content = "";
+        let col2Content = "";
+        
+        // Cấp phát nội dung cột theo chế độ hiển thị
+        if (displayMode === 'word') {
+            col1Content = item[colKanji] || "";
+            col2Content = `<div class="pinyin">${item[colHira] || ""}</div><div class="meaning">${item[colNghia] || ""}</div>`;
+        } else {
+            const hasEx = item.examples && item.examples.length > 0;
+            col1Content = hasEx ? item.examples[0].japanese : "N/A";
+            col2Content = `<div class="meaning">${hasEx ? item.examples[0].vietnamese : "Không có ví dụ"}</div>`;
+        }
+
         card.innerHTML = `
             <div class="index-col"><span class="index-number">${String((page-1)*limit + i + 1).padStart(2, '0')}</span></div>
             <div class="content-col">
-                <div class="hz-column">${item[colKanji] || ""}</div>
+                <div class="hz-column">${col1Content}</div>
                 <div class="info-column ${!showInfo ? 'hide-info' : ''}">
-                    <div class="pinyin">${item[colHira] || ""}</div>
-                    <div class="meaning">${item[colNghia] || ""}</div>
+                    ${col2Content}
                 </div>
             </div>
             <button class="master-btn ${isM ? 'is-mastered' : ''}" onclick="event.stopPropagation(); toggleMaster(${item["_rowNumber"]}, '${isM ? 'Chưa thuộc' : 'Đã thuộc'}', ${i})">
@@ -370,7 +394,14 @@ async function select(i) {
     if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     const item = currentList[i];
     if (item) {
-        const textToSpeak = item[colHira] || item[colKanji] || "";
+        let textToSpeak = "";
+        // Cấp phát văn bản phát âm theo chế độ hiển thị
+        if (displayMode === 'word') {
+            textToSpeak = item[colHira] || item[colKanji] || "";
+        } else {
+            const hasEx = item.examples && item.examples.length > 0;
+            textToSpeak = hasEx ? item.examples[0].japanese : (item[colHira] || "");
+        }
         await speak(textToSpeak);
     }
 }

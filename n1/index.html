@@ -31,9 +31,10 @@
         .tab-btn.active { background: var(--primary); color: white; }
         .tab-btn.active.done-mode { background: var(--success); }
         
-        .settings-panel { padding: 0 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        /* Thay đổi thành 4 cột cho phù hợp thêm nút tốc độ đọc */
+        .settings-panel { padding: 0 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
         .setting-item label { font-size: 7px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 3px; text-transform: uppercase; }
-        select { width: 100%; border: 1.5px solid #f1f5f9; padding: 8px; border-radius: 10px; font-weight: 700; font-size: 11px; outline: none; background: #fff; }
+        select { width: 100%; border: 1.5px solid #f1f5f9; padding: 6px; border-radius: 10px; font-weight: 700; font-size: 10px; outline: none; background: #fff; }
         
         /* Dropdown Sheet */
         .sheet-control { padding: 0 12px 10px; display: flex; gap: 8px; }
@@ -98,20 +99,30 @@
     
     <div class="settings-panel">
         <div class="setting-item"><label>Giọng đọc</label>
-            <select id="voice-select">
+            <select id="voice-select" onchange="haptic(); saveSettings();">
                 <option value="ja-JP-NanamiNeural">Azure Nữ</option>
                 <option value="ja-JP-KeitaNeural">Azure Nam</option>
             </select>
         </div>
+        <div class="setting-item"><label>Tốc độ đọc</label>
+            <select id="rate-select" onchange="haptic(); saveSettings();">
+                <option value="0.5">0.5x</option>
+                <option value="0.8">0.8x</option>
+                <option value="1.0" selected>1.0x</option>
+                <option value="1.2">1.2x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2.0">2.0x</option>
+            </select>
+        </div>
         <div class="setting-item"><label>Hiển thị</label>
-            <select id="limit-select" onchange="haptic(); page=1; render();">
+            <select id="limit-select" onchange="haptic(); page=1; saveSettings(); render();">
                 <option value="10" selected>10 Mục</option>
                 <option value="20">20 Mục</option>
                 <option value="50">50 Mục</option>
             </select>
         </div>
         <div class="setting-item"><label>Tốc độ lướt</label>
-            <select id="delay-select">
+            <select id="delay-select" onchange="haptic(); saveSettings();">
                 <option value="1500">1.5 Giây</option>
                 <option value="3000" selected>3 Giây</option>
                 <option value="5000">5 Giây</option>
@@ -151,47 +162,75 @@
 <script>
 // --- LOGIC HỆ THỐNG & API ---
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyHlwz0I6vqBann9-wcnzW-9m_QTc-N9PH5dT94Ygtjrf2iJe1C_0UyJVZ-DNqvYr4hMg/exec";
-
-const DB_NAME = "JP_MASTER_LOCAL_DB";
-const STORE_NAME = "sheets_data";
-const DB_VERSION = 1;
+const SETTINGS_KEY = "JP_MASTER_SETTINGS";
 
 let page = 1, isShuffle = false, isPlaying = false, showInfo = true;
-let displayMode = 'word'; // Trạng thái: 'word' hoặc 'example'
+let displayMode = 'word'; 
 let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 let rawData = []; 
 let colHira = "", colKanji = "";
-let db;
 
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
-// 1. Khởi tạo IndexedDB
+// Khởi tạo và nạp cài đặt đã lưu
 window.onload = function() {
-    console.log("[SYSTEM] Đang khởi tạo cơ sở dữ liệu IndexedDB...");
-    initIndexedDB().then(() => {
-        loadAppData(); 
-    }).catch(err => {
-        console.error("[ERROR] Không thể khởi tạo IndexedDB!", err);
-        showToast("Lỗi khởi tạo DB!");
-    });
+    console.log("[SYSTEM] Khởi tạo ứng dụng...");
+    loadSettings();
+    loadAppData();
 };
 
-function initIndexedDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = (e) => {
-            const database = e.target.result;
-            if (!database.objectStoreNames.contains(STORE_NAME)) {
-                database.createObjectStore(STORE_NAME, { keyPath: "sheetName" });
-                console.log("[DB] Đã tạo Object Store mới: sheets_data");
-            }
-        };
-        request.onsuccess = (e) => { db = e.target.result; resolve(); };
-        request.onerror = (e) => reject(e.target.error);
-    });
+// Hàm lưu trạng thái vào localStorage
+function saveSettings() {
+    const settings = {
+        voice: document.getElementById("voice-select").value,
+        limit: document.getElementById("limit-select").value,
+        delay: document.getElementById("delay-select").value,
+        rate: document.getElementById("rate-select").value,
+        displayMode: displayMode,
+        showInfo: showInfo,
+        isShuffle: isShuffle
+    };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    console.log("[LOCAL] Đã lưu cấu hình cài đặt.");
 }
 
-// 3. Logic Đọc dữ liệu: Tải list từ file JSON và GỌI GAS ĐỂ ĐỔI TRẠNG THÁI
+// Hàm đọc trạng thái từ localStorage
+function loadSettings() {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    if (!saved) return;
+    
+    try {
+        const settings = JSON.parse(saved);
+        console.log("[LOCAL] Đã tìm thấy cấu hình cũ, đang áp dụng...");
+        
+        if (settings.voice) document.getElementById("voice-select").value = settings.voice;
+        if (settings.limit) document.getElementById("limit-select").value = settings.limit;
+        if (settings.delay) document.getElementById("delay-select").value = settings.delay;
+        if (settings.rate) document.getElementById("rate-select").value = settings.rate;
+        
+        if (settings.displayMode) {
+            displayMode = settings.displayMode;
+            document.getElementById('mode-txt').innerText = (displayMode === 'word') ? "Từ" : "Ví dụ";
+            document.getElementById('mode-btn').classList.toggle('active-blue', displayMode === 'example');
+        }
+        
+        if (settings.showInfo !== undefined) {
+            showInfo = settings.showInfo;
+            document.getElementById('info-txt').innerText = showInfo ? "Hiện" : "Ẩn";
+            document.getElementById('info-btn').querySelector('i').innerText = showInfo ? "👁️" : "🙈";
+            document.getElementById('info-btn').classList.toggle('active-blue', !showInfo);
+        }
+        
+        if (settings.isShuffle !== undefined) {
+            isShuffle = settings.isShuffle;
+            document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle);
+        }
+    } catch (e) {
+        console.warn("[LOCAL] Lỗi khi nạp cấu hình cũ:", e);
+    }
+}
+
+// Hàm nạp dữ liệu gốc
 async function loadAppData() {
     console.log(`[SYSTEM] Bắt đầu tải dữ liệu gốc từ MimikaraN1.json`);
     showToast("Đang nạp từ file JSON...");
@@ -200,25 +239,21 @@ async function loadAppData() {
         const jsonPath = 'MimikaraN1.json';
         const response = await fetch(jsonPath);
         
-        if (!response.ok) {
-            throw new Error(`Không tìm thấy file ${jsonPath}`);
-        }
+        if (!response.ok) throw new Error(`Không tìm thấy file ${jsonPath}`);
         
         const jsonData = await response.json();
         console.log(`[AJAX-SUCCESS] Đọc thành công file JSON. Tổng số từ: ${jsonData.length}`);
         
         const units = [...new Set(jsonData.map(item => item.unit))].sort((a, b) => a - b);
-        
         const select = document.getElementById("sheet-select");
         select.innerHTML = units.map(u => `<option value="${u}">Unit ${u}</option>`).join('');
         
-        // --- GỌI GAS ĐỂ LẤY TRẠNG THÁI ---
         const firstUnit = units[0];
-        const statusMap = await fetchAllStatusFromGAS(`Unit ${firstUnit}`);
+        const statusMap = await fetchAllStatusFromGAS();
 
         rawData = jsonData.map(item => {
             const wordKey = item.word ? item.word.trim() : "";
-            const currentStatus = statusMap[wordKey] || "Chưa thuộc"; // Nếu không thấy map trong sheet -> Chưa thuộc
+            const currentStatus = statusMap[wordKey] || "Chưa thuộc";
             
             return {
                 "_rowNumber": item.id,
@@ -237,54 +272,32 @@ async function loadAppData() {
         showToast("✓ Đã nạp dữ liệu hoàn chỉnh");
     } catch (err) {
         console.error("[AJAX-ERROR] Lỗi khi nạp dữ liệu!", err);
-        handleError(err);
+        showToast("Lỗi nạp dữ liệu!");
     }
 }
 
-// Hàm fetch lấy toàn bộ trạng thái từ Cloud
-async function fetchAllStatusFromGAS(sheetName) {
+async function fetchAllStatusFromGAS() {
     try {
-        console.log(`[CLOUD] Đang lấy trạng thái các từ từ Sheet: ${sheetName}`);
-        const response = await fetch(`${GAS_API_URL}?action=getAllStatus&sheetName=${encodeURIComponent(sheetName)}`);
-        if (response.ok) {
-            const data = await response.json();
-            return data;
-        }
+        console.log(`[CLOUD] Đang lấy trạng thái các từ từ Cloud (Cố định Sheet1)`);
+        const response = await fetch(`${GAS_API_URL}?action=getAllStatus`);
+        if (response.ok) return await response.json();
     } catch (e) {
-        console.error("[CLOUD-ERROR] Không lấy được trạng thái từ Cloud, sử dụng mặc định 'Chưa thuộc'", e);
+        console.error("[CLOUD-ERROR] Không lấy được trạng thái từ Cloud", e);
     }
     return {};
 }
 
-// Hàm đổi Unit (Cần cập nhật lại trạng thái của Unit mới)
 async function changeSheet() { 
     page = 1; 
     currentIndex = -1; 
     if(isPlaying) stopLoop(); 
-    
-    const selectedUnit = document.getElementById("sheet-select").value;
-    showToast(`Đang nạp Unit ${selectedUnit}...`);
-    
-    const statusMap = await fetchAllStatusFromGAS(`Unit ${selectedUnit}`);
-    
-    // Cập nhật lại trạng thái cho RAM rawData
-    rawData.forEach(item => {
-        if (item.unit == selectedUnit) {
-            const wordKey = item.Kanji ? item.Kanji.trim() : "";
-            item["Trạng thái"] = statusMap[wordKey] || "Chưa thuộc";
-        }
-    });
-
     render(); 
 }
 
 function forceReloadFromCloud() { loadAppData(); }
 
-// 4. LOGIC GHI DỮ LIỆU: ĐỒNG BỘ TRẠNG THÁI LÊN SHEET DỰA VÀO TỪ
 async function toggleMaster(word, statusValue, elementIdx) {
-    const selectedSheet = document.getElementById("sheet-select").value; 
     const card = document.getElementById(`card-${elementIdx}`);
-    
     if (card) card.classList.add('card-syncing');
     
     const item = rawData.find(r => r["Kanji"] === word);
@@ -295,18 +308,15 @@ async function toggleMaster(word, statusValue, elementIdx) {
     
     setTimeout(() => render(true), 250);
 
-    // GỌI API THEO TỪ
     console.log(`[CLOUD-SYNC] Đang ghi trạng thái cho từ "${word}" lên Sheet...`);
-    const sheetNameForCloud = `Unit ${selectedSheet}`; 
 
-    fetch(`${GAS_API_URL}?action=updateStatus&sheetName=${encodeURIComponent(sheetNameForCloud)}&word=${encodeURIComponent(word)}&statusValue=${encodeURIComponent(statusValue)}`)
+    fetch(`${GAS_API_URL}?action=updateStatus&word=${encodeURIComponent(word)}&statusValue=${encodeURIComponent(statusValue)}`)
         .then(res => res.json())
         .then(result => {
             if (result.success) {
                 console.log(`[CLOUD-SUCCESS] Đã cập nhật xong trạng thái từ "${word}"`);
                 setTimeout(() => showToast("☁ Đã lưu lên Sheet"), 500); 
             } else {
-                console.warn("[CLOUD-FAIL] Cloud báo thất bại.");
                 showToast("⚠️ Chưa lên được Sheet!");
             }
         })
@@ -318,7 +328,6 @@ async function toggleMaster(word, statusValue, elementIdx) {
 
 function detectColumns(firstRow) {
     const keys = Object.keys(firstRow).filter(k => k !== "_rowNumber" && k !== "Trạng thái" && k !== "unit" && k !== "examples");
-    
     colKanji = keys.find(k => k.toLowerCase() === "kanji" || k.toLowerCase().includes("từ")) || keys[1] || "";
     colHira = keys.find(k => k.toLowerCase() === "hira" || k.toLowerCase().includes("yomi")) || keys[2] || "";
 }
@@ -328,12 +337,12 @@ function toggleDisplayMode() {
     document.getElementById('mode-txt').innerText = (displayMode === 'word') ? "Từ" : "Ví dụ";
     document.getElementById('mode-btn').classList.toggle('active-blue', displayMode === 'example');
     showToast(`Chuyển sang xem ${displayMode === 'word' ? 'Từ' : 'Ví dụ'}`);
+    saveSettings();
     render(true);
 }
 
 function updateStats() {
     const selectedUnit = parseInt(document.getElementById('sheet-select').value);
-    // Tính toán số liệu dựa trên UNIT hiện tại
     const unitData = rawData.filter(item => item.unit === selectedUnit);
     const total = unitData.length;
     
@@ -354,7 +363,6 @@ function render(keepShuffle = false) {
     const selectedUnit = parseInt(document.getElementById('sheet-select').value);
     updateStats();
 
-    // Lọc dữ liệu theo TAB trạng thái VÀ UNIT
     let filtered = rawData.filter(item => {
         const status = item["Trạng thái"] || "Chưa thuộc";
         const matchTab = currentTab === 'todo' ? status === "Chưa thuộc" : status === "Đã thuộc";
@@ -391,8 +399,7 @@ function render(keepShuffle = false) {
         card.id = `card-${i}`;
         card.onclick = () => { select(i); if(isPlaying) stopLoop(); };
         
-        let col1Content = "";
-        let col2Content = "";
+        let col1Content = "", col2Content = "";
         
         if (displayMode === 'word') {
             col1Content = item[colKanji] || "";
@@ -440,7 +447,8 @@ async function select(i) {
 async function speak(text) {
     if (!text) return;
     const voice = document.getElementById("voice-select").value;
-    await speakCommon({ text: text, voice: voice, rate: "1.0" });
+    const rate = document.getElementById("rate-select").value; // ĐỌC TỐC ĐỘ TỪ SELECT MỚI
+    await speakCommon({ text: text, voice: voice, rate: rate });
 }
 
 function togglePlay() {
@@ -460,12 +468,11 @@ function togglePlay() {
 
 function stopLoop() { isPlaying = false; document.getElementById('play-btn').innerText = '▶'; clearInterval(autoTimer); }
 function switchTab(type) { currentTab = type; page = 1; currentIndex = -1; document.getElementById('tab-todo').className = `tab-btn ${type === 'todo' ? 'active' : ''}`; document.getElementById('tab-done').className = `tab-btn ${type === 'done' ? 'active done-mode' : ''}`; render(); }
-function toggleInfo() { showInfo = !showInfo; const btn = document.getElementById('info-btn'); btn.classList.toggle('active-blue', !showInfo); document.getElementById('info-txt').innerText = showInfo ? "Hiện" : "Ẩn"; btn.querySelector('i').innerText = showInfo ? "👁️" : "🙈"; render(true); }
-function toggleShuffle() { isShuffle = !isShuffle; document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle); render(); }
+function toggleInfo() { showInfo = !showInfo; const btn = document.getElementById('info-btn'); btn.classList.toggle('active-blue', !showInfo); document.getElementById('info-txt').innerText = showInfo ? "Hiện" : "Ẩn"; btn.querySelector('i').innerText = showInfo ? "👁️" : "🙈"; saveSettings(); render(true); }
+function toggleShuffle() { isShuffle = !isShuffle; document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle); saveSettings(); render(); }
 function prevPage() { if(page > 1) { page--; render(); } }
 function nextPage() { page++; render(); }
 function showToast(text) { const toast = document.getElementById('toast-msg'); toast.innerText = text; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1500); }
-function handleError(error) { console.error("[ERROR]", error); showToast("Đã có lỗi hệ thống!"); }
 </script>
 </body>
 </html>

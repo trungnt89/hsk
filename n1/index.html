@@ -49,12 +49,12 @@
         .index-number { font-size: 10px; font-weight: 800; color: #cbd5e1; }
         
         .content-col { flex-grow: 1; display: grid; grid-template-columns: 1fr 2fr; gap: 12px; align-items: center; min-width: 0; }
-        .hz-column { font-size: 1.1rem; color: var(--text-main); font-weight: 700; word-break: break-all; }
+        .hz-column { font-size: 0.9rem; color: var(--text-main); font-weight: 700; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
-        .info-column { border-left: 1.5px solid #f1f5f9; padding-left: 12px; transition: opacity 0.2s; }
+        .info-column { border-left: 1.5px solid #f1f5f9; padding-left: 12px; transition: opacity 0.2s; min-width: 0; }
         .info-column.hide-info { opacity: 0; visibility: hidden; }
-        .pinyin { color: var(--primary); font-weight: 700; font-size: 0.85rem; }
-        .meaning { color: var(--text-sub); font-size: 0.8rem; margin-top: 3px; }
+        .pinyin { color: var(--primary); font-weight: 700; font-size: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .meaning { color: var(--text-sub); font-size: 0.7rem; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
         /* Mastered Button */
         .master-btn { width: 44px; height: 44px; border-radius: 14px; border: none; background: #f1f5f9; color: #cbd5e1; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; margin-left: 8px; flex-shrink: 0; }
@@ -157,7 +157,7 @@ const STORE_NAME = "sheets_data";
 const DB_VERSION = 1;
 
 let page = 1, isShuffle = false, isPlaying = false, showInfo = true;
-let displayMode = 'word'; // Trạng thái: 'word' (hiển thị Từ) hoặc 'example' (hiển thị Ví dụ)
+let displayMode = 'word'; // Trạng thái: 'word' hoặc 'example'
 let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 let rawData = []; 
 let colHira = "", colKanji = "";
@@ -169,7 +169,7 @@ function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 window.onload = function() {
     console.log("[SYSTEM] Đang khởi tạo cơ sở dữ liệu IndexedDB...");
     initIndexedDB().then(() => {
-        loadAppData(); // Gọi thẳng hàm load dữ liệu JSON
+        loadAppData(); 
     }).catch(err => {
         console.error("[ERROR] Không thể khởi tạo IndexedDB!", err);
         showToast("Lỗi khởi tạo DB!");
@@ -191,98 +191,127 @@ function initIndexedDB() {
     });
 }
 
-// 3. Logic Đọc dữ liệu: AJAX gọi file JSON trực tiếp và quét Unit
+// 3. Logic Đọc dữ liệu: Tải list từ file JSON và GỌI GAS ĐỂ ĐỔI TRẠNG THÁI
 async function loadAppData() {
-    console.log(`[SYSTEM] Bắt đầu xử lý dữ liệu cho file JSON MimikaraN1.json`);
+    console.log(`[SYSTEM] Bắt đầu tải dữ liệu gốc từ MimikaraN1.json`);
     showToast("Đang nạp từ file JSON...");
 
     try {
         const jsonPath = 'MimikaraN1.json';
-        console.log(`[AJAX] Đang gọi fetch tới đường dẫn: ${jsonPath}`);
         const response = await fetch(jsonPath);
         
         if (!response.ok) {
-            throw new Error(`Không tìm thấy hoặc không thể đọc file ${jsonPath}`);
+            throw new Error(`Không tìm thấy file ${jsonPath}`);
         }
         
         const jsonData = await response.json();
         console.log(`[AJAX-SUCCESS] Đọc thành công file JSON. Tổng số từ: ${jsonData.length}`);
         
-        // QUÉT TẤT CẢ UNIT DUY NHẤT CÓ TRONG FILE JSON
         const units = [...new Set(jsonData.map(item => item.unit))].sort((a, b) => a - b);
-        console.log(`[SYSTEM] Đã tìm thấy các Unit:`, units);
         
-        // Đổ danh sách Unit vào ô Dropdown
         const select = document.getElementById("sheet-select");
         select.innerHTML = units.map(u => `<option value="${u}">Unit ${u}</option>`).join('');
         
-        // Map lại cấu trúc của JSON cho khớp với logic cũ của App
-        rawData = jsonData.map(item => ({
-            "_rowNumber": item.id, // Dùng ID trong JSON đại diện cho rowID trên Sheet
-            "Kanji": item.word,
-            "Hira": item.reading,
-            "Nghia": item.meaning,
-            "unit": item.unit, // Giữ lại thuộc tính unit để lọc dữ liệu
-            "examples": item.examples || [], // Giữ lại mảng ví dụ để phục vụ chế độ hiển thị Ví dụ
-            "Trạng thái": "Chưa thuộc" // Mặc định từ JSON là chưa thuộc
-        }));
+        // --- GỌI GAS ĐỂ LẤY TRẠNG THÁI ---
+        const firstUnit = units[0];
+        const statusMap = await fetchAllStatusFromGAS(`Unit ${firstUnit}`);
+
+        rawData = jsonData.map(item => {
+            const wordKey = item.word ? item.word.trim() : "";
+            const currentStatus = statusMap[wordKey] || "Chưa thuộc"; // Nếu không thấy map trong sheet -> Chưa thuộc
+            
+            return {
+                "_rowNumber": item.id,
+                "Kanji": item.word,
+                "Hira": item.reading,
+                "Nghia": item.meaning,
+                "unit": item.unit, 
+                "examples": item.examples || [], 
+                "Trạng thái": currentStatus 
+            };
+        });
         
         detectColumns(rawData[0]);
         page = 1; 
         render();
-        showToast("✓ Đã nạp JSON thành công");
+        showToast("✓ Đã nạp dữ liệu hoàn chỉnh");
     } catch (err) {
-        console.error("[AJAX-ERROR] Lỗi khi nạp file JSON!", err);
+        console.error("[AJAX-ERROR] Lỗi khi nạp dữ liệu!", err);
         handleError(err);
     }
 }
 
-// Hàm đổi Unit
-function changeSheet() { 
+// Hàm fetch lấy toàn bộ trạng thái từ Cloud
+async function fetchAllStatusFromGAS(sheetName) {
+    try {
+        console.log(`[CLOUD] Đang lấy trạng thái các từ từ Sheet: ${sheetName}`);
+        const response = await fetch(`${GAS_API_URL}?action=getAllStatus&sheetName=${encodeURIComponent(sheetName)}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        }
+    } catch (e) {
+        console.error("[CLOUD-ERROR] Không lấy được trạng thái từ Cloud, sử dụng mặc định 'Chưa thuộc'", e);
+    }
+    return {};
+}
+
+// Hàm đổi Unit (Cần cập nhật lại trạng thái của Unit mới)
+async function changeSheet() { 
     page = 1; 
     currentIndex = -1; 
     if(isPlaying) stopLoop(); 
+    
+    const selectedUnit = document.getElementById("sheet-select").value;
+    showToast(`Đang nạp Unit ${selectedUnit}...`);
+    
+    const statusMap = await fetchAllStatusFromGAS(`Unit ${selectedUnit}`);
+    
+    // Cập nhật lại trạng thái cho RAM rawData
+    rawData.forEach(item => {
+        if (item.unit == selectedUnit) {
+            const wordKey = item.Kanji ? item.Kanji.trim() : "";
+            item["Trạng thái"] = statusMap[wordKey] || "Chưa thuộc";
+        }
+    });
+
     render(); 
 }
 
 function forceReloadFromCloud() { loadAppData(); }
 
-// 4. LOGIC GHI DỮ LIỆU: ĐỒNG BỘ TRẠNG THÁI LÊN SHEET
-async function toggleMaster(rowNumber, statusValue, elementIdx) {
-    const selectedSheet = document.getElementById("sheet-select").value; // Ở đây sẽ lấy giá trị là số Unit
+// 4. LOGIC GHI DỮ LIỆU: ĐỒNG BỘ TRẠNG THÁI LÊN SHEET DỰA VÀO TỪ
+async function toggleMaster(word, statusValue, elementIdx) {
+    const selectedSheet = document.getElementById("sheet-select").value; 
     const card = document.getElementById(`card-${elementIdx}`);
     
     if (card) card.classList.add('card-syncing');
     
-    // Cập nhật mảng RAM
-    const item = rawData.find(r => r["_rowNumber"] === rowNumber);
+    const item = rawData.find(r => r["Kanji"] === word);
     if (item) item["Trạng thái"] = statusValue;
 
-    // Tạo hiệu ứng thu nhỏ ẩn dần và vẽ lại màn hình
     if (card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
     showToast("✓ Đã lưu vào máy");
     
     setTimeout(() => render(true), 250);
 
-    // BẮT BUỘC ĐỒNG BỘ TRỰC TIẾP LÊN FILE GOOGLE SHEET QUA ID
-    console.log(`[CLOUD-SYNC] Đang ghi trạng thái dòng ${rowNumber} lên Google Sheet...`);
-    
-    // Sửa SheetName tương ứng với Số Unit nếu file Sheet của bạn đặt tên là "Unit 1", "Unit 2"...
+    // GỌI API THEO TỪ
+    console.log(`[CLOUD-SYNC] Đang ghi trạng thái cho từ "${word}" lên Sheet...`);
     const sheetNameForCloud = `Unit ${selectedSheet}`; 
 
-    fetch(`${GAS_API_URL}?action=updateStatus&sheetName=${encodeURIComponent(sheetNameForCloud)}&rowId=${rowNumber}&statusValue=${encodeURIComponent(statusValue)}`)
+    fetch(`${GAS_API_URL}?action=updateStatus&sheetName=${encodeURIComponent(sheetNameForCloud)}&word=${encodeURIComponent(word)}&statusValue=${encodeURIComponent(statusValue)}`)
         .then(res => res.json())
         .then(result => {
             if (result.success) {
-                console.log(`[CLOUD-SUCCESS] Tuyệt vời! Đã cập nhật xong lên Google Sheet cho dòng ${rowNumber}.`);
+                console.log(`[CLOUD-SUCCESS] Đã cập nhật xong trạng thái từ "${word}"`);
                 setTimeout(() => showToast("☁ Đã lưu lên Sheet"), 500); 
             } else {
-                console.warn("[CLOUD-FAIL] Cloud báo thất bại nhưng đã lưu ở máy.");
+                console.warn("[CLOUD-FAIL] Cloud báo thất bại.");
                 showToast("⚠️ Chưa lên được Sheet!");
             }
         })
         .catch(e => {
-            console.error("[CLOUD-ERROR] Không thể kết nối tới Google Sheet:", e);
+            console.error("[CLOUD-ERROR] Không thể kết nối:", e);
             showToast("❌ Lỗi mạng: Chưa lên Sheet");
         });
 }
@@ -294,7 +323,6 @@ function detectColumns(firstRow) {
     colHira = keys.find(k => k.toLowerCase() === "hira" || k.toLowerCase().includes("yomi")) || keys[2] || "";
 }
 
-// Hàm chuyển đổi Từ / Ví dụ
 function toggleDisplayMode() {
     displayMode = (displayMode === 'word') ? 'example' : 'word';
     document.getElementById('mode-txt').innerText = (displayMode === 'word') ? "Từ" : "Ví dụ";
@@ -304,11 +332,16 @@ function toggleDisplayMode() {
 }
 
 function updateStats() {
-    const total = rawData.length;
+    const selectedUnit = parseInt(document.getElementById('sheet-select').value);
+    // Tính toán số liệu dựa trên UNIT hiện tại
+    const unitData = rawData.filter(item => item.unit === selectedUnit);
+    const total = unitData.length;
+    
     if (total === 0) return;
-    const masteredCount = rawData.filter(item => item["Trạng thái"] === "Đã thuộc").length;
+    const masteredCount = unitData.filter(item => item["Trạng thái"] === "Đã thuộc").length;
     const todoCount = total - masteredCount;
     const percent = Math.round((masteredCount / total) * 100) || 0;
+    
     document.getElementById('progress-fill').style.width = percent + '%';
     document.getElementById('progress-text').innerText = `TIẾN ĐỘ: ${percent}%`;
     document.getElementById('count-text').innerText = `${masteredCount}/${total}`;
@@ -321,7 +354,7 @@ function render(keepShuffle = false) {
     const selectedUnit = parseInt(document.getElementById('sheet-select').value);
     updateStats();
 
-    // Lọc dữ liệu theo TAB trạng thái VÀ UNIT đã chọn
+    // Lọc dữ liệu theo TAB trạng thái VÀ UNIT
     let filtered = rawData.filter(item => {
         const status = item["Trạng thái"] || "Chưa thuộc";
         const matchTab = currentTab === 'todo' ? status === "Chưa thuộc" : status === "Đã thuộc";
@@ -361,7 +394,6 @@ function render(keepShuffle = false) {
         let col1Content = "";
         let col2Content = "";
         
-        // Cấp phát nội dung cột theo chế độ hiển thị
         if (displayMode === 'word') {
             col1Content = item[colKanji] || "";
             col2Content = `<div class="pinyin">${item[colHira] || ""}</div><div class="meaning">${item[colNghia] || ""}</div>`;
@@ -379,7 +411,7 @@ function render(keepShuffle = false) {
                     ${col2Content}
                 </div>
             </div>
-            <button class="master-btn ${isM ? 'is-mastered' : ''}" onclick="event.stopPropagation(); toggleMaster(${item["_rowNumber"]}, '${isM ? 'Chưa thuộc' : 'Đã thuộc'}', ${i})">
+            <button class="master-btn ${isM ? 'is-mastered' : ''}" onclick="event.stopPropagation(); toggleMaster('${item["Kanji"]}', '${isM ? 'Chưa thuộc' : 'Đã thuộc'}', ${i})">
                 ${isM ? '✅' : '✔️'}
             </button>`;
         listEl.appendChild(card);
@@ -395,7 +427,6 @@ async function select(i) {
     const item = currentList[i];
     if (item) {
         let textToSpeak = "";
-        // Cấp phát văn bản phát âm theo chế độ hiển thị
         if (displayMode === 'word') {
             textToSpeak = item[colHira] || item[colKanji] || "";
         } else {

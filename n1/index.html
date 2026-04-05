@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Từ Vựng Tiếng Nhật - Pro Cloud</title>
+    <title>Từ Vựng Tiếng Nhật - Pro Cloud DB</title>
+    
     <script src="../com/assistive.js"></script>
     <script src="../com/TTSClient.js"></script>
     
@@ -13,7 +14,7 @@
         
         body, html { margin: 0; padding: 0; height: 100%; width: 100vw; font-family: 'Montserrat', sans-serif; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; }
         
-        /* Top Section (Header & Tabs) */
+        /* Top Section */
         .top-section { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding-bottom: 10px; flex-shrink: 0; z-index: 100; }
         header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
         header h3 { margin: 0; color: var(--primary); font-size: 1.1rem; }
@@ -30,10 +31,14 @@
         .tab-btn.active { background: var(--primary); color: white; }
         .tab-btn.active.done-mode { background: var(--success); }
         
-        /* Settings Panel */
         .settings-panel { padding: 0 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .setting-item label { font-size: 7px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 3px; text-transform: uppercase; }
         select { width: 100%; border: 1.5px solid #f1f5f9; padding: 8px; border-radius: 10px; font-weight: 700; font-size: 11px; outline: none; background: #fff; }
+        
+        /* Dropdown Sheet */
+        .sheet-control { padding: 0 12px 10px; display: flex; gap: 8px; }
+        .sheet-control select { border: 1.5px solid #f1f5f9; padding: 10px; font-weight: 700; border-radius: 12px; flex: 1; }
+        .btn-reload { padding: 10px; background: #f1f5f9; border: none; border-radius: 12px; font-weight: 800; font-size: 11px; color: var(--text-main); cursor: pointer; }
         
         /* Scroll Area - List Cards */
         .scroll-area { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding: 12px; scroll-behavior: smooth; }
@@ -115,10 +120,11 @@
     </div>
 </div>
 
-<div style="padding: 0 12px 10px;">
-    <select id="sheet-select" onchange="haptic(); loadData()" style="border: 1.5px solid #f1f5f9; padding: 10px; font-weight: 700; width: 100%; border-radius: 12px;">
-        <option>Đang tải sheet...</option>
+<div class="sheet-control">
+    <select id="sheet-select" onchange="haptic(); changeSheet()">
+        <option>Đang tải danh sách...</option>
     </select>
+    <button class="btn-reload" onclick="haptic(); forceReloadFromCloud()">F5 Cloud</button>
 </div>
 
 <div class="scroll-area" id="word-list">
@@ -145,128 +151,211 @@
 // --- LOGIC HỆ THỐNG & API ---
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyHlwz0I6vqBann9-wcnzW-9m_QTc-N9PH5dT94Ygtjrf2iJe1C_0UyJVZ-DNqvYr4hMg/exec";
 
+// Khởi tạo DB IndexedDB
+const DB_NAME = "JP_MASTER_LOCAL_DB";
+const STORE_NAME = "sheets_data";
+const DB_VERSION = 1;
+
 let page = 1, isShuffle = false, isPlaying = false, showInfo = true;
 let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
-let rawData = []; // Dữ liệu gốc từ Sheet
+let rawData = []; 
+let colHira = "", colKanji = "";
+let db;
 
-// Biến lưu trữ tên các cột ánh xạ sau khi phân tích sheet
-let colHira = "";
-let colKanji = "";
-
-// Tạo rung phản hồi nhẹ khi chạm trên mobile
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
-// Khởi tạo trang: Lấy danh sách Sheet
+// 1. Khởi tạo IndexedDB ngay khi mở trang
 window.onload = function() {
-    console.log("[SYSTEM] Đang khởi tạo ứng dụng, lấy danh sách sheet...");
+    console.log("[SYSTEM] Đang khởi tạo cơ sở dữ liệu IndexedDB...");
+    initIndexedDB().then(() => {
+        fetchSheetsList();
+    }).catch(err => {
+        console.error("[ERROR] Không thể khởi tạo IndexedDB!", err);
+        showToast("Lỗi khởi tạo DB!");
+    });
+};
+
+function initIndexedDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onupgradeneeded = (e) => {
+            const database = e.target.result;
+            if (!database.objectStoreNames.contains(STORE_NAME)) {
+                // Sử dụng keyPath là tên sheet
+                database.createObjectStore(STORE_NAME, { keyPath: "sheetName" });
+                console.log("[DB] Đã tạo Object Store mới: sheets_data");
+            }
+        };
+        
+        request.onsuccess = (e) => {
+            db = e.target.result;
+            console.log("[DB] IndexedDB kết nối thành công.");
+            resolve();
+        };
+        
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+// 2. Lấy danh sách Sheet
+function fetchSheetsList() {
+    console.log("[SYSTEM] Lấy danh sách sheet từ Cloud...");
     fetch(`${GAS_API_URL}?action=getSheetsInfo`)
         .then(res => res.json())
         .then(sheets => {
             const select = document.getElementById("sheet-select");
             select.innerHTML = sheets.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-            loadData(); // Tự động load dữ liệu của sheet đầu tiên
+            loadAppData(); // Tự động load dữ liệu cho sheet mặc định
         })
         .catch(err => handleError(err));
-};
+}
 
-// Đọc dữ liệu từ Google Sheet
-function loadData() {
+// 3. Logic Đọc dữ liệu: Ưu tiên IndexedDB -> Nếu không có thì mới gọi Cloud
+async function loadAppData() {
     const selectedSheet = document.getElementById("sheet-select").value;
-    console.log(`[SYSTEM] Bắt đầu tải dữ liệu sheet: ${selectedSheet}`);
-    showToast("Đang tải dữ liệu...");
-    
-    fetch(`${GAS_API_URL}?action=readSheet&sheetName=${encodeURIComponent(selectedSheet)}`)
+    console.log(`[SYSTEM] Đang xử lý lấy dữ liệu cho: ${selectedSheet}`);
+    showToast("Đang kiểm tra bộ nhớ máy...");
+
+    const localData = await getDataFromIndexedDB(selectedSheet);
+
+    if (localData && localData.data.length > 0) {
+        console.log(`[DB] Đã tìm thấy dữ liệu Local cho sheet "${selectedSheet}". Không cần fetch.`);
+        rawData = localData.data;
+        detectColumns(rawData[0]);
+        page = 1;
+        render();
+        showToast("✓ Đã nạp từ máy");
+    } else {
+        console.log(`[DB] Chưa có dữ liệu Local. Bắt đầu tải từ Cloud...`);
+        fetchDataFromCloud(selectedSheet);
+    }
+}
+
+// Tải cứng từ Cloud về và lưu vào IndexedDB
+function fetchDataFromCloud(sheetName) {
+    showToast("Tải dữ liệu từ Cloud...");
+    fetch(`${GAS_API_URL}?action=readSheet&sheetName=${encodeURIComponent(sheetName)}`)
         .then(res => res.json())
-        .then(data => {
-            console.log(`[SUCCESS] Đã lấy thành công ${data.length} bản ghi.`);
+        .then(async (data) => {
+            console.log(`[CLOUD] Đã lấy thành công ${data.length} bản ghi.`);
             rawData = data;
             
-            // Tự động phân tích cột Kanji và Hiragana từ headers
-            if (data.length > 0) {
-                detectColumns(data[0]);
-            }
+            // Lưu vào IndexedDB
+            await saveDataToIndexedDB(sheetName, data);
             
+            if (data.length > 0) detectColumns(data[0]);
             page = 1;
             render();
+            showToast("✓ Đã đồng bộ máy");
         })
         .catch(err => handleError(err));
 }
 
-// Logic tự động tìm cột theo tên (Gần đúng)
-function detectColumns(firstRow) {
-    const keys = Object.keys(firstRow).filter(k => k !== "_rowNumber" && k !== "Trạng thái");
-    
-    // Tìm cột Hira
-    colHira = keys.find(k => k.toLowerCase().includes("hira") || k.toLowerCase().includes("yomi") || k.toLowerCase().includes("kana")) || "";
-    
-    // Tìm cột Kanji
-    colKanji = keys.find(k => k.toLowerCase().includes("kanji") || k.toLowerCase().includes("từ") || k.toLowerCase().includes("word")) || "";
-    
-    // Fallback: Nếu không phát hiện được từ khóa, gán mặc định
-    if (!colKanji && keys.length > 0) colKanji = keys[0]; // Cột đầu thường là Kanji
-    if (!colHira && keys.length > 1) colHira = keys[1];   // Cột 2 thường là Hiragana
-
-    console.log(`[ANALYSIS] Đã xác định cột Kanji: [${colKanji}], Cột Hira: [${colHira}]`);
+// Hàm đổi sheet
+function changeSheet() {
+    page = 1; 
+    currentIndex = -1;
+    if(isPlaying) stopLoop();
+    loadAppData();
 }
 
-// Chuyển đổi trạng thái Đã thuộc / Chưa thuộc lên Sheet
+// Hàm cưỡng bức tải lại từ Cloud
+function forceReloadFromCloud() {
+    const selectedSheet = document.getElementById("sheet-select").value;
+    console.log(`[SYSTEM] Bắt buộc nạp lại dữ liệu từ Cloud cho sheet "${selectedSheet}"`);
+    fetchDataFromCloud(selectedSheet);
+}
+
+// 4. Logic Ghi dữ liệu: Cập nhật song song cả Local và Cloud
 async function toggleMaster(rowNumber, statusValue, elementIdx) {
     const selectedSheet = document.getElementById("sheet-select").value;
     const card = document.getElementById(`card-${elementIdx}`);
     
+    // CẬP NHẬT TỨC THỜI TRÊN GIAO DIỆN VÀ DB (Optimistic Update)
     if (card) card.classList.add('card-syncing');
-    console.log(`[API] Đang cập nhật dòng ${rowNumber} thành trạng thái: ${statusValue}`);
+    
+    // 4.1 Cập nhật biến RAM
+    const item = rawData.find(r => r["_rowNumber"] === rowNumber);
+    if (item) item["Trạng thái"] = statusValue;
 
-    try {
-        const res = await fetch(`${GAS_API_URL}?action=updateStatus&sheetName=${encodeURIComponent(selectedSheet)}&rowId=${rowNumber}&statusValue=${encodeURIComponent(statusValue)}`);
-        const result = await res.json();
-        
-        if (result.success) {
-            console.log(`[SUCCESS] Đã đồng bộ thành công lên cloud.`);
-            const item = rawData.find(r => r["_rowNumber"] === rowNumber);
-            if (item) item["Trạng thái"] = statusValue;
-            
-            if (card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
-            showToast("✓ Đã lưu Cloud");
-            
-            setTimeout(() => render(true), 250);
-        } else {
-            throw new Error("API return false");
-        }
-    } catch (e) {
-        console.error("[ERROR] Lỗi đồng bộ dữ liệu:", e);
-        if (card) card.classList.remove('card-syncing');
-        showToast("❌ Lỗi Cloud");
-    }
+    // 4.2 Cập nhật IndexedDB
+    await saveDataToIndexedDB(selectedSheet, rawData);
+    
+    // Hiệu ứng và Render lại phần tử sau khi update DB
+    if (card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
+    showToast("✓ Đã lưu máy");
+    setTimeout(() => render(true), 250);
+
+    // 4.3 Âm thầm gửi API đồng bộ lên Cloud
+    console.log(`[API-SILENT] Đang đẩy cập nhật dòng ${rowNumber} lên Cloud...`);
+    fetch(`${GAS_API_URL}?action=updateStatus&sheetName=${encodeURIComponent(selectedSheet)}&rowId=${rowNumber}&statusValue=${encodeURIComponent(statusValue)}`)
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                console.log(`[CLOUD-SUCCESS] Đồng bộ Cloud thành công cho dòng ${rowNumber}.`);
+            } else {
+                console.warn("[CLOUD-FAIL] Cloud không phản hồi thành công.");
+            }
+        })
+        .catch(e => {
+            console.error("[CLOUD-ERROR] Lỗi đồng bộ ngầm lên Cloud:", e);
+        });
 }
 
-// Tính toán thanh tiến độ và số lượng
+// --- HELPER FUNCTIONS CHO INDEXEDDB ---
+function saveDataToIndexedDB(sheetName, data) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], "readwrite");
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.put({ sheetName, data });
+        
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+function getDataFromIndexedDB(sheetName) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], "readonly");
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(sheetName);
+        
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+// --- GIỮ NGUYÊN TOÀN BỘ LOGIC CÒN LẠI ĐỂ BẢO TOÀN TÍNH NĂNG ---
+function detectColumns(firstRow) {
+    const keys = Object.keys(firstRow).filter(k => k !== "_rowNumber" && k !== "Trạng thái");
+    colHira = keys.find(k => k.toLowerCase().includes("hira") || k.toLowerCase().includes("yomi") || k.toLowerCase().includes("kana")) || "";
+    colKanji = keys.find(k => k.toLowerCase().includes("kanji") || k.toLowerCase().includes("từ") || k.toLowerCase().includes("word")) || "";
+    if (!colKanji && keys.length > 0) colKanji = keys[0];
+    if (!colHira && keys.length > 1) colHira = keys[1];
+    console.log(`[ANALYSIS] Đã xác định cột Kanji: [${colKanji}], Cột Hira: [${colHira}]`);
+}
+
 function updateStats() {
     const total = rawData.length;
     if (total === 0) return;
-    
     const masteredCount = rawData.filter(item => item["Trạng thái"] === "Đã thuộc").length;
     const todoCount = total - masteredCount;
     const percent = Math.round((masteredCount / total) * 100) || 0;
-
     document.getElementById('progress-fill').style.width = percent + '%';
     document.getElementById('progress-text').innerText = `TIẾN ĐỘ: ${percent}%`;
     document.getElementById('count-text').innerText = `${masteredCount}/${total}`;
-    
     document.getElementById('tab-todo').innerText = `CHƯA THUỘC (${todoCount})`;
     document.getElementById('tab-done').innerText = `ĐÃ THUỘC (${masteredCount})`;
 }
 
-// Render dữ liệu ra giao diện
 function render(keepShuffle = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     updateStats();
-
     let filtered = rawData.filter(item => {
         const status = item["Trạng thái"] || "Chưa thuộc";
         return currentTab === 'todo' ? status === "Chưa thuộc" : status === "Đã thuộc";
     });
-
     const totalP = Math.ceil(filtered.length / limit) || 1;
     if (page > totalP) page = totalP;
     let items = filtered.slice((page - 1) * limit, page * limit);
@@ -279,7 +368,6 @@ function render(keepShuffle = false) {
 
     const listEl = document.getElementById('word-list');
     listEl.innerHTML = '';
-    
     if (currentList.length === 0) {
         listEl.innerHTML = `<div style="text-align: center; color: #888; margin-top: 20px;">Trống...</div>`;
         document.getElementById('page-label').innerText = `PAGE ${page}/${totalP}`;
@@ -295,7 +383,6 @@ function render(keepShuffle = false) {
         const card = document.createElement('div');
         card.className = `word-card ${i === currentIndex ? 'active' : ''}`;
         card.id = `card-${i}`;
-        
         card.onclick = () => { select(i); if(isPlaying) stopLoop(); };
         
         card.innerHTML = `
@@ -312,112 +399,50 @@ function render(keepShuffle = false) {
             </button>`;
         listEl.appendChild(card);
     });
-    
     document.getElementById('page-label').innerText = `PAGE ${page}/${totalP}`;
 }
 
-// Xử lý khi chọn một từ
 async function select(i) {
     currentIndex = i;
     document.querySelectorAll('.word-card').forEach(c => c.classList.remove('active'));
     const card = document.getElementById(`card-${i}`);
-    if (card) { 
-        card.classList.add('active'); 
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
-    }
-    
+    if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     const item = currentList[i];
     if (item) {
-        // Ưu tiên lấy dữ liệu cột Hiragana, nếu không có/rỗng thì lấy cột Kanji
         const textToSpeak = item[colHira] || item[colKanji] || "";
-        console.log(`[AUDIO] Đang yêu cầu đọc text: "${textToSpeak}"`);
         await speak(textToSpeak);
     }
 }
 
-// HÀM CHỈ SỬ DỤNG speakCommon TỪ THƯ VIỆN TTSClient.js
 async function speak(text) {
     if (!text) return;
     const voice = document.getElementById("voice-select").value;
-    
-    console.log(`[TTS] Gọi speakCommon với text="${text}", giọng="${voice}"`);
-    
-    // Gọi trực tiếp thư viện Azure TTS giống như HSK Master
-    await speakCommon({
-        text: text,
-        voice: voice,
-        rate: "1.0"
-    });
+    await speakCommon({ text: text, voice: voice, rate: "1.0" });
 }
 
-// Toggle nút Play/Stop
 function togglePlay() {
     isPlaying = !isPlaying;
     document.getElementById('play-btn').innerText = isPlaying ? '⏹' : '▶';
-    
     if (isPlaying) { 
-        console.log("[SYSTEM] Đã bật chế độ tự động chạy.");
         if(currentIndex === -1) currentIndex = 0; 
         select(currentIndex); 
-        
         const delay = parseInt(document.getElementById('delay-select').value);
         autoTimer = setInterval(async () => {
             currentIndex++;
-            if (currentIndex >= currentList.length) { 
-                currentIndex = 0; 
-                if(isShuffle) render(); 
-            }
+            if (currentIndex >= currentList.length) { currentIndex = 0; if(isShuffle) render(); }
             await select(currentIndex);
         }, delay);
-    } else {
-        stopLoop();
-    }
+    } else { stopLoop(); }
 }
 
-function stopLoop() { 
-    console.log("[SYSTEM] Đã dừng tự động chạy.");
-    isPlaying = false; 
-    document.getElementById('play-btn').innerText = '▶'; 
-    clearInterval(autoTimer); 
-}
-
-function switchTab(type) {
-    currentTab = type;
-    page = 1; currentIndex = -1;
-    document.getElementById('tab-todo').className = `tab-btn ${type === 'todo' ? 'active' : ''}`;
-    document.getElementById('tab-done').className = `tab-btn ${type === 'done' ? 'active done-mode' : ''}`;
-    render();
-}
-
-function toggleInfo() { 
-    showInfo = !showInfo; 
-    const btn = document.getElementById('info-btn');
-    btn.classList.toggle('active-blue', !showInfo);
-    document.getElementById('info-txt').innerText = showInfo ? "Hiện" : "Ẩn";
-    btn.querySelector('i').innerText = showInfo ? "👁️" : "🙈";
-    render(true); 
-}
-
-function toggleShuffle() { 
-    isShuffle = !isShuffle; 
-    document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle);
-    render(); 
-}
-
+function stopLoop() { isPlaying = false; document.getElementById('play-btn').innerText = '▶'; clearInterval(autoTimer); }
+function switchTab(type) { currentTab = type; page = 1; currentIndex = -1; document.getElementById('tab-todo').className = `tab-btn ${type === 'todo' ? 'active' : ''}`; document.getElementById('tab-done').className = `tab-btn ${type === 'done' ? 'active done-mode' : ''}`; render(); }
+function toggleInfo() { showInfo = !showInfo; const btn = document.getElementById('info-btn'); btn.classList.toggle('active-blue', !showInfo); document.getElementById('info-txt').innerText = showInfo ? "Hiện" : "Ẩn"; btn.querySelector('i').innerText = showInfo ? "👁️" : "🙈"; render(true); }
+function toggleShuffle() { isShuffle = !isShuffle; document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle); render(); }
 function prevPage() { if(page > 1) { page--; render(); } }
 function nextPage() { page++; render(); }
-
-function showToast(text) {
-    const toast = document.getElementById('toast-msg');
-    toast.innerText = text;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 1500);
-}
-
-function handleError(error) { 
-    console.error("[ERROR]", error); 
-    showToast("Đã có lỗi hệ thống!"); 
-}
+function showToast(text) { const toast = document.getElementById('toast-msg'); toast.innerText = text; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1500); }
+function handleError(error) { console.error("[ERROR]", error); showToast("Đã có lỗi hệ thống!"); }
 </script>
 </body>
 </html>

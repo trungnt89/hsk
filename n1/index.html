@@ -122,7 +122,7 @@
 
 <div class="sheet-control">
     <select id="sheet-select" onchange="haptic(); changeSheet()">
-        <option>Đang tải danh sách...</option>
+        <option>Đang nạp Unit...</option>
     </select>
     <button class="btn-reload" onclick="haptic(); forceReloadFromCloud()">F5 Cloud</button>
 </div>
@@ -167,7 +167,7 @@ function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 window.onload = function() {
     console.log("[SYSTEM] Đang khởi tạo cơ sở dữ liệu IndexedDB...");
     initIndexedDB().then(() => {
-        fetchSheetsList();
+        loadAppData(); // Gọi thẳng hàm load dữ liệu JSON
     }).catch(err => {
         console.error("[ERROR] Không thể khởi tạo IndexedDB!", err);
         showToast("Lỗi khởi tạo DB!");
@@ -189,21 +189,8 @@ function initIndexedDB() {
     });
 }
 
-// 2. Lấy danh sách Sheet
-function fetchSheetsList() {
-    fetch(`${GAS_API_URL}?action=getSheetsInfo`)
-        .then(res => res.json())
-        .then(sheets => {
-            const select = document.getElementById("sheet-select");
-            select.innerHTML = sheets.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-            loadAppData();
-        })
-        .catch(err => handleError(err));
-}
-
-// 3. Logic Đọc dữ liệu: AJAX gọi file JSON trực tiếp
+// 3. Logic Đọc dữ liệu: AJAX gọi file JSON trực tiếp và quét Unit
 async function loadAppData() {
-    const selectedSheet = document.getElementById("sheet-select").value;
     console.log(`[SYSTEM] Bắt đầu xử lý dữ liệu cho file JSON n1/MimikaraN1.json`);
     showToast("Đang nạp từ file JSON...");
 
@@ -219,12 +206,21 @@ async function loadAppData() {
         const jsonData = await response.json();
         console.log(`[AJAX-SUCCESS] Đọc thành công file JSON. Tổng số từ: ${jsonData.length}`);
         
+        // QUÉT TẤT CẢ UNIT DUY NHẤT CÓ TRONG FILE JSON
+        const units = [...new Set(jsonData.map(item => item.unit))].sort((a, b) => a - b);
+        console.log(`[SYSTEM] Đã tìm thấy các Unit:`, units);
+        
+        // Đổ danh sách Unit vào ô Dropdown
+        const select = document.getElementById("sheet-select");
+        select.innerHTML = units.map(u => `<option value="${u}">Unit ${u}</option>`).join('');
+        
         // Map lại cấu trúc của JSON cho khớp với logic cũ của App
         rawData = jsonData.map(item => ({
             "_rowNumber": item.id, // Dùng ID trong JSON đại diện cho rowID trên Sheet
             "Kanji": item.word,
             "Hira": item.reading,
             "Nghia": item.meaning,
+            "unit": item.unit, // Giữ lại thuộc tính unit để lọc dữ liệu
             "Trạng thái": "Chưa thuộc" // Mặc định từ JSON là chưa thuộc
         }));
         
@@ -238,39 +234,40 @@ async function loadAppData() {
     }
 }
 
-function fetchDataFromCloud(sheetName) {
-    // Hàm này giữ nguyên nhưng tạm thời không dùng đến do đã nạp file JSON
-    console.log("[SYSTEM] Đọc file local JSON, bỏ qua Cloud nạp từ.");
+// Hàm đổi Unit
+function changeSheet() { 
+    page = 1; 
+    currentIndex = -1; 
+    if(isPlaying) stopLoop(); 
+    render(); 
 }
 
-function changeSheet() { page = 1; currentIndex = -1; if(isPlaying) stopLoop(); loadAppData(); }
 function forceReloadFromCloud() { loadAppData(); }
 
-// 4. LOGIC GHI DỮ LIỆU: CẬP NHẬT CẢ LOCAL VÀ BẮT BUỘC ĐỒNG BỘ LÊN SHEET
+// 4. LOGIC GHI DỮ LIỆU: ĐỒNG BỘ TRẠNG THÁI LÊN SHEET
 async function toggleMaster(rowNumber, statusValue, elementIdx) {
-    const selectedSheet = document.getElementById("sheet-select").value;
+    const selectedSheet = document.getElementById("sheet-select").value; // Ở đây sẽ lấy giá trị là số Unit
     const card = document.getElementById(`card-${elementIdx}`);
     
-    // BƯỚC 1: LƯU TRẠNG THÁI VÀO BỘ NHỚ MÁY (INDEXEDDB) ĐỂ HIỂN THỊ TỨC THÌ
     if (card) card.classList.add('card-syncing');
     
     // Cập nhật mảng RAM
     const item = rawData.find(r => r["_rowNumber"] === rowNumber);
     if (item) item["Trạng thái"] = statusValue;
 
-    // Lưu đè mảng RAM mới vào IndexedDB
-    await saveDataToIndexedDB(selectedSheet, rawData);
-    
     // Tạo hiệu ứng thu nhỏ ẩn dần và vẽ lại màn hình
     if (card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
     showToast("✓ Đã lưu vào máy");
     
     setTimeout(() => render(true), 250);
 
-    // BƯỚC 2: BẮT BUỘC ĐỒNG BỘ TRỰC TIẾP LÊN FILE GOOGLE SHEET
+    // BẮT BUỘC ĐỒNG BỘ TRỰC TIẾP LÊN FILE GOOGLE SHEET QUA ID
     console.log(`[CLOUD-SYNC] Đang ghi trạng thái dòng ${rowNumber} lên Google Sheet...`);
     
-    fetch(`${GAS_API_URL}?action=updateStatus&sheetName=${encodeURIComponent(selectedSheet)}&rowId=${rowNumber}&statusValue=${encodeURIComponent(statusValue)}`)
+    // Sửa SheetName tương ứng với Số Unit nếu file Sheet của bạn đặt tên là "Unit 1", "Unit 2"...
+    const sheetNameForCloud = `Unit ${selectedSheet}`; 
+
+    fetch(`${GAS_API_URL}?action=updateStatus&sheetName=${encodeURIComponent(sheetNameForCloud)}&rowId=${rowNumber}&statusValue=${encodeURIComponent(statusValue)}`)
         .then(res => res.json())
         .then(result => {
             if (result.success) {
@@ -287,29 +284,8 @@ async function toggleMaster(rowNumber, statusValue, elementIdx) {
         });
 }
 
-// Các hàm Helper cho IndexedDB
-function saveDataToIndexedDB(sheetName, data) {
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([STORE_NAME], "readwrite");
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.put({ sheetName, data });
-        request.onsuccess = () => resolve();
-        request.onerror = (e) => reject(e.target.error);
-    });
-}
-
-function getDataFromIndexedDB(sheetName) {
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([STORE_NAME], "readonly");
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.get(sheetName);
-        request.onsuccess = (e) => resolve(e.target.result);
-        request.onerror = (e) => reject(e.target.error);
-    });
-}
-
 function detectColumns(firstRow) {
-    const keys = Object.keys(firstRow).filter(k => k !== "_rowNumber" && k !== "Trạng thái");
+    const keys = Object.keys(firstRow).filter(k => k !== "_rowNumber" && k !== "Trạng thái" && k !== "unit");
     
     colKanji = keys.find(k => k.toLowerCase() === "kanji" || k.toLowerCase().includes("từ")) || keys[1] || "";
     colHira = keys.find(k => k.toLowerCase() === "hira" || k.toLowerCase().includes("yomi")) || keys[2] || "";
@@ -330,11 +306,17 @@ function updateStats() {
 
 function render(keepShuffle = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
+    const selectedUnit = parseInt(document.getElementById('sheet-select').value);
     updateStats();
+
+    // Lọc dữ liệu theo TAB trạng thái VÀ UNIT đã chọn
     let filtered = rawData.filter(item => {
         const status = item["Trạng thái"] || "Chưa thuộc";
-        return currentTab === 'todo' ? status === "Chưa thuộc" : status === "Đã thuộc";
+        const matchTab = currentTab === 'todo' ? status === "Chưa thuộc" : status === "Đã thuộc";
+        const matchUnit = item.unit === selectedUnit;
+        return matchTab && matchUnit;
     });
+
     const totalP = Math.ceil(filtered.length / limit) || 1;
     if (page > totalP) page = totalP;
     let items = filtered.slice((page - 1) * limit, page * limit);
@@ -353,7 +335,7 @@ function render(keepShuffle = false) {
         return;
     }
 
-    const keys = Object.keys(rawData[0]).filter(k => k !== "_rowNumber" && k !== "Trạng thái");
+    const keys = Object.keys(rawData[0]).filter(k => k !== "_rowNumber" && k !== "Trạng thái" && k !== "unit");
     const colNghia = keys.find(k => k.toLowerCase() === "nghia" || k.toLowerCase().includes("nghĩa")) || "Nghia";
 
     currentList.forEach((item, i) => {

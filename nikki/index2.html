@@ -18,8 +18,10 @@
         main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 
         .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 8px; font-size: 14px; resize: none; height: 154px; outline: none; }
-        
+        .write-card-a textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 8px; font-size: 16px; resize: none; height: 80px; outline: none; }
+		
+		  .write-card textarea {width: 100%;border: 1px solid #dfe6e9;border-radius: 8px; padding: 8px; font-size: 14px;resize: none;height: 154px;outline: none;}
+		  
         .action-area { display: flex; justify-content: flex-end; align-items: center; margin-top: 5px; gap: 8px; }
         .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .btn-cancel { background-color: #eee; color: #333; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
@@ -29,16 +31,12 @@
         .tab-btn { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; }
         .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 60px; scroll-behavior: smooth; position: relative; }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 60px; scroll-behavior: smooth; }
         .tab-content.active { display: block; }
         
-        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; transition: 0.2s; position: relative; flex-shrink: 0; }
+        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; transition: 0.2s; position: relative; }
         .diary-item.selected { border-left-color: var(--ai-color); background-color: #f0fff4; }
-        .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
-
-        #pinnedSection { position: sticky; top: 0; z-index: 10; background: var(--bg-color); padding-bottom: 4px; border-bottom: 1px dashed #ccc; margin-bottom: 10px; display: flex; flex-direction: column; }
-        .pinned-label { font-size: 0.7rem; font-weight: bold; color: #f39c12; margin-bottom: 5px; padding-left: 5px; padding-top: 5px; }
-
+        
         .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 5px; }
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--ai-color); color: #2c3e50; }
         .btn-speak { background: var(--ai-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
@@ -50,13 +48,8 @@
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
         .diary-content { font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
         
-        /* Cải thiện giao diện nút hành động */
-        .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px; }
-        .item-actions-left { display: flex; gap: 20px; }
-        .item-actions-right { display: flex; gap: 15px; }
-        .item-action-btn { background: none; border: none; font-size: 0.8rem; cursor: pointer; font-weight: 600; padding: 5px 0; }
-        
-        .pin-btn { color: #f39c12; }
+        .item-actions { display: flex; gap: 12px; border-top: 1px solid #eee; padding-top: 8px; }
+        .item-action-btn { background: none; border: none; font-size: 0.75rem; cursor: pointer; font-weight: 600; }
         .edit-btn { color: var(--edit-color); }
         .delete-btn { color: var(--danger-color); }
         .ai-btn { color: var(--ai-color); font-weight: bold; }
@@ -65,7 +58,7 @@
     </style>
 </head>
 <body>
-    <script src="../com/assistive.js"></script>
+	<script src="../com/assistive.js"></script>
     <script src="../com/TTSClient.js"></script>
 
     <header><h1>日記 & AI N3 (Secure)</h1></header>
@@ -175,57 +168,23 @@
                 container.innerHTML = '<p class="loading-text">Chưa có bài viết nào.</p>';
                 return;
             }
-
-            const pinnedItems = diaries.filter(d => d.pinned);
-            const normalItems = diaries.filter(d => !d.pinned);
-
             container.innerHTML = '';
-            
-            if (pinnedItems.length > 0) {
-                const pinnedSection = document.createElement('div');
-                pinnedSection.id = 'pinnedSection';
-                pinnedSection.innerHTML = `<div class="pinned-label">📌 ĐÃ GHIM (${pinnedItems.length}/2)</div>`;
-                pinnedItems.forEach(item => pinnedSection.appendChild(createItemEl(item)));
-                container.appendChild(pinnedSection);
-            }
-
-            normalItems.forEach(item => container.appendChild(createItemEl(item)));
-            console.log(`[Log] Rendered ${pinnedItems.length} pinned, ${normalItems.length} normal.`);
-        }
-
-        function createItemEl(item) {
-            const div = document.createElement('div');
-            div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
-            div.id = `item-${item.id}`;
-            div.onclick = () => selectRecord(item.id);
-            div.innerHTML = `
-                <div class="diary-date">${item.date}</div>
-                <div class="diary-content">${item.text}</div>
-                <div class="item-actions">
-                    <div class="item-actions-left">
-                        <span class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ ghim' : '📌 Ghim'}</span>
-                        <span class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</span>
-                        <span class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</span>
-                    </div>
-                    <div class="item-actions-right">
+            diaries.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''}`;
+                div.id = `item-${item.id}`;
+                div.onclick = () => selectRecord(item.id);
+                div.innerHTML = `
+                    <div class="diary-date">${item.date}</div>
+                    <div class="diary-content">${item.text}</div>
+                    <div class="item-actions">
+                        <span class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">Sửa</span>
+                        <span class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">Xóa</span>
                         <span class="item-action-btn ai-btn" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ AI N3</span>
                     </div>
-                </div>
-            `;
-            return div;
-        }
-
-        function togglePin(id) {
-            const idx = currentDiaries.findIndex(d => d.id == id);
-            if (idx === -1) return;
-            const isPinned = !!currentDiaries[idx].pinned;
-            if (!isPinned && currentDiaries.filter(d => d.pinned).length >= 2) {
-                alert("Tối đa 2 bài ghim."); return;
-            }
-            currentDiaries[idx].pinned = !isPinned;
-            renderList(currentDiaries);
-            callGAS({ action: 'update_pin', id: id, pinned: currentDiaries[idx].pinned });
-            console.log(`[Log] Toggle pin for ${id}: ${currentDiaries[idx].pinned}`);
+                `;
+                container.appendChild(div);
+            });
         }
 
         function selectRecord(id) {
@@ -240,6 +199,7 @@
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
             const pContainer = document.getElementById('paragraphContainer');
             const cContainer = document.getElementById('conversationContainer');
+
             if (!item) return;
 
             pContainer.innerHTML = item.paragraph 
@@ -256,21 +216,34 @@
         async function speakText(elementId, btnId) {
             const el = document.getElementById(elementId);
             const btn = document.getElementById(btnId);
-            if(!el || !btn || btn.classList.contains("active")) return; 
+            if(!el || !btn) return;
             
+            if (btn.classList.contains("active")) return; 
+
+            // Kiểm tra sự tồn tại của hàm speakCommon từ file ../com/TTSClient.js
             if (typeof window.speakCommon !== 'function') {
-                alert("Lỗi: Không tìm thấy hàm speakCommon."); return;
+                alert("Lỗi: Không tìm thấy hàm speakCommon. Hãy kiểm tra đường dẫn ../com/TTSClient.js");
+                return;
             }
 
             const text = el.innerText;
             const voice = document.getElementById("voiceSelect").value;
             const rate = document.getElementById("rateSelect").value;
+
             btn.classList.add("active");
             
             try {
-                await window.speakCommon({ text, voice, rate, filename: "Diary_AI_N3" });
+                // Sử dụng hàm speakCommon từ file của bạn
+                await window.speakCommon({
+                    text: text,
+                    voice: voice,
+                    rate: rate,
+                    filename: "Diary_AI_N3"
+                });
+
                 btn.classList.remove("active");
                 if(isRepeating) {
+                    // Kiểm tra xem tab hiện tại có còn đang hiển thị el này không
                     const parentTab = el.closest('.tab-content');
                     if (parentTab && parentTab.classList.contains('active')) {
                         setTimeout(() => speakText(elementId, btnId), 800);
@@ -285,15 +258,19 @@
         async function askAI(targetId, content) {
             selectRecord(targetId);
             switchTab(1);
-            console.log(`[AI] Processing for ID: ${targetId}`);
-            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
-            document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
+            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang gửi yêu cầu bảo mật đến Server...</p>';
+            document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý hội thoại...</p>';
 
             try {
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'ask_ai_proxy', id: targetId, content: content })
+                    body: JSON.stringify({
+                        action: 'ask_ai_proxy',
+                        id: targetId,
+                        content: content
+                    })
                 });
+                
                 const res = await response.json();
                 if (res.status === 'success') {
                     const idx = currentDiaries.findIndex(d => d.id == targetId);
@@ -302,9 +279,11 @@
                         currentDiaries[idx].conversation = res.conversation;
                     }
                     updateAIView();
+                } else {
+                    throw new Error(res.message);
                 }
             } catch (e) {
-                alert("Lỗi AI");
+                alert("Lỗi AI: " + e.message);
                 updateAIView();
             }
         }
@@ -314,12 +293,16 @@
             if(!val) return;
             const id = Date.now().toString();
             const date = new Date().toLocaleString('vi-VN');
-            currentDiaries.unshift({id, date, text: val, paragraph: "", conversation: "", pinned: false});
+            
+            currentDiaries.unshift({id, date, text: val, paragraph: "", conversation: ""});
             renderList(currentDiaries);
             selectRecord(id);
+            
+            const diaryTab = document.getElementById('tab-diary');
+            diaryTab.scrollTo({ top: 0, behavior: 'smooth' });
+
             document.getElementById('diaryInput').value = '';
             callGAS({action:'create', id, date, text: val});
-            console.log("[Log] Created new entry.");
         }
 
         function startEdit(id, text) {
@@ -338,7 +321,6 @@
             const tid = editingId;
             clearEditMode();
             callGAS({action:'update', id: tid, text: val});
-            console.log("[Log] Updated entry.");
         }
 
         function clearEditMode() {
@@ -353,7 +335,6 @@
             currentDiaries = currentDiaries.filter(i => i.id != id);
             renderList(currentDiaries);
             callGAS({action:'delete', id});
-            console.log("[Log] Deleted entry.");
         }
 
         function callGAS(p) {

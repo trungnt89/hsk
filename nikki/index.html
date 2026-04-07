@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <script src="../com/assistive.js"></script>
     <title>Nhật Ký Của Tôi - AI Integrated</title>
     <style>
         /* === RESET & BASE STYLES === */
@@ -15,49 +14,41 @@
             --ai-color: #00b894;
         }
         body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
         header h1 { font-size: 1.2rem; font-weight: 600; }
         main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 
-        /* Thẻ viết nhật ký */
         .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 8px; font-size: 16px; resize: none; height: 120px; outline: none; }
+        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 8px; font-size: 16px; resize: none; height: 100px; outline: none; }
         .action-area { display: flex; justify-content: flex-end; margin-top: 5px; gap: 8px; }
         .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-cancel { background-color: #eee; color: #333; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
 
-        /* Danh sách bài viết */
-        .diary-list { flex: 1; overflow-y: auto; padding-bottom: 60px; }
-        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; position: relative; animation: fadeIn 0.3s ease; }
+        .tabs { display: flex; background: #eee; border-radius: 8px; padding: 4px; margin-top: 5px; flex-shrink: 0; }
+        .tab-btn { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; }
+        .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 60px; }
+        .tab-content.active { display: block; }
+        
+        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; position: relative; animation: fadeIn 0.3s ease; border-left: 4px solid var(--primary-color); }
+        .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.6; font-size: 0.9rem; white-space: pre-wrap; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--ai-color); }
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
         .diary-content { font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
         
-        /* Actions */
         .item-actions { display: flex; gap: 12px; border-top: 1px solid #eee; padding-top: 8px; }
         .item-action-btn { background: none; border: none; font-size: 0.75rem; cursor: pointer; font-weight: 600; }
         .edit-btn { color: var(--edit-color); }
         .delete-btn { color: var(--danger-color); }
         .ai-btn { color: var(--ai-color); display: flex; align-items: center; gap: 3px; }
 
-        /* === AI MODAL === */
-        #aiModal { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px;
-        }
-        .modal-content { 
-            background: white; width: 100%; max-width: 500px; border-radius: 15px; 
-            padding: 20px; max-height: 80vh; overflow-y: auto; position: relative;
-        }
-        .modal-header { font-weight: bold; color: var(--primary-color); margin-bottom: 15px; display: flex; justify-content: space-between; }
-        .modal-body { font-size: 0.9rem; line-height: 1.6; white-space: pre-line; color: #2d3436; background: #f9f9f9; padding: 15px; border-radius: 8px; }
-        .close-modal { cursor: pointer; font-size: 1.2rem; }
-
-        /* Bottom Nav */
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; justify-content: space-around; align-items: center; height: 50px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 10; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-light); font-size: 0.75rem; cursor: pointer; }
         .nav-item.active { color: var(--primary-color); }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .loading-lock { pointer-events: none; opacity: 0.6; }
+        .loading-text { text-align: center; padding: 20px; font-size: 0.85rem; color: var(--text-light); }
     </style>
 </head>
 <body>
@@ -68,37 +59,39 @@
         <div class="write-card">
             <textarea id="diaryInput" placeholder="Hôm nay của bạn thế nào?..."></textarea>
             <div class="action-area">
-                <button id="cancelBtn" class="btn-cancel" style="display:none; padding: 8px 16px; border-radius: 8px; border:none;">Hủy</button>
+                <button id="cancelBtn" class="btn-cancel" style="display:none;">Hủy</button>
                 <button id="saveBtn" class="btn-save">Lưu lại</button>
             </div>
         </div>
 
-        <div class="diary-list">
-            <div id="diaryContainer">
-                <p style="text-align: center; margin-top: 10px; font-size: 0.85rem;">Đang tải dữ liệu...</p>
-            </div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(0)">📝 Nhật ký</button>
+            <button class="tab-btn" onclick="switchTab(1)">📖 Đoạn văn N3</button>
+            <button class="tab-btn" onclick="switchTab(2)">💬 Hội thoại</button>
+        </div>
+
+        <div id="tab-diary" class="tab-content active">
+            <div id="diaryContainer"><p class="loading-text">Đang tải dữ liệu...</p></div>
+        </div>
+
+        <div id="tab-paragraph" class="tab-content">
+            <div id="paragraphContainer"><p class="loading-text">Chưa có dữ liệu AI.</p></div>
+        </div>
+
+        <div id="tab-conversation" class="tab-content">
+            <div id="conversationContainer"><p class="loading-text">Chưa có dữ liệu AI.</p></div>
         </div>
     </main>
 
-    <div id="aiModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>✨ Gemini 2.5 N3 Translation</span>
-                <span class="close-modal" onclick="closeAI()">✕</span>
-            </div>
-            <div id="aiResult" class="modal-body">Đang xử lý...</div>
-        </div>
-    </div>
-
     <div class="bottom-nav">
         <div class="nav-item active"><span>📝 日記</span></div>
-        <div class="nav-item" onclick="alert('Developing...')"><span>📅 Lịch</span></div>
-        <div class="nav-item" onclick="alert('Developing...')"><span>⚙️ Cài đặt</span></div>
+        <div class="nav-item"><span>📅 Lịch</span></div>
+        <div class="nav-item"><span>⚙️ Cài đặt</span></div>
     </div>
 
     <script>
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
-        const AI_KEY = "AIzaSyBzO04K2X714XGytWk7CbNmBZaxoIWXX5o";
+        const AI_KEY = "AIzaSyBzO04K2X714XGytWk7CbNmBZaxoIWXX5o"; 
         let currentDiaries = [];
         let editingId = null;
 
@@ -108,20 +101,26 @@
             document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
         });
 
-        // --- CORE LOGIC (GIỮ NGUYÊN TỪ BẢN CŨ) ---
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const btns = document.querySelectorAll('.tab-btn');
+            tabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
+            btns.forEach((btn, i) => btn.classList.toggle('active', i === index));
+        }
+
         function loadDiaries() {
             fetch(GAS_URL).then(res => res.json()).then(res => {
                 if (res.status === 'success') {
                     currentDiaries = res.data;
                     renderList(currentDiaries);
                 }
-            });
+            }).catch(err => console.error("[LOG ERROR] Không tải được dữ liệu:", err));
         }
 
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
             if (!diaries.length) {
-                container.innerHTML = '<p style="text-align:center;font-size:0.85rem;color:#636e72;">Chưa có bài viết nào.</p>';
+                container.innerHTML = '<p class="loading-text">Chưa có bài viết nào.</p>';
                 return;
             }
             container.innerHTML = '';
@@ -135,23 +134,24 @@
                     <div class="item-actions">
                         <span class="item-action-btn edit-btn" onclick="startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">Sửa</span>
                         <span class="item-action-btn delete-btn" onclick="deleteDiary('${item.id}')">Xóa</span>
-                        <span class="item-action-btn ai-btn" onclick="askAI(\`${item.text.replace(/`/g, '\\`')}\`)">✨ AI N3</span>
+                        <span class="item-action-btn ai-btn" onclick="askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ AI N3</span>
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
 
-        // --- AI INTEGRATION LOGIC ---
-        async function askAI(content) {
-            const modal = document.getElementById('aiModal');
-            const resultBox = document.getElementById('aiResult');
-            modal.style.display = 'flex';
-            resultBox.innerText = "Giáo viên AI đang viết bài N3 cho bạn...";
+        async function askAI(targetId, content) {
+            console.log(`[LOG AI] Gửi yêu cầu Gemini 2.5 cho ID: ${targetId}`);
+            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">Đang tạo nội dung N3...</p>';
+            document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">Đang tạo hội thoại...</p>';
+            switchTab(1);
 
-            const prompt = `Hãy thực hiện 2 việc:
-            1. Viết lại nội dung sau thành một đoạn văn tiếng Nhật tự nhiên trình độ N3 với độ dài 500 chữ: "${content}"
-            2. Tạo mẫu hội thoại 2 người về nội dung trên.`;
+            const prompt = `
+            Nội dung nhật ký: "${content}"
+            Nhiệm vụ (Chỉ trả về tiếng Nhật trình độ N3):
+            1. Viết đoạn văn 500 chữ. Bắt đầu bằng: ---PARAGRAPH---
+            2. Tạo hội thoại 2 người. Bắt đầu bằng: ---CONVERSATION---`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${AI_KEY}`, {
@@ -159,17 +159,49 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
+                
                 const data = await response.json();
-                resultBox.innerText = data.candidates[0].content.parts[0].text;
-                console.log("[LOG AI] Đã tạo nội dung N3 thành công.");
+                if (data.error) throw new Error(data.error.message);
+
+                const fullText = data.candidates[0].content.parts[0].text;
+                const parts = fullText.split("---CONVERSATION---");
+                const paragraphPart = parts[0].replace("---PARAGRAPH---", "").trim();
+                const conversationPart = parts[1] ? parts[1].trim() : "Lỗi tách hội thoại.";
+
+                document.getElementById('paragraphContainer').innerHTML = `<div class="ai-content-box">${paragraphPart}</div>`;
+                document.getElementById('conversationContainer').innerHTML = `<div class="ai-content-box">${conversationPart}</div>`;
+
+                // TỰ ĐỘNG LƯU VÀO GOOGLE SHEET (Cập nhật cột D và E qua GAS type)
+                const timestamp = new Date().toLocaleString('vi-VN');
+                
+                // Lưu Đoạn Văn (Sẽ vào cột D)
+                callGAS({
+                    action: 'create', 
+                    id: targetId, 
+                    type: 'AI_PARA', 
+                    date: timestamp, 
+                    text: paragraphPart
+                }, 'Lưu Đoạn Văn AI', null);
+
+                // Lưu Hội Thoại (Sẽ vào cột E)
+                callGAS({
+                    action: 'create', 
+                    id: targetId, 
+                    type: 'AI_CONV', 
+                    date: timestamp, 
+                    text: conversationPart
+                }, 'Lưu Hội Thoại AI', null);
+
+                console.log("[LOG AI] Đã gửi yêu cầu đồng bộ AI sang Sheet.");
+
             } catch (error) {
-                resultBox.innerText = "Lỗi kết nối AI: " + error.message;
+                console.error("[LOG ERROR] Lỗi AI:", error);
+                const errorMsg = `<p class="loading-text" style="color:red;">Lỗi: ${error.message}</p>`;
+                document.getElementById('paragraphContainer').innerHTML = errorMsg;
+                document.getElementById('conversationContainer').innerHTML = errorMsg;
             }
         }
 
-        function closeAI() { document.getElementById('aiModal').style.display = 'none'; }
-
-        // --- SUPPORT FUNCTIONS (CRUD) ---
         function saveDiary() {
             const val = document.getElementById('diaryInput').value.trim();
             if(!val) return;
@@ -178,6 +210,7 @@
             currentDiaries.unshift({id, date, text: val, isFake: true});
             renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';
+            // Lưu gốc vào cột C (Mặc định không có type)
             callGAS({action:'create', id, date, text: val}, 'Thêm mới', id);
         }
 
@@ -186,6 +219,7 @@
             document.getElementById('diaryInput').value = text;
             document.getElementById('saveBtn').innerText = 'Cập nhật';
             document.getElementById('cancelBtn').style.display = 'inline-block';
+            window.scrollTo(0,0);
         }
 
         function updateDiary() {
@@ -208,7 +242,7 @@
         }
 
         function deleteDiary(id) {
-            if(!confirm("Xóa nhé?")) return;
+            if(!confirm("Xóa bài viết?")) return;
             currentDiaries = currentDiaries.filter(i => i.id != id);
             renderList(currentDiaries);
             callGAS({action:'delete', id}, 'Xóa', null);
@@ -217,13 +251,13 @@
         function callGAS(payload, action, targetId) {
             fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
             .then(() => {
-                console.log(`[LOG] ${action} thành công.`);
+                console.log(`[LOG] ${action} đồng bộ thành công.`);
                 if(targetId) {
                     const idx = currentDiaries.findIndex(i => i.id == targetId);
                     if(idx !== -1) delete currentDiaries[idx].isFake;
                     renderList(currentDiaries);
                 }
-            });
+            }).catch(err => console.error(`[LOG ERROR] ${action} thất bại:`, err));
         }
     </script>
 </body>

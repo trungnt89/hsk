@@ -192,7 +192,6 @@
             const activeEl = document.getElementById(`item-${id}`);
             if (activeEl) {
                 activeEl.classList.add('selected');
-                // Tự động scroll đến item được chọn bên trong container tab-diary
                 const container = document.getElementById('tab-diary');
                 const offsetTop = activeEl.offsetTop - container.offsetTop;
                 container.scrollTo({ top: offsetTop - 10, behavior: 'smooth' });
@@ -292,6 +291,9 @@
             
             currentDiaries.unshift({id, date, text: val, paragraph: "", conversation: ""});
             renderList(currentDiaries);
+            
+            // Tự động cuộn danh sách lên đầu để thấy bài vừa lưu
+            document.getElementById('tab-diary').scrollTop = 0;
             selectRecord(id);
             
             document.getElementById('diaryInput').value = '';

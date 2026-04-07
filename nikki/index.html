@@ -212,7 +212,6 @@
             const speakBtn = document.getElementById('btnMainSpeak');
             speakBtn.disabled = (index === 0);
             
-            // Đã xóa phần window.stopSpeak() khi chuyển tab theo yêu cầu
             updateAIView();
         }
 
@@ -282,7 +281,6 @@
         }
 
         function selectRecord(id) {
-            // Chỉ tắt âm thanh khi chọn một record khác record đang được chọn
             if (selectedDiaryId !== null && selectedDiaryId != id) {
                 if (typeof window.stopSpeak === 'function') window.stopSpeak();
                 resetSpeakBtns();
@@ -325,14 +323,21 @@
 
         function resetSpeakBtns() {
             const btn = document.getElementById('btnMainSpeak');
-            btn.classList.remove('playing');
-            btn.innerHTML = '🔊 Đọc';
+            if (btn) {
+                btn.classList.remove('playing');
+                btn.innerHTML = '🔊 Đọc';
+            }
         }
 
         async function speakText(elementId, btnId) {
             const el = document.getElementById(elementId);
             const btn = document.getElementById(btnId);
-            if(!el || !btn || typeof window.speakCommon !== 'function') return;
+            
+            // Sửa lỗi: Kiểm tra el và btn trước khi truy cập classList
+            if(!el || !btn || typeof window.speakCommon !== 'function') {
+                console.warn("[Log] Không tìm thấy nội dung hoặc nút điều khiển.");
+                return;
+            }
 
             resetSpeakBtns();
             btn.classList.add("playing");

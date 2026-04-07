@@ -76,7 +76,7 @@
                 globalAudio = document.createElement('audio');
                 globalAudio.id = "tts-auto-audio";
                 globalAudio.controls = true;
-                globalAudio.style.cssText = "position:fixed; bottom:10px; right:10px; z-index:9999; width:300px; height:35px; background:#fff; border-radius:50px; box-shadow:0 4px 15px rgba(0,0,0,0.3);";
+                globalAudio.style.cssText = "position:fixed; bottom:-100px; right:10px; z-index:9999; width:300px; height:35px; background:#fff; border-radius:50px; box-shadow:0 4px 15px rgba(0,0,0,0.3);";
                 document.body.appendChild(globalAudio);
                 console.log("[TTS Log] Visible Audio Player Created");
             }

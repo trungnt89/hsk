@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N3 Japanese AI Generator</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #e74c3c; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
+        h1 { color: var(--primary); text-align: center; border-bottom: 3px solid var(--accent); padding-bottom: 10px; margin-bottom: 25px; }
+        
+        .input-section { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #34495e; }
+        textarea { 
+            width: 100%; height: 150px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; 
+            font-size: 16px; box-sizing: border-box; transition: border 0.3s;
+        }
+        textarea:focus { border-color: var(--accent); outline: none; }
+        
+        button { 
+            width: 100%; padding: 15px; background: var(--primary); color: white; 
+            border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        button:hover { background: #34495e; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        button:disabled { background: #95a5a6; cursor: not-allowed; }
+
+        .result-section { margin-top: 30px; display: none; border-top: 2px solid #eee; padding-top: 20px; }
+        .output-label { color: var(--accent); font-size: 1.2rem; margin-bottom: 15px; }
+        .output-box { 
+            background: #fffdf0; border-left: 5px solid var(--accent); padding: 20px; 
+            border-radius: 0 8px 8px 0; white-space: pre-line; line-height: 1.8; font-size: 18px; color: #2c3e50;
+        }
+        
+        .log-container { 
+            margin-top: 20px; background: #1e1e1e; color: #4af626; padding: 12px; 
+            border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px;
+            max-height: 120px; overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>N3 Japanese Writer AI</h1>
+
+    <div class="input-section">
+        <label for="viInput">Nhập nội dung Tiếng Việt của bạn:</label>
+        <textarea id="viInput" placeholder="Ví dụ: Muốn an toàn tài chính cần kiếm thêm thu nhập thụ động..."></textarea>
+    </div>
+
+    <button id="genBtn" onclick="generateN3()">TẠO BÀI VIẾT N3</button>
+
+    <div id="resultSection" class="result-section">
+        <div class="output-label">Kết quả từ AI:</div>
+        <div id="jpOutput" class="output-box"></div>
+        
+        <div class="log-container" id="logBox"></div>
+    </div>
+</div>
+
+<script>
+    // Cấu hình API (Key đã được tích hợp)
+    const CONFIG = {
+        API_KEY: "AIzaSyA1v7f2h0LvD_068-dalniG2KJJXWw956s",
+        MODEL_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    };
+
+    function addLog(msg) {
+        const logBox = document.getElementById('logBox');
+        const time = new Date().toLocaleTimeString();
+        logBox.innerHTML += `[${time}] ${msg}<br>`;
+        logBox.scrollTop = logBox.scrollHeight;
+        console.log(`[SYSTEM LOG]: ${msg}`);
+    }
+
+    async function generateN3() {
+        const input = document.getElementById('viInput').value.trim();
+        const btn = document.getElementById('genBtn');
+        const output = document.getElementById('jpOutput');
+        const section = document.getElementById('resultSection');
+
+        if (!input) {
+            alert("Vui lòng nhập nội dung!");
+            return;
+        }
+
+        // Setup UI
+        btn.disabled = true;
+        btn.innerText = "Đang xử lý...";
+        section.style.display = 'block';
+        output.innerText = "AI đang suy nghĩ và chuyển đổi sang N3...";
+        addLog("Bắt đầu quá trình phân tích nội dung.");
+
+        // Prompt chuyên dụng cho trình độ N3
+        const prompt = `
+            Hãy đóng vai một giáo viên tiếng Nhật chuyên luyện thi JLPT N3.
+            Nhiệm vụ: Chuyển đổi nội dung tiếng Việt dưới đây thành một đoạn văn tiếng Nhật tự nhiên.
+            
+            YÊU CẦU BẮT BUỘC:
+            1. Trình độ: Sử dụng từ vựng và ngữ pháp trình độ N3 (không quá khó, không quá dễ).
+            2. Cấu trúc: Đoạn văn phải mạch lạc, sử dụng các liên từ (Conjunctions) như: しかし, なぜなら, したがって, そのため.
+            3. Nội dung trả về: 
+               - Đoạn văn tiếng Nhật hoàn chỉnh.
+               - Một danh sách ngắn (3-5 mục) giải thích các mẫu ngữ pháp N3 đã dùng trong đoạn văn đó.
+            
+            NỘI DUNG TIẾNG VIỆT: "${input}"
+        `;
+
+        try {
+            addLog("Đang kết nối với Google Gemini API...");
+            const response = await fetch(`${CONFIG.MODEL_URL}?key=${CONFIG.API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) throw new Error(data.error.message);
+
+            const aiResponse = data.candidates[0].content.parts[0].text;
+            
+            output.innerText = aiResponse;
+            addLog("Đã nhận phản hồi từ AI thành công.");
+            addLog("Trình độ: N3 Level - Trạng thái: Hoàn tất.");
+
+        } catch (error) {
+            output.innerText = "Lỗi kết nối: " + error.message;
+            addLog("LỖI: " + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "TẠO BÀI VIẾT N3";
+        }
+    }
+</script>
+
+</body>
+</html>

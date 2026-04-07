@@ -27,7 +27,7 @@
         .tab-btn { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; }
         .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 60px; }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 60px; scroll-behavior: smooth; }
         .tab-content.active { display: block; }
         
         .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; transition: 0.2s; position: relative; }
@@ -79,7 +79,6 @@
     </main>
 
     <script>
-        // URL Web App sau khi bạn Deploy lại GAS
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
         
         let currentDiaries = [];
@@ -170,7 +169,6 @@
             document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý hội thoại...</p>';
 
             try {
-                // Gọi qua Proxy GAS để bảo mật Key
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
                     body: JSON.stringify({
@@ -202,9 +200,16 @@
             if(!val) return;
             const id = Date.now().toString();
             const date = new Date().toLocaleString('vi-VN');
+            
+            // Thêm vào đầu mảng dữ liệu local
             currentDiaries.unshift({id, date, text: val, paragraph: "", conversation: ""});
             renderList(currentDiaries);
             selectRecord(id);
+            
+            // TỰ ĐỘNG CUỘN LÊN ĐẦU DANH SÁCH NHẬT KÝ
+            const diaryTab = document.getElementById('tab-diary');
+            diaryTab.scrollTo({ top: 0, behavior: 'smooth' });
+
             document.getElementById('diaryInput').value = '';
             callGAS({action:'create', id, date, text: val});
         }
@@ -214,6 +219,7 @@
             document.getElementById('diaryInput').value = text;
             document.getElementById('saveBtn').innerText = 'Cập nhật';
             document.getElementById('cancelBtn').style.display = 'inline-block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function updateDiary() {

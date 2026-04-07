@@ -58,10 +58,10 @@
     </style>
 </head>
 <body>
-	<script src="../com/assistive.js"></script>
+    <script src="../com/assistive.js"></script>
     <script src="../com/TTSClient.js"></script>
 
-    <header><h1>日記 & AI N3 (Secure)</h1></header>
+    <header><h1>日記 & AI</h1></header>
 
     <main>
         <div class="write-card">
@@ -112,6 +112,7 @@
         let isRepeating = false;
 
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("App initialized");
             loadDiaries();
             loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => editingId ? updateDiary() : saveDiary());
@@ -158,6 +159,7 @@
                     }
                 }
             }).catch(err => {
+                console.error("Fetch error:", err);
                 document.getElementById('diaryContainer').innerHTML = '<p class="loading-text" style="color:red">Lỗi kết nối Server.</p>';
             });
         }
@@ -188,10 +190,18 @@
         }
 
         function selectRecord(id) {
+            console.log("Action: selectRecord and scroll to ID:", id);
             selectedDiaryId = id;
             document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
             const activeEl = document.getElementById(`item-${id}`);
-            if (activeEl) activeEl.classList.add('selected');
+            if (activeEl) {
+                activeEl.classList.add('selected');
+                // Tự động scroll đến item được chọn trong danh sách
+                activeEl.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }
             updateAIView();
         }
 
@@ -203,9 +213,9 @@
             if (!item) return;
 
             pContainer.innerHTML = item.paragraph 
-                ? `<div class="ai-header"><span>📖 Đoạn văn N3</span><button class="btn-speak" id="btn-speak-p" onclick="speakText('p-content', 'btn-speak-p')">🔊 Đọc</button></div>
+                ? `<div class="ai-header"><span>📖 Đoạn văn</span><button class="btn-speak" id="btn-speak-p" onclick="speakText('p-content', 'btn-speak-p')">🔊 Đọc</button></div>
                    <div id="p-content" class="ai-content-box">${item.paragraph}</div>` 
-                : `<div class="loading-text">Nhấn nút <b>✨ AI N3</b> ở tab Nhật ký để tạo nội dung.</div>`;
+                : `<div class="loading-text">Nhấn nút <b>✨ AI Generate</b> ở tab Nhật ký để tạo nội dung.</div>`;
             
             cContainer.innerHTML = item.conversation 
                 ? `<div class="ai-header"><span>💬 Hội thoại</span><button class="btn-speak" id="btn-speak-c" onclick="speakText('c-content', 'btn-speak-c')">🔊 Đọc</button></div>
@@ -220,7 +230,6 @@
             
             if (btn.classList.contains("active")) return; 
 
-            // Kiểm tra sự tồn tại của hàm speakCommon từ file ../com/TTSClient.js
             if (typeof window.speakCommon !== 'function') {
                 alert("Lỗi: Không tìm thấy hàm speakCommon. Hãy kiểm tra đường dẫn ../com/TTSClient.js");
                 return;
@@ -231,9 +240,9 @@
             const rate = document.getElementById("rateSelect").value;
 
             btn.classList.add("active");
+            console.log("Starting TTS for:", elementId);
             
             try {
-                // Sử dụng hàm speakCommon từ file của bạn
                 await window.speakCommon({
                     text: text,
                     voice: voice,
@@ -243,7 +252,6 @@
 
                 btn.classList.remove("active");
                 if(isRepeating) {
-                    // Kiểm tra xem tab hiện tại có còn đang hiển thị el này không
                     const parentTab = el.closest('.tab-content');
                     if (parentTab && parentTab.classList.contains('active')) {
                         setTimeout(() => speakText(elementId, btnId), 800);
@@ -283,6 +291,7 @@
                     throw new Error(res.message);
                 }
             } catch (e) {
+                console.error("AI Proxy Error:", e);
                 alert("Lỗi AI: " + e.message);
                 updateAIView();
             }
@@ -302,6 +311,7 @@
             diaryTab.scrollTo({ top: 0, behavior: 'smooth' });
 
             document.getElementById('diaryInput').value = '';
+            console.log("Creating diary entry:", id);
             callGAS({action:'create', id, date, text: val});
         }
 
@@ -320,6 +330,7 @@
             renderList(currentDiaries);
             const tid = editingId;
             clearEditMode();
+            console.log("Updating diary entry:", tid);
             callGAS({action:'update', id: tid, text: val});
         }
 
@@ -332,13 +343,15 @@
 
         function deleteDiary(id) {
             if(!confirm("Xóa bài này?")) return;
+            console.log("Deleting diary entry:", id);
             currentDiaries = currentDiaries.filter(i => i.id != id);
             renderList(currentDiaries);
             callGAS({action:'delete', id});
         }
 
         function callGAS(p) {
-            fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
+            fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) })
+            .catch(e => console.error("GAS Call Error:", e));
         }
     </script>
 </body>

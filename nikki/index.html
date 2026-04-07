@@ -70,7 +70,7 @@
     <script src="../com/assistive.js"></script>
     <script src="../com/TTSClient.js"></script>
 
-    <header><h1>日記 & AI N3 (Secure)</h1></header>
+    <header><h1>日記 & AI</h1></header>
 
     <main>
         <div class="write-card">
@@ -122,12 +122,62 @@
         let isRepeating = false;
         let currentTabIndex = 0;
 
+        // --- INDEXEDDB LOGIC ---
+        const dbName = "DiaryDB";
+        const storeName = "diaries";
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        db.createObjectStore(storeName, { keyPath: "id" });
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function saveToIDB(data) {
+            const db = await initDB();
+            const tx = db.transaction(storeName, "readwrite");
+            const store = tx.objectStore(storeName);
+            store.clear();
+            data.forEach(item => store.put(item));
+            console.log("[IndexedDB] Cached updated.");
+            return tx.complete;
+        }
+
+        async function getFromIDB() {
+            const db = await initDB();
+            return new Promise((resolve) => {
+                const tx = db.transaction(storeName, "readonly");
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            loadDiaries();
+            initApp();
             loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => editingId ? updateDiary() : saveDiary());
             document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
         });
+
+        async function initApp() {
+            // Hiển thị dữ liệu từ Cache trước để UI mượt mà
+            const cachedData = await getFromIDB();
+            if (cachedData && cachedData.length > 0) {
+                currentDiaries = cachedData.sort((a, b) => b.id - a.id);
+                renderList(currentDiaries);
+                selectRecord(selectedDiaryId || currentDiaries[0].id);
+            }
+            // Sau đó đồng bộ từ Server
+            loadDiaries();
+        }
 
         function saveTTSSettings() {
             localStorage.setItem("diary_voice", document.getElementById("voiceSelect").value);
@@ -170,13 +220,14 @@
             fetch(GAS_URL).then(res => res.json()).then(res => {
                 if (res.status === 'success') {
                     currentDiaries = res.data;
+                    saveToIDB(currentDiaries); // Cập nhật lại cache từ sever
                     renderList(currentDiaries);
                     if (currentDiaries.length > 0) {
                         selectRecord(selectedDiaryId || currentDiaries[0].id);
                     }
                 }
             }).catch(err => {
-                document.getElementById('diaryContainer').innerHTML = '<p class="loading-text" style="color:red">Lỗi kết nối Server.</p>';
+                console.warn("[Server] Fetch failed, using offline data.");
             });
         }
 
@@ -224,6 +275,7 @@
             const isPinned = !!currentDiaries[idx].pinned;
             if (!isPinned && currentDiaries.filter(d => d.pinned).length >= 2) { alert("Tối đa 2 bài ghim."); return; }
             currentDiaries[idx].pinned = !isPinned;
+            saveToIDB(currentDiaries);
             renderList(currentDiaries);
             callGAS({ action: 'update_pin', id: id, pinned: currentDiaries[idx].pinned });
         }
@@ -258,10 +310,8 @@
             if (btn.classList.contains("playing")) {
                 if (typeof window.stopSpeak === 'function') window.stopSpeak();
                 resetSpeakBtns();
-                console.log("[TTS] Global stop triggered.");
                 return;
             }
-            
             let targetId = currentTabIndex === 1 ? 'p-content' : (currentTabIndex === 2 ? 'c-content' : null);
             if (targetId) speakText(targetId, 'btnMainSpeak');
         }
@@ -315,6 +365,7 @@
                     if (idx !== -1) {
                         currentDiaries[idx].paragraph = res.paragraph;
                         currentDiaries[idx].conversation = res.conversation;
+                        saveToIDB(currentDiaries);
                     }
                     updateAIView();
                 }
@@ -326,13 +377,14 @@
             if(!val) return;
             const id = Date.now().toString();
             const date = new Date().toLocaleString('vi-VN');
-            currentDiaries.unshift({id, date, text: val, paragraph: "", conversation: "", pinned: false});
+            const newItem = {id, date, text: val, paragraph: "", conversation: "", pinned: false};
+            currentDiaries.unshift(newItem);
+            saveToIDB(currentDiaries);
             renderList(currentDiaries);
             selectRecord(id);
             document.getElementById('diaryInput').value = '';
             callGAS({action:'create', id, date, text: val});
             switchTab(0);
-            console.log("[Log] Save successful, returned to Diary tab.");
         }
 
         function startEdit(id, text) {
@@ -347,12 +399,12 @@
             const val = document.getElementById('diaryInput').value.trim();
             const idx = currentDiaries.findIndex(i => i.id == editingId);
             currentDiaries[idx].text = val;
+            saveToIDB(currentDiaries);
             renderList(currentDiaries);
             const tid = editingId;
             clearEditMode();
             callGAS({action:'update', id: tid, text: val});
             switchTab(0);
-            console.log("[Log] Update successful, returned to Diary tab.");
         }
 
         function clearEditMode() {
@@ -365,6 +417,7 @@
         function deleteDiary(id) {
             if(!confirm("Xóa bài này?")) return;
             currentDiaries = currentDiaries.filter(i => i.id != id);
+            saveToIDB(currentDiaries);
             renderList(currentDiaries);
             callGAS({action:'delete', id});
         }

@@ -33,7 +33,10 @@
         .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; transition: 0.2s; position: relative; }
         .diary-item.selected { border-left-color: var(--ai-color); background-color: #f0fff4; }
         
+        .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 5px; }
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--ai-color); color: #2c3e50; }
+        .btn-speak { background: var(--ai-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
         .diary-content { font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
         
@@ -47,6 +50,7 @@
     </style>
 </head>
 <body>
+    <script src="../com/TTSClient.js"></script>
 
     <header><h1>日記 & AI N3 (Secure)</h1></header>
 
@@ -154,12 +158,23 @@
             if (!item) return;
 
             pContainer.innerHTML = item.paragraph 
-                ? `<div class="ai-content-box">${item.paragraph}</div>` 
+                ? `<div class="ai-header"><span>📖 Đoạn văn N3</span><button class="btn-speak" onclick="speakText('p-content')">🔊 Đọc</button></div>
+                   <div id="p-content" class="ai-content-box">${item.paragraph}</div>` 
                 : `<div class="loading-text">Nhấn nút <b>✨ AI N3</b> ở tab Nhật ký để tạo nội dung.</div>`;
             
             cContainer.innerHTML = item.conversation 
-                ? `<div class="ai-content-box">${item.conversation}</div>` 
+                ? `<div class="ai-header"><span>💬 Hội thoại</span><button class="btn-speak" onclick="speakText('c-content')">🔊 Đọc</button></div>
+                   <div id="c-content" class="ai-content-box">${item.conversation}</div>` 
                 : `<div class="loading-text">Chưa có hội thoại AI.</div>`;
+        }
+
+        function speakText(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            if (typeof TTSClient !== 'undefined') {
+                TTSClient.speak(text, "ja-JP");
+            } else {
+                alert("Lỗi: Không tìm thấy thư viện TTSClient.js");
+            }
         }
 
         async function askAI(targetId, content) {
@@ -201,12 +216,10 @@
             const id = Date.now().toString();
             const date = new Date().toLocaleString('vi-VN');
             
-            // Thêm vào đầu mảng dữ liệu local
             currentDiaries.unshift({id, date, text: val, paragraph: "", conversation: ""});
             renderList(currentDiaries);
             selectRecord(id);
             
-            // TỰ ĐỘNG CUỘN LÊN ĐẦU DANH SÁCH NHẬT KÝ
             const diaryTab = document.getElementById('tab-diary');
             diaryTab.scrollTo({ top: 0, behavior: 'smooth' });
 

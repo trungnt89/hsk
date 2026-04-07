@@ -385,6 +385,12 @@
                         saveToIDB(currentDiaries);
                     }
                     updateAIView();
+                } else if (res.message && res.message.includes("503")) {
+                    alert("Hệ thống AI đang quá tải (Lỗi 503). Vui lòng đợi vài giây rồi thử lại nhé!");
+                    updateAIView();
+                } else {
+                    alert("Lỗi AI: " + (res.message || "Không xác định"));
+                    updateAIView();
                 }
             } catch (e) { 
                 console.error("[Log] Lỗi gọi AI:", e);
@@ -406,7 +412,6 @@
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
             
-            // Cưỡng ép cuộn vùng chứa lên đầu
             const container = document.getElementById('tab-diary');
             container.scrollTop = 0;
 
@@ -434,7 +439,6 @@
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
             
-            // Cuộn lên đầu khi cập nhật xong
             const container = document.getElementById('tab-diary');
             container.scrollTop = 0;
 

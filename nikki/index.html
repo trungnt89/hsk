@@ -168,14 +168,12 @@
         });
 
         async function initApp() {
-            // Hiển thị dữ liệu từ Cache trước để UI mượt mà
             const cachedData = await getFromIDB();
             if (cachedData && cachedData.length > 0) {
                 currentDiaries = cachedData.sort((a, b) => b.id - a.id);
                 renderList(currentDiaries);
                 selectRecord(selectedDiaryId || currentDiaries[0].id);
             }
-            // Sau đó đồng bộ từ Server
             loadDiaries();
         }
 
@@ -211,8 +209,11 @@
             const speakBtn = document.getElementById('btnMainSpeak');
             speakBtn.disabled = (index === 0);
             
-            if (typeof window.stopSpeak === 'function') window.stopSpeak();
-            resetSpeakBtns();
+            // CHỈ tắt âm thanh khi quay lại tab Nhật ký (index 0)
+            if (index === 0 && typeof window.stopSpeak === 'function') {
+                window.stopSpeak();
+                resetSpeakBtns();
+            }
             updateAIView();
         }
 
@@ -220,7 +221,7 @@
             fetch(GAS_URL).then(res => res.json()).then(res => {
                 if (res.status === 'success') {
                     currentDiaries = res.data;
-                    saveToIDB(currentDiaries); // Cập nhật lại cache từ sever
+                    saveToIDB(currentDiaries);
                     renderList(currentDiaries);
                     if (currentDiaries.length > 0) {
                         selectRecord(selectedDiaryId || currentDiaries[0].id);
@@ -281,6 +282,11 @@
         }
 
         function selectRecord(id) {
+            // Nếu chọn một record khác, dừng âm thanh cũ để tránh lẫn lộn nội dung
+            if (selectedDiaryId !== id && typeof window.stopSpeak === 'function') {
+                window.stopSpeak();
+                resetSpeakBtns();
+            }
             selectedDiaryId = id;
             document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
             const activeEl = document.getElementById(`item-${id}`);

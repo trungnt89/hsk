@@ -12,10 +12,7 @@
             e.target.result.createObjectStore(DB_STORE);
         }
     };
-    ttsDbReq.onsuccess = (e) => { 
-        ttsDb = e.target.result; 
-        console.log("[TTS Log] IndexedDB Connected");
-    };
+    ttsDbReq.onsuccess = (e) => { ttsDb = e.target.result; };
 
     async function saveToCache(key, blob) {
         if (!ttsDb) return;
@@ -28,33 +25,18 @@
 
     function playAudio(url, audioControl) {
         return new Promise(res => {
-            console.log("[TTS Log] Playing audio...");
-            // Dừng mọi âm thanh đang phát trước khi chạy âm thanh mới
+            // FIX: Dừng mọi âm thanh đang phát trước khi chạy âm thanh mới
             audioControl.pause();
             audioControl.currentTime = 0;
             
             audioControl.src = url;
-            audioControl.onended = () => {
-                console.log("[TTS Log] Playback ended");
-                res();
-            };
+            audioControl.onended = res;
             audioControl.play().catch(err => {
                 console.warn("[Audio Playback Interrupted]", err);
                 res();
             });
         });
     }
-
-    /**
-     * Hàm dừng âm thanh chủ động từ bên ngoài
-     */
-    window.stopSpeak = function() {
-        if (globalAudio) {
-            globalAudio.pause();
-            globalAudio.currentTime = 0;
-            console.log("[TTS Log] Audio stopped manually via stopSpeak()");
-        }
-    };
 
     /**
      * Hàm gọi chính - Xuất ra phạm vi toàn cục (window)
@@ -75,6 +57,7 @@
             if (!globalAudio) {
                 globalAudio = document.createElement('audio');
                 globalAudio.id = "tts-auto-audio";
+                // FIX: Hiển thị bộ điều khiển âm thanh để người dùng có thể tắt thủ công
                 globalAudio.controls = true;
                 globalAudio.style.cssText = "position:fixed; bottom:10px; right:10px; z-index:9999; width:220px; height:35px; background:#fff; border-radius:50px; box-shadow:0 4px 15px rgba(0,0,0,0.3);";
                 document.body.appendChild(globalAudio);
@@ -83,12 +66,9 @@
             audioControl = globalAudio;
         }
 
-        if (!text) {
-            console.log("[TTS Log] No text provided to speak");
-            return;
-        }
+        if (!text) return;
 
-        // Cấu hình MediaSession
+        // Cấu hình MediaSession (Điều khiển trên màn hình khóa/thông báo)
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: text,
@@ -96,13 +76,14 @@
                 album: filename,
                 artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/3039/3039387.png', sizes: '512x512', type: 'image/png' }]
             });
-            navigator.mediaSession.setActionHandler('pause', () => { window.stopSpeak(); });
-            navigator.mediaSession.setActionHandler('stop', () => { window.stopSpeak(); });
+            // Cho phép dừng từ thanh thông báo điện thoại
+            navigator.mediaSession.setActionHandler('pause', () => { audioControl.pause(); });
+            navigator.mediaSession.setActionHandler('stop', () => { audioControl.pause(); audioControl.currentTime = 0; });
         }
 
         const cacheKey = `${voice}_${rate}_${text}`;
 
-        // 1. Kiểm tra Cache
+        // 1. Kiểm tra Cache trong IndexedDB
         const cachedBlob = await new Promise(res => {
             if (!ttsDb) return res(null);
             try {
@@ -113,15 +94,13 @@
         });
 
         if (cachedBlob) {
-            console.log("[TTS Log] Using cached audio");
             return playAudio(URL.createObjectURL(cachedBlob), audioControl);
         }
 
-        // 2. Gọi API TTS
+        // 2. Gọi API TTS (Sử dụng link Streaming đã tối ưu của bạn)
         const url = `https://hsk-gilt.vercel.app/api/tts_test?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
         
         try {
-            console.log("[TTS Log] Fetching from API...");
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             

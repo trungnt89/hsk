@@ -3,46 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>N3 Japanese Writer - Fixed</title>
+    <title>N3 Japanese AI Writer - Final Fix</title>
     <style>
         :root { --primary: #2c3e50; --accent: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); padding: 20px; display: flex; justify-content: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; display: flex; justify-content: center; }
         .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
-        h1 { color: var(--primary); text-align: center; border-bottom: 3px solid var(--accent); padding-bottom: 10px; margin-bottom: 25px; }
-        textarea { width: 100%; height: 150px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        button:disabled { background: #95a5a6; }
+        h1 { color: var(--primary); text-align: center; border-bottom: 3px solid var(--accent); padding-bottom: 10px; margin-bottom: 25px; font-size: 24px; }
+        textarea { width: 100%; height: 140px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; font-family: inherit; }
+        button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        button:hover { background: #34495e; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
         .result-section { margin-top: 30px; display: none; }
         .output-box { background: #fffdf0; border-left: 5px solid var(--accent); padding: 20px; border-radius: 0 8px 8px 0; white-space: pre-line; line-height: 1.8; font-size: 18px; color: #2c3e50; }
-        .log-container { margin-top: 20px; background: #1e1e1e; color: #4af626; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 150px; overflow-y: auto; }
+        .log-container { margin-top: 20px; background: #1e1e1e; color: #4af626; padding: 12px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 11px; max-height: 120px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>N3 Japanese Content Creator</h1>
-    <textarea id="viInput" placeholder="Nhập nội dung Tiếng Việt của bạn tại đây..."></textarea>
-    <button id="genBtn" onclick="generateN3()">TẠO BÀI VIẾT N3</button>
+    <h1>N3 Japanese Creator</h1>
+    <label style="font-weight: bold; display: block; margin-bottom: 10px;">Nhập nội dung Tiếng Việt:</label>
+    <textarea id="viInput" placeholder="Ví dụ: Muốn an toàn tài chính cần kiếm thêm thu nhập thụ động..."></textarea>
+    
+    <button id="genBtn" onclick="generateN3()">BẮT ĐẦU TẠO VĂN BẢN N3</button>
 
     <div id="resultSection" class="result-section">
-        <div style="font-weight:bold; color:var(--accent); margin-bottom:10px;">KẾT QUẢ N3:</div>
+        <div style="font-weight:bold; color:var(--accent); margin-bottom:10px; font-size: 18px;">KẾT QUẢ (N3 LEVEL):</div>
         <div id="jpOutput" class="output-box"></div>
+        
         <div class="log-container" id="logBox"></div>
     </div>
 </div>
 
 <script>
-    // SỬ DỤNG MODEL GEMINI-PRO ĐỂ ĐẢM BẢO KHÔNG LỖI 404
+    /** * SỬ DỤNG MODEL 1.0-PRO - ĐÂY LÀ MODEL CÓ ĐỘ TƯƠNG THÍCH CAO NHẤT 
+     * ĐỂ TRÁNH LỖI 404 TRÊN CÁC KEY CŨ/VÙNG HẠN CHẾ
+     */
     const CONFIG = {
         API_KEY: "AIzaSyA1v7f2h0LvD_068-dalniG2KJJXWw956s",
-        // Chuyển sang model gemini-pro ổn định hơn cho API Key cá nhân
-        MODEL_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+        // Endpoint v1beta với model gemini-1.0-pro (ổn định nhất)
+        MODEL_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent"
     };
 
     function addLog(msg) {
         const logBox = document.getElementById('logBox');
         logBox.innerHTML += `> [${new Date().toLocaleTimeString()}] ${msg}<br>`;
         logBox.scrollTop = logBox.scrollHeight;
+        console.log(`[LOG]: ${msg}`);
     }
 
     async function generateN3() {
@@ -51,18 +58,24 @@
         const output = document.getElementById('jpOutput');
         const section = document.getElementById('resultSection');
 
-        if (!input) { alert("Vui lòng nhập nội dung!"); return; }
+        if (!input) {
+            alert("Vui lòng nhập nội dung!");
+            return;
+        }
 
         btn.disabled = true;
-        btn.innerText = "Đang kết nối...";
+        btn.innerText = "Đang kết nối API...";
         section.style.display = 'block';
-        output.innerText = "Đang xử lý nội dung bằng Model Gemini Pro...";
-        addLog("Khởi động quy trình.");
+        output.innerText = "Đang phân tích dữ liệu...";
+        addLog("Khởi động hệ thống.");
 
-        const prompt = `Bạn là giáo viên Nhật ngữ. Hãy dịch đoạn sau sang tiếng Nhật trình độ N3, dùng các liên từ logic và liệt kê 3 mẫu ngữ pháp N3 đã dùng: "${input}"`;
+        // Prompt ép AI sử dụng tư duy N3
+        const prompt = `Bạn là chuyên gia Nhật ngữ. Hãy dịch đoạn văn sau sang tiếng Nhật trình độ N3.
+        Yêu cầu: Sử dụng từ vựng/ngữ pháp N3 và giải thích 3 cấu trúc đã dùng ở cuối bài.
+        Nội dung: "${input}"`;
 
         try {
-            addLog("Đang gửi yêu cầu đến Endpoint: gemini-pro...");
+            addLog("Đang gọi Endpoint: gemini-1.0-pro...");
             
             const response = await fetch(`${CONFIG.MODEL_URL}?key=${CONFIG.API_KEY}`, {
                 method: 'POST',
@@ -75,27 +88,30 @@
             const data = await response.json();
             
             if (data.error) {
-                // Nếu vẫn 404, thử tự động chuyển sang model flash bản cũ hơn
-                if(data.error.code === 404) {
-                    addLog("Lỗi 404: Đang thử cấu hình model dự phòng...");
-                    throw new Error("Model không khả dụng. Vui lòng kiểm tra vùng quốc gia của Key.");
-                }
-                throw new Error(data.error.message);
+                // Nếu vẫn 404, có khả năng Key của bạn cần được khởi tạo lại trong Google AI Studio
+                throw new Error(`${data.error.code}: ${data.error.message}`);
             }
 
-            const aiResponse = data.candidates[0].content.parts[0].text;
-            output.innerText = aiResponse;
-            addLog("THÀNH CÔNG: Đã nhận phản hồi từ Gemini Pro.");
+            if (data.candidates && data.candidates[0].content) {
+                const aiText = data.candidates[0].content.parts[0].text;
+                output.innerText = aiText;
+                addLog("THÀNH CÔNG: Đã tạo văn bản N3.");
+            } else {
+                throw new Error("Không nhận được nội dung từ AI.");
+            }
 
         } catch (error) {
-            output.innerText = "Lỗi: " + error.message;
+            output.innerText = "Lỗi hệ thống: " + error.message;
             addLog("LỖI: " + error.message);
-            console.error(error);
+            if(error.message.includes("404")) {
+                addLog("CẢNH BÁO: API Key của bạn không tìm thấy Model. Hãy thử tạo Key mới tại aistudio.google.com.");
+            }
         } finally {
             btn.disabled = false;
-            btn.innerText = "TẠO BÀI VIẾT N3";
+            btn.innerText = "BẮT ĐẦU TẠO VĂN BẢN N3";
         }
     }
 </script>
+
 </body>
 </html>

@@ -2,46 +2,103 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>HSK TTS Test</title>
+    <title>HSK TTS Test - Japanese Voices</title>
     <script src="../com/TTSClient.js"></script>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; background: #eee; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 400px; }
-        textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        button:active { background: #1e7e34; }
-        #status { font-size: 12px; color: #888; margin-top: 10px; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; padding-top: 50px; background: #f0f2f5; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h3 { margin-top: 0; color: #2d3436; text-align: center; margin-bottom: 20px; }
+        
+        .setting-row { margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
+        label { font-size: 0.85rem; font-weight: 600; color: #636e72; }
+        
+        textarea { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #dfe6e9; border-radius: 8px; font-size: 14px; resize: none; outline: none; transition: 0.3s; }
+        textarea:focus { border-color: #00b894; }
+        
+        select { width: 100%; padding: 10px; border: 1px solid #dfe6e9; border-radius: 8px; font-size: 14px; background: white; outline: none; cursor: pointer; }
+        
+        button { width: 100%; padding: 14px; background: #00b894; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #00a383; }
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        
+        #status { font-size: 13px; color: #b2bec3; margin-top: 15px; text-align: center; font-style: italic; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h3>HSK TTS Client</h3>
-    <textarea id="inpText" rows="3">こんにちは、私は日本語を勉強しています。</textarea>
+    <h3>🇯🇵 Japanese TTS Settings</h3>
     
-    <button onclick="testSpeak()">🔊 Speak (Japanese)</button>
+    <div class="setting-row">
+        <label for="inpText">Nội dung (Text):</label>
+        <textarea id="inpText" rows="3">こんにちは、日本語を勉強するのは楽しいです。</textarea>
+    </div>
+
+    <div class="setting-row">
+        <label for="voiceSelect">Giọng đọc (Voice):</label>
+        <select id="voiceSelect">
+            <option value="ja-JP-NanamiNeural">Nanami (Nữ - Tự nhiên)</option>
+            <option value="ja-JP-KeitaNeural">Keita (Nam - Tự nhiên)</option>
+            <option value="ja-JP-AoiNeural">Aoi (Nữ - Trẻ trung)</option>
+            <option value="ja-JP-DaichiNeural">Daichi (Nam - Trầm ấm)</option>
+            <option value="ja-JP-MayuNeural">Mayu (Nữ - Nhẹ nhàng)</option>
+            <option value="ja-JP-NaokiNeural">Naoki (Nam - Truyền cảm)</option>
+            <option value="ja-JP-ShioriNeural">Shiori (Nữ - Chuyên nghiệp)</option>
+        </select>
+    </div>
+
+    <div class="setting-row">
+        <label for="rateSelect">Tốc độ (Rate):</label>
+        <select id="rateSelect">
+            <option value="0.5">0.5x (Rất chậm)</option>
+            <option value="0.7">0.7x (Chậm)</option>
+            <option value="0.8" selected>0.8x (Khuyên dùng)</option>
+            <option value="1.0">1.0x (Bình thường)</option>
+            <option value="1.2">1.2x (Nhanh)</option>
+        </select>
+    </div>
     
-    <div id="status">Ready</div>
+    <button id="btnSpeak" onclick="testSpeak()">🔊 Đọc ngay</button>
+    
+    <div id="status">Sẵn sàng</div>
     <audio id="ttsAudio" hidden></audio>
 </div>
 
 <script>
     async function testSpeak() {
         const text = document.getElementById('inpText').value;
+        const voice = document.getElementById('voiceSelect').value;
+        const rate = document.getElementById('rateSelect').value;
         const status = document.getElementById('status');
-        const player = document.getElementById('ttsAudio');
+        const btn = document.getElementById('btnSpeak');
 
-        status.innerText = "Processing...";
+        if (!text.trim()) {
+            alert("Vui lòng nhập nội dung!");
+            return;
+        }
 
-        // Gọi hàm speakCommon đã được window export từ TTSClient.js
-        await speakCommon({
-		    //audioControl: player,
-            text: text,
-            voice: "ja-JP-KeitaNeural", // Bạn có thể thay đổi voice ở đây
-            rate: "1.0"
-        });
+        status.innerText = "Đang xử lý...";
+        btn.disabled = true;
 
-        status.innerText = "Finished!";
+        try {
+            console.log(`[Log] Đang yêu cầu giọng đọc: ${voice} | Tốc độ: ${rate}`);
+            
+            // Gọi hàm speakCommon từ TTSClient.js
+            await speakCommon({
+                text: text,
+                voice: voice,
+                rate: rate,
+                filename: "JP_Practice" // Ghi log theo quy tắc lưu trữ
+            });
+
+            status.innerText = "Hoàn thành!";
+        } catch (error) {
+            console.error("[Log] Lỗi TTS:", error);
+            status.innerText = "Lỗi phát âm thanh!";
+        } finally {
+            btn.disabled = false;
+        }
     }
 </script>
 

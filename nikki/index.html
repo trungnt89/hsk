@@ -209,8 +209,8 @@
             const speakBtn = document.getElementById('btnMainSpeak');
             speakBtn.disabled = (index === 0);
             
-            // CHỈ tắt âm thanh khi quay lại tab Nhật ký (index 0)
-            if (index === 0 && typeof window.stopSpeak === 'function') {
+            // Chỉ tắt âm thanh nếu chuyển sang tab khác không phải tab đầu tiên (Nhật ký)
+            if (index !== 0 && typeof window.stopSpeak === 'function') {
                 window.stopSpeak();
                 resetSpeakBtns();
             }
@@ -282,9 +282,9 @@
         }
 
         function selectRecord(id) {
-            // Nếu chọn một record khác, dừng âm thanh cũ để tránh lẫn lộn nội dung
-            if (selectedDiaryId !== id && typeof window.stopSpeak === 'function') {
-                window.stopSpeak();
+            // Chỉ tắt âm thanh khi chọn một record khác record đang được chọn
+            if (selectedDiaryId !== null && selectedDiaryId != id) {
+                if (typeof window.stopSpeak === 'function') window.stopSpeak();
                 resetSpeakBtns();
             }
             selectedDiaryId = id;

@@ -286,18 +286,25 @@
         function saveDiary() {
             const val = document.getElementById('diaryInput').value.trim();
             if(!val) return;
+            
+            console.log("Log: Saving new diary entry...");
+            
             const id = Date.now().toString();
             const date = new Date().toLocaleString('vi-VN');
             
             currentDiaries.unshift({id, date, text: val, paragraph: "", conversation: ""});
             renderList(currentDiaries);
             
-            // Tự động cuộn danh sách lên đầu để thấy bài vừa lưu
-            document.getElementById('tab-diary').scrollTop = 0;
-            selectRecord(id);
+            // Cưỡng ép cuộn vùng chứa lên đầu ngay lập tức
+            const container = document.getElementById('tab-diary');
+            container.scrollTop = 0;
+            
+            // Đợi 1 chút để DOM ổn định rồi mới thực hiện select (có kèm scroll chi tiết)
+            setTimeout(() => {
+                selectRecord(id);
+            }, 50);
             
             document.getElementById('diaryInput').value = '';
-            console.log("Log: Created new diary entry", id);
             callGAS({action:'create', id, date, text: val});
         }
 

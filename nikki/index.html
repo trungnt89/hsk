@@ -175,7 +175,9 @@
             if (cachedData && cachedData.length > 0) {
                 currentDiaries = cachedData.sort((a, b) => b.id - a.id);
                 renderList(currentDiaries);
-                selectRecord(selectedDiaryId || currentDiaries[0].id);
+                if (currentDiaries.length > 0) {
+                    selectRecord(selectedDiaryId || currentDiaries[0].id);
+                }
             }
             loadDiaries();
         }
@@ -333,7 +335,6 @@
             const el = document.getElementById(elementId);
             const btn = document.getElementById(btnId);
             
-            // Sửa lỗi: Kiểm tra el và btn trước khi truy cập classList
             if(!el || !btn || typeof window.speakCommon !== 'function') {
                 console.warn("[Log] Không tìm thấy nội dung hoặc nút điều khiển.");
                 return;
@@ -394,13 +395,25 @@
         function saveDiary() {
             const val = document.getElementById('diaryInput').value.trim();
             if(!val) return;
+            
+            console.log("Log: Saving new diary entry...");
+            
             const id = Date.now().toString();
             const date = new Date().toLocaleString('vi-VN');
             const newItem = {id, date, text: val, paragraph: "", conversation: "", pinned: false};
+            
             currentDiaries.unshift(newItem);
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
-            selectRecord(id);
+            
+            // Cưỡng ép cuộn vùng chứa lên đầu
+            const container = document.getElementById('tab-diary');
+            container.scrollTop = 0;
+
+            setTimeout(() => {
+                selectRecord(id);
+            }, 50);
+            
             document.getElementById('diaryInput').value = '';
             callGAS({action:'create', id, date, text: val});
             switchTab(0);
@@ -420,6 +433,11 @@
             currentDiaries[idx].text = val;
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
+            
+            // Cuộn lên đầu khi cập nhật xong
+            const container = document.getElementById('tab-diary');
+            container.scrollTop = 0;
+
             const tid = editingId;
             clearEditMode();
             callGAS({action:'update', id: tid, text: val});

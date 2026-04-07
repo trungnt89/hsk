@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nhật Ký Của Tôi - AI Integrated</title>
+    <title>Nhật Ký Của Tôi - AI Integrated (Secure)</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         :root {
@@ -43,13 +43,12 @@
         .delete-btn { color: var(--danger-color); }
         .ai-btn { color: var(--ai-color); font-weight: bold; }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; justify-content: space-around; align-items: center; height: 50px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
         .loading-text { text-align: center; padding: 40px; font-size: 0.9rem; color: var(--text-light); line-height: 1.6; }
     </style>
 </head>
 <body>
 
-    <header><h1>日記 & AI N3</h1></header>
+    <header><h1>日記 & AI N3 (Secure)</h1></header>
 
     <main>
         <div class="write-card">
@@ -67,7 +66,7 @@
         </div>
 
         <div id="tab-diary" class="tab-content active">
-            <div id="diaryContainer"><p class="loading-text">Đang tải dữ liệu từ Google Sheets...</p></div>
+            <div id="diaryContainer"><p class="loading-text">Đang tải dữ liệu...</p></div>
         </div>
 
         <div id="tab-paragraph" class="tab-content">
@@ -80,8 +79,9 @@
     </main>
 
     <script>
+        // URL Web App sau khi bạn Deploy lại GAS
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
-        const AI_KEY = "AIzaSyBzO04K2X714XGytWk7CbNmBZaxoIWXX5o"; 
+        
         let currentDiaries = [];
         let editingId = null;
         let selectedDiaryId = null;
@@ -97,8 +97,6 @@
             const btns = document.querySelectorAll('.tab-btn');
             tabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
             btns.forEach((btn, i) => btn.classList.toggle('active', i === index));
-            
-            // Cập nhật view mỗi khi chuyển tab để đảm bảo dữ liệu mới nhất được đổ vào
             updateAIView();
         }
 
@@ -107,11 +105,8 @@
                 if (res.status === 'success') {
                     currentDiaries = res.data;
                     renderList(currentDiaries);
-                    
-                    // Logic fix: Luôn chọn 1 record sau khi load xong dữ liệu
                     if (currentDiaries.length > 0) {
-                        const idToSelect = selectedDiaryId || currentDiaries[0].id;
-                        selectRecord(idToSelect);
+                        selectRecord(selectedDiaryId || currentDiaries[0].id);
                     }
                 }
             }).catch(err => {
@@ -122,7 +117,7 @@
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
             if (!diaries.length) {
-                container.innerHTML = '<p class="loading-text">Bạn chưa có bài viết nào. Hãy viết gì đó bên trên!</p>';
+                container.innerHTML = '<p class="loading-text">Chưa có bài viết nào.</p>';
                 return;
             }
             container.innerHTML = '';
@@ -131,7 +126,6 @@
                 div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''}`;
                 div.id = `item-${item.id}`;
                 div.onclick = () => selectRecord(item.id);
-                
                 div.innerHTML = `
                     <div class="diary-date">${item.date}</div>
                     <div class="diary-content">${item.text}</div>
@@ -150,71 +144,59 @@
             document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
             const activeEl = document.getElementById(`item-${id}`);
             if (activeEl) activeEl.classList.add('selected');
-            
-            // Ép cập nhật view AI ngay lập tức
             updateAIView();
         }
 
         function updateAIView() {
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
-            const paraContainer = document.getElementById('paragraphContainer');
-            const convContainer = document.getElementById('conversationContainer');
+            const pContainer = document.getElementById('paragraphContainer');
+            const cContainer = document.getElementById('conversationContainer');
 
-            if (!item) {
-                const msg = '<p class="loading-text">Vui lòng chọn một bài nhật ký.</p>';
-                paraContainer.innerHTML = msg; convContainer.innerHTML = msg;
-                return;
-            }
+            if (!item) return;
 
-            paraContainer.innerHTML = item.paragraph 
+            pContainer.innerHTML = item.paragraph 
                 ? `<div class="ai-content-box">${item.paragraph}</div>` 
-                : `<div class="loading-text">BÀI NÀY CHƯA CÓ ĐOẠN VĂN.<br>Hãy nhấn <b>✨ AI N3</b> ở bài này trong tab Nhật ký để tạo.</div>`;
+                : `<div class="loading-text">Nhấn nút <b>✨ AI N3</b> ở tab Nhật ký để tạo nội dung.</div>`;
             
-            convContainer.innerHTML = item.conversation 
+            cContainer.innerHTML = item.conversation 
                 ? `<div class="ai-content-box">${item.conversation}</div>` 
-                : `<div class="loading-text">BÀI NÀY CHƯA CÓ HỘI THOẠI.</div>`;
+                : `<div class="loading-text">Chưa có hội thoại AI.</div>`;
         }
 
         async function askAI(targetId, content) {
             selectRecord(targetId);
             switchTab(1);
-            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Gemini đang suy nghĩ và viết nội dung N3...</p>';
-            document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang tạo hội thoại...</p>';
-
-            const prompt = `Nội dung: "${content}". Viết 1 đoạn văn 500 chữ trình độ N3 (---PARAGRAPH---) và 1 hội thoại lịch sự N3 (---CONVERSATION---).`;
+            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang gửi yêu cầu bảo mật đến Server...</p>';
+            document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý hội thoại...</p>';
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${AI_KEY}`, {
+                // Gọi qua Proxy GAS để bảo mật Key
+                const response = await fetch(GAS_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({
+                        action: 'ask_ai_proxy',
+                        id: targetId,
+                        content: content
+                    })
                 });
                 
-                const data = await response.json();
-                const fullText = data.candidates[0].content.parts[0].text;
-                const parts = fullText.split("---CONVERSATION---");
-                const pPart = parts[0].replace("---PARAGRAPH---", "").trim();
-                const cPart = parts[1] ? parts[1].trim() : "Không thể tạo hội thoại.";
-
-                // Cập nhật dữ liệu vào biến cục bộ
-                const idx = currentDiaries.findIndex(d => d.id == targetId);
-                if (idx !== -1) {
-                    currentDiaries[idx].paragraph = pPart;
-                    currentDiaries[idx].conversation = cPart;
+                const res = await response.json();
+                if (res.status === 'success') {
+                    const idx = currentDiaries.findIndex(d => d.id == targetId);
+                    if (idx !== -1) {
+                        currentDiaries[idx].paragraph = res.paragraph;
+                        currentDiaries[idx].conversation = res.conversation;
+                    }
+                    updateAIView();
+                } else {
+                    throw new Error(res.message);
                 }
-                updateAIView();
-
-                // Lưu lên Sheet
-                const ts = new Date().toLocaleString('vi-VN');
-                callGAS({ action: 'create', id: targetId, type: 'AI_PARA', date: ts, text: pPart });
-                callGAS({ action: 'create', id: targetId, type: 'AI_CONV', date: ts, text: cPart });
-
             } catch (e) {
                 alert("Lỗi AI: " + e.message);
+                updateAIView();
             }
         }
 
-        // --- CRUD (GIỮ NGUYÊN) ---
         function saveDiary() {
             const val = document.getElementById('diaryInput').value.trim();
             if(!val) return;
@@ -255,8 +237,6 @@
             if(!confirm("Xóa bài này?")) return;
             currentDiaries = currentDiaries.filter(i => i.id != id);
             renderList(currentDiaries);
-            if(selectedDiaryId == id) selectedDiaryId = currentDiaries[0]?.id;
-            updateAIView();
             callGAS({action:'delete', id});
         }
 

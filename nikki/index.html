@@ -209,11 +209,7 @@
             const speakBtn = document.getElementById('btnMainSpeak');
             speakBtn.disabled = (index === 0);
             
-            // Chỉ tắt âm thanh nếu chuyển sang tab khác không phải tab đầu tiên (Nhật ký)
-            if (index !== 0 && typeof window.stopSpeak === 'function') {
-                window.stopSpeak();
-                resetSpeakBtns();
-            }
+            // Đã xóa phần window.stopSpeak() khi chuyển tab theo yêu cầu
             updateAIView();
         }
 
@@ -286,6 +282,7 @@
             if (selectedDiaryId !== null && selectedDiaryId != id) {
                 if (typeof window.stopSpeak === 'function') window.stopSpeak();
                 resetSpeakBtns();
+                console.log("[Log] Chuyển DiaryId: Dừng âm thanh cũ.");
             }
             selectedDiaryId = id;
             document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
@@ -338,6 +335,7 @@
             btn.innerHTML = '⏹ Dừng';
 
             try {
+                console.log("[Log] Bắt đầu đọc nội dung: " + elementId);
                 await window.speakCommon({ 
                     text: el.innerText, 
                     voice: document.getElementById("voiceSelect").value, 
@@ -352,7 +350,10 @@
                         resetSpeakBtns();
                     }
                 }
-            } catch (e) { resetSpeakBtns(); }
+            } catch (e) { 
+                console.error("[Log] Lỗi phát âm thanh:", e);
+                resetSpeakBtns(); 
+            }
         }
 
         async function askAI(targetId, content) {
@@ -375,7 +376,10 @@
                     }
                     updateAIView();
                 }
-            } catch (e) { updateAIView(); }
+            } catch (e) { 
+                console.error("[Log] Lỗi gọi AI:", e);
+                updateAIView(); 
+            }
         }
 
         function saveDiary() {
@@ -429,6 +433,7 @@
         }
 
         function callGAS(p) {
+            console.log("[Log] Đồng bộ server action:", p.action);
             fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
         }
     </script>

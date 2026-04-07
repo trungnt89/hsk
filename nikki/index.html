@@ -23,7 +23,11 @@
         .action-area { display: flex; justify-content: flex-end; align-items: center; margin-top: 5px; gap: 8px; }
         .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .btn-cancel { background-color: #eee; color: #333; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        
         .tts-controls { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+        .btn-main-speak { background: var(--ai-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; min-width: 85px; transition: 0.3s; }
+        .btn-main-speak:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
+        .btn-main-speak.playing { background: var(--danger-color); }
 
         .tabs { display: flex; background: #eee; border-radius: 8px; padding: 4px; margin-top: 5px; flex-shrink: 0; }
         .tab-btn { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; }
@@ -41,8 +45,7 @@
 
         .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 5px; }
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--ai-color); color: #2c3e50; }
-        .btn-speak { background: var(--ai-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; min-width: 80px; text-align: center; }
-        .btn-speak.playing { background: var(--danger-color); }
+        
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
         select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; background: white; }
@@ -76,6 +79,7 @@
                 <button id="cancelBtn" class="btn-cancel" style="display:none;">Hủy</button>
                 <button id="saveBtn" class="btn-save">Lưu lại</button>
                 <div class="tts-controls">
+                    <button id="btnMainSpeak" class="btn-main-speak" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
                     <button id="btnRepeat" class="btn-repeat" title="Lặp lại" onclick="toggleRepeat()">🔂</button>
                     <select id="voiceSelect" class="tts-select" onchange="saveTTSSettings()">
                         <option value="ja-JP-KeitaNeural">Nam (JP)</option>
@@ -116,6 +120,7 @@
         let editingId = null;
         let selectedDiaryId = null;
         let isRepeating = false;
+        let currentTabIndex = 0;
 
         document.addEventListener('DOMContentLoaded', () => {
             loadDiaries();
@@ -147,10 +152,17 @@
         }
 
         function switchTab(index) {
+            currentTabIndex = index;
             const tabs = document.querySelectorAll('.tab-content');
             const btns = document.querySelectorAll('.tab-btn');
             tabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
             btns.forEach((btn, i) => btn.classList.toggle('active', i === index));
+            
+            const speakBtn = document.getElementById('btnMainSpeak');
+            speakBtn.disabled = (index === 0);
+            
+            if (typeof window.stopSpeak === 'function') window.stopSpeak();
+            resetSpeakBtns();
             updateAIView();
         }
 
@@ -231,31 +243,33 @@
             if (!item) return;
 
             pContainer.innerHTML = item.paragraph 
-                ? `<div class="ai-header"><span>📖 Đoạn văn N3</span><button class="btn-speak" id="btn-speak-p" onclick="handleSpeakClick('p-content', 'btn-speak-p')">🔊 Đọc</button></div>
+                ? `<div class="ai-header"><span>📖 Đoạn văn N3</span></div>
                    <div id="p-content" class="ai-content-box">${item.paragraph}</div>` 
                 : `<div class="loading-text">Nhấn nút <b>✨ AI N3</b> ở tab Nhật ký để tạo nội dung.</div>`;
             
             cContainer.innerHTML = item.conversation 
-                ? `<div class="ai-header"><span>💬 Hội thoại</span><button class="btn-speak" id="btn-speak-c" onclick="handleSpeakClick('c-content', 'btn-speak-c')">🔊 Đọc</button></div>
+                ? `<div class="ai-header"><span>💬 Hội thoại</span></div>
                    <div id="c-content" class="ai-content-box">${item.conversation}</div>` 
                 : `<div class="loading-text">Chưa có hội thoại AI.</div>`;
         }
 
-        function handleSpeakClick(elementId, btnId) {
-            const btn = document.getElementById(btnId);
+        function handleGlobalSpeak() {
+            const btn = document.getElementById('btnMainSpeak');
             if (btn.classList.contains("playing")) {
                 if (typeof window.stopSpeak === 'function') window.stopSpeak();
                 resetSpeakBtns();
-            } else {
-                speakText(elementId, btnId);
+                console.log("[TTS] Global stop triggered.");
+                return;
             }
+            
+            let targetId = currentTabIndex === 1 ? 'p-content' : (currentTabIndex === 2 ? 'c-content' : null);
+            if (targetId) speakText(targetId, 'btnMainSpeak');
         }
 
         function resetSpeakBtns() {
-            document.querySelectorAll('.btn-speak').forEach(b => {
-                b.classList.remove('playing');
-                b.innerHTML = '🔊 Đọc';
-            });
+            const btn = document.getElementById('btnMainSpeak');
+            btn.classList.remove('playing');
+            btn.innerHTML = '🔊 Đọc';
         }
 
         async function speakText(elementId, btnId) {
@@ -317,6 +331,8 @@
             selectRecord(id);
             document.getElementById('diaryInput').value = '';
             callGAS({action:'create', id, date, text: val});
+            switchTab(0);
+            console.log("[Log] Save successful, returned to Diary tab.");
         }
 
         function startEdit(id, text) {
@@ -335,6 +351,8 @@
             const tid = editingId;
             clearEditMode();
             callGAS({action:'update', id: tid, text: val});
+            switchTab(0);
+            console.log("[Log] Update successful, returned to Diary tab.");
         }
 
         function clearEditMode() {

@@ -41,8 +41,8 @@
 
         .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 5px; }
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--ai-color); color: #2c3e50; }
-        .btn-speak { background: var(--ai-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-        .btn-speak.active { background: var(--danger-color); }
+        .btn-speak { background: var(--ai-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; min-width: 80px; text-align: center; }
+        .btn-speak.playing { background: var(--danger-color); }
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
         select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; background: white; }
@@ -50,7 +50,6 @@
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
         .diary-content { font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
         
-        /* Cải thiện giao diện nút hành động */
         .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px; }
         .item-actions-left { display: flex; gap: 20px; }
         .item-actions-right { display: flex; gap: 15px; }
@@ -171,16 +170,10 @@
 
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
-            if (!diaries.length) {
-                container.innerHTML = '<p class="loading-text">Chưa có bài viết nào.</p>';
-                return;
-            }
-
+            if (!diaries.length) { container.innerHTML = '<p class="loading-text">Chưa có bài viết nào.</p>'; return; }
             const pinnedItems = diaries.filter(d => d.pinned);
             const normalItems = diaries.filter(d => !d.pinned);
-
             container.innerHTML = '';
-            
             if (pinnedItems.length > 0) {
                 const pinnedSection = document.createElement('div');
                 pinnedSection.id = 'pinnedSection';
@@ -188,9 +181,7 @@
                 pinnedItems.forEach(item => pinnedSection.appendChild(createItemEl(item)));
                 container.appendChild(pinnedSection);
             }
-
             normalItems.forEach(item => container.appendChild(createItemEl(item)));
-            console.log(`[Log] Rendered ${pinnedItems.length} pinned, ${normalItems.length} normal.`);
         }
 
         function createItemEl(item) {
@@ -219,13 +210,10 @@
             const idx = currentDiaries.findIndex(d => d.id == id);
             if (idx === -1) return;
             const isPinned = !!currentDiaries[idx].pinned;
-            if (!isPinned && currentDiaries.filter(d => d.pinned).length >= 2) {
-                alert("Tối đa 2 bài ghim."); return;
-            }
+            if (!isPinned && currentDiaries.filter(d => d.pinned).length >= 2) { alert("Tối đa 2 bài ghim."); return; }
             currentDiaries[idx].pinned = !isPinned;
             renderList(currentDiaries);
             callGAS({ action: 'update_pin', id: id, pinned: currentDiaries[idx].pinned });
-            console.log(`[Log] Toggle pin for ${id}: ${currentDiaries[idx].pinned}`);
         }
 
         function selectRecord(id) {
@@ -243,52 +231,65 @@
             if (!item) return;
 
             pContainer.innerHTML = item.paragraph 
-                ? `<div class="ai-header"><span>📖 Đoạn văn N3</span><button class="btn-speak" id="btn-speak-p" onclick="speakText('p-content', 'btn-speak-p')">🔊 Đọc</button></div>
+                ? `<div class="ai-header"><span>📖 Đoạn văn N3</span><button class="btn-speak" id="btn-speak-p" onclick="handleSpeakClick('p-content', 'btn-speak-p')">🔊 Đọc</button></div>
                    <div id="p-content" class="ai-content-box">${item.paragraph}</div>` 
                 : `<div class="loading-text">Nhấn nút <b>✨ AI N3</b> ở tab Nhật ký để tạo nội dung.</div>`;
             
             cContainer.innerHTML = item.conversation 
-                ? `<div class="ai-header"><span>💬 Hội thoại</span><button class="btn-speak" id="btn-speak-c" onclick="speakText('c-content', 'btn-speak-c')">🔊 Đọc</button></div>
+                ? `<div class="ai-header"><span>💬 Hội thoại</span><button class="btn-speak" id="btn-speak-c" onclick="handleSpeakClick('c-content', 'btn-speak-c')">🔊 Đọc</button></div>
                    <div id="c-content" class="ai-content-box">${item.conversation}</div>` 
                 : `<div class="loading-text">Chưa có hội thoại AI.</div>`;
+        }
+
+        function handleSpeakClick(elementId, btnId) {
+            const btn = document.getElementById(btnId);
+            if (btn.classList.contains("playing")) {
+                if (typeof window.stopSpeak === 'function') window.stopSpeak();
+                resetSpeakBtns();
+            } else {
+                speakText(elementId, btnId);
+            }
+        }
+
+        function resetSpeakBtns() {
+            document.querySelectorAll('.btn-speak').forEach(b => {
+                b.classList.remove('playing');
+                b.innerHTML = '🔊 Đọc';
+            });
         }
 
         async function speakText(elementId, btnId) {
             const el = document.getElementById(elementId);
             const btn = document.getElementById(btnId);
-            if(!el || !btn || btn.classList.contains("active")) return; 
-            
-            if (typeof window.speakCommon !== 'function') {
-                alert("Lỗi: Không tìm thấy hàm speakCommon."); return;
-            }
+            if(!el || !btn || typeof window.speakCommon !== 'function') return;
 
-            const text = el.innerText;
-            const voice = document.getElementById("voiceSelect").value;
-            const rate = document.getElementById("rateSelect").value;
-            btn.classList.add("active");
-            
+            resetSpeakBtns();
+            btn.classList.add("playing");
+            btn.innerHTML = '⏹ Dừng';
+
             try {
-                await window.speakCommon({ text, voice, rate, filename: "Diary_AI_N3" });
-                btn.classList.remove("active");
-                if(isRepeating) {
-                    const parentTab = el.closest('.tab-content');
-                    if (parentTab && parentTab.classList.contains('active')) {
-                        setTimeout(() => speakText(elementId, btnId), 800);
+                await window.speakCommon({ 
+                    text: el.innerText, 
+                    voice: document.getElementById("voiceSelect").value, 
+                    rate: document.getElementById("rateSelect").value, 
+                    filename: "Diary_AI_N3" 
+                });
+                
+                if (btn.classList.contains("playing")) {
+                    if (isRepeating && el.closest('.tab-content').classList.contains('active')) {
+                        setTimeout(() => speakText(elementId, btnId), 600);
+                    } else {
+                        resetSpeakBtns();
                     }
                 }
-            } catch (err) {
-                console.error("Audio error:", err);
-                btn.classList.remove("active");
-            }
+            } catch (e) { resetSpeakBtns(); }
         }
 
         async function askAI(targetId, content) {
             selectRecord(targetId);
             switchTab(1);
-            console.log(`[AI] Processing for ID: ${targetId}`);
             document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
             document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
-
             try {
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
@@ -303,10 +304,7 @@
                     }
                     updateAIView();
                 }
-            } catch (e) {
-                alert("Lỗi AI");
-                updateAIView();
-            }
+            } catch (e) { updateAIView(); }
         }
 
         function saveDiary() {
@@ -319,7 +317,6 @@
             selectRecord(id);
             document.getElementById('diaryInput').value = '';
             callGAS({action:'create', id, date, text: val});
-            console.log("[Log] Created new entry.");
         }
 
         function startEdit(id, text) {
@@ -338,7 +335,6 @@
             const tid = editingId;
             clearEditMode();
             callGAS({action:'update', id: tid, text: val});
-            console.log("[Log] Updated entry.");
         }
 
         function clearEditMode() {
@@ -353,7 +349,6 @@
             currentDiaries = currentDiaries.filter(i => i.id != id);
             renderList(currentDiaries);
             callGAS({action:'delete', id});
-            console.log("[Log] Deleted entry.");
         }
 
         function callGAS(p) {

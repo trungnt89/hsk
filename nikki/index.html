@@ -19,9 +19,10 @@
 
         .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
         .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 8px; font-size: 16px; resize: none; height: 80px; outline: none; }
-        .action-area { display: flex; justify-content: flex-end; margin-top: 5px; gap: 8px; }
+        .action-area { display: flex; justify-content: flex-end; align-items: center; margin-top: 5px; gap: 8px; }
         .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .btn-cancel { background-color: #eee; color: #333; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .tts-controls { display: flex; align-items: center; gap: 5px; margin-left: auto; }
 
         .tabs { display: flex; background: #eee; border-radius: 8px; padding: 4px; margin-top: 5px; flex-shrink: 0; }
         .tab-btn { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; }
@@ -36,7 +37,11 @@
         .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 5px; }
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--ai-color); color: #2c3e50; }
         .btn-speak { background: var(--ai-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-        
+        .btn-speak.active { background: var(--danger-color); }
+        .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
+        select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; background: white; }
+
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
         .diary-content { font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
         
@@ -60,6 +65,18 @@
             <div class="action-area">
                 <button id="cancelBtn" class="btn-cancel" style="display:none;">Hủy</button>
                 <button id="saveBtn" class="btn-save">Lưu lại</button>
+                <div class="tts-controls">
+                    <button id="btnRepeat" class="btn-repeat" title="Lặp lại" onclick="toggleRepeat()">🔂</button>
+                    <select id="voiceSelect" class="tts-select" onchange="saveTTSSettings()">
+                        <option value="ja-JP-KeitaNeural">Nam</option>
+                        <option value="ja-JP-NanamiNeural" selected>Nữ</option>
+                    </select>
+                    <select id="rateSelect" class="tts-select" onchange="saveTTSSettings()">
+                        <option value="0.7">0.7x</option>
+                        <option value="0.8" selected>0.8x</option>
+                        <option value="1.0">1.0x</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -88,12 +105,36 @@
         let currentDiaries = [];
         let editingId = null;
         let selectedDiaryId = null;
+        let isRepeating = false;
 
         document.addEventListener('DOMContentLoaded', () => {
             loadDiaries();
+            loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => editingId ? updateDiary() : saveDiary());
             document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
         });
+
+        function saveTTSSettings() {
+            localStorage.setItem("diary_voice", document.getElementById("voiceSelect").value);
+            localStorage.setItem("diary_rate", document.getElementById("rateSelect").value);
+            localStorage.setItem("diary_repeat", isRepeating);
+        }
+
+        function loadTTSSettings() {
+            const v = localStorage.getItem("diary_voice");
+            const r = localStorage.getItem("diary_rate");
+            const rep = localStorage.getItem("diary_repeat");
+            if(v) document.getElementById("voiceSelect").value = v;
+            if(r) document.getElementById("rateSelect").value = r;
+            if(rep !== null) isRepeating = rep === "true";
+            document.getElementById("btnRepeat").classList.toggle("active", isRepeating);
+        }
+
+        function toggleRepeat() {
+            isRepeating = !isRepeating;
+            document.getElementById("btnRepeat").classList.toggle("active", isRepeating);
+            saveTTSSettings();
+        }
 
         function switchTab(index) {
             const tabs = document.querySelectorAll('.tab-content');
@@ -158,23 +199,40 @@
             if (!item) return;
 
             pContainer.innerHTML = item.paragraph 
-                ? `<div class="ai-header"><span>📖 Đoạn văn N3</span><button class="btn-speak" onclick="speakText('p-content')">🔊 Đọc</button></div>
+                ? `<div class="ai-header"><span>📖 Đoạn văn N3</span><button class="btn-speak" id="btn-speak-p" onclick="speakText('p-content', 'btn-speak-p')">🔊 Đọc</button></div>
                    <div id="p-content" class="ai-content-box">${item.paragraph}</div>` 
                 : `<div class="loading-text">Nhấn nút <b>✨ AI N3</b> ở tab Nhật ký để tạo nội dung.</div>`;
             
             cContainer.innerHTML = item.conversation 
-                ? `<div class="ai-header"><span>💬 Hội thoại</span><button class="btn-speak" onclick="speakText('c-content')">🔊 Đọc</button></div>
+                ? `<div class="ai-header"><span>💬 Hội thoại</span><button class="btn-speak" id="btn-speak-c" onclick="speakText('c-content', 'btn-speak-c')">🔊 Đọc</button></div>
                    <div id="c-content" class="ai-content-box">${item.conversation}</div>` 
                 : `<div class="loading-text">Chưa có hội thoại AI.</div>`;
         }
 
-        function speakText(elementId) {
-            const text = document.getElementById(elementId).innerText;
-            if (typeof TTSClient !== 'undefined') {
-                TTSClient.speak(text, "ja-JP");
-            } else {
+        async function speakText(elementId, btnId) {
+            const el = document.getElementById(elementId);
+            if(!el) return;
+            const text = el.innerText;
+            const btn = document.getElementById(btnId);
+            
+            if (typeof TTSClient === 'undefined') {
                 alert("Lỗi: Không tìm thấy thư viện TTSClient.js");
+                return;
             }
+
+            if(btn.classList.contains("active")) return; 
+
+            const voice = document.getElementById("voiceSelect").value;
+            const rate = parseFloat(document.getElementById("rateSelect").value);
+
+            btn.classList.add("active");
+            
+            TTSClient.speak(text, voice, rate, () => {
+                btn.classList.remove("active");
+                if(isRepeating) {
+                    setTimeout(() => speakText(elementId, btnId), 600);
+                }
+            });
         }
 
         async function askAI(targetId, content) {

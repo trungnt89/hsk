@@ -3,41 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>N3 Japanese Writer - Fixed 404</title>
+    <title>N3 Japanese Writer - AI Teacher</title>
     <style>
         :root { --primary: #2c3e50; --accent: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; display: flex; justify-content: center; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; display: flex; justify-content: center; }
         .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
-        h1 { color: var(--primary); text-align: center; border-bottom: 3px solid var(--accent); padding-bottom: 10px; margin-bottom: 25px; }
-        textarea { width: 100%; height: 150px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        h1 { color: var(--primary); text-align: center; border-bottom: 3px solid var(--accent); padding-bottom: 10px; margin-bottom: 25px; font-size: 24px; }
+        textarea { width: 100%; height: 160px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; font-family: inherit; resize: vertical; }
+        textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 5px rgba(231, 76, 60, 0.2); }
         button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
-        button:disabled { background: #95a5a6; }
+        button:hover { background: #34495e; }
+        button:disabled { background: #95a5a6; cursor: not-allowed; }
         .result-section { margin-top: 30px; display: none; }
-        .output-box { background: #fffdf0; border-left: 5px solid var(--accent); padding: 20px; border-radius: 8px; white-space: pre-line; line-height: 1.8; font-size: 18px; color: #2c3e50; }
-        .log-container { margin-top: 20px; background: #1e1e1e; color: #4af626; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; }
+        .output-box { background: #fffdf0; border-left: 5px solid var(--accent); padding: 20px; border-radius: 0 8px 8px 0; white-space: pre-line; line-height: 1.8; font-size: 18px; color: #2c3e50; }
+        .log-container { margin-top: 20px; background: #1e1e1e; color: #4af626; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 120px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>N3 Japanese Content AI</h1>
-    <textarea id="viInput" placeholder="Nhập nội dung Tiếng Việt của bạn..."></textarea>
+    <h1>N3 Japanese Teacher AI</h1>
+    <label style="font-weight: bold; display: block; margin-bottom: 10px;">Nhập ý tưởng (Tiếng Việt):</label>
+    <textarea id="viInput" placeholder="Ví dụ: Hôm nay tôi học được cách quản lý thời gian hiệu quả..."></textarea>
+    
     <button id="genBtn" onclick="generateN3()">BẮT ĐẦU CHUYỂN ĐỔI</button>
 
     <div id="resultSection" class="result-section">
-        <div style="font-weight:bold; color:var(--accent); margin-bottom:10px;">KẾT QUẢ:</div>
+        <div style="font-weight:bold; color:var(--accent); margin-bottom:10px;">BÀI VIẾT TRÌNH ĐỘ N3 & NGỮ PHÁP:</div>
         <div id="jpOutput" class="output-box"></div>
         <div class="log-container" id="logBox"></div>
     </div>
 </div>
 
 <script>
+    // API Key của bạn từ My Gemini Project (Đã Enable)
     const API_KEY = "AIzaSyAys_Hy1nUvuwGwZhOuKRbccNJAnU_Sa1w";
+    const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
     function addLog(msg) {
         const logBox = document.getElementById('logBox');
         logBox.innerHTML += `> [${new Date().toLocaleTimeString()}] ${msg}<br>`;
         logBox.scrollTop = logBox.scrollHeight;
+        console.log(msg);
     }
 
     async function generateN3() {
@@ -46,55 +53,51 @@
         const output = document.getElementById('jpOutput');
         const section = document.getElementById('resultSection');
 
-        if (!input) return alert("Vui lòng nhập nội dung!");
+        if (!input) { alert("Vui lòng nhập nội dung!"); return; }
 
         btn.disabled = true;
-        btn.innerText = "Đang xử lý...";
+        btn.innerText = "Đang kết nối Giáo viên AI...";
         section.style.display = 'block';
-        output.innerText = "Đang kết nối API...";
-        addLog("Bắt đầu quy trình.");
+        output.innerText = "Đang viết bài...";
+        addLog("Đã gửi yêu cầu đến Gemini 1.5 Flash.");
 
-        const prompt = `Dịch sang tiếng Nhật N3 và giải thích ngữ pháp: "${input}"`;
+        const prompt = `Bạn là một giáo viên dạy tiếng Nhật trình độ N3.
+        Hãy dịch đoạn văn sau sang tiếng Nhật mức độ N3, sử dụng các từ nối (なぜなら, そこで...) và ngữ pháp N3.
+        Cuối bài hãy liệt kê 3 mẫu ngữ pháp N3 đã sử dụng và giải thích cách dùng ngắn gọn bằng tiếng Việt.
+        Nội dung: "${input}"`;
 
-        // Danh sách Model và URL cấu hình chuẩn để tránh 404
-        const modelAttempts = [
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`
-        ];
+        try {
+            const response = await fetch(ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
 
-        for (let url of modelAttempts) {
-            try {
-                const modelName = url.includes("flash") ? "Gemini 1.5 Flash" : "Gemini Pro";
-                addLog(`Đang thử model: ${modelName}...`);
+            const data = await response.json();
 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.candidates) {
-                    output.innerText = data.candidates[0].content.parts[0].text;
-                    addLog(`THÀNH CÔNG với ${modelName}!`);
-                    btn.disabled = false;
-                    btn.innerText = "BẮT ĐẦU CHUYỂN ĐỔI";
-                    return;
-                } else if (response.status === 404) {
-                    addLog(`Model ${modelName} báo lỗi 404. Đang chuyển sang dự phòng...`);
-                } else {
-                    throw new Error(data.error ? data.error.message : "Lỗi không xác định");
-                }
-            } catch (err) {
-                addLog("LỖI: " + err.message);
+            if (data.error) {
+                throw new Error(`${data.error.code}: ${data.error.message}`);
             }
-        }
 
-        output.innerText = "Lỗi: Cả hai model đều báo 404. Có thể API Key của bạn cần thêm thời gian để kích hoạt sau khi tạo Project mới (thường mất 5-10 phút).";
-        btn.disabled = false;
-        btn.innerText = "BẮT ĐẦU CHUYỂN ĐỔI";
+            if (data.candidates && data.candidates[0].content) {
+                output.innerText = data.candidates[0].content.parts[0].text;
+                addLog("THÀNH CÔNG: Đã nhận bài viết N3.");
+            } else {
+                throw new Error("Không nhận được dữ liệu trả về.");
+            }
+
+        } catch (error) {
+            output.innerText = "Lỗi: " + error.message;
+            addLog("LỖI: " + error.message);
+            if(error.message.includes("404")) {
+                addLog("Gợi ý: Hãy chờ 2-3 phút để Google kích hoạt hoàn toàn API cho Project của bạn.");
+            }
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "BẮT ĐẦU CHUYỂN ĐỔI";
+        }
     }
 </script>
+
 </body>
 </html>

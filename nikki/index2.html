@@ -18,9 +18,7 @@
         main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 
         .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .write-card-a textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 8px; font-size: 16px; resize: none; height: 80px; outline: none; }
-		
-		  .write-card textarea {width: 100%;border: 1px solid #dfe6e9;border-radius: 8px; padding: 8px; font-size: 14px;resize: none;height: 154px;outline: none;}
+        .write-card textarea {width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 8px; font-size: 14px; resize: none; height: 154px; outline: none;}
 		  
         .action-area { display: flex; justify-content: flex-end; align-items: center; margin-top: 5px; gap: 8px; }
         .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
@@ -112,7 +110,6 @@
         let isRepeating = false;
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("App initialized");
             loadDiaries();
             loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => editingId ? updateDiary() : saveDiary());
@@ -159,7 +156,6 @@
                     }
                 }
             }).catch(err => {
-                console.error("Fetch error:", err);
                 document.getElementById('diaryContainer').innerHTML = '<p class="loading-text" style="color:red">Lỗi kết nối Server.</p>';
             });
         }
@@ -190,17 +186,16 @@
         }
 
         function selectRecord(id) {
-            console.log("Action: selectRecord and scroll to ID:", id);
+            console.log("Log: Selecting record ID", id);
             selectedDiaryId = id;
             document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
             const activeEl = document.getElementById(`item-${id}`);
             if (activeEl) {
                 activeEl.classList.add('selected');
-                // Tự động scroll đến item được chọn trong danh sách
-                activeEl.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest'
-                });
+                // Tự động scroll đến item được chọn bên trong container tab-diary
+                const container = document.getElementById('tab-diary');
+                const offsetTop = activeEl.offsetTop - container.offsetTop;
+                container.scrollTo({ top: offsetTop - 10, behavior: 'smooth' });
             }
             updateAIView();
         }
@@ -227,11 +222,10 @@
             const el = document.getElementById(elementId);
             const btn = document.getElementById(btnId);
             if(!el || !btn) return;
-            
             if (btn.classList.contains("active")) return; 
 
             if (typeof window.speakCommon !== 'function') {
-                alert("Lỗi: Không tìm thấy hàm speakCommon. Hãy kiểm tra đường dẫn ../com/TTSClient.js");
+                alert("Lỗi: Không tìm thấy hàm speakCommon.");
                 return;
             }
 
@@ -240,8 +234,6 @@
             const rate = document.getElementById("rateSelect").value;
 
             btn.classList.add("active");
-            console.log("Starting TTS for:", elementId);
-            
             try {
                 await window.speakCommon({
                     text: text,
@@ -249,7 +241,6 @@
                     rate: rate,
                     filename: "Diary_AI_N3"
                 });
-
                 btn.classList.remove("active");
                 if(isRepeating) {
                     const parentTab = el.closest('.tab-content');
@@ -266,8 +257,8 @@
         async function askAI(targetId, content) {
             selectRecord(targetId);
             switchTab(1);
-            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang gửi yêu cầu bảo mật đến Server...</p>';
-            document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý hội thoại...</p>';
+            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
+            document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
 
             try {
                 const response = await fetch(GAS_URL, {
@@ -278,7 +269,6 @@
                         content: content
                     })
                 });
-                
                 const res = await response.json();
                 if (res.status === 'success') {
                     const idx = currentDiaries.findIndex(d => d.id == targetId);
@@ -287,11 +277,8 @@
                         currentDiaries[idx].conversation = res.conversation;
                     }
                     updateAIView();
-                } else {
-                    throw new Error(res.message);
-                }
+                } else { throw new Error(res.message); }
             } catch (e) {
-                console.error("AI Proxy Error:", e);
                 alert("Lỗi AI: " + e.message);
                 updateAIView();
             }
@@ -307,11 +294,8 @@
             renderList(currentDiaries);
             selectRecord(id);
             
-            const diaryTab = document.getElementById('tab-diary');
-            diaryTab.scrollTo({ top: 0, behavior: 'smooth' });
-
             document.getElementById('diaryInput').value = '';
-            console.log("Creating diary entry:", id);
+            console.log("Log: Created new diary entry", id);
             callGAS({action:'create', id, date, text: val});
         }
 
@@ -330,7 +314,7 @@
             renderList(currentDiaries);
             const tid = editingId;
             clearEditMode();
-            console.log("Updating diary entry:", tid);
+            console.log("Log: Updated diary entry", tid);
             callGAS({action:'update', id: tid, text: val});
         }
 
@@ -343,15 +327,14 @@
 
         function deleteDiary(id) {
             if(!confirm("Xóa bài này?")) return;
-            console.log("Deleting diary entry:", id);
+            console.log("Log: Deleted diary entry", id);
             currentDiaries = currentDiaries.filter(i => i.id != id);
             renderList(currentDiaries);
             callGAS({action:'delete', id});
         }
 
         function callGAS(p) {
-            fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) })
-            .catch(e => console.error("GAS Call Error:", e));
+            fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
         }
     </script>
 </body>

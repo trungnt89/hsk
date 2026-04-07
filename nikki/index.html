@@ -4,366 +4,200 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="../com/assistive.js"></script>
-    <title>Nhật Ký Của Tôi</title>
+    <title>Nhật Ký Của Tôi - AI Integrated</title>
     <style>
         /* === RESET & BASE STYLES === */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         :root {
-            --bg-color: #f5f7fb;
-            --primary-color: #6c5ce7;
-            --secondary-color: #a29bfe;
-            --text-color: #2d3436;
-            --text-light: #636e72;
-            --card-bg: #ffffff;
-            --danger-color: #ff7675;
-            --edit-color: #0984e3;
-            --success-color: #2ecc71;
+            --bg-color: #f5f7fb; --primary-color: #6c5ce7; --secondary-color: #a29bfe;
+            --text-color: #2d3436; --text-light: #636e72; --card-bg: #ffffff;
+            --danger-color: #ff7675; --edit-color: #0984e3; --success-color: #2ecc71;
+            --ai-color: #00b894;
         }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header h1 { font-size: 1.2rem; font-weight: 600; }
+        main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
+        /* Thẻ viết nhật ký */
+        .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
+        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 8px; font-size: 16px; resize: none; height: 120px; outline: none; }
+        .action-area { display: flex; justify-content: flex-end; margin-top: 5px; gap: 8px; }
+        .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
 
-        /* === HEADER === */
-        header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 10px 15px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        header h1 {
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-
-        /* === MAIN CONTENT AREA === */
-        main {
-            flex: 1;
-            overflow: hidden; 
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        /* Thẻ viết nhật ký mới */
-        .write-card {
-            background: var(--card-bg);
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            flex-shrink: 0; 
-        }
-
-        .write-card textarea {
-            width: 100%;
-            border: 1px solid #dfe6e9;
-            border-radius: 8px;
-            padding: 8px;
-            font-size: 16px; /* Tối thiểu 16px để iOS Safari không tự động zoom */
-            resize: none;
-            height: 200px; /* Đã tăng gấp đôi từ 100px lên 200px */
-            outline: none;
-            transition: border 0.3s ease;
-        }
-
-        .write-card textarea:focus {
-            border-color: var(--primary-color);
-        }
-
-        .action-area {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 5px;
-            gap: 8px;
-        }
-
-        .btn-save {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(108, 92, 231, 0.2);
-            transition: transform 0.2s;
-        }
-
-        .btn-save:active {
-            transform: scale(0.95);
-        }
-
-        .btn-cancel {
-            background-color: #b2bec3;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: none; 
-        }
-
-        /* Danh sách các bài nhật ký cũ */
-        .diary-list {
-            flex: 1;
-            overflow-y: auto; 
-            padding-bottom: 60px; 
-        }
-
-        .diary-list h2 {
-            font-size: 1rem;
-            margin-bottom: 5px;
-            color: var(--text-light);
-            position: sticky; 
-            top: 0;
-            background: var(--bg-color);
-            padding-bottom: 5px;
-            z-index: 5;
-        }
-
-        .diary-item {
-            background: var(--card-bg);
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            margin-bottom: 8px;
-            position: relative;
-            animation: fadeIn 0.3s ease;
-            transition: all 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .diary-date {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            margin-bottom: 2px;
-            font-weight: 600;
-        }
-
-        .diary-content {
-            font-size: 0.85rem;
-            line-height: 1.4;
-            white-space: pre-wrap; 
-        }
-
-        .actions-right {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .item-action-btn {
-            background: none;
-            border: none;
-            font-size: 0.75rem;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
+        /* Danh sách bài viết */
+        .diary-list { flex: 1; overflow-y: auto; padding-bottom: 60px; }
+        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; position: relative; animation: fadeIn 0.3s ease; }
+        .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
+        .diary-content { font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
+        
+        /* Actions */
+        .item-actions { display: flex; gap: 12px; border-top: 1px solid #eee; padding-top: 8px; }
+        .item-action-btn { background: none; border: none; font-size: 0.75rem; cursor: pointer; font-weight: 600; }
         .edit-btn { color: var(--edit-color); }
         .delete-btn { color: var(--danger-color); }
+        .ai-btn { color: var(--ai-color); display: flex; align-items: center; gap: 3px; }
 
-        /* === TOAST NOTIFICATION (Đã ẩn hoàn toàn) === */
-        .toast {
-            display: none;
+        /* === AI MODAL === */
+        #aiModal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px;
         }
+        .modal-content { 
+            background: white; width: 100%; max-width: 500px; border-radius: 15px; 
+            padding: 20px; max-height: 80vh; overflow-y: auto; position: relative;
+        }
+        .modal-header { font-weight: bold; color: var(--primary-color); margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .modal-body { font-size: 0.9rem; line-height: 1.6; white-space: pre-line; color: #2d3436; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+        .close-modal { cursor: pointer; font-size: 1.2rem; }
 
-        /* === LOCK INTERACTION & SHIMMER EFFECT === */
-        .loading-lock { 
-            pointer-events: none; 
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(108, 92, 231, 0.2);
-        }
-        .loading-lock .actions-right { display: none !important; }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; justify-content: space-around; align-items: center; height: 50px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 10; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-light); font-size: 0.75rem; cursor: pointer; }
+        .nav-item.active { color: var(--primary-color); }
 
-        .loading-lock::after {
-            content: "";
-            position: absolute;
-            top: 0; right: 0; bottom: 0; left: 0;
-            background: linear-gradient(90deg, transparent, rgba(108, 92, 231, 0.1), transparent);
-            animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        /* === BOTTOM NAVIGATION === */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--card-bg);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            height: 50px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
-            z-index: 10;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-light);
-            font-size: 0.75rem;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .nav-item.active {
-            color: var(--primary-color);
-        }
-
-        .nav-icon {
-            font-size: 1.2rem;
-            margin-bottom: 2px;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .loading-lock { pointer-events: none; opacity: 0.6; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>日記</h1>
-    </header>
+    <header><h1>日記 & AI N3</h1></header>
 
     <main>
         <div class="write-card">
             <textarea id="diaryInput" placeholder="Hôm nay của bạn thế nào?..."></textarea>
             <div class="action-area">
-                <button id="cancelBtn" class="btn-cancel">Hủy</button>
+                <button id="cancelBtn" class="btn-cancel" style="display:none; padding: 8px 16px; border-radius: 8px; border:none;">Hủy</button>
                 <button id="saveBtn" class="btn-save">Lưu lại</button>
             </div>
         </div>
 
         <div class="diary-list">
-            <h2>一覧</h2>
             <div id="diaryContainer">
-                <p style="color: #636e72; text-align: center; margin-top: 10px; font-size: 0.85rem;">Đang tải dữ liệu...</p>
+                <p style="text-align: center; margin-top: 10px; font-size: 0.85rem;">Đang tải dữ liệu...</p>
             </div>
         </div>
     </main>
 
-    <div id="toast" class="toast">Đang lưu...</div>
-
-    <div class="bottom-nav">
-        <div class="nav-item active">
-            <div class="nav-icon">📝</div>
-            <span>日記</span>
-        </div>
-        <div class="nav-item" onclick="alert('Tính năng đang phát triển!')">
-            <div class="nav-icon">📅</div>
-            <span>Lịch</span>
-        </div>
-        <div class="nav-item" onclick="alert('Tính năng đang phát triển!')">
-            <div class="nav-icon">⚙️</div>
-            <span>Cài đặt</span>
+    <div id="aiModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>✨ Gemini 2.5 N3 Translation</span>
+                <span class="close-modal" onclick="closeAI()">✕</span>
+            </div>
+            <div id="aiResult" class="modal-body">Đang xử lý...</div>
         </div>
     </div>
 
-    <script>
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
+    <div class="bottom-nav">
+        <div class="nav-item active"><span>📝 日記</span></div>
+        <div class="nav-item" onclick="alert('Developing...')"><span>📅 Lịch</span></div>
+        <div class="nav-item" onclick="alert('Developing...')"><span>⚙️ Cài đặt</span></div>
+    </div>
 
-        let editingId = null; 
-        let currentDiaries = []; 
+    <script>
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
+        const AI_KEY = "AIzaSyAys_Hy1nUvuwGwZhOuKRbccNJAnU_Sa1w";
+        let currentDiaries = [];
+        let editingId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('[LOG] Khởi tạo ứng dụng nhật ký kết nối GAS.');
             loadDiaries();
-
-            document.getElementById('saveBtn').addEventListener('click', handleSubmit);
+            document.getElementById('saveBtn').addEventListener('click', () => editingId ? updateDiary() : saveDiary());
             document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
-
-            const diaryInput = document.getElementById('diaryInput');
-            diaryInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    console.log('[LOG] Nhấn Enter thuần túy - mặc định tự do xuống dòng.');
-                }
-            });
         });
 
-        function handleSubmit() {
-            if (editingId) {
-                updateDiary();
-            } else {
-                saveDiary();
+        // --- CORE LOGIC (GIỮ NGUYÊN TỪ BẢN CŨ) ---
+        function loadDiaries() {
+            fetch(GAS_URL).then(res => res.json()).then(res => {
+                if (res.status === 'success') {
+                    currentDiaries = res.data;
+                    renderList(currentDiaries);
+                }
+            });
+        }
+
+        function renderList(diaries) {
+            const container = document.getElementById('diaryContainer');
+            if (!diaries.length) {
+                container.innerHTML = '<p style="text-align:center;font-size:0.85rem;color:#636e72;">Chưa có bài viết nào.</p>';
+                return;
+            }
+            container.innerHTML = '';
+            diaries.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `diary-item ${item.isFake ? 'loading-lock' : ''}`;
+                div.id = `item-${item.id}`;
+                div.innerHTML = `
+                    <div class="diary-date">${item.date}</div>
+                    <div class="diary-content">${item.text}</div>
+                    <div class="item-actions">
+                        <span class="item-action-btn edit-btn" onclick="startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">Sửa</span>
+                        <span class="item-action-btn delete-btn" onclick="deleteDiary('${item.id}')">Xóa</span>
+                        <span class="item-action-btn ai-btn" onclick="askAI(\`${item.text.replace(/`/g, '\\`')}\`)">✨ AI N3</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- AI INTEGRATION LOGIC ---
+        async function askAI(content) {
+            const modal = document.getElementById('aiModal');
+            const resultBox = document.getElementById('aiResult');
+            modal.style.display = 'flex';
+            resultBox.innerText = "Giáo viên AI đang viết bài N3 cho bạn...";
+
+            const prompt = `Hãy thực hiện 2 việc:
+            1. Viết lại nội dung sau thành một đoạn văn tiếng Nhật tự nhiên trình độ N3 với độ dài 500 chữ: "${content}"
+            2. Tạo mẫu hội thoại 2 người về nội dung trên.`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${AI_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                resultBox.innerText = data.candidates[0].content.parts[0].text;
+                console.log("[LOG AI] Đã tạo nội dung N3 thành công.");
+            } catch (error) {
+                resultBox.innerText = "Lỗi kết nối AI: " + error.message;
             }
         }
 
+        function closeAI() { document.getElementById('aiModal').style.display = 'none'; }
+
+        // --- SUPPORT FUNCTIONS (CRUD) ---
         function saveDiary() {
-            const textarea = document.getElementById('diaryInput');
-            const content = textarea.value.trim();
-            if (!content) return;
-
-            const now = new Date();
-            const dateStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} - ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+            const val = document.getElementById('diaryInput').value.trim();
+            if(!val) return;
             const id = Date.now().toString();
-
-            const payload = { action: 'create', id: id, date: dateStr, text: content };
-
-            const newEntry = { id: id, date: dateStr, text: content, isFake: true };
-            currentDiaries.unshift(newEntry);
+            const date = new Date().toLocaleString('vi-VN');
+            currentDiaries.unshift({id, date, text: val, isFake: true});
             renderList(currentDiaries);
-
-            textarea.value = '';
-
-            callGAS(payload, 'Thêm mới', id);
+            document.getElementById('diaryInput').value = '';
+            callGAS({action:'create', id, date, text: val}, 'Thêm mới', id);
         }
 
         function startEdit(id, text) {
-            console.log(`[LOG] Bắt đầu sửa bài viết ID: ${id}`);
             editingId = id;
             document.getElementById('diaryInput').value = text;
-            document.getElementById('diaryInput').focus();
             document.getElementById('saveBtn').innerText = 'Cập nhật';
             document.getElementById('cancelBtn').style.display = 'inline-block';
         }
 
         function updateDiary() {
-            const textarea = document.getElementById('diaryInput');
-            const content = textarea.value.trim();
-            if (!content || !editingId) return;
-
-            const payload = { action: 'update', id: editingId, text: content };
-
-            const index = currentDiaries.findIndex(item => item.id.toString() === editingId.toString());
-            if (index !== -1) {
-                currentDiaries[index].text = content;
-                currentDiaries[index].isFake = true; 
-                renderList(currentDiaries);
-            }
-
-            const tempId = editingId;
+            const val = document.getElementById('diaryInput').value.trim();
+            if(!val) return;
+            const idx = currentDiaries.findIndex(i => i.id == editingId);
+            currentDiaries[idx].text = val;
+            currentDiaries[idx].isFake = true;
+            renderList(currentDiaries);
+            const tid = editingId;
             clearEditMode();
-            callGAS(payload, 'Cập nhật', tempId);
+            callGAS({action:'update', id: tid, text: val}, 'Cập nhật', tid);
         }
 
         function clearEditMode() {
@@ -374,85 +208,22 @@
         }
 
         function deleteDiary(id) {
-            if (!confirm('Bạn có chắc muốn xóa dòng nhật ký này không?')) return;
-            const payload = { action: 'delete', id: id.toString() };
-            
-            currentDiaries = currentDiaries.filter(item => item.id.toString() !== id.toString());
+            if(!confirm("Xóa nhé?")) return;
+            currentDiaries = currentDiaries.filter(i => i.id != id);
             renderList(currentDiaries);
-
-            callGAS(payload, 'Xóa', null);
+            callGAS({action:'delete', id}, 'Xóa', null);
         }
 
-        function loadDiaries() {
-            fetch(GAS_WEB_APP_URL)
-                .then(res => res.json())
-                .then(res => {
-                    console.log(`[LOG] Đã lấy dữ liệu từ GAS thành công.`);
-                    if (res.status === 'success') {
-                        currentDiaries = res.data; 
-                        renderList(currentDiaries);
-                    }
-                })
-                .catch(err => console.error('[LOG LỖI] Không thể load dữ liệu:', err));
-        }
-
-        function renderList(diaries) {
-            const container = document.getElementById('diaryContainer');
-            if (!diaries || diaries.length === 0) {
-                container.innerHTML = '<p style="color: #636e72; text-align: center; margin-top: 10px; font-size: 0.85rem;">Chưa có dòng nhật ký nào. Hãy viết gì đó nhé!</p>';
-                return;
-            }
-            container.innerHTML = '';
-            diaries.forEach(item => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = `diary-item ${item.isFake ? 'loading-lock' : ''}`;
-                itemDiv.id = `item-${item.id}`;
-                itemDiv.innerHTML = `
-                    <div class="diary-date">${item.date}</div>
-                    <div class="diary-content">${escapeHtml(item.text)}</div>
-                    <div class="actions-right">
-                        <button class="item-action-btn edit-btn" onclick="startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">Sửa</button>
-                        <button class="item-action-btn delete-btn" onclick="deleteDiary('${item.id}')">Xóa</button>
-                    </div>
-                `;
-                container.appendChild(itemDiv);
-            });
-        }
-
-        function callGAS(payload, actionName, targetId) {
-            console.log(`[LOG] Đang gửi yêu cầu ${actionName} tới GAS...`);
-
-            fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                mode: 'no-cors', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
+        function callGAS(payload, action, targetId) {
+            fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
             .then(() => {
-                console.log(`[LOG] Đã hoàn tất yêu cầu ${actionName} ngầm.`);
-
-                setTimeout(() => {
-                    if (targetId) {
-                        const targetElement = document.getElementById(`item-${targetId}`);
-                        if (targetElement) {
-                            targetElement.classList.remove('loading-lock');
-                            targetElement.style.border = 'none';
-                        }
-                        const index = currentDiaries.findIndex(item => item.id.toString() === targetId.toString());
-                        if (index !== -1) delete currentDiaries[index].isFake;
-                    }
-                }, 500); 
-            })
-            .catch(err => {
-                console.error(`[LOG LỖI] Thao tác ${actionName} thất bại:`, err);
-                loadDiaries();
+                console.log(`[LOG] ${action} thành công.`);
+                if(targetId) {
+                    const idx = currentDiaries.findIndex(i => i.id == targetId);
+                    if(idx !== -1) delete currentDiaries[idx].isFake;
+                    renderList(currentDiaries);
+                }
             });
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
     </script>
 </body>

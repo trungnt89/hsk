@@ -68,8 +68,8 @@
                 <div class="tts-controls">
                     <button id="btnRepeat" class="btn-repeat" title="Lặp lại" onclick="toggleRepeat()">🔂</button>
                     <select id="voiceSelect" class="tts-select" onchange="saveTTSSettings()">
-                        <option value="ja-JP-KeitaNeural">Nam</option>
-                        <option value="ja-JP-NanamiNeural" selected>Nữ</option>
+                        <option value="ja-JP-KeitaNeural">Nam (JP)</option>
+                        <option value="ja-JP-NanamiNeural" selected>Nữ (JP)</option>
                     </select>
                     <select id="rateSelect" class="tts-select" onchange="saveTTSSettings()">
                         <option value="0.7">0.7x</option>
@@ -211,28 +211,44 @@
 
         async function speakText(elementId, btnId) {
             const el = document.getElementById(elementId);
-            if(!el) return;
-            const text = el.innerText;
             const btn = document.getElementById(btnId);
+            if(!el || !btn) return;
             
-            if (typeof TTSClient === 'undefined') {
-                alert("Lỗi: Không tìm thấy thư viện TTSClient.js");
+            if (btn.classList.contains("active")) return; 
+
+            // Kiểm tra sự tồn tại của hàm speakCommon từ file ../com/TTSClient.js
+            if (typeof window.speakCommon !== 'function') {
+                alert("Lỗi: Không tìm thấy hàm speakCommon. Hãy kiểm tra đường dẫn ../com/TTSClient.js");
                 return;
             }
 
-            if(btn.classList.contains("active")) return; 
-
+            const text = el.innerText;
             const voice = document.getElementById("voiceSelect").value;
-            const rate = parseFloat(document.getElementById("rateSelect").value);
+            const rate = document.getElementById("rateSelect").value;
 
             btn.classList.add("active");
             
-            TTSClient.speak(text, voice, rate, () => {
+            try {
+                // Sử dụng hàm speakCommon từ file của bạn
+                await window.speakCommon({
+                    text: text,
+                    voice: voice,
+                    rate: rate,
+                    filename: "Diary_AI_N3"
+                });
+
                 btn.classList.remove("active");
                 if(isRepeating) {
-                    setTimeout(() => speakText(elementId, btnId), 600);
+                    // Kiểm tra xem tab hiện tại có còn đang hiển thị el này không
+                    const parentTab = el.closest('.tab-content');
+                    if (parentTab && parentTab.classList.contains('active')) {
+                        setTimeout(() => speakText(elementId, btnId), 800);
+                    }
                 }
-            });
+            } catch (err) {
+                console.error("Audio error:", err);
+                btn.classList.remove("active");
+            }
         }
 
         async function askAI(targetId, content) {

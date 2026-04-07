@@ -125,6 +125,7 @@
         let isRepeating = false;
         let currentTabIndex = 0;
 
+        // --- INDEXEDDB LOGIC ---
         const dbName = "DiaryDB";
         const storeName = "diaries";
 
@@ -170,17 +171,13 @@
         });
 
         async function initApp() {
-            // Restore last state
-            currentTabIndex = parseInt(localStorage.getItem("diary_last_tab") || "0");
-            selectedDiaryId = localStorage.getItem("diary_last_id");
-
             const cachedData = await getFromIDB();
             if (cachedData && cachedData.length > 0) {
                 currentDiaries = cachedData.sort((a, b) => b.id - a.id);
                 renderList(currentDiaries);
-                const targetId = selectedDiaryId || currentDiaries[0].id;
-                selectRecord(targetId);
-                switchTab(currentTabIndex);
+                if (currentDiaries.length > 0) {
+                    selectRecord(selectedDiaryId || currentDiaries[0].id);
+                }
             }
             loadDiaries();
         }
@@ -209,8 +206,6 @@
 
         function switchTab(index) {
             currentTabIndex = index;
-            localStorage.setItem("diary_last_tab", index);
-            
             const tabs = document.querySelectorAll('.tab-content');
             const btns = document.querySelectorAll('.tab-btn');
             tabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
@@ -228,9 +223,9 @@
                     currentDiaries = res.data;
                     saveToIDB(currentDiaries);
                     renderList(currentDiaries);
-                    const targetId = selectedDiaryId || currentDiaries[0].id;
-                    selectRecord(targetId);
-                    switchTab(currentTabIndex);
+                    if (currentDiaries.length > 0) {
+                        selectRecord(selectedDiaryId || currentDiaries[0].id);
+                    }
                 }
             }).catch(err => {
                 console.warn("[Server] Fetch failed, using offline data.");
@@ -240,9 +235,6 @@
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
             if (!diaries.length) { container.innerHTML = '<p class="loading-text">Chưa có bài viết nào.</p>'; return; }
-            
-            document.getElementById('tab-diary').scrollTop = 0;
-
             const pinnedItems = diaries.filter(d => d.pinned);
             const normalItems = diaries.filter(d => !d.pinned);
             container.innerHTML = '';
@@ -294,10 +286,9 @@
             if (selectedDiaryId !== null && selectedDiaryId != id) {
                 if (typeof window.stopSpeak === 'function') window.stopSpeak();
                 resetSpeakBtns();
+                console.log("[Log] Chuyển DiaryId: Dừng âm thanh cũ.");
             }
             selectedDiaryId = id;
-            localStorage.setItem("diary_last_id", id);
-
             document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
             const activeEl = document.getElementById(`item-${id}`);
             if (activeEl) activeEl.classList.add('selected');
@@ -344,13 +335,17 @@
             const el = document.getElementById(elementId);
             const btn = document.getElementById(btnId);
             
-            if(!el || !btn || typeof window.speakCommon !== 'function') return;
+            if(!el || !btn || typeof window.speakCommon !== 'function') {
+                console.warn("[Log] Không tìm thấy nội dung hoặc nút điều khiển.");
+                return;
+            }
 
             resetSpeakBtns();
             btn.classList.add("playing");
             btn.innerHTML = '⏹ Dừng';
 
             try {
+                console.log("[Log] Bắt đầu đọc nội dung: " + elementId);
                 await window.speakCommon({ 
                     text: el.innerText, 
                     voice: document.getElementById("voiceSelect").value, 
@@ -406,14 +401,25 @@
         function saveDiary() {
             const val = document.getElementById('diaryInput').value.trim();
             if(!val) return;
+            
+            console.log("Log: Saving new diary entry...");
+            
             const id = Date.now().toString();
             const date = new Date().toLocaleString('vi-VN');
             const newItem = {id, date, text: val, paragraph: "", conversation: "", pinned: false};
+            
             currentDiaries.unshift(newItem);
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
+            
+            const container = document.getElementById('tab-diary');
+            container.scrollTop = 0;
+
+            setTimeout(() => {
+                selectRecord(id);
+            }, 50);
+            
             document.getElementById('diaryInput').value = '';
-            selectRecord(id);
             callGAS({action:'create', id, date, text: val});
             switchTab(0);
         }
@@ -432,6 +438,10 @@
             currentDiaries[idx].text = val;
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
+            
+            const container = document.getElementById('tab-diary');
+            container.scrollTop = 0;
+
             const tid = editingId;
             clearEditMode();
             callGAS({action:'update', id: tid, text: val});
@@ -450,11 +460,11 @@
             currentDiaries = currentDiaries.filter(i => i.id != id);
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
-            if (selectedDiaryId == id) selectedDiaryId = null;
             callGAS({action:'delete', id});
         }
 
         function callGAS(p) {
+            console.log("[Log] Đồng bộ server action:", p.action);
             fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
         }
     </script>

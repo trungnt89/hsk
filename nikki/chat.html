@@ -135,19 +135,16 @@
         <div class="log-container" id="logBox"></div>
     </div>
 </div>
-
 <script>
     /**
-     * Cấu hình API - Đã cập nhật sang phiên bản v1 ổn định
+     * Cấu hình API - Chuyển về v1beta để tương thích hoàn toàn với gemini-1.5-flash
      */
     const CONFIG = {
         API_KEY: "AIzaSyA1v7f2h0LvD_068-dalniG2KJJXWw956s",
-        MODEL_URL: "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+        // Chuyển URL về v1beta
+        MODEL_URL: "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
     };
 
-    /**
-     * Hàm ghi Log theo yêu cầu người dùng
-     */
     function addLog(msg) {
         const logBox = document.getElementById('logBox');
         const time = new Date().toLocaleTimeString();
@@ -156,9 +153,6 @@
         console.log(`[LOG]: ${msg}`);
     }
 
-    /**
-     * Hàm chính xử lý gọi API và hiển thị kết quả
-     */
     async function generateN3() {
         const input = document.getElementById('viInput').value.trim();
         const btn = document.getElementById('genBtn');
@@ -166,35 +160,22 @@
         const section = document.getElementById('resultSection');
 
         if (!input) {
-            alert("Vui lòng nhập nội dung tiếng Việt!");
+            alert("Vui lòng nhập nội dung!");
             return;
         }
 
-        // Cập nhật giao diện khi bắt đầu
         btn.disabled = true;
-        btn.innerText = "Đang phân tích...";
+        btn.innerText = "Đang xử lý...";
         section.style.display = 'block';
-        output.innerText = "Hệ thống đang kết nối với AI để xử lý văn bản N3...";
+        output.innerText = "Đang kết nối API (v1beta)...";
         
-        addLog("Khởi tạo yêu cầu chuyển đổi văn bản.");
+        addLog("Bắt đầu quy trình chuyển đổi.");
 
-        // Prompt được thiết kế tối ưu cho trình độ N3
-        const prompt = `
-            Hãy đóng vai một giáo viên tiếng Nhật chuyên nghiệp. 
-            Nhiệm vụ: Chuyển đổi nội dung tiếng Việt dưới đây thành một đoạn văn tiếng Nhật tự nhiên ở trình độ JLPT N3.
-            
-            Yêu cầu chi tiết:
-            1. Sử dụng từ vựng và ngữ pháp đặc trưng của trình độ N3 (Ví dụ: ～べき, ～のではないか, ～といわれている, ～不労所得, ～経済的...).
-            2. Bài viết cần có sự kết nối logic bằng các liên từ (Conjunctions) như: しかし, なぜなら, したがって, その一方で.
-            3. Trình bày:
-               - Phần 1: Đoạn văn tiếng Nhật hoàn chỉnh.
-               - Phần 2: Giải thích ngắn gọn (bằng tiếng Việt) 3-5 cấu trúc ngữ pháp N3 đã sử dụng trong bài.
-            
-            NỘI DUNG TIẾNG VIỆT: "${input}"
-        `;
+        // Prompt chuyên sâu N3
+        const prompt = `Hãy đóng vai giáo viên tiếng Nhật. Dịch nội dung sau sang tiếng Nhật trình độ N3, sử dụng từ vựng/ngữ pháp N3 (～べき, ～不労所得...) và liệt kê các cấu trúc đã dùng: "${input}"`;
 
         try {
-            addLog("Đang gửi yêu cầu đến Gemini API (Endpoint: v1)...");
+            addLog("Đang gửi yêu cầu (Model: Gemini 1.5 Flash)...");
             
             const response = await fetch(`${CONFIG.MODEL_URL}?key=${CONFIG.API_KEY}`, {
                 method: 'POST',
@@ -208,27 +189,28 @@
 
             const data = await response.json();
             
-            // Xử lý lỗi từ API (ví dụ: Sai Key, Hết hạn mức, Sai URL)
+            // Nếu vẫn 404 hoặc lỗi khác
             if (data.error) {
                 throw new Error(`${data.error.code}: ${data.error.message}`);
             }
 
-            // Kiểm tra tính hợp lệ của dữ liệu phản hồi
             if (data.candidates && data.candidates[0].content) {
                 const aiResponse = data.candidates[0].content.parts[0].text;
                 output.innerText = aiResponse;
-                addLog("Thành công: Đã nhận phản hồi từ AI.");
-                addLog("Trạng thái: Hoàn tất xử lý nội dung N3.");
+                addLog("Thành công: Đã nhận phản hồi.");
             } else {
-                throw new Error("API phản hồi nhưng không có nội dung hợp lệ.");
+                throw new Error("API không trả về kết quả hợp lệ.");
             }
 
         } catch (error) {
-            output.innerText = "Hệ thống gặp lỗi: " + error.message;
+            output.innerText = "Lỗi: " + error.message;
             addLog("LỖI: " + error.message);
-            console.error("Full Debug Info:", error);
+            
+            // Hướng dẫn nếu vẫn lỗi 404
+            if (error.message.includes("404")) {
+                addLog("Gợi ý: Kiểm tra lại tên Model hoặc vùng quốc gia của API Key.");
+            }
         } finally {
-            // Khôi phục nút bấm
             btn.disabled = false;
             btn.innerText = "BẮT ĐẦU CHUYỂN ĐỔI";
         }

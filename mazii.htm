@@ -3,64 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Mazii API Vercel</title>
+    <title>Mazii Test Vercel</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-        input { padding: 10px; width: 70%; }
-        button { padding: 10px; cursor: pointer; }
-        #result { margin-top: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 8px; white-space: pre-wrap; background: #f9f9f9; }
-        .word-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
-        .phonetic { color: #666; font-size: 0.9em; }
-        .mean { color: #d32f2f; font-weight: bold; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: auto; background: #f4f7f6; }
+        .container { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        button { padding: 12px 24px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0051bb; }
+        #result { border-top: 2px solid #eee; padding-top: 20px; }
+        .word-card { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        .word-title { font-size: 1.4em; color: #333; margin: 0; }
+        .phonetic { color: #666; font-size: 0.9em; margin-bottom: 8px; }
+        .short-mean { display: inline-block; background: #e3f2fd; color: #0d47a1; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; margin-bottom: 10px; }
+        .mean-list { margin: 0; padding-left: 20px; color: #d32f2f; font-weight: 500; }
     </style>
 </head>
 <body>
-    <h2>Mazii API Tester (Vercel)</h2>
-    <input type="text" id="queryInput" placeholder="Nhập từ cần tra (vd: パソコン)">
-    <button onclick="search()">Tra cứu</button>
+
+<div class="container">
+    <h2>Tra cứu Mazii (Vercel API)</h2>
+    <div class="input-group">
+        <input type="text" id="queryInput" placeholder="Nhập từ cần tra..." onkeypress="if(event.key==='Enter') search()">
+        <button onclick="search()">Tra cứu</button>
+    </div>
 
     <div id="result">Kết quả sẽ hiển thị ở đây...</div>
+</div>
 
-    <script>
-        async function search() {
-            const query = document.getElementById('queryInput').value;
-            const resultDiv = document.getElementById('result');
-            
-            if (!query) return alert("Vui lòng nhập từ!");
+<script>
+    async function search() {
+        const query = document.getElementById('queryInput').value.trim();
+        const resultDiv = document.getElementById('result');
+        
+        if (!query) return;
 
-            console.log("Starting search for:", query);
-            resultDiv.innerHTML = "Đang tải...";
+        console.log("[FRONTEND] Searching for:", query);
+        resultDiv.innerHTML = "<em>Đang tra cứu dữ liệu...</em>";
 
-            try {
-                // Gọi tới endpoint serverless function của Vercel
-                const response = await fetch('/api/mazii', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query })
+        try {
+            const response = await fetch('/api/mazii', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            });
+
+            const data = await response.json();
+            console.log("[FRONTEND] Data received:", data);
+
+            if (data.data && data.data.words && data.data.words.length > 0) {
+                let html = "";
+                data.data.words.forEach(item => {
+                    // Lấy các nghĩa chi tiết từ mảng means
+                    const meansHtml = item.means 
+                        ? item.means.map(m => `<li>${m.mean}</li>`).join('') 
+                        : '<li>Không có nghĩa chi tiết</li>';
+
+                    html += `
+                        <div class="word-card">
+                            <h3 class="word-title">${item.word}</h3>
+                            <div class="phonetic">${item.phonetic || ''}</div>
+                            <div class="short-mean">Tóm tắt: ${item.short_mean || 'N/A'}</div>
+                            <ul class="mean-list">
+                                ${meansHtml}
+                            </ul>
+                        </div>`;
                 });
-
-                const data = await response.json();
-                console.log("Response from Vercel:", data);
-
-                if (data.data && data.data.length > 0) {
-                    let html = "";
-                    data.data.forEach(item => {
-                        const means = item.means ? item.means.map(m => m.mean).join(", ") : "N/A";
-                        html += `
-                            <div class="word-item">
-                                <strong>${item.word}</strong> <span class="phonetic">(${item.phonetic || ''})</span>
-                                <div class="mean">${means}</div>
-                            </div>`;
-                    });
-                    resultDiv.innerHTML = html;
-                } else {
-                    resultDiv.innerHTML = "Không tìm thấy kết quả.";
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                resultDiv.innerHTML = "Lỗi: " + error.message;
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = "<p>Không tìm thấy kết quả phù hợp trong thẻ 'words'.</p>";
             }
+        } catch (error) {
+            console.error("[FRONTEND] Error:", error);
+            resultDiv.innerHTML = "<p style='color:red'>Lỗi: " + error.message + "</p>";
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>

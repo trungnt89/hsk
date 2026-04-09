@@ -1,8 +1,8 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.32
+ * Japanese Lookup & Highlight Manager - Version 2026.33
+ * - Feature: Fixed iOS/iPhone selection not triggering lookup
  * - Feature: Sticky popup to prevent overlapping content
  * - Feature: Click outside to hide popup
- * - Feature: Auto-hide popup after deletion
  */
 
 const JapaneseLookup = (() => {
@@ -90,7 +90,6 @@ const JapaneseLookup = (() => {
             Module.deleteFromList(word);
             popup.style.display = 'none';
         };
-        // Cuộn xuống cuối để thấy popup nếu nó đẩy nội dung quá dài
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
@@ -129,7 +128,7 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
-            console.log("[Log] Init JapaneseLookup v2026.32");
+            console.log("[Log] Init JapaneseLookup v2026.33");
             createUI();
             await loadKanjiDict();
             try {
@@ -154,11 +153,17 @@ const JapaneseLookup = (() => {
                 }
             });
 
-            document.addEventListener('mouseup', (e) => {
+            // Xử lý tra từ trên cả PC và iPhone
+            const handleSelection = () => {
                 const sel = window.getSelection().toString().trim();
                 if (sel && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(sel)) {
                     lookupNew(sel);
                 }
+            };
+
+            document.addEventListener('mouseup', handleSelection);
+            document.addEventListener('touchend', () => {
+                setTimeout(handleSelection, 100); // Đợi menu hệ thống iPhone ổn định
             });
 
             setInterval(() => { if(dataLoaded) Module.applyHighlight(); }, 3000);

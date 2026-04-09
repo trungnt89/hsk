@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Mazii API</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+        input {
+            width: 300px;
+            padding: 8px;
+        }
+        button {
+            padding: 8px 12px;
+            margin-left: 10px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Test API Mazii</h2>
+
+<input id="word" placeholder="Nhập từ (ví dụ: 食べる)" />
+<button onclick="search()">Dịch</button>
+
+<pre id="result">Kết quả sẽ hiện ở đây...</pre>
+
+<script>
+async function search() {
+    const word = document.getElementById("word").value;
+
+    const url = "https://api.mazii.net/api/search";
+
+    const body = {
+        query: word,
+        type: "word"
+    };
+
+    try {
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+                // Nếu cần cookie:
+                // "Cookie": "token-id=xxxx"
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        document.getElementById("result").textContent =
+            JSON.stringify(data, null, 2);
+
+    } catch (err) {
+        document.getElementById("result").textContent =
+            "Lỗi: " + err;
+    }
+}
+</script>
+
+</body>
+</html>

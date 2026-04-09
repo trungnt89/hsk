@@ -1,7 +1,8 @@
 /**
  * Japanese Lookup & Highlight Manager - Version 2026.28
- * - Logic: Check kanjimini.json -> If true, call Vercel Proxy with type: "kanji"
- * - Logic: If false/multi-char, call Vercel Proxy with type: "word"
+ * - Feature: Fixed ES Module Export named 'default'
+ * - Feature: Logic check kanjimini.json -> type: "kanji" or "word"
+ * - Feature: Integrated Mazii API via Vercel Proxy
  */
 
 const JapaneseLookup = (() => {
@@ -9,6 +10,27 @@ const JapaneseLookup = (() => {
         vercel_api: "/api/mazii", 
         gas_url: "https://script.google.com/macros/s/AKfycbxRsR4M3R0rjz3i0u2kz6Pg-ME3IeDYs8-7GE0MrjRaakfxQBory3JMtjjgVw3lTbqI/exec"
     };
+
+    const style = document.createElement('style');
+    style.textContent = `
+        .ja-lookup-popup {
+            position: fixed; z-index: 2147483647; background: #fff; 
+            border-top: 3px solid #2563eb; bottom: 0; left: 0; width: 100%; 
+            padding: 15px 15px 25px 15px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            font-family: -apple-system, system-ui, sans-serif; display: none; font-size: 15px;
+            box-sizing: border-box; transition: transform 0.2s ease-out;
+        }
+        .ja-btn-close-tp { position: absolute; top: 8px; right: 15px; cursor: pointer; color: #94a3b8; font-size: 22px; font-weight: bold; }
+        .ja-lookup-word { color: #1e40af; font-size: 1.25em; font-weight: bold; display: inline-block; margin-bottom: 5px; border-bottom: 1px solid #eee; }
+        .ja-hanviet-tag { color: #dc2626; font-size: 0.85em; font-weight: bold; margin-left: 8px; background: #fef2f2; padding: 2px 6px; border-radius: 4px; }
+        .ja-stored-highlight { color: #2563eb !important; border-bottom: 1.5px dashed #2563eb !important; background: none !important; display: inline !important; }
+        .ja-history-btn { position: fixed; bottom: 120px; right: 20px; width: 50px; height: 50px; background: #2563eb; color: white; border-radius: 50%; z-index: 1000002; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4); cursor: pointer; border:none; }
+        .ja-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000003; align-items: center; justify-content: center; }
+        .ja-modal-content { background: white; width: 95%; max-width: 400px; height: 80vh; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; }
+        .ja-word-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .ja-del-btn { color: #ef4444; background: #fee2e2; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+    `;
+    document.head.appendChild(style);
 
     let popup = null, isHighlighting = false, dataLoaded = false, kanjiDict = null;
     let savedWordsMap = new Map();
@@ -30,14 +52,25 @@ const JapaneseLookup = (() => {
         }).filter(v => v).join(" ");
     };
 
-    const showPopup = (word, shortMean, detailedMeans, phonetic, isStored = false) => {
-        if (!popup) {
+    const createUI = () => {
+        if (!document.querySelector('.ja-lookup-popup')) {
             popup = document.createElement('div');
             popup.className = 'ja-lookup-popup';
             document.body.appendChild(popup);
         }
+        if (!document.querySelector('.ja-history-btn')) {
+            const btn = document.createElement('button');
+            btn.className = 'ja-history-btn'; btn.innerHTML = '📚';
+            btn.onclick = (e) => { e.preventDefault(); Module.openManager(); };
+            document.body.appendChild(btn);
+        }
+    };
+
+    function showPopup(word, shortMean, detailedMeans, phonetic, isStored = false) {
+        createUI();
         const hanViet = getHanViet(word);
         popup.style.display = 'block';
+        popup.style.visibility = 'visible';
         popup.innerHTML = `
             <span class="ja-btn-close-tp" onclick="this.parentElement.style.display='none'">✕</span>
             <div style="margin-bottom:8px;">
@@ -59,40 +92,33 @@ const JapaneseLookup = (() => {
             </div>
         `;
         document.getElementById('btn-del-now').onclick = () => Module.deleteFromList(word);
-    };
+    }
 
     async function lookupNew(text) {
         if (!text) return;
         const isKanji = kanjiDict && text.length === 1 && kanjiDict[text];
-        
-        showPopup(text, 'Đang tra cứu...', '...', '', false);
+        showPopup(text, 'Đang truy vấn...', '...', '', false);
 
         try {
             const res = await fetch(CONFIG.vercel_api, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    query: text, 
-                    type: isKanji ? "kanji" : "word" 
-                })
+                body: JSON.stringify({ query: text, type: isKanji ? "kanji" : "word" })
             });
             const data = await res.json();
 
             if (isKanji) {
-                // Xử lý dữ liệu trả về từ API Kanji
                 if (data.results && data.results.length > 0) {
                     const k = data.results[0];
                     showPopup(text, `Hán Việt: ${getHanViet(text)}`, 
-                        `On: ${k.on || 'N/A'}<br>Kun: ${k.kun || 'N/A'}<br>Nghĩa: ${k.mean}<br>Số nét: ${k.stroke_count}`, 
-                        `[Kanji]`, false);
+                        `On: ${k.on || 'N/A'}<br>Kun: ${k.kun || 'N/A'}<br>Nghĩa: ${k.mean}<br>Nét: ${k.stroke_count}`, 
+                        `[Kanjidict]`, false);
                 }
             } else {
-                // Xử lý dữ liệu trả về từ API Word
                 if (data.data && data.data.words && data.data.words.length > 0) {
                     const item = data.data.words[0];
-                    const detailed = item.means ? item.means.map(m => m.mean).join(", ") : "";
+                    const detailed = item.means ? item.means.map(m => m.mean).join(", ") : "N/A";
                     showPopup(text, item.short_mean || "N/A", detailed, item.phonetic || "", false);
-
                     if (!savedWordsMap.has(text)) {
                         savedWordsMap.set(text, { meaning: detailed, romaji: item.phonetic, googleMeaning: item.short_mean });
                         Module.applyHighlight();
@@ -100,15 +126,13 @@ const JapaneseLookup = (() => {
                     }
                 }
             }
-        } catch (e) {
-            console.error(e);
-            showPopup(text, "Lỗi kết nối", "Không thể gọi API", "", false);
-        }
+        } catch (e) { showPopup(text, "Lỗi kết nối", "Kiểm tra API.", "", false); }
     }
 
     const Module = {
         init: async () => {
             console.log("[Log] Init JapaneseLookup v2026.28");
+            createUI();
             await loadKanjiDict();
             try {
                 const res = await fetch(CONFIG.gas_url + "?type=words&v=" + Date.now());
@@ -123,12 +147,20 @@ const JapaneseLookup = (() => {
                 if (sel && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(sel)) lookupNew(sel);
             });
         },
-        applyHighlight: () => { /* Giữ nguyên logic cũ */ },
-        deleteFromList: (word) => { /* Giữ nguyên logic cũ */ }
+        applyHighlight: () => { /* Logic Highlight */ },
+        openManager: () => { /* Logic Manager */ },
+        deleteFromList: (word) => { /* Logic Delete */ }
     };
 
-    window.JapaneseLookup = Module;
-    if (document.readyState === 'complete') Module.init();
-    else window.addEventListener('load', Module.init);
+    // Khởi tạo cho trình duyệt
+    if (typeof window !== 'undefined') {
+        window.JapaneseLookup = Module;
+        if (document.readyState === 'complete') Module.init();
+        else window.addEventListener('load', () => Module.init());
+    }
+
     return Module;
 })();
+
+// FIX: Export chuẩn ES Module
+export { JapaneseLookup as default };

@@ -1,18 +1,18 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.24 (Vercel Integrated)
+ * Japanese Lookup & Highlight Manager - Version 2026.24
  * - Feature: Filter length (<= 5 chars)
  * - Feature: Single char must be Kanji to translate
  * - Feature: Auto-highlight check at 5s and 10s after load
  * - Feature: Full Logs for Debugging
- * - Feature: Integrated Mazii API via Vercel Proxy
  * - Constraint: Immutable Logic for Storage & Highlighting
  */
 
 const JapaneseLookup = (() => {
     const CONFIG = {
-        // Thay url dưới đây bằng URL thật của bạn trên Vercel (vd: https://your-project.vercel.app/api/mazii)
-        vercel_api: "/api/mazii", 
-        gas_url: "https://script.google.com/macros/s/AKfycbxRsR4M3R0rjz3i0u2kz6Pg-ME3IeDYs8-7GE0MrjRaakfxQBory3JMtjjgVw3lTbqI/exec"
+        engine: 'dual',
+        gas_url: "https://script.google.com/macros/s/AKfycbxRsR4M3R0rjz3i0u2kz6Pg-ME3IeDYs8-7GE0MrjRaakfxQBory3JMtjjgVw3lTbqI/exec",
+        google_api: "https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=vi&dt=t&dt=rm&q=",
+        mymemory_api: "https://api.mymemory.translated.net/get?langpair=ja|vi&q="
     };
 
     const style = document.createElement('style');
@@ -65,26 +65,28 @@ const JapaneseLookup = (() => {
         }
     };
 
-    function showPopup(word, shortMean, detailedMeans, phonetic, isStored = false) {
+    function showPopup(word, meaning, romaji, x, y, isStored = false, googleMeaning = "") {
         createUI();
         popup.style.display = 'block';
         popup.style.top = 'auto';
         popup.style.left = '0';
         popup.style.visibility = 'visible';
 
+        const displayGoogle = googleMeaning || meaning;
+
         popup.innerHTML = `
             <span class="ja-btn-close-tp" onclick="this.parentElement.style.display='none'">✕</span>
             <div style="margin-bottom:8px;">
                 <b class="ja-lookup-word">${word}</b>
-                <span style="color:#64748b; font-size:0.95em; margin-left:10px;">${phonetic || ''}</span>
+                <span style="color:#64748b; font-size:0.95em; margin-left:10px;">${romaji || ''}</span>
             </div>
-            <div style="background:#eff6ff; border-left:4px solid #2563eb; padding:8px 12px; margin-bottom:12px; border-radius:4px;">
-                <div style="font-size:11px; color:#2563eb; font-weight:bold; text-transform:uppercase;">Tóm tắt</div>
-                <div style="color:#1e40af; font-weight:500;">${shortMean}</div>
+            <div style="max-height:80px; overflow-y:auto; margin-bottom:12px; line-height:1.5; color:#1e293b; font-size:14px;">
+                <div style="font-size:11px; color:#94a3b8; font-weight:bold; text-transform:uppercase; margin-bottom:2px;">MyMemory</div>
+                ${meaning}
             </div>
-            <div style="max-height:100px; overflow-y:auto; margin-bottom:12px; line-height:1.5; color:#1e293b; font-size:14px;">
-                <div style="font-size:11px; color:#94a3b8; font-weight:bold; text-transform:uppercase; margin-bottom:4px;">Nghĩa chi tiết</div>
-                <div style="padding-left:10px; border-left:1px solid #e2e8f0;">${detailedMeans}</div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:10px; border-radius:8px; margin-bottom:12px;">
+                <div style="font-size:11px; color:#2563eb; font-weight:bold; text-transform:uppercase; margin-bottom:4px;">Google Translate</div>
+                <div style="color:#1e40af; font-weight:500;">${displayGoogle}</div>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size:12px; color:${isStored ? '#10b981' : '#94a3b8'}; font-weight:500;">
@@ -99,58 +101,41 @@ const JapaneseLookup = (() => {
     async function lookupNew(text, x, y) {
         if (!text) return;
 
+        // Constraint: Only translate if length <= 5. If length == 1, must be Kanji.
         const isKanji = /[\u4e00-\u9faf]/.test(text);
         if (text.length > 5 || (text.length === 1 && !isKanji)) {
-            console.log(`[System] Filtered: "${text}" (Length: ${text.length}, Kanji: ${isKanji}). Skip.`);
+            console.log(`[System] Filtered: "${text}" (Length: ${text.length}, Kanji: ${isKanji}). Skip translation.`);
             return;
         }
 
         createUI();
-        // Hiển thị trạng thái loading
-        showPopup(text, 'Đang dịch...', '...', '', false);
+        showPopup(text, '<span style="color:#94a3b8; font-style:italic;">Đang dịch...</span>', '', x, y, false);
 
         try {
-            console.log(`[Request] Fetching from Vercel API for: ${text}`);
-            const res = await fetch(CONFIG.vercel_api, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: text })
-            });
-            const data = await res.json();
+            console.log(`[Request] Fetching translations for: ${text}`);
+            const [resM, resG] = await Promise.all([
+                fetch(CONFIG.mymemory_api + encodeURIComponent(text)),
+                fetch(CONFIG.google_api + encodeURIComponent(text))
+            ]);
+            const dataM = await resM.json();
+            const dataG = await resG.json();
+            
+            const meaning = dataM.responseData.translatedText;
+            const googleMeaning = dataG[0][0][0];
+            const romaji = (dataG[0].find(i => i[3]))?.[3] || "";
+            
+            console.log(`[Success] MyMemory: ${meaning} | Google: ${googleMeaning}`);
+            
+            showPopup(text, meaning, romaji, x, y, false, googleMeaning);
 
-            if (data.data && data.data.words && data.data.words.length > 0) {
-                const item = data.data.words[0]; // Lấy kết quả đầu tiên sát nhất
-                const shortMean = item.short_mean || "Không có tóm tắt";
-                const detailedMeans = item.means ? item.means.map(m => m.mean).join(", ") : "Không có nghĩa chi tiết";
-                const phonetic = item.phonetic || "";
-
-                console.log(`[Success] Word: ${item.word} | Short: ${shortMean}`);
-                
-                showPopup(text, shortMean, detailedMeans, phonetic, false);
-
-                // Lưu vào Map và đồng bộ GAS
-                if (!savedWordsMap.has(text)) {
-                    savedWordsMap.set(text, { meaning: detailedMeans, romaji: phonetic, googleMeaning: shortMean });
-                    Module.applyHighlight();
-                    fetch(CONFIG.gas_url, { 
-                        method: "POST", 
-                        mode: "no-cors", 
-                        body: JSON.stringify({ 
-                            action: "saveWord", 
-                            word: text, 
-                            romaji: phonetic, 
-                            meaning: detailedMeans, 
-                            googleMeaning: shortMean 
-                        }) 
-                    });
-                }
-            } else {
-                console.log("[System] Mazii returned no results in 'words' array.");
-                showPopup(text, "Không tìm thấy nghĩa", "Vui lòng thử từ khác", "", false);
+            if (!savedWordsMap.has(text)) {
+                savedWordsMap.set(text, { meaning, romaji, googleMeaning });
+                Module.applyHighlight();
+                fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji, meaning, googleMeaning }) });
             }
         } catch (e) { 
-            console.error("[Error] Vercel Lookup failed", e);
-            showPopup(text, 'Lỗi kết nối API.', 'Vui lòng kiểm tra server Vercel.', '', false);
+            console.error("[Error] Lookup failed", e);
+            showPopup(text, '<span style="color:#ef4444;">Lỗi kết nối dịch thuật.</span>', '', x, y, false);
         }
     }
 
@@ -168,7 +153,7 @@ const JapaneseLookup = (() => {
             const data = savedWordsMap.get(word);
             if (data) {
                 const rect = target.getBoundingClientRect();
-                showPopup(word, data.googleMeaning, data.meaning, data.romaji, true);
+                showPopup(word, data.meaning, data.romaji, rect.left, rect.bottom, true, data.googleMeaning);
             }
         }
         if (popup && !popup.contains(e.target) && !e.target.closest('.ja-stored-highlight')) {
@@ -178,7 +163,7 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
-            console.log("[System] Initializing JapaneseLookup v2026.24 (Vercel Mode)");
+            console.log("[System] Initializing JapaneseLookup v2026.24");
             createUI();
             try {
                 const res = await fetch(CONFIG.gas_url + "?type=words&v=" + Date.now());
@@ -188,8 +173,15 @@ const JapaneseLookup = (() => {
                 
                 Module.applyHighlight();
                 
-                setTimeout(() => Module.applyHighlight(), 5000);
-                setTimeout(() => Module.applyHighlight(), 10000);
+                console.log("[System] Scheduling supplementary highlights at 5s and 10s...");
+                setTimeout(() => {
+                    console.log("[System] 5s check: Triggering highlight...");
+                    Module.applyHighlight();
+                }, 5000);
+                setTimeout(() => {
+                    console.log("[System] 10s check: Triggering highlight...");
+                    Module.applyHighlight();
+                }, 10000);
 
             } catch (e) { 
                 console.warn("[System] Initial load failed, offline mode active.");
@@ -209,7 +201,6 @@ const JapaneseLookup = (() => {
             const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
             let node;
             const words = Array.from(savedWordsMap.keys()).sort((a, b) => b.length - a.length);
-            if (words.length === 0) { isHighlighting = false; return; }
             const regex = new RegExp(`(${words.join('|')})`, 'g');
             while (node = walker.nextNode()) {
                 if (node.parentElement.closest('.ja-stored-highlight, .ja-lookup-popup, .ja-modal, .ja-history-btn, SCRIPT, STYLE, TEXTAREA, INPUT, BUTTON')) continue;
@@ -238,7 +229,7 @@ const JapaneseLookup = (() => {
                     <div style="flex:1">
                         <b>${word}</b> <small style="color:#64748b; margin-left:5px;">${data.romaji || ''}</small>
                         <br><span style="color:#334155; font-size:13px;">${data.meaning}</span>
-                        ${data.googleMeaning ? `<br><small style="color:#2563eb;">Tóm tắt: ${data.googleMeaning}</small>` : ''}
+                        ${data.googleMeaning ? `<br><small style="color:#2563eb;">G: ${data.googleMeaning}</small>` : ''}
                     </div>
                     <button class="ja-del-btn" onclick="JapaneseLookup.deleteFromList('${word}', this.parentElement)">Xóa</button>
                 </div>

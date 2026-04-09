@@ -1,8 +1,8 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.31
+ * Japanese Lookup & Highlight Manager - Version 2026.32
+ * - Feature: Sticky popup to prevent overlapping content
  * - Feature: Click outside to hide popup
  * - Feature: Auto-hide popup after deletion
- * - Feature: Optimized event listeners for better UX
  */
 
 const JapaneseLookup = (() => {
@@ -14,9 +14,9 @@ const JapaneseLookup = (() => {
     const style = document.createElement('style');
     style.textContent = `
         .ja-lookup-popup {
-            position: fixed; z-index: 2147483647; background: #fff; 
-            border-top: 3px solid #2563eb; bottom: 0; left: 0; width: 100%; 
-            padding: 10px 15px 15px 15px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            position: sticky; z-index: 2147483647; background: #fff; 
+            border-top: 3px solid #2563eb; bottom: 0; width: 100%; 
+            padding: 10px 15px 15px 15px; box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
             font-family: -apple-system, system-ui, sans-serif; display: none; font-size: 15px;
             box-sizing: border-box; transition: transform 0.2s ease-out;
         }
@@ -90,6 +90,8 @@ const JapaneseLookup = (() => {
             Module.deleteFromList(word);
             popup.style.display = 'none';
         };
+        // Cuộn xuống cuối để thấy popup nếu nó đẩy nội dung quá dài
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
     async function lookupNew(text) {
@@ -127,7 +129,7 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
-            console.log("[Log] Init JapaneseLookup v2026.31");
+            console.log("[Log] Init JapaneseLookup v2026.32");
             createUI();
             await loadKanjiDict();
             try {

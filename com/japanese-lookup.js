@@ -1,8 +1,8 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.33
+ * Japanese Lookup & Highlight Manager - Version 2026.34
+ * - Feature: Moved history button to top right
  * - Feature: Fixed iOS/iPhone selection not triggering lookup
  * - Feature: Sticky popup to prevent overlapping content
- * - Feature: Click outside to hide popup
  */
 
 const JapaneseLookup = (() => {
@@ -24,7 +24,7 @@ const JapaneseLookup = (() => {
         .ja-lookup-word { color: #1e40af; font-size: 1.2em; font-weight: bold; display: inline-block; margin-bottom: 2px; }
         .ja-hanviet-tag { color: #dc2626; font-size: 0.8em; font-weight: bold; margin-left: 5px; background: #fef2f2; padding: 1px 5px; border-radius: 4px; }
         .ja-stored-highlight { color: #2563eb !important; border-bottom: 1.5px dashed #2563eb !important; background: none !important; display: inline !important; cursor: pointer; }
-        .ja-history-btn { position: fixed; bottom: 100px; right: 15px; width: 45px; height: 45px; background: #2563eb; color: white; border-radius: 50%; z-index: 1000002; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; border:none; }
+        .ja-history-btn { position: fixed; top: 15px; right: 15px; width: 45px; height: 45px; background: #2563eb; color: white; border-radius: 50%; z-index: 1000002; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; border:none; }
         .ja-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000003; align-items: center; justify-content: center; }
         .ja-modal-content { background: white; width: 95%; max-width: 400px; height: 80vh; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; }
         .ja-word-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
@@ -128,7 +128,7 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
-            console.log("[Log] Init JapaneseLookup v2026.33");
+            console.log("[Log] Init JapaneseLookup v2026.34");
             createUI();
             await loadKanjiDict();
             try {
@@ -153,7 +153,6 @@ const JapaneseLookup = (() => {
                 }
             });
 
-            // Xử lý tra từ trên cả PC và iPhone
             const handleSelection = () => {
                 const sel = window.getSelection().toString().trim();
                 if (sel && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(sel)) {
@@ -163,7 +162,7 @@ const JapaneseLookup = (() => {
 
             document.addEventListener('mouseup', handleSelection);
             document.addEventListener('touchend', () => {
-                setTimeout(handleSelection, 100); // Đợi menu hệ thống iPhone ổn định
+                setTimeout(handleSelection, 100);
             });
 
             setInterval(() => { if(dataLoaded) Module.applyHighlight(); }, 3000);

@@ -37,7 +37,7 @@ const JapaneseLookup = (() => {
 
     const loadKanjiDict = async () => {
         try {
-            const res = await fetch("kanjimini.json");
+            const res = await fetch("../kanjimini.json");
             const data = await res.json();
             kanjiDict = data.reduce((acc, curr) => { acc[curr.w] = curr.h; return acc; }, {});
             console.log("[Log] Kanji Dictionary Loaded.");

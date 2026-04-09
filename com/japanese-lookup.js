@@ -1,8 +1,8 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.30
- * - Feature: Optimized UI (Compact padding/margin)
- * - Feature: Enhanced Kanji Display (Kun, Mean, Detail)
- * - Feature: Fixed ES Module Export & Auto-highlight
+ * Japanese Lookup & Highlight Manager - Version 2026.31
+ * - Feature: Click outside to hide popup
+ * - Feature: Auto-hide popup after deletion
+ * - Feature: Optimized event listeners for better UX
  */
 
 const JapaneseLookup = (() => {
@@ -86,7 +86,10 @@ const JapaneseLookup = (() => {
                 <button class="ja-del-btn" id="btn-del-now">🗑 Xóa</button>
             </div>
         `;
-        document.getElementById('btn-del-now').onclick = () => Module.deleteFromList(word);
+        document.getElementById('btn-del-now').onclick = () => {
+            Module.deleteFromList(word);
+            popup.style.display = 'none';
+        };
     }
 
     async function lookupNew(text) {
@@ -124,7 +127,7 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
-            console.log("[Log] Init JapaneseLookup v2026.30");
+            console.log("[Log] Init JapaneseLookup v2026.31");
             createUI();
             await loadKanjiDict();
             try {
@@ -135,14 +138,24 @@ const JapaneseLookup = (() => {
                 Module.applyHighlight();
             } catch (e) { dataLoaded = true; }
 
+            document.addEventListener('mousedown', (e) => {
+                const isClickInsidePopup = e.target.closest('.ja-lookup-popup');
+                const isClickInsideModal = e.target.closest('.ja-modal');
+                const isClickHistoryBtn = e.target.closest('.ja-history-btn');
+
+                if (e.target.closest('.ja-stored-highlight')) {
+                    const word = e.target.textContent;
+                    const d = savedWordsMap.get(word);
+                    if (d) showPopup(word, d.googleMeaning || d.meaning, d.meaning, d.romaji, true);
+                } else if (!isClickInsidePopup && !isClickInsideModal && !isClickHistoryBtn) {
+                    if (popup) popup.style.display = 'none';
+                }
+            });
+
             document.addEventListener('mouseup', (e) => {
                 const sel = window.getSelection().toString().trim();
                 if (sel && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(sel)) {
                     lookupNew(sel);
-                } else if (e.target.closest('.ja-stored-highlight')) {
-                    const word = e.target.textContent;
-                    const d = savedWordsMap.get(word);
-                    if (d) showPopup(word, d.googleMeaning || d.meaning, d.meaning, d.romaji, true);
                 }
             });
 

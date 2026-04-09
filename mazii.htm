@@ -1,64 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Mazii Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mazii API Vercel</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        input { padding: 10px; width: 70%; }
+        button { padding: 10px; cursor: pointer; }
+        #result { margin-top: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 8px; white-space: pre-wrap; background: #f9f9f9; }
+        .word-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
+        .phonetic { color: #666; font-size: 0.9em; }
+        .mean { color: #d32f2f; font-weight: bold; }
+    </style>
 </head>
 <body>
+    <h2>Mazii API Tester (Vercel)</h2>
+    <input type="text" id="queryInput" placeholder="Nhập từ cần tra (vd: パソコン)">
+    <button onclick="search()">Tra cứu</button>
 
-<h2>Test API Mazii</h2>
+    <div id="result">Kết quả sẽ hiển thị ở đây...</div>
 
-<input id="word" placeholder="Nhập từ..." />
-<button onclick="search()">Dịch</button>
+    <script>
+        async function search() {
+            const query = document.getElementById('queryInput').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!query) return alert("Vui lòng nhập từ!");
 
-<pre id="result"></pre>
+            console.log("Starting search for:", query);
+            resultDiv.innerHTML = "Đang tải...";
 
-<script>
-async function search() {
-    const word = document.getElementById("word").value;
+            try {
+                // Gọi tới endpoint serverless function của Vercel
+                const response = await fetch('/api/mazii', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
 
-    try {
-        const res = await fetch("https://mazii.net/api/search/word", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include", // QUAN TRỌNG
-            body: JSON.stringify({
-                dict: "javi",
-                limit: 20,
-                page: 1,
-                query: word,
-                type: "word"
-            })
-        });
+                const data = await response.json();
+                console.log("Response from Vercel:", data);
 
-        const data = await res.json();
-
-        // render đẹp
-        if (data.data) {
-            let output = "";
-            data.data.forEach(item => {
-                output += `
-🔤 ${item.word}
-(${item.phonetic})
-👉 ${item.mean}
-
--------------------
-`;
-            });
-            document.getElementById("result").textContent = output;
-        } else {
-            document.getElementById("result").textContent =
-                JSON.stringify(data, null, 2);
+                if (data.data && data.data.length > 0) {
+                    let html = "";
+                    data.data.forEach(item => {
+                        const means = item.means ? item.means.map(m => m.mean).join(", ") : "N/A";
+                        html += `
+                            <div class="word-item">
+                                <strong>${item.word}</strong> <span class="phonetic">(${item.phonetic || ''})</span>
+                                <div class="mean">${means}</div>
+                            </div>`;
+                    });
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = "Không tìm thấy kết quả.";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                resultDiv.innerHTML = "Lỗi: " + error.message;
+            }
         }
-
-    } catch (err) {
-        document.getElementById("result").textContent =
-            "Lỗi: " + err;
-    }
-}
-</script>
-
+    </script>
 </body>
 </html>

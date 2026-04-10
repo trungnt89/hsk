@@ -36,7 +36,7 @@
         .tab-btn { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; }
         .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 60px; scroll-behavior: smooth; position: relative; }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 60px; scroll-behavior: smooth; }
         .tab-content.active { display: block; }
         
         .diary-item { background: var(--card-bg); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; transition: 0.2s; position: relative; }
@@ -44,30 +44,29 @@
         .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
 
         #pinnedSection { position: sticky; top: 0; z-index: 10; background: var(--bg-color); padding-bottom: 4px; border-bottom: 1px dashed #ccc; margin-bottom: 10px; display: flex; flex-direction: column; }
-        .pinned-label { font-size: 0.7rem; font-weight: bold; color: #f39c12; margin-bottom: 5px; padding-left: 5px; padding-top: 5px; }
+        .pinned-label { font-size: 0.7rem; font-weight: bold; color: #f39c12; margin-bottom: 5px; padding: 5px; }
 
         .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 5px; }
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--ai-color); color: #2c3e50; }
         
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
-        select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; background: white; }
+        select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
 
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
         .diary-content { font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
         
         .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 5px; }
-        .item-actions-left { display: flex; gap: 15px; }
-        .item-actions-right { display: flex; gap: 15px; }
-        .item-action-btn { background: none; border: none; font-size: 0.8rem; cursor: pointer; font-weight: 600; transition: opacity 0.3s; }
+        .item-actions-left, .item-actions-right { display: flex; gap: 15px; }
+        .item-action-btn { background: none; border: none; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
         
         .pin-btn { color: #f39c12; }
         .edit-btn { color: var(--edit-color); }
         .delete-btn { color: var(--danger-color); }
-        .ai-btn { color: var(--ai-color); font-weight: bold; }
-        .ai-btn.generated { color: #27ae60; opacity: 0.8; }
+        .ai-btn { color: var(--ai-color); }
+        .ai-btn.generated { color: #27ae60; }
 
-        .loading-text { text-align: center; padding: 40px; font-size: 0.9rem; color: var(--text-light); line-height: 1.6; }
+        .loading-text { text-align: center; padding: 40px; font-size: 0.9rem; color: var(--text-light); }
     </style>
 </head>
 <body>
@@ -90,7 +89,6 @@
                         <option value="ja-JP-NanamiNeural" selected>Nữ (JP)</option>
                     </select>
                     <select id="rateSelect" class="tts-select" onchange="saveTTSSettings()">
-                        <option value="0.7">0.7x</option>
                         <option value="0.75">0.75</option>
                         <option value="0.8" selected>0.8x</option>
                         <option value="1.0">1.0x</option>
@@ -108,18 +106,11 @@
         <div id="tab-diary" class="tab-content active">
             <div id="diaryContainer"><p class="loading-text">Đang tải dữ liệu...</p></div>
         </div>
-
-        <div id="tab-paragraph" class="tab-content">
-            <div id="paragraphContainer"></div>
-        </div>
-
-        <div id="tab-conversation" class="tab-content">
-            <div id="conversationContainer"></div>
-        </div>
+        <div id="tab-paragraph" class="tab-content"><div id="paragraphContainer"></div></div>
+        <div id="tab-conversation" class="tab-content"><div id="conversationContainer"></div></div>
     </main>
 
     <script>
-        // QUAN TRỌNG: Đảm bảo GAS_URL này là Deployment ID mới nhất sau khi sửa Code.gs
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
         
         let currentDiaries = [];
@@ -136,9 +127,7 @@
                 const request = indexedDB.open(dbName, 1);
                 request.onupgradeneeded = (e) => {
                     const db = e.target.result;
-                    if (!db.objectStoreNames.contains(storeName)) {
-                        db.createObjectStore(storeName, { keyPath: "id" });
-                    }
+                    if (!db.objectStoreNames.contains(storeName)) db.createObjectStore(storeName, { keyPath: "id" });
                 };
                 request.onsuccess = (e) => resolve(e.target.result);
                 request.onerror = (e) => reject(e.target.error);
@@ -151,7 +140,6 @@
             const store = tx.objectStore(storeName);
             store.clear();
             data.forEach(item => store.put(item));
-            console.log("[IndexedDB] Sync Complete.");
             return tx.complete;
         }
 
@@ -176,14 +164,20 @@
 
         async function initApp() {
             const cachedData = await getFromIDB();
-            if (cachedData && cachedData.length > 0) {
+            if (cachedData.length > 0) {
                 currentDiaries = cachedData.sort((a, b) => b.id - a.id);
                 renderList(currentDiaries);
-                const targetId = selectedDiaryId || (currentDiaries.length > 0 ? currentDiaries[0].id : null);
-                if (targetId) selectRecord(targetId, true);
+                if (selectedDiaryId) selectRecord(selectedDiaryId, true);
                 switchTab(currentTabIndex);
             }
             loadDiaries();
+        }
+
+        function loadTTSSettings() {
+            const v = localStorage.getItem("diary_voice"), r = localStorage.getItem("diary_rate"), rep = localStorage.getItem("diary_repeat");
+            if(v) document.getElementById("voiceSelect").value = v;
+            if(r) document.getElementById("rateSelect").value = r;
+            if(rep !== null) { isRepeating = rep === "true"; document.getElementById("btnRepeat").classList.toggle("active", isRepeating); }
         }
 
         function saveTTSSettings() {
@@ -192,32 +186,14 @@
             localStorage.setItem("diary_repeat", isRepeating);
         }
 
-        function loadTTSSettings() {
-            const v = localStorage.getItem("diary_voice");
-            const r = localStorage.getItem("diary_rate");
-            const rep = localStorage.getItem("diary_repeat");
-            if(v) document.getElementById("voiceSelect").value = v;
-            if(r) document.getElementById("rateSelect").value = r;
-            if(rep !== null) isRepeating = rep === "true";
-            document.getElementById("btnRepeat").classList.toggle("active", isRepeating);
-        }
-
-        function toggleRepeat() {
-            isRepeating = !isRepeating;
-            document.getElementById("btnRepeat").classList.toggle("active", isRepeating);
-            saveTTSSettings();
-        }
+        function toggleRepeat() { isRepeating = !isRepeating; document.getElementById("btnRepeat").classList.toggle("active", isRepeating); saveTTSSettings(); }
 
         function switchTab(index) {
             currentTabIndex = index;
             localStorage.setItem("diary_current_tab", index);
-            const tabs = document.querySelectorAll('.tab-content');
-            const btns = document.querySelectorAll('.tab-btn');
-            tabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
-            btns.forEach((btn, i) => btn.classList.toggle('active', i === index));
-            
-            const speakBtn = document.getElementById('btnMainSpeak');
-            speakBtn.disabled = (index === 0);
+            document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === index));
+            document.getElementById('btnMainSpeak').disabled = (index === 0);
             updateAIView();
         }
 
@@ -229,32 +205,36 @@
                     currentDiaries = data.data;
                     await saveToIDB(currentDiaries);
                     renderList(currentDiaries);
-                    const targetId = selectedDiaryId || (currentDiaries.length > 0 ? currentDiaries[0].id : null);
-                    if (targetId) selectRecord(targetId, true);
+                    if (selectedDiaryId) selectRecord(selectedDiaryId);
                 }
-            } catch (err) { console.warn("[Offline] Không thể tải từ Server."); }
+            } catch (err) { console.warn("[Offline]"); }
+        }
+
+        async function callGAS(p) {
+            // Chuyển object sang query string cho doGet
+            const queryString = Object.keys(p).map(k => `${encodeURIComponent(k)}=${encodeURIComponent(p[k])}`).join('&');
+            try {
+                const response = await fetch(`${GAS_URL}?${queryString}`);
+                return await response.json();
+            } catch (e) { console.error(e); return {status: 'error'}; }
         }
 
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
-            if (!diaries.length) { container.innerHTML = '<p class="loading-text">Chưa có bài viết nào.</p>'; return; }
-            const pinnedItems = diaries.filter(d => d.pinned);
-            const normalItems = diaries.filter(d => !d.pinned);
             container.innerHTML = '';
-            
-            if (pinnedItems.length > 0) {
-                const pinnedSection = document.createElement('div');
-                pinnedSection.id = 'pinnedSection';
-                pinnedSection.innerHTML = `<div class="pinned-label">📌 ĐÃ GHIM (${pinnedItems.length}/2)</div>`;
-                pinnedItems.forEach(item => pinnedSection.appendChild(createItemEl(item)));
-                container.appendChild(pinnedSection);
+            const pinned = diaries.filter(d => d.pinned), normal = diaries.filter(d => !d.pinned);
+            if (pinned.length) {
+                const sec = document.createElement('div'); sec.id = 'pinnedSection';
+                sec.innerHTML = `<div class="pinned-label">📌 ĐÃ GHIM</div>`;
+                pinned.forEach(item => sec.appendChild(createItemEl(item)));
+                container.appendChild(sec);
             }
-            normalItems.forEach(item => container.appendChild(createItemEl(item)));
+            normal.forEach(item => container.appendChild(createItemEl(item)));
             if (window.JapaneseLookup?.render) setTimeout(() => window.JapaneseLookup.render(), 100);
         }
 
         function createItemEl(item) {
-            const isGenerated = !!(item.paragraph || item.conversation);
+            const isGen = !!(item.paragraph || item.conversation);
             const div = document.createElement('div');
             div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
             div.id = `item-${item.id}`;
@@ -264,192 +244,102 @@
                 <div class="diary-content">${item.text}</div>
                 <div class="item-actions">
                     <div class="item-actions-left">
-                        <span class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ ghim' : '📌 Ghim'}</span>
+                        <span class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</span>
                         <span class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</span>
                         <span class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</span>
                     </div>
                     <div class="item-actions-right">
-                        <span class="item-action-btn ai-btn ${isGenerated ? 'generated' : ''}" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGenerated ? '✅ AI' : '✨ AI'}</span>
+                        <span class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</span>
                     </div>
                 </div>
             `;
             return div;
         }
 
-        async function callGAS(p) {
-            console.log("[Sync] Gửi lệnh:", p.action);
-            try {
-                // Sửa lỗi no-cors để đảm bảo Body được gửi đi
-                await fetch(GAS_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify(p) 
-                });
-                console.log("[Sync] Server nhận lệnh thành công.");
-            } catch (e) { console.error("[Sync] Lỗi:", e); }
-        }
-
-        function togglePin(id) {
-            const idx = currentDiaries.findIndex(d => d.id == id);
-            if (idx === -1) return;
-            const isPinned = !!currentDiaries[idx].pinned;
-            if (!isPinned && currentDiaries.filter(d => d.pinned).length >= 2) { alert("Tối đa 2 bài ghim."); return; }
-            currentDiaries[idx].pinned = !isPinned;
-            saveToIDB(currentDiaries);
-            renderList(currentDiaries);
-            callGAS({ action: 'update_pin', id: id, pinned: currentDiaries[idx].pinned });
-        }
-
-        function selectRecord(id, shouldScroll = false) {
-            selectedDiaryId = id;
-            localStorage.setItem("diary_selected_id", id);
+        function selectRecord(id, scroll = false) {
+            selectedDiaryId = id; localStorage.setItem("diary_selected_id", id);
             document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
-            const activeEl = document.getElementById(`item-${id}`);
-            if (activeEl) {
-                activeEl.classList.add('selected');
-                if (shouldScroll) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            const el = document.getElementById(`item-${id}`);
+            if (el) { el.classList.add('selected'); if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
             updateAIView();
         }
 
         function updateAIView() {
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
-            const pContainer = document.getElementById('paragraphContainer');
-            const cContainer = document.getElementById('conversationContainer');
             if (!item) return;
-
-            pContainer.innerHTML = item.paragraph 
-                ? `<div class="ai-header"><span>📖 Đoạn văn</span></div><div id="p-content" class="ai-content-box">${item.paragraph}</div>` 
-                : `<div class="loading-text">Dữ liệu AI chưa được tạo.</div>`;
-            
-            cContainer.innerHTML = item.conversation 
-                ? `<div class="ai-header"><span>💬 Hội thoại</span></div><div id="c-content" class="ai-content-box">${item.conversation}</div>` 
-                : `<div class="loading-text">Dữ liệu AI chưa được tạo.</div>`;
+            document.getElementById('paragraphContainer').innerHTML = item.paragraph ? `<div id="p-content" class="ai-content-box">${item.paragraph}</div>` : `<p class="loading-text">Chưa có dữ liệu AI.</p>`;
+            document.getElementById('conversationContainer').innerHTML = item.conversation ? `<div id="c-content" class="ai-content-box">${item.conversation}</div>` : `<p class="loading-text">Chưa có dữ liệu AI.</p>`;
         }
 
-        async function speakText(elementId, btnId) {
-            const el = document.getElementById(elementId);
-            const btn = document.getElementById(btnId);
-            if(!el || !btn || typeof window.speakCommon !== 'function') return;
-
-            btn.classList.add("playing");
-            btn.innerHTML = '⏹ Dừng';
-
-            try {
-                // Quản lý status từ vựng: filename + id theo yêu cầu
-                const statusKey = `Diary_AI_N3_${selectedDiaryId}`;
-                await window.speakCommon({ 
-                    text: el.innerText, 
-                    voice: document.getElementById("voiceSelect").value, 
-                    rate: document.getElementById("rateSelect").value, 
-                    filename: statusKey 
-                });
-                
-                if (btn.classList.contains("playing")) {
-                    if (isRepeating && el.closest('.tab-content').classList.contains('active')) {
-                        setTimeout(() => speakText(elementId, btnId), 1000);
-                    } else { resetSpeakBtns(); }
+        async function askAI(id, content) {
+            selectRecord(id); switchTab(1);
+            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
+            const res = await callGAS({ action: 'ask_ai_proxy', id, content });
+            if (res.status === 'success') {
+                const idx = currentDiaries.findIndex(d => d.id == id);
+                if (idx !== -1) {
+                    currentDiaries[idx].paragraph = res.paragraph; currentDiaries[idx].conversation = res.conversation;
+                    await saveToIDB(currentDiaries); renderList(currentDiaries); updateAIView();
                 }
-            } catch (e) { resetSpeakBtns(); }
+            }
+        }
+
+        async function speakText(elId, btnId) {
+            const el = document.getElementById(elId), btn = document.getElementById(btnId);
+            if(!el || !window.speakCommon) return;
+            btn.classList.add("playing"); btn.innerHTML = '⏹ Dừng';
+            const statusKey = `Diary_AI_N3_${selectedDiaryId}`;
+            await window.speakCommon({ text: el.innerText, voice: document.getElementById("voiceSelect").value, rate: document.getElementById("rateSelect").value, filename: statusKey });
+            if (btn.classList.contains("playing")) {
+                if (isRepeating && el.closest('.tab-content').classList.contains('active')) setTimeout(() => speakText(elId, btnId), 1000);
+                else resetSpeakBtns();
+            }
         }
 
         function handleGlobalSpeak() {
             const btn = document.getElementById('btnMainSpeak');
-            if (btn.classList.contains("playing")) {
-                if (typeof window.stopSpeak === 'function') window.stopSpeak();
-                resetSpeakBtns();
-                return;
-            }
+            if (btn.classList.contains("playing")) { if (window.stopSpeak) window.stopSpeak(); resetSpeakBtns(); return; }
             const tid = currentTabIndex === 1 ? 'p-content' : (currentTabIndex === 2 ? 'c-content' : null);
             if (tid) speakText(tid, 'btnMainSpeak');
         }
 
-        function resetSpeakBtns() {
-            const btn = document.getElementById('btnMainSpeak');
-            btn.classList.remove('playing');
-            btn.innerHTML = '🔊 Đọc';
-        }
-
-        async function askAI(targetId, content) {
-            selectRecord(targetId);
-            switchTab(1);
-            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
-            
-            try {
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'ask_ai_proxy', id: targetId, content: content })
-                });
-                const res = await response.json();
-                if (res.status === 'success') {
-                    const idx = currentDiaries.findIndex(d => d.id == targetId);
-                    if (idx !== -1) {
-                        currentDiaries[idx].paragraph = res.paragraph;
-                        currentDiaries[idx].conversation = res.conversation;
-                        await saveToIDB(currentDiaries);
-                        renderList(currentDiaries);
-                        updateAIView();
-                    }
-                } else { alert("AI Error: " + res.message); }
-            } catch (e) { console.error("AI Request Failed", e); }
-        }
+        function resetSpeakBtns() { const b = document.getElementById('btnMainSpeak'); b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
 
         function saveDiary() {
-            const val = document.getElementById('diaryInput').value.trim();
-            if(!val) return;
-            const id = Date.now().toString();
-            const date = new Date().toLocaleString('vi-VN');
-            const newItem = {id, date, text: val, paragraph: "", conversation: "", pinned: false};
-            currentDiaries.unshift(newItem);
-            saveToIDB(currentDiaries);
-            renderList(currentDiaries);
+            const text = document.getElementById('diaryInput').value.trim(); if(!text) return;
+            const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
+            const newItem = {id, date, text, paragraph: "", conversation: "", pinned: false};
+            currentDiaries.unshift(newItem); saveToIDB(currentDiaries); renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';
-            callGAS({action:'create', id, date, text: val});
-            selectRecord(id, true);
+            callGAS({action:'create', id, date, text}); selectRecord(id, true);
         }
 
         function startEdit(id, text) {
-            editingId = id;
-            document.getElementById('diaryInput').value = text;
-            document.getElementById('saveBtn').innerText = 'Cập nhật';
-            document.getElementById('cancelBtn').style.display = 'inline-block';
+            editingId = id; document.getElementById('diaryInput').value = text;
+            document.getElementById('saveBtn').innerText = 'Cập nhật'; document.getElementById('cancelBtn').style.display = 'inline-block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function updateDiary() {
-            const val = document.getElementById('diaryInput').value.trim();
+            const text = document.getElementById('diaryInput').value.trim();
             const idx = currentDiaries.findIndex(i => i.id == editingId);
             if (idx === -1) return;
-            currentDiaries[idx].text = val;
-            saveToIDB(currentDiaries);
-            renderList(currentDiaries);
-            const tid = editingId;
-            clearEditMode();
-            callGAS({action:'update', id: tid, text: val});
+            currentDiaries[idx].text = text;
+            const tid = editingId; saveToIDB(currentDiaries); renderList(currentDiaries); clearEditMode();
+            callGAS({action:'update', id: tid, text});
         }
 
-        function clearEditMode() {
-            editingId = null;
-            document.getElementById('diaryInput').value = '';
-            document.getElementById('saveBtn').innerText = 'Lưu lại';
-            document.getElementById('cancelBtn').style.display = 'none';
+        function deleteDiary(id) { if(confirm("Xóa?")) { currentDiaries = currentDiaries.filter(i => i.id != id); saveToIDB(currentDiaries); renderList(currentDiaries); callGAS({action:'delete', id}); } }
+        function togglePin(id) {
+            const idx = currentDiaries.findIndex(d => d.id == id);
+            if (idx === -1) return;
+            const cur = !!currentDiaries[idx].pinned;
+            if (!cur && currentDiaries.filter(d => d.pinned).length >= 2) { alert("Tối đa 2 ghim"); return; }
+            currentDiaries[idx].pinned = !cur;
+            saveToIDB(currentDiaries); renderList(currentDiaries);
+            callGAS({action:'update_pin', id, pinned: currentDiaries[idx].pinned});
         }
-
-        function deleteDiary(id) {
-            if(!confirm("Xóa bài này?")) return;
-            currentDiaries = currentDiaries.filter(i => i.id != id);
-            saveToIDB(currentDiaries);
-            renderList(currentDiaries);
-            callGAS({action:'delete', id});
-        }
-
-        function toggleItemButtons(id, enabled) {
-            const itemEl = document.getElementById(`item-${id}`);
-            if (!itemEl) return;
-            itemEl.querySelectorAll('.item-action-btn').forEach(btn => {
-                btn.style.pointerEvents = enabled ? 'auto' : 'none';
-                btn.style.opacity = enabled ? '1' : '0.4';
-            });
-        }
+        function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
     </script>
 </body>
 </html>

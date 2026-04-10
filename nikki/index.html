@@ -59,7 +59,7 @@
         .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; }
         .item-actions-left { display: flex; gap: 20px; }
         .item-actions-right { display: flex; gap: 15px; }
-        .item-action-btn { background: none; border: none; font-size: 0.8rem; cursor: pointer; font-weight: 600; padding: 5px 0; }
+        .item-action-btn { background: none; border: none; font-size: 0.8rem; cursor: pointer; font-weight: 600; padding: 5px 0; transition: opacity 0.3s; }
         
         .pin-btn { color: #f39c12; }
         .edit-btn { color: var(--edit-color); }
@@ -314,12 +314,12 @@
 
             pContainer.innerHTML = item.paragraph 
                 ? `<div class="ai-header"><span>📖 Đoạn văn</span></div>
-                   <div id="p-content" class="ai-content-box">${item.paragraph}</div>` 
+                    <div id="p-content" class="ai-content-box">${item.paragraph}</div>` 
                 : `<div class="loading-text">Nhấn nút <b>✨ AI</b> ở tab Nhật ký để tạo nội dung.</div>`;
             
             cContainer.innerHTML = item.conversation 
                 ? `<div class="ai-header"><span>💬 Hội thoại</span></div>
-                   <div id="c-content" class="ai-content-box">${item.conversation}</div>` 
+                    <div id="c-content" class="ai-content-box">${item.conversation}</div>` 
                 : `<div class="loading-text">Chưa có hội thoại AI.</div>`;
         }
 
@@ -467,9 +467,37 @@
             callGAS({action:'delete', id});
         }
 
-        function callGAS(p) {
+        async function callGAS(p) {
             console.log("[Log] Đồng bộ server action:", p.action);
-            fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
+            
+            // Disable buttons if action is create or update
+            const isSaving = (p.action === 'create' || p.action === 'update');
+            if (isSaving) {
+                toggleItemButtons(p.id, false);
+                console.log(`[Log] Disable buttons for item ${p.id} during save.`);
+            }
+
+            try {
+                // Sử dụng await để đảm bảo logic xử lý được tuần tự hóa
+                await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
+            } catch (e) {
+                console.error("[Log] GAS call failed:", e);
+            } finally {
+                if (isSaving) {
+                    toggleItemButtons(p.id, true);
+                    console.log(`[Log] Enable buttons for item ${p.id} after save.`);
+                }
+            }
+        }
+
+        function toggleItemButtons(id, enabled) {
+            const itemEl = document.getElementById(`item-${id}`);
+            if (!itemEl) return;
+            const buttons = itemEl.querySelectorAll('.item-action-btn');
+            buttons.forEach(btn => {
+                btn.style.pointerEvents = enabled ? 'auto' : 'none';
+                btn.style.opacity = enabled ? '1' : '0.4';
+            });
         }
     </script>
 </body>

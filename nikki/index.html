@@ -378,6 +378,12 @@
             switchTab(1);
             document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
             document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
+            
+            // Disable all AI buttons to prevent multiple requests
+            const aiButtons = document.querySelectorAll('.ai-btn');
+            aiButtons.forEach(btn => { btn.style.pointerEvents = 'none'; btn.style.opacity = '0.5'; });
+            console.log("[Log] Ajax started: AI buttons disabled.");
+
             try {
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
@@ -390,7 +396,7 @@
                         currentDiaries[idx].paragraph = res.paragraph;
                         currentDiaries[idx].conversation = res.conversation;
                         saveToIDB(currentDiaries);
-                        renderList(currentDiaries); // Cập nhật lại UI danh sách để đổi trạng thái nút
+                        renderList(currentDiaries); 
                     }
                     updateAIView();
                 } else if (res.message && res.message.includes("503")) {
@@ -403,6 +409,10 @@
             } catch (e) { 
                 console.error("[Log] Lỗi gọi AI:", e);
                 updateAIView(); 
+            } finally {
+                // Re-enable all AI buttons
+                aiButtons.forEach(btn => { btn.style.pointerEvents = 'auto'; btn.style.opacity = '1'; });
+                console.log("[Log] Ajax finished: AI buttons enabled.");
             }
         }
 

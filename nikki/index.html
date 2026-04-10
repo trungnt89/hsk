@@ -189,7 +189,6 @@
         async function callGAS(paramsObj) {
             console.log("[Sync] Action:", paramsObj.action);
             
-            // Disable all interactive buttons
             const btns = document.querySelectorAll('button, .item-action-btn');
             btns.forEach(b => {
                 if (b.tagName === 'BUTTON') {
@@ -210,13 +209,11 @@
             try {
                 const response = await fetch(`${GAS_URL}?${params.toString()}`);
                 const res = await response.json();
-                console.log("[Sync] GAS Response:", res.status);
                 return res;
             } catch (e) {
                 console.error("[Sync] Lỗi GAS:", e);
-                return { status: 'error', message: e.toString() };
+                return { status: 'error', message: "Lỗi kết nối Server" };
             } finally {
-                // Re-enable all buttons
                 btns.forEach(b => {
                     if (b.tagName === 'BUTTON') {
                         b.disabled = false;
@@ -225,7 +222,6 @@
                         b.style.opacity = '1';
                     }
                 });
-                // Fix state for TTS button which should be disabled on tab 0
                 const index = parseInt(localStorage.getItem("diary_current_tab") || 0);
                 document.getElementById('btnMainSpeak').disabled = (index === 0);
             }
@@ -322,7 +318,11 @@
 
         async function askAI(id, content) {
             selectRecord(id); switchTab(1);
-            document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 AI đang biên soạn nội dung...</p>';
+            const pContainer = document.getElementById('paragraphContainer');
+            const cContainer = document.getElementById('conversationContainer');
+            pContainer.innerHTML = '<p class="loading-text">🤖 AI đang biên soạn nội dung...</p>';
+            cContainer.innerHTML = '<p class="loading-text">🤖 AI đang biên soạn nội dung...</p>';
+            
             const res = await callGAS({ action: 'ask_ai_proxy', id, content });
             if (res.status === 'success') {
                 const idx = currentDiaries.findIndex(d => d.id == id);
@@ -331,6 +331,15 @@
                     currentDiaries[idx].conversation = res.conversation;
                     await saveToIDB(currentDiaries); renderList(currentDiaries); updateAIView();
                 }
+            } else {
+                const errorHtml = `
+                    <div class="ai-content-box" style="border-left-color: var(--danger-color); background: #fff5f5;">
+                        <b style="color: var(--danger-color)">❌ Lỗi AI:</b> ${res.message || 'Thất bại'}
+                        <br><button class="btn-save" style="margin-top:10px; padding:5px 10px; font-size:12px" 
+                        onclick="askAI('${id}', \`${content.replace(/`/g, '\\`')}\`)">🔄 Thử lại</button>
+                    </div>`;
+                pContainer.innerHTML = errorHtml;
+                cContainer.innerHTML = errorHtml;
             }
         }
 
@@ -354,8 +363,15 @@
         function updateAIView() {
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
             if (!item) return;
-            document.getElementById('paragraphContainer').innerHTML = item.paragraph ? `<div id="p-content" class="ai-content-box">${item.paragraph}</div>` : `<p class="loading-text">Bấm biểu tượng AI ở tab Nhật ký để tạo nội dung.</p>`;
-            document.getElementById('conversationContainer').innerHTML = item.conversation ? `<div id="c-content" class="ai-content-box">${item.conversation}</div>` : `<p class="loading-text">Bấm biểu tượng AI ở tab Nhật ký để tạo nội dung.</p>`;
+            if (item.paragraph) document.getElementById('paragraphContainer').innerHTML = `<div id="p-content" class="ai-content-box">${item.paragraph}</div>`;
+            else if (!document.getElementById('paragraphContainer').querySelector('.ai-content-box[style*="danger-color"]')) {
+                document.getElementById('paragraphContainer').innerHTML = `<p class="loading-text">Bấm biểu tượng AI ở tab Nhật ký để tạo nội dung.</p>`;
+            }
+            
+            if (item.conversation) document.getElementById('conversationContainer').innerHTML = `<div id="c-content" class="ai-content-box">${item.conversation}</div>`;
+            else if (!document.getElementById('conversationContainer').querySelector('.ai-content-box[style*="danger-color"]')) {
+                document.getElementById('conversationContainer').innerHTML = `<p class="loading-text">Bấm biểu tượng AI ở tab Nhật ký để tạo nội dung.</p>`;
+            }
         }
 
         function loadTTSSettings() {

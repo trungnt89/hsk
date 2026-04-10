@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nhật Ký Của Tôi - AI Integrated (Secure)</title>
-	<script type="module">
-		import JapaneseLookup from '../com/japanese-lookup.js?v=1';
-	</script>
+    <script type="module">
+        import JapaneseLookup from '../com/japanese-lookup.js?v=1';
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         :root {
@@ -91,7 +91,7 @@
                     </select>
                     <select id="rateSelect" class="tts-select" onchange="saveTTSSettings()">
                         <option value="0.7">0.7x</option>
-						<option value="0.75">0.75</option>
+                        <option value="0.75">0.75</option>
                         <option value="0.8" selected>0.8x</option>
                         <option value="1.0">1.0x</option>
                     </select>
@@ -150,7 +150,7 @@
             const store = tx.objectStore(storeName);
             store.clear();
             data.forEach(item => store.put(item));
-            console.log("[IndexedDB] Cached updated.");
+            console.log("[IndexedDB] Cache updated successfully.");
             return tx.complete;
         }
 
@@ -167,11 +167,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             initApp();
             loadTTSSettings();
-            document.getElementById('saveBtn').addEventListener('click', () => editingId ? updateDiary() : saveDiary());
+            document.getElementById('saveBtn').addEventListener('click', () => {
+                console.log("[Log] Save trigger. Editing mode:", !!editingId);
+                editingId ? updateDiary() : saveDiary();
+            });
             document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
         });
 
         async function initApp() {
+            console.log("[Log] App Initializing...");
             const cachedData = await getFromIDB();
             if (cachedData && cachedData.length > 0) {
                 currentDiaries = cachedData.sort((a, b) => b.id - a.id);
@@ -187,6 +191,7 @@
             localStorage.setItem("diary_voice", document.getElementById("voiceSelect").value);
             localStorage.setItem("diary_rate", document.getElementById("rateSelect").value);
             localStorage.setItem("diary_repeat", isRepeating);
+            console.log("[Log] TTS Settings saved to localStorage.");
         }
 
         function loadTTSSettings() {
@@ -203,6 +208,7 @@
             isRepeating = !isRepeating;
             document.getElementById("btnRepeat").classList.toggle("active", isRepeating);
             saveTTSSettings();
+            console.log("[Log] Repeat toggled:", isRepeating);
         }
 
         function switchTab(index) {
@@ -216,9 +222,11 @@
             const speakBtn = document.getElementById('btnMainSpeak');
             speakBtn.disabled = (index === 0);
             updateAIView();
+            console.log("[Log] Switched to tab:", index);
         }
 
         function loadDiaries() {
+            console.log("[Log] Fetching data from GAS...");
             fetch(GAS_URL).then(res => res.json()).then(res => {
                 if (res.status === 'success') {
                     currentDiaries = res.data;
@@ -226,9 +234,10 @@
                     renderList(currentDiaries);
                     const targetId = selectedDiaryId || (currentDiaries.length > 0 ? currentDiaries[0].id : null);
                     if (targetId) selectRecord(targetId, true);
+                    console.log("[Log] Server sync complete.");
                 }
             }).catch(err => {
-                console.warn("[Server] Fetch failed, using offline data.");
+                console.warn("[Log] Server fetch failed, maintaining offline state.");
             });
         }
 
@@ -246,7 +255,7 @@
                 container.appendChild(pinnedSection);
             }
             normalItems.forEach(item => container.appendChild(createItemEl(item)));
-			if (window.JapaneseLookup?.render) setTimeout(() => window.JapaneseLookup.render(), 50);
+            if (window.JapaneseLookup?.render) setTimeout(() => window.JapaneseLookup.render(), 50);
         }
 
         function createItemEl(item) {
@@ -281,6 +290,7 @@
             const isPinned = !!currentDiaries[idx].pinned;
             if (!isPinned && currentDiaries.filter(d => d.pinned).length >= 2) { alert("Tối đa 2 bài ghim."); return; }
             currentDiaries[idx].pinned = !isPinned;
+            console.log(`[Log] Item ${id} pin status changed to:`, currentDiaries[idx].pinned);
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
             callGAS({ action: 'update_pin', id: id, pinned: currentDiaries[idx].pinned });
@@ -331,7 +341,10 @@
                 return;
             }
             let targetId = currentTabIndex === 1 ? 'p-content' : (currentTabIndex === 2 ? 'c-content' : null);
-            if (targetId) speakText(targetId, 'btnMainSpeak');
+            if (targetId) {
+                console.log("[Log] Speech started for tab:", currentTabIndex);
+                speakText(targetId, 'btnMainSpeak');
+            }
         }
 
         function resetSpeakBtns() {
@@ -353,36 +366,38 @@
             btn.innerHTML = '⏹ Dừng';
 
             try {
+                // Sử dụng "Diary_AI_N3" kèm ID để quản lý status từ vựng theo yêu cầu lưu trữ
+                const statusKey = `Diary_AI_N3_${selectedDiaryId}`;
                 await window.speakCommon({ 
                     text: el.innerText, 
                     voice: document.getElementById("voiceSelect").value, 
                     rate: document.getElementById("rateSelect").value, 
-                    filename: "Diary_AI_N3" 
+                    filename: statusKey 
                 });
                 
                 if (btn.classList.contains("playing")) {
                     if (isRepeating && el.closest('.tab-content').classList.contains('active')) {
+                        console.log("[Log] Repeat enabled. Restarting speech...");
                         setTimeout(() => speakText(elementId, btnId), 600);
                     } else {
                         resetSpeakBtns();
                     }
                 }
             } catch (e) { 
-                console.error("[Log] Lỗi phát âm thanh:", e);
+                console.error("[Log] TTS Error:", e);
                 resetSpeakBtns(); 
             }
         }
 
         async function askAI(targetId, content) {
+            console.log("[Log] Starting AI Generation for ID:", targetId);
             selectRecord(targetId);
             switchTab(1);
             document.getElementById('paragraphContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
             document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang xử lý...</p>';
             
-            // Disable all AI buttons to prevent multiple requests
             const aiButtons = document.querySelectorAll('.ai-btn');
             aiButtons.forEach(btn => { btn.style.pointerEvents = 'none'; btn.style.opacity = '0.5'; });
-            console.log("[Log] Ajax started: AI buttons disabled.");
 
             try {
                 const response = await fetch(GAS_URL, {
@@ -398,21 +413,18 @@
                         saveToIDB(currentDiaries);
                         renderList(currentDiaries); 
                     }
-                    updateAIView();
-                } else if (res.message && res.message.includes("503")) {
-                    alert("Hệ thống AI đang quá tải (Lỗi 503). Vui lòng đợi vài giây rồi thử lại nhé!");
+                    console.log("[Log] AI response received and stored.");
                     updateAIView();
                 } else {
-                    alert("Lỗi AI: " + (res.message || "Không xác định"));
+                    alert("Lỗi: " + (res.message || "Không xác định"));
                     updateAIView();
                 }
             } catch (e) { 
-                console.error("[Log] Lỗi gọi AI:", e);
+                console.error("[Log] AI Request failed:", e);
                 updateAIView(); 
             } finally {
-                // Re-enable all AI buttons
                 aiButtons.forEach(btn => { btn.style.pointerEvents = 'auto'; btn.style.opacity = '1'; });
-                console.log("[Log] Ajax finished: AI buttons enabled.");
+                console.log("[Log] AI Process finished.");
             }
         }
 
@@ -422,17 +434,17 @@
             const id = Date.now().toString();
             const date = new Date().toLocaleString('vi-VN');
             const newItem = {id, date, text: val, paragraph: "", conversation: "", pinned: false};
+            console.log("[Action] Saving new entry ID:", id);
             currentDiaries.unshift(newItem);
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
-            document.getElementById('tab-diary').scrollTop = 0;
-            setTimeout(() => selectRecord(id, true), 50);
             document.getElementById('diaryInput').value = '';
             callGAS({action:'create', id, date, text: val});
             switchTab(0);
         }
 
         function startEdit(id, text) {
+            console.log("[Action] Start editing item:", id);
             editingId = id;
             document.getElementById('diaryInput').value = text;
             document.getElementById('saveBtn').innerText = 'Cập nhật';
@@ -443,6 +455,8 @@
         function updateDiary() {
             const val = document.getElementById('diaryInput').value.trim();
             const idx = currentDiaries.findIndex(i => i.id == editingId);
+            if (idx === -1) return;
+            console.log("[Action] Updating entry ID:", editingId);
             currentDiaries[idx].text = val;
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
@@ -461,6 +475,7 @@
 
         function deleteDiary(id) {
             if(!confirm("Xóa bài này?")) return;
+            console.log("[Action] Deleting entry ID:", id);
             currentDiaries = currentDiaries.filter(i => i.id != id);
             saveToIDB(currentDiaries);
             renderList(currentDiaries);
@@ -468,25 +483,17 @@
         }
 
         async function callGAS(p) {
-            console.log("[Log] Đồng bộ server action:", p.action);
-            
-            // Disable buttons if action is create or update
+            console.log("[Sync] Calling Server Action:", p.action);
             const isSaving = (p.action === 'create' || p.action === 'update');
-            if (isSaving) {
-                toggleItemButtons(p.id, false);
-                console.log(`[Log] Disable buttons for item ${p.id} during save.`);
-            }
+            if (isSaving) toggleItemButtons(p.id, false);
 
             try {
-                // Sử dụng await để đảm bảo logic xử lý được tuần tự hóa
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
+                console.log("[Sync] Action successful:", p.action);
             } catch (e) {
-                console.error("[Log] GAS call failed:", e);
+                console.error("[Sync] GAS call failed:", e);
             } finally {
-                if (isSaving) {
-                    toggleItemButtons(p.id, true);
-                    console.log(`[Log] Enable buttons for item ${p.id} after save.`);
-                }
+                if (isSaving) toggleItemButtons(p.id, true);
             }
         }
 

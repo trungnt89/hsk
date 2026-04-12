@@ -41,7 +41,8 @@ export const ShadowGame = {
         `;
         
         wrapper.innerHTML = `
-            <button id="btnMic" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px;">🎤</button>
+            <button id="btnMic" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0;">🎤</button>
+            <button id="btnList" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0;">📜</button>
             <div id="gamePanel" style="display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden;">
                 <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
                     <div id="gameHistory" style="font-size: 10px; color:#94a3b8; white-space: nowrap; overflow-x: auto;"></div>
@@ -49,11 +50,20 @@ export const ShadowGame = {
                 </div>
                 <div id="gameScore" style="font-weight:bold; color:#4ade80;">0%</div>
             </div>
+            <div id="voiceListPanel" style="display:none; position:absolute; bottom:70px; left:10px; right:10px; background:white; border:1px solid #ccc; border-radius:12px; padding:10px; max-height:300px; overflow-y:auto; box-shadow:0 -5px 15px rgba(0,0,0,0.1);">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
+                    <b style="font-size:14px;">Danh sách ghi âm</b>
+                    <span id="closeList" style="cursor:pointer; padding:0 5px;">✕</span>
+                </div>
+                <div id="voiceItems" style="font-size:12px; color:#333;"></div>
+            </div>
         `;
 
         document.body.appendChild(wrapper);
         document.body.style.paddingBottom = "80px";
         this.getEl('btnMic').onclick = () => this.toggle();
+        this.getEl('btnList').onclick = () => this.toggleVoiceList();
+        this.getEl('closeList').onclick = () => { this.getEl('voiceListPanel').style.display = 'none'; };
     },
 
     init() {
@@ -142,6 +152,40 @@ export const ShadowGame = {
                 console.error("Upload failed", err); 
             }
         };
+    },
+
+    async toggleVoiceList() {
+        const panel = this.getEl('voiceListPanel');
+        if (panel.style.display === 'block') {
+            panel.style.display = 'none';
+            return;
+        }
+        panel.style.display = 'block';
+        this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Đang tải danh sách...</p>';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const lessonId = urlParams.get('id');
+        if (!lessonId) {
+            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Không tìm thấy ID bài học.</p>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`${RECORD_GAS_URL}?action=getVoiceList&lessonId=${lessonId}`);
+            const data = await res.json();
+            if (data.status === 'success' && data.files.length > 0) {
+                this.getEl('voiceItems').innerHTML = data.files.map(f => `
+                    <div style="display:flex; align-items:center; gap:10px; padding:8px; border-bottom:1px solid #f0f0f0;">
+                        <span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name.split('_').pop()}</span>
+                        <audio controls style="height:24px; width:150px;"><source src="${f.url}" type="audio/webm"></audio>
+                    </div>
+                `).join('');
+            } else {
+                this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm nào.</p>';
+            }
+        } catch (e) {
+            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;color:red;">Lỗi tải dữ liệu.</p>';
+        }
     },
 
     showToast(msg) {

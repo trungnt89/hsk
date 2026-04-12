@@ -146,7 +146,12 @@ export const ShadowGame = {
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
             const browserScript = this.history.join(" ");
-            const area = document.querySelector('.content-area.active');
+            
+            // TÌM SCRIPT GỐC: Ưu tiên class active, nếu không lấy tab đang hiển thị
+            let area = document.querySelector('.content-area.active');
+            if (!area) {
+                area = Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
+            }
             const script = area ? area.innerText.trim() : "";
             
             const fileName = `Shadow_${this.lessonId}_${Date.now()}_${score.replace('/', '-')}.webm`;
@@ -156,7 +161,7 @@ export const ShadowGame = {
                 fileName, 
                 lessonId: this.lessonId, 
                 score, 
-                script: script,
+                script: script, // Gửi script gốc lên GAS
                 browserScript: browserScript 
             });
 
@@ -258,7 +263,10 @@ export const ShadowGame = {
     },
 
     highlightInBody(text) {
-        const area = document.querySelector('.content-area.active'); if (!area) return;
+        let area = document.querySelector('.content-area.active');
+        if (!area) area = Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
+        if (!area) return;
+
         const walk = document.createTreeWalker(area, NodeFilter.SHOW_TEXT);
         let n; while(n = walk.nextNode()) {
             if (n.textContent.includes(text)) {
@@ -269,7 +277,9 @@ export const ShadowGame = {
     },
 
     showFinalResult() {
-        const area = document.querySelector('.content-area.active');
+        let area = document.querySelector('.content-area.active');
+        if (!area) area = Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
+        
         const targetWords = area?.innerText.trim().split(/[\s,.;:!?、。]+/).filter(w => w) || [];
         const spoken = this.history.join(" ").toLowerCase();
         let matches = 0;

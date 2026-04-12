@@ -171,13 +171,16 @@ export const ShadowGame = {
         }
 
         try {
-            const res = await fetch(`${RECORD_GAS_URL}?action=getVoiceList&lessonId=${lessonId}`);
+            // Sử dụng type=listVoice để khớp với code GAS bạn vừa sửa
+            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
             const data = await res.json();
-            if (data.status === 'success' && data.files.length > 0) {
-                this.getEl('voiceItems').innerHTML = data.files.map(f => `
+            
+            const voiceFiles = data.data || data.files || [];
+            if (data.status === 'success' && voiceFiles.length > 0) {
+                this.getEl('voiceItems').innerHTML = voiceFiles.map(f => `
                     <div style="display:flex; align-items:center; gap:10px; padding:8px; border-bottom:1px solid #f0f0f0;">
-                        <span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name.split('_').pop()}</span>
-                        <audio controls style="height:24px; width:150px;"><source src="${f.url}" type="audio/webm"></audio>
+                        <span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.formattedDate || f.name.split('_').pop()}</span>
+                        <audio controls style="height:24px; width:150px; outline:none;"><source src="${f.url}" type="audio/webm"></audio>
                     </div>
                 `).join('');
             } else {

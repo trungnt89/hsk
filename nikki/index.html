@@ -23,7 +23,6 @@
         main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         
         .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
-        /* Tối ưu ô nhập cao gấp đôi và giảm khoảng trống theo yêu cầu */
         .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 10px; font-size: 15px; resize: none; height: 220px; outline: none; display: block; }
         
         .action-area { display: flex; justify-content: flex-end; align-items: center; margin-top: 5px; gap: 8px; }
@@ -95,9 +94,9 @@
         </div>
 
         <div class="tabs">
-            <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
             <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)">📝 Nhật ký</button>
             <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
+            <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
         </div>
 
         <div id="tab-diary" class="tab-content active">
@@ -198,24 +197,26 @@
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
             container.innerHTML = '';
+            const total = diaries.length;
+            console.log(`[Render] Rendering ${total} records`);
             const pinned = diaries.filter(d => d.pinned), normal = diaries.filter(d => !d.pinned);
             if (pinned.length) {
                 const sec = document.createElement('div'); sec.id = 'pinnedSection';
                 sec.innerHTML = `<div class="pinned-label">📌 ĐÃ GHIM</div>`;
-                pinned.forEach(item => sec.appendChild(createItemEl(item)));
+                pinned.forEach((item) => sec.appendChild(createItemEl(item, total - diaries.indexOf(item))));
                 container.appendChild(sec);
             }
-            normal.forEach(item => container.appendChild(createItemEl(item)));
+            normal.forEach((item) => container.appendChild(createItemEl(item, total - diaries.indexOf(item))));
         }
 
-        function createItemEl(item) {
+        function createItemEl(item, count) {
             const isGen = !!(item.paragraph || item.conversation);
             const div = document.createElement('div');
             div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
             div.id = `item-${item.id}`;
             div.onclick = () => selectRecord(item.id);
             div.innerHTML = `
-                <div class="diary-date">${item.date}</div>
+                <div class="diary-date">#${count} - ${item.date}</div>
                 <div class="diary-content">${item.text}</div>
                 <div class="item-actions">
                     <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>

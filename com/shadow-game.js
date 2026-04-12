@@ -200,7 +200,7 @@ export const ShadowGame = {
             return;
         }
         panel.style.display = 'block';
-        this.getEl('voiceItems').innerHTML = `<p style="text-align:center;padding:20px;">${syncFromServer ? 'Đang tải từ server...' : 'Đang đọc bộ nhớ tạm...'}</p>`;
+        this.getEl('voiceItems').innerHTML = `<p style="text-align:center;padding:20px;">Đang kiểm tra dữ liệu...</p>`;
 
         const urlParams = new URLSearchParams(window.location.search);
         const lessonId = urlParams.get('id');
@@ -210,18 +210,17 @@ export const ShadowGame = {
         }
 
         try {
-            let voiceFiles = [];
-            if (syncFromServer) {
-                console.log("Fetching from server for lessonId:", lessonId);
-                const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
-                const data = await res.json();
-                voiceFiles = data.data || [];
-            } else {
+            // Luôn lấy danh sách từ server trước để biết ID nào đang tồn tại
+            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
+            const data = await res.json();
+            let voiceFiles = data.data || [];
+
+            // Nếu server trống và không phải yêu cầu đồng bộ, thử lấy từ local cũ
+            if (voiceFiles.length === 0 && !syncFromServer) {
                 const tx = this.db.transaction("voices", "readonly");
                 const store = tx.objectStore("voices");
                 voiceFiles = await new Promise(res => {
                     const req = store.getAll();
-                    // Sửa logic lọc: kiểm tra lessonId trực tiếp hoặc qua tên file
                     req.onsuccess = () => res(req.result.filter(v => (v.lessonId == lessonId) || (v.name && v.name.includes(`_${lessonId}_`))).sort((a,b) => (b.date || 0) - (a.date || 0)));
                 });
             }
@@ -230,26 +229,31 @@ export const ShadowGame = {
                 this.getEl('voiceItems').innerHTML = "";
                 for (const f of voiceFiles) {
                     let local = await this.getVoiceLocal(f.id);
-                    if (!local && syncFromServer && f.id) {
-                        const bRes = await fetch(`${RECORD_GAS_URL}?type=getFileBlob&fileId=${f.id}`);
-                        const bData = await bRes.json();
-                        if (bData.status === "success" && bData.data) {
-                            const byteCharacters = atob(bData.data);
-                            const byteNumbers = new Array(byteCharacters.length);
-                            for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
-                            const blob = new Blob([new Uint8Array(byteNumbers)], { type: "audio/webm" });
-                            await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate, lessonId: lessonId });
-                            local = { blob, formattedDate: f.formattedDate, name: f.name };
-                        }
+                    
+                    // TỰ ĐỘNG GỌI SERVER: Nếu local chưa có file này, tải về ngay
+                    if (!local && f.id) {
+                        try {
+                            const bRes = await fetch(`${RECORD_GAS_URL}?type=getFileBlob&fileId=${f.id}`);
+                            const bData = await bRes.json();
+                            if (bData.status === "success" && bData.data) {
+                                const byteCharacters = atob(bData.data);
+                                const byteNumbers = new Array(byteCharacters.length);
+                                for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                const blob = new Blob([new Uint8Array(byteNumbers)], { type: "audio/webm" });
+                                await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate, lessonId: lessonId });
+                                local = { blob, formattedDate: f.formattedDate, name: f.name };
+                            }
+                        } catch (err) { console.error("Auto-fetch failed for", f.id); }
                     }
 
                     const url = local ? URL.createObjectURL(local.blob) : "";
-                    const displayName = (f.name || local?.name || 'Voice Record').replace(/^Shadow_|_.*$/g, '');
+                    const displayName = f.name || local?.name || 'Unknown File';
                     const item = document.createElement('div');
-                    item.style.cssText = "display:flex; flex-direction:column; gap:4px; padding:10px; border-bottom:1px solid #f0f0f0;";
+                    item.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:8px; border-bottom:1px solid #f0f0f0;";
                     item.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b;">
-                            <b style="color:#1e293b;">${displayName}</b>
+                        <div style="font-size:9px; color:#94a3b8; margin-bottom:2px;">ID: ${f.id}</div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
+                            <b style="color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${displayName}</b>
                             <span>${f.formattedDate || local?.formattedDate || ''}</span>
                         </div>
                         <audio controls style="height:32px; width:100%; outline:none;"><source src="${url}" type="audio/webm"></audio>
@@ -257,7 +261,7 @@ export const ShadowGame = {
                     this.getEl('voiceItems').appendChild(item);
                 }
             } else {
-                this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm cho ID này.</p>';
+                this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm cho bài này.</p>';
             }
         } catch (e) {
             console.error("List error:", e);

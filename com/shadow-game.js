@@ -182,7 +182,6 @@ export const ShadowGame = {
             });
 
             if (res.status === 'success') {
-                // Chỉ lưu blob âm thanh vào IndexedDB để cache âm thanh, không cache list meta
                 await this.dbOp('readwrite', 'voices', 'put', { 
                     id: res.id, blob, name: fileName, 
                     date: Date.now(), 
@@ -204,9 +203,30 @@ export const ShadowGame = {
         const itemsWrap = this.getEl('voiceItems'); 
         itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">🔄 Đang tải danh sách cho bài ${this.lessonId}...</div>`;
 
-        // Bỏ caching list meta: Luôn gọi API để lấy danh sách mới nhất theo bài hiện tại
-        const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
-        let files = res.data || [];
+        // Nếu là sync (reload), xóa hết data cũ của bài này trong IndexedDB trước khi tải mới
+        if (sync) {
+            const allItems = await this.dbOp('readonly', 'voices', 'getAll');
+            const toDelete = allItems.filter(v => String(v.lessonId) === String(this.lessonId));
+            for (const item of toDelete) {
+                const tx = this.db.transaction("voices", "readwrite");
+                tx.objectStore("voices").delete(item.id);
+            }
+        }
+
+        // Ưu tiên lấy từ IndexedDB theo lessonId
+        let files = await this.dbOp('readonly', 'voices', 'getAll');
+        files = files.filter(v => String(v.lessonId) === String(this.lessonId));
+
+        // Nếu là sync hoặc DB trống cho bài này, gọi API lấy mới
+        if (sync || files.length === 0) {
+            const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
+            files = res.data || [];
+            // Đồng bộ dữ liệu mới tải về vào IndexedDB (không ghi đè blob nếu đã tồn tại)
+            for (const f of files) {
+                const existing = await this.dbOp('readonly', 'voices', 'get', f.id);
+                if (!existing) await this.dbOp('readwrite', 'voices', 'put', { ...f, lessonId: this.lessonId });
+            }
+        }
 
         itemsWrap.innerHTML = "";
         if (files.length === 0) {
@@ -218,7 +238,7 @@ export const ShadowGame = {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
             
-            // Kiểm tra xem audio blob đã được cache trong IndexedDB chưa
+            // Lấy thông tin từ DB để đảm bảo có Blob (nếu đã tải)
             const cached = await this.dbOp('readonly', 'voices', 'get', f.id);
             let audioSrc = cached && cached.blob ? URL.createObjectURL(cached.blob) : "";
             
@@ -231,7 +251,6 @@ export const ShadowGame = {
                     <span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span>
                 </div>`;
             
-            // Nếu chưa có cache âm thanh, tải từ server và lưu vào IndexedDB
             if (!audioSrc && f.id) {
                 this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
                     if (res.data) {

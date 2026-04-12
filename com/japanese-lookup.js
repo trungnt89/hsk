@@ -1,7 +1,7 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.34
- * - Feature: Moved history button to top right
- * - Feature: Fixed iOS/iPhone selection not triggering lookup
+ * Japanese Lookup & Highlight Manager - Version 2026.35
+ * - Feature: Optimized for Safari iOS (iPhone) selection
+ * - Feature: Limit lookup to selections under 6 words
  * - Feature: Sticky popup to prevent overlapping content
  */
 
@@ -128,7 +128,7 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
-            console.log("[Log] Init JapaneseLookup v2026.34");
+            console.log("[Log] Init JapaneseLookup v2026.35");
             createUI();
             await loadKanjiDict();
             try {
@@ -154,15 +154,27 @@ const JapaneseLookup = (() => {
             });
 
             const handleSelection = () => {
-                const sel = window.getSelection().toString().trim();
-                if (sel && /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(sel)) {
-                    lookupNew(sel);
+                const selection = window.getSelection();
+                const selText = selection.toString().trim();
+                
+                if (!selText) return;
+
+                // 1. Không xử lý nếu bôi đen trên 6 từ
+                const wordCount = selText.split(/\s+/).length;
+                if (wordCount > 6) return;
+
+                // 2. Chỉ xử lý nếu chứa ký tự Nhật Bản
+                if (/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(selText)) {
+                    lookupNew(selText);
                 }
             };
 
             document.addEventListener('mouseup', handleSelection);
-            document.addEventListener('touchend', () => {
-                setTimeout(handleSelection, 100);
+            
+            // Đặc trị cho Safari iOS: Lắng nghe thay đổi vùng chọn với độ trễ để tránh trigger liên tục
+            document.addEventListener('selectionchange', () => {
+                if (window._selTimeout) clearTimeout(window._selTimeout);
+                window._selTimeout = setTimeout(handleSelection, 500);
             });
 
             setInterval(() => { if(dataLoaded) Module.applyHighlight(); }, 3000);

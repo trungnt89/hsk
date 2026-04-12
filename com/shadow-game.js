@@ -85,12 +85,14 @@ export const ShadowGame = {
     },
 
     async updateBadgeCounts() {
+        console.log("[ShadowGame] Updating badge counts...");
         try {
             const res = await this.api({ type: 'listVoice' });
             if (res.status === "success") {
                 document.querySelectorAll("div.diary-date > span").forEach(el => el.innerText = "0");
                 res.data.forEach(file => {
-                    const lid = file.name.match(/Shadow_([^_]+)_/)?.[1];
+                    const match = file.name.match(/Shadow_([^_]+)_/);
+                    const lid = match ? match[1] : null;
                     const span = document.querySelector(`#item-${lid} div.diary-date span`);
                     if (span) span.innerText = (parseInt(span.innerText) || 0) + 1;
                 });
@@ -103,7 +105,7 @@ export const ShadowGame = {
         this.buildUI(); 
         this.injectRequiredClasses();
 
-        // Load list counts sau 5s để đợi AJAX chính load xong
+        // Yêu cầu: Load list counts sau 5s để các ajax khác load xong
         setTimeout(() => this.updateBadgeCounts(), 5000);
 
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -188,16 +190,24 @@ export const ShadowGame = {
         const panel = this.getEl('voiceListPanel');
         if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
         panel.style.display = 'block';
-        const itemsWrap = this.getEl('voiceItems'); itemsWrap.innerHTML = "Đang tải...";
+        const itemsWrap = this.getEl('voiceItems'); 
+        itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">🔄 Đang tải danh sách cho bài ${this.lessonId}...</div>`;
 
-        // Lọc theo đúng lessonId hiện tại
-        let files = sync ? [] : (await this.dbOp('readonly', 'voices', 'getAll')).filter(v => String(v.lessonId) === String(this.lessonId));
+        // Ưu tiên lọc từ IndexedDB theo lessonId hiện tại
+        let files = sync ? [] : (await this.dbOp('readonly', 'voices', 'getAll')).filter(v => String(v.lessonId) === String(this.lessonId) || v.name?.includes(`Shadow_${this.lessonId}_`));
+        
+        // Nếu yêu cầu sync hoặc không có data local, gọi API
         if (sync || files.length === 0) {
-            const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
+            const res = await this.api({ type: 'listVoice' });
             files = (res.data || []).filter(v => v.name?.includes(`Shadow_${this.lessonId}_`));
         }
 
         itemsWrap.innerHTML = "";
+        if (files.length === 0) {
+            itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#94a3b8;">Chưa có bản ghi nào cho bài này.</div>`;
+            return;
+        }
+
         files.sort((a,b) => (b.date || 0) - (a.date || 0)).forEach(async f => {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
@@ -215,7 +225,9 @@ export const ShadowGame = {
                 this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
                     if (res.data) {
                         const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/webm" });
-                        item.querySelector('audio').src = URL.createObjectURL(b);
+                        const newSrc = URL.createObjectURL(b);
+                        const aud = item.querySelector('audio');
+                        if (aud) aud.src = newSrc;
                         this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b, lessonId: this.lessonId });
                     }
                 });

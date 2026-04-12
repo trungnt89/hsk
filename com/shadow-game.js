@@ -123,19 +123,41 @@ export const ShadowGame = {
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
             
-            // ĐỒNG BỘ ID: Lấy trực tiếp từ URL của trình duyệt
             const urlParams = new URLSearchParams(window.location.search);
             const lessonId = urlParams.get('id') || "unknown";
             const fileName = `Shadow_${lessonId}_${Date.now()}.webm`;
 
             try {
-                await fetch(RECORD_GAS_URL, {
+                const response = await fetch(RECORD_GAS_URL, {
                     method: "POST",
                     body: JSON.stringify({ action: "uploadVoice", base64, fileName })
                 });
+                
+                if (response.ok) {
+                    this.showToast("✅ Đã lưu ghi âm thành công!");
+                }
                 console.log("[ShadowGame] Log: File saved for ID", lessonId);
-            } catch (err) { console.error("Upload failed", err); }
+            } catch (err) { 
+                this.showToast("❌ Lỗi khi lưu ghi âm");
+                console.error("Upload failed", err); 
+            }
         };
+    },
+
+    showToast(msg) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
+            border-radius: 20px; font-size: 13px; z-index: 10000;
+            transition: opacity 0.5s; pointer-events: none;
+        `;
+        toast.innerText = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => { 
+            toast.style.opacity = '0'; 
+            setTimeout(() => toast.remove(), 500); 
+        }, 2000);
     },
 
     handleVoiceInput(text, isFinal) {

@@ -1,8 +1,8 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.35
- * - Feature: Optimized for Safari iOS (iPhone) selection
- * - Feature: Limit lookup to selections under 6 words
- * - Feature: Sticky popup to prevent overlapping content
+ * Japanese Lookup & Highlight Manager - Version 2026.36
+ * - Feature: Optimized for Safari iOS (iPhone)
+ * - Strict Limit: No lookup for selections > 6 words or > 50 characters
+ * - Integrity: Preserving all Kanji Details and GAS Logic
  */
 
 const JapaneseLookup = (() => {
@@ -40,7 +40,6 @@ const JapaneseLookup = (() => {
             const res = await fetch("../com/kanjimini.json");
             const data = await res.json();
             kanjiDict = data.reduce((acc, curr) => { acc[curr.w] = curr.h; return acc; }, {});
-            console.log("[Log] Kanji Loaded.");
         } catch (e) { console.warn("[Log] kanjimini.json error."); }
     };
 
@@ -108,10 +107,7 @@ const JapaneseLookup = (() => {
 
             if (isKanji && data.results && data.results.length > 0) {
                 const k = data.results[0];
-                const kanjiDetail = `
-                    <div style="margin-top:5px; padding-top:5px; border-top:1px dashed #bfdbfe; font-size:12px; color:#475569;">
-                        <b>Kun:</b> ${k.kun}<br><b>Giải thích:</b> ${k.detail.replace(/##/g, '<br>• ')}
-                    </div>`;
+                const kanjiDetail = `<div style="margin-top:5px; padding-top:5px; border-top:1px dashed #bfdbfe; font-size:12px; color:#475569;"><b>Kun:</b> ${k.kun}<br><b>Giải thích:</b> ${k.detail.replace(/##/g, '<br>• ')}</div>`;
                 showPopup(text, k.mean + kanjiDetail, '', `[Kanji]`, false);
             } else if (data.data && data.data.words && data.data.words.length > 0) {
                 const item = data.data.words[0];
@@ -128,7 +124,6 @@ const JapaneseLookup = (() => {
 
     const Module = {
         init: async () => {
-            console.log("[Log] Init JapaneseLookup v2026.35");
             createUI();
             await loadKanjiDict();
             try {
@@ -140,15 +135,11 @@ const JapaneseLookup = (() => {
             } catch (e) { dataLoaded = true; }
 
             document.addEventListener('mousedown', (e) => {
-                const isClickInsidePopup = e.target.closest('.ja-lookup-popup');
-                const isClickInsideModal = e.target.closest('.ja-modal');
-                const isClickHistoryBtn = e.target.closest('.ja-history-btn');
-
                 if (e.target.closest('.ja-stored-highlight')) {
                     const word = e.target.textContent;
                     const d = savedWordsMap.get(word);
                     if (d) showPopup(word, d.googleMeaning || d.meaning, d.meaning, d.romaji, true);
-                } else if (!isClickInsidePopup && !isClickInsideModal && !isClickHistoryBtn) {
+                } else if (!e.target.closest('.ja-lookup-popup') && !e.target.closest('.ja-modal') && !e.target.closest('.ja-history-btn')) {
                     if (popup) popup.style.display = 'none';
                 }
             });
@@ -156,22 +147,18 @@ const JapaneseLookup = (() => {
             const handleSelection = () => {
                 const selection = window.getSelection();
                 const selText = selection.toString().trim();
-                
                 if (!selText) return;
-
-                // 1. Không xử lý nếu bôi đen trên 6 từ
+                
+                // CHẶN TRA CỨU ĐOẠN DÀI (> 6 từ hoặc > 50 ký tự)
                 const wordCount = selText.split(/\s+/).length;
-                if (wordCount > 6) return;
+                if (wordCount > 6 || selText.length > 50) return;
 
-                // 2. Chỉ xử lý nếu chứa ký tự Nhật Bản
                 if (/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(selText)) {
                     lookupNew(selText);
                 }
             };
 
             document.addEventListener('mouseup', handleSelection);
-            
-            // Đặc trị cho Safari iOS: Lắng nghe thay đổi vùng chọn với độ trễ để tránh trigger liên tục
             document.addEventListener('selectionchange', () => {
                 if (window._selTimeout) clearTimeout(window._selTimeout);
                 window._selTimeout = setTimeout(handleSelection, 500);

@@ -82,10 +82,10 @@ export const ShadowGame = {
                 <div id="gameScore" style="font-weight:bold; color:#4ade80;">0/1000</div>
             </div>
             <div id="voiceListPanel" style="display:none; position:fixed; top:10px; left:10px; right:10px; background:white; border:1px solid #cbd5e1; border-radius:12px; padding:10px; max-height:70vh; overflow-y:auto; box-shadow:0 5px 25px rgba(0,0,0,0.2); z-index:10001;">
-                <div style="display:flex; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px; gap:10px;">
-                    <span id="closeList" style="cursor:pointer; font-size:20px; padding:0 5px;">✕</span>
-                    <b style="font-size:14px; flex-grow:1;">🎙️ Danh sách ghi âm</b>
+                <div style="display:flex; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px; gap:15px;">
+                    <span id="closeList" style="cursor:pointer; font-size:20px;" title="Đóng">✕</span>
                     <span id="refreshList" style="cursor:pointer; font-size:18px;" title="Lấy mới từ server">🔄</span>
+                    <b style="font-size:14px; flex-grow:1; text-align:right;">🎙️ Danh sách ghi âm</b>
                 </div>
                 <div id="voiceItems" style="font-size:12px; color:#333;"></div>
             </div>
@@ -176,7 +176,6 @@ export const ShadowGame = {
                 const urlParams = new URLSearchParams(window.location.search);
                 const lessonId = urlParams.get('id') || "unknown";
                 
-                // Yêu cầu: Đổi định dạng tên file: Shadow_{lessonId}_{Date.now()}_{score}.webm
                 const fileName = `Shadow_${lessonId}_${Date.now()}_${score.replace('/', '-')}.webm`;
                 console.log("Log: Uploading file with name:", fileName);
 
@@ -224,11 +223,24 @@ export const ShadowGame = {
                 req.onsuccess = () => res(req.result.filter(v => (v.lessonId == lessonId) || (v.name && v.name.includes(`_${lessonId}_`))).sort((a,b) => (b.date || 0) - (a.date || 0)));
             });
 
-            if (!syncFromServer && localFiles.length > 0) {
+            if (syncFromServer) {
+                console.log("Log: Refreshing - Clearing local records for lesson:", lessonId);
+                const deleteTx = this.db.transaction("voices", "readwrite");
+                const deleteStore = deleteTx.objectStore("voices");
+                for (const localF of localFiles) {
+                    if (localF.id) deleteStore.delete(localF.id);
+                }
+                await new Promise(r => deleteTx.oncomplete = r);
+                
+                console.log("Log: Syncing fresh records from server");
+                const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
+                const data = await res.json();
+                voiceFiles = data.data || [];
+            } else if (localFiles.length > 0) {
                 voiceFiles = localFiles;
                 console.log("Log: Loading local records");
             } else {
-                console.log("Log: Syncing records from server");
+                console.log("Log: No local records, syncing from server");
                 const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
                 const data = await res.json();
                 voiceFiles = data.data || [];
@@ -257,8 +269,6 @@ export const ShadowGame = {
                     const url = local ? URL.createObjectURL(local.blob) : "";
                     const rawName = f.name || local?.name || 'Unknown File';
                     const displayName = rawName.replace('.webm', '');
-                    
-                    // Bóc tách điểm số từ tên file hỗ trợ cả định dạng % cũ và thang 1000 mới
                     const scoreMatch = rawName.match(/(\d+(\/\d+)?%?)/);
                     const extractedScore = scoreMatch ? scoreMatch[0].replace('-', '/') : (f.score || local?.score || '0/1000');
 
@@ -325,8 +335,6 @@ export const ShadowGame = {
     updateUI() {
         this.getEl('gameHistory').innerText = this.history.join(" ");
         this.getEl('gameCurrent').innerText = this.currentInterim;
-        
-        // Tính điểm trên thang 1000 dựa trên số từ đã nhận diện / tổng số từ trong bài
         const area = document.querySelector('.content-area.active');
         if (area) {
             const targetWords = area.innerText.split(/\s+/).filter(w => w.length > 0);

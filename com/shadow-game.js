@@ -80,10 +80,13 @@ export const ShadowGame = {
                 </div>
                 <div id="gameScore" style="font-weight:bold; color:#4ade80;">0%</div>
             </div>
-            <div id="voiceListPanel" style="display:none; position:absolute; bottom:70px; left:10px; right:10px; background:white; border:1px solid #ccc; border-radius:12px; padding:10px; max-height:400px; overflow-y:auto; box-shadow:0 -5px 15px rgba(0,0,0,0.2); z-index:10000;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                    <b style="font-size:14px;">Danh sách ghi âm</b>
-                    <span id="closeList" style="cursor:pointer; padding:0 5px;">✕</span>
+            <div id="voiceListPanel" style="display:none; position:fixed; top:10px; left:10px; right:10px; background:white; border:1px solid #cbd5e1; border-radius:12px; padding:10px; max-height:80vh; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2); z-index:10001;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px;">
+                    <b style="font-size:14px;">🎙️ Danh sách ghi âm</b>
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <span id="refreshList" style="cursor:pointer; font-size:18px;" title="Lấy mới từ server">🔄</span>
+                        <span id="closeList" style="cursor:pointer; font-size:20px; padding:0 5px;">✕</span>
+                    </div>
                 </div>
                 <div id="voiceItems" style="font-size:12px; color:#333;"></div>
             </div>
@@ -93,6 +96,7 @@ export const ShadowGame = {
         document.body.style.paddingBottom = "80px";
         this.getEl('btnMic').onclick = () => this.toggle();
         this.getEl('btnList').onclick = () => this.toggleVoiceList();
+        this.getEl('refreshList').onclick = () => this.toggleVoiceList(true);
         this.getEl('closeList').onclick = () => { this.getEl('voiceListPanel').style.display = 'none'; };
     },
 
@@ -145,7 +149,7 @@ export const ShadowGame = {
             this.mediaRecorder.onstop = () => {
                 const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
                 this.uploadToDrive(blob).then(() => {
-                    if (this.getEl('voiceListPanel').style.display === 'block') this.toggleVoiceList(true);
+                    if (this.getEl('voiceListPanel').style.display === 'block') this.toggleVoiceList(false);
                 });
                 stream.getTracks().forEach(t => t.stop());
             };
@@ -188,29 +192,39 @@ export const ShadowGame = {
         });
     },
 
-    async toggleVoiceList(forceRefresh = false) {
+    async toggleVoiceList(syncFromServer = false) {
         const panel = this.getEl('voiceListPanel');
-        if (!forceRefresh && panel.style.display === 'block') {
+        if (!syncFromServer && panel.style.display === 'block') {
             panel.style.display = 'none';
             return;
         }
         panel.style.display = 'block';
-        this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Đang đồng bộ dữ liệu...</p>';
+        this.getEl('voiceItems').innerHTML = `<p style="text-align:center;padding:20px;">${syncFromServer ? 'Đang tải từ server...' : 'Đang đọc bộ nhớ tạm...'}</p>`;
 
         const urlParams = new URLSearchParams(window.location.search);
         const lessonId = urlParams.get('id');
         if (!lessonId) return;
 
         try {
-            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
-            const data = await res.json();
-            const voiceFiles = data.data || [];
+            let voiceFiles = [];
+            if (syncFromServer) {
+                const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
+                const data = await res.json();
+                voiceFiles = data.data || [];
+            } else {
+                const tx = this.db.transaction("voices", "readonly");
+                const store = tx.objectStore("voices");
+                voiceFiles = await new Promise(res => {
+                    const req = store.getAll();
+                    req.onsuccess = () => res(req.result.filter(v => v.name && v.name.includes(`Shadow_${lessonId}`)).sort((a,b) => b.date - a.date));
+                });
+            }
 
-            if (data.status === 'success' && voiceFiles.length > 0) {
+            if (voiceFiles.length > 0) {
                 this.getEl('voiceItems').innerHTML = "";
                 for (const f of voiceFiles) {
                     let local = await this.getVoiceLocal(f.id);
-                    if (!local) {
+                    if (!local && syncFromServer) {
                         const bRes = await fetch(`${RECORD_GAS_URL}?type=getFileBlob&fileId=${f.id}`);
                         const bData = await bRes.json();
                         if (bData.status === "success") {
@@ -225,10 +239,13 @@ export const ShadowGame = {
 
                     const url = local ? URL.createObjectURL(local.blob) : "";
                     const item = document.createElement('div');
-                    item.style.cssText = "display:flex; align-items:center; gap:10px; padding:8px; border-bottom:1px solid #f0f0f0;";
+                    item.style.cssText = "display:flex; flex-direction:column; gap:4px; padding:10px; border-bottom:1px solid #f0f0f0;";
                     item.innerHTML = `
-                        <span style="flex-grow:1; font-size:11px; color:#666;">${f.formattedDate || 'Ghi âm'}</span>
-                        <audio controls style="height:28px; width:180px;"><source src="${url}" type="audio/webm"></audio>
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b;">
+                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${f.name || 'N/A'}</span>
+                            <span>${f.formattedDate || ''}</span>
+                        </div>
+                        <audio controls style="height:32px; width:100%; outline:none;"><source src="${url}" type="audio/webm"></audio>
                     `;
                     this.getEl('voiceItems').appendChild(item);
                 }
@@ -245,7 +262,7 @@ export const ShadowGame = {
         toast.style.cssText = `
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
-            border-radius: 20px; font-size: 12px; z-index: 10001;
+            border-radius: 20px; font-size: 12px; z-index: 10002;
             transition: opacity 0.5s; pointer-events: none;
         `;
         toast.innerText = msg;

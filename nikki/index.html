@@ -305,7 +305,6 @@
                 const btnIdx = parseInt(btn.getAttribute('onclick').match(/\d+/)[0]);
                 btn.classList.toggle('active', btnIdx === index);
             });
-            document.getElementById('btnMainSpeak').disabled = (index === 0);
             updateAIView();
         }
 
@@ -321,10 +320,25 @@
         }
 
         function updateAIView() {
+            console.log("[UI] Updating AI View & Button States");
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
             if (!item) return;
-            document.getElementById('paragraphContainer').innerHTML = item.paragraph ? `<div id="p-content" class="ai-content-box">${item.paragraph}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
-            document.getElementById('conversationContainer').innerHTML = item.conversation ? `<div id="c-content" class="ai-content-box">${item.conversation}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
+
+            const pContent = item.paragraph;
+            const cContent = item.conversation;
+
+            document.getElementById('paragraphContainer').innerHTML = pContent ? `<div id="p-content" class="ai-content-box">${pContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
+            document.getElementById('conversationContainer').innerHTML = cContent ? `<div id="c-content" class="ai-content-box">${cContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
+
+            // Vô hiệu hóa nút Đọc dựa trên tab hiện tại và nội dung tương ứng
+            const btnSpeak = document.getElementById('btnMainSpeak');
+            if (currentTabIndex === 1) {
+                btnSpeak.disabled = !pContent;
+            } else if (currentTabIndex === 2) {
+                btnSpeak.disabled = !cContent;
+            } else {
+                btnSpeak.disabled = true;
+            }
         }
 
         function loadTTSSettings() {

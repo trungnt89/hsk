@@ -7,51 +7,73 @@
     <script src="../com/assistive.js"></script>    
     <style>
         body { background: #000; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; overflow: hidden; }
-        .header { background: #111; padding: 20px 5px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; }
-        .container { padding: 15px; height: calc(100vh - 100px); overflow-y: auto; }
+        .header { background: #111; padding: 10px 15px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; height: 60px; box-sizing: border-box; }
+        .container { padding: 10px; height: calc(100vh - 60px); overflow-y: auto; box-sizing: border-box; }
         
         #monitor-box {
             background: #050505;
             border: 1px solid #222;
-            font-size: 16px;
-            padding: 10px;
+            font-size: 14px;
+            padding: 5px;
+            min-height: 100%;
         }
 
         .log-entry {
             border-bottom: 1px solid #1a1a1a;
-            padding: 8px 0;
+            padding: 6px 0;
             display: flex;
-            gap: 15px;
-            align-items: flex-start;
+            gap: 12px;
+            align-items: flex-start; /* Giữ các cột canh đỉnh khi log dài */
+            line-height: 1.5;
         }
 
-        /* Tăng min-width để chứa đủ ngày giờ đầy đủ */
-        .log-time { color: #888; min-width: 180px; font-family: 'Consolas', monospace; }
-        .log-level { font-weight: bold; min-width: 60px; text-transform: uppercase; }
+        /* Cố định chiều rộng cột thời gian để không bị rớt dòng */
+        .log-time { 
+            color: #888; 
+            flex: 0 0 190px; 
+            font-family: 'Consolas', monospace; 
+            white-space: nowrap; 
+        }
+
+        /* Cố định chiều rộng cột Level */
+        .log-level { 
+            font-weight: bold; 
+            flex: 0 0 80px; 
+            text-transform: uppercase; 
+        }
+
+        /* Cột nội dung tự động co giãn và ngắt dòng đúng cách */
+        .log-msg { 
+            flex: 1; 
+            word-break: break-word; /* Ngắt dòng khi gặp từ quá dài */
+            white-space: pre-wrap; /* Giữ nguyên định dạng xuống dòng nếu có */
+            color: #ddd;
+        }
+
         .level-info { color: #2ecc71; }
         .level-error { color: #e74c3c; }
         .level-warn { color: #f1c40f; }
 
         #clock {
             font-family: 'Consolas', monospace;
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
             color: #2ecc71;
-            text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
         }
-        h3 { font-size: 24px; margin: 0; color: #eee; }
+        h3 { font-size: 20px; margin: 0; color: #eee; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
     <div class="header">
         <div style="display:flex; align-items:center; gap:15px;">
-            <div style="width:15px; height:10px; background:#2ecc71; border-radius:50%; box-shadow: 0 0 15px #2ecc71;"></div>
+            <div style="width:12px; height:12px; background:#2ecc71; border-radius:50%; box-shadow: 0 0 10px #2ecc71;"></div>
             <h3>CONSOLE MONITOR (JST)</h3>
         </div>
         <div id="clock">--:--:--</div>
     </div>
     <div class="container">
-        <div id="monitor-box">Đang tải dữ liệu log...</div>
+        <div id="monitor-box">Đang kết nối hệ thống...</div>
     </div>
 
     <script src="../com/logger.js"></script>
@@ -62,38 +84,28 @@
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleString('ja-JP', {
                 timeZone: 'Asia/Tokyo',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
                 hour12: false
-            });
+            }).replace(/\//g, '-'); // Đổi / thành - cho đẹp
         }
 
         async function fetchLogs() {
             try {
-                console.log("[SYSTEM] Fetching logs from Google Sheet...");
                 const response = await fetch(GAS_URL);
                 const data = await response.json();
                 const container = document.getElementById('monitor-box');
                 
                 if (!data || data.length === 0) {
-                    container.innerHTML = "Không có dữ liệu log.";
+                    container.innerHTML = "<div style='padding:10px; color:#555;'>Không có dữ liệu log.</div>";
                     return;
                 }
 
                 container.innerHTML = data.map(log => {
-                    // Định dạng ngày giờ đầy đủ cho từng dòng log
                     const logDate = new Date(log.timestamp).toLocaleString('ja-JP', {
                         timeZone: 'Asia/Tokyo',
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit',
                         hour12: false
                     });
 
@@ -106,11 +118,11 @@
                     `;
                 }).join('');
 
-                console.log("[SUCCESS] Logs updated at: " + new Date().toISOString());
+                console.log("[SYNC] Success: " + new Date().toLocaleTimeString());
                 
             } catch (error) {
-                console.error("[ERROR] Failed to fetch logs:", error);
-                document.getElementById('monitor-box').innerHTML = "Lỗi kết nối: " + error.message;
+                console.error("[SYNC] Error:", error);
+                document.getElementById('monitor-box').innerHTML = "<div style='color:#e74c3c; padding:10px;'>Lỗi kết nối: " + error.message + "</div>";
             }
         }
 
@@ -120,9 +132,7 @@
         window.onload = () => {
             updateClock();
             fetchLogs();
-            if (typeof LoggerModule !== 'undefined') {
-                LoggerModule.init("monitor-box");
-            }
+            if (typeof LoggerModule !== 'undefined') LoggerModule.init("monitor-box");
         };
     </script>
 </body>

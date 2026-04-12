@@ -85,7 +85,7 @@ export const ShadowGame = {
                 <div style="display:flex; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px; gap:15px;">
                     <span id="closeList" style="cursor:pointer; font-size:20px;" title="Đóng">✕</span>
                     <span id="refreshList" style="cursor:pointer; font-size:18px;" title="Lấy mới từ server">🔄</span>
-                    <b style="font-size:14px; flex-grow:1; text-align:right;">🎙️ Danh sách ghi âm</b>
+                    <b style="font-size:14px; flex-grow:1; text-align:center;">🎙️ Danh sách ghi âm</b>
                 </div>
                 <div id="voiceItems" style="font-size:12px; color:#333;"></div>
             </div>

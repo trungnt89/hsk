@@ -38,31 +38,33 @@ export const ShadowGame = {
 
     async updateBadgeCounts() {
         if (!this.db) return;
-        
+
         const urlParams = new URLSearchParams(window.location.search);
         const lessonId = urlParams.get('id');
         if (!lessonId) return;
 
-        console.log(`Log: Fetching record count via AJAX for ID: ${lessonId}`);
-        
-        try {
-            // Gọi AJAX lấy list từ server
-            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
-            const data = await res.json();
-            const serverRecords = data.data || [];
-            const count = serverRecords.length;
+        console.log(`Log: Calling getListVoice via AJAX to update count for ID: ${lessonId}`);
 
-            // Trả về số lượng count vào html theo ID
-            const el = document.getElementById(`record_count_${lessonId}`);
-            if (el) {
-                el.innerText = count;
-                console.log(`Log: HTML updated for record_count_${lessonId}: ${count}`);
+        try {
+            // Thực hiện gọi AJAX lấy danh sách từ Server (getListVoice)
+            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
+            const result = await res.json();
+            
+            if (result.status === "success" && result.data) {
+                const count = result.data.length;
+                
+                // Trả về số lượng count vào html theo ID record_count_XXX
+                const el = document.getElementById(`record_count_${lessonId}`);
+                if (el) {
+                    el.innerText = count;
+                    console.log(`Log: Successfully updated record_count_${lessonId} in HTML. Value: ${count}`);
+                }
             }
         } catch (err) {
-            console.error("Log: AJAX Count Error:", err);
+            console.error("Log: AJAX updateBadgeCounts error:", err);
         }
 
-        // Đồng bộ hóa với Local DB (Optional - for UI consistency)
+        // Đồng bộ hóa trạng thái Local DB
         const tx = this.db.transaction("voices", "readonly");
         const store = tx.objectStore("voices");
         const allRecords = await new Promise(res => {
@@ -75,8 +77,7 @@ export const ShadowGame = {
             const lid = rec.lessonId;
             if (lid) counts[lid] = (counts[lid] || 0) + 1;
         });
-        
-        console.log("Log: Local badge sync complete", counts);
+        console.log("Log: Local DB count consistency check finished", counts);
     },
 
     async getVoiceLocal(id) {
@@ -242,6 +243,7 @@ export const ShadowGame = {
                 console.log("Log: Recording stopped. Final Score:", score);
                 this.uploadToDrive(blob, score).then(() => {
                     if (this.getEl('voiceListPanel').style.display === 'block') this.toggleVoiceList(false);
+                    // Cập nhật lại badge count sau khi upload thành công
                     this.updateBadgeCounts();
                 });
                 stream.getTracks().forEach(t => t.stop());

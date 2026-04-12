@@ -99,7 +99,12 @@ export const ShadowGame = {
     },
 
     async init() {
-        await this.initDB(); this.buildUI(); this.updateBadgeCounts(); this.injectRequiredClasses();
+        await this.initDB(); 
+        this.buildUI(); 
+        this.injectRequiredClasses();
+
+        // Load list counts sau 5s để đợi AJAX chính load xong
+        setTimeout(() => this.updateBadgeCounts(), 5000);
 
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SR) {
@@ -147,7 +152,6 @@ export const ShadowGame = {
             const base64 = reader.result.split(',')[1];
             const browserScript = this.history.join(" ");
             
-            // TÌM SCRIPT GỐC: Ưu tiên class active, nếu không lấy tab đang hiển thị
             let area = document.querySelector('.content-area.active');
             if (!area) {
                 area = Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
@@ -161,7 +165,7 @@ export const ShadowGame = {
                 fileName, 
                 lessonId: this.lessonId, 
                 score, 
-                script: script, // Gửi script gốc lên GAS
+                script: script, 
                 browserScript: browserScript 
             });
 
@@ -186,10 +190,11 @@ export const ShadowGame = {
         panel.style.display = 'block';
         const itemsWrap = this.getEl('voiceItems'); itemsWrap.innerHTML = "Đang tải...";
 
-        let files = sync ? [] : (await this.dbOp('readonly', 'voices', 'getAll')).filter(v => v.lessonId == this.lessonId || v.name?.includes(`_${this.lessonId}_`));
+        // Lọc theo đúng lessonId hiện tại
+        let files = sync ? [] : (await this.dbOp('readonly', 'voices', 'getAll')).filter(v => String(v.lessonId) === String(this.lessonId));
         if (sync || files.length === 0) {
             const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
-            files = res.data || [];
+            files = (res.data || []).filter(v => v.name?.includes(`Shadow_${this.lessonId}_`));
         }
 
         itemsWrap.innerHTML = "";
@@ -198,6 +203,7 @@ export const ShadowGame = {
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
             let audioSrc = f.blob ? URL.createObjectURL(f.blob) : "";
             item.innerHTML = `
+                <div style="font-size:11px; color:#64748b; margin-bottom:4px; word-break:break-all;">📄 ${f.name || 'Ghi âm mới'}</div>
                 <div style="font-size:12px; display:flex; justify-content:space-between"><span>🕒 ${f.formattedDate || new Date(f.date).toLocaleString()}</span><b>${f.score || '0/1000'}</b></div>
                 <audio controls src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
                 <div style="text-align:right; margin-top:5px; display:flex; justify-content:space-between; align-items:center;">

@@ -240,7 +240,7 @@ export const ShadowGame = {
             
             item.innerHTML = `
                 <div style="font-size:11px; color:#64748b; margin-bottom:4px; word-break:break-all;">📄 ${f.name || 'Ghi âm mới'}</div>
-                <div style="font-size:12px; display:flex; justify-content:space-between"><span>🕒 ${f.formattedDate || new Date(f.date).toLocaleString()}</span><b>${f.score || '0/1000'}</b></div>
+                <div style="font-size:12px; display:flex; justify-content:space-between"><span>🕒 ${new Date(f.date).toLocaleString()}</span><b>${f.score || '0/1000'}</b></div>
                 <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
                 <div style="text-align:right; margin-top:5px; display:flex; justify-content:space-between; align-items:center;">
                     <button class="ai-btn" style="font-size:10px; padding:2px 8px; border-radius:4px; border:1px solid #10b981; color:#10b981; background:#fff; cursor:pointer">🤖 AI Chấm</button>

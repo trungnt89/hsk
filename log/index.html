@@ -4,26 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JST Live Console</title>
-	<script src="../com/assistive.js"></script>    
+    <script src="../com/assistive.js"></script>    
     <style>
         body { background: #000; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; overflow: hidden; }
         .header { background: #111; padding: 20px 5px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; }
-        .container { padding: 15px; height: calc(100vh - 100px); }
+        .container { padding: 15px; height: calc(100vh - 100px); overflow-y: auto; }
         
-        /* Ghi đè CSS cho trang monitor chuyên dụng */
-        #monitor-box #log-box-inner { 
-            max-height: calc(100vh - 150px) !important; 
-            background: #050505 !important; 
-            border: 1px solid #222 !important;
-            font-size: 16px !important; /* Chữ to rõ cho Monitor */
+        #monitor-box {
+            background: #050505;
+            border: 1px solid #222;
+            font-size: 16px;
+            padding: 10px;
         }
-        #monitor-box td {
-            font-size: 16px !important;
-            padding: 12px 8px !important;
+
+        .log-entry {
+            border-bottom: 1px solid #1a1a1a;
+            padding: 8px 0;
+            display: flex;
+            gap: 15px;
         }
+
+        .log-time { color: #888; min-width: 100px; }
+        .log-level { font-weight: bold; min-width: 60px; }
+        .level-info { color: #2ecc71; }
+        .level-error { color: #e74c3c; }
+
         #clock {
             font-family: 'Consolas', monospace;
-            font-size: 32px; /* Đồng hồ cực to */
+            font-size: 32px;
             font-weight: bold;
             color: #2ecc71;
             text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
@@ -40,11 +48,13 @@
         <div id="clock">--:--:--</div>
     </div>
     <div class="container">
-        <div id="monitor-box"></div>
+        <div id="monitor-box">Đang tải dữ liệu log...</div>
     </div>
 
     <script src="../com/logger.js"></script>
     <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxYrGbKghzwW1cKU37CJf-UFISCcvGkemZlTJZH1GWa7x4qrAOd2UKzVOR3vWAPOtyMww/exec";
+
         function updateClock() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString('ja-JP', {
@@ -52,8 +62,45 @@
                 hour12: false
             });
         }
+
+        async function fetchLogs() {
+            try {
+                const response = await fetch(GAS_URL);
+                const data = await response.json();
+                const container = document.getElementById('monitor-box');
+                
+                if (data.length === 0) {
+                    container.innerHTML = "Không có dữ liệu log.";
+                    return;
+                }
+
+                container.innerHTML = data.map(log => `
+                    <div class="log-entry">
+                        <span class="log-time">[${new Date(log.timestamp).toLocaleTimeString('ja-JP')}]</span>
+                        <span class="log-level level-${String(log.level).toLowerCase()}">${log.level}</span>
+                        <span class="log-msg">${log.message}</span>
+                    </div>
+                `).join('');
+
+                // Ghi log vào hệ thống logger cục bộ nếu cần
+                console.log("Log synced from Sheet at: " + new Date().toISOString());
+                
+            } catch (error) {
+                document.getElementById('monitor-box').innerHTML = "Lỗi kết nối: " + error.message;
+            }
+        }
+
         setInterval(updateClock, 1000);
-        window.onload = () => LoggerModule.init("monitor-box");
+        // Tự động làm mới log mỗi 10 giây
+        setInterval(fetchLogs, 10000);
+
+        window.onload = () => {
+            updateClock();
+            fetchLogs();
+            if (typeof LoggerModule !== 'undefined') {
+                LoggerModule.init("monitor-box");
+            }
+        };
     </script>
 </body>
 </html>

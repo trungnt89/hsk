@@ -6,7 +6,11 @@ const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCn
 export const ShadowGame = {
     isListening: false, history: [], currentInterim: "", recognition: null,
     mediaRecorder: null, audioChunks: [], db: null,
-    lessonId: new URLSearchParams(window.location.search).get('id') || "unknown",
+    
+    // Đảm bảo LessonID luôn được cập nhật theo URL hiện tại
+    get lessonId() {
+        return new URLSearchParams(window.location.search).get('id') || "unknown";
+    },
 
     getEl: (id) => document.getElementById(id),
 
@@ -105,7 +109,7 @@ export const ShadowGame = {
         this.buildUI(); 
         this.injectRequiredClasses();
 
-        // Yêu cầu: Load list counts sau 5s để các ajax khác load xong
+        // Load list counts sau 5s để đợi AJAX chính load xong
         setTimeout(() => this.updateBadgeCounts(), 5000);
 
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;

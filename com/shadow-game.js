@@ -32,7 +32,31 @@ export const ShadowGame = {
         if (!this.db) return;
         console.log("Log: Saving to IndexedDB -> ID:", id, "Meta:", metadata);
         const tx = this.db.transaction("voices", "readwrite");
-        tx.objectStore("voices").put({ id, blob, ...metadata });
+        const request = tx.objectStore("voices").put({ id, blob, ...metadata });
+        request.onsuccess = () => this.updateBadgeCounts();
+    },
+
+    async updateBadgeCounts() {
+        if (!this.db) return;
+        const tx = this.db.transaction("voices", "readonly");
+        const store = tx.objectStore("voices");
+        const allRecords = await new Promise(res => {
+            const req = store.getAll();
+            req.onsuccess = () => res(req.result);
+        });
+
+        const counts = {};
+        allRecords.forEach(rec => {
+            const lid = rec.lessonId;
+            if (lid) counts[lid] = (counts[lid] || 0) + 1;
+        });
+
+        // Tìm tất cả element có ID dạng record_count_XXX
+        Object.keys(counts).forEach(lid => {
+            const el = document.getElementById(`record_count_${lid}`);
+            if (el) el.innerText = counts[lid];
+        });
+        console.log("Log: Badge counts updated", counts);
     },
 
     async getVoiceLocal(id) {
@@ -128,10 +152,10 @@ export const ShadowGame = {
             if (result.status === 'success' || result.message?.includes('not found')) {
                 const tx = this.db.transaction("voices", "readwrite");
                 tx.objectStore("voices").delete(fileId);
+                tx.oncomplete = () => this.updateBadgeCounts();
                 
                 element.remove();
                 this.showToast("🗑️ Đã xóa bản ghi!");
-                // Cập nhật lại số lượng sau khi xóa
                 const currentCount = document.querySelectorAll('#voiceItems > div').length;
                 this.getEl('voiceCountLabel').innerText = `Tổng số: ${currentCount}`;
             } else {
@@ -147,6 +171,7 @@ export const ShadowGame = {
         console.log("Log: Initializing ShadowGame module...");
         await this.initDB();
         this.buildUI();
+        this.updateBadgeCounts();
         this.injectRequiredClasses();
 
         document.querySelectorAll('.tab-btn').forEach(btn => {

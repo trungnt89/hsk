@@ -1,6 +1,6 @@
 /**
- * ShadowGame Module - Auto-Injection Edition
- * Tự động thiết lập môi trường mà không cần sửa HTML manual.
+ * ShadowGame Module - Bottom Navigation Edition
+ * Tự động chèn xuống cuối trang và đẩy nội dung lên để tránh che khuất.
  */
 export const ShadowGame = {
     isListening: false,
@@ -10,26 +10,15 @@ export const ShadowGame = {
 
     getEl(id) { return document.getElementById(id); },
 
-    // Tự động tìm hoặc tạo điểm neo (Anchor)
-    findBestAnchor() {
-        // Ưu tiên chèn sau Header hoặc trước Main
-        const header = document.querySelector('header');
-        if (header) return header;
-        return document.body;
-    },
-
-    // Tự động thêm class .content-area cho các tab để highlight hoạt động
     injectRequiredClasses() {
         const containers = ['paragraphContainer', 'conversationContainer'];
         containers.forEach(id => {
             const el = document.getElementById(id);
             if (el && !el.classList.contains('content-area')) {
                 el.classList.add('content-area');
-                console.log(`[ShadowGame] Injected .content-area to ${id}`);
             }
         });
         
-        // Cập nhật trạng thái active dựa trên tab hiện tại của app
         const activeTab = document.querySelector('.tab-content.active .content-area');
         if (activeTab) {
             document.querySelectorAll('.content-area').forEach(a => a.classList.remove('active'));
@@ -40,21 +29,21 @@ export const ShadowGame = {
     buildUI() {
         if (this.getEl('shadow-game-wrapper')) return;
 
-        const anchor = this.findBestAnchor();
         const wrapper = document.createElement('div');
         wrapper.id = "shadow-game-wrapper";
+        // Chuyển position thành fixed và bottom: 0
         wrapper.style.cssText = `
-            display: flex; align-items: center; gap: 10px; padding: 6px 12px; 
-            min-height: 48px; width: 100%; position: sticky; top: 0; 
-            background: #ffffff; z-index: 9999; border-bottom: 2px solid #cbd5e1;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.08); box-sizing: border-box;
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px; 
+            min-height: 60px; width: 100%; position: fixed; bottom: 0; left: 0;
+            background: #ffffff; z-index: 9999; border-top: 2px solid #cbd5e1;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1); box-sizing: border-box;
         `;
         
         wrapper.innerHTML = `
-            <button id="btnMic" title="Bắt đầu Shadowing" style="width: 38px; height: 38px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; padding: 0;">
+            <button id="btnMic" title="Bắt đầu Shadowing" style="width: 42px; height: 42px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; padding: 0; transition: all 0.2s;">
                 🎤
             </button>
-            <div id="gamePanel" style="display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 4px 14px; border-radius: 10px; align-items: center; gap: 10px; overflow: hidden; border: 1px solid #334155;">
+            <div id="gamePanel" style="display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden; border: 1px solid #334155;">
                 <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
                     <div id="gameHistory" style="font-size: 10px; color:#94a3b8; white-space: nowrap; overflow-x: auto; scrollbar-width: none; min-height: 12px;"></div>
                     <div id="gameCurrent" style="font-size: 13px; font-weight: 600; color:#4ade80; white-space: nowrap; overflow-x: auto; scrollbar-width: none; min-height: 18px;"></div>
@@ -65,22 +54,19 @@ export const ShadowGame = {
             </div>
         `;
 
-        // Chèn vào sau Header
-        if (anchor.tagName === 'HEADER') {
-            anchor.parentNode.insertBefore(wrapper, anchor.nextSibling);
-        } else {
-            anchor.prepend(wrapper);
-        }
+        document.body.appendChild(wrapper);
+
+        // Tự động đẩy padding cho body để không bị che nội dung
+        document.body.style.paddingBottom = "70px";
 
         this.getEl('btnMic').onclick = () => this.toggle();
-        console.log("[ShadowGame] UI Built successfully.");
+        console.log("[ShadowGame] UI Built at Bottom with auto-padding.");
     },
 
     init() {
         this.buildUI();
         this.injectRequiredClasses();
 
-        // Lắng nghe sự kiện chuyển tab của App để cập nhật class .active
         const tabBtns = document.querySelectorAll('.tab-btn');
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -113,9 +99,6 @@ export const ShadowGame = {
         };
 
         this.recognition.onend = () => { if (this.isListening) try { this.recognition.start(); } catch(e) {} };
-        
-        // Log setup hoàn tất
-        console.log("[ShadowGame] System Initialized with Auto-Injection.");
     },
 
     toggle() { this.isListening ? this.stop() : this.start(); },
@@ -129,11 +112,8 @@ export const ShadowGame = {
         btn.style.background = '#fee2e2';
         btn.style.borderColor = '#ef4444';
         btn.innerHTML = '🛑';
-        
         this.getEl('gameCurrent').innerText = "Đang lắng nghe...";
-        this.getEl('gameHistory').innerText = "";
-        try { this.recognition.start(); } catch(e) { console.error("Mic error:", e); }
-        console.log("[ShadowGame] Recording started.");
+        try { this.recognition.start(); } catch(e) {}
     },
 
     stop() {
@@ -143,7 +123,6 @@ export const ShadowGame = {
         btn.style.borderColor = '#cbd5e1';
         btn.innerHTML = '🎤';
         if (this.recognition) this.recognition.stop();
-        console.log("[ShadowGame] Recording stopped.");
     },
 
     resetUI() {
@@ -152,7 +131,6 @@ export const ShadowGame = {
         if (this.getEl('gameHistory')) this.getEl('gameHistory').innerText = "";
         if (this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = "";
         if (this.getEl('gameScore')) this.getEl('gameScore').innerText = "0%";
-        
         const active = document.querySelector('.content-area.active');
         if (active) active.querySelectorAll('.shadow-highlight').forEach(el => el.replaceWith(el.innerText));
     },
@@ -161,7 +139,6 @@ export const ShadowGame = {
         const input = text.trim();
         if (!input) return;
         if (isFinal) {
-            console.log("[ShadowGame] Final Result:", input);
             this.highlightInBody(input);
             this.history.push(input);
             this.calculateScore();
@@ -173,20 +150,13 @@ export const ShadowGame = {
     highlightInBody(text) {
         const targetArea = document.querySelector('.content-area.active');
         if (!targetArea || !text) return;
-
-        // Xóa highlight cũ
         targetArea.querySelectorAll('.shadow-highlight').forEach(el => el.replaceWith(el.innerText));
-
         const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(${escapedText})`, 'gi');
-
         const walk = document.createTreeWalker(targetArea, NodeFilter.SHOW_TEXT, null, false);
         let node;
         const nodesToReplace = [];
-        while(node = walk.nextNode()) {
-            if (regex.test(node.textContent)) nodesToReplace.push(node);
-        }
-
+        while(node = walk.nextNode()) { if (regex.test(node.textContent)) nodesToReplace.push(node); }
         nodesToReplace.forEach(node => {
             const span = document.createElement('span');
             span.innerHTML = node.textContent.replace(regex, '<span class="shadow-highlight" style="background-color: #fef08a; color: #1e293b; padding: 0 2px; border-radius: 2px; font-weight: bold;">$1</span>');
@@ -211,5 +181,4 @@ export const ShadowGame = {
     }
 };
 
-// Tự kích hoạt khi load
 setTimeout(() => ShadowGame.init(), 1000);

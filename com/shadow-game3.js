@@ -89,14 +89,6 @@ export const ShadowGame = {
                 </div>
                 <div id="voiceItems" style="font-size:12px; color:#333;"></div>
             </div>
-            <div id="scoreResultPanel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:400px; background:white; border-radius:16px; padding:20px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10005; border:1px solid #e2e8f0;">
-                <div style="text-align:center; margin-bottom:15px;">
-                    <h3 style="margin:0; color:#1e293b;">Kết quả luyện tập</h3>
-                    <div id="finalScoreDisplay" style="font-size:32px; font-weight:bold; color:#10b981; margin:10px 0;">0/1000</div>
-                </div>
-                <div id="scoreReasoning" style="font-size:14px; line-height:1.6; max-height:200px; overflow-y:auto; padding:10px; background:#f8fafc; border-radius:8px; border:1px solid #f1f5f9; margin-bottom:15px; word-break: break-word;"></div>
-                <button id="closeScore" style="width:100%; padding:10px; background:#1e293b; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Đóng & Lưu</button>
-            </div>
         `;
 
         document.body.appendChild(wrapper);
@@ -105,7 +97,6 @@ export const ShadowGame = {
         this.getEl('btnList').onclick = () => this.toggleVoiceList();
         this.getEl('refreshList').onclick = () => this.toggleVoiceList(true);
         this.getEl('closeList').onclick = () => { this.getEl('voiceListPanel').style.display = 'none'; };
-        this.getEl('closeScore').onclick = () => { this.getEl('scoreResultPanel').style.display = 'none'; };
     },
 
     async init() {
@@ -173,7 +164,6 @@ export const ShadowGame = {
         this.isListening = false;
         this.getEl('btnMic').innerHTML = '🎤';
         if (this.recognition) this.recognition.stop();
-        this.showFinalResult();
         if (this.mediaRecorder) this.mediaRecorder.stop();
     },
 
@@ -342,40 +332,17 @@ export const ShadowGame = {
         });
     },
 
-    showFinalResult() {
-        const area = document.querySelector('.content-area.active');
-        if (!area) return;
-        
-        // Tách từ bài đọc
-        const targetWords = area.innerText.split(/[\s,.;:!?]+/).filter(w => w.length > 0);
-        // Gom lịch sử nói thành chuỗi chữ thường
-        const spokenText = this.history.join(" ").toLowerCase();
-        
-        let resultHtml = "";
-        let matchCount = 0;
-
-        targetWords.forEach(word => {
-            const isMatch = spokenText.includes(word.toLowerCase());
-            if (isMatch) matchCount++;
-            
-            // Khớp thì xanh, không khớp thì đỏ
-            resultHtml += `<span style="color: ${isMatch ? '#10b981' : '#ef4444'}; font-weight: ${isMatch ? 'bold' : 'normal'}">${word} </span>`;
-        });
-
-        const score = targetWords.length > 0 ? Math.min(1000, Math.round((matchCount / targetWords.length) * 1000)) : 0;
-        
-        this.getEl('finalScoreDisplay').innerText = `${score}/1000`;
-        this.getEl('scoreReasoning').innerHTML = resultHtml;
-        this.getEl('scoreResultPanel').style.display = 'block';
-        
-        // Cập nhật điểm vào UI chính để upload
-        this.getEl('gameScore').innerText = `${score}/1000`;
-        console.log(`Log Score Logic: Matches ${matchCount}/${targetWords.length} words.`);
-    },
-
     updateUI() {
         this.getEl('gameHistory').innerText = this.history.join(" ");
         this.getEl('gameCurrent').innerText = this.currentInterim;
+        const area = document.querySelector('.content-area.active');
+        if (area) {
+            const targetWords = area.innerText.split(/\s+/).filter(w => w.length > 0);
+            const matchCount = this.history.length;
+            const rawScore = targetWords.length > 0 ? Math.round((matchCount / targetWords.length) * 1000) : 0;
+            const finalScore = Math.min(rawScore, 1000);
+            this.getEl('gameScore').innerText = `${finalScore}/1000`;
+        }
     },
 
     resetUI() {

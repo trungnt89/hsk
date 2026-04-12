@@ -30,6 +30,7 @@ export const ShadowGame = {
 
     async saveVoiceLocal(id, blob, metadata) {
         if (!this.db) return;
+        console.log("Saving to IndexedDB:", id, metadata);
         const tx = this.db.transaction("voices", "readwrite");
         tx.objectStore("voices").put({ id, blob, ...metadata });
     },
@@ -181,7 +182,7 @@ export const ShadowGame = {
                     });
                     const result = await res.json();
                     if (result.status === 'success') {
-                        await this.saveVoiceLocal(result.id, blob, { name: fileName, date: Date.now(), formattedDate: new Date().toLocaleString() });
+                        await this.saveVoiceLocal(result.id, blob, { name: fileName, date: Date.now(), formattedDate: new Date().toLocaleString(), lessonId: lessonId });
                         this.showToast("✅ Đã lưu ghi âm!");
                     }
                 } catch (err) { 
@@ -203,11 +204,15 @@ export const ShadowGame = {
 
         const urlParams = new URLSearchParams(window.location.search);
         const lessonId = urlParams.get('id');
-        if (!lessonId) return;
+        if (!lessonId) {
+            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Không tìm thấy ID bài học.</p>';
+            return;
+        }
 
         try {
             let voiceFiles = [];
             if (syncFromServer) {
+                console.log("Fetching from server for lessonId:", lessonId);
                 const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
                 const data = await res.json();
                 voiceFiles = data.data || [];
@@ -216,7 +221,8 @@ export const ShadowGame = {
                 const store = tx.objectStore("voices");
                 voiceFiles = await new Promise(res => {
                     const req = store.getAll();
-                    req.onsuccess = () => res(req.result.filter(v => v.name && v.name.includes(`_${lessonId}_`)).sort((a,b) => (b.date || 0) - (a.date || 0)));
+                    // Sửa logic lọc: kiểm tra lessonId trực tiếp hoặc qua tên file
+                    req.onsuccess = () => res(req.result.filter(v => (v.lessonId == lessonId) || (v.name && v.name.includes(`_${lessonId}_`))).sort((a,b) => (b.date || 0) - (a.date || 0)));
                 });
             }
 
@@ -227,18 +233,18 @@ export const ShadowGame = {
                     if (!local && syncFromServer && f.id) {
                         const bRes = await fetch(`${RECORD_GAS_URL}?type=getFileBlob&fileId=${f.id}`);
                         const bData = await bRes.json();
-                        if (bData.status === "success") {
+                        if (bData.status === "success" && bData.data) {
                             const byteCharacters = atob(bData.data);
                             const byteNumbers = new Array(byteCharacters.length);
                             for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
                             const blob = new Blob([new Uint8Array(byteNumbers)], { type: "audio/webm" });
-                            await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate });
-                            local = { blob };
+                            await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate, lessonId: lessonId });
+                            local = { blob, formattedDate: f.formattedDate, name: f.name };
                         }
                     }
 
                     const url = local ? URL.createObjectURL(local.blob) : "";
-                    const displayName = (f.name || 'Voice Record').replace(/^Shadow_|_.*$/g, '');
+                    const displayName = (f.name || local?.name || 'Voice Record').replace(/^Shadow_|_.*$/g, '');
                     const item = document.createElement('div');
                     item.style.cssText = "display:flex; flex-direction:column; gap:4px; padding:10px; border-bottom:1px solid #f0f0f0;";
                     item.innerHTML = `
@@ -251,10 +257,11 @@ export const ShadowGame = {
                     this.getEl('voiceItems').appendChild(item);
                 }
             } else {
-                this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm.</p>';
+                this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm cho ID này.</p>';
             }
         } catch (e) {
-            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;color:red;">Lỗi kết nối.</p>';
+            console.error("List error:", e);
+            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;color:red;">Lỗi kết nối hoặc dữ liệu.</p>';
         }
     },
 
@@ -301,9 +308,9 @@ export const ShadowGame = {
 
     resetUI() {
         this.history = [];
-        this.getEl('gameHistory').innerText = "";
-        this.getEl('gameCurrent').innerText = "";
-        this.getEl('gameScore').innerText = "0%";
+        if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = "";
+        if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = "";
+        if(this.getEl('gameScore')) this.getEl('gameScore').innerText = "0%";
     }
 };
 

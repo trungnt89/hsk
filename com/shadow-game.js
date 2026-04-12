@@ -30,7 +30,7 @@ export const ShadowGame = {
 
     async saveVoiceLocal(id, blob, metadata) {
         if (!this.db) return;
-        console.log("Saving to IndexedDB:", id, metadata);
+        console.log("Log: Saving to IndexedDB -> ID:", id, "Meta:", metadata);
         const tx = this.db.transaction("voices", "readwrite");
         tx.objectStore("voices").put({ id, blob, ...metadata });
     },
@@ -102,6 +102,7 @@ export const ShadowGame = {
     },
 
     async init() {
+        console.log("Log: Initializing ShadowGame module...");
         await this.initDB();
         this.buildUI();
         this.injectRequiredClasses();
@@ -136,6 +137,7 @@ export const ShadowGame = {
     toggle() { this.isListening ? this.stop() : this.start(); },
 
     async start() {
+        console.log("Log: Recording started");
         this.isListening = true;
         this.history = [];
         this.audioChunks = [];
@@ -150,6 +152,7 @@ export const ShadowGame = {
             this.mediaRecorder.onstop = () => {
                 const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
                 const score = this.getEl('gameScore').innerText;
+                console.log("Log: Recording stopped. Final Score:", score);
                 this.uploadToDrive(blob, score).then(() => {
                     if (this.getEl('voiceListPanel').style.display === 'block') this.toggleVoiceList(false);
                 });
@@ -174,7 +177,10 @@ export const ShadowGame = {
                 const base64 = reader.result.split(',')[1];
                 const urlParams = new URLSearchParams(window.location.search);
                 const lessonId = urlParams.get('id') || "unknown";
+                
+                // Yêu cầu 1: Nhúng score vào tên file
                 const fileName = `Shadow_${lessonId}_${score}_${Date.now()}.webm`;
+                console.log("Log: Uploading file with name:", fileName);
 
                 try {
                     const res = await fetch(RECORD_GAS_URL, {
@@ -187,6 +193,7 @@ export const ShadowGame = {
                         this.showToast("✅ Đã lưu ghi âm!");
                     }
                 } catch (err) { 
+                    console.error("Log: Upload error:", err);
                     this.showToast("❌ Lỗi Drive");
                 }
                 resolve();
@@ -212,7 +219,6 @@ export const ShadowGame = {
 
         try {
             let voiceFiles = [];
-            
             const tx = this.db.transaction("voices", "readonly");
             const store = tx.objectStore("voices");
             const localFiles = await new Promise(res => {
@@ -222,9 +228,9 @@ export const ShadowGame = {
 
             if (!syncFromServer && localFiles.length > 0) {
                 voiceFiles = localFiles;
-                console.log("Strict: Using local data.");
+                console.log("Log: Loading local records");
             } else {
-                console.log("Strict: Fetching from server.");
+                console.log("Log: Syncing records from server");
                 const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
                 const data = await res.json();
                 voiceFiles = data.data || [];
@@ -251,7 +257,13 @@ export const ShadowGame = {
                     }
 
                     const url = local ? URL.createObjectURL(local.blob) : "";
-                    const displayName = (f.name || local?.name || 'Unknown File').replace('.webm', '');
+                    const rawName = f.name || local?.name || 'Unknown File';
+                    const displayName = rawName.replace('.webm', '');
+                    
+                    // Yêu cầu 2: Bóc tách điểm số từ tên file để xử lý đồng bộ đa thiết bị
+                    const scoreMatch = rawName.match(/(\d+%)/);
+                    const extractedScore = scoreMatch ? scoreMatch[1] : (f.score || local?.score || '0%');
+
                     const item = document.createElement('div');
                     item.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:8px; border-bottom:1px solid #f0f0f0;";
                     item.innerHTML = `
@@ -261,7 +273,7 @@ export const ShadowGame = {
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:4px;">
                             <b style="color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${displayName}</b>
-                            <span style="background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:bold;">⭐ ${f.score || local?.score || 'N/A'}</span>
+                            <span style="background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:bold;">⭐ ${extractedScore}</span>
                         </div>
                         <audio controls style="height:32px; width:100%; outline:none;"><source src="${url}" type="audio/webm"></audio>
                     `;
@@ -271,7 +283,7 @@ export const ShadowGame = {
                 this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm cho bài này.</p>';
             }
         } catch (e) {
-            console.error("List error:", e);
+            console.error("Log: List error:", e);
             this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;color:red;">Lỗi kết nối hoặc dữ liệu.</p>';
         }
     },
@@ -318,6 +330,7 @@ export const ShadowGame = {
     },
 
     resetUI() {
+        console.log("Log: UI Reset");
         this.history = [];
         if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = "";
         if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = "";

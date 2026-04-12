@@ -283,25 +283,20 @@ export const ShadowGame = {
                     const rawName = f.name || local?.name || 'Unknown File';
                     const displayName = rawName.replace('.webm', '');
                     
-                    // Sửa logic lấy điểm số: Tìm cụm X-1000 hoặc X/1000 ở cuối tên file
                     const scoreMatch = rawName.match(/(\d+)[-/](1000)/);
                     const extractedScore = scoreMatch ? `${scoreMatch[1]}/${scoreMatch[2]}` : (f.score || local?.score || '0/1000');
 
                     const item = document.createElement('div');
-                    item.style.cssText = "display:flex; flex-direction:column; gap:4px; padding:12px 8px; border-bottom:1px solid #f1f5f9; background:#fff;";
+                    item.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:8px; border-bottom:1px solid #f1f5f9; background:#fff;";
                     item.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2px;">
-                            <div style="display:flex; flex-direction:column;">
-                                <span style="font-size:13px; font-weight:600; color:#1e293b;">🕒 ${f.formattedDate || local?.formattedDate || new Date(f.date).toLocaleString()}</span>
-                                <span style="font-size:9px; color:#94a3b8; font-family:monospace; margin-top:2px;">ID: ${f.id}</span>
-                            </div>
-                            <div style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:8px; border:1px solid #bbf7d0; text-align:center;">
-                                <div style="font-size:10px; font-weight:normal; opacity:0.8; line-height:1;">Điểm số</div>
-                                <div style="font-size:15px; font-weight:800;">${extractedScore}</div>
-                            </div>
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:2px;">
+                            <span style="font-size:12px; font-weight:600; color:#1e293b;">🕒 ${f.formattedDate || local?.formattedDate || new Date(f.date).toLocaleString()}</span>
+                            <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:800; border:1px solid #bbf7d0;">
+                                ${extractedScore}
+                            </span>
                         </div>
-                        <div style="font-size:10px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:6px;">
-                            File: ${displayName}
+                        <div style="font-size:9px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px;">
+                            ${displayName}
                         </div>
                         <audio controls style="height:34px; width:100%; filter: sepia(20%) saturate(70%) grayscale(100%) contrast(90%); outline:none;">
                             <source src="${url}" type="audio/webm">
@@ -377,7 +372,6 @@ export const ShadowGame = {
 
         const score = targetWords.length > 0 ? Math.min(1000, Math.round((matchCount / targetWords.length) * 1000)) : 0;
         
-        // Hiển thị text đã chuyển đổi từ voice
         if (this.getEl('spokenResultText')) {
             this.getEl('spokenResultText').innerText = fullSpokenText || "(Không ghi nhận được âm thanh)";
         }

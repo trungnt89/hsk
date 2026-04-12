@@ -39,32 +39,41 @@ export const ShadowGame = {
     async updateBadgeCounts() {
         if (!this.db) return;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const lessonId = urlParams.get('id');
-        if (!lessonId) return;
-
-        console.log(`Log: Calling getListVoice via AJAX to update count for ID: ${lessonId}`);
+        console.log(`Log: Calling getListVoice via AJAX to fetch all records for global count update`);
 
         try {
-            // Thực hiện gọi AJAX lấy danh sách từ Server (getListVoice)
-            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
+            // Thực hiện gọi AJAX lấy TOÀN BỘ danh sách từ Server
+            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice`);
             const result = await res.json();
             
             if (result.status === "success" && result.data) {
-                const count = result.data.length;
+                // Xóa số liệu cũ trên giao diện (về 0) trước khi cập nhật mới
+                document.querySelectorAll('[id^="record_count_"]').forEach(el => el.innerText = "0");
+
+                const serverCounts = {};
+                result.data.forEach(file => {
+                    // Tên file có dạng: Shadow_lessonId_timestamp...
+                    const match = file.name.match(/Shadow_([^_]+)_/);
+                    if (match && match[1]) {
+                        const lid = match[1];
+                        serverCounts[lid] = (serverCounts[lid] || 0) + 1;
+                    }
+                });
                 
-                // Trả về số lượng count vào html theo ID record_count_XXX
-                const el = document.getElementById(`record_count_${lessonId}`);
-                if (el) {
-                    el.innerText = count;
-                    console.log(`Log: Successfully updated record_count_${lessonId} in HTML. Value: ${count}`);
-                }
+                // Đổ dữ liệu count vào các thẻ HTML tương ứng record_count_XXX
+                Object.keys(serverCounts).forEach(lid => {
+                    const el = document.getElementById(`record_count_${lid}`);
+                    if (el) {
+                        el.innerText = serverCounts[lid];
+                    }
+                });
+                console.log("Log: Global Server-side counts updated:", serverCounts);
             }
         } catch (err) {
             console.error("Log: AJAX updateBadgeCounts error:", err);
         }
 
-        // Đồng bộ hóa trạng thái Local DB
+        // Đồng bộ hóa trạng thái Local DB (Consistency Check)
         const tx = this.db.transaction("voices", "readonly");
         const store = tx.objectStore("voices");
         const allRecords = await new Promise(res => {
@@ -72,12 +81,12 @@ export const ShadowGame = {
             req.onsuccess = () => res(req.result);
         });
 
-        const counts = {};
+        const localCounts = {};
         allRecords.forEach(rec => {
             const lid = rec.lessonId;
-            if (lid) counts[lid] = (counts[lid] || 0) + 1;
+            if (lid) localCounts[lid] = (localCounts[lid] || 0) + 1;
         });
-        console.log("Log: Local DB count consistency check finished", counts);
+        console.log("Log: Local DB status:", localCounts);
     },
 
     async getVoiceLocal(id) {

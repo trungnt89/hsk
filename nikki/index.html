@@ -216,7 +216,9 @@
             div.id = `item-${item.id}`;
             div.onclick = () => selectRecord(item.id);
             div.innerHTML = `
-                <div class="diary-date">#${count} - ${item.date}</div>
+                <div class="diary-date">#${count} - ${item.date} 
+                    <span style="margin-left:8px; color:var(--primary-color); background:#eee; padding:1px 6px; border-radius:10px; font-size:0.7rem;">🎙️ ${item.voiceCount || 0}</span>
+                </div>
                 <div class="diary-content">${item.text}</div>
                 <div class="item-actions">
                     <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
@@ -232,7 +234,7 @@
             const text = document.getElementById('diaryInput').value.trim();
             if(!text) return;
             const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
-            const newItem = {id, date, text, paragraph: "", conversation: "", pinned: false};
+            const newItem = {id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0};
             currentDiaries.unshift(newItem);
             saveToIDB(currentDiaries); renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';

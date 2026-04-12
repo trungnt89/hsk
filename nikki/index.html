@@ -6,7 +6,17 @@
     <title>Nhật Ký Của Tôi - AI Integrated</title>
     <script type="module">
         import JapaneseLookup from '../com/japanese-lookup.js?v=1';
+		import { ShadowGame } from '../com/shadow-game.js?v=1';
+
+		window.ShadowGame = ShadowGame;
+
+		// Khởi tạo ShadowGame khi dữ liệu đã sẵn sàng
+		window.addEventListener('contentRendered', () => {
+		  const anchor = document.querySelector('#content-text h3') || document.querySelector('#content-text');
+		  if (anchor) ShadowGame.init(anchor);
+		});
     </script>
+	
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         :root {

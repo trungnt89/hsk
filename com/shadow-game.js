@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Optimized Version
+ * ShadowGame Module - Full Optimized & Fixed Audio Source
  */
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
@@ -49,8 +49,7 @@ export const ShadowGame = {
     buildUI() {
         if (this.getEl('shadow-game-wrapper')) return;
         this.injectCSS();
-        const wrap = document.createElement('div');
-        wrap.id = "shadow-game-wrapper";
+        const wrap = document.createElement('div'); wrap.id = "shadow-game-wrapper";
         wrap.innerHTML = `
             <button id="btnMic" class="sg-btn">🎤</button>
             <button id="btnList" class="sg-btn">📜</button>
@@ -63,17 +62,17 @@ export const ShadowGame = {
             </div>
             <div id="voiceListPanel" class="sg-panel">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee;">
-                    <span id="closeList">✕ Đóng</span>
+                    <span id="closeList" style="cursor:pointer">✕ Đóng</span>
                     <b>🎙️ Ghi âm</b>
-                    <span id="refreshList">🔄 Tải lại</span>
+                    <span id="refreshList" style="cursor:pointer">🔄 Tải lại</span>
                 </div>
                 <div id="voiceItems" style="max-height:60vh; overflow-y:auto;"></div>
             </div>
             <div id="scoreResultPanel" class="sg-panel" style="z-index:10005;">
-                <h3 style="text-align:center">Kết quả</h3>
-                <div id="finalScoreDisplay" style="font-size:32px; text-align:center; color:#10b981;">0/1000</div>
-                <div id="scoreReasoning" style="font-size:14px; margin:15px 0; max-height:200px; overflow:auto;"></div>
-                <button id="closeScore" style="width:100%; padding:10px; background:#1e293b; color:#fff; border-radius:8px;">Lưu & Đóng</button>
+                <h3 style="text-align:center">Kết quả luyện tập</h3>
+                <div id="finalScoreDisplay" style="font-size:32px; text-align:center; color:#10b981; font-weight:bold;">0/1000</div>
+                <div id="scoreReasoning" style="font-size:14px; margin:15px 0; max-height:200px; overflow:auto; word-break:break-word;"></div>
+                <button id="closeScore" style="width:100%; padding:10px; background:#1e293b; color:#fff; border-radius:8px; cursor:pointer;">Lưu & Đóng</button>
             </div>`;
         document.body.appendChild(wrap);
         document.body.style.paddingBottom = "80px";
@@ -86,6 +85,7 @@ export const ShadowGame = {
     },
 
     async updateBadgeCounts() {
+        console.log("Log: Updating badges...");
         try {
             const res = await this.api({ type: 'listVoice' });
             if (res.status === "success") {
@@ -100,23 +100,17 @@ export const ShadowGame = {
     },
 
     async init() {
-        await this.initDB();
-        this.buildUI();
-        this.updateBadgeCounts();
-        this.injectRequiredClasses();
+        console.log("Log: ShadowGame Init");
+        await this.initDB(); this.buildUI(); this.updateBadgeCounts(); this.injectRequiredClasses();
 
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SR) {
-            this.recognition = new SR();
-            this.recognition.continuous = true;
-            this.recognition.interimResults = true;
-            this.recognition.lang = 'ja-JP';
+            this.recognition = new SR(); this.recognition.continuous = true; this.recognition.interimResults = true; this.recognition.lang = 'ja-JP';
             this.recognition.onresult = e => {
                 let interim = '';
                 for (let i = e.resultIndex; i < e.results.length; ++i) {
-                    const text = e.results[i][0].transcript;
-                    if (e.results[i].isFinal) { this.handleVoiceInput(text, true); }
-                    else interim += text;
+                    if (e.results[i].isFinal) this.handleVoiceInput(e.results[i][0].transcript, true);
+                    else interim += e.results[i][0].transcript;
                 }
                 if (interim) this.handleVoiceInput(interim, false);
             };
@@ -127,6 +121,7 @@ export const ShadowGame = {
     toggle() { this.isListening ? this.stop() : this.start(); },
 
     async start() {
+        console.log("Log: Start recording");
         this.isListening = true; this.history = []; this.audioChunks = [];
         this.getEl('gamePanel').style.display = 'flex';
         this.getEl('btnMic').innerHTML = '🛑';
@@ -145,30 +140,19 @@ export const ShadowGame = {
     },
 
     stop() {
-        this.isListening = false;
-        this.getEl('btnMic').innerHTML = '🎤';
-        this.recognition?.stop();
-        this.showFinalResult();
-        this.mediaRecorder?.stop();
+        this.isListening = false; this.getEl('btnMic').innerHTML = '🎤';
+        this.recognition?.stop(); this.showFinalResult(); this.mediaRecorder?.stop();
     },
 
     async uploadToDrive(blob, score) {
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
+        const reader = new FileReader(); reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
             const script = this.history.join(" ");
             const fileName = `Shadow_${this.lessonId}_${Date.now()}_${score.replace('/', '-')}.webm`;
-            
-            const res = await this.api({action: "uploadVoice"}, "POST", {
-                action: "uploadVoice", base64, fileName, lessonId: this.lessonId, score, script
-            });
-
+            const res = await this.api({}, "POST", { action: "uploadVoice", base64, fileName, lessonId: this.lessonId, score, script });
             if (res.status === 'success') {
-                await this.dbOp('readwrite', 'voices', 'put', {
-                    id: res.id, blob, name: fileName, date: Date.now(),
-                    formattedDate: new Date().toLocaleString(), lessonId: this.lessonId, score, script
-                });
+                await this.dbOp('readwrite', 'voices', 'put', { id: res.id, blob, name: fileName, date: Date.now(), formattedDate: new Date().toLocaleString(), lessonId: this.lessonId, score, script });
                 this.showToast("✅ Đã lưu!");
             }
         };
@@ -178,38 +162,43 @@ export const ShadowGame = {
         const panel = this.getEl('voiceListPanel');
         if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
         panel.style.display = 'block';
-        const itemsWrap = this.getEl('voiceItems');
-        itemsWrap.innerHTML = "Đang tải...";
+        const itemsWrap = this.getEl('voiceItems'); itemsWrap.innerHTML = "Đang tải...";
 
-        let files = sync ? [] : (await this.dbOp('readonly', 'voices', 'getAll')).filter(v => v.lessonId == this.lessonId);
-        
+        let files = sync ? [] : (await this.dbOp('readonly', 'voices', 'getAll')).filter(v => v.lessonId == this.lessonId || v.name?.includes(`_${this.lessonId}_`));
         if (sync || files.length === 0) {
             const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
             files = res.data || [];
         }
 
         itemsWrap.innerHTML = "";
-        files.forEach(async f => {
+        files.sort((a,b) => (b.date || 0) - (a.date || 0)).forEach(async f => {
             const item = document.createElement('div');
-            item.className = "voice-item";
-            item.style.padding = "10px; border-bottom:1px solid #eee";
+            item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
+            let audioSrc = f.blob ? URL.createObjectURL(f.blob) : "";
             item.innerHTML = `
-                <div style="font-size:12px">🕒 ${f.formattedDate || new Date(f.date).toLocaleString()} <b>[${f.score || '0/1000'}]</b></div>
-                <audio controls src="${f.blob ? URL.createObjectURL(f.blob) : ''}" style="width:100%; height:30px"></audio>
-                <span class="del-btn" style="color:red; cursor:pointer">Xóa</span>`;
+                <div style="font-size:12px; display:flex; justify-content:space-between"><span>🕒 ${f.formattedDate || new Date(f.date).toLocaleString()}</span><b>${f.score || '0/1000'}</b></div>
+                <audio controls src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
+                <div style="text-align:right"><span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span></div>`;
+            if (!audioSrc && f.id) {
+                this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
+                    if (res.data) {
+                        const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/webm" });
+                        item.querySelector('audio').src = URL.createObjectURL(b);
+                        this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b, lessonId: this.lessonId });
+                    }
+                });
+            }
             item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.id, item);
             itemsWrap.appendChild(item);
         });
     },
 
     async deleteVoice(id, el) {
-        if (!confirm("Xóa?")) return;
+        if (!confirm("Xóa bản ghi?")) return;
         const res = await this.api({}, "POST", { action: "deleteVoice", fileId: id });
         if (res.status === 'success') {
-            const tx = this.db.transaction("voices", "readwrite");
-            tx.objectStore("voices").delete(id);
-            el.remove();
-            this.updateBadgeCounts();
+            const tx = this.db.transaction("voices", "readwrite"); tx.objectStore("voices").delete(id);
+            el.remove(); this.updateBadgeCounts();
         }
     },
 
@@ -221,14 +210,11 @@ export const ShadowGame = {
     },
 
     highlightInBody(text) {
-        const area = document.querySelector('.content-area.active');
-        if (!area) return;
+        const area = document.querySelector('.content-area.active'); if (!area) return;
         const walk = document.createTreeWalker(area, NodeFilter.SHOW_TEXT);
-        let n;
-        while(n = walk.nextNode()) {
+        let n; while(n = walk.nextNode()) {
             if (n.textContent.includes(text)) {
-                const s = document.createElement('mark');
-                s.innerText = text;
+                const s = document.createElement('mark'); s.innerText = text;
                 n.replaceWith(n.textContent.split(text)[0], s, n.textContent.split(text)[1]);
             }
         }
@@ -240,11 +226,9 @@ export const ShadowGame = {
         const spoken = this.history.join(" ").toLowerCase();
         let matches = 0;
         let html = targetWords.map(w => {
-            const ok = spoken.includes(w.toLowerCase());
-            if (ok) matches++;
+            const ok = spoken.includes(w.toLowerCase()); if (ok) matches++;
             return `<span style="color:${ok ? '#10b981' : '#ef4444'}">${w} </span>`;
         }).join("");
-
         const score = targetWords.length ? Math.round((matches / targetWords.length) * 1000) : 0;
         this.getEl('finalScoreDisplay').innerText = `${score}/1000`;
         this.getEl('scoreReasoning').innerHTML = html;
@@ -253,16 +237,13 @@ export const ShadowGame = {
     },
 
     showToast(m) {
-        const t = document.createElement('div');
-        t.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:5px 15px; border-radius:15px; z-index:10002";
-        t.innerText = m; document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2000);
+        const t = document.createElement('div'); t.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:5px 15px; border-radius:15px; z-index:10002; font-size:12px";
+        t.innerText = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2000);
     },
 
     injectRequiredClasses() {
         ['paragraphContainer', 'conversationContainer'].forEach(id => {
-            const el = this.getEl(id);
-            if (el) el.classList.add('content-area');
+            const el = this.getEl(id); if (el) el.classList.add('content-area');
         });
     }
 };

@@ -42,13 +42,13 @@ export const ShadowGame = {
         console.log(`Log: Calling getListVoice via AJAX to fetch all records for global count update`);
 
         try {
-            // Thực hiện gọi AJAX lấy TOÀN BỘ danh sách từ Server
             const res = await fetch(`${RECORD_GAS_URL}?type=listVoice`);
             const result = await res.json();
             
             if (result.status === "success" && result.data) {
-                // Xóa số liệu cũ trên giao diện (về 0) trước khi cập nhật mới
-                document.querySelectorAll('[id^="record_count_"]').forEach(el => el.innerText = "0");
+                // Reset toàn bộ span count về 0
+                const countSpans = document.querySelectorAll("div.diary-date > span");
+                countSpans.forEach(el => el.innerText = "0");
 
                 const serverCounts = {};
                 result.data.forEach(file => {
@@ -60,9 +60,9 @@ export const ShadowGame = {
                     }
                 });
                 
-                // Đổ dữ liệu count vào các thẻ HTML tương ứng record_count_XXX
+                // Đổ dữ liệu count vào các thẻ HTML tương ứng với cấu trúc document.querySelector("#item-ID > div.diary-date > span")
                 Object.keys(serverCounts).forEach(lid => {
-                    const el = document.getElementById(`record_count_${lid}`);
+                    const el = document.querySelector(`#item-${lid} div.diary-date span`);
                     if (el) {
                         el.innerText = serverCounts[lid];
                     }
@@ -73,7 +73,6 @@ export const ShadowGame = {
             console.error("Log: AJAX updateBadgeCounts error:", err);
         }
 
-        // Đồng bộ hóa trạng thái Local DB (Consistency Check)
         const tx = this.db.transaction("voices", "readonly");
         const store = tx.objectStore("voices");
         const allRecords = await new Promise(res => {
@@ -252,7 +251,6 @@ export const ShadowGame = {
                 console.log("Log: Recording stopped. Final Score:", score);
                 this.uploadToDrive(blob, score).then(() => {
                     if (this.getEl('voiceListPanel').style.display === 'block') this.toggleVoiceList(false);
-                    // Cập nhật lại badge count sau khi upload thành công
                     this.updateBadgeCounts();
                 });
                 stream.getTracks().forEach(t => t.stop());
@@ -438,57 +436,4 @@ export const ShadowGame = {
         nodes.forEach(n => {
             const s = document.createElement('span');
             s.innerHTML = n.textContent.replace(regex, '<span style="background:#fef08a;font-weight:bold;">$1</span>');
-            n.replaceWith(s);
-        });
-    },
-
-    showFinalResult() {
-        const area = document.querySelector('.content-area.active');
-        if (!area) return;
-
-        console.log("Log: Processing Final Results...");
-        const originalText = area.innerText.trim();
-        const targetWords = originalText.split(/[\s,.;:!?、。]+/).filter(w => w.length > 0);
-        const fullSpokenText = this.history.join(" ");
-        const spokenTextLower = fullSpokenText.toLowerCase();
-        
-        let resultHtml = "";
-        let matchCount = 0;
-
-        targetWords.forEach(word => {
-            const cleanWord = word.toLowerCase();
-            const isMatch = spokenTextLower.includes(cleanWord);
-            if (isMatch) matchCount++;
-            
-            resultHtml += `<span style="color: ${isMatch ? '#10b981' : '#ef4444'}; font-weight: ${isMatch ? 'bold' : 'normal'}">${word} </span>`;
-        });
-
-        const score = targetWords.length > 0 ? Math.min(1000, Math.round((matchCount / targetWords.length) * 1000)) : 0;
-        
-        if (this.getEl('spokenResultText')) {
-            this.getEl('spokenResultText').innerText = fullSpokenText || "(Không ghi nhận được âm thanh)";
-        }
-
-        this.getEl('finalScoreDisplay').innerText = `${score}/1000`;
-        this.getEl('scoreReasoning').innerHTML = resultHtml;
-        this.getEl('scoreResultPanel').style.display = 'block';
-        
-        this.getEl('gameScore').innerText = `${score}/1000`;
-        console.log(`Log: Mapping complete. Score: ${score}. Matches: ${matchCount}/${targetWords.length}`);
-    },
-
-    updateUI() {
-        if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = this.history.join(" ");
-        if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = this.currentInterim;
-    },
-
-    resetUI() {
-        console.log("Log: UI Reset");
-        this.history = [];
-        if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = "";
-        if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = "";
-        if(this.getEl('gameScore')) this.getEl('gameScore').innerText = "0/1000";
-    }
-};
-
-setTimeout(() => ShadowGame.init(), 1000);
+            n.replace

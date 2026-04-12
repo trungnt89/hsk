@@ -22,12 +22,15 @@
             padding: 8px 0;
             display: flex;
             gap: 15px;
+            align-items: flex-start;
         }
 
-        .log-time { color: #888; min-width: 100px; }
-        .log-level { font-weight: bold; min-width: 60px; }
+        /* Tăng min-width để chứa đủ ngày giờ đầy đủ */
+        .log-time { color: #888; min-width: 180px; font-family: 'Consolas', monospace; }
+        .log-level { font-weight: bold; min-width: 60px; text-transform: uppercase; }
         .level-info { color: #2ecc71; }
         .level-error { color: #e74c3c; }
+        .level-warn { color: #f1c40f; }
 
         #clock {
             font-family: 'Consolas', monospace;
@@ -57,41 +60,61 @@
 
         function updateClock() {
             const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString('ja-JP', {
-                timeZone: 'Asia/Tokyo', 
+            document.getElementById('clock').innerText = now.toLocaleString('ja-JP', {
+                timeZone: 'Asia/Tokyo',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
                 hour12: false
             });
         }
 
         async function fetchLogs() {
             try {
+                console.log("[SYSTEM] Fetching logs from Google Sheet...");
                 const response = await fetch(GAS_URL);
                 const data = await response.json();
                 const container = document.getElementById('monitor-box');
                 
-                if (data.length === 0) {
+                if (!data || data.length === 0) {
                     container.innerHTML = "Không có dữ liệu log.";
                     return;
                 }
 
-                container.innerHTML = data.map(log => `
-                    <div class="log-entry">
-                        <span class="log-time">[${new Date(log.timestamp).toLocaleTimeString('ja-JP')}]</span>
-                        <span class="log-level level-${String(log.level).toLowerCase()}">${log.level}</span>
-                        <span class="log-msg">${log.message}</span>
-                    </div>
-                `).join('');
+                container.innerHTML = data.map(log => {
+                    // Định dạng ngày giờ đầy đủ cho từng dòng log
+                    const logDate = new Date(log.timestamp).toLocaleString('ja-JP', {
+                        timeZone: 'Asia/Tokyo',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
 
-                // Ghi log vào hệ thống logger cục bộ nếu cần
-                console.log("Log synced from Sheet at: " + new Date().toISOString());
+                    return `
+                        <div class="log-entry">
+                            <span class="log-time">[${logDate}]</span>
+                            <span class="log-level level-${String(log.level).toLowerCase()}">${log.level}</span>
+                            <span class="log-msg">${log.message}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                console.log("[SUCCESS] Logs updated at: " + new Date().toISOString());
                 
             } catch (error) {
+                console.error("[ERROR] Failed to fetch logs:", error);
                 document.getElementById('monitor-box').innerHTML = "Lỗi kết nối: " + error.message;
             }
         }
 
         setInterval(updateClock, 1000);
-        // Tự động làm mới log mỗi 10 giây
         setInterval(fetchLogs, 10000);
 
         window.onload = () => {

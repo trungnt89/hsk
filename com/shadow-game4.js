@@ -111,35 +111,6 @@ export const ShadowGame = {
         this.getEl('closeScore').onclick = () => { this.getEl('scoreResultPanel').style.display = 'none'; };
     },
 
-    async deleteVoice(fileId, element) {
-        if (!confirm("Bạn có chắc chắn muốn xóa bản ghi này?")) return;
-        
-        console.log("Log: Deleting record -> ID:", fileId);
-        try {
-            // 1. Xóa trên Server (Google Drive) thông qua POST action deleteVoice
-            const res = await fetch(RECORD_GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "deleteVoice", fileId: fileId })
-            });
-            const result = await res.json();
-
-            // Cho phép xóa cục bộ nếu server báo thành công hoặc không tìm thấy file trên server
-            if (result.status === 'success' || result.message?.includes('not found')) {
-                // 2. Xóa trong IndexedDB
-                const tx = this.db.transaction("voices", "readwrite");
-                tx.objectStore("voices").delete(fileId);
-                
-                element.remove();
-                this.showToast("🗑️ Đã xóa bản ghi!");
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (err) {
-            console.error("Log: Delete error:", err);
-            this.showToast("❌ Lỗi khi xóa");
-        }
-    },
-
     async init() {
         console.log("Log: Initializing ShadowGame module...");
         await this.initDB();
@@ -316,23 +287,21 @@ export const ShadowGame = {
                     const extractedScore = scoreMatch ? `${scoreMatch[1]}/${scoreMatch[2]}` : (f.score || local?.score || '0/1000');
 
                     const item = document.createElement('div');
-                    item.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:8px; border-bottom:1px solid #f1f5f9; background:#fff; position:relative;";
+                    item.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:8px; border-bottom:1px solid #f1f5f9; background:#fff;";
                     item.innerHTML = `
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:2px;">
                             <span style="font-size:12px; font-weight:600; color:#1e293b;">🕒 ${f.formattedDate || local?.formattedDate || new Date(f.date).toLocaleString()}</span>
                             <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:800; border:1px solid #bbf7d0;">
                                 ${extractedScore}
                             </span>
-                            <span class="delete-voice-btn" style="margin-left:auto; cursor:pointer; color:#ef4444; font-size:16px; padding:0 5px;" title="Xóa">🗑️</span>
                         </div>
-                        <div style="font-size:9px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; padding-right:30px;">
+                        <div style="font-size:9px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px;">
                             ${displayName}
                         </div>
                         <audio controls style="height:34px; width:100%; filter: sepia(20%) saturate(70%) grayscale(100%) contrast(90%); outline:none;">
                             <source src="${url}" type="audio/webm">
                         </audio>
                     `;
-                    item.querySelector('.delete-voice-btn').onclick = () => this.deleteVoice(f.id, item);
                     this.getEl('voiceItems').appendChild(item);
                 }
             } else {

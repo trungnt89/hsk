@@ -81,7 +81,7 @@ export const ShadowGame = {
                 </div>
                 <div id="gameScore" style="font-weight:bold; color:#4ade80;">0%</div>
             </div>
-            <div id="voiceListPanel" style="display:none; position:fixed; top:10px; left:10px; right:10px; background:white; border:1px solid #cbd5e1; border-radius:12px; padding:10px; max-height:80vh; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2); z-index:10001;">
+            <div id="voiceListPanel" style="display:none; position:fixed; bottom:70px; left:10px; right:10px; background:white; border:1px solid #cbd5e1; border-radius:12px; padding:10px; max-height:50vh; overflow-y:auto; box-shadow:0 -5px 25px rgba(0,0,0,0.2); z-index:10001;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px;">
                     <b style="font-size:14px;">🎙️ Danh sách ghi âm</b>
                     <div style="display:flex; gap:15px; align-items:center;">
@@ -149,7 +149,8 @@ export const ShadowGame = {
             this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
             this.mediaRecorder.onstop = () => {
                 const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                this.uploadToDrive(blob).then(() => {
+                const score = this.getEl('gameScore').innerText;
+                this.uploadToDrive(blob, score).then(() => {
                     if (this.getEl('voiceListPanel').style.display === 'block') this.toggleVoiceList(false);
                 });
                 stream.getTracks().forEach(t => t.stop());
@@ -165,7 +166,7 @@ export const ShadowGame = {
         if (this.mediaRecorder) this.mediaRecorder.stop();
     },
 
-    async uploadToDrive(blob) {
+    async uploadToDrive(blob, score = "0%") {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.readAsDataURL(blob);
@@ -173,16 +174,16 @@ export const ShadowGame = {
                 const base64 = reader.result.split(',')[1];
                 const urlParams = new URLSearchParams(window.location.search);
                 const lessonId = urlParams.get('id') || "unknown";
-                const fileName = `Shadow_${lessonId}_${Date.now()}.webm`;
+                const fileName = `Shadow_${lessonId}_${score}_${Date.now()}.webm`;
 
                 try {
                     const res = await fetch(RECORD_GAS_URL, {
                         method: "POST",
-                        body: JSON.stringify({ action: "uploadVoice", base64, fileName })
+                        body: JSON.stringify({ action: "uploadVoice", base64, fileName, score })
                     });
                     const result = await res.json();
                     if (result.status === 'success') {
-                        await this.saveVoiceLocal(result.id, blob, { name: fileName, date: Date.now(), formattedDate: new Date().toLocaleString(), lessonId: lessonId });
+                        await this.saveVoiceLocal(result.id, blob, { name: fileName, date: Date.now(), formattedDate: new Date().toLocaleString(), lessonId: lessonId, score: score });
                         this.showToast("✅ Đã lưu ghi âm!");
                     }
                 } catch (err) { 
@@ -212,7 +213,6 @@ export const ShadowGame = {
         try {
             let voiceFiles = [];
             
-            // NGHIÊM NGẶT: Kiểm tra IndexedDB trước
             const tx = this.db.transaction("voices", "readonly");
             const store = tx.objectStore("voices");
             const localFiles = await new Promise(res => {
@@ -220,12 +220,10 @@ export const ShadowGame = {
                 req.onsuccess = () => res(req.result.filter(v => (v.lessonId == lessonId) || (v.name && v.name.includes(`_${lessonId}_`))).sort((a,b) => (b.date || 0) - (a.date || 0)));
             });
 
-            // Nếu không phải yêu cầu đồng bộ và local có data -> Dùng local
             if (!syncFromServer && localFiles.length > 0) {
                 voiceFiles = localFiles;
                 console.log("Strict: Using local data.");
             } else {
-                // Chỉ gọi server khi DB trống hoặc được yêu cầu Refresh
                 console.log("Strict: Fetching from server.");
                 const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
                 const data = await res.json();
@@ -237,7 +235,6 @@ export const ShadowGame = {
                 for (const f of voiceFiles) {
                     let local = await this.getVoiceLocal(f.id);
                     
-                    // Chỉ tải blob nếu ID này chưa tồn tại trong IndexedDB
                     if (!local && f.id) {
                         try {
                             const bRes = await fetch(`${RECORD_GAS_URL}?type=getFileBlob&fileId=${f.id}`);
@@ -247,21 +244,24 @@ export const ShadowGame = {
                                 const byteNumbers = new Array(byteCharacters.length);
                                 for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
                                 const blob = new Blob([new Uint8Array(byteNumbers)], { type: "audio/webm" });
-                                await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate, lessonId: lessonId });
-                                local = { blob, formattedDate: f.formattedDate, name: f.name };
+                                await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate, lessonId: lessonId, score: f.score || '0%' });
+                                local = { blob, formattedDate: f.formattedDate, name: f.name, score: f.score };
                             }
                         } catch (err) { console.error("Blob download failed", f.id); }
                     }
 
                     const url = local ? URL.createObjectURL(local.blob) : "";
-                    const displayName = f.name || local?.name || 'Unknown File';
+                    const displayName = (f.name || local?.name || 'Unknown File').replace('.webm', '');
                     const item = document.createElement('div');
                     item.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:8px; border-bottom:1px solid #f0f0f0;";
                     item.innerHTML = `
-                        <div style="font-size:9px; color:#94a3b8; margin-bottom:2px;">ID: ${f.id}</div>
-                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
-                            <b style="color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px;">${displayName}</b>
-                            <span>${f.formattedDate || local?.formattedDate || ''}</span>
+                        <div style="font-size:9px; color:#94a3b8; margin-bottom:2px; display:flex; justify-content:space-between;">
+                            <span>ID: ${f.id}</span>
+                            <span style="color:#64748b;">🕒 ${f.formattedDate || local?.formattedDate || new Date(f.date).toLocaleString() || ''}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:4px;">
+                            <b style="color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${displayName}</b>
+                            <span style="background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:bold;">⭐ ${f.score || local?.score || 'N/A'}</span>
                         </div>
                         <audio controls style="height:32px; width:100%; outline:none;"><source src="${url}" type="audio/webm"></audio>
                     `;

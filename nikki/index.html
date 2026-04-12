@@ -20,9 +20,12 @@
         body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
         header h1 { font-size: 1.2rem; font-weight: 600; }
-        main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+        main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        
         .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 8px; font-size: 14px; resize: none; height: 120px; outline: none; }
+        /* Tối ưu ô nhập cao gấp đôi và giảm khoảng trống theo yêu cầu */
+        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 10px; font-size: 15px; resize: none; height: 220px; outline: none; display: block; }
+        
         .action-area { display: flex; justify-content: flex-end; align-items: center; margin-top: 5px; gap: 8px; }
         .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .btn-save:disabled { background-color: #ccc; cursor: not-allowed; }
@@ -31,24 +34,29 @@
         .btn-main-speak { background: var(--ai-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; min-width: 85px; transition: 0.3s; }
         .btn-main-speak:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
         .btn-main-speak.playing { background: var(--danger-color); }
+        
         .tabs { display: flex; background: #eee; border-radius: 8px; padding: 4px; margin-top: 5px; flex-shrink: 0; }
-        .tab-btn { flex: 1; border: none; padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; }
+        .tab-btn { flex: 1; border: none; padding: 10px 5px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; }
         .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 60px; scroll-behavior: smooth; }
+        
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 20px; scroll-behavior: smooth; }
         .tab-content.active { display: block; }
-        .diary-item { background: var(--card-bg); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; transition: 0.2s; position: relative; }
+        
+        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; position: relative; }
         .diary-item.selected { border-left-color: var(--ai-color); background-color: #f0fff4; }
         .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
-        #pinnedSection { position: sticky; top: 0; z-index: 10; background: var(--bg-color); padding-bottom: 4px; border-bottom: 1px dashed #ccc; margin-bottom: 10px; display: flex; flex-direction: column; }
+        
+        #pinnedSection { position: sticky; top: 0; z-index: 10; background: var(--bg-color); padding-bottom: 4px; border-bottom: 1px dashed #ccc; margin-bottom: 10px; }
         .pinned-label { font-size: 0.7rem; font-weight: bold; color: #f39c12; margin-bottom: 5px; padding: 5px; }
-        .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--ai-color); color: #2c3e50; }
+        
+        .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.7; font-size: 1rem; white-space: pre-wrap; margin-bottom: 10px; border-left: 4px solid var(--ai-color); color: #2c3e50; }
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
         select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
-        .diary-content { font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
-        .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 5px; }
-        .item-actions-left, .item-actions-right { display: flex; gap: 15px; }
+        .diary-content { font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
+        
+        .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 8px; }
         .item-action-btn { background: none; border: none; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
         .pin-btn { color: #f39c12; }
         .edit-btn { color: var(--edit-color); }
@@ -72,7 +80,7 @@
                 <button id="saveBtn" class="btn-save">Lưu lại</button>
                 <div class="tts-controls">
                     <button id="btnMainSpeak" class="btn-main-speak" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
-                    <button id="btnRepeat" class="btn-repeat" title="Lặp lại" onclick="toggleRepeat()">🔂</button>
+                    <button id="btnRepeat" class="btn-repeat" onclick="toggleRepeat()">🔂</button>
                     <select id="voiceSelect" class="tts-select" onchange="saveTTSSettings()">
                         <option value="ja-JP-KeitaNeural">Nam (JP)</option>
                         <option value="ja-JP-NanamiNeural" selected>Nữ (JP)</option>
@@ -87,9 +95,9 @@
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab(0)">📝 Nhật ký</button>
-            <button class="tab-btn" onclick="switchTab(1)">📖 Đoạn văn</button>
-            <button class="tab-btn" onclick="switchTab(2)">💬 Hội thoại</button>
+            <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
+            <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)">📝 Nhật ký</button>
+            <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
         </div>
 
         <div id="tab-diary" class="tab-content active">
@@ -104,12 +112,12 @@
         let currentDiaries = [];
         let editingId = null;
         let selectedDiaryId = localStorage.getItem("diary_selected_id") || null;
-        let isRepeating = false;
+        let isRepeating = localStorage.getItem("diary_repeat") === "true";
         let currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0;
 
         const dbName = "DiaryDB", storeName = "diaries";
 
-        function initDB() {
+        async function initDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(dbName, 1);
                 request.onupgradeneeded = (e) => {
@@ -141,6 +149,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("[System] App Initialized");
             initApp();
             loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => {
@@ -170,26 +179,19 @@
                     renderList(currentDiaries);
                     if (selectedDiaryId) selectRecord(selectedDiaryId);
                 }
-            } catch (err) { console.warn("[Sync] Offline mode or fetch error"); }
+            } catch (err) { console.warn("[Sync] Offline mode"); }
         }
 
         async function callGAS(paramsObj) {
             console.log("[GAS Action]:", paramsObj.action);
-            const btns = document.querySelectorAll('button, .item-action-btn');
-            btns.forEach(b => b.tagName === 'BUTTON' ? b.disabled = true : b.style.opacity = '0.5');
-
             const params = new URLSearchParams();
             for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
-
             try {
                 const response = await fetch(`${GAS_URL}?${params.toString()}`);
                 return await response.json();
             } catch (e) {
                 console.error("[Sync Error]:", e);
-                return { status: 'error', message: "Lỗi kết nối Server" };
-            } finally {
-                btns.forEach(b => b.tagName === 'BUTTON' ? b.disabled = false : b.style.opacity = '1');
-                document.getElementById('btnMainSpeak').disabled = (currentTabIndex === 0);
+                return { status: 'error', message: "Lỗi kết nối" };
             }
         }
 
@@ -216,14 +218,10 @@
                 <div class="diary-date">${item.date}</div>
                 <div class="diary-content">${item.text}</div>
                 <div class="item-actions">
-                    <div class="item-actions-left">
-                        <span class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</span>
-                        <span class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</span>
-                        <span class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</span>
-                    </div>
-                    <div class="item-actions-right">
-                        <span class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</span>
-                    </div>
+                    <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
+                    <div class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
+                    <div class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
+                    <div class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
                 </div>
             `;
             return div;
@@ -253,9 +251,9 @@
             const text = document.getElementById('diaryInput').value.trim();
             const idx = currentDiaries.findIndex(i => i.id == editingId);
             if (idx === -1) return;
-            const tid = editingId;
             currentDiaries[idx].text = text;
             saveToIDB(currentDiaries); renderList(currentDiaries);
+            const tid = editingId;
             clearEditMode();
             callGAS({action:'update', id: tid, text});
         }
@@ -282,7 +280,6 @@
             selectRecord(id); switchTab(1);
             const pContainer = document.getElementById('paragraphContainer'), cContainer = document.getElementById('conversationContainer');
             pContainer.innerHTML = cContainer.innerHTML = '<p class="loading-text">🤖 AI đang biên soạn nội dung...</p>';
-            
             const res = await callGAS({ action: 'ask_ai_proxy', id, content });
             if (res.status === 'success') {
                 const idx = currentDiaries.findIndex(d => d.id == id);
@@ -291,34 +288,31 @@
                     currentDiaries[idx].conversation = res.conversation;
                     await saveToIDB(currentDiaries); renderList(currentDiaries); updateAIView();
                 }
-            } else {
-                pContainer.innerHTML = cContainer.innerHTML = `<div class="ai-content-box" style="border-left-color: var(--danger-color)">❌ Lỗi AI: ${res.message}</div>`;
             }
         }
 
         function switchTab(index) {
+            console.log("[Tab] Switched to:", index);
             currentTabIndex = index;
             localStorage.setItem("diary_current_tab", index);
             document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
-            document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === index));
+            document.querySelectorAll('.tab-btn').forEach((btn) => {
+                const btnIdx = parseInt(btn.getAttribute('onclick').match(/\d+/)[0]);
+                btn.classList.toggle('active', btnIdx === index);
+            });
             document.getElementById('btnMainSpeak').disabled = (index === 0);
             updateAIView();
         }
 
         function selectRecord(id, scroll = false) {
-            selectedDiaryId = id; 
-            localStorage.setItem("diary_selected_id", id);
-            
-            // Cập nhật URL để ShadowGame lấy ID (Zero-refresh)
+            selectedDiaryId = id; localStorage.setItem("diary_selected_id", id);
             const newUrl = new URL(window.location);
             newUrl.searchParams.set('id', id);
             window.history.replaceState({}, '', newUrl); 
-
             document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
             const el = document.getElementById(`item-${id}`);
             if (el) { el.classList.add('selected'); if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
             updateAIView();
-            console.log("[Log] ID synced to URL:", id);
         }
 
         function updateAIView() {
@@ -329,10 +323,10 @@
         }
 
         function loadTTSSettings() {
-            const v = localStorage.getItem("diary_voice"), r = localStorage.getItem("diary_rate"), rep = localStorage.getItem("diary_repeat");
+            const v = localStorage.getItem("diary_voice"), r = localStorage.getItem("diary_rate");
             if(v) document.getElementById("voiceSelect").value = v;
             if(r) document.getElementById("rateSelect").value = r;
-            if(rep !== null) { isRepeating = rep === "true"; document.getElementById("btnRepeat").classList.toggle("active", isRepeating); }
+            document.getElementById("btnRepeat").classList.toggle("active", isRepeating);
         }
 
         function saveTTSSettings() {
@@ -346,8 +340,9 @@
         async function speakText(elId, btnId) {
             const el = document.getElementById(elId), btn = document.getElementById(btnId);
             if(!el || !window.speakCommon) return;
+            console.log("[TTS] Speaking:", elId);
             btn.classList.add("playing"); btn.innerHTML = '⏹ Dừng';
-            const statusKey = `Diary_AI_N3_${selectedDiaryId}`;
+            const statusKey = `Diary_AI_${selectedDiaryId}`;
             await window.speakCommon({ text: el.innerText, voice: document.getElementById("voiceSelect").value, rate: document.getElementById("rateSelect").value, filename: statusKey });
             if (btn.classList.contains("playing")) {
                 if (isRepeating && el.closest('.tab-content').classList.contains('active')) setTimeout(() => speakText(elId, btnId), 1000);

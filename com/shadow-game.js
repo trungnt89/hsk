@@ -94,6 +94,9 @@ export const ShadowGame = {
                     <h3 style="margin:0; color:#1e293b;">Kết quả luyện tập</h3>
                     <div id="finalScoreDisplay" style="font-size:32px; font-weight:bold; color:#10b981; margin:10px 0;">0/1000</div>
                 </div>
+                <div style="font-size:12px; font-weight:bold; color:#64748b; margin-bottom:5px;">Văn bản đã ghi nhận:</div>
+                <div id="spokenResultText" style="font-size:14px; padding:10px; background:#f1f5f9; border-radius:8px; margin-bottom:15px; border:1px dashed #cbd5e1; max-height:100px; overflow-y:auto; color:#1e293b;"></div>
+                <div style="font-size:12px; font-weight:bold; color:#64748b; margin-bottom:5px;">So sánh với bản gốc:</div>
                 <div id="scoreReasoning" style="font-size:14px; line-height:1.6; max-height:200px; overflow-y:auto; padding:10px; background:#f8fafc; border-radius:8px; border:1px solid #f1f5f9; margin-bottom:15px; word-break: break-word;"></div>
                 <button id="closeScore" style="width:100%; padding:10px; background:#1e293b; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Đóng & Lưu</button>
             </div>
@@ -345,37 +348,42 @@ export const ShadowGame = {
     showFinalResult() {
         const area = document.querySelector('.content-area.active');
         if (!area) return;
-        
-        // Tách từ bài đọc
-        const targetWords = area.innerText.split(/[\s,.;:!?]+/).filter(w => w.length > 0);
-        // Gom lịch sử nói thành chuỗi chữ thường
-        const spokenText = this.history.join(" ").toLowerCase();
+
+        console.log("Log: Processing Final Results...");
+        const originalText = area.innerText.trim();
+        const targetWords = originalText.split(/[\s,.;:!?、。]+/).filter(w => w.length > 0);
+        const fullSpokenText = this.history.join(" ");
+        const spokenTextLower = fullSpokenText.toLowerCase();
         
         let resultHtml = "";
         let matchCount = 0;
 
         targetWords.forEach(word => {
-            const isMatch = spokenText.includes(word.toLowerCase());
+            const cleanWord = word.toLowerCase();
+            const isMatch = spokenTextLower.includes(cleanWord);
             if (isMatch) matchCount++;
             
-            // Khớp thì xanh, không khớp thì đỏ
             resultHtml += `<span style="color: ${isMatch ? '#10b981' : '#ef4444'}; font-weight: ${isMatch ? 'bold' : 'normal'}">${word} </span>`;
         });
 
         const score = targetWords.length > 0 ? Math.min(1000, Math.round((matchCount / targetWords.length) * 1000)) : 0;
         
+        // Hiển thị text đã chuyển đổi từ voice
+        if (this.getEl('spokenResultText')) {
+            this.getEl('spokenResultText').innerText = fullSpokenText || "(Không ghi nhận được âm thanh)";
+        }
+
         this.getEl('finalScoreDisplay').innerText = `${score}/1000`;
         this.getEl('scoreReasoning').innerHTML = resultHtml;
         this.getEl('scoreResultPanel').style.display = 'block';
         
-        // Cập nhật điểm vào UI chính để upload
         this.getEl('gameScore').innerText = `${score}/1000`;
-        console.log(`Log Score Logic: Matches ${matchCount}/${targetWords.length} words.`);
+        console.log(`Log: Mapping complete. Score: ${score}. Matches: ${matchCount}/${targetWords.length}`);
     },
 
     updateUI() {
-        this.getEl('gameHistory').innerText = this.history.join(" ");
-        this.getEl('gameCurrent').innerText = this.currentInterim;
+        if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = this.history.join(" ");
+        if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = this.currentInterim;
     },
 
     resetUI() {

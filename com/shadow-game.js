@@ -85,7 +85,6 @@ export const ShadowGame = {
     },
 
     async updateBadgeCounts() {
-        console.log("Log: Updating badges...");
         try {
             const res = await this.api({ type: 'listVoice' });
             if (res.status === "success") {
@@ -100,7 +99,6 @@ export const ShadowGame = {
     },
 
     async init() {
-        console.log("Log: ShadowGame Init");
         await this.initDB(); this.buildUI(); this.updateBadgeCounts(); this.injectRequiredClasses();
 
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -121,7 +119,6 @@ export const ShadowGame = {
     toggle() { this.isListening ? this.stop() : this.start(); },
 
     async start() {
-        console.log("Log: Start recording");
         this.isListening = true; this.history = []; this.audioChunks = [];
         this.getEl('gamePanel').style.display = 'flex';
         this.getEl('btnMic').innerHTML = '🛑';
@@ -148,11 +145,31 @@ export const ShadowGame = {
         const reader = new FileReader(); reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
-            const script = this.history.join(" ");
+            const browserScript = this.history.join(" ");
+            const area = document.querySelector('.content-area.active');
+            const script = area ? area.innerText.trim() : "";
+            
             const fileName = `Shadow_${this.lessonId}_${Date.now()}_${score.replace('/', '-')}.webm`;
-            const res = await this.api({}, "POST", { action: "uploadVoice", base64, fileName, lessonId: this.lessonId, score, script });
+            const res = await this.api({}, "POST", { 
+                action: "uploadVoice", 
+                base64, 
+                fileName, 
+                lessonId: this.lessonId, 
+                score, 
+                script: script,
+                browserScript: browserScript 
+            });
+
             if (res.status === 'success') {
-                await this.dbOp('readwrite', 'voices', 'put', { id: res.id, blob, name: fileName, date: Date.now(), formattedDate: new Date().toLocaleString(), lessonId: this.lessonId, score, script });
+                await this.dbOp('readwrite', 'voices', 'put', { 
+                    id: res.id, blob, name: fileName, 
+                    date: Date.now(), 
+                    formattedDate: new Date().toLocaleString(), 
+                    lessonId: this.lessonId, 
+                    score, 
+                    script, 
+                    browserScript 
+                });
                 this.showToast("✅ Đã lưu!");
             }
         };
@@ -178,7 +195,11 @@ export const ShadowGame = {
             item.innerHTML = `
                 <div style="font-size:12px; display:flex; justify-content:space-between"><span>🕒 ${f.formattedDate || new Date(f.date).toLocaleString()}</span><b>${f.score || '0/1000'}</b></div>
                 <audio controls src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
-                <div style="text-align:right"><span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span></div>`;
+                <div style="text-align:right; margin-top:5px; display:flex; justify-content:space-between; align-items:center;">
+                    <button class="ai-btn" style="font-size:10px; padding:2px 8px; border-radius:4px; border:1px solid #10b981; color:#10b981; background:#fff; cursor:pointer">🤖 AI Chấm</button>
+                    <span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span>
+                </div>`;
+            
             if (!audioSrc && f.id) {
                 this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
                     if (res.data) {
@@ -188,7 +209,34 @@ export const ShadowGame = {
                     }
                 });
             }
+
             item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.id, item);
+            item.querySelector('.ai-btn').onclick = async (e) => {
+                const btn = e.target;
+                btn.disabled = true;
+                btn.innerText = "Đang chấm...";
+                
+                const res = await this.api({}, "POST", { 
+                    action: "assessVoice", 
+                    fileId: f.id, 
+                    script: f.script 
+                });
+
+                if (res.status === 'success') {
+                    this.getEl('finalScoreDisplay').innerText = `${res.data.score}/1000`;
+                    this.getEl('scoreReasoning').innerHTML = `
+                        <p style="color:#1e293b; margin-bottom:10px"><b>AI Transcript:</b><br>${res.data.transcript}</p>
+                        <p style="color:#1e293b"><b>Nhận xét:</b><br>${res.data.feedback}</p>
+                    `;
+                    this.getEl('scoreResultPanel').style.display = 'block';
+                    btn.innerText = "Đã chấm";
+                } else {
+                    alert("Lỗi AI: " + res.message);
+                    btn.disabled = false;
+                    btn.innerText = "🤖 AI Chấm";
+                }
+            };
+
             itemsWrap.appendChild(item);
         });
     },

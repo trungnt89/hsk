@@ -81,11 +81,14 @@ export const ShadowGame = {
                 </div>
                 <div id="gameScore" style="font-weight:bold; color:#4ade80;">0/1000</div>
             </div>
-            <div id="voiceListPanel" style="display:none; position:fixed; top:10px; left:10px; right:10px; background:white; border:1px solid #cbd5e1; border-radius:12px; padding:10px; max-height:80vh; overflow-y:auto; box-shadow:0 5px 25px rgba(0,0,0,0.2); z-index:10001;">
-                <div style="display:flex; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px; gap:15px;">
+            <div id="voiceListPanel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:450px; background:white; border:1px solid #cbd5e1; border-radius:16px; padding:10px; max-height:85vh; overflow-y:auto; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10001;">
+                <div style="display:flex; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:12px; gap:15px;">
                     <span id="closeList" style="cursor:pointer; font-size:20px;" title="Đóng">✕</span>
                     <span id="refreshList" style="cursor:pointer; font-size:18px;" title="Lấy mới từ server">🔄</span>
-                    <b style="font-size:14px; flex-grow:1; text-align:center;">🎙️ Danh sách ghi âm</b>
+                    <div style="flex-grow:1; text-align:center; line-height:1.2;">
+                        <b style="font-size:15px; display:block;">🎙️ Danh sách ghi âm</b>
+                        <span id="voiceCountLabel" style="font-size:11px; color:#64748b;">Tổng số: 0</span>
+                    </div>
                 </div>
                 <div id="voiceItems" style="font-size:12px; color:#333;"></div>
             </div>
@@ -116,21 +119,21 @@ export const ShadowGame = {
         
         console.log("Log: Deleting record -> ID:", fileId);
         try {
-            // 1. Xóa trên Server (Google Drive) thông qua POST action deleteVoice
             const res = await fetch(RECORD_GAS_URL, {
                 method: "POST",
                 body: JSON.stringify({ action: "deleteVoice", fileId: fileId })
             });
             const result = await res.json();
 
-            // Cho phép xóa cục bộ nếu server báo thành công hoặc không tìm thấy file trên server
             if (result.status === 'success' || result.message?.includes('not found')) {
-                // 2. Xóa trong IndexedDB
                 const tx = this.db.transaction("voices", "readwrite");
                 tx.objectStore("voices").delete(fileId);
                 
                 element.remove();
                 this.showToast("🗑️ Đã xóa bản ghi!");
+                // Cập nhật lại số lượng sau khi xóa
+                const currentCount = document.querySelectorAll('#voiceItems > div').length;
+                this.getEl('voiceCountLabel').innerText = `Tổng số: ${currentCount}`;
             } else {
                 throw new Error(result.message);
             }
@@ -289,6 +292,7 @@ export const ShadowGame = {
             }
 
             if (voiceFiles.length > 0) {
+                this.getEl('voiceCountLabel').innerText = `Tổng số: ${voiceFiles.length}`;
                 this.getEl('voiceItems').innerHTML = "";
                 for (const f of voiceFiles) {
                     let local = await this.getVoiceLocal(f.id);
@@ -336,6 +340,7 @@ export const ShadowGame = {
                     this.getEl('voiceItems').appendChild(item);
                 }
             } else {
+                this.getEl('voiceCountLabel').innerText = `Tổng số: 0`;
                 this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm cho bài này.</p>';
             }
         } catch (e) {

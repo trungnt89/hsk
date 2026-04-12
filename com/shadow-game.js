@@ -79,15 +79,13 @@ export const ShadowGame = {
                     <div id="gameHistory" style="font-size: 10px; color:#94a3b8; white-space: nowrap; overflow-x: auto;"></div>
                     <div id="gameCurrent" style="font-size: 13px; font-weight: 600; color:#4ade80; white-space: nowrap; overflow-x: auto;"></div>
                 </div>
-                <div id="gameScore" style="font-weight:bold; color:#4ade80;">0%</div>
+                <div id="gameScore" style="font-weight:bold; color:#4ade80;">0/1000</div>
             </div>
-            <div id="voiceListPanel" style="display:none; position:fixed; bottom:70px; left:10px; right:10px; background:white; border:1px solid #cbd5e1; border-radius:12px; padding:10px; max-height:50vh; overflow-y:auto; box-shadow:0 -5px 25px rgba(0,0,0,0.2); z-index:10001;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px;">
-                    <b style="font-size:14px;">🎙️ Danh sách ghi âm</b>
-                    <div style="display:flex; gap:15px; align-items:center;">
-                        <span id="refreshList" style="cursor:pointer; font-size:18px;" title="Lấy mới từ server">🔄</span>
-                        <span id="closeList" style="cursor:pointer; font-size:20px; padding:0 5px;">✕</span>
-                    </div>
+            <div id="voiceListPanel" style="display:none; position:fixed; top:10px; left:10px; right:10px; background:white; border:1px solid #cbd5e1; border-radius:12px; padding:10px; max-height:70vh; overflow-y:auto; box-shadow:0 5px 25px rgba(0,0,0,0.2); z-index:10001;">
+                <div style="display:flex; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px; gap:10px;">
+                    <span id="closeList" style="cursor:pointer; font-size:20px; padding:0 5px;">✕</span>
+                    <b style="font-size:14px; flex-grow:1;">🎙️ Danh sách ghi âm</b>
+                    <span id="refreshList" style="cursor:pointer; font-size:18px;" title="Lấy mới từ server">🔄</span>
                 </div>
                 <div id="voiceItems" style="font-size:12px; color:#333;"></div>
             </div>
@@ -169,7 +167,7 @@ export const ShadowGame = {
         if (this.mediaRecorder) this.mediaRecorder.stop();
     },
 
-    async uploadToDrive(blob, score = "0%") {
+    async uploadToDrive(blob, score = "0/1000") {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.readAsDataURL(blob);
@@ -178,8 +176,8 @@ export const ShadowGame = {
                 const urlParams = new URLSearchParams(window.location.search);
                 const lessonId = urlParams.get('id') || "unknown";
                 
-                // Yêu cầu 1: Nhúng score vào tên file
-                const fileName = `Shadow_${lessonId}_${score}_${Date.now()}.webm`;
+                // Yêu cầu: Đổi định dạng tên file: Shadow_{lessonId}_{Date.now()}_{score}.webm
+                const fileName = `Shadow_${lessonId}_${Date.now()}_${score.replace('/', '-')}.webm`;
                 console.log("Log: Uploading file with name:", fileName);
 
                 try {
@@ -250,7 +248,7 @@ export const ShadowGame = {
                                 const byteNumbers = new Array(byteCharacters.length);
                                 for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
                                 const blob = new Blob([new Uint8Array(byteNumbers)], { type: "audio/webm" });
-                                await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate, lessonId: lessonId, score: f.score || '0%' });
+                                await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate, lessonId: lessonId, score: f.score || '0/1000' });
                                 local = { blob, formattedDate: f.formattedDate, name: f.name, score: f.score };
                             }
                         } catch (err) { console.error("Blob download failed", f.id); }
@@ -260,9 +258,9 @@ export const ShadowGame = {
                     const rawName = f.name || local?.name || 'Unknown File';
                     const displayName = rawName.replace('.webm', '');
                     
-                    // Yêu cầu 2: Bóc tách điểm số từ tên file để xử lý đồng bộ đa thiết bị
-                    const scoreMatch = rawName.match(/(\d+%)/);
-                    const extractedScore = scoreMatch ? scoreMatch[1] : (f.score || local?.score || '0%');
+                    // Bóc tách điểm số từ tên file hỗ trợ cả định dạng % cũ và thang 1000 mới
+                    const scoreMatch = rawName.match(/(\d+(\/\d+)?%?)/);
+                    const extractedScore = scoreMatch ? scoreMatch[0].replace('-', '/') : (f.score || local?.score || '0/1000');
 
                     const item = document.createElement('div');
                     item.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:8px; border-bottom:1px solid #f0f0f0;";
@@ -327,6 +325,16 @@ export const ShadowGame = {
     updateUI() {
         this.getEl('gameHistory').innerText = this.history.join(" ");
         this.getEl('gameCurrent').innerText = this.currentInterim;
+        
+        // Tính điểm trên thang 1000 dựa trên số từ đã nhận diện / tổng số từ trong bài
+        const area = document.querySelector('.content-area.active');
+        if (area) {
+            const targetWords = area.innerText.split(/\s+/).filter(w => w.length > 0);
+            const matchCount = this.history.length;
+            const rawScore = targetWords.length > 0 ? Math.round((matchCount / targetWords.length) * 1000) : 0;
+            const finalScore = Math.min(rawScore, 1000);
+            this.getEl('gameScore').innerText = `${finalScore}/1000`;
+        }
     },
 
     resetUI() {
@@ -334,7 +342,7 @@ export const ShadowGame = {
         this.history = [];
         if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = "";
         if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = "";
-        if(this.getEl('gameScore')) this.getEl('gameScore').innerText = "0%";
+        if(this.getEl('gameScore')) this.getEl('gameScore').innerText = "0/1000";
     }
 };
 

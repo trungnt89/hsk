@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Full Optimized & Fixed Audio Source (iPhone Support)
+ * ShadowGame Module - Full Optimized & Fixed Audio Source
  */
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
@@ -145,8 +145,7 @@ export const ShadowGame = {
         this.mediaRecorder = new MediaRecorder(stream);
         this.mediaRecorder.ondataavailable = e => this.audioChunks.push(e.data);
         this.mediaRecorder.onstop = async () => {
-            // Sửa mimeType thành audio/mp4 để iPhone có thể đọc được codec âm thanh
-            const blob = new Blob(this.audioChunks, { type: 'audio/mp4' });
+            const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
             await this.uploadToDrive(blob, this.getEl('gameScore').innerText);
             this.updateBadgeCounts();
             stream.getTracks().forEach(t => t.stop());
@@ -171,7 +170,7 @@ export const ShadowGame = {
             }
             const script = area ? area.innerText.trim() : "";
             
-            const fileName = `Shadow_${this.lessonId}_${Date.now()}_${score.replace('/', '-')}.mp4`;
+            const fileName = `Shadow_${this.lessonId}_${Date.now()}_${score.replace('/', '-')}.webm`;
             const res = await this.api({}, "POST", { 
                 action: "uploadVoice", 
                 base64, 
@@ -204,6 +203,7 @@ export const ShadowGame = {
         const itemsWrap = this.getEl('voiceItems'); 
         itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">🔄 Đang tải danh sách cho bài ${this.lessonId}...</div>`;
 
+        // Nếu là sync (reload), xóa hết data cũ của bài này trong IndexedDB trước khi tải mới
         if (sync) {
             const allItems = await this.dbOp('readonly', 'voices', 'getAll');
             const toDelete = allItems.filter(v => String(v.lessonId) === String(this.lessonId));
@@ -213,12 +213,15 @@ export const ShadowGame = {
             }
         }
 
+        // Ưu tiên lấy từ IndexedDB theo lessonId
         let files = await this.dbOp('readonly', 'voices', 'getAll');
         files = files.filter(v => String(v.lessonId) === String(this.lessonId));
 
+        // Nếu là sync hoặc DB trống cho bài này, gọi API lấy mới
         if (sync || files.length === 0) {
             const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
             files = res.data || [];
+            // Đồng bộ dữ liệu mới tải về vào IndexedDB (không ghi đè blob nếu đã tồn tại)
             for (const f of files) {
                 const existing = await this.dbOp('readonly', 'voices', 'get', f.id);
                 if (!existing) await this.dbOp('readwrite', 'voices', 'put', { ...f, lessonId: this.lessonId });
@@ -235,13 +238,14 @@ export const ShadowGame = {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
             
+            // Lấy thông tin từ DB để đảm bảo có Blob (nếu đã tải)
             const cached = await this.dbOp('readonly', 'voices', 'get', f.id);
             let audioSrc = cached && cached.blob ? URL.createObjectURL(cached.blob) : "";
             
             item.innerHTML = `
                 <div style="font-size:11px; color:#64748b; margin-bottom:4px; word-break:break-all;">📄 ${f.name || 'Ghi âm mới'}</div>
                 <div style="font-size:12px; display:flex; justify-content:space-between"><span>🕒 ${f.formattedDate || new Date(f.date).toLocaleString()}</span><b>${f.score || '0/1000'}</b></div>
-                <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
+                <audio controls src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
                 <div style="text-align:right; margin-top:5px; display:flex; justify-content:space-between; align-items:center;">
                     <button class="ai-btn" style="font-size:10px; padding:2px 8px; border-radius:4px; border:1px solid #10b981; color:#10b981; background:#fff; cursor:pointer">🤖 AI Chấm</button>
                     <span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span>
@@ -250,8 +254,7 @@ export const ShadowGame = {
             if (!audioSrc && f.id) {
                 this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
                     if (res.data) {
-                        // Đồng bộ mimeType mp4 cho iPhone
-                        const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });
+                        const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/webm" });
                         const newSrc = URL.createObjectURL(b);
                         const aud = item.querySelector('audio');
                         if (aud) aud.src = newSrc;
@@ -263,7 +266,8 @@ export const ShadowGame = {
             item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.id, item);
             item.querySelector('.ai-btn').onclick = async (e) => {
                 const btn = e.target;
-                btn.disabled = true; btn.innerText = "Đang chấm...";
+                btn.disabled = true;
+                btn.innerText = "Đang chấm...";
                 
                 const res = await this.api({}, "POST", { 
                     action: "assessVoice", 
@@ -281,7 +285,8 @@ export const ShadowGame = {
                     btn.innerText = "Đã chấm";
                 } else {
                     alert("Lỗi AI: " + res.message);
-                    btn.disabled = false; btn.innerText = "🤖 AI Chấm";
+                    btn.disabled = false;
+                    btn.innerText = "🤖 AI Chấm";
                 }
             };
 

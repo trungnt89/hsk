@@ -91,15 +91,17 @@ export const ShadowGame = {
     async updateBadgeCounts() {
         console.log("[ShadowGame] Updating badge counts...");
         try {
-            const res = await this.api({ type: 'listVoice' });
+            // Sử dụng action countVoiceByLesson để tối ưu hiệu năng
+            const res = await this.api({ type: 'countVoiceByLesson' });
             if (res.status === "success") {
+                // Reset tất cả các badge về 0 trước khi cập nhật
                 document.querySelectorAll("div.diary-date > span").forEach(el => el.innerText = "0");
-                res.data.forEach(file => {
-                    const match = file.name.match(/Shadow_([^_]+)_/);
-                    const lid = match ? match[1] : null;
-                    const span = document.querySelector(`#item-${lid} div.diary-date span`);
-                    if (span) span.innerText = (parseInt(span.innerText) || 0) + 1;
-                });
+                
+                // res.data là object kiểu { "lessonId": count }
+                for (const [lessonId, count] of Object.entries(res.data)) {
+                    const span = document.querySelector(`#item-${lessonId} div.diary-date span`);
+                    if (span) span.innerText = count;
+                }
             }
         } catch (e) { console.error("Badge update fail", e); }
     },
@@ -200,10 +202,10 @@ export const ShadowGame = {
         // Ưu tiên lọc từ IndexedDB theo lessonId hiện tại
         let files = sync ? [] : (await this.dbOp('readonly', 'voices', 'getAll')).filter(v => String(v.lessonId) === String(this.lessonId) || v.name?.includes(`Shadow_${this.lessonId}_`));
         
-        // Nếu yêu cầu sync hoặc không có data local, gọi API
+        // Nếu yêu cầu sync hoặc không có data local, gọi API listVoice chi tiết cho bài hiện tại
         if (sync || files.length === 0) {
-            const res = await this.api({ type: 'listVoice' });
-            files = (res.data || []).filter(v => v.name?.includes(`Shadow_${this.lessonId}_`));
+            const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
+            files = res.data || [];
         }
 
         itemsWrap.innerHTML = "";

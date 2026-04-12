@@ -276,17 +276,33 @@ export const ShadowGame = {
                 const urlParams = new URLSearchParams(window.location.search);
                 const lessonId = urlParams.get('id') || "unknown";
                 
+                // Lấy toàn bộ text từ lịch sử nhận diện giọng nói
+                const script = this.history.join(" ");
+                
                 const fileName = `Shadow_${lessonId}_${Date.now()}_${score.replace('/', '-')}.webm`;
-                console.log("Log: Uploading file with name:", fileName);
+                console.log("Log: Uploading voice with Script & Score:", { fileName, score, scriptLength: script.length });
 
                 try {
                     const res = await fetch(RECORD_GAS_URL, {
                         method: "POST",
-                        body: JSON.stringify({ action: "uploadVoice", base64, fileName, score })
+                        body: JSON.stringify({ 
+                            action: "uploadVoice", 
+                            base64, 
+                            fileName, 
+                            score, 
+                            script // Gửi kèm script đọc được
+                        })
                     });
                     const result = await res.json();
                     if (result.status === 'success') {
-                        await this.saveVoiceLocal(result.id, blob, { name: fileName, date: Date.now(), formattedDate: new Date().toLocaleString(), lessonId: lessonId, score: score });
+                        await this.saveVoiceLocal(result.id, blob, { 
+                            name: fileName, 
+                            date: Date.now(), 
+                            formattedDate: new Date().toLocaleString(), 
+                            lessonId: lessonId, 
+                            score: score,
+                            script: script 
+                        });
                         this.showToast("✅ Đã lưu ghi âm!");
                     }
                 } catch (err) { 

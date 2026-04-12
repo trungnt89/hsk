@@ -124,7 +124,7 @@ export const ShadowGame = {
             }
         }, 2000);
 
-        setTimeout(() => this.updateBadgeCounts(), 3000);
+        setTimeout(() => this.updateBadgeCounts(), 5000);
 
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SR) {

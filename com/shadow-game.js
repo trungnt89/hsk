@@ -91,13 +91,9 @@ export const ShadowGame = {
     async updateBadgeCounts() {
         console.log("[ShadowGame] Updating badge counts...");
         try {
-            // Sử dụng action countVoiceByLesson để tối ưu hiệu năng
             const res = await this.api({ type: 'countVoiceByLesson' });
             if (res.status === "success") {
-                // Reset tất cả các badge về 0 trước khi cập nhật
                 document.querySelectorAll("div.diary-date > span").forEach(el => el.innerText = "0");
-                
-                // res.data là object kiểu { "lessonId": count }
                 for (const [lessonId, count] of Object.entries(res.data)) {
                     const span = document.querySelector(`#item-${lessonId} div.diary-date span`);
                     if (span) span.innerText = count;
@@ -111,8 +107,16 @@ export const ShadowGame = {
         this.buildUI(); 
         this.injectRequiredClasses();
 
-        // Load list counts sau 5s để đợi AJAX chính load xong
-        setTimeout(() => this.updateBadgeCounts(), 5000);
+        // Tự động cập nhật badge khi phát hiện URL thay đổi lessonId
+        this._lastLessonId = this.lessonId;
+        setInterval(() => {
+            if (this.lessonId !== this._lastLessonId) {
+                this._lastLessonId = this.lessonId;
+                this.updateBadgeCounts();
+            }
+        }, 2000);
+
+        setTimeout(() => this.updateBadgeCounts(), 3000);
 
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SR) {
@@ -178,6 +182,7 @@ export const ShadowGame = {
             });
 
             if (res.status === 'success') {
+                // Chỉ lưu blob âm thanh vào IndexedDB để cache âm thanh, không cache list meta
                 await this.dbOp('readwrite', 'voices', 'put', { 
                     id: res.id, blob, name: fileName, 
                     date: Date.now(), 
@@ -199,14 +204,9 @@ export const ShadowGame = {
         const itemsWrap = this.getEl('voiceItems'); 
         itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">🔄 Đang tải danh sách cho bài ${this.lessonId}...</div>`;
 
-        // Ưu tiên lọc từ IndexedDB theo lessonId hiện tại
-        let files = sync ? [] : (await this.dbOp('readonly', 'voices', 'getAll')).filter(v => String(v.lessonId) === String(this.lessonId) || v.name?.includes(`Shadow_${this.lessonId}_`));
-        
-        // Nếu yêu cầu sync hoặc không có data local, gọi API listVoice chi tiết cho bài hiện tại
-        if (sync || files.length === 0) {
-            const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
-            files = res.data || [];
-        }
+        // Bỏ caching list meta: Luôn gọi API để lấy danh sách mới nhất theo bài hiện tại
+        const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
+        let files = res.data || [];
 
         itemsWrap.innerHTML = "";
         if (files.length === 0) {
@@ -217,7 +217,11 @@ export const ShadowGame = {
         files.sort((a,b) => (b.date || 0) - (a.date || 0)).forEach(async f => {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
-            let audioSrc = f.blob ? URL.createObjectURL(f.blob) : "";
+            
+            // Kiểm tra xem audio blob đã được cache trong IndexedDB chưa
+            const cached = await this.dbOp('readonly', 'voices', 'get', f.id);
+            let audioSrc = cached && cached.blob ? URL.createObjectURL(cached.blob) : "";
+            
             item.innerHTML = `
                 <div style="font-size:11px; color:#64748b; margin-bottom:4px; word-break:break-all;">📄 ${f.name || 'Ghi âm mới'}</div>
                 <div style="font-size:12px; display:flex; justify-content:space-between"><span>🕒 ${f.formattedDate || new Date(f.date).toLocaleString()}</span><b>${f.score || '0/1000'}</b></div>
@@ -227,6 +231,7 @@ export const ShadowGame = {
                     <span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span>
                 </div>`;
             
+            // Nếu chưa có cache âm thanh, tải từ server và lưu vào IndexedDB
             if (!audioSrc && f.id) {
                 this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
                     if (res.data) {

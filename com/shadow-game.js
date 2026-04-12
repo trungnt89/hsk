@@ -120,7 +120,7 @@ export const ShadowGame = {
         wrapper.style.cssText = `
             display: flex; align-items: center; gap: 10px; padding: 8px 12px; 
             min-height: 60px; width: 100%; position: fixed; bottom: 0; left: 0;
-            background: #ffffff; z-index: 9999; border-top: 2px solid #cbd5e1;
+            background: #ffffff; z-index: 999; border-top: 2px solid #cbd5e1;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1); box-sizing: border-box;
         `;
         
@@ -128,9 +128,9 @@ export const ShadowGame = {
             <button id="btnMic" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0;">🎤</button>
             <button id="btnList" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0;">📜</button>
             <div id="gamePanel" style="display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden;">
-                <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;">
-                    <div id="gameHistory" style="font-size: 10px; color:#94a3b8; white-space: nowrap; overflow-x: auto;"></div>
-                    <div id="gameCurrent" style="font-size: 13px; font-weight: 600; color:#4ade80; white-space: nowrap; overflow-x: auto;"></div>
+                <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; max-width: calc(100vw - 180px);">
+                    <div id="gameHistory" style="font-size: 10px; color:#94a3b8; white-space: nowrap; overflow-x: auto; scrollbar-width: none;"></div>
+                    <div id="gameCurrent" style="font-size: 13px; font-weight: 600; color:#4ade80; white-space: nowrap; overflow-x: auto; scrollbar-width: none;"></div>
                 </div>
                 <div id="gameScore" style="font-weight:bold; color:#4ade80;">0/1000</div>
             </div>
@@ -289,6 +289,7 @@ export const ShadowGame = {
                             action: "uploadVoice", 
                             base64, 
                             fileName, 
+                            lessonId, // Truyền ID của bài đọc để lưu lại thông tin đồng bộ
                             score, 
                             script // Gửi kèm script đọc được
                         })

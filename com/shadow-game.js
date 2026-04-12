@@ -210,19 +210,26 @@ export const ShadowGame = {
         }
 
         try {
-            // Luôn lấy danh sách từ server trước để biết ID nào đang tồn tại
-            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
-            const data = await res.json();
-            let voiceFiles = data.data || [];
+            let voiceFiles = [];
+            
+            // NGHIÊM NGẶT: Kiểm tra IndexedDB trước
+            const tx = this.db.transaction("voices", "readonly");
+            const store = tx.objectStore("voices");
+            const localFiles = await new Promise(res => {
+                const req = store.getAll();
+                req.onsuccess = () => res(req.result.filter(v => (v.lessonId == lessonId) || (v.name && v.name.includes(`_${lessonId}_`))).sort((a,b) => (b.date || 0) - (a.date || 0)));
+            });
 
-            // Nếu server trống và không phải yêu cầu đồng bộ, thử lấy từ local cũ
-            if (voiceFiles.length === 0 && !syncFromServer) {
-                const tx = this.db.transaction("voices", "readonly");
-                const store = tx.objectStore("voices");
-                voiceFiles = await new Promise(res => {
-                    const req = store.getAll();
-                    req.onsuccess = () => res(req.result.filter(v => (v.lessonId == lessonId) || (v.name && v.name.includes(`_${lessonId}_`))).sort((a,b) => (b.date || 0) - (a.date || 0)));
-                });
+            // Nếu không phải yêu cầu đồng bộ và local có data -> Dùng local
+            if (!syncFromServer && localFiles.length > 0) {
+                voiceFiles = localFiles;
+                console.log("Strict: Using local data.");
+            } else {
+                // Chỉ gọi server khi DB trống hoặc được yêu cầu Refresh
+                console.log("Strict: Fetching from server.");
+                const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
+                const data = await res.json();
+                voiceFiles = data.data || [];
             }
 
             if (voiceFiles.length > 0) {
@@ -230,7 +237,7 @@ export const ShadowGame = {
                 for (const f of voiceFiles) {
                     let local = await this.getVoiceLocal(f.id);
                     
-                    // TỰ ĐỘNG GỌI SERVER: Nếu local chưa có file này, tải về ngay
+                    // Chỉ tải blob nếu ID này chưa tồn tại trong IndexedDB
                     if (!local && f.id) {
                         try {
                             const bRes = await fetch(`${RECORD_GAS_URL}?type=getFileBlob&fileId=${f.id}`);
@@ -243,7 +250,7 @@ export const ShadowGame = {
                                 await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate, lessonId: lessonId });
                                 local = { blob, formattedDate: f.formattedDate, name: f.name };
                             }
-                        } catch (err) { console.error("Auto-fetch failed for", f.id); }
+                        } catch (err) { console.error("Blob download failed", f.id); }
                     }
 
                     const url = local ? URL.createObjectURL(local.blob) : "";
@@ -253,7 +260,7 @@ export const ShadowGame = {
                     item.innerHTML = `
                         <div style="font-size:9px; color:#94a3b8; margin-bottom:2px;">ID: ${f.id}</div>
                         <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
-                            <b style="color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${displayName}</b>
+                            <b style="color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px;">${displayName}</b>
                             <span>${f.formattedDate || local?.formattedDate || ''}</span>
                         </div>
                         <audio controls style="height:32px; width:100%; outline:none;"><source src="${url}" type="audio/webm"></audio>

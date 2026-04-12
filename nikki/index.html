@@ -148,7 +148,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("[System] App Initialized");
             initApp();
             loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => {
@@ -182,14 +181,12 @@
         }
 
         async function callGAS(paramsObj) {
-            console.log("[GAS Action]:", paramsObj.action);
             const params = new URLSearchParams();
             for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
             try {
                 const response = await fetch(`${GAS_URL}?${params.toString()}`);
                 return await response.json();
             } catch (e) {
-                console.error("[Sync Error]:", e);
                 return { status: 'error', message: "Lỗi kết nối" };
             }
         }
@@ -198,7 +195,6 @@
             const container = document.getElementById('diaryContainer');
             container.innerHTML = '';
             const total = diaries.length;
-            console.log(`[Render] Rendering ${total} records`);
             const pinned = diaries.filter(d => d.pinned), normal = diaries.filter(d => !d.pinned);
             if (pinned.length) {
                 const sec = document.createElement('div'); sec.id = 'pinnedSection';
@@ -223,8 +219,8 @@
                 <div class="item-actions">
                     <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
                     <div class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
-                    <div class="item-action-btn" style="color:var(--primary-color);" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Đoạn</div>
-                    <div class="item-action-btn" style="color:#e67e22;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Hội thoại</div>
+                    <button class="item-action-btn" style="color:var(--primary-color);" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)" ${!item.paragraph ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>📖 Đoạn</button>
+                    <button class="item-action-btn" style="color:#e67e22;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)" ${!item.conversation ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>💬 Hội thoại</button>
                     <div class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
                     <div class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
                 </div>
@@ -297,7 +293,6 @@
         }
 
         function switchTab(index) {
-            console.log("[Tab] Switched to:", index);
             currentTabIndex = index;
             localStorage.setItem("diary_current_tab", index);
             document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
@@ -320,25 +315,15 @@
         }
 
         function updateAIView() {
-            console.log("[UI] Updating AI View & Button States");
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
             if (!item) return;
-
-            const pContent = item.paragraph;
-            const cContent = item.conversation;
-
+            const pContent = item.paragraph, cContent = item.conversation;
             document.getElementById('paragraphContainer').innerHTML = pContent ? `<div id="p-content" class="ai-content-box">${pContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
             document.getElementById('conversationContainer').innerHTML = cContent ? `<div id="c-content" class="ai-content-box">${cContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
-
-            // Vô hiệu hóa nút Đọc dựa trên tab hiện tại và nội dung tương ứng
             const btnSpeak = document.getElementById('btnMainSpeak');
-            if (currentTabIndex === 1) {
-                btnSpeak.disabled = !pContent;
-            } else if (currentTabIndex === 2) {
-                btnSpeak.disabled = !cContent;
-            } else {
-                btnSpeak.disabled = true;
-            }
+            if (currentTabIndex === 1) btnSpeak.disabled = !pContent;
+            else if (currentTabIndex === 2) btnSpeak.disabled = !cContent;
+            else btnSpeak.disabled = true;
         }
 
         function loadTTSSettings() {
@@ -359,7 +344,6 @@
         async function speakText(elId, btnId) {
             const el = document.getElementById(elId), btn = document.getElementById(btnId);
             if(!el || !window.speakCommon) return;
-            console.log("[TTS] Speaking:", elId);
             btn.classList.add("playing"); btn.innerHTML = '⏹ Dừng';
             const statusKey = `Diary_AI_${selectedDiaryId}`;
             await window.speakCommon({ text: el.innerText, voice: document.getElementById("voiceSelect").value, rate: document.getElementById("rateSelect").value, filename: statusKey });

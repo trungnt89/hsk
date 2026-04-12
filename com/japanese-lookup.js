@@ -151,6 +151,7 @@ const JapaneseLookup = (() => {
                 
                 // CHẶN TRA CỨU ĐOẠN DÀI (> 6 từ hoặc > 50 ký tự)
                 const wordCount = selText.split(/\s+/).length;
+				console.log("wordCount="+wordCount);
                 if (wordCount > 6 || selText.length > 50) return;
 
                 if (/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(selText)) {

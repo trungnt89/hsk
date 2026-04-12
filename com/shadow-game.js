@@ -38,6 +38,31 @@ export const ShadowGame = {
 
     async updateBadgeCounts() {
         if (!this.db) return;
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const lessonId = urlParams.get('id');
+        if (!lessonId) return;
+
+        console.log(`Log: Fetching record count via AJAX for ID: ${lessonId}`);
+        
+        try {
+            // Gọi AJAX lấy list từ server
+            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
+            const data = await res.json();
+            const serverRecords = data.data || [];
+            const count = serverRecords.length;
+
+            // Trả về số lượng count vào html theo ID
+            const el = document.getElementById(`record_count_${lessonId}`);
+            if (el) {
+                el.innerText = count;
+                console.log(`Log: HTML updated for record_count_${lessonId}: ${count}`);
+            }
+        } catch (err) {
+            console.error("Log: AJAX Count Error:", err);
+        }
+
+        // Đồng bộ hóa với Local DB (Optional - for UI consistency)
         const tx = this.db.transaction("voices", "readonly");
         const store = tx.objectStore("voices");
         const allRecords = await new Promise(res => {
@@ -50,13 +75,8 @@ export const ShadowGame = {
             const lid = rec.lessonId;
             if (lid) counts[lid] = (counts[lid] || 0) + 1;
         });
-
-        // Tìm tất cả element có ID dạng record_count_XXX
-        Object.keys(counts).forEach(lid => {
-            const el = document.getElementById(`record_count_${lid}`);
-            if (el) el.innerText = counts[lid];
-        });
-        console.log("Log: Badge counts updated", counts);
+        
+        console.log("Log: Local badge sync complete", counts);
     },
 
     async getVoiceLocal(id) {
@@ -222,6 +242,7 @@ export const ShadowGame = {
                 console.log("Log: Recording stopped. Final Score:", score);
                 this.uploadToDrive(blob, score).then(() => {
                     if (this.getEl('voiceListPanel').style.display === 'block') this.toggleVoiceList(false);
+                    this.updateBadgeCounts();
                 });
                 stream.getTracks().forEach(t => t.stop());
             };

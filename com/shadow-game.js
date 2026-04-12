@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Full Auto-Injection & Audio Upload
+ * ShadowGame Module - Full Auto-Injection & IndexedDB Audio Storage
  */
 
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
@@ -11,8 +11,38 @@ export const ShadowGame = {
     recognition: null,
     mediaRecorder: null,
     audioChunks: [],
+    db: null,
 
     getEl(id) { return document.getElementById(id); },
+
+    async initDB() {
+        return new Promise((resolve) => {
+            const request = indexedDB.open("ShadowVoiceDB", 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains("voices")) {
+                    db.createObjectStore("voices", { keyPath: "id" });
+                }
+            };
+            request.onsuccess = (e) => { this.db = e.target.result; resolve(); };
+        });
+    },
+
+    async saveVoiceLocal(id, blob, metadata) {
+        if (!this.db) return;
+        const tx = this.db.transaction("voices", "readwrite");
+        tx.objectStore("voices").put({ id, blob, ...metadata });
+    },
+
+    async getVoiceLocal(id) {
+        if (!this.db) return null;
+        const tx = this.db.transaction("voices", "readonly");
+        return new Promise(res => {
+            const req = tx.objectStore("voices").get(id);
+            req.onsuccess = () => res(req.result);
+            req.onerror = () => res(null);
+        });
+    },
 
     injectRequiredClasses() {
         const containers = ['paragraphContainer', 'conversationContainer'];
@@ -50,7 +80,7 @@ export const ShadowGame = {
                 </div>
                 <div id="gameScore" style="font-weight:bold; color:#4ade80;">0%</div>
             </div>
-            <div id="voiceListPanel" style="display:none; position:absolute; bottom:70px; left:10px; right:10px; background:white; border:1px solid #ccc; border-radius:12px; padding:10px; max-height:300px; overflow-y:auto; box-shadow:0 -5px 15px rgba(0,0,0,0.1);">
+            <div id="voiceListPanel" style="display:none; position:absolute; bottom:70px; left:10px; right:10px; background:white; border:1px solid #ccc; border-radius:12px; padding:10px; max-height:400px; overflow-y:auto; box-shadow:0 -5px 15px rgba(0,0,0,0.2); z-index:10000;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
                     <b style="font-size:14px;">Danh sách ghi âm</b>
                     <span id="closeList" style="cursor:pointer; padding:0 5px;">✕</span>
@@ -66,7 +96,8 @@ export const ShadowGame = {
         this.getEl('closeList').onclick = () => { this.getEl('voiceListPanel').style.display = 'none'; };
     },
 
-    init() {
+    async init() {
+        await this.initDB();
         this.buildUI();
         this.injectRequiredClasses();
 
@@ -113,7 +144,9 @@ export const ShadowGame = {
             this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
             this.mediaRecorder.onstop = () => {
                 const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                this.uploadToDrive(blob);
+                this.uploadToDrive(blob).then(() => {
+                    if (this.getEl('voiceListPanel').style.display === 'block') this.toggleVoiceList(true);
+                });
                 stream.getTracks().forEach(t => t.stop());
             };
             this.mediaRecorder.start();
@@ -128,66 +161,82 @@ export const ShadowGame = {
     },
 
     async uploadToDrive(blob) {
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = async () => {
-            const base64 = reader.result.split(',')[1];
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const lessonId = urlParams.get('id') || "unknown";
-            const fileName = `Shadow_${lessonId}_${Date.now()}.webm`;
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = async () => {
+                const base64 = reader.result.split(',')[1];
+                const urlParams = new URLSearchParams(window.location.search);
+                const lessonId = urlParams.get('id') || "unknown";
+                const fileName = `Shadow_${lessonId}_${Date.now()}.webm`;
 
-            try {
-                const response = await fetch(RECORD_GAS_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ action: "uploadVoice", base64, fileName })
-                });
-                
-                if (response.ok) {
-                    this.showToast("✅ Đã lưu ghi âm thành công!");
+                try {
+                    const res = await fetch(RECORD_GAS_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ action: "uploadVoice", base64, fileName })
+                    });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        await this.saveVoiceLocal(result.id, blob, { name: fileName, date: Date.now() });
+                        this.showToast("✅ Đã lưu ghi âm!");
+                    }
+                } catch (err) { 
+                    this.showToast("❌ Lỗi Drive");
                 }
-                console.log("[ShadowGame] Log: File saved for ID", lessonId);
-            } catch (err) { 
-                this.showToast("❌ Lỗi khi lưu ghi âm");
-                console.error("Upload failed", err); 
-            }
-        };
+                resolve();
+            };
+        });
     },
 
-    async toggleVoiceList() {
+    async toggleVoiceList(forceRefresh = false) {
         const panel = this.getEl('voiceListPanel');
-        if (panel.style.display === 'block') {
+        if (!forceRefresh && panel.style.display === 'block') {
             panel.style.display = 'none';
             return;
         }
         panel.style.display = 'block';
-        this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Đang tải danh sách...</p>';
+        this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Đang đồng bộ dữ liệu...</p>';
 
         const urlParams = new URLSearchParams(window.location.search);
         const lessonId = urlParams.get('id');
-        if (!lessonId) {
-            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Không tìm thấy ID bài học.</p>';
-            return;
-        }
+        if (!lessonId) return;
 
         try {
-            // Sử dụng type=listVoice để khớp với code GAS bạn vừa sửa
             const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
             const data = await res.json();
-            
-            const voiceFiles = data.data || data.files || [];
+            const voiceFiles = data.data || [];
+
             if (data.status === 'success' && voiceFiles.length > 0) {
-                this.getEl('voiceItems').innerHTML = voiceFiles.map(f => `
-                    <div style="display:flex; align-items:center; gap:10px; padding:8px; border-bottom:1px solid #f0f0f0;">
-                        <span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.formattedDate || f.name.split('_').pop()}</span>
-                        <audio controls style="height:24px; width:150px; outline:none;"><source src="${f.url}" type="audio/webm"></audio>
-                    </div>
-                `).join('');
+                this.getEl('voiceItems').innerHTML = "";
+                for (const f of voiceFiles) {
+                    let local = await this.getVoiceLocal(f.id);
+                    if (!local) {
+                        const bRes = await fetch(`${RECORD_GAS_URL}?type=getFileBlob&fileId=${f.id}`);
+                        const bData = await bRes.json();
+                        if (bData.status === "success") {
+                            const byteCharacters = atob(bData.data);
+                            const byteNumbers = new Array(byteCharacters.length);
+                            for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+                            const blob = new Blob([new Uint8Array(byteNumbers)], { type: "audio/webm" });
+                            await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date });
+                            local = { blob };
+                        }
+                    }
+
+                    const url = local ? URL.createObjectURL(local.blob) : "";
+                    const item = document.createElement('div');
+                    item.style.cssText = "display:flex; align-items:center; gap:10px; padding:8px; border-bottom:1px solid #f0f0f0;";
+                    item.innerHTML = `
+                        <span style="flex-grow:1; font-size:11px; color:#666;">${f.formattedDate || 'Ghi âm'}</span>
+                        <audio controls style="height:28px; width:180px;"><source src="${url}" type="audio/webm"></audio>
+                    `;
+                    this.getEl('voiceItems').appendChild(item);
+                }
             } else {
-                this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm nào.</p>';
+                this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm.</p>';
             }
         } catch (e) {
-            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;color:red;">Lỗi tải dữ liệu.</p>';
+            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;color:red;">Lỗi kết nối.</p>';
         }
     },
 
@@ -196,15 +245,12 @@ export const ShadowGame = {
         toast.style.cssText = `
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
-            border-radius: 20px; font-size: 13px; z-index: 10000;
+            border-radius: 20px; font-size: 12px; z-index: 10001;
             transition: opacity 0.5s; pointer-events: none;
         `;
         toast.innerText = msg;
         document.body.appendChild(toast);
-        setTimeout(() => { 
-            toast.style.opacity = '0'; 
-            setTimeout(() => toast.remove(), 500); 
-        }, 2000);
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 2000);
     },
 
     handleVoiceInput(text, isFinal) {

@@ -436,4 +436,57 @@ export const ShadowGame = {
         nodes.forEach(n => {
             const s = document.createElement('span');
             s.innerHTML = n.textContent.replace(regex, '<span style="background:#fef08a;font-weight:bold;">$1</span>');
-            n.replace
+            n.replaceWith(s);
+        });
+    },
+
+    showFinalResult() {
+        const area = document.querySelector('.content-area.active');
+        if (!area) return;
+
+        console.log("Log: Processing Final Results...");
+        const originalText = area.innerText.trim();
+        const targetWords = originalText.split(/[\s,.;:!?、。]+/).filter(w => w.length > 0);
+        const fullSpokenText = this.history.join(" ");
+        const spokenTextLower = fullSpokenText.toLowerCase();
+        
+        let resultHtml = "";
+        let matchCount = 0;
+
+        targetWords.forEach(word => {
+            const cleanWord = word.toLowerCase();
+            const isMatch = spokenTextLower.includes(cleanWord);
+            if (isMatch) matchCount++;
+            
+            resultHtml += `<span style="color: ${isMatch ? '#10b981' : '#ef4444'}; font-weight: ${isMatch ? 'bold' : 'normal'}">${word} </span>`;
+        });
+
+        const score = targetWords.length > 0 ? Math.min(1000, Math.round((matchCount / targetWords.length) * 1000)) : 0;
+        
+        if (this.getEl('spokenResultText')) {
+            this.getEl('spokenResultText').innerText = fullSpokenText || "(Không ghi nhận được âm thanh)";
+        }
+
+        this.getEl('finalScoreDisplay').innerText = `${score}/1000`;
+        this.getEl('scoreReasoning').innerHTML = resultHtml;
+        this.getEl('scoreResultPanel').style.display = 'block';
+        
+        this.getEl('gameScore').innerText = `${score}/1000`;
+        console.log(`Log: Mapping complete. Score: ${score}. Matches: ${matchCount}/${targetWords.length}`);
+    },
+
+    updateUI() {
+        if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = this.history.join(" ");
+        if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = this.currentInterim;
+    },
+
+    resetUI() {
+        console.log("Log: UI Reset");
+        this.history = [];
+        if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = "";
+        if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = "";
+        if(this.getEl('gameScore')) this.getEl('gameScore').innerText = "0/1000";
+    }
+};
+
+setTimeout(() => ShadowGame.init(), 1000);

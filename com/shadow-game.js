@@ -1,213 +1,109 @@
 /**
- * ShadowGame Module - Full Auto-Injection & IndexedDB Audio Storage
+ * ShadowGame Module - Optimized Version
  */
-
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
 export const ShadowGame = {
-    isListening: false,
-    history: [],
-    currentInterim: "",
-    recognition: null,
-    mediaRecorder: null,
-    audioChunks: [],
-    db: null,
+    isListening: false, history: [], currentInterim: "", recognition: null,
+    mediaRecorder: null, audioChunks: [], db: null,
+    lessonId: new URLSearchParams(window.location.search).get('id') || "unknown",
 
-    getEl(id) { return document.getElementById(id); },
+    getEl: (id) => document.getElementById(id),
+
+    async api(params = {}, method = 'GET', body = null) {
+        const url = new URL(RECORD_GAS_URL);
+        if (method === 'GET') Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
+        const res = await fetch(url, { method, body: body ? JSON.stringify(body) : null });
+        return res.json();
+    },
 
     async initDB() {
-        return new Promise((resolve) => {
-            const request = indexedDB.open("ShadowVoiceDB", 1);
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains("voices")) {
-                    db.createObjectStore("voices", { keyPath: "id" });
-                }
-            };
-            request.onsuccess = (e) => { this.db = e.target.result; resolve(); };
-        });
-    },
-
-    async saveVoiceLocal(id, blob, metadata) {
-        if (!this.db) return;
-        console.log("Log: Saving to IndexedDB -> ID:", id, "Meta:", metadata);
-        const tx = this.db.transaction("voices", "readwrite");
-        const request = tx.objectStore("voices").put({ id, blob, ...metadata });
-        request.onsuccess = () => this.updateBadgeCounts();
-    },
-
-    async updateBadgeCounts() {
-        if (!this.db) return;
-
-        console.log(`Log: Calling getListVoice via AJAX to fetch all records for global count update`);
-
-        try {
-            const res = await fetch(`${RECORD_GAS_URL}?type=listVoice`);
-            const result = await res.json();
-            
-            if (result.status === "success" && result.data) {
-                // Reset toàn bộ span count về 0
-                const countSpans = document.querySelectorAll("div.diary-date > span");
-                countSpans.forEach(el => el.innerText = "0");
-
-                const serverCounts = {};
-                result.data.forEach(file => {
-                    // Tên file có dạng: Shadow_lessonId_timestamp...
-                    const match = file.name.match(/Shadow_([^_]+)_/);
-                    if (match && match[1]) {
-                        const lid = match[1];
-                        serverCounts[lid] = (serverCounts[lid] || 0) + 1;
-                    }
-                });
-                
-                // Đổ dữ liệu count vào các thẻ HTML tương ứng với cấu trúc document.querySelector("#item-ID > div.diary-date > span")
-                Object.keys(serverCounts).forEach(lid => {
-                    const el = document.querySelector(`#item-${lid} div.diary-date span`);
-                    if (el) {
-                        el.innerText = serverCounts[lid];
-                    }
-                });
-                console.log("Log: Global Server-side counts updated:", serverCounts);
-            }
-        } catch (err) {
-            console.error("Log: AJAX updateBadgeCounts error:", err);
-        }
-
-        const tx = this.db.transaction("voices", "readonly");
-        const store = tx.objectStore("voices");
-        const allRecords = await new Promise(res => {
-            const req = store.getAll();
-            req.onsuccess = () => res(req.result);
-        });
-
-        const localCounts = {};
-        allRecords.forEach(rec => {
-            const lid = rec.lessonId;
-            if (lid) localCounts[lid] = (localCounts[lid] || 0) + 1;
-        });
-        console.log("Log: Local DB status:", localCounts);
-    },
-
-    async getVoiceLocal(id) {
-        if (!this.db) return null;
-        const tx = this.db.transaction("voices", "readonly");
         return new Promise(res => {
-            const req = tx.objectStore("voices").get(id);
-            req.onsuccess = () => res(req.result);
-            req.onerror = () => res(null);
+            const req = indexedDB.open("ShadowVoiceDB", 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore("voices", { keyPath: "id" });
+            req.onsuccess = e => { this.db = e.target.result; res(); };
         });
     },
 
-    injectRequiredClasses() {
-        const containers = ['paragraphContainer', 'conversationContainer'];
-        containers.forEach(id => {
-            const el = document.getElementById(id);
-            if (el && !el.classList.contains('content-area')) el.classList.add('content-area');
+    async dbOp(mode, storeName, action, data) {
+        const tx = this.db.transaction(storeName, mode);
+        const store = tx.objectStore(storeName);
+        return new Promise(res => {
+            const req = action === 'put' ? store.put(data) : (action === 'get' ? store.get(data) : store.getAll());
+            req.onsuccess = () => res(req.result);
         });
-        
-        const activeTab = document.querySelector('.tab-content.active .content-area');
-        if (activeTab) {
-            document.querySelectorAll('.content-area').forEach(a => a.classList.remove('active'));
-            activeTab.classList.add('active');
-        }
+    },
+
+    injectCSS() {
+        const style = document.createElement('style');
+        style.textContent = `
+            #shadow-game-wrapper { display: flex; align-items: center; gap: 10px; padding: 8px 12px; min-height: 60px; width: 100%; position: fixed; bottom: 0; left: 0; background: #fff; z-index: 999; border-top: 2px solid #cbd5e1; box-sizing: border-box; }
+            .sg-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0; }
+            #gamePanel { display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden; }
+            .sg-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:450px; background:white; border-radius:16px; padding:15px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10001; }
+            .content-area mark { background: #fef08a; font-weight: bold; }
+        `;
+        document.head.appendChild(style);
     },
 
     buildUI() {
         if (this.getEl('shadow-game-wrapper')) return;
-
-        const wrapper = document.createElement('div');
-        wrapper.id = "shadow-game-wrapper";
-        wrapper.style.cssText = `
-            display: flex; align-items: center; gap: 10px; padding: 8px 12px; 
-            min-height: 60px; width: 100%; position: fixed; bottom: 0; left: 0;
-            background: #ffffff; z-index: 999; border-top: 2px solid #cbd5e1;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1); box-sizing: border-box;
-        `;
-        
-        wrapper.innerHTML = `
-            <button id="btnMic" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0;">🎤</button>
-            <button id="btnList" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0;">📜</button>
-            <div id="gamePanel" style="display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden;">
-                <div style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; max-width: calc(100vw - 180px);">
-                    <div id="gameHistory" style="font-size: 10px; color:#94a3b8; white-space: nowrap; overflow-x: auto; scrollbar-width: none;"></div>
-                    <div id="gameCurrent" style="font-size: 13px; font-weight: 600; color:#4ade80; white-space: nowrap; overflow-x: auto; scrollbar-width: none;"></div>
+        this.injectCSS();
+        const wrap = document.createElement('div');
+        wrap.id = "shadow-game-wrapper";
+        wrap.innerHTML = `
+            <button id="btnMic" class="sg-btn">🎤</button>
+            <button id="btnList" class="sg-btn">📜</button>
+            <div id="gamePanel">
+                <div style="flex-grow: 1; overflow: hidden; font-size: 10px;">
+                    <div id="gameHistory" style="color:#94a3b8; white-space: nowrap;"></div>
+                    <div id="gameCurrent" style="font-size: 13px; color:#4ade80; font-weight:600;"></div>
                 </div>
                 <div id="gameScore" style="font-weight:bold; color:#4ade80;">0/1000</div>
             </div>
-            <div id="voiceListPanel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:450px; background:white; border:1px solid #cbd5e1; border-radius:16px; padding:10px; max-height:85vh; overflow-y:auto; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10001;">
-                <div style="display:flex; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:12px; gap:15px;">
-                    <span id="closeList" style="cursor:pointer; font-size:20px;" title="Đóng">✕</span>
-                    <span id="refreshList" style="cursor:pointer; font-size:18px;" title="Lấy mới từ server">🔄</span>
-                    <div style="flex-grow:1; text-align:center; line-height:1.2;">
-                        <b style="font-size:15px; display:block;">🎙️ Danh sách ghi âm</b>
-                        <span id="voiceCountLabel" style="font-size:11px; color:#64748b;">Tổng số: 0</span>
-                    </div>
+            <div id="voiceListPanel" class="sg-panel">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee;">
+                    <span id="closeList">✕ Đóng</span>
+                    <b>🎙️ Ghi âm</b>
+                    <span id="refreshList">🔄 Tải lại</span>
                 </div>
-                <div id="voiceItems" style="font-size:12px; color:#333;"></div>
+                <div id="voiceItems" style="max-height:60vh; overflow-y:auto;"></div>
             </div>
-            <div id="scoreResultPanel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:400px; background:white; border-radius:16px; padding:20px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10005; border:1px solid #e2e8f0;">
-                <div style="text-align:center; margin-bottom:15px;">
-                    <h3 style="margin:0; color:#1e293b;">Kết quả luyện tập</h3>
-                    <div id="finalScoreDisplay" style="font-size:32px; font-weight:bold; color:#10b981; margin:10px 0;">0/1000</div>
-                </div>
-                <div style="font-size:12px; font-weight:bold; color:#64748b; margin-bottom:5px;">Văn bản đã ghi nhận:</div>
-                <div id="spokenResultText" style="font-size:14px; padding:10px; background:#f1f5f9; border-radius:8px; margin-bottom:15px; border:1px dashed #cbd5e1; max-height:100px; overflow-y:auto; color:#1e293b;"></div>
-                <div style="font-size:12px; font-weight:bold; color:#64748b; margin-bottom:5px;">So sánh với bản gốc:</div>
-                <div id="scoreReasoning" style="font-size:14px; line-height:1.6; max-height:200px; overflow-y:auto; padding:10px; background:#f8fafc; border-radius:8px; border:1px solid #f1f5f9; margin-bottom:15px; word-break: break-word;"></div>
-                <button id="closeScore" style="width:100%; padding:10px; background:#1e293b; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Đóng & Lưu</button>
-            </div>
-        `;
-
-        document.body.appendChild(wrapper);
+            <div id="scoreResultPanel" class="sg-panel" style="z-index:10005;">
+                <h3 style="text-align:center">Kết quả</h3>
+                <div id="finalScoreDisplay" style="font-size:32px; text-align:center; color:#10b981;">0/1000</div>
+                <div id="scoreReasoning" style="font-size:14px; margin:15px 0; max-height:200px; overflow:auto;"></div>
+                <button id="closeScore" style="width:100%; padding:10px; background:#1e293b; color:#fff; border-radius:8px;">Lưu & Đóng</button>
+            </div>`;
+        document.body.appendChild(wrap);
         document.body.style.paddingBottom = "80px";
+
         this.getEl('btnMic').onclick = () => this.toggle();
         this.getEl('btnList').onclick = () => this.toggleVoiceList();
         this.getEl('refreshList').onclick = () => this.toggleVoiceList(true);
-        this.getEl('closeList').onclick = () => { this.getEl('voiceListPanel').style.display = 'none'; };
-        this.getEl('closeScore').onclick = () => { this.getEl('scoreResultPanel').style.display = 'none'; };
+        this.getEl('closeList').onclick = () => this.getEl('voiceListPanel').style.display = 'none';
+        this.getEl('closeScore').onclick = () => this.getEl('scoreResultPanel').style.display = 'none';
     },
 
-    async deleteVoice(fileId, element) {
-        if (!confirm("Bạn có chắc chắn muốn xóa bản ghi này?")) return;
-        
-        console.log("Log: Deleting record -> ID:", fileId);
+    async updateBadgeCounts() {
         try {
-            const res = await fetch(RECORD_GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "deleteVoice", fileId: fileId })
-            });
-            const result = await res.json();
-
-            if (result.status === 'success' || result.message?.includes('not found')) {
-                const tx = this.db.transaction("voices", "readwrite");
-                tx.objectStore("voices").delete(fileId);
-                tx.oncomplete = () => this.updateBadgeCounts();
-                
-                element.remove();
-                this.showToast("🗑️ Đã xóa bản ghi!");
-                const currentCount = document.querySelectorAll('#voiceItems > div').length;
-                this.getEl('voiceCountLabel').innerText = `Tổng số: ${currentCount}`;
-            } else {
-                throw new Error(result.message);
+            const res = await this.api({ type: 'listVoice' });
+            if (res.status === "success") {
+                document.querySelectorAll("div.diary-date > span").forEach(el => el.innerText = "0");
+                res.data.forEach(file => {
+                    const lid = file.name.match(/Shadow_([^_]+)_/)?.[1];
+                    const span = document.querySelector(`#item-${lid} div.diary-date span`);
+                    if (span) span.innerText = (parseInt(span.innerText) || 0) + 1;
+                });
             }
-        } catch (err) {
-            console.error("Log: Delete error:", err);
-            this.showToast("❌ Lỗi khi xóa");
-        }
+        } catch (e) { console.error("Badge update fail", e); }
     },
 
     async init() {
-        console.log("Log: Initializing ShadowGame module...");
         await this.initDB();
         this.buildUI();
         this.updateBadgeCounts();
         this.injectRequiredClasses();
-
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                setTimeout(() => { this.injectRequiredClasses(); this.resetUI(); }, 200);
-            });
-        });
 
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SR) {
@@ -215,294 +111,159 @@ export const ShadowGame = {
             this.recognition.continuous = true;
             this.recognition.interimResults = true;
             this.recognition.lang = 'ja-JP';
-            this.recognition.onresult = (event) => {
+            this.recognition.onresult = e => {
                 let interim = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        this.handleVoiceInput(event.results[i][0].transcript, true);
-                    } else {
-                        interim += event.results[i][0].transcript;
-                    }
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    const text = e.results[i][0].transcript;
+                    if (e.results[i].isFinal) { this.handleVoiceInput(text, true); }
+                    else interim += text;
                 }
                 if (interim) this.handleVoiceInput(interim, false);
             };
-            this.recognition.onend = () => { if (this.isListening) this.recognition.start(); };
+            this.recognition.onend = () => this.isListening && this.recognition.start();
         }
     },
 
     toggle() { this.isListening ? this.stop() : this.start(); },
 
     async start() {
-        console.log("Log: Recording started");
-        this.isListening = true;
-        this.history = [];
-        this.audioChunks = [];
+        this.isListening = true; this.history = []; this.audioChunks = [];
         this.getEl('gamePanel').style.display = 'flex';
         this.getEl('btnMic').innerHTML = '🛑';
-        try { this.recognition.start(); } catch(e) {}
+        this.recognition?.start();
 
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.mediaRecorder = new MediaRecorder(stream);
-            this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
-            this.mediaRecorder.onstop = () => {
-                const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                const score = this.getEl('gameScore').innerText;
-                console.log("Log: Recording stopped. Final Score:", score);
-                this.uploadToDrive(blob, score).then(() => {
-                    if (this.getEl('voiceListPanel').style.display === 'block') this.toggleVoiceList(false);
-                    this.updateBadgeCounts();
-                });
-                stream.getTracks().forEach(t => t.stop());
-            };
-            this.mediaRecorder.start();
-        } catch (err) { console.error("Mic error:", err); }
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.mediaRecorder = new MediaRecorder(stream);
+        this.mediaRecorder.ondataavailable = e => this.audioChunks.push(e.data);
+        this.mediaRecorder.onstop = async () => {
+            const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+            await this.uploadToDrive(blob, this.getEl('gameScore').innerText);
+            this.updateBadgeCounts();
+            stream.getTracks().forEach(t => t.stop());
+        };
+        this.mediaRecorder.start();
     },
 
     stop() {
         this.isListening = false;
         this.getEl('btnMic').innerHTML = '🎤';
-        if (this.recognition) this.recognition.stop();
+        this.recognition?.stop();
         this.showFinalResult();
-        if (this.mediaRecorder) this.mediaRecorder.stop();
+        this.mediaRecorder?.stop();
     },
 
-    async uploadToDrive(blob, score = "0/1000") {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            reader.onloadend = async () => {
-                const base64 = reader.result.split(',')[1];
-                const urlParams = new URLSearchParams(window.location.search);
-                const lessonId = urlParams.get('id') || "unknown";
-                
-                // Lấy toàn bộ text từ lịch sử nhận diện giọng nói
-                const script = this.history.join(" ");
-                
-                const fileName = `Shadow_${lessonId}_${Date.now()}_${score.replace('/', '-')}.webm`;
-                console.log("Log: Uploading voice with Script & Score:", { fileName, score, scriptLength: script.length });
+    async uploadToDrive(blob, score) {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+            const base64 = reader.result.split(',')[1];
+            const script = this.history.join(" ");
+            const fileName = `Shadow_${this.lessonId}_${Date.now()}_${score.replace('/', '-')}.webm`;
+            
+            const res = await this.api({action: "uploadVoice"}, "POST", {
+                action: "uploadVoice", base64, fileName, lessonId: this.lessonId, score, script
+            });
 
-                try {
-                    const res = await fetch(RECORD_GAS_URL, {
-                        method: "POST",
-                        body: JSON.stringify({ 
-                            action: "uploadVoice", 
-                            base64, 
-                            fileName, 
-                            lessonId, // Truyền ID của bài đọc để lưu lại thông tin đồng bộ
-                            score, 
-                            script // Gửi kèm script đọc được
-                        })
-                    });
-                    const result = await res.json();
-                    if (result.status === 'success') {
-                        await this.saveVoiceLocal(result.id, blob, { 
-                            name: fileName, 
-                            date: Date.now(), 
-                            formattedDate: new Date().toLocaleString(), 
-                            lessonId: lessonId, 
-                            score: score,
-                            script: script 
-                        });
-                        this.showToast("✅ Đã lưu ghi âm!");
-                    }
-                } catch (err) { 
-                    console.error("Log: Upload error:", err);
-                    this.showToast("❌ Lỗi Drive");
-                }
-                resolve();
-            };
+            if (res.status === 'success') {
+                await this.dbOp('readwrite', 'voices', 'put', {
+                    id: res.id, blob, name: fileName, date: Date.now(),
+                    formattedDate: new Date().toLocaleString(), lessonId: this.lessonId, score, script
+                });
+                this.showToast("✅ Đã lưu!");
+            }
+        };
+    },
+
+    async toggleVoiceList(sync = false) {
+        const panel = this.getEl('voiceListPanel');
+        if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
+        panel.style.display = 'block';
+        const itemsWrap = this.getEl('voiceItems');
+        itemsWrap.innerHTML = "Đang tải...";
+
+        let files = sync ? [] : (await this.dbOp('readonly', 'voices', 'getAll')).filter(v => v.lessonId == this.lessonId);
+        
+        if (sync || files.length === 0) {
+            const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
+            files = res.data || [];
+        }
+
+        itemsWrap.innerHTML = "";
+        files.forEach(async f => {
+            const item = document.createElement('div');
+            item.className = "voice-item";
+            item.style.padding = "10px; border-bottom:1px solid #eee";
+            item.innerHTML = `
+                <div style="font-size:12px">🕒 ${f.formattedDate || new Date(f.date).toLocaleString()} <b>[${f.score || '0/1000'}]</b></div>
+                <audio controls src="${f.blob ? URL.createObjectURL(f.blob) : ''}" style="width:100%; height:30px"></audio>
+                <span class="del-btn" style="color:red; cursor:pointer">Xóa</span>`;
+            item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.id, item);
+            itemsWrap.appendChild(item);
         });
     },
 
-    async toggleVoiceList(syncFromServer = false) {
-        const panel = this.getEl('voiceListPanel');
-        if (!syncFromServer && panel.style.display === 'block') {
-            panel.style.display = 'none';
-            return;
+    async deleteVoice(id, el) {
+        if (!confirm("Xóa?")) return;
+        const res = await this.api({}, "POST", { action: "deleteVoice", fileId: id });
+        if (res.status === 'success') {
+            const tx = this.db.transaction("voices", "readwrite");
+            tx.objectStore("voices").delete(id);
+            el.remove();
+            this.updateBadgeCounts();
         }
-        panel.style.display = 'block';
-        this.getEl('voiceItems').innerHTML = `<p style="text-align:center;padding:20px;">Đang kiểm tra dữ liệu...</p>`;
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const lessonId = urlParams.get('id');
-        if (!lessonId) {
-            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Không tìm thấy ID bài học.</p>';
-            return;
-        }
-
-        try {
-            let voiceFiles = [];
-            const tx = this.db.transaction("voices", "readonly");
-            const store = tx.objectStore("voices");
-            const localFiles = await new Promise(res => {
-                const req = store.getAll();
-                req.onsuccess = () => res(req.result.filter(v => (v.lessonId == lessonId) || (v.name && v.name.includes(`_${lessonId}_`))).sort((a,b) => (b.date || 0) - (a.date || 0)));
-            });
-
-            if (syncFromServer) {
-                console.log("Log: Refreshing - Clearing local records for lesson:", lessonId);
-                const deleteTx = this.db.transaction("voices", "readwrite");
-                const deleteStore = deleteTx.objectStore("voices");
-                for (const localF of localFiles) {
-                    if (localF.id) deleteStore.delete(localF.id);
-                }
-                await new Promise(r => deleteTx.oncomplete = r);
-                
-                console.log("Log: Syncing fresh records from server");
-                const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
-                const data = await res.json();
-                voiceFiles = data.data || [];
-            } else if (localFiles.length > 0) {
-                voiceFiles = localFiles;
-                console.log("Log: Loading local records");
-            } else {
-                console.log("Log: No local records, syncing from server");
-                const res = await fetch(`${RECORD_GAS_URL}?type=listVoice&lessonId=${lessonId}`);
-                const data = await res.json();
-                voiceFiles = data.data || [];
-            }
-
-            if (voiceFiles.length > 0) {
-                this.getEl('voiceCountLabel').innerText = `Tổng số: ${voiceFiles.length}`;
-                this.getEl('voiceItems').innerHTML = "";
-                for (const f of voiceFiles) {
-                    let local = await this.getVoiceLocal(f.id);
-                    
-                    if (!local && f.id) {
-                        try {
-                            const bRes = await fetch(`${RECORD_GAS_URL}?type=getFileBlob&fileId=${f.id}`);
-                            const bData = await bRes.json();
-                            if (bData.status === "success" && bData.data) {
-                                const byteCharacters = atob(bData.data);
-                                const byteNumbers = new Array(byteCharacters.length);
-                                for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                const blob = new Blob([new Uint8Array(byteNumbers)], { type: "audio/webm" });
-                                await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate, lessonId: lessonId, score: f.score || '0/1000' });
-                                local = { blob, formattedDate: f.formattedDate, name: f.name, score: f.score };
-                            }
-                        } catch (err) { console.error("Blob download failed", f.id); }
-                    }
-
-                    const url = local ? URL.createObjectURL(local.blob) : "";
-                    const rawName = f.name || local?.name || 'Unknown File';
-                    const displayName = rawName.replace('.webm', '');
-                    
-                    const scoreMatch = rawName.match(/(\d+)[-/](1000)/);
-                    const extractedScore = scoreMatch ? `${scoreMatch[1]}/${scoreMatch[2]}` : (f.score || local?.score || '0/1000');
-
-                    const item = document.createElement('div');
-                    item.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:8px; border-bottom:1px solid #f1f5f9; background:#fff; position:relative;";
-                    item.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:2px;">
-                            <span style="font-size:12px; font-weight:600; color:#1e293b;">🕒 ${f.formattedDate || local?.formattedDate || new Date(f.date).toLocaleString()}</span>
-                            <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:800; border:1px solid #bbf7d0;">
-                                ${extractedScore}
-                            </span>
-                            <span class="delete-voice-btn" style="margin-left:auto; cursor:pointer; color:#ef4444; font-size:16px; padding:0 5px;" title="Xóa">🗑️</span>
-                        </div>
-                        <div style="font-size:9px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; padding-right:30px;">
-                            ${displayName}
-                        </div>
-                        <audio controls style="height:34px; width:100%; filter: sepia(20%) saturate(70%) grayscale(100%) contrast(90%); outline:none;">
-                            <source src="${url}" type="audio/webm">
-                        </audio>
-                    `;
-                    item.querySelector('.delete-voice-btn').onclick = () => this.deleteVoice(f.id, item);
-                    this.getEl('voiceItems').appendChild(item);
-                }
-            } else {
-                this.getEl('voiceCountLabel').innerText = `Tổng số: 0`;
-                this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;">Chưa có bản ghi âm cho bài này.</p>';
-            }
-        } catch (e) {
-            console.error("Log: List error:", e);
-            this.getEl('voiceItems').innerHTML = '<p style="text-align:center;padding:20px;color:red;">Lỗi kết nối hoặc dữ liệu.</p>';
-        }
-    },
-
-    showToast(msg) {
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
-            border-radius: 20px; font-size: 12px; z-index: 10002;
-            transition: opacity 0.5s; pointer-events: none;
-        `;
-        toast.innerText = msg;
-        document.body.appendChild(toast);
-        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 2000);
     },
 
     handleVoiceInput(text, isFinal) {
-        if (isFinal) {
-            this.highlightInBody(text);
-            this.history.push(text);
-        }
+        if (isFinal) { this.highlightInBody(text); this.history.push(text); }
         this.currentInterim = text;
-        this.updateUI();
+        this.getEl('gameHistory').innerText = this.history.join(" ");
+        this.getEl('gameCurrent').innerText = text;
     },
 
     highlightInBody(text) {
         const area = document.querySelector('.content-area.active');
         if (!area) return;
-        const regex = new RegExp(`(${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        const walk = document.createTreeWalker(area, NodeFilter.SHOW_TEXT, null, false);
-        let node, nodes = [];
-        while(node = walk.nextNode()) if (regex.test(node.textContent)) nodes.push(node);
-        nodes.forEach(n => {
-            const s = document.createElement('span');
-            s.innerHTML = n.textContent.replace(regex, '<span style="background:#fef08a;font-weight:bold;">$1</span>');
-            n.replaceWith(s);
-        });
+        const walk = document.createTreeWalker(area, NodeFilter.SHOW_TEXT);
+        let n;
+        while(n = walk.nextNode()) {
+            if (n.textContent.includes(text)) {
+                const s = document.createElement('mark');
+                s.innerText = text;
+                n.replaceWith(n.textContent.split(text)[0], s, n.textContent.split(text)[1]);
+            }
+        }
     },
 
     showFinalResult() {
         const area = document.querySelector('.content-area.active');
-        if (!area) return;
+        const targetWords = area?.innerText.trim().split(/[\s,.;:!?、。]+/).filter(w => w) || [];
+        const spoken = this.history.join(" ").toLowerCase();
+        let matches = 0;
+        let html = targetWords.map(w => {
+            const ok = spoken.includes(w.toLowerCase());
+            if (ok) matches++;
+            return `<span style="color:${ok ? '#10b981' : '#ef4444'}">${w} </span>`;
+        }).join("");
 
-        console.log("Log: Processing Final Results...");
-        const originalText = area.innerText.trim();
-        const targetWords = originalText.split(/[\s,.;:!?、。]+/).filter(w => w.length > 0);
-        const fullSpokenText = this.history.join(" ");
-        const spokenTextLower = fullSpokenText.toLowerCase();
-        
-        let resultHtml = "";
-        let matchCount = 0;
-
-        targetWords.forEach(word => {
-            const cleanWord = word.toLowerCase();
-            const isMatch = spokenTextLower.includes(cleanWord);
-            if (isMatch) matchCount++;
-            
-            resultHtml += `<span style="color: ${isMatch ? '#10b981' : '#ef4444'}; font-weight: ${isMatch ? 'bold' : 'normal'}">${word} </span>`;
-        });
-
-        const score = targetWords.length > 0 ? Math.min(1000, Math.round((matchCount / targetWords.length) * 1000)) : 0;
-        
-        if (this.getEl('spokenResultText')) {
-            this.getEl('spokenResultText').innerText = fullSpokenText || "(Không ghi nhận được âm thanh)";
-        }
-
+        const score = targetWords.length ? Math.round((matches / targetWords.length) * 1000) : 0;
         this.getEl('finalScoreDisplay').innerText = `${score}/1000`;
-        this.getEl('scoreReasoning').innerHTML = resultHtml;
+        this.getEl('scoreReasoning').innerHTML = html;
         this.getEl('scoreResultPanel').style.display = 'block';
-        
         this.getEl('gameScore').innerText = `${score}/1000`;
-        console.log(`Log: Mapping complete. Score: ${score}. Matches: ${matchCount}/${targetWords.length}`);
     },
 
-    updateUI() {
-        if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = this.history.join(" ");
-        if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = this.currentInterim;
+    showToast(m) {
+        const t = document.createElement('div');
+        t.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:5px 15px; border-radius:15px; z-index:10002";
+        t.innerText = m; document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2000);
     },
 
-    resetUI() {
-        console.log("Log: UI Reset");
-        this.history = [];
-        if(this.getEl('gameHistory')) this.getEl('gameHistory').innerText = "";
-        if(this.getEl('gameCurrent')) this.getEl('gameCurrent').innerText = "";
-        if(this.getEl('gameScore')) this.getEl('gameScore').innerText = "0/1000";
+    injectRequiredClasses() {
+        ['paragraphContainer', 'conversationContainer'].forEach(id => {
+            const el = this.getEl(id);
+            if (el) el.classList.add('content-area');
+        });
     }
 };
 

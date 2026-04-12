@@ -81,7 +81,7 @@ export const ShadowGame = {
                 </div>
                 <div id="gameScore" style="font-weight:bold; color:#4ade80;">0/1000</div>
             </div>
-            <div id="voiceListPanel" style="display:none; position:fixed; top:10px; left:10px; right:10px; background:white; border:1px solid #cbd5e1; border-radius:12px; padding:10px; max-height:70vh; overflow-y:auto; box-shadow:0 5px 25px rgba(0,0,0,0.2); z-index:10001;">
+            <div id="voiceListPanel" style="display:none; position:fixed; top:10px; left:10px; right:10px; background:white; border:1px solid #cbd5e1; border-radius:12px; padding:10px; max-height:80vh; overflow-y:auto; box-shadow:0 5px 25px rgba(0,0,0,0.2); z-index:10001;">
                 <div style="display:flex; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:8px; gap:15px;">
                     <span id="closeList" style="cursor:pointer; font-size:20px;" title="Đóng">✕</span>
                     <span id="refreshList" style="cursor:pointer; font-size:18px;" title="Lấy mới từ server">🔄</span>
@@ -282,21 +282,30 @@ export const ShadowGame = {
                     const url = local ? URL.createObjectURL(local.blob) : "";
                     const rawName = f.name || local?.name || 'Unknown File';
                     const displayName = rawName.replace('.webm', '');
-                    const scoreMatch = rawName.match(/(\d+(\/\d+)?%?)/);
-                    const extractedScore = scoreMatch ? scoreMatch[0].replace('-', '/') : (f.score || local?.score || '0/1000');
+                    
+                    // Sửa logic lấy điểm số: Tìm cụm X-1000 hoặc X/1000 ở cuối tên file
+                    const scoreMatch = rawName.match(/(\d+)[-/](1000)/);
+                    const extractedScore = scoreMatch ? `${scoreMatch[1]}/${scoreMatch[2]}` : (f.score || local?.score || '0/1000');
 
                     const item = document.createElement('div');
-                    item.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:8px; border-bottom:1px solid #f0f0f0;";
+                    item.style.cssText = "display:flex; flex-direction:column; gap:4px; padding:12px 8px; border-bottom:1px solid #f1f5f9; background:#fff;";
                     item.innerHTML = `
-                        <div style="font-size:9px; color:#94a3b8; margin-bottom:2px; display:flex; justify-content:space-between;">
-                            <span>ID: ${f.id}</span>
-                            <span style="color:#64748b;">🕒 ${f.formattedDate || local?.formattedDate || new Date(f.date).toLocaleString() || ''}</span>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2px;">
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-size:13px; font-weight:600; color:#1e293b;">🕒 ${f.formattedDate || local?.formattedDate || new Date(f.date).toLocaleString()}</span>
+                                <span style="font-size:9px; color:#94a3b8; font-family:monospace; margin-top:2px;">ID: ${f.id}</span>
+                            </div>
+                            <div style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:8px; border:1px solid #bbf7d0; text-align:center;">
+                                <div style="font-size:10px; font-weight:normal; opacity:0.8; line-height:1;">Điểm số</div>
+                                <div style="font-size:15px; font-weight:800;">${extractedScore}</div>
+                            </div>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:4px;">
-                            <b style="color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${displayName}</b>
-                            <span style="background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:bold;">⭐ ${extractedScore}</span>
+                        <div style="font-size:10px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:6px;">
+                            File: ${displayName}
                         </div>
-                        <audio controls style="height:32px; width:100%; outline:none;"><source src="${url}" type="audio/webm"></audio>
+                        <audio controls style="height:34px; width:100%; filter: sepia(20%) saturate(70%) grayscale(100%) contrast(90%); outline:none;">
+                            <source src="${url}" type="audio/webm">
+                        </audio>
                     `;
                     this.getEl('voiceItems').appendChild(item);
                 }

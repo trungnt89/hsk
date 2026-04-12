@@ -181,7 +181,7 @@ export const ShadowGame = {
                     });
                     const result = await res.json();
                     if (result.status === 'success') {
-                        await this.saveVoiceLocal(result.id, blob, { name: fileName, date: Date.now() });
+                        await this.saveVoiceLocal(result.id, blob, { name: fileName, date: Date.now(), formattedDate: new Date().toLocaleString() });
                         this.showToast("✅ Đã lưu ghi âm!");
                     }
                 } catch (err) { 
@@ -216,7 +216,7 @@ export const ShadowGame = {
                 const store = tx.objectStore("voices");
                 voiceFiles = await new Promise(res => {
                     const req = store.getAll();
-                    req.onsuccess = () => res(req.result.filter(v => v.name && v.name.includes(`Shadow_${lessonId}`)).sort((a,b) => b.date - a.date));
+                    req.onsuccess = () => res(req.result.filter(v => v.name && v.name.includes(`_${lessonId}_`)).sort((a,b) => (b.date || 0) - (a.date || 0)));
                 });
             }
 
@@ -224,7 +224,7 @@ export const ShadowGame = {
                 this.getEl('voiceItems').innerHTML = "";
                 for (const f of voiceFiles) {
                     let local = await this.getVoiceLocal(f.id);
-                    if (!local && syncFromServer) {
+                    if (!local && syncFromServer && f.id) {
                         const bRes = await fetch(`${RECORD_GAS_URL}?type=getFileBlob&fileId=${f.id}`);
                         const bData = await bRes.json();
                         if (bData.status === "success") {
@@ -232,18 +232,19 @@ export const ShadowGame = {
                             const byteNumbers = new Array(byteCharacters.length);
                             for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
                             const blob = new Blob([new Uint8Array(byteNumbers)], { type: "audio/webm" });
-                            await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date });
+                            await this.saveVoiceLocal(f.id, blob, { name: f.name, date: f.date, formattedDate: f.formattedDate });
                             local = { blob };
                         }
                     }
 
                     const url = local ? URL.createObjectURL(local.blob) : "";
+                    const displayName = (f.name || 'Voice Record').replace(/^Shadow_|_.*$/g, '');
                     const item = document.createElement('div');
                     item.style.cssText = "display:flex; flex-direction:column; gap:4px; padding:10px; border-bottom:1px solid #f0f0f0;";
                     item.innerHTML = `
                         <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b;">
-                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">${f.name || 'N/A'}</span>
-                            <span>${f.formattedDate || ''}</span>
+                            <b style="color:#1e293b;">${displayName}</b>
+                            <span>${f.formattedDate || local?.formattedDate || ''}</span>
                         </div>
                         <audio controls style="height:32px; width:100%; outline:none;"><source src="${url}" type="audio/webm"></audio>
                     `;

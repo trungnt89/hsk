@@ -26,16 +26,19 @@
         } catch (e) { console.warn("[TTS Cache Save Error]", e); }
     }
 
-    function playAudio(url, audioControl) {
+    function playAudio(url, audioControl, loop = false) {
         return new Promise(res => {
-            console.log("[TTS Log] Playing audio...");
+            console.log(`[TTS Log] Playing audio (loop: ${loop})...`);
             // Dừng mọi âm thanh đang phát trước khi chạy âm thanh mới
             audioControl.pause();
             audioControl.currentTime = 0;
             
+            // Thiết lập chế độ lặp lại của HTML5 Audio
+            audioControl.loop = loop;
+            
             audioControl.src = url;
             audioControl.onended = () => {
-                console.log("[TTS Log] Playback ended");
+                console.log(`[TTS Log] Playback ended (was loop: ${audioControl.loop})`);
                 res();
             };
             audioControl.play().catch(err => {
@@ -52,7 +55,8 @@
         if (globalAudio) {
             globalAudio.pause();
             globalAudio.currentTime = 0;
-            console.log("[TTS Log] Audio stopped manually via stopSpeak()");
+            globalAudio.loop = false; // Reset loop khi stop chủ động
+            console.log("[TTS Log] Audio stopped manually and loop disabled");
         }
     };
 
@@ -64,7 +68,8 @@
             text = "", 
             voice = "zh-CN-XiaoxiaoNeural", 
             rate = "1.0", 
-            filename = "hsk_data" 
+            filename = "hsk_data",
+            loop = false // Nhận thêm tham số loop
         } = config;
         
         const lang = config.lang || (voice.includes('-') ? voice.substring(0, 5) : "zh-CN");
@@ -113,8 +118,8 @@
         });
 
         if (cachedBlob) {
-            console.log("[TTS Log] Using cached audio");
-            return playAudio(URL.createObjectURL(cachedBlob), audioControl);
+            console.log("[TTS Log] Using cached audio for loop processing");
+            return playAudio(URL.createObjectURL(cachedBlob), audioControl, loop);
         }
 
         // 2. Gọi API TTS
@@ -127,7 +132,7 @@
             
             const blob = await res.blob();
             saveToCache(cacheKey, blob); 
-            return playAudio(URL.createObjectURL(blob), audioControl);
+            return playAudio(URL.createObjectURL(blob), audioControl, loop);
         } catch (e) {
             console.error("[TTS API Error]", e);
         }

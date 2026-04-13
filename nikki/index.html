@@ -86,8 +86,8 @@
                         <option value="ja-JP-NanamiNeural" selected>Nữ (JP)</option>
                     </select>
                     <select id="rateSelect" class="tts-select" onchange="saveTTSSettings()">
-					    <option value="0.7">0.70</option>
-						<option value="0.72">0.72</option>
+                        <option value="0.7">0.70</option>
+                        <option value="0.72">0.72</option>
                         <option value="0.75">0.75</option>
                         <option value="0.8" selected>0.8x</option>
                         <option value="1.0">1.0x</option>
@@ -297,9 +297,9 @@
                     await saveToIDB(currentDiaries); renderList(currentDiaries); updateAIView();
                 }
             }else{
-				alert(res.message);
-				document.getElementById("tab-btn-0").click();
-			}
+                alert(res.message);
+                document.getElementById("tab-btn-0").click();
+            }
         }
 
         function switchTab(index) {
@@ -336,7 +336,6 @@
             document.getElementById('paragraphContainer').innerHTML = pContent ? `<div id="p-content" class="ai-content-box">${pContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
             document.getElementById('conversationContainer').innerHTML = cContent ? `<div id="c-content" class="ai-content-box">${cContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
 
-            // Vô hiệu hóa nút Đọc dựa trên tab hiện tại và nội dung tương ứng
             const btnSpeak = document.getElementById('btnMainSpeak');
             if (currentTabIndex === 1) {
                 btnSpeak.disabled = !pContent;
@@ -360,24 +359,47 @@
             localStorage.setItem("diary_repeat", isRepeating);
         }
 
-        function toggleRepeat() { isRepeating = !isRepeating; document.getElementById("btnRepeat").classList.toggle("active", isRepeating); saveTTSSettings(); }
+        function toggleRepeat() { 
+            isRepeating = !isRepeating; 
+            document.getElementById("btnRepeat").classList.toggle("active", isRepeating); 
+            saveTTSSettings(); 
+            // Nếu đang phát, cần gọi lại để cập nhật trạng thái loop của trình phát
+            const btn = document.getElementById('btnMainSpeak');
+            if (btn.classList.contains("playing")) {
+                handleGlobalSpeak(); // Dừng
+                handleGlobalSpeak(); // Phát lại với cấu hình loop mới
+            }
+        }
 
         async function speakText(elId, btnId) {
             const el = document.getElementById(elId), btn = document.getElementById(btnId);
             if(!el || !window.speakCommon) return;
-            console.log("[TTS] Speaking:", elId);
+            console.log("[TTS] Speaking:", elId, "Repeat:", isRepeating);
+            
             btn.classList.add("playing"); btn.innerHTML = '⏹ Dừng';
             const statusKey = `Diary_AI_${selectedDiaryId}`;
-            await window.speakCommon({ text: el.innerText, voice: document.getElementById("voiceSelect").value, rate: document.getElementById("rateSelect").value, filename: statusKey });
-            if (btn.classList.contains("playing")) {
-                if (isRepeating && el.closest('.tab-content').classList.contains('active')) setTimeout(() => speakText(elId, btnId), 1000);
-                else resetSpeakBtns();
+            
+            await window.speakCommon({ 
+                text: el.innerText, 
+                voice: document.getElementById("voiceSelect").value, 
+                rate: document.getElementById("rateSelect").value, 
+                filename: statusKey,
+                loop: isRepeating // Gửi tham số loop vào TTSClient
+            });
+
+            // Chỉ reset UI khi kết thúc mà KHÔNG ở chế độ repeat
+            if (!isRepeating) {
+                resetSpeakBtns();
             }
         }
 
         function handleGlobalSpeak() {
             const btn = document.getElementById('btnMainSpeak');
-            if (btn.classList.contains("playing")) { if (window.stopSpeak) window.stopSpeak(); resetSpeakBtns(); return; }
+            if (btn.classList.contains("playing")) { 
+                if (window.stopSpeak) window.stopSpeak(); 
+                resetSpeakBtns(); 
+                return; 
+            }
             const tid = currentTabIndex === 1 ? 'p-content' : (currentTabIndex === 2 ? 'c-content' : null);
             if (tid) speakText(tid, 'btnMainSpeak');
         }

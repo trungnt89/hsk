@@ -75,7 +75,7 @@
                 globalAudio.controls = true;
                 globalAudio.preload = "auto";
                 globalAudio.playsInline = true; 
-                globalAudio.style.cssText = "position:fixed; bottom:10px; right:10px; z-index:9999; width:220px; height:35px; background:#fff; border-radius:50px; box-shadow:0 4px 15px rgba(0,0,0,0.3);";
+                globalAudio.style.cssText = "position:fixed; bottom:-100px; right:10px; z-index:9999; width:220px; height:35px; background:#fff; border-radius:50px; box-shadow:0 4px 15px rgba(0,0,0,0.3);";
                 document.body.appendChild(globalAudio);
                 console.log("[TTS Log] Visible Background-ready Player Created");
             }

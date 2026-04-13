@@ -1,139 +1,66 @@
 (function() {
-    // --- ASSISTIVE TOUCH UI ---
     function initAssistiveTouch() {
-        console.log("[Log] Initializing 3x3 Menu with Logs link...");
         if (!document.body) return;
-
-        const styleSheet = document.createElement("style");
-        styleSheet.innerText = `
-            #assistive-touch { 
-                position: fixed; 
-                top: 40%; 
-                left: 0px; 
-                transform: translateY(-50%); 
-                width: 50px; 
-                height: 50px; 
-                background: rgba(0, 0, 0, 0.3); 
-                border: 4px solid rgba(255, 255, 255, 0.3); 
-                border-radius: 12px; 
-                z-index: 10000; 
-                cursor: move; 
-                touch-action: none; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
-                box-shadow: 0 0 10px rgba(0,0,0,0.3); 
-            }
-            #assistive-touch::after { content: ""; width: 28px; height: 28px; background: rgba(255, 255, 255, 0.8); border-radius: 50%; }
-            #assistive-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-            
-            .menu-container { position: relative; background: rgba(28, 28, 30, 0.95); padding: 18px; border-radius: 30px; width: 240px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 0.5px solid rgba(255,255,255,0.1); font-family: -apple-system, sans-serif; }
-            .menu-section-title { color: #8e8e93; font-size: 9px; font-weight: 700; text-transform: uppercase; margin: 5px 0 10px 4px; letter-spacing: 0.5px; border-bottom: 0.5px solid rgba(255,255,255,0.1); padding-bottom: 3px; width: 100%; box-sizing: border-box; }
-            .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-            
-            .menu-item { display: flex; flex-direction: column; align-items: center; color: white; cursor: pointer; transition: transform 0.1s; }
+        const style = document.createElement("style");
+        style.innerText = `
+            #assistive-touch { position: fixed; top: 5px; left: 5px; width: 35px; height: 35px; background: rgba(0,0,0,0.2); border: 3px solid rgba(255,255,255,0.2); border-radius: 10px; z-index: 10000; cursor: move; touch-action: none; display: flex; align-items: center; justify-content: center; }
+            #assistive-touch::after { content: ""; width: 18px; height: 18px; background: rgba(255,255,255,0.3); border-radius: 50%; }
+            #assistive-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+            .menu-container { position: relative; background: rgba(28,28,30,0.96); padding: 20px; border-radius: 30px; width: 90%; max-width: 400px; font-family: -apple-system, sans-serif; box-sizing: border-box; border: 0.5px solid rgba(255,255,255,0.1); }
+            .menu-section-title { color: #8e8e93; font-size: 10px; font-weight: 700; text-transform: uppercase; margin: 5px 0 12px 4px; border-bottom: 0.5px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
+            .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+            .menu-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.1s; }
             .menu-item:active { transform: scale(0.9); }
-            .item-icon { width: 44px; height: 44px; background: #3a3a3c; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 4px; }
-            .item-label { font-size: 9px; font-weight: 500; text-align: center; color: #efeff4; }
-        `;
-        document.head.appendChild(styleSheet);
+            .item-icon { width: 52px; height: 52px; background: #3a3a3c; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 6px; }
+            .item-label { font-size: 11px; font-weight: 600; text-align: center; color: #fff; }`;
+        document.head.appendChild(style);
 
-        const button = document.createElement('div');
-        button.id = 'assistive-touch';
-        const menu = document.createElement('div');
-        menu.id = 'assistive-menu';
+        const btn = Object.assign(document.createElement('div'), { id: 'assistive-touch' });
+        const menu = Object.assign(document.createElement('div'), { id: 'assistive-menu' });
         
-        menu.innerHTML = `
-            <div class="menu-container">
-                <div class="menu-section-title">Năng suất</div>
-                <div class="menu-grid">
-                    <div class="menu-item" onclick="location.href='../index.html'"><div class="item-icon">🏠</div><span class="item-label">Home</span></div>
-                    <div class="menu-item" onclick="location.href='../task/index.html'"><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
-                    <div class="menu-item" onclick="location.href='../pomodoro/index.html'"><div class="item-icon">🍅</div><span class="item-label">Pomo</span></div>
-                </div>
-                <div class="menu-section-title">Học tập</div>
-                <div class="menu-grid">
-                    <div class="menu-item" onclick="location.href='../pmp/index.html'"><div class="item-icon">📘</div><span class="item-label">PMP</span></div>
-                    <div class="menu-item" onclick="location.href='../jp/index.html'"><div class="item-icon">🇯🇵</div><span class="item-label">Japan</span></div>
-                    <div class="menu-item" onclick="location.href='../hsk/index.html'"><div class="item-icon">🇨🇳</div><span class="item-label">HSK</span></div>
-                </div>
-                <div class="menu-section-title">Hệ thống</div>
-                <div class="menu-grid">
-                    <div class="menu-item" onclick="location.href='../db/index.html'"><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
-                    <!-- <div class="menu-item" onclick="location.href='../sms/index.html'"><div class="item-icon">💬</div><span class="item-label">SMS</span></div> -->
-                    <div class="menu-item" onclick="location.href='../log/index.html'"><div class="item-icon">📜</div><span class="item-label">Logs</span></div>
-                    <div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
-                </div>
-            </div>`;
+        const nav = (path) => `onclick="location.href='../${path}'"`;
+        menu.innerHTML = `<div class="menu-container">
+            <div class="menu-section-title">Năng suất</div>
+            <div class="menu-grid">
+                <div class="menu-item" ${nav('index.html')}><div class="item-icon">🏠</div><span class="item-label">Home</span></div>
+                <div class="menu-item" ${nav('task/index.html')}><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
+                <div class="menu-item" ${nav('pomodoro/index.html')}><div class="item-icon">🍅</div><span class="item-label">Pomo</span></div>
+                <div class="menu-item" ${nav('nikki/index.html')}><div class="item-icon">📔</div><span class="item-label">Nikki</span></div>
+            </div>
+            <div class="menu-section-title">Học tập</div>
+            <div class="menu-grid">
+                <div class="menu-item" ${nav('pmp/index.html')}><div class="item-icon">📘</div><span class="item-label">PMP</span></div>
+                <div class="menu-item" ${nav('n1/index.html')}><div class="item-icon">🇯🇵</div><span class="item-label">Japan</span></div>
+                <div class="menu-item" ${nav('hsk/index.html')}><div class="item-icon">🇨🇳</div><span class="item-label">HSK</span></div>
+            </div>
+            <div class="menu-section-title">Hệ thống</div>
+            <div class="menu-grid">
+                <div class="menu-item" ${nav('db/index.html')}><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
+                <div class="menu-item" ${nav('log/index.html')}><div class="item-icon">📜</div><span class="item-label">Logs</span></div>
+                <div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
+            </div></div>`;
 
-        document.body.appendChild(button);
-        document.body.appendChild(menu);
+        [btn, menu].forEach(el => document.body.appendChild(el));
 
-        let isDragging = false, startPos = { x: 0, y: 0 }, offset = { x: 0, y: 0 };
-
-        const onStart = (e) => {
-            const touch = e.touches ? e.touches[0] : e;
-            isDragging = false; 
-            startPos.x = touch.clientX; 
-            startPos.y = touch.clientY;
-            
-            const rect = button.getBoundingClientRect();
-            offset.x = touch.clientX - rect.left; 
-            offset.y = touch.clientY - rect.top;
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('touchmove', onMove, { passive: false });
-        };
-        
-        const onMove = (e) => {
-            const touch = e.touches ? e.touches[0] : e;
-            if (Math.abs(touch.clientX - startPos.x) > 5 || Math.abs(touch.clientY - startPos.y) > 5) {
-                isDragging = true;
-            }
-            if (isDragging) {
+        let drag = false, start = { x: 0, y: 0 }, off = { x: 0, y: 0 };
+        const move = (e) => {
+            const t = e.touches ? e.touches[0] : e;
+            if (Math.abs(t.clientX - start.x) > 5 || Math.abs(t.clientY - start.y) > 5) drag = true;
+            if (drag) {
                 if (e.cancelable) e.preventDefault();
-                const x = Math.max(0, Math.min(touch.clientX - offset.x, window.innerWidth - 50));
-                const y = Math.max(0, Math.min(touch.clientY - offset.y, window.innerHeight - 50));
-                
-                button.style.transform = 'none'; 
-                button.style.setProperty('left', x + 'px', 'important');
-                button.style.setProperty('top', y + 'px', 'important');
-                button.style.right = 'auto';
-                button.style.bottom = 'auto';
+                btn.style.left = Math.max(0, Math.min(t.clientX - off.x, window.innerWidth - 35)) + 'px';
+                btn.style.top = Math.max(0, Math.min(t.clientY - off.y, window.innerHeight - 35)) + 'px';
             }
         };
 
-        const onEnd = () => {
-            if (isDragging) {
-                const rect = button.getBoundingClientRect();
-                button.style.left = rect.left + 'px';
-                button.style.top = rect.top + 'px';
-            }
-            document.removeEventListener('mousemove', onMove); 
-            document.removeEventListener('touchmove', onMove); 
-        };
-
-        button.addEventListener('mousedown', onStart);
-        button.addEventListener('touchstart', onStart, { passive: false });
-        window.addEventListener('mouseup', onEnd);
-        window.addEventListener('touchend', onEnd);
-
-        button.addEventListener('click', (e) => { 
-            if (isDragging) {
-                e.preventDefault();
-                e.stopPropagation();
-            } else {
-                menu.style.display = 'flex'; 
-            }
-        }, true);
-
-        menu.addEventListener('click', (e) => {
-            if (e.target === menu) {
-                menu.style.display = 'none';
-            }
+        btn.addEventListener('touchstart', (e) => {
+            drag = false; const t = e.touches[0]; start = { x: t.clientX, y: t.clientY };
+            const r = btn.getBoundingClientRect(); off = { x: t.clientX - r.left, y: t.clientY - r.top };
+            document.addEventListener('touchmove', move, { passive: false });
         });
+        window.addEventListener('touchend', () => document.removeEventListener('touchmove', move));
+        btn.addEventListener('click', (e) => !drag && (menu.style.display = 'flex'));
+        menu.addEventListener('click', (e) => e.target === menu && (menu.style.display = 'none'));
     }
-
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAssistiveTouch);
-    else initAssistiveTouch();
+    document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', initAssistiveTouch) : initAssistiveTouch();
 })();

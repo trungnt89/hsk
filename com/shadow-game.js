@@ -280,7 +280,7 @@ export const ShadowGame = {
     },
 
     handleVoiceInput(text, isFinal) {
-        if (isFinal) { this.highlightInBody(text); this.history.push(text); }
+        //if (isFinal) { this.highlightInBody(text); this.history.push(text); }
         this.currentInterim = text;
         this.getEl('gameHistory').innerText = this.history.join(" ");
         this.getEl('gameCurrent').innerText = text;

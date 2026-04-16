@@ -55,7 +55,7 @@
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
         .diary-content { font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
         
-        .item-actions { display: flex; justify-content: flex-start; align-items: center; border-top: 1px solid #eee; padding-top: 8px; gap: 15px; flex-wrap: wrap; }
+        .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 8px; gap: 4px; flex-wrap: wrap; }
         .item-action-btn { background: none; border: none; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
         .item-action-btn.disabled { color: #ccc !important; cursor: not-allowed; pointer-events: none; opacity: 0.6; }
         .pin-btn { color: #f39c12; }
@@ -219,21 +219,17 @@
             div.id = `item-${item.id}`;
             div.onclick = () => selectRecord(item.id);
             div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <div class="diary-date" style="margin-bottom:0;">${item.date}
-                        <span style="margin-left:8px; color:var(--primary-color); background:#eee; padding:1px 6px; border-radius:10px; font-size:0.7rem;">🎙️ ${item.voiceCount || 0}</span>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <div class="item-action-btn ${item.paragraph ? '' : 'disabled'}" style="color:var(--primary-color); font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Đoạn</div>
-                        <div class="item-action-btn ${item.conversation ? '' : 'disabled'}" style="color:#e67e22; font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Hội thoại</div>
-                        <div class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" style="font-size:0.75rem;" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
-                    </div>
+                <div class="diary-date">${item.date}
+                    <span style="margin-left:8px; color:var(--primary-color); background:#eee; padding:1px 6px; border-radius:10px; font-size:0.7rem;">🎙️ ${item.voiceCount || 0}</span>
                 </div>
                 <div class="diary-content">${item.text}</div>
                 <div class="item-actions">
                     <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
                     <div class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
+                    <div class="item-action-btn ${item.paragraph ? '' : 'disabled'}" style="color:var(--primary-color);" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Đoạn</div>
+                    <div class="item-action-btn ${item.conversation ? '' : 'disabled'}" style="color:#e67e22;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Hội thoại</div>
                     <div class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
+                    <div class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
                 </div>
             `;
             return div;

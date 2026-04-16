@@ -33,14 +33,13 @@
                 <div class="menu-item" ${nav('index.html')}><div class="item-icon">🏠</div><span class="item-label">Home</span></div>
                 <div class="menu-item" ${nav('task/index.html')}><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
                 <div class="menu-item" ${nav('pomodoro/index.html')}><div class="item-icon">🍅</div><span class="item-label">Pomo</span></div>
-                <div class="menu-item" ${nav('nikki/index.html')}><div class="item-icon">📔</div><span class="item-label">NIKKI</span></div>
-                <div class="menu-item" ${nav('tik/index1.html')}><div class="item-icon">📱</div><span class="item-label">Tik</span></div>
             </div>
             <div class="menu-section-title">Học tập</div>
             <div class="menu-grid">
                 <div class="menu-item" ${nav('pmp/index.html')}><div class="item-icon">📘</div><span class="item-label">PMP</span></div>
                 <div class="menu-item" ${nav('n1/index.html')}><div class="item-icon">🇯🇵</div><span class="item-label">Japan</span></div>
                 <div class="menu-item" ${nav('hsk/index.html')}><div class="item-icon">🇨🇳</div><span class="item-label">HSK</span></div>
+				<div class="menu-item" ${nav('nikki/index.html')}><div class="item-icon">📔</div><span class="item-label">NIKKI</span></div>
             </div>
             <div class="menu-section-title">Hệ thống</div>
             <div class="menu-grid">

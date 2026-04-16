@@ -1,6 +1,11 @@
 (function() {
     function initAssistiveTouch() {
-        if (!document.body) return;
+        console.log("[AssistiveTouch] Khởi tạo menu..."); // Log khởi tạo
+        if (!document.body) {
+            console.error("[AssistiveTouch] document.body không tồn tại.");
+            return;
+        }
+        
         const style = document.createElement("style");
         style.innerText = `
             #assistive-touch { position: fixed; top: 5px; left: 5px; width: 35px; height: 35px; background: rgba(0,0,0,0.2); border: 3px solid rgba(255,255,255,0.2); border-radius: 10px; z-index: 10000; cursor: move; touch-action: none; display: flex; align-items: center; justify-content: center; }
@@ -18,7 +23,10 @@
         const btn = Object.assign(document.createElement('div'), { id: 'assistive-touch' });
         const menu = Object.assign(document.createElement('div'), { id: 'assistive-menu' });
         
-        const nav = (path) => `onclick="location.href='../${path}'"`;
+        const nav = (path) => {
+            return `onclick="console.log('[Navigation] Chuyển hướng tới: ${path}'); location.href='../${path}'"`;
+        };
+
         menu.innerHTML = `<div class="menu-container">
             <div class="menu-section-title">Năng suất</div>
             <div class="menu-grid">
@@ -26,6 +34,7 @@
                 <div class="menu-item" ${nav('task/index.html')}><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
                 <div class="menu-item" ${nav('pomodoro/index.html')}><div class="item-icon">🍅</div><span class="item-label">Pomo</span></div>
                 <div class="menu-item" ${nav('nikki/index.html')}><div class="item-icon">📔</div><span class="item-label">NIKKI</span></div>
+                <div class="menu-item" ${nav('tik/index.html')}><div class="item-icon">📱</div><span class="item-label">Tik</span></div>
             </div>
             <div class="menu-section-title">Học tập</div>
             <div class="menu-grid">
@@ -37,7 +46,7 @@
             <div class="menu-grid">
                 <div class="menu-item" ${nav('db/index.html')}><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
                 <div class="menu-item" ${nav('log/index.html')}><div class="item-icon">📜</div><span class="item-label">Logs</span></div>
-                <div class="menu-item" onclick="location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
+                <div class="menu-item" onclick="console.log('[System] Reloading...'); location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
             </div></div>`;
 
         [btn, menu].forEach(el => document.body.appendChild(el));
@@ -58,9 +67,22 @@
             const r = btn.getBoundingClientRect(); off = { x: t.clientX - r.left, y: t.clientY - r.top };
             document.addEventListener('touchmove', move, { passive: false });
         });
-        window.addEventListener('touchend', () => document.removeEventListener('touchmove', move));
-        btn.addEventListener('click', (e) => !drag && (menu.style.display = 'flex'));
-        menu.addEventListener('click', (e) => e.target === menu && (menu.style.display = 'none'));
+        window.addEventListener('touchend', () => {
+            if (drag) console.log(`[AssistiveTouch] Đã di chuyển tới vị trí mới: x=${btn.style.left}, y=${btn.style.top}`);
+            document.removeEventListener('touchmove', move);
+        });
+        btn.addEventListener('click', (e) => {
+            if (!drag) {
+                console.log("[AssistiveTouch] Mở menu.");
+                menu.style.display = 'flex';
+            }
+        });
+        menu.addEventListener('click', (e) => {
+            if (e.target === menu) {
+                console.log("[AssistiveTouch] Đóng menu.");
+                menu.style.display = 'none';
+            }
+        });
     }
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', initAssistiveTouch) : initAssistiveTouch();
 })();

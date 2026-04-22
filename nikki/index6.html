@@ -87,8 +87,8 @@
                     </select>
                     <select id="rateSelect" class="tts-select" onchange="saveTTSSettings()">
                         <option value="0.65">0.65</option>
-                        <option value="0.68">0.68</option>
-                        <option value="0.70">0.70</option>
+						<option value="0.68">0.68</option>
+						<option value="0.70">0.70</option>
                         <option value="0.72">0.72</option>
                         <option value="0.75">0.75</option>
                         <option value="0.80" selected>0.80</option>
@@ -99,10 +99,7 @@
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)">
-                📝 Nhật ký <span id="count-diary"></span>
-                <span id="pinFilterToggle" style="margin-left:5px; font-size:0.7rem; padding:2px 5px; background:#ddd; border-radius:4px; color:#333;" onclick="event.stopPropagation(); togglePinFilter()">👁️ Tất cả</span>
-            </button>
+            <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)">📝 Nhật ký <span id="count-diary"></span></button>
             <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn <span id="count-paragraph"></span></button>
             <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại <span id="count-conversation"></span></button>
         </div>
@@ -121,7 +118,6 @@
         let selectedDiaryId = localStorage.getItem("diary_selected_id") || null;
         let isRepeating = localStorage.getItem("diary_repeat") === "true";
         let currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0;
-        let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
 
         const dbName = "DiaryDB", storeName = "diaries";
 
@@ -206,29 +202,16 @@
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
             container.innerHTML = '';
-            
-            // Cập nhật nhãn nút lọc
-            const filterBtn = document.getElementById('pinFilterToggle');
-            if(filterBtn) filterBtn.innerText = showPinnedOnly ? "👁️ Chỉ ghim" : "👁️ Tất cả";
-            if(filterBtn) filterBtn.style.background = showPinnedOnly ? "var(--primary-color)" : "#ddd";
-            if(filterBtn) filterBtn.style.color = showPinnedOnly ? "white" : "#333";
-
-            let displayData = diaries;
-            if (showPinnedOnly) {
-                displayData = diaries.filter(d => d.pinned);
-            }
-
-            const total = displayData.length;
-            console.log(`[Render] Rendering ${total} records (Filter: ${showPinnedOnly})`);
-            
-            const pinned = displayData.filter(d => d.pinned), normal = displayData.filter(d => !d.pinned);
+            const total = diaries.length;
+            console.log(`[Render] Rendering ${total} records`);
+            const pinned = diaries.filter(d => d.pinned), normal = diaries.filter(d => !d.pinned);
             if (pinned.length) {
                 const sec = document.createElement('div'); sec.id = 'pinnedSection';
                 sec.innerHTML = `<div class="pinned-label">📌 ĐÃ GHIM</div>`;
-                pinned.forEach((item) => sec.appendChild(createItemEl(item, total - displayData.indexOf(item))));
+                pinned.forEach((item) => sec.appendChild(createItemEl(item, total - diaries.indexOf(item))));
                 container.appendChild(sec);
             }
-            normal.forEach((item) => container.appendChild(createItemEl(item, total - displayData.indexOf(item))));
+            normal.forEach((item) => container.appendChild(createItemEl(item, total - diaries.indexOf(item))));
         }
 
         function createItemEl(item, count) {
@@ -297,16 +280,11 @@
             }
         }
 
-        function togglePinFilter() {
-            showPinnedOnly = !showPinnedOnly;
-            localStorage.setItem("diary_show_pinned_only", showPinnedOnly);
-            renderList(currentDiaries);
-        }
-
         function togglePin(id) {
             const idx = currentDiaries.findIndex(d => d.id == id);
             if (idx === -1) return;
             const isPinning = !currentDiaries[idx].pinned;
+            if (isPinning && currentDiaries.filter(d => d.pinned).length >= 2) { alert("Tối đa 2 ghim"); return; }
             currentDiaries[idx].pinned = isPinning;
             saveToIDB(currentDiaries); renderList(currentDiaries);
             callGAS({action:'update_pin', id, pinned: isPinning});

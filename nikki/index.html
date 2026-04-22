@@ -35,18 +35,23 @@
         .btn-main-speak.playing { background: var(--danger-color); }
         
         .tabs { display: flex; background: #eee; border-radius: 8px; padding: 4px; margin-top: 5px; flex-shrink: 0; }
-        .tab-btn { flex: 1; border: none; padding: 10px 5px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; }
+        .tab-btn { flex: 1; border: none; padding: 10px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 4px; }
         .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
+        /* iPhone Toggle Switch */
+        .toggle-container { display: inline-flex; align-items: center; cursor: pointer; position: relative; margin-left: 4px; }
+        .toggle-switch { position: relative; width: 30px; height: 16px; background-color: #ccc; border-radius: 10px; transition: 0.3s; }
+        .toggle-switch::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: 0.3s; }
+        .toggle-active .toggle-switch { background-color: var(--success-color); }
+        .toggle-active .toggle-switch::after { left: 16px; }
+        .toggle-label { font-size: 0.6rem; margin-right: 2px; color: inherit; font-weight: bold; display: none; } /* Ẩn text nếu muốn gọn */
+
         .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 20px; scroll-behavior: smooth; }
         .tab-content.active { display: block; }
         
         .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; position: relative; }
         .diary-item.selected { border-left-color: var(--ai-color); background-color: #f0fff4; }
         .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
-        
-        #pinnedSection { position: sticky; top: 0; z-index: 10; background: var(--bg-color); padding-bottom: 4px; border-bottom: 1px dashed #ccc; margin-bottom: 10px; }
-        .pinned-label { font-size: 0.7rem; font-weight: bold; color: #f39c12; margin-bottom: 5px; padding: 5px; }
         
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.7; font-size: 1rem; white-space: pre-wrap; margin-bottom: 10px; border-left: 4px solid var(--ai-color); color: #2c3e50; }
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
@@ -100,11 +105,14 @@
 
         <div class="tabs">
             <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)">
-                📝 Nhật ký <span id="count-diary"></span>
-                <span id="pinFilterToggle" style="margin-left:5px; font-size:0.7rem; padding:2px 5px; background:#ddd; border-radius:4px; color:#333;" onclick="event.stopPropagation(); togglePinFilter()">👁️ Tất cả</span>
+                <span>📝 Nhật ký</span>
+                <div class="toggle-container" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
+                    <span class="toggle-label" id="pinLabelText">Tất cả</span>
+                    <div class="toggle-switch"></div>
+                </div>
             </button>
-            <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn <span id="count-paragraph"></span></button>
-            <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại <span id="count-conversation"></span></button>
+            <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
+            <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
         </div>
 
         <div id="tab-diary" class="tab-content active">
@@ -207,11 +215,13 @@
             const container = document.getElementById('diaryContainer');
             container.innerHTML = '';
             
-            // Cập nhật nhãn nút lọc
-            const filterBtn = document.getElementById('pinFilterToggle');
-            if(filterBtn) filterBtn.innerText = showPinnedOnly ? "👁️ Chỉ ghim" : "👁️ Tất cả";
-            if(filterBtn) filterBtn.style.background = showPinnedOnly ? "var(--primary-color)" : "#ddd";
-            if(filterBtn) filterBtn.style.color = showPinnedOnly ? "white" : "#333";
+            // Cập nhật giao diện Toggle iPhone
+            const toggleWrapper = document.getElementById('pinToggleWrapper');
+            const pinLabel = document.getElementById('pinLabelText');
+            if(toggleWrapper) {
+                toggleWrapper.classList.toggle('toggle-active', showPinnedOnly);
+                if(pinLabel) pinLabel.innerText = showPinnedOnly ? "Ghim" : "Tất cả";
+            }
 
             let displayData = diaries;
             if (showPinnedOnly) {
@@ -221,14 +231,7 @@
             const total = displayData.length;
             console.log(`[Render] Rendering ${total} records (Filter: ${showPinnedOnly})`);
             
-            const pinned = displayData.filter(d => d.pinned), normal = displayData.filter(d => !d.pinned);
-            if (pinned.length) {
-                const sec = document.createElement('div'); sec.id = 'pinnedSection';
-                sec.innerHTML = `<div class="pinned-label">📌 ĐÃ GHIM</div>`;
-                pinned.forEach((item) => sec.appendChild(createItemEl(item, total - displayData.indexOf(item))));
-                container.appendChild(sec);
-            }
-            normal.forEach((item) => container.appendChild(createItemEl(item, total - displayData.indexOf(item))));
+            displayData.forEach((item) => container.appendChild(createItemEl(item, total - displayData.indexOf(item))));
         }
 
         function createItemEl(item, count) {
@@ -243,8 +246,8 @@
                         <span style="margin-left:8px; color:var(--primary-color); background:#eee; padding:1px 6px; border-radius:10px; font-size:0.7rem;">🎙️ ${item.voiceCount || 0}</span>
                     </div>
                     <div style="display:flex; gap:10px;">
-						<div class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
-						<div class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
+                        <div class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
+                        <div class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
                     </div>
                 </div>
                 <div class="diary-content">${item.text}</div>
@@ -301,6 +304,7 @@
             showPinnedOnly = !showPinnedOnly;
             localStorage.setItem("diary_show_pinned_only", showPinnedOnly);
             renderList(currentDiaries);
+            console.log("[Filter] Pinned Only:", showPinnedOnly);
         }
 
         function togglePin(id) {
@@ -335,9 +339,8 @@
             currentTabIndex = index;
             localStorage.setItem("diary_current_tab", index);
             document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
-            document.querySelectorAll('.tab-btn').forEach((btn) => {
-                const btnIdx = parseInt(btn.getAttribute('onclick').match(/\d+/)[0]);
-                btn.classList.toggle('active', btnIdx === index);
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
             });
             updateAIView();
         }
@@ -354,7 +357,6 @@
         }
 
         function updateAIView() {
-            console.log("[UI] Updating AI View & Button States");
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
             if (!item) return;
 
@@ -391,18 +393,16 @@
             isRepeating = !isRepeating; 
             document.getElementById("btnRepeat").classList.toggle("active", isRepeating); 
             saveTTSSettings(); 
-            // Nếu đang phát, cần gọi lại để cập nhật trạng thái loop của trình phát
             const btn = document.getElementById('btnMainSpeak');
             if (btn.classList.contains("playing")) {
-                handleGlobalSpeak(); // Dừng
-                handleGlobalSpeak(); // Phát lại với cấu hình loop mới
+                handleGlobalSpeak(); 
+                handleGlobalSpeak(); 
             }
         }
 
         async function speakText(elId, btnId) {
             const el = document.getElementById(elId), btn = document.getElementById(btnId);
             if(!el || !window.speakCommon) return;
-            console.log("[TTS] Speaking:", elId, "Repeat:", isRepeating);
             
             btn.classList.add("playing"); btn.innerHTML = '⏹ Dừng';
             const statusKey = `Diary_AI_${selectedDiaryId}`;
@@ -412,10 +412,9 @@
                 voice: document.getElementById("voiceSelect").value, 
                 rate: document.getElementById("rateSelect").value, 
                 filename: statusKey,
-                loop: isRepeating // Gửi tham số loop vào TTSClient
+                loop: isRepeating 
             });
 
-            // Chỉ reset UI khi kết thúc mà KHÔNG ở chế độ repeat
             if (!isRepeating) {
                 resetSpeakBtns();
             }

@@ -50,7 +50,7 @@
             <label>Giờ phát:</label>
             <input type="time" id="alarm-time">
             <select id="alarm-song-select">
-                <option value="">-- Chọn bài hát báo thức --</option>
+                <option value="">-- Chờ tải danh sách bài hát... --</option>
             </select>
         </div>
         <div class="flex-row" style="justify-content: flex-end;">
@@ -128,7 +128,6 @@
     function handleAuthClick() { tokenClient.requestAccessToken({prompt: 'consent'}); }
 
     async function listFiles() {
-        log("Đang tải danh sách bài hát...");
         try {
             const query = `'${FOLDER_ID}' in parents and mimeType = 'audio/mpeg' and trashed = false`;
             const res = await gapi.client.drive.files.list({q: query, fields: 'files(id, name)', orderBy: 'name'});
@@ -154,7 +153,7 @@
 
             document.getElementById('status').innerText = `Sẵn sàng (${allFiles.length} bài).`;
             
-            // QUAN TRỌNG: Chỉ khôi phục sau khi dropdown bài hát đã có dữ liệu
+            // --- GỌI KHÔI PHỤC NGAY SAU KHI LOAD XONG FILE ---
             restoreAlarmSettings();
         } catch (e) { log(`Lỗi tải file: ${e.message}`); }
     }
@@ -170,7 +169,7 @@
         const settings = { time: timeVal, songId: songId, songName: songName };
         localStorage.setItem('alarm_settings', JSON.stringify(settings));
         
-        log(`Đã lưu cài đặt báo thức: ${timeVal} - ${songName}`);
+        log(`💾 Đã lưu setting: ${timeVal} - ${songName}`);
         activateAlarm(timeVal, songId, songName);
     }
 
@@ -179,21 +178,26 @@
         if (saved) {
             const settings = JSON.parse(saved);
             
-            // Gán lại giá trị vào giao diện
+            // 1. Gán giờ
             document.getElementById('alarm-time').value = settings.time;
-            document.getElementById('alarm-song-select').value = settings.songId;
             
-            log(`Khôi phục báo thức: ${settings.time} - ${settings.songName}`);
+            // 2. Gán bài hát (Dropdown)
+            const select = document.getElementById('alarm-song-select');
+            select.value = settings.songId;
+
+            log(`🔄 Đã khôi phục setting từ bộ nhớ: ${settings.time} - ${settings.songName}`);
+            
+            // 3. Kích hoạt đếm ngược luôn
             activateAlarm(settings.time, settings.songId, settings.songName);
         } else {
-            log("Không có cài đặt báo thức cũ trong bộ nhớ.");
+            log("ℹ️ Không tìm thấy setting cũ.");
         }
     }
 
     function activateAlarm(time, id, name) {
         cancelAlarm(false);
         document.getElementById('countdown-box').style.display = 'block';
-        document.getElementById('alarm-status').innerText = `🔔 Đã hẹn: ${name} lúc ${time}`;
+        document.getElementById('alarm-status').innerText = `🔔 Chờ phát: ${name} lúc ${time}`;
         
         startCountdown(time);
 
@@ -201,7 +205,7 @@
             const now = new Date();
             const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             if (currentTime === time) {
-                log("Đến giờ báo thức!");
+                log("⏰ BÁO THỨC ĐANG REO!");
                 playMusic(id, name);
                 showToast();
                 cancelAlarm(true); 
@@ -218,9 +222,7 @@
             let target = new Date();
             target.setHours(targetH, targetM, 0, 0);
 
-            if (target <= now) {
-                target.setDate(target.getDate() + 1);
-            }
+            if (target <= now) target.setDate(target.getDate() + 1);
 
             const diff = target - now;
             const h = Math.floor(diff / 3600000);
@@ -236,10 +238,10 @@
         if (alarmInterval) clearInterval(alarmInterval);
         if (countdownInterval) clearInterval(countdownInterval);
         document.getElementById('countdown-box').style.display = 'none';
-        document.getElementById('alarm-status').innerText = "Chưa có báo thức.";
+        document.getElementById('alarm-status').innerText = "Chưa kích hoạt báo thức.";
         if (clearStorage) {
             localStorage.removeItem('alarm_settings');
-            log("Đã xóa cài đặt báo thức.");
+            log("🗑️ Đã xóa setting báo thức.");
         }
     }
 
@@ -256,7 +258,7 @@
             audio.src = URL.createObjectURL(blob);
             document.getElementById('now-playing').innerText = "🎵 Đang phát: " + name;
             audio.play();
-        } catch (e) { log(`Lỗi phát nhạc: ${e.message}`); }
+        } catch (e) { log(`❌ Lỗi phát nhạc: ${e.message}`); }
     }
 
     function showToast() {

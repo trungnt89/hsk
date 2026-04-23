@@ -2,93 +2,100 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drive MP3 Player - Professional Scheduler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MP3 Auto-Scheduler Pro</title>
     <script src="../com/assistive.js"></script>
     <style>
-        :root { --primary-color: #4285f4; --bg-color: #f1f3f4; --card-bg: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .app-container { width: 100%; max-width: 700px; background: var(--card-bg); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); padding: 24px; margin-bottom: 150px; }
-        .auth-box { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        button { padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; font-weight: 500; transition: 0.2s; }
-        #auth_button { background: var(--primary-color); color: white; }
+        :root { --primary-color: #4285f4; --bg-color: #f8f9fa; --card-bg: #ffffff; --success: #34a853; --danger: #d93025; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); margin: 0; padding: 10px; color: #3c4043; }
         
-        .schedule-box { background: #e8f0fe; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #4285f4; }
-        .schedule-box h3 { margin-top: 0; font-size: 16px; color: #1967d2; }
-        .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-        input[type="time"], select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
-        select { flex-grow: 1; min-width: 200px; }
+        .app-container { width: 100%; max-width: 500px; background: var(--card-bg); border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 20px; margin: 0 auto 160px; box-sizing: border-box; }
         
-        #countdown-box { padding: 10px; background: #fff; border-radius: 4px; color: #d93025; font-weight: bold; display: none; border: 2px solid #d93025; text-align: center; margin-top: 10px; }
+        h1 { font-size: 22px; margin-bottom: 20px; color: #1a73e8; text-align: center; }
+        .auth-box { text-align: center; margin-bottom: 20px; }
         
-        .section-title { font-size: 14px; color: #5f6368; margin-top: 20px; margin-bottom: 10px; width: 100%; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-        #file-list { list-style: none; padding: 0; width: 100%; }
-        .file-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f1f3f4; cursor: pointer; border-radius: 4px; }
-        .file-item:hover { background: #eef2f7; }
-        
-        #toast { position: fixed; top: 20px; right: 20px; background: #323232; color: #fff; padding: 16px 24px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; z-index: 1000; animation: slideIn 0.5s ease-out; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        button { border: none; cursor: pointer; font-weight: 600; transition: filter 0.2s; display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 10px; }
+        button:active { filter: brightness(0.8); }
 
-        .player-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
-        audio { width: 100%; max-width: 600px; }
-        
-        #force-active-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; }
-        #force-active-overlay button { background: #34a853; color: white; font-size: 18px; padding: 15px 30px; margin-top: 20px; border-radius: 50px; border: none; cursor: pointer; }
+        .schedule-box { background: #f1f8ff; padding: 16px; border-radius: 12px; border: 1px solid #c2e7ff; margin-bottom: 20px; }
+        .schedule-box h3 { margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
 
-        #loading-status { font-weight: bold; animation: pulse 1.5s infinite; margin-right: 10px; }
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #5f6368; }
+        input[type="time"], select { width: 100%; height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #dadce0; font-size: 16px; box-sizing: border-box; background: white; }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn-full { grid-column: span 2; }
+        
+        #loading-status { text-align: center; font-size: 13px; font-weight: bold; margin-bottom: 10px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        #countdown-box { background: white; border: 1px solid #f28b82; border-radius: 8px; padding: 12px; text-align: center; margin-top: 15px; display: none; }
+        #time-left { font-size: 20px; font-weight: 800; color: var(--danger); display: block; }
+
+        .file-item { padding: 14px; border-bottom: 1px solid #f1f3f4; display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 1.4; }
+        .file-item:last-child { border-bottom: none; }
+
+        .player-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 16px; border-top: 1px solid #e0e0e0; box-shadow: 0 -4px 12px rgba(0,0,0,0.05); z-index: 100; }
+        
+        #force-active-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; padding: 30px; text-align: center; }
     </style>
 </head>
 <body>
 
-<div id="toast">🔔 Báo thức: Bắt đầu phát âm thanh!</div>
-
 <div id="force-active-overlay">
-    <h2 style="color: #4285f4;">🔄 Cần Kích Hoạt Lại</h2>
-    <p>Hệ thống đã khôi phục cài đặt cũ sau khi tải lại trang.<br>Vui lòng nhấn nút bên dưới để cấp quyền âm thanh.</p>
-    <button onclick="confirmAndUnlock()">🚀 KÍCH HOẠT NGAY</button>
+    <h2 style="color: #4285f4;">🎵 Sẵn sàng phát nhạc</h2>
+    <p>Để đảm bảo báo thức hoạt động trên iPhone, vui lòng nhấn nút bên dưới.</p>
+    <button onclick="confirmAndUnlock()" style="background: var(--success); color: white; padding: 15px 40px; font-size: 18px;">KÍCH HOẠT NGAY</button>
 </div>
 
 <div class="app-container">
-    <header><h1 style="text-align: center;">🎵 MP3 Auto-Scheduler</h1></header>
+    <h1>🎶 MP3 Scheduler</h1>
     
     <div class="auth-box">
-        <button id="auth_button" onclick="handleAuthClick()">Đăng nhập Google</button>
-        <button id="signout_button" onclick="handleSignoutClick()" style="display:none; background:#dadce0">Đăng xuất</button>
+        <button id="auth_button" onclick="handleAuthClick()" style="background: var(--primary-color); color:white; width: 100%;">Đăng nhập Google Drive</button>
+        <button id="signout_button" onclick="handleSignoutClick()" style="display:none; background:#eee; width: 100%;">Đăng xuất</button>
     </div>
 
     <div class="schedule-box" id="alarm-ui" style="display:none">
         <h3>⏰ Cấu hình báo thức</h3>
-        <div class="flex-row">
-            <label>Giờ phát:</label>
+        
+        <div class="input-group">
+            <label>Giờ báo thức</label>
             <input type="time" id="alarm-time">
+        </div>
+
+        <div class="input-group">
+            <label>Chọn bài hát</label>
             <select id="alarm-song-select">
-                <option value="">-- Chờ tải danh sách bài hát... --</option>
+                <option value="">Đang tải danh sách...</option>
             </select>
         </div>
-        <div class="flex-row" style="justify-content: space-between;">
-            <div>
-                <label>Trạng thái:</label>
-                <button id="toggle-alarm-btn" onclick="toggleAlarmActive()" style="background:#5f6368; color:white">Đang Tắt</button>
-            </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <span id="loading-status" style="font-size: 12px; color: #4285f4; display: none;">⏳ Đang tải nhạc...</span>
-                <button onclick="setAlarm()" style="background:#34a853; color:white">Lưu & Bật</button>
-                <button onclick="cancelAlarm()" style="background:#dadce0">Xóa cài đặt</button>
-            </div>
+
+        <div id="loading-status" style="display: none; color: var(--primary-color);">⏳ Đang nạp dữ liệu nhạc...</div>
+
+        <div class="action-grid">
+            <button id="toggle-alarm-btn" onclick="toggleAlarmActive()" style="background:#5f6368; color:white">Đang Tắt</button>
+            <button onclick="cancelAlarm()" style="background:#dadce0; color:#3c4043">Xóa cài đặt</button>
+            <button onclick="setAlarm()" class="btn-full" style="background: var(--success); color:white">LƯU & KÍCH HOẠT BÁO THỨC</button>
         </div>
-        <div id="countdown-box">⏳ Nhạc sẽ phát sau: <span id="time-left">00:00:00</span></div>
-        <p id="alarm-status" style="font-size:12px; margin-top:10px; color:#5f6368; font-style: italic;"></p>
+
+        <div id="countdown-box">
+            <span style="font-size: 12px; color: #5f6368;">Nhạc sẽ phát sau:</span>
+            <span id="time-left">00:00:00</span>
+        </div>
+        
+        <p id="alarm-status" style="font-size:11px; color:#80868b; margin-top:12px; text-align: center;"></p>
     </div>
 
-    <div id="status">Đang kiểm tra quyền truy cập...</div>
-    <div class="section-title">Nghe thử bài hát (Phát ngay)</div>
-    <ul id="file-list"></ul>
+    <div id="status" style="text-align: center; font-size: 13px; color: #5f6368;">Đang khởi tạo...</div>
+    <div style="font-weight: bold; margin: 20px 0 10px 5px; font-size: 14px;">Danh sách nhạc Drive</div>
+    <div id="file-list" style="background: #fff; border-radius: 12px; border: 1px solid #eee;"></div>
 </div>
 
 <div class="player-bar" id="player-container" style="display:none">
-    <div id="now-playing" style="font-size:13px; margin-bottom:5px; font-weight:bold"></div>
-    <audio id="audio-player" controls></audio>
+    <div id="now-playing" style="font-size:12px; margin-bottom:8px; font-weight:bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+    <audio id="audio-player" controls style="width: 100%; height: 40px;"></audio>
 </div>
 
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
@@ -99,14 +106,10 @@
     const API_KEY = 'AIzaSyA6Da55CI95neQ_aAhhoTz-lQfK827D2kU';
     const FOLDER_ID = '1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm';
 
-    let alarmInterval = null;
-    let countdownInterval = null;
-    let tokenClient;
-    let allFiles = [];
-    let isAlarmActive = false;
-    let isRingingToday = false;
+    let alarmInterval, countdownInterval, tokenClient;
+    let allFiles = [], isAlarmActive = false, isRingingToday = false;
 
-    function log(msg) { console.log(`[${new Date().toLocaleTimeString()}] ${msg}`); }
+    function log(msg) { console.log(`[LOG] ${msg}`); }
 
     function gapiLoaded() {
         gapi.load('client', async () => {
@@ -117,33 +120,20 @@
 
     function gisLoaded() {
         tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.readonly',
-            callback: (resp) => handleAuthResponse(resp)
+            client_id: CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.readonly',
+            callback: (resp) => { localStorage.setItem('google_access_token', resp.access_token); showAppContent(); listFiles(); }
         });
     }
 
     function checkStoredToken() {
-        const storedToken = localStorage.getItem('google_access_token');
-        if (storedToken) {
-            gapi.client.setToken({ access_token: storedToken });
-            showAppContent();
-            listFiles();
-        } else {
-            document.getElementById('status').innerText = "Vui lòng đăng nhập.";
-        }
-    }
-
-    function handleAuthResponse(resp) {
-        if (resp.error) return;
-        localStorage.setItem('google_access_token', resp.access_token);
-        showAppContent();
-        listFiles();
+        const t = localStorage.getItem('google_access_token');
+        if (t) { gapi.client.setToken({access_token: t}); showAppContent(); listFiles(); }
+        else { document.getElementById('status').innerText = "Vui lòng đăng nhập."; }
     }
 
     function showAppContent() {
         document.getElementById('alarm-ui').style.display = 'block';
-        document.getElementById('signout_button').style.display = 'inline-block';
+        document.getElementById('signout_button').style.display = 'block';
         document.getElementById('auth_button').style.display = 'none';
     }
 
@@ -158,76 +148,62 @@
             const list = document.getElementById('file-list');
             const select = document.getElementById('alarm-song-select');
             list.innerHTML = '';
-            select.innerHTML = '<option value="">-- Chọn bài hát báo thức --</option>';
+            select.innerHTML = '<option value="">-- Chọn bài hát --</option>';
 
             allFiles.forEach(f => {
-                const li = document.createElement('li');
-                li.className = 'file-item';
-                li.innerHTML = `<span>▶️ ${f.name}</span>`;
-                li.onclick = () => playMusic(f.id, f.name);
-                list.appendChild(li);
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `<span>▶️</span> <span style="flex:1">${f.name}</span>`;
+                div.onclick = () => playMusic(f.id, f.name);
+                list.appendChild(div);
 
                 const opt = document.createElement('option');
-                opt.value = f.id;
-                opt.text = f.name;
+                opt.value = f.id; opt.text = f.name;
                 select.appendChild(opt);
             });
-
-            document.getElementById('status').innerText = `Sẵn sàng (${allFiles.length} bài).`;
+            document.getElementById('status').innerText = `Tải xong ${allFiles.length} bài.`;
             restoreAlarmSettings();
-        } catch (e) { log(`Lỗi tải file: ${e.message}`); }
+        } catch (e) { log(e.message); }
     }
 
     function unlockAudio() {
         const audio = document.getElementById('audio-player');
-        audio.play().then(() => {
-            audio.pause();
-            log("🔓 Audio Unlocked");
-        }).catch(e => log("⚠️ Gesture required"));
+        audio.play().then(() => { audio.pause(); log("Audio Unlocked"); }).catch(e => log("Gesture required"));
     }
 
     function confirmAndUnlock() {
         unlockAudio();
         document.getElementById('force-active-overlay').style.display = 'none';
-        log("🚀 Hệ thống đã được kích hoạt lại.");
     }
 
     function setAlarm() {
         const timeVal = document.getElementById('alarm-time').value;
         const songSelect = document.getElementById('alarm-song-select');
-        const songId = songSelect.value;
-        const songName = songSelect.options[songSelect.selectedIndex].text;
+        if (!timeVal || !songSelect.value) return alert("Chọn giờ và nhạc!");
 
-        if (!timeVal || !songId) return alert("Vui lòng chọn đủ giờ và nhạc!");
-
-        const settings = { time: timeVal, songId: songId, songName: songName, active: true };
+        const settings = { time: timeVal, songId: songSelect.value, songName: songSelect.options[songSelect.selectedIndex].text, active: true };
         localStorage.setItem('alarm_settings', JSON.stringify(settings));
-        
-        isAlarmActive = true;
-        isRingingToday = false; 
-        unlockAudio();
-        updateToggleButtonUI();
-        log(`💾 Đã lưu & Bật hẹn giờ: ${timeVal}`);
-        preloadMusic(songId, songName); 
-        activateAlarm(timeVal, songId, songName);
+        isAlarmActive = true; isRingingToday = false;
+        unlockAudio(); updateToggleButtonUI();
+        preloadMusic(settings.songId, settings.songName);
+        activateAlarm(timeVal, settings.songId, settings.songName);
     }
 
     function toggleAlarmActive() {
         const saved = localStorage.getItem('alarm_settings');
         if (!saved) return;
-        let settings = JSON.parse(saved);
+        let s = JSON.parse(saved);
         isAlarmActive = !isAlarmActive;
-        settings.active = isAlarmActive;
-        localStorage.setItem('alarm_settings', JSON.stringify(settings));
+        s.active = isAlarmActive;
+        localStorage.setItem('alarm_settings', JSON.stringify(s));
         if(isAlarmActive) unlockAudio();
         updateToggleButtonUI();
-        log(`🔔 Chế độ hẹn giờ: ${isAlarmActive ? 'BẬT' : 'TẤT'}`);
     }
 
     function updateToggleButtonUI() {
         const btn = document.getElementById('toggle-alarm-btn');
-        btn.innerText = isAlarmActive ? "Đang BẬT" : "Đang TẤT";
-        btn.style.background = isAlarmActive ? "#34a853" : "#5f6368";
+        btn.innerText = isAlarmActive ? "Đang BẬT" : "Đang TẮT";
+        btn.style.background = isAlarmActive ? "var(--success)" : "#5f6368";
         document.getElementById('countdown-box').style.display = isAlarmActive ? 'block' : 'none';
     }
 
@@ -235,15 +211,13 @@
         const saved = localStorage.getItem('alarm_settings');
         if (saved) {
             document.getElementById('force-active-overlay').style.display = 'flex';
-            const settings = JSON.parse(saved);
-            document.getElementById('alarm-time').value = settings.time;
-            document.getElementById('alarm-song-select').value = settings.songId;
-            isAlarmActive = settings.active !== undefined ? settings.active : true;
-
+            const s = JSON.parse(saved);
+            document.getElementById('alarm-time').value = s.time;
+            document.getElementById('alarm-song-select').value = s.songId;
+            isAlarmActive = s.active !== undefined ? s.active : true;
             updateToggleButtonUI();
-            log(`🔄 Khôi phục setting: ${settings.time}`);
-            preloadMusic(settings.songId, settings.songName);
-            activateAlarm(settings.time, settings.songId, settings.songName);
+            preloadMusic(s.songId, s.songName);
+            activateAlarm(s.time, s.songId, s.songName);
         }
     }
 
@@ -251,99 +225,67 @@
         if (alarmInterval) clearInterval(alarmInterval);
         document.getElementById('alarm-status').innerText = `🔔 Hẹn giờ: ${name} lúc ${time}`;
         startCountdown(time);
-
         alarmInterval = setInterval(() => {
             if (!isAlarmActive) return;
             const now = new Date();
-            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            
-            if (currentTime === time) {
-                if (!isRingingToday) {
-                    isRingingToday = true; 
-                    log("⏰ ĐẾN GIỜ!");
-                    triggerAlarmPlay(name);
-                    showToast();
-                }
-            } else {
-                isRingingToday = false; 
-            }
+            const cur = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            if (cur === time) {
+                if (!isRingingToday) { isRingingToday = true; triggerAlarmPlay(name); }
+            } else { isRingingToday = false; }
         }, 1000);
     }
 
     function startCountdown(targetTime) {
         if (countdownInterval) clearInterval(countdownInterval);
-        const [targetH, targetM] = targetTime.split(':').map(Number);
-        
+        const [tH, tM] = targetTime.split(':').map(Number);
         countdownInterval = setInterval(() => {
             if (!isAlarmActive) return;
             const now = new Date();
             let target = new Date();
-            target.setHours(targetH, targetM, 0, 0);
+            target.setHours(tH, tM, 0, 0);
             if (target <= now) target.setDate(target.getDate() + 1);
-
             const diff = target - now;
             const h = Math.floor(diff / 3600000);
             const m = Math.floor((diff % 3600000) / 60000);
             const s = Math.floor((diff % 60000) / 1000);
-
-            document.getElementById('time-left').innerText = 
-                `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            document.getElementById('time-left').innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }, 1000);
     }
 
     function cancelAlarm() {
-        if (alarmInterval) clearInterval(alarmInterval);
-        if (countdownInterval) clearInterval(countdownInterval);
-        isAlarmActive = false;
-        updateToggleButtonUI();
+        clearInterval(alarmInterval); clearInterval(countdownInterval);
+        isAlarmActive = false; updateToggleButtonUI();
         localStorage.removeItem('alarm_settings');
         document.getElementById('alarm-status').innerText = "Đã xóa cài đặt.";
-        log("🗑️ Đã xóa setting.");
     }
 
     async function preloadMusic(id, name) {
         const audio = document.getElementById('audio-player');
         const loader = document.getElementById('loading-status');
-        loader.style.display = 'inline';
-        log(`⏳ Đang nạp: ${name}`);
+        loader.style.display = 'block';
         try {
             const token = gapi.client.getToken().access_token;
-            const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
+            const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { headers: { 'Authorization': 'Bearer ' + token } });
             const blob = await resp.blob();
             if (audio.src) URL.revokeObjectURL(audio.src);
             audio.src = URL.createObjectURL(blob);
-            log(`✅ Sẵn sàng: ${name}`);
-        } catch (e) { log(`❌ Lỗi: ${e.message}`); }
+            log("Loaded: " + name);
+        } catch (e) { log(e.message); }
         finally { loader.style.display = 'none'; }
     }
 
     function triggerAlarmPlay(name) {
         const audio = document.getElementById('audio-player');
         if (audio.src) {
-            document.getElementById('player-container').style.display = 'flex';
+            document.getElementById('player-container').style.display = 'block';
             document.getElementById('now-playing').innerText = "🎵 Đang phát: " + name;
             audio.currentTime = 0;
-            audio.play().catch(e => log("❌ Play blocked"));
+            audio.play().catch(e => log("Blocked"));
         }
     }
 
-    async function playMusic(id, name) {
-        await preloadMusic(id, name);
-        triggerAlarmPlay(name);
-    }
-
-    function showToast() {
-        const toast = document.getElementById('toast');
-        toast.style.display = 'block';
-        setTimeout(() => { toast.style.display = 'none'; }, 10000);
-    }
-
-    function handleSignoutClick() { 
-        localStorage.clear(); 
-        location.reload(); 
-    }
+    async function playMusic(id, name) { await preloadMusic(id, name); triggerAlarmPlay(name); }
+    function handleSignoutClick() { localStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>

@@ -32,7 +32,9 @@
         .player-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
         audio { width: 100%; max-width: 600px; }
         
-        /* Hiệu ứng chữ "Đang tải" nhấp nháy */
+        #force-active-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; }
+        #force-active-overlay button { background: #34a853; color: white; font-size: 18px; padding: 15px 30px; margin-top: 20px; border-radius: 50px; border: none; cursor: pointer; }
+
         #loading-status { font-weight: bold; animation: pulse 1.5s infinite; margin-right: 10px; }
         @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
     </style>
@@ -40,6 +42,12 @@
 <body>
 
 <div id="toast">🔔 Báo thức: Bắt đầu phát âm thanh!</div>
+
+<div id="force-active-overlay">
+    <h2 style="color: #4285f4;">🔄 Cần Kích Hoạt Lại</h2>
+    <p>Hệ thống đã khôi phục cài đặt cũ sau khi tải lại trang.<br>Vui lòng nhấn nút bên dưới để cấp quyền âm thanh.</p>
+    <button onclick="confirmAndUnlock()">🚀 KÍCH HOẠT NGAY</button>
+</div>
 
 <div class="app-container">
     <header><h1 style="text-align: center;">🎵 MP3 Auto-Scheduler</h1></header>
@@ -170,13 +178,18 @@
         } catch (e) { log(`Lỗi tải file: ${e.message}`); }
     }
 
-    // Mở khóa quyền Autoplay cho trình duyệt
     function unlockAudio() {
         const audio = document.getElementById('audio-player');
         audio.play().then(() => {
             audio.pause();
-            log("🔓 Đã xin quyền phát âm thanh thành công.");
-        }).catch(e => log("⚠️ Chờ nhấn nút để mở khóa audio."));
+            log("🔓 Audio Unlocked");
+        }).catch(e => log("⚠️ Gesture required"));
+    }
+
+    function confirmAndUnlock() {
+        unlockAudio();
+        document.getElementById('force-active-overlay').style.display = 'none';
+        log("🚀 Hệ thống đã được kích hoạt lại.");
     }
 
     function setAlarm() {
@@ -192,7 +205,7 @@
         
         isAlarmActive = true;
         isRingingToday = false; 
-        unlockAudio(); // Mở khóa khi nhấn nút Lưu
+        unlockAudio();
         updateToggleButtonUI();
         log(`💾 Đã lưu & Bật hẹn giờ: ${timeVal}`);
         preloadMusic(songId, songName); 
@@ -201,19 +214,19 @@
 
     function toggleAlarmActive() {
         const saved = localStorage.getItem('alarm_settings');
-        if (!saved) return alert("Vui lòng thiết lập giờ và Lưu trước!");
+        if (!saved) return;
         let settings = JSON.parse(saved);
         isAlarmActive = !isAlarmActive;
         settings.active = isAlarmActive;
         localStorage.setItem('alarm_settings', JSON.stringify(settings));
-        if(isAlarmActive) unlockAudio(); // Mở khóa khi nhấn nút Bật lại
+        if(isAlarmActive) unlockAudio();
         updateToggleButtonUI();
-        log(`🔔 Chế độ hẹn giờ: ${isAlarmActive ? 'BẬT' : 'TẮT'}`);
+        log(`🔔 Chế độ hẹn giờ: ${isAlarmActive ? 'BẬT' : 'TẤT'}`);
     }
 
     function updateToggleButtonUI() {
         const btn = document.getElementById('toggle-alarm-btn');
-        btn.innerText = isAlarmActive ? "Đang BẬT" : "Đang TẮT";
+        btn.innerText = isAlarmActive ? "Đang BẬT" : "Đang TẤT";
         btn.style.background = isAlarmActive ? "#34a853" : "#5f6368";
         document.getElementById('countdown-box').style.display = isAlarmActive ? 'block' : 'none';
     }
@@ -221,6 +234,7 @@
     function restoreAlarmSettings() {
         const saved = localStorage.getItem('alarm_settings');
         if (saved) {
+            document.getElementById('force-active-overlay').style.display = 'flex';
             const settings = JSON.parse(saved);
             document.getElementById('alarm-time').value = settings.time;
             document.getElementById('alarm-song-select').value = settings.songId;
@@ -236,19 +250,17 @@
     function activateAlarm(time, id, name) {
         if (alarmInterval) clearInterval(alarmInterval);
         document.getElementById('alarm-status').innerText = `🔔 Hẹn giờ: ${name} lúc ${time}`;
-        
         startCountdown(time);
 
         alarmInterval = setInterval(() => {
             if (!isAlarmActive) return;
-
             const now = new Date();
             const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             
             if (currentTime === time) {
                 if (!isRingingToday) {
                     isRingingToday = true; 
-                    log("⏰ ĐẾN GIỜ! Kích hoạt trình phát...");
+                    log("⏰ ĐẾN GIỜ!");
                     triggerAlarmPlay(name);
                     showToast();
                 }
@@ -264,7 +276,6 @@
         
         countdownInterval = setInterval(() => {
             if (!isAlarmActive) return;
-
             const now = new Date();
             let target = new Date();
             target.setHours(targetH, targetM, 0, 0);
@@ -294,7 +305,7 @@
         const audio = document.getElementById('audio-player');
         const loader = document.getElementById('loading-status');
         loader.style.display = 'inline';
-        log(`⏳ Đang tải nhạc chờ: ${name}`);
+        log(`⏳ Đang nạp: ${name}`);
         try {
             const token = gapi.client.getToken().access_token;
             const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, {
@@ -303,8 +314,8 @@
             const blob = await resp.blob();
             if (audio.src) URL.revokeObjectURL(audio.src);
             audio.src = URL.createObjectURL(blob);
-            log(`✅ Nhạc đã nạp xong: ${name}`);
-        } catch (e) { log(`❌ Lỗi tải nhạc: ${e.message}`); }
+            log(`✅ Sẵn sàng: ${name}`);
+        } catch (e) { log(`❌ Lỗi: ${e.message}`); }
         finally { loader.style.display = 'none'; }
     }
 
@@ -314,10 +325,7 @@
             document.getElementById('player-container').style.display = 'flex';
             document.getElementById('now-playing').innerText = "🎵 Đang phát: " + name;
             audio.currentTime = 0;
-            audio.play().catch(e => {
-                log("❌ Lỗi phát: Trình duyệt chặn âm thanh.");
-                alert("Đã đến giờ nhưng trình duyệt chặn tự động phát. Vui lòng tương tác với trang web (nhấn phím bất kỳ hoặc nhấn Lưu & Bật lần nữa) để cấp quyền.");
-            });
+            audio.play().catch(e => log("❌ Play blocked"));
         }
     }
 

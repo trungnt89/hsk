@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drive MP3 Explorer</title>
+    <title>Drive MP3 Player - Folder Mode</title>
     <style>
         :root { --primary-color: #4285f4; --bg-color: #f1f3f4; --card-bg: #ffffff; --text-main: #202124; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 700px; background: var(--card-bg); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); padding: 24px; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .app-container { width: 100%; max-width: 700px; background: var(--card-bg); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); padding: 24px; margin-bottom: 100px; }
         header { text-align: center; border-bottom: 1px solid #dadce0; padding-bottom: 16px; margin-bottom: 20px; }
         .auth-box { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
         button { padding: 10px 24px; font-weight: 500; border: none; border-radius: 4px; cursor: pointer; }
@@ -15,22 +15,33 @@
         #signout_button { background-color: #fff; color: #5f6368; border: 1px solid #dadce0; display: none; }
         #status { font-size: 14px; color: #5f6368; text-align: center; margin-bottom: 15px; }
         #file-list { list-style: none; padding: 0; }
-        .file-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f1f3f4; }
+        .file-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f1f3f4; cursor: pointer; transition: background 0.2s; }
+        .file-item:hover { background-color: #e8f0fe; }
         .file-icon { font-size: 20px; margin-right: 15px; color: #f4b400; }
         .file-details { flex-grow: 1; overflow: hidden; }
-        .file-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .file-id { font-size: 11px; color: #70757a; }
+        .file-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        
+        /* Player Bar */
+        .player-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #dadce0; padding: 15px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        #now-playing { font-size: 13px; margin-bottom: 8px; color: var(--primary-color); font-weight: bold; }
+        audio { width: 100%; max-width: 600px; height: 40px; }
     </style>
 </head>
 <body>
+
 <div class="app-container">
-    <header><h1>🎵 Drive MP3 Explorer</h1></header>
+    <header><h1>🎵 Folder MP3 Player</h1></header>
     <div class="auth-box">
         <button id="auth_button" onclick="handleAuthClick()">Đăng nhập Google</button>
         <button id="signout_button" onclick="handleSignoutClick()">Đăng xuất</button>
     </div>
-    <div id="status">Vui lòng kết nối tài khoản.</div>
+    <div id="status">Vui lòng kết nối tài khoản để xem thư mục chỉ định.</div>
     <ul id="file-list"></ul>
+</div>
+
+<div class="player-bar" id="player-container" style="display: none;">
+    <div id="now-playing">Đang chọn bài...</div>
+    <audio id="audio-player" controls autoplay src=""></audio>
 </div>
 
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
@@ -39,8 +50,10 @@
 <script>
     const CLIENT_ID = '468623053565-0km0r3d4du83a3vjsk94ilnkv35qplge.apps.googleusercontent.com'; 
     const API_KEY = 'AIzaSyA6Da55CI95neQ_aAhhoTz-lQfK827D2kU'; 
+    const FOLDER_ID = '1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm';
+    
     const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
+    const SCOPES = 'https://www.googleapis.com/auth/drive.readonly'; // Đổi thành readonly để tải file
 
     let tokenClient, gapiInited = false, gisInited = false;
 
@@ -51,7 +64,7 @@
         tokenClient.callback = async (resp) => {
             if (resp.error !== undefined) throw (resp);
             document.getElementById('signout_button').style.display = 'block';
-            document.getElementById('status').innerText = 'Đang quét Drive...';
+            document.getElementById('status').innerText = 'Đang quét thư mục...';
             await listMp3Files();
         };
         if (gapi.client.getToken() === null) { tokenClient.requestAccessToken({prompt: 'consent'}); } 
@@ -60,10 +73,12 @@
 
     async function listMp3Files() {
         try {
+            // Câu lệnh 'q' đã được sửa để lọc đúng Folder ID của bạn
+            const query = `'${FOLDER_ID}' in parents and mimeType = 'audio/mpeg' and trashed = false`;
             const response = await gapi.client.drive.files.list({
                 'pageSize': 100,
                 'fields': 'files(id, name)',
-                'q': "mimeType = 'audio/mpeg' and trashed = false"
+                'q': query
             });
             displayFiles(response.result.files);
         } catch (err) { document.getElementById('status').innerText = "Lỗi: " + err.message; }
@@ -72,14 +87,41 @@
     function displayFiles(files) {
         const list = document.getElementById('file-list');
         list.innerHTML = '';
-        if (!files || files.length == 0) { document.getElementById('status').innerText = 'Không thấy file MP3.'; return; }
-        document.getElementById('status').innerText = `Tìm thấy ${files.length} file:`;
+        if (!files || files.length == 0) { document.getElementById('status').innerText = 'Không thấy file MP3 trong thư mục này.'; return; }
+        document.getElementById('status').innerText = `Tìm thấy ${files.length} file trong thư mục:`;
+        
         files.forEach(file => {
             const li = document.createElement('li');
             li.className = 'file-item';
-            li.innerHTML = `<div class="file-icon">🎵</div><div class="file-details"><div class="file-name">${file.name}</div><div class="file-id">ID: ${file.id}</div></div>`;
+            li.onclick = () => playMusic(file.id, file.name);
+            li.innerHTML = `
+                <div class="file-icon">▶️</div>
+                <div class="file-details">
+                    <div class="file-name">${file.name}</div>
+                </div>
+            `;
             list.appendChild(li);
         });
+    }
+
+    function playMusic(fileId, fileName) {
+        const playerContainer = document.getElementById('player-container');
+        const audioPlayer = document.getElementById('audio-player');
+        const nowPlaying = document.getElementById('now-playing');
+
+        // Tạo link stream trực tiếp từ Google Drive API
+        const streamUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${API_KEY}`;
+        
+        playerContainer.style.display = 'flex';
+        nowPlaying.innerText = "Đang phát: " + fileName;
+        
+        // Gán token vào header hoặc dùng phương pháp stream qua URL (phương pháp này yêu cầu file được share đúng hoặc dùng token)
+        // Vì dùng alt=media với API KEY thường giới hạn, ta sẽ dùng phương pháp tốt hơn là kèm Access Token
+        const accessToken = gapi.client.getToken().access_token;
+        
+        // Cách nhanh nhất để audio player nhận token là fetch hoặc dùng URL có token (chỉ cho mục đích cá nhân)
+        audioPlayer.src = streamUrl + `&access_token=${accessToken}`;
+        audioPlayer.play();
     }
 
     function handleSignoutClick() {

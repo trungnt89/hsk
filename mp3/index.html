@@ -97,7 +97,7 @@
 
     function gapiLoaded() {
         gapi.load('client', async () => {
-            await gapi.client.init({apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/discovery/v1/apis/drive/v3/rest']});
+            await gapi.client.init({apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
             checkStoredToken();
         });
     }
@@ -178,7 +178,7 @@
         
         isAlarmActive = true;
         updateToggleButtonUI();
-        log(`💾 Đã lưu & Bật: ${timeVal} - ${songName}`);
+        log(`💾 Đã lưu & Bật hẹn giờ: ${timeVal} - ${songName}`);
         preloadMusic(songId, songName); 
         activateAlarm(timeVal, songId, songName);
     }
@@ -210,7 +210,7 @@
             isAlarmActive = settings.active !== undefined ? settings.active : true;
 
             updateToggleButtonUI();
-            log(`🔄 Khôi phục: ${settings.time} (Trạng thái: ${isAlarmActive ? 'Bật' : 'Tắt'})`);
+            log(`🔄 Khôi phục setting: ${settings.time} (Trạng thái: ${isAlarmActive ? 'Bật' : 'Tắt'})`);
             preloadMusic(settings.songId, settings.songName);
             activateAlarm(settings.time, settings.songId, settings.songName);
         }
@@ -230,7 +230,7 @@
             
             if (currentTime === time && !isRingingToday) {
                 isRingingToday = true; 
-                log("⏰ BÁO THỨC ĐANG REO!");
+                log("⏰ ĐẾN GIỜ! Khởi động trình phát...");
                 triggerAlarmPlay(name);
                 showToast();
             } else if (currentTime !== time) {

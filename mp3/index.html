@@ -74,7 +74,7 @@
             </select>
         </div>
 
-        <div id="loading-status" style="display: none; color: var(--primary-color);">⏳ Đang nạp dữ liệu nhạc...</div>
+        <div id="loading-status" style="display: none; color: var(--primary-color);">⏳ Hệ thống đang nạp dữ liệu nhạc...</div>
 
         <div class="action-grid">
             <button id="toggle-alarm-btn" onclick="toggleAlarmActive()" style="background:#5f6368; color:white">Đang Tắt</button>
@@ -110,7 +110,7 @@
 
     let alarmInterval, countdownInterval, tokenClient;
     let allFiles = [], isAlarmActive = false, isRingingToday = false;
-    let isPreloading = false; // Flag khóa tương tác
+    let isPreloading = false;
 
     function log(msg) { console.log(`[${new Date().toLocaleTimeString()}] ${msg}`); }
 
@@ -265,18 +265,26 @@
 
     async function preloadMusic(id, name) {
         if (isPreloading) return;
-        isPreloading = true;
+        
         const audio = document.getElementById('audio-player');
+        // KIỂM TRA: Nếu ID bài hát đang load trùng với ID cũ, thoát ngay để tiết kiệm thời gian
+        if (audio.dataset.currentId === id && audio.src) {
+            log(`⚡ Bài hát "${name}" đã có sẵn trong bộ nhớ, bỏ qua tải lại.`);
+            return;
+        }
+
+        isPreloading = true;
         const loader = document.getElementById('loading-status');
         toggleListInteraction(true);
         loader.style.display = 'block';
-        log(`⏳ Preloading: ${name}`);
+        log(`⏳ Preloading from Drive: ${name}`);
         try {
             const token = gapi.client.getToken().access_token;
             const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { headers: { 'Authorization': 'Bearer ' + token } });
             const blob = await resp.blob();
             if (audio.src) URL.revokeObjectURL(audio.src);
             audio.src = URL.createObjectURL(blob);
+            audio.dataset.currentId = id; // Đánh dấu bài hát hiện tại
             log("✅ Loaded: " + name);
         } catch (e) { log("❌ Load Error: " + e.message); }
         finally { 
@@ -306,7 +314,6 @@
 
     async function playMusic(id, name) { 
         if (isPreloading) return;
-        // Update Selected UI
         document.querySelectorAll('.file-item').forEach(el => el.classList.remove('selected'));
         const listItems = document.querySelectorAll('.file-item');
         for (let item of listItems) {

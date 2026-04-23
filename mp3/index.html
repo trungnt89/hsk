@@ -75,7 +75,7 @@
 
 <div class="player-bar" id="player-container" style="display:none">
     <div id="now-playing" style="font-size:13px; margin-bottom:5px; font-weight:bold"></div>
-    <audio id="audio-player" controls autoplay></audio>
+    <audio id="audio-player" controls></audio>
 </div>
 
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
@@ -177,6 +177,7 @@
         localStorage.setItem('alarm_settings', JSON.stringify(settings));
         
         isAlarmActive = true;
+        isRingingToday = false; 
         updateToggleButtonUI();
         log(`💾 Đã lưu & Bật hẹn giờ: ${timeVal} - ${songName}`);
         preloadMusic(songId, songName); 
@@ -191,12 +192,12 @@
         settings.active = isAlarmActive;
         localStorage.setItem('alarm_settings', JSON.stringify(settings));
         updateToggleButtonUI();
-        log(`🔔 Chế độ hẹn giờ: ${isAlarmActive ? 'BẬT' : 'TẮT'}`);
+        log(`🔔 Chế độ hẹn giờ: ${isAlarmActive ? 'BẬT' : 'TẤT'}`);
     }
 
     function updateToggleButtonUI() {
         const btn = document.getElementById('toggle-alarm-btn');
-        btn.innerText = isAlarmActive ? "Đang BẬT" : "Đang TẮT";
+        btn.innerText = isAlarmActive ? "Đang BẬT" : "Đang TẤT";
         btn.style.background = isAlarmActive ? "#34a853" : "#5f6368";
         document.getElementById('countdown-box').style.display = isAlarmActive ? 'block' : 'none';
     }
@@ -228,12 +229,14 @@
             const now = new Date();
             const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             
-            if (currentTime === time && !isRingingToday) {
-                isRingingToday = true; 
-                log("⏰ ĐẾN GIỜ! Khởi động trình phát...");
-                triggerAlarmPlay(name);
-                showToast();
-            } else if (currentTime !== time) {
+            if (currentTime === time) {
+                if (!isRingingToday) {
+                    isRingingToday = true; 
+                    log("⏰ ĐẾN GIỜ! Khởi động trình phát nhạc...");
+                    triggerAlarmPlay(name);
+                    showToast();
+                }
+            } else {
                 isRingingToday = false; 
             }
         }, 1000);
@@ -292,7 +295,7 @@
             document.getElementById('player-container').style.display = 'flex';
             document.getElementById('now-playing').innerText = "🎵 Đang phát: " + name;
             audio.currentTime = 0;
-            audio.play().catch(e => log("⚠️ Cần chạm vào màn hình để cấp quyền phát âm thanh!"));
+            audio.play().catch(e => log("⚠️ Trình duyệt yêu cầu tương tác để phát nhạc!"));
         }
     }
 

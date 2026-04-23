@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drive MP3 Player - Professional Scheduler</title>
-	<script src="../com/assistive.js"></script>
+    <script src="../com/assistive.js"></script>
     <style>
         :root { --primary-color: #4285f4; --bg-color: #f1f3f4; --card-bg: #ffffff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); padding: 20px; display: flex; flex-direction: column; align-items: center; }
@@ -153,8 +153,6 @@
             });
 
             document.getElementById('status').innerText = `Sẵn sàng (${allFiles.length} bài).`;
-            
-            // --- GỌI KHÔI PHỤC NGAY SAU KHI LOAD XONG FILE ---
             restoreAlarmSettings();
         } catch (e) { log(`Lỗi tải file: ${e.message}`); }
     }
@@ -170,7 +168,8 @@
         const settings = { time: timeVal, songId: songId, songName: songName };
         localStorage.setItem('alarm_settings', JSON.stringify(settings));
         
-        log(`💾 Đã lưu setting: ${timeVal} - ${songName}`);
+        log(`💾 Đã lưu setting & đang tải nhạc đệm: ${timeVal} - ${songName}`);
+        preloadMusic(songId, songName); 
         activateAlarm(timeVal, songId, songName);
     }
 
@@ -178,17 +177,11 @@
         const saved = localStorage.getItem('alarm_settings');
         if (saved) {
             const settings = JSON.parse(saved);
-            
-            // 1. Gán giờ
             document.getElementById('alarm-time').value = settings.time;
-            
-            // 2. Gán bài hát (Dropdown)
-            const select = document.getElementById('alarm-song-select');
-            select.value = settings.songId;
+            document.getElementById('alarm-song-select').value = settings.songId;
 
             log(`🔄 Đã khôi phục setting từ bộ nhớ: ${settings.time} - ${settings.songName}`);
-            
-            // 3. Kích hoạt đếm ngược luôn
+            preloadMusic(settings.songId, settings.songName);
             activateAlarm(settings.time, settings.songId, settings.songName);
         } else {
             log("ℹ️ Không tìm thấy setting cũ.");
@@ -207,9 +200,8 @@
             const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             if (currentTime === time) {
                 log("⏰ BÁO THỨC ĐANG REO!");
-                playMusic(id, name);
+                triggerAlarmPlay(name);
                 showToast();
-                cancelAlarm(true); 
             }
         }, 1000);
     }
@@ -222,7 +214,6 @@
             const now = new Date();
             let target = new Date();
             target.setHours(targetH, targetM, 0, 0);
-
             if (target <= now) target.setDate(target.getDate() + 1);
 
             const diff = target - now;
@@ -246,20 +237,35 @@
         }
     }
 
-    async function playMusic(id, name) {
+    async function preloadMusic(id, name) {
         const audio = document.getElementById('audio-player');
-        document.getElementById('player-container').style.display = 'flex';
-        document.getElementById('now-playing').innerText = "⏳ Đang tải nhạc...";
+        log(`⏳ Đang tải trước nhạc: ${name}`);
         try {
             const token = gapi.client.getToken().access_token;
             const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             const blob = await resp.blob();
+            if (audio.src) URL.revokeObjectURL(audio.src);
             audio.src = URL.createObjectURL(blob);
+            log(`✅ Đã tải xong nhạc: ${name}`);
+        } catch (e) { log(`❌ Lỗi tải nhạc: ${e.message}`); }
+    }
+
+    function triggerAlarmPlay(name) {
+        const audio = document.getElementById('audio-player');
+        const container = document.getElementById('player-container');
+        if (audio.src) {
+            container.style.display = 'flex';
             document.getElementById('now-playing').innerText = "🎵 Đang phát: " + name;
-            audio.play();
-        } catch (e) { log(`❌ Lỗi phát nhạc: ${e.message}`); }
+            audio.currentTime = 0;
+            audio.play().catch(e => log("Cần tương tác người dùng để phát: " + e));
+        }
+    }
+
+    async function playMusic(id, name) {
+        await preloadMusic(id, name);
+        triggerAlarmPlay(name);
     }
 
     function showToast() {

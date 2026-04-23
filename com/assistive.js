@@ -40,6 +40,7 @@
                 <div class="menu-item" ${nav('n1/index.html')}><div class="item-icon">🇯🇵</div><span class="item-label">Japan</span></div>
                 <div class="menu-item" ${nav('hsk/index.html')}><div class="item-icon">🇨🇳</div><span class="item-label">HSK</span></div>
 				<div class="menu-item" ${nav('nikki/index.html')}><div class="item-icon">📔</div><span class="item-label">NIKKI</span></div>
+				<div class="menu-item" ${nav('mp3/index.html')}><div class="item-icon">🧭</div><span class="item-label">MP3</span></div>
             </div>
             <div class="menu-section-title">Hệ thống</div>
             <div class="menu-grid">

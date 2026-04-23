@@ -33,8 +33,10 @@
         #countdown-box { background: white; border: 1px solid #f28b82; border-radius: 8px; padding: 12px; text-align: center; margin-top: 15px; display: none; }
         #time-left { font-size: 20px; font-weight: 800; color: var(--danger); display: block; }
 
-        .file-item { padding: 14px; border-bottom: 1px solid #f1f3f4; display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 1.4; }
+        .file-item { padding: 14px; border-bottom: 1px solid #f1f3f4; display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 1.4; transition: background 0.2s; cursor: pointer; }
         .file-item:last-child { border-bottom: none; }
+        .file-item.selected { background: #e8f0fe; border-left: 4px solid var(--primary-color); color: var(--primary-color); font-weight: bold; }
+        .file-item.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 
         .player-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 16px; border-top: 1px solid #e0e0e0; box-shadow: 0 -4px 12px rgba(0,0,0,0.05); z-index: 100; }
         
@@ -59,32 +61,15 @@
 
     <div class="schedule-box" id="alarm-ui" style="display:none">
         <h3>⏰ Cấu hình báo thức</h3>
-        
-        <div class="input-group">
-            <label>Giờ báo thức</label>
-            <input type="time" id="alarm-time">
-        </div>
-
-        <div class="input-group">
-            <label>Chọn bài hát</label>
-            <select id="alarm-song-select">
-                <option value="">Đang tải danh sách...</option>
-            </select>
-        </div>
-
-        <div id="loading-status" style="display: none; color: var(--primary-color);">⏳ Đang nạp dữ liệu nhạc...</div>
-
+        <div class="input-group"><label>Giờ báo thức</label><input type="time" id="alarm-time"></div>
+        <div class="input-group"><label>Chọn bài hát</label><select id="alarm-song-select"><option value="">Đang tải danh sách...</option></select></div>
+        <div id="loading-status" style="display: none; color: var(--primary-color);">⏳ Hệ thống đang nạp dữ liệu nhạc...</div>
         <div class="action-grid">
             <button id="toggle-alarm-btn" onclick="toggleAlarmActive()" style="background:#5f6368; color:white">Đang Tắt</button>
             <button onclick="cancelAlarm()" style="background:#dadce0; color:#3c4043">Xóa cài đặt</button>
             <button onclick="setAlarm()" class="btn-full" style="background: var(--success); color:white">LƯU & KÍCH HOẠT BÁO THỨC</button>
         </div>
-
-        <div id="countdown-box">
-            <span style="font-size: 12px; color: #5f6368;">Nhạc sẽ phát sau:</span>
-            <span id="time-left">00:00:00</span>
-        </div>
-        
+        <div id="countdown-box"><span style="font-size: 12px; color: #5f6368;">Nhạc sẽ phát sau:</span><span id="time-left">00:00:00</span></div>
         <p id="alarm-status" style="font-size:11px; color:#80868b; margin-top:12px; text-align: center;"></p>
     </div>
 
@@ -108,12 +93,13 @@
 
     let alarmInterval, countdownInterval, tokenClient;
     let allFiles = [], isAlarmActive = false, isRingingToday = false;
+    let isPreloading = false; // Khóa tương tác khi đang load Ajax
 
-    function log(msg) { console.log(`[LOG] ${msg}`); }
+    function log(msg) { console.log(`[${new Date().toLocaleTimeString()}] ${msg}`); }
 
     function gapiLoaded() {
         gapi.load('client', async () => {
-            await gapi.client.init({apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
+            await gapi.client.init({apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/discovery/v3/rest']});
             checkStoredToken();
         });
     }
@@ -168,7 +154,7 @@
 
     function unlockAudio() {
         const audio = document.getElementById('audio-player');
-        audio.play().then(() => { audio.pause(); log("Audio Unlocked"); }).catch(e => log("Gesture required"));
+        audio.play().then(() => { audio.pause(); log("🔓 Audio Unlocked"); }).catch(e => log("⚠️ Gesture required"));
     }
 
     function confirmAndUnlock() {
@@ -230,7 +216,7 @@
             const now = new Date();
             const cur = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             if (cur === time) {
-                if (!isRingingToday) { isRingingToday = true; triggerAlarmPlay(name); }
+                if (!isRingingToday) { isRingingToday = true; log("⏰ Alarm triggered!"); triggerAlarmPlay(name); }
             } else { isRingingToday = false; }
         }, 1000);
     }
@@ -257,21 +243,38 @@
         isAlarmActive = false; updateToggleButtonUI();
         localStorage.removeItem('alarm_settings');
         document.getElementById('alarm-status').innerText = "Đã xóa cài đặt.";
+        log("🗑️ Alarm canceled.");
     }
 
     async function preloadMusic(id, name) {
+        if (isPreloading) return;
+        isPreloading = true;
         const audio = document.getElementById('audio-player');
         const loader = document.getElementById('loading-status');
+        toggleListInteraction(true);
         loader.style.display = 'block';
+        log(`⏳ Preloading: ${name}`);
         try {
             const token = gapi.client.getToken().access_token;
             const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { headers: { 'Authorization': 'Bearer ' + token } });
             const blob = await resp.blob();
             if (audio.src) URL.revokeObjectURL(audio.src);
             audio.src = URL.createObjectURL(blob);
-            log("Loaded: " + name);
-        } catch (e) { log(e.message); }
-        finally { loader.style.display = 'none'; }
+            log("✅ Ready: " + name);
+        } catch (e) { log("❌ Load error: " + e.message); }
+        finally { 
+            loader.style.display = 'none'; 
+            isPreloading = false;
+            toggleListInteraction(false);
+        }
+    }
+
+    function toggleListInteraction(disabled) {
+        const items = document.querySelectorAll('.file-item');
+        items.forEach(item => {
+            if (disabled) item.classList.add('disabled');
+            else item.classList.remove('disabled');
+        });
     }
 
     function triggerAlarmPlay(name) {
@@ -280,11 +283,22 @@
             document.getElementById('player-container').style.display = 'block';
             document.getElementById('now-playing').innerText = "🎵 Đang phát: " + name;
             audio.currentTime = 0;
-            audio.play().catch(e => log("Blocked"));
+            audio.play().catch(e => log("❌ Play blocked"));
         }
     }
 
-    async function playMusic(id, name) { await preloadMusic(id, name); triggerAlarmPlay(name); }
+    async function playMusic(id, name) {
+        if (isPreloading) return;
+        // Cập nhật Selected UI
+        document.querySelectorAll('.file-item').forEach(el => el.classList.remove('selected'));
+        const items = document.querySelectorAll('.file-item');
+        for (let item of items) {
+            if (item.innerText.includes(name)) { item.classList.add('selected'); break; }
+        }
+        await preloadMusic(id, name);
+        triggerAlarmPlay(name);
+    }
+    
     function handleSignoutClick() { localStorage.clear(); location.reload(); }
 </script>
 </body>

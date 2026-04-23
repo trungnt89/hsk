@@ -15,16 +15,17 @@
         /* Schedule UI */
         .schedule-box { background: #e8f0fe; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #4285f4; }
         .schedule-box h3 { margin-top: 0; font-size: 16px; color: #1967d2; }
-        .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        input[type="time"] { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+        input[type="time"], select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+        select { flex-grow: 1; min-width: 200px; }
         
-        #countdown-box { margin-top: 10px; padding: 10px; background: #fff; border-radius: 4px; color: #d93025; font-weight: bold; display: none; border: 2px solid #d93025; text-align: center; }
+        #countdown-box { padding: 10px; background: #fff; border-radius: 4px; color: #d93025; font-weight: bold; display: none; border: 2px solid #d93025; text-align: center; margin-top: 10px; }
         
-        #file-list { list-style: none; padding: 0; }
+        .section-title { font-size: 14px; color: #5f6368; margin-top: 20px; margin-bottom: 10px; width: 100%; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        #file-list { list-style: none; padding: 0; width: 100%; }
         .file-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f1f3f4; cursor: pointer; border-radius: 4px; }
         .file-item:hover { background: #eef2f7; }
         
-        /* Toast Notification */
         #toast { position: fixed; top: 20px; right: 20px; background: #323232; color: #fff; padding: 16px 24px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; z-index: 1000; animation: slideIn 0.5s ease-out; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
@@ -45,19 +46,25 @@
     </div>
 
     <div class="schedule-box" id="alarm-ui" style="display:none">
-        <h3>⏰ Hẹn giờ phát tự động (Độc lập)</h3>
+        <h3>⏰ Cấu hình báo thức</h3>
         <div class="flex-row">
             <label>Giờ phát:</label>
             <input type="time" id="alarm-time">
-            <span id="target-song-name" style="font-weight:bold; color:#1967d2">Chưa chọn bài</span>
-            <button onclick="setAlarm()" style="background:#34a853; color:white">Lưu hẹn giờ</button>
-            <button onclick="cancelAlarm()" style="background:#dadce0">Hủy</button>
+            <select id="alarm-song-select">
+                <option value="">-- Chọn bài hát báo thức --</option>
+            </select>
         </div>
-        <div id="countdown-box">⏳ Thời gian chờ báo thức: <span id="time-left">00:00:00</span></div>
-        <p id="alarm-status" style="font-size:12px; margin-top:10px; color:#5f6368"></p>
+        <div class="flex-row" style="justify-content: flex-end;">
+            <button onclick="setAlarm()" style="background:#34a853; color:white">Lưu & Kích hoạt</button>
+            <button onclick="cancelAlarm()" style="background:#dadce0">Hủy bỏ</button>
+        </div>
+        <div id="countdown-box">⏳ Nhạc sẽ phát sau: <span id="time-left">00:00:00</span></div>
+        <p id="alarm-status" style="font-size:12px; margin-top:10px; color:#5f6368; font-style: italic;"></p>
     </div>
 
-    <div id="status">Đang khởi động hệ thống...</div>
+    <div id="status">Đang kiểm tra quyền truy cập...</div>
+    
+    <div class="section-title">Nghe thử danh sách bài hát (Không ảnh hưởng báo thức)</div>
     <ul id="file-list"></ul>
 </div>
 
@@ -74,14 +81,14 @@
     const API_KEY = 'AIzaSyA6Da55CI95neQ_aAhhoTz-lQfK827D2kU';
     const FOLDER_ID = '1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm';
 
-    let selectedSongForAlarm = null;
     let alarmInterval = null;
     let countdownInterval = null;
     let tokenClient;
+    let allFiles = []; // Lưu danh sách file để dùng cho Select
 
-    // --- LOGGING ---
     function log(msg) { console.log(`[${new Date().toLocaleTimeString()}] ${msg}`); }
 
+    // --- KHỞI TẠO ---
     function gapiLoaded() {
         gapi.load('client', async () => {
             await gapi.client.init({apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']});
@@ -100,19 +107,17 @@
     function checkStoredToken() {
         const storedToken = localStorage.getItem('google_access_token');
         if (storedToken) {
-            log("Tự động đăng nhập bằng token cũ.");
             gapi.client.setToken({ access_token: storedToken });
             showAppContent();
             listFiles();
         } else {
-            document.getElementById('status').innerText = "Vui lòng đăng nhập.";
+            document.getElementById('status').innerText = "Vui lòng đăng nhập để sử dụng.";
         }
     }
 
     function handleAuthResponse(resp) {
         if (resp.error) return;
         localStorage.setItem('google_access_token', resp.access_token);
-        log("Đăng nhập thành công, đã lưu token.");
         showAppContent();
         listFiles();
     }
@@ -125,53 +130,87 @@
 
     function handleAuthClick() { tokenClient.requestAccessToken({prompt: 'consent'}); }
 
+    // --- LẤY DANH SÁCH FILE ---
     async function listFiles() {
         try {
             const query = `'${FOLDER_ID}' in parents and mimeType = 'audio/mpeg' and trashed = false`;
-            const res = await gapi.client.drive.files.list({q: query, fields: 'files(id, name)'});
-            const files = res.result.files;
+            const res = await gapi.client.drive.files.list({q: query, fields: 'files(id, name)', orderBy: 'name'});
+            allFiles = res.result.files;
+            
             const list = document.getElementById('file-list');
+            const select = document.getElementById('alarm-song-select');
+            
             list.innerHTML = '';
-            files.forEach(f => {
+            select.innerHTML = '<option value="">-- Chọn bài hát báo thức --</option>';
+
+            allFiles.forEach(f => {
+                // Thêm vào list nghe thử
                 const li = document.createElement('li');
                 li.className = 'file-item';
                 li.innerHTML = `<span>▶️ ${f.name}</span>`;
-                li.onclick = () => { 
-                    selectedSongForAlarm = f; 
-                    document.getElementById('target-song-name').innerText = "Hẹn: " + f.name; 
-                    log(`Đã chọn bài cho báo thức: ${f.name}`);
-                    playMusic(f.id, f.name); // Phát nghe thử độc lập
-                };
+                li.onclick = () => playMusic(f.id, f.name);
                 list.appendChild(li);
+
+                // Thêm vào dropdown báo thức
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.text = f.name;
+                select.appendChild(opt);
             });
-            document.getElementById('status').innerText = `Danh sách phát: ${files.length} bài.`;
+
+            document.getElementById('status').innerText = `Hệ thống sẵn sàng (${allFiles.length} bài hát).`;
+            
+            // Khôi phục setting cũ sau khi list bài đã load xong
+            restoreAlarmSettings();
+
         } catch (e) { if (e.status === 401) handleSignoutClick(); }
     }
 
-    // --- LOGIC BÁO THỨC ĐỘC LẬP ---
+    // --- LOGIC BÁO THỨC (LƯU TRỮ VÀ ĐỘC LẬP) ---
     function setAlarm() {
         const timeVal = document.getElementById('alarm-time').value;
-        if (!selectedSongForAlarm) return alert("Vui lòng click chọn 1 bài hát trong danh sách!");
-        if (!timeVal) return alert("Vui lòng chọn giờ phát!");
+        const songId = document.getElementById('alarm-song-select').value;
+        const songName = document.getElementById('alarm-song-select').options[document.getElementById('alarm-song-select').selectedIndex].text;
 
-        cancelAlarm(); // Xóa lịch cũ nếu có
-        log(`Đã đặt lịch báo thức mới lúc ${timeVal} cho bài ${selectedSongForAlarm.name}`);
+        if (!timeVal || !songId) return alert("Vui lòng chọn cả thời gian và bài hát báo thức!");
+
+        // Lưu vào LocalStorage
+        const settings = { time: timeVal, songId: songId, songName: songName };
+        localStorage.setItem('alarm_settings', JSON.stringify(settings));
+
+        activateAlarm(timeVal, songId, songName);
+        log(`Cài đặt báo thức mới: ${timeVal} - Bài hát: ${songName}`);
+    }
+
+    function activateAlarm(time, id, name) {
+        cancelAlarm(false); // Xóa các Interval hiện tại nhưng không xóa Storage
 
         document.getElementById('countdown-box').style.display = 'block';
-        document.getElementById('alarm-status').innerText = `🔔 Báo thức đang chờ: ${selectedSongForAlarm.name}`;
+        document.getElementById('alarm-status').innerText = `🔔 Đang hẹn giờ: Bài [${name}] lúc ${time}`;
         
-        startCountdown(timeVal);
+        startCountdown(time);
 
         alarmInterval = setInterval(() => {
             const now = new Date();
             const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            if (currentTime === timeVal) {
-                log("ĐÚNG GIỜ! Kích hoạt báo thức.");
+            if (currentTime === time) {
+                log("Đến giờ báo thức!");
                 showToast();
-                playMusic(selectedSongForAlarm.id, selectedSongForAlarm.name);
-                cancelAlarm();
+                playMusic(id, name);
+                cancelAlarm(true); // Phát xong thì xóa cả Storage để dừng hẳn
             }
         }, 1000);
+    }
+
+    function restoreAlarmSettings() {
+        const saved = localStorage.getItem('alarm_settings');
+        if (saved) {
+            const settings = JSON.parse(saved);
+            document.getElementById('alarm-time').value = settings.time;
+            document.getElementById('alarm-song-select').value = settings.songId;
+            activateAlarm(settings.time, settings.songId, settings.songName);
+            log("Đã khôi phục cài đặt báo thức từ bộ nhớ.");
+        }
     }
 
     function startCountdown(targetTime) {
@@ -191,24 +230,24 @@
         }, 1000);
     }
 
-    function cancelAlarm() {
+    function cancelAlarm(clearStorage = true) {
         clearInterval(alarmInterval);
         clearInterval(countdownInterval);
         document.getElementById('countdown-box').style.display = 'none';
-        document.getElementById('alarm-status').innerText = "Hệ thống báo thức đang rảnh.";
+        document.getElementById('alarm-status').innerText = "Báo thức hiện không được kích hoạt.";
+        if (clearStorage) localStorage.removeItem('alarm_settings');
     }
 
     function showToast() {
         const toast = document.getElementById('toast');
         toast.style.display = 'block';
-        setTimeout(() => { toast.style.display = 'none'; }, 5000);
+        setTimeout(() => { toast.style.display = 'none'; }, 8000);
     }
 
     async function playMusic(id, name) {
         const audio = document.getElementById('audio-player');
         document.getElementById('player-container').style.display = 'flex';
-        document.getElementById('now-playing').innerText = "⏳ Đang tải file...";
-        log(`Bắt đầu tải nhạc: ${name}`);
+        document.getElementById('now-playing').innerText = "⏳ Đang tải nhạc...";
         
         try {
             const token = gapi.client.getToken().access_token;
@@ -219,11 +258,11 @@
             audio.src = URL.createObjectURL(blob);
             document.getElementById('now-playing').innerText = "🎵 Đang phát: " + name;
             audio.play();
-        } catch (e) { log(`Lỗi phát nhạc: ${e.message}`); }
+        } catch (e) { log(`Lỗi: ${e.message}`); }
     }
 
     function handleSignoutClick() { 
-        localStorage.removeItem('google_access_token');
+        localStorage.clear();
         location.reload(); 
     }
 </script>

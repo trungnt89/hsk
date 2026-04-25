@@ -160,29 +160,22 @@ let page = 1, isShuffle = false, isPlaying = false, showInfo = true;
 let displayMode = 'word', autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 let rawData = [], colHira = "", colKanji = "";
 
-// --- YÊU CẦU: ĐIỀU HƯỚNG BÀN PHÍM ---
+// --- CẬP NHẬT: ĐIỀU HƯỚNG BÀN PHÍM ---
 window.addEventListener('keydown', (e) => {
-    console.log(`[Key Event] Phím bấm: ${e.key}`);
     if (e.key === 'ArrowRight') {
-        console.log('[Nav] Keyboard Next - Tiến 1 từ');
-        if (currentIndex < currentList.length - 1) {
-            select(currentIndex + 1);
-        } else {
-            nextPage();
-        }
+        if (currentIndex < currentList.length - 1) select(currentIndex + 1);
+        else nextPage();
     } else if (e.key === 'ArrowLeft') {
-        console.log('[Nav] Keyboard Prev - Lùi 1 từ');
-        if (currentIndex > 0) {
-            select(currentIndex - 1);
-        } else {
-            prevPage();
-        }
+        if (currentIndex > 0) select(currentIndex - 1);
+        else prevPage();
     } else if (e.key === 'ArrowUp') {
-        console.log('[Info] Keyboard Show - Hiện nghĩa');
-        if (!showInfo) toggleInfo();
+        // YÊU CẦU 1: Click mũi tên lên -> chuyển đổi hiện/ko hiện nghĩa
+        haptic();
+        toggleInfo();
     } else if (e.key === 'ArrowDown') {
-        console.log('[Info] Keyboard Hide - Ẩn nghĩa');
-        if (showInfo) toggleInfo();
+        // YÊU CẦU 2: Click mũi tên xuống -> hiện câu hoặc ko hiện câu (Display Mode)
+        haptic();
+        toggleDisplayMode();
     }
 });
 
@@ -213,7 +206,6 @@ function loadSettings() {
     if (!saved) return;
     try {
         const settings = JSON.parse(saved);
-        console.log("[LOCAL] Áp dụng cấu hình.");
         if (settings.voice) document.getElementById("voice-select").value = settings.voice;
         if (settings.limit) document.getElementById("limit-select").value = settings.limit;
         if (settings.delay) document.getElementById("delay-select").value = settings.delay;

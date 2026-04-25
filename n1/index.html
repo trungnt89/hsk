@@ -48,24 +48,15 @@
         .index-col { width: 30px; flex-shrink: 0; text-align: center; margin-right: 10px; }
         .index-number { font-size: 10px; font-weight: 800; color: #cbd5e1; }
         
-        /* Giãn rộng cột grid để tránh bóp nghẹt chữ */
         .content-col { flex-grow: 1; display: grid; grid-template-columns: 1.2fr 2fr; gap: 12px; align-items: center; min-width: 0; }
-        
-        /* Bỏ bold và cho phép từ vựng tự xuống dòng */
         .hz-column { font-size: 0.9rem; color: var(--text-main); font-weight: normal; word-break: break-word; }
-        
-        /* Cho phép giãn nở chiếm trọn không gian còn lại */
         .info-column { border-left: 1.5px solid #f1f5f9; padding-left: 12px; transition: opacity 0.2s; min-width: 0; flex: 1; }
         .info-column.hide-info { opacity: 0; visibility: hidden; }
-        
-        /* Bỏ bold và cho phép tự xuống dòng */
         .pinyin { color: var(--primary); font-weight: normal; font-size: 0.75rem; word-break: break-word; }
         .meaning { color: var(--text-sub); font-size: 0.7rem; margin-top: 3px; word-break: break-word; }
         
-        /* Mastered Button */
         .master-btn { width: 44px; height: 44px; border-radius: 14px; border: none; background: #f1f5f9; color: #cbd5e1; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; margin-left: 8px; flex-shrink: 0; }
         .master-btn.is-mastered { color: var(--success); background: #ecfdf5; }
-        .card-syncing { background: #fffbeb !important; border-color: var(--accent) !important; opacity: 0.8; transition: 0.3s; }
         
         /* Controls Bar (Bottom Navigation) */
         .controls-bar { height: 85px; background: #fff; display: flex; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); border-radius: 24px 24px 0 0; padding: 0 8px; flex-shrink: 0; position: relative; }
@@ -76,7 +67,6 @@
         /* Floating Play Button */
         .btn-play { width: 65px; height: 65px; background: var(--accent); border: 6px solid var(--bg); border-radius: 50%; font-size: 24px; color: white; cursor: pointer; box-shadow: 0 8px 15px rgba(251, 152, 0, 0.3); display: flex; align-items: center; justify-content: center; position: absolute; top: -32px; left: 50%; transform: translateX(-50%); }
         
-        /* Toast Notification */
         #toast-msg {
             position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
             background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px;
@@ -113,7 +103,7 @@
             <select id="rate-select" onchange="haptic(); saveSettings();">
                 <option value="0.7">0.7x</option>
                 <option value="0.8">0.8x</option>
-				<option value="0.9">0.9x</option>
+                <option value="0.9">0.9x</option>
                 <option value="1.0" selected>1.0x</option>
             </select>
         </div>
@@ -163,27 +153,49 @@
 <div id="toast-msg">Cloud Synced</div>
 
 <script>
-// --- LOGIC HỆ THỐNG & API ---
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyHlwz0I6vqBann9-wcnzW-9m_QTc-N9PH5dT94Ygtjrf2iJe1C_0UyJVZ-DNqvYr4hMg/exec";
 const SETTINGS_KEY = "JP_MASTER_SETTINGS";
 
 let page = 1, isShuffle = false, isPlaying = false, showInfo = true;
-let displayMode = 'word'; 
-let autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
-let rawData = []; 
-let colHira = "", colKanji = "";
+let displayMode = 'word', autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
+let rawData = [], colHira = "", colKanji = "";
+
+// --- YÊU CẦU: ĐIỀU HƯỚNG BÀN PHÍM ---
+window.addEventListener('keydown', (e) => {
+    console.log(`[Key Event] Phím bấm: ${e.key}`);
+    if (e.key === 'ArrowRight') {
+        console.log('[Nav] Keyboard Next - Tiến 1 từ');
+        if (currentIndex < currentList.length - 1) {
+            select(currentIndex + 1);
+        } else {
+            nextPage();
+        }
+    } else if (e.key === 'ArrowLeft') {
+        console.log('[Nav] Keyboard Prev - Lùi 1 từ');
+        if (currentIndex > 0) {
+            select(currentIndex - 1);
+        } else {
+            prevPage();
+        }
+    } else if (e.key === 'ArrowUp') {
+        console.log('[Info] Keyboard Show - Hiện nghĩa');
+        if (!showInfo) toggleInfo();
+    } else if (e.key === 'ArrowDown') {
+        console.log('[Info] Keyboard Hide - Ẩn nghĩa');
+        if (showInfo) toggleInfo();
+    }
+});
 
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
-// Khởi tạo và nạp cài đặt đã lưu
 window.onload = function() {
     console.log("[SYSTEM] Khởi tạo ứng dụng...");
     loadSettings();
     loadAppData();
 };
 
-// Hàm lưu trạng thái vào localStorage
 function saveSettings() {
+    console.log("[LOCAL] Lưu cấu hình.");
     const settings = {
         voice: document.getElementById("voice-select").value,
         limit: document.getElementById("limit-select").value,
@@ -194,138 +206,85 @@ function saveSettings() {
         isShuffle: isShuffle
     };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    console.log("[LOCAL] Đã lưu cấu hình cài đặt.");
 }
 
-// Hàm đọc trạng thái từ localStorage
 function loadSettings() {
     const saved = localStorage.getItem(SETTINGS_KEY);
     if (!saved) return;
-    
     try {
         const settings = JSON.parse(saved);
-        console.log("[LOCAL] Đã tìm thấy cấu hình cũ, đang áp dụng...");
-        
+        console.log("[LOCAL] Áp dụng cấu hình.");
         if (settings.voice) document.getElementById("voice-select").value = settings.voice;
         if (settings.limit) document.getElementById("limit-select").value = settings.limit;
         if (settings.delay) document.getElementById("delay-select").value = settings.delay;
         if (settings.rate) document.getElementById("rate-select").value = settings.rate;
-        
         if (settings.displayMode) {
             displayMode = settings.displayMode;
             document.getElementById('mode-txt').innerText = (displayMode === 'word') ? "Từ" : "Ví dụ";
             document.getElementById('mode-btn').classList.toggle('active-blue', displayMode === 'example');
         }
-        
         if (settings.showInfo !== undefined) {
             showInfo = settings.showInfo;
             document.getElementById('info-txt').innerText = showInfo ? "Hiện" : "Ẩn";
             document.getElementById('info-btn').querySelector('i').innerText = showInfo ? "👁️" : "🙈";
             document.getElementById('info-btn').classList.toggle('active-blue', !showInfo);
         }
-        
         if (settings.isShuffle !== undefined) {
             isShuffle = settings.isShuffle;
             document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle);
         }
-    } catch (e) {
-        console.warn("[LOCAL] Lỗi khi nạp cấu hình cũ:", e);
-    }
+    } catch (e) { console.warn("[LOCAL] Lỗi cấu hình:", e); }
 }
 
-// Hàm nạp dữ liệu gốc
 async function loadAppData() {
-    console.log(`[SYSTEM] Bắt đầu tải dữ liệu gốc từ MimikaraN1.json`);
-    showToast("Đang nạp từ file JSON...");
-
+    console.log(`[SYSTEM] Tải dữ liệu từ MimikaraN1.json`);
+    showToast("Đang nạp...");
     try {
-        const jsonPath = 'MimikaraN1.json';
-        const response = await fetch(jsonPath);
-        
-        if (!response.ok) throw new Error(`Không tìm thấy file ${jsonPath}`);
-        
+        const response = await fetch('MimikaraN1.json');
         const jsonData = await response.json();
-        console.log(`[AJAX-SUCCESS] Đọc thành công file JSON. Tổng số từ: ${jsonData.length}`);
-        
         const units = [...new Set(jsonData.map(item => item.unit))].sort((a, b) => a - b);
-        const select = document.getElementById("sheet-select");
-        select.innerHTML = units.map(u => `<option value="${u}">Unit ${u}</option>`).join('');
-        
+        const selectEl = document.getElementById("sheet-select");
+        selectEl.innerHTML = units.map(u => `<option value="${u}">Unit ${u}</option>`).join('');
         const statusMap = await fetchAllStatusFromGAS();
-
         rawData = jsonData.map(item => {
             const wordKey = item.word ? item.word.trim() : "";
-            const currentStatus = statusMap[wordKey] || "Chưa thuộc";
-            
             return {
                 "_rowNumber": item.id,
                 "Kanji": item.word,
                 "Hira": item.reading,
                 "Nghia": item.meaning,
-                "unit": item.unit, 
-                "examples": item.examples || [], 
-                "Trạng thái": currentStatus 
+                "unit": item.unit,
+                "examples": item.examples || [],
+                "Trạng thái": statusMap[wordKey] || "Chưa thuộc"
             };
         });
-        
         detectColumns(rawData[0]);
-        page = 1; 
+        page = 1;
         render();
-        showToast("✓ Đã nạp dữ liệu hoàn chỉnh");
-    } catch (err) {
-        console.error("[AJAX-ERROR] Lỗi khi nạp dữ liệu!", err);
-        showToast("Lỗi nạp dữ liệu!");
-    }
+        showToast("✓ Hoàn tất");
+    } catch (err) { console.error("[ERROR]", err); showToast("Lỗi nạp dữ liệu!"); }
 }
 
 async function fetchAllStatusFromGAS() {
     try {
-        console.log(`[CLOUD] Đang lấy trạng thái các từ từ Cloud (Cố định Sheet1)`);
         const response = await fetch(`${GAS_API_URL}?action=getAllStatus`);
         if (response.ok) return await response.json();
-    } catch (e) {
-        console.error("[CLOUD-ERROR] Không lấy được trạng thái từ Cloud", e);
-    }
+    } catch (e) { console.error("[CLOUD-ERROR]", e); }
     return {};
 }
 
-async function changeSheet() { 
-    page = 1; 
-    currentIndex = -1; 
-    if(isPlaying) stopLoop(); 
-    render(); 
-}
-
+async function changeSheet() { page = 1; currentIndex = -1; if(isPlaying) stopLoop(); render(); }
 function forceReloadFromCloud() { loadAppData(); }
 
 async function toggleMaster(word, statusValue, elementIdx) {
-    const card = document.getElementById(`card-${elementIdx}`);
-    if (card) card.classList.add('card-syncing');
-    
     const item = rawData.find(r => r["Kanji"] === word);
     if (item) item["Trạng thái"] = statusValue;
-
-    if (card) { card.style.transform = "scale(0.8)"; card.style.opacity = "0"; }
-    showToast("✓ Đã lưu vào máy");
-    
+    showToast("✓ Đã lưu máy");
     setTimeout(() => render(true), 250);
-
-    console.log(`[CLOUD-SYNC] Đang ghi trạng thái cho từ "${word}" lên Sheet...`);
-
     fetch(`${GAS_API_URL}?action=updateStatus&word=${encodeURIComponent(word)}&statusValue=${encodeURIComponent(statusValue)}`)
         .then(res => res.json())
-        .then(result => {
-            if (result.success) {
-                console.log(`[CLOUD-SUCCESS] Đã cập nhật xong trạng thái từ "${word}"`);
-                setTimeout(() => showToast("☁ Đã lưu lên Sheet"), 500); 
-            } else {
-                showToast("⚠️ Chưa lên được Sheet!");
-            }
-        })
-        .catch(e => {
-            console.error("[CLOUD-ERROR] Không thể kết nối:", e);
-            showToast("❌ Lỗi mạng: Chưa lên Sheet");
-        });
+        .then(result => { if (result.success) showToast("☁ Đã đồng bộ"); })
+        .catch(e => showToast("❌ Lỗi đồng bộ"));
 }
 
 function detectColumns(firstRow) {
@@ -338,7 +297,6 @@ function toggleDisplayMode() {
     displayMode = (displayMode === 'word') ? 'example' : 'word';
     document.getElementById('mode-txt').innerText = (displayMode === 'word') ? "Từ" : "Ví dụ";
     document.getElementById('mode-btn').classList.toggle('active-blue', displayMode === 'example');
-    showToast(`Chuyển sang xem ${displayMode === 'word' ? 'Từ' : 'Ví dụ'}`);
     saveSettings();
     render(true);
 }
@@ -346,17 +304,13 @@ function toggleDisplayMode() {
 function updateStats() {
     const selectedUnit = parseInt(document.getElementById('sheet-select').value);
     const unitData = rawData.filter(item => item.unit === selectedUnit);
-    const total = unitData.length;
-    
-    if (total === 0) return;
+    if (unitData.length === 0) return;
     const masteredCount = unitData.filter(item => item["Trạng thái"] === "Đã thuộc").length;
-    const todoCount = total - masteredCount;
-    const percent = Math.round((masteredCount / total) * 100) || 0;
-    
+    const percent = Math.round((masteredCount / unitData.length) * 100) || 0;
     document.getElementById('progress-fill').style.width = percent + '%';
     document.getElementById('progress-text').innerText = `TIẾN ĐỘ: ${percent}%`;
-    document.getElementById('count-text').innerText = `${masteredCount}/${total}`;
-    document.getElementById('tab-todo').innerText = `CHƯA THUỘC (${todoCount})`;
+    document.getElementById('count-text').innerText = `${masteredCount}/${unitData.length}`;
+    document.getElementById('tab-todo').innerText = `CHƯA THUỘC (${unitData.length - masteredCount})`;
     document.getElementById('tab-done').innerText = `ĐÃ THUỘC (${masteredCount})`;
 }
 
@@ -364,24 +318,15 @@ function render(keepShuffle = false) {
     const limit = parseInt(document.getElementById('limit-select').value);
     const selectedUnit = parseInt(document.getElementById('sheet-select').value);
     updateStats();
-
     let filtered = rawData.filter(item => {
         const status = item["Trạng thái"] || "Chưa thuộc";
-        const matchTab = currentTab === 'todo' ? status === "Chưa thuộc" : status === "Đã thuộc";
-        const matchUnit = item.unit === selectedUnit;
-        return matchTab && matchUnit;
+        return (currentTab === 'todo' ? status === "Chưa thuộc" : status === "Đã thuộc") && item.unit === selectedUnit;
     });
-
     const totalP = Math.ceil(filtered.length / limit) || 1;
     if (page > totalP) page = totalP;
     let items = filtered.slice((page - 1) * limit, page * limit);
-
-    if (isShuffle && !keepShuffle) {
-        currentList = [...items].sort(() => Math.random() - 0.5);
-    } else if (!isShuffle) {
-        currentList = items;
-    }
-
+    if (isShuffle && !keepShuffle) { currentList = [...items].sort(() => Math.random() - 0.5); }
+    else if (!isShuffle) { currentList = items; }
     const listEl = document.getElementById('word-list');
     listEl.innerHTML = '';
     if (currentList.length === 0) {
@@ -389,40 +334,27 @@ function render(keepShuffle = false) {
         document.getElementById('page-label').innerText = `PAGE ${page}/${totalP}`;
         return;
     }
-
     const keys = Object.keys(rawData[0]).filter(k => k !== "_rowNumber" && k !== "Trạng thái" && k !== "unit" && k !== "examples");
     const colNghia = keys.find(k => k.toLowerCase() === "nghia" || k.toLowerCase().includes("nghĩa")) || "Nghia";
-
     currentList.forEach((item, i) => {
-        const status = item["Trạng thái"] || "Chưa thuộc";
-        const isM = status === "Đã thuộc";
+        const isM = item["Trạng thái"] === "Đã thuộc";
         const card = document.createElement('div');
         card.className = `word-card ${i === currentIndex ? 'active' : ''}`;
         card.id = `card-${i}`;
         card.onclick = () => { select(i); if(isPlaying) stopLoop(); };
-        
-        let col1Content = "", col2Content = "";
-        
+        let c1 = "", c2 = "";
         if (displayMode === 'word') {
-            col1Content = item[colKanji] || "";
-            col2Content = `<div class="pinyin">${item[colHira] || ""}</div><div class="meaning">${item[colNghia] || ""}</div>`;
+            c1 = item[colKanji] || "";
+            c2 = `<div class="pinyin">${item[colHira] || ""}</div><div class="meaning">${item[colNghia] || ""}</div>`;
         } else {
             const hasEx = item.examples && item.examples.length > 0;
-            col1Content = hasEx ? item.examples[0].japanese : "N/A";
-            col2Content = `<div class="meaning">${hasEx ? item.examples[0].vietnamese : "Không có ví dụ"}</div>`;
+            c1 = hasEx ? item.examples[0].japanese : "N/A";
+            c2 = `<div class="meaning">${hasEx ? item.examples[0].vietnamese : "Không có ví dụ"}</div>`;
         }
-
         card.innerHTML = `
-            <div class="index-col"><span class="index-number">${String((page-1)*limit + i + 1).padStart(2, '0')}</span></div>
-            <div class="content-col">
-                <div class="hz-column">${col1Content}</div>
-                <div class="info-column ${!showInfo ? 'hide-info' : ''}">
-                    ${col2Content}
-                </div>
-            </div>
-            <button class="master-btn ${isM ? 'is-mastered' : ''}" onclick="event.stopPropagation(); toggleMaster('${item["Kanji"]}', '${isM ? 'Chưa thuộc' : 'Đã thuộc'}', ${i})">
-                ${isM ? '✅' : '✔️'}
-            </button>`;
+            <div class="index-col"><span class="index-number">${String((page-1)*limit+i+1).padStart(2,'0')}</span></div>
+            <div class="content-col"><div class="hz-column">${c1}</div><div class="info-column ${!showInfo?'hide-info':''}">${c2}</div></div>
+            <button class="master-btn ${isM?'is-mastered':''}" onclick="event.stopPropagation(); toggleMaster('${item["Kanji"]}', '${isM?'Chưa thuộc':'Đã thuộc'}', ${i})">${isM?'✅':'✔️'}</button>`;
         listEl.appendChild(card);
     });
     document.getElementById('page-label').innerText = `PAGE ${page}/${totalP}`;
@@ -435,22 +367,14 @@ async function select(i) {
     if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     const item = currentList[i];
     if (item) {
-        let textToSpeak = "";
-        if (displayMode === 'word') {
-            textToSpeak = item[colHira] || item[colKanji] || "";
-        } else {
-            const hasEx = item.examples && item.examples.length > 0;
-            textToSpeak = hasEx ? item.examples[0].japanese : (item[colHira] || "");
-        }
-        await speak(textToSpeak);
+        let txt = displayMode === 'word' ? (item[colHira] || item[colKanji]) : (item.examples?.[0]?.japanese || item[colHira]);
+        await speak(txt);
     }
 }
 
 async function speak(text) {
     if (!text) return;
-    const voice = document.getElementById("voice-select").value;
-    const rate = document.getElementById("rate-select").value;
-    await speakCommon({ text: text, voice: voice, rate: rate });
+    await speakCommon({ text: text, voice: document.getElementById("voice-select").value, rate: document.getElementById("rate-select").value });
 }
 
 function togglePlay() {
@@ -459,22 +383,21 @@ function togglePlay() {
     if (isPlaying) { 
         if(currentIndex === -1) currentIndex = 0; 
         select(currentIndex); 
-        const delay = parseInt(document.getElementById('delay-select').value);
         autoTimer = setInterval(async () => {
             currentIndex++;
             if (currentIndex >= currentList.length) { currentIndex = 0; if(isShuffle) render(); }
             await select(currentIndex);
-        }, delay);
+        }, parseInt(document.getElementById('delay-select').value));
     } else { stopLoop(); }
 }
 
 function stopLoop() { isPlaying = false; document.getElementById('play-btn').innerText = '▶'; clearInterval(autoTimer); }
-function switchTab(type) { currentTab = type; page = 1; currentIndex = -1; document.getElementById('tab-todo').className = `tab-btn ${type === 'todo' ? 'active' : ''}`; document.getElementById('tab-done').className = `tab-btn ${type === 'done' ? 'active done-mode' : ''}`; render(); }
-function toggleInfo() { showInfo = !showInfo; const btn = document.getElementById('info-btn'); btn.classList.toggle('active-blue', !showInfo); document.getElementById('info-txt').innerText = showInfo ? "Hiện" : "Ẩn"; btn.querySelector('i').innerText = showInfo ? "👁️" : "🙈"; saveSettings(); render(true); }
-function toggleShuffle() { isShuffle = !isShuffle; document.getElementById('shuffle-btn').classList.toggle('active-blue', isShuffle); saveSettings(); render(); }
-function prevPage() { if(page > 1) { page--; render(); } }
-function nextPage() { page++; render(); }
-function showToast(text) { const toast = document.getElementById('toast-msg'); toast.innerText = text; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1500); }
+function switchTab(type) { currentTab = type; page = 1; currentIndex = -1; render(); }
+function toggleInfo() { showInfo = !showInfo; saveSettings(); render(true); }
+function toggleShuffle() { isShuffle = !isShuffle; saveSettings(); render(); }
+function prevPage() { if(page > 1) { page--; currentIndex = -1; render(); } }
+function nextPage() { page++; currentIndex = -1; render(); }
+function showToast(text) { const t = document.getElementById('toast-msg'); t.innerText = text; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
 </script>
 </body>
 </html>

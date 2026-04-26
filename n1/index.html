@@ -50,6 +50,7 @@
         
         .content-col { flex-grow: 1; display: grid; grid-template-columns: 1.2fr 2fr; gap: 12px; align-items: center; min-width: 0; }
         .hz-column { font-size: 0.9rem; color: var(--text-main); font-weight: normal; word-break: break-word; }
+        .highlight { color: var(--primary); font-weight: 800; text-decoration: underline; }
         .info-column { border-left: 1.5px solid #f1f5f9; padding-left: 12px; transition: opacity 0.2s; min-width: 0; flex: 1; }
         .info-column.hide-info { opacity: 0; visibility: hidden; }
         .pinyin { color: var(--primary); font-weight: normal; font-size: 0.75rem; word-break: break-word; }
@@ -160,7 +161,6 @@ let page = 1, isShuffle = false, isPlaying = false, showInfo = true;
 let displayMode = 'word', autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 let rawData = [], colHira = "", colKanji = "";
 
-// --- ĐIỀU HƯỚNG BÀN PHÍM ---
 window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
         let nextIdx = (currentIndex + 1) >= currentList.length ? 0 : currentIndex + 1;
@@ -182,7 +182,6 @@ function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 window.onload = function() {
     console.log("[SYSTEM] Khởi tạo...");
     loadSettings();
-    // Đảm bảo log ra giá trị sau khi loadSettings
     console.log("[SYSTEM] Giọng đọc hiện tại:", document.getElementById("voice-select").value);
     loadAppData();
 };
@@ -197,7 +196,6 @@ function saveSettings() {
         showInfo: showInfo,
         isShuffle: isShuffle
     };
-    console.log("[LOCAL] Lưu cấu hình:", settings);
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
@@ -290,6 +288,8 @@ function toggleDisplayMode() {
     document.getElementById('mode-btn').classList.toggle('active-blue', displayMode === 'example');
     saveSettings();
     render(true);
+    // Tự động đọc lại mục hiện tại khi chuyển chế độ
+    if (currentIndex !== -1) select(currentIndex);
 }
 
 function updateStats() {
@@ -339,7 +339,12 @@ function render(keepShuffle = false) {
             c2 = `<div class="pinyin">${item[colHira] || ""}</div><div class="meaning">${item[colNghia] || ""}</div>`;
         } else {
             const hasEx = item.examples && item.examples.length > 0;
-            c1 = hasEx ? item.examples[0].japanese : "N/A";
+            let exText = hasEx ? item.examples[0].japanese : "N/A";
+            if (hasEx && item[colKanji]) {
+                const regex = new RegExp(`(${item[colKanji]}|${item[colHira]})`, 'g');
+                exText = exText.replace(regex, `<span class="highlight">$1</span>`);
+            }
+            c1 = exText;
             c2 = `<div class="meaning">${hasEx ? item.examples[0].vietnamese : "Không có ví dụ"}</div>`;
         }
         card.innerHTML = `
@@ -367,7 +372,6 @@ async function speak(text) {
     if (!text) return;
     const selectedVoice = document.getElementById("voice-select").value;
     const selectedRate = document.getElementById("rate-select").value;
-    // Log ra giá trị thực tế truyền vào thư viện
     console.log(`[TTS] Voice: ${selectedVoice} | Rate: ${selectedRate}`);
     await speakCommon({ text: text, voice: selectedVoice, rate: selectedRate });
 }

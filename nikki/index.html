@@ -226,20 +226,30 @@
                 displayData = diaries.filter(d => d.pinned);
             }
 
-            const total = displayData.length;
-            displayData.forEach((item) => container.appendChild(createItemEl(item, total - displayData.indexOf(item))));
+            displayData.forEach((item) => container.appendChild(createItemEl(item)));
         }
 
-        function createItemEl(item, count) {
+        function createItemEl(item) {
             const isGen = !!(item.paragraph || item.conversation);
             const div = document.createElement('div');
             div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
             div.id = `item-${item.id}`;
-            div.onclick = () => selectRecord(item.id);
+            // [LOG] Cập nhật onclick để không bị overlap với các nút chức năng
+            div.onclick = (e) => {
+                if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger')) {
+                    selectRecord(item.id);
+                }
+            };
+            
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <div class="diary-date" style="margin-bottom:0;">${item.date}
-                        <span style="margin-left:8px; color:var(--primary-color); background:#eee; padding:1px 6px; border-radius:10px; font-size:0.7rem;">🎙️ ${item.voiceCount || 0}</span>
+                    <div class="diary-date" style="margin-bottom:0;">
+                        ${item.date}
+                        <span class="count-trigger" 
+                              onclick="event.stopPropagation(); handleRecordBadgeClick('${item.id}')" 
+                              style="margin-left:8px; color:white; background:var(--primary-color); padding:2px 8px; border-radius:10px; font-size:0.7rem; cursor:pointer; font-weight:bold; display:inline-block;">
+                            🎙️ ${item.voiceCount || 0}
+                        </span>
                     </div>
                     <div style="display:flex; gap:10px;">
                         <div class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
@@ -255,6 +265,25 @@
                 </div>
             `;
             return div;
+        }
+
+        /**
+         * [LOG] Xử lý click vào badge record: Chọn trước, mở danh sách sau
+         */
+        function handleRecordBadgeClick(id) {
+            console.log(`[LOG] Triggering voice list for ID: ${id}`);
+            // Đảm bảo item này được chọn và URL được cập nhật
+            selectRecord(id);
+            
+            // Đợi một chút để module ShadowGame nhận diện sự thay đổi (nếu có) rồi trigger click
+            setTimeout(() => {
+                const btnList = document.getElementById('btnList');
+                if (btnList) {
+                    btnList.click();
+                } else {
+                    console.warn("[System] Không tìm thấy #btnList của module");
+                }
+            }, 50);
         }
 
         function saveDiary() {

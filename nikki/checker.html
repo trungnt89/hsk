@@ -52,7 +52,6 @@
 
     <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng với model Gemini 2.5 Flash.</div>
 </div>
-
 <script>
     const SHADOW_DB_NAME = 'ShadowVoiceDB'; 
     const SHADOW_STORE_NAME = 'voices';     
@@ -106,28 +105,40 @@
     }
 
     window.onload = async () => {
-        // 1. Load API Key
+        addLog("🚀 Đang khởi tạo hệ thống...");
+
+        // 1. Load API Key và Log trạng thái
         const db = await initSettingsDB();
         const tx = db.transaction(SETTINGS_STORE_NAME, 'readonly');
         const store = tx.objectStore(SETTINGS_STORE_NAME);
         const req = store.get('api_key');
-        req.onsuccess = () => { if(req.result) apiKeyInput.value = req.result; };
+        req.onsuccess = () => { 
+            if(req.result) {
+                apiKeyInput.value = req.result;
+                addLog("🔑 Đã nạp API Key từ bộ nhớ.");
+            } else {
+                addLog("ℹ️ Chưa có API Key trong bộ nhớ.");
+            }
+        };
 
-        // 2. Load dữ liệu từ URL fileId
+        // 2. Load dữ liệu từ URL fileId và Log trạng thái
         const fileId = new URLSearchParams(window.location.search).get('fileId');
         if (fileId) {
-            addLog(`Đang truy xuất dữ liệu fileId: ${fileId}`);
+            addLog(`🔍 Đang truy xuất dữ liệu từ Database cho fileId: ${fileId}`);
             const data = await loadDataFromShadowModule(fileId);
             if (data) {
                 // Đổ thông tin vào form
                 scriptInput.value = data.script || "";
+                if (data.script) addLog("📝 Đã nạp Script từ Database.");
+                
                 if (data.blob) {
                     currentBlob = data.blob;
                     const url = URL.createObjectURL(data.blob);
                     audioPreview.src = url;
                     audioPreview.style.display = "block";
-                    addLog("✅ Đã nạp thành công Audio và Script vào form.");
+                    addLog(`🎵 Đã nạp Audio từ Database (${(data.blob.size / 1024).toFixed(1)} KB).`);
                 }
+                addLog("✅ Hoàn tất load dữ liệu tự động.");
             } else {
                 addLog("⚠️ Không tìm thấy dữ liệu ứng với fileId này.");
             }
@@ -135,18 +146,27 @@
     };
 
     apiKeyInput.onchange = async () => {
+        const val = apiKeyInput.value.trim();
         const db = await initSettingsDB();
         const tx = db.transaction(SETTINGS_STORE_NAME, 'readwrite');
-        tx.objectStore(SETTINGS_STORE_NAME).put(apiKeyInput.value.trim(), 'api_key');
-        addLog("Đã lưu API Key.");
+        tx.objectStore(SETTINGS_STORE_NAME).put(val, 'api_key');
+        addLog(`🔑 Đã cập nhật và lưu API Key mới (Độ dài: ${val.length}).`);
     };
 
     audioInput.onchange = (e) => {
-        currentBlob = e.target.files[0];
-        if (currentBlob) {
-            audioPreview.src = URL.createObjectURL(currentBlob);
+        const file = e.target.files[0];
+        if (file) {
+            currentBlob = file;
+            audioPreview.src = URL.createObjectURL(file);
             audioPreview.style.display = "block";
-            addLog("Đã nạp file từ máy tính.");
+            addLog(`📂 Đã nạp file từ máy tính: ${file.name} (${(file.size / 1024).toFixed(1)} KB).`);
+        }
+    };
+
+    scriptInput.oninput = () => {
+        // Log nhẹ khi người dùng tự gõ script
+        if (scriptInput.value.length % 10 === 0) { // Giảm tần suất log
+             console.log("Script updated...");
         }
     };
 
@@ -155,20 +175,28 @@
         const script = scriptInput.value.trim();
         const file = currentBlob;
 
+        // Log kiểm tra trước khi gửi
+        addLog("🧪 Kiểm tra thông tin trước khi gửi:");
+        addLog(`- API Key: ${key ? "Đã sẵn sàng" : "❌ Thiếu"}`);
+        addLog(`- Script: ${script ? (script.substring(0, 15) + "...") : "⚠️ Trống (AI sẽ tự nhận diện)"}`);
+        addLog(`- Audio File: ${file ? "Đã nạp" : "❌ Thiếu"}`);
+
         if(!file || !key) {
             alert("Vui lòng cung cấp API Key và dữ liệu âm thanh!");
+            addLog("❌ Hủy yêu cầu: Thiếu thông tin bắt buộc.");
             return;
         }
 
         analyzeBtn.disabled = true;
         statusDiv.innerText = "Trạng thái: Đang chấm điểm...";
         resultDiv.style.display = "none";
-        addLog("Bắt đầu gọi Gemini 2.5 Flash...");
+        addLog("⏳ Đang mã hóa âm thanh & Gọi Gemini 2.5 Flash...");
 
         try {
-            const base64Data = await new Promise(res => {
+            const base64Data = await new Promise((resolve, reject) => {
                 const r = new FileReader();
-                r.onload = () => res(r.result.split(',')[1]);
+                r.onload = () => resolve(r.result.split(',')[1]);
+                r.onerror = () => reject(new Error("Lỗi đọc file âm thanh."));
                 r.readAsDataURL(file);
             });
 
@@ -187,7 +215,7 @@
                             2. NHẬN XÉT phát âm & Pitch Accent.
                             3. CHẤM ĐIỂM /100.
                             4. KHUYÊN CẢI THIỆN.` },
-                            { inline_data: { mime_type: "audio/mp4", data: base64Data } }
+                            { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
                         ]
                     }]
                 })
@@ -199,11 +227,11 @@
             if (data.candidates && data.candidates.length > 0) {
                 resultDiv.innerText = data.candidates[0].content.parts[0].text;
                 resultDiv.style.display = "block";
-                statusDiv.innerText = "Trạng thái: Đã có kết quả!";
-                addLog("Chấm điểm hoàn tất.");
+                statusDiv.innerText = "Trạng thái: Đ đã có kết quả!";
+                addLog("✅ Chấm điểm hoàn tất. Đã nhận kết quả từ AI.");
             }
         } catch (err) {
-            addLog("Lỗi: " + err.message);
+            addLog("❌ Lỗi: " + err.message);
             statusDiv.innerText = "Trạng thái: Lỗi.";
         } finally {
             analyzeBtn.disabled = false;

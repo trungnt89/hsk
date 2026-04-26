@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Internal Navigation Dashboard</title>
-	<script src="../com/assistive.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #1e1e1e; }
@@ -32,7 +31,6 @@
         /* Content Area */
         #content { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
         
-        /* Cố gắng ép iframe hiển thị */
         #main-frame {
             width: 100%;
             flex-grow: 1;
@@ -56,17 +54,11 @@
 
 <div id="sidebar">
     <div class="sidebar-header">MENU ĐIỀU HƯỚNG</div>
-	
-    <div class="menu-item" 
-		onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc/edit?gid=0#gid=0')">LOG</div>
-    <div class="menu-item" 
-		onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/13lnWD6MxoMJNSn9iPqbJVDpyghthMt4JhjuiSE3F064/edit?gid=858088211#gid=858088211')">VoiceRecorder</div>
-    <div class="menu-item" 
-		onclick="loadInternal(this, 'https://aistudio.google.com/spend?project=gen-lang-client-0273316723')">Gemine Spend</div>
-	<div class="menu-item" 
-		onclick="loadInternal(this, 'https://platform.deepseek.com/usage')">DeepSeek Spend</div>
-
-
+    <div class="menu-item" onclick="openExternal(this, 'https://vercel.com/trungnt6541s-projects/hsk/deployments')">Vercel Deployments ↗</div>
+    <div class="menu-item" onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc/edit?gid=0#gid=0')">Sheets LOG</div>
+    <div class="menu-item" onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/13lnWD6MxoMJNSn9iPqbJVDpyghthMt4JhjuiSE3F064/edit?gid=858088211#gid=858088211')">Google Voice</div>
+    <div class="menu-item" onclick="openExternal(this, 'https://platform.deepseek.com/usage')">DeepSeek Usage ↗</div>
+    <div class="menu-item" onclick="loadInternal(this, 'https://aistudio.google.com/spend?project=gen-lang-client-0273316723')">Gemine Usage</div>
 </div>
 
 <div id="content">
@@ -82,29 +74,32 @@
         console.log(msg);
     }
 
+    function openExternal(el, url) {
+        writeLog(`--- Mở link ngoài trong tab mới: ${url} ---`);
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        window.open(url, '_blank');
+    }
+
     function loadInternal(el, url) {
         writeLog("--- Yêu cầu tải nội dung nội bộ ---");
-        
-        // Cập nhật trạng thái menu
         document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
         el.classList.add('active');
 
         const frame = document.getElementById('main-frame');
-        
         writeLog(`Đang khởi tạo nạp URL: ${url}`);
         frame.src = url;
 
-        // Kiểm tra sau 2 giây xem có lỗi hiển thị không
         setTimeout(() => {
             writeLog("Trạng thái nạp: Hoàn tất kiểm tra cơ bản.");
-            writeLog("Lưu ý: Nếu màn hình trắng, hãy kiểm tra Extension 'Ignore X-Frame-Options'.");
         }, 2000);
     }
 
     window.onload = () => {
         writeLog("Hệ thống Dashboard đã khởi động.");
-        const first = document.querySelector('.menu-item');
-        if(first) first.click();
+        // Tự động click vào mục đầu tiên có thể load nội bộ
+        const firstInternal = document.querySelector('.menu-item[onclick^="loadInternal"]');
+        if(firstInternal) firstInternal.click();
     }
 </script>
 

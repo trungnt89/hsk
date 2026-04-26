@@ -43,7 +43,6 @@
 
     <div class="log-box" id="logBox">Logs: Hệ thống khởi tạo hoàn tất.</div>
 </div>
-
 <script>
     const DB_NAME = 'JP_Pronunciation_DB';
     const STORE_NAME = 'config';
@@ -60,52 +59,28 @@
         const time = new Date().toLocaleTimeString();
         logBox.innerText += `\n[${time}] ${msg}`;
         logBox.scrollTop = logBox.scrollHeight;
-        console.log(`[${time}] ${msg}`);
     }
 
-    // --- CƠ CHẾ LƯU TRỮ INDEXEDDB ---
     async function getDB() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const req = indexedDB.open(DB_NAME, 1);
             req.onupgradeneeded = (e) => e.target.result.createObjectStore(STORE_NAME);
             req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject("Không thể mở DB");
         });
     }
 
     async function loadSavedKey() {
-        try {
-            const db = await getDB();
-            const tx = db.transaction(STORE_NAME, 'readonly');
-            const store = tx.objectStore(STORE_NAME);
-            const req = store.get(KEY_NAME);
-            req.onsuccess = () => {
-                if (req.result) {
-                    apiKeyInput.value = req.result;
-                    logger("Đã khôi phục API Key từ bộ nhớ.");
-                }
-            };
-        } catch (e) { logger("Lỗi đọc DB: " + e); }
+        const db = await getDB();
+        const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(KEY_NAME);
+        req.onsuccess = () => { if (req.result) apiKeyInput.value = req.result; };
     }
 
     async function saveKey(val) {
-        try {
-            const db = await getDB();
-            const tx = db.transaction(STORE_NAME, 'readwrite');
-            tx.objectStore(STORE_NAME).put(val, KEY_NAME);
-            logger("Đã lưu API Key mới vào IndexedDB.");
-        } catch (e) { logger("Lỗi lưu DB: " + e); }
+        const db = await getDB();
+        db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(val, KEY_NAME);
+        logger("Đã lưu API Key.");
     }
 
-    // --- NHẬN DIỆN MIME TYPE THÔNG MINH ---
-    function detectMimeType(file) {
-        if (file.type) return file.type;
-        const ext = file.name.split('.').pop().toLowerCase();
-        const map = { 'm4a': 'audio/mp4', 'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'aac': 'audio/aac', 'flac': 'audio/flac' };
-        return map[ext] || 'audio/mpeg';
-    }
-
-    // --- SỰ KIỆN ---
     window.onload = loadSavedKey;
     apiKeyInput.onchange = (e) => saveKey(e.target.value);
 
@@ -114,27 +89,24 @@
         const key = apiKeyInput.value;
 
         if (!key || !file) {
-            alert("Vui lòng nhập API Key và chọn file âm thanh!");
+            alert("Vui lòng nhập API Key và chọn file!");
             return;
         }
 
         analyzeBtn.disabled = true;
         resultDiv.style.display = "none";
-        statusDiv.innerText = "Trạng thái: Đang phân tích âm thanh...";
-        logger(`Bắt đầu xử lý file: ${file.name}`);
+        statusDiv.innerText = "Đang phân tích...";
+        logger(`Đang xử lý: ${file.name}`);
 
         try {
-            // 1. Chuyển sang Base64
             const base64Data = await new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result.split(',')[1]);
                 reader.readAsDataURL(file);
             });
-            logger("Đã chuyển đổi Audio sang Base64.");
 
-            // 2. Gọi API (Sử dụng v1 stable)
-            const mime = detectMimeType(file);
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
+            // FIX: Sử dụng gemini-1.5-flash-latest để đảm bảo model luôn được tìm thấy
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${key}`;
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -142,8 +114,8 @@
                 body: JSON.stringify({
                     contents: [{
                         parts: [
-                            { text: "Bạn là một giáo viên tiếng Nhật bản xứ chuyên nghiệp. Hãy nghe đoạn ghi âm này và thực hiện: \n1. Transcript chính xác lời người nói bằng Kanji và Hiragana.\n2. Nhận xét chi tiết về phát âm từng âm tiết.\n3. Chỉ ra các lỗi về trường âm, âm ngắt hoặc Pitch Accent (ngữ điệu).\n4. Đánh giá mức độ tự nhiên (1-10) và lời khuyên cải thiện.\nHãy trả lời bằng tiếng Việt rõ ràng." },
-                            { inline_data: { mime_type: mime, data: base64Data } }
+                            { text: "Bạn là giáo viên tiếng Nhật. Hãy nghe file này và nhận xét phát âm, transcript lại nội dung bằng tiếng Việt." },
+                            { inline_data: { mime_type: file.type || 'audio/mpeg', data: base64Data } }
                         ]
                     }]
                 })
@@ -151,25 +123,47 @@
 
             const data = await response.json();
 
-            if (data.error) throw new Error(data.error.message);
-
-            if (data.candidates && data.candidates[0].content) {
-                resultDiv.innerText = data.candidates[0].content.parts[0].text;
-                resultDiv.style.display = "block";
-                statusDiv.innerText = "Trạng thái: Hoàn tất!";
-                logger("Thành công: Đã nhận phản hồi từ AI.");
-            } else {
-                throw new Error("Cấu trúc phản hồi không đúng.");
+            if (data.error) {
+                // Nếu vẫn lỗi, thử hạ cấp xuống v1beta (dành cho một số tài khoản chưa cập nhật v1)
+                if (data.error.message.includes("not found")) {
+                    logger("Thử lại với Endpoint dự phòng...");
+                    return retryWithBeta(key, base64Data, file.type || 'audio/mpeg');
+                }
+                throw new Error(data.error.message);
             }
+
+            resultDiv.innerText = data.candidates[0].content.parts[0].text;
+            resultDiv.style.display = "block";
+            statusDiv.innerText = "Hoàn tất!";
+            logger("Thành công.");
 
         } catch (err) {
             logger("Lỗi: " + err.message);
-            statusDiv.innerText = "Trạng thái: Lỗi hệ thống.";
-            alert("Đã có lỗi xảy ra: " + err.message);
+            alert("Lỗi: " + err.message);
         } finally {
             analyzeBtn.disabled = false;
         }
     };
+
+    // Hàm dự phòng nếu bản v1 chưa khả dụng với tài khoản của bạn
+    async function retryWithBeta(key, base64, mime) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: "Nhận xét phát âm file này bằng tiếng Việt." }, { inline_data: { mime_type: mime, data: base64 } }] }]
+                })
+            });
+            const data = await res.json();
+            resultDiv.innerText = data.candidates[0].content.parts[0].text;
+            resultDiv.style.display = "block";
+            statusDiv.innerText = "Hoàn tất (via Beta)!";
+        } catch (e) {
+            logger("Lỗi dự phòng: " + e.message);
+        }
+    }
 </script>
 
 </body>

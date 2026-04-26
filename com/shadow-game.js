@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Updated sorting by formattedDate string
+ * ShadowGame Module - Sắp xếp giảm dần theo chuỗi formattedDate (Mới nhất lên đầu)
  */
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
@@ -198,7 +198,6 @@ export const ShadowGame = {
             let area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
             const fileName = `Shadow_${this.lessonId}_${Date.now()}.mp4`;
-            const formattedDate = new Date().toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" }).replace(' ', '-').replace(/-/g, '/').replace(/\//, '/').replace(' ', '-'); // Giữ format chuỗi đồng nhất
             
             const res = await this.api({}, "POST", { 
                 action: "uploadVoice", base64, fileName, lessonId: this.lessonId, 
@@ -207,7 +206,7 @@ export const ShadowGame = {
             if (res.status === 'success') {
                 await this.dbOp('readwrite', 'voices', 'put', { 
                     id: res.id, blob, name: fileName, date: Date.now(), 
-                    formattedDate: res.formattedDate || formattedDate, lessonId: this.lessonId, 
+                    formattedDate: res.formattedDate, lessonId: this.lessonId, 
                     score: "N/A", script, browserScript 
                 });
                 this.updateBadgeCounts();
@@ -246,7 +245,7 @@ export const ShadowGame = {
 
         itemsWrap.innerHTML = localFiles.length === 0 ? `<div style="padding:20px; text-align:center; color:#94a3b8;">Chưa có bản ghi nào.</div>` : "";
         
-        // Sắp xếp giảm dần theo chuỗi formattedDate trực tiếp
+        // Sắp xếp giảm dần theo chuỗi formattedDate trực tiếp (Mới nhất lên đầu)
         localFiles.sort((a, b) => (b.formattedDate || "").localeCompare(a.formattedDate || "")).forEach(async f => {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";

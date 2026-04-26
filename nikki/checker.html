@@ -54,11 +54,8 @@
 </div>
 
 <script>
-    // Database chứa dữ liệu ghi âm (của module ShadowGame)
     const SHADOW_DB_NAME = 'ShadowVoiceDB'; 
     const SHADOW_STORE_NAME = 'voices';     
-
-    // Database chứa settings (API Key)
     const SETTINGS_DB_NAME = 'JP_Score_DB_v1';
     const SETTINGS_STORE_NAME = 'settings';
 
@@ -102,39 +99,37 @@
                     const getReq = store.get(fileId);
                     getReq.onsuccess = () => res(getReq.result);
                     getReq.onerror = () => res(null);
-                } catch (err) { 
-                    addLog("Lỗi truy cập Store ShadowVoiceDB: " + err.message);
-                    res(null); 
-                }
+                } catch (err) { res(null); }
             };
             req.onerror = () => res(null);
         });
     }
 
     window.onload = async () => {
-        // 1. Load API Key từ Settings DB
+        // 1. Load API Key
         const db = await initSettingsDB();
         const tx = db.transaction(SETTINGS_STORE_NAME, 'readonly');
         const store = tx.objectStore(SETTINGS_STORE_NAME);
         const req = store.get('api_key');
         req.onsuccess = () => { if(req.result) apiKeyInput.value = req.result; };
 
-        // 2. Xử lý fileId từ URL
+        // 2. Load dữ liệu từ URL fileId
         const fileId = new URLSearchParams(window.location.search).get('fileId');
         if (fileId) {
             addLog(`Đang truy xuất dữ liệu fileId: ${fileId}`);
             const data = await loadDataFromShadowModule(fileId);
             if (data) {
+                // Đổ thông tin vào form
                 scriptInput.value = data.script || "";
                 if (data.blob) {
                     currentBlob = data.blob;
                     const url = URL.createObjectURL(data.blob);
                     audioPreview.src = url;
                     audioPreview.style.display = "block";
-                    addLog("✅ Đã nạp thành công Audio và Script.");
+                    addLog("✅ Đã nạp thành công Audio và Script vào form.");
                 }
             } else {
-                addLog("⚠️ Không tìm thấy dữ liệu trong bộ nhớ trình duyệt.");
+                addLog("⚠️ Không tìm thấy dữ liệu ứng với fileId này.");
             }
         }
     };
@@ -168,7 +163,7 @@
         analyzeBtn.disabled = true;
         statusDiv.innerText = "Trạng thái: Đang chấm điểm...";
         resultDiv.style.display = "none";
-        addLog("Đang gửi yêu cầu tới Gemini 2.5 Flash...");
+        addLog("Bắt đầu gọi Gemini 2.5 Flash...");
 
         try {
             const base64Data = await new Promise(res => {
@@ -204,8 +199,8 @@
             if (data.candidates && data.candidates.length > 0) {
                 resultDiv.innerText = data.candidates[0].content.parts[0].text;
                 resultDiv.style.display = "block";
-                statusDiv.innerText = "Trạng thái: Hoàn tất!";
-                addLog("Phân tích thành công.");
+                statusDiv.innerText = "Trạng thái: Đã có kết quả!";
+                addLog("Chấm điểm hoàn tất.");
             }
         } catch (err) {
             addLog("Lỗi: " + err.message);

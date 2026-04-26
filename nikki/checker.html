@@ -13,13 +13,15 @@
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #444; }
         input[type="text"], input[type="file"], textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
         textarea { height: 100px; resize: vertical; font-family: inherit; }
+        input[type="text"]:focus, textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 5px rgba(0,123,255,0.2); }
         button { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         button:hover { background: var(--primary); transform: translateY(-1px); }
         button:disabled { background: #ccc; cursor: not-allowed; }
         #status { margin: 15px 0; font-weight: bold; color: #666; display: flex; align-items: center; }
         #status::before { content: "●"; margin-right: 8px; color: #e67e22; }
-        #result { margin-top: 25px; padding: 25px; background: #fff; border-left: 6px solid var(--primary); border-radius: 4px; white-space: pre-wrap; display: none; border: 1px solid #e1e8ed; box-shadow: 0 4px 10px rgba(0,0,0,0.03); font-size: 14px; }
+        #result { margin-top: 25px; padding: 25px; background: #fff; border-left: 6px solid var(--primary); border-radius: 4px; white-space: pre-wrap; display: none; border: 1px solid #e1e8ed; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         .log-box { margin-top: 30px; background: #2d3436; color: #00ff00; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; }
+        #audioPreview { margin-top: 10px; width: 100%; height: 40px; display: none; }
     </style>
 </head>
 <body>
@@ -34,12 +36,13 @@
 
     <div class="form-group">
         <label>Kịch bản gốc (Script tiếng Nhật):</label>
-        <textarea id="originalScript" placeholder="Nhập văn bản tiếng Nhật..."></textarea>
+        <textarea id="originalScript" placeholder="Nhập đoạn văn bản tiếng Nhật bạn định nói vào đây..."></textarea>
     </div>
 
     <div class="form-group">
         <label>File ghi âm (.m4a, .mp3, .wav):</label>
         <input type="file" id="audioFile" accept="audio/*">
+        <audio id="audioPreview" controls></audio>
     </div>
 
     <button id="analyzeBtn">Phân Tích & Chấm Điểm</button>
@@ -47,12 +50,15 @@
     <div id="status">Trạng thái: Sẵn sàng</div>
     <div id="result"></div>
 
-    <div class="log-box" id="logBox">Logs: Hệ thống sẵn sàng (Model: Gemini 2.0 Flash).</div>
+    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng với model Gemini 2.5 Flash.</div>
 </div>
 
 <script>
-    const DB_NAME = 'JP_Score_DB_v1';
-    const STORE_NAME = 'settings';
+    const DB_NAME = 'ShadowVoiceDB'; // Tên DB từ Module
+    const STORE_NAME = 'voices';     // Store chứa blob/script
+    const SETTINGS_DB = 'JP_Score_DB_v1';
+    const SETTINGS_STORE = 'settings';
+
     const apiKeyInput = document.getElementById('apiKey');
     const scriptInput = document.getElementById('originalScript');
     const audioInput = document.getElementById('audioFile');
@@ -60,88 +66,116 @@
     const resultDiv = document.getElementById('result');
     const statusDiv = document.getElementById('status');
     const logBox = document.getElementById('logBox');
+    const audioPreview = document.getElementById('audioPreview');
+
+    let currentBlob = null;
 
     function addLog(msg) {
         const t = new Date().toLocaleTimeString();
         logBox.innerText += `\n[${t}] ${msg}`;
         logBox.scrollTop = logBox.scrollHeight;
-        console.log(`[LOG] ${msg}`);
     }
 
-    async function initDB() {
+    async function initSettingsDB() {
         return new Promise(res => {
-            const req = indexedDB.open(DB_NAME, 1);
-            req.onupgradeneeded = e => {
-                if (!e.target.result.objectStoreNames.contains(STORE_NAME)) {
-                    e.target.result.createObjectStore(STORE_NAME);
-                }
-            };
+            const req = indexedDB.open(SETTINGS_DB, 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore(SETTINGS_STORE);
             req.onsuccess = () => res(req.result);
         });
     }
 
+    // Lấy dữ liệu âm thanh/script từ Module ShadowGame
+    async function loadDataFromModule(fileId) {
+        return new Promise(res => {
+            const req = indexedDB.open(DB_NAME, 1);
+            req.onsuccess = e => {
+                try {
+                    const tx = e.target.result.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const getReq = store.get(fileId);
+                    getReq.onsuccess = () => res(getReq.result);
+                } catch (err) { res(null); }
+            };
+            req.onerror = () => res(null);
+        });
+    }
+
     window.onload = async () => {
-        const db = await initDB();
+        // Load API Key
+        const db = await initSettingsDB();
         const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get('api_key');
         req.onsuccess = () => { if(req.result) apiKeyInput.value = req.result; };
+
+        // Xử lý fileId từ URL
+        const fileId = new URLSearchParams(window.location.search).get('fileId');
+        if (fileId) {
+            addLog(`Đang tìm dữ liệu cho ID: ${fileId}`);
+            const data = await loadDataFromModule(fileId);
+            if (data) {
+                scriptInput.value = data.script || "";
+                if (data.blob) {
+                    currentBlob = data.blob;
+                    audioPreview.src = URL.createObjectURL(data.blob);
+                    audioPreview.style.display = "block";
+                    addLog("✅ Đã nạp Script và Audio từ bộ nhớ.");
+                }
+            }
+        }
     };
 
     apiKeyInput.onchange = async () => {
-        const db = await initDB();
+        const db = await initSettingsDB();
         db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(apiKeyInput.value.trim(), 'api_key');
-        addLog("Đã cập nhật API Key vào bộ nhớ.");
+        addLog("Đã lưu API Key.");
     };
 
-    // --- LẮNG NGHE DỮ LIỆU TỪ MODULE JS ---
-    window.addEventListener("message", async (event) => {
-        if (!event.data || event.data.action !== "direct_score") return;
-
-        const { apiKey, audioBlob, script } = event.data;
-        addLog("Nhận lệnh chấm điểm tự động từ Module.");
-
-        if (apiKey) apiKeyInput.value = apiKey;
-        if (script) scriptInput.value = script;
-
-        const finalKey = apiKey || apiKeyInput.value.trim();
-        
-        if (!audioBlob) {
-            addLog("Lỗi: Không nhận được dữ liệu âm thanh (Blob).");
-            return;
+    audioInput.onchange = (e) => {
+        currentBlob = e.target.files[0];
+        if (currentBlob) {
+            audioPreview.src = URL.createObjectURL(currentBlob);
+            audioPreview.style.display = "block";
         }
-        
-        await processAndScore(audioBlob, finalKey, script || scriptInput.value);
-    });
+    };
 
-    async function processAndScore(fileOrBlob, key, script) {
-        if(!key) {
-            alert("Vui lòng nhập API Key!");
+    analyzeBtn.onclick = async () => {
+        const key = apiKeyInput.value.trim();
+        const script = scriptInput.value.trim();
+        const file = currentBlob;
+
+        if(!file || !key) {
+            alert("Vui lòng cung cấp API Key và dữ liệu âm thanh!");
             return;
         }
 
         analyzeBtn.disabled = true;
-        statusDiv.innerText = "Trạng thái: Đang xử lý...";
+        statusDiv.innerText = "Trạng thái: Đang chấm điểm...";
         resultDiv.style.display = "none";
-        addLog("Đang mã hóa Audio sang Base64...");
+        addLog("Bắt đầu gọi Gemini 2.5 Flash...");
 
         try {
-            const base64Data = await new Promise((res, rej) => {
+            const base64Data = await new Promise(res => {
                 const r = new FileReader();
                 r.onload = () => res(r.result.split(',')[1]);
-                r.onerror = () => rej(new Error("Lỗi đọc file âm thanh."));
-                r.readAsDataURL(fileOrBlob);
+                r.readAsDataURL(file);
             });
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+            // GIỮ NGUYÊN MODEL 2.5 FLASH THEO YÊU CẦU
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
-            addLog("Đang gửi dữ liệu tới Gemini API...");
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{
                         parts: [
-                            { text: `Bạn là chuyên gia ngôn ngữ Nhật Bản. Hãy chấm điểm phát âm dựa trên kịch bản: "${script || 'Tự nhận diện'}". Phân tích lỗi sai, Pitch Accent, và chấm điểm trên thang 100. Phản hồi bằng tiếng Việt.` },
-                            { inline_data: { mime_type: fileOrBlob.type || "audio/mp4", data: base64Data } }
+                            { text: `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
+                            KỊCH BẢN GỐC: "${script || 'Không cung cấp'}"
+                            YÊU CẦU:
+                            1. SO SÁNH nội dung nói.
+                            2. NHẬN XÉT CHI TIẾT phát âm và Pitch Accent.
+                            3. CHẤM ĐIỂM /100.
+                            4. KHUYÊN CẢI THIỆN.` },
+                            { inline_data: { mime_type: "audio/mp4", data: base64Data } }
                         ]
                     }]
                 })
@@ -150,35 +184,19 @@
             const data = await response.json();
             if (data.error) throw new Error(data.error.message);
 
-            if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-                const feedback = data.candidates[0].content.parts[0].text;
-                resultDiv.innerText = feedback;
+            if (data.candidates && data.candidates.length > 0) {
+                resultDiv.innerText = data.candidates[0].content.parts[0].text;
                 resultDiv.style.display = "block";
-                statusDiv.innerText = "Trạng thái: Hoàn tất!";
-                addLog("Chấm điểm thành công.");
-
-                // Gửi kết quả ngược lại cho module nếu cần
-                window.parent.postMessage({ action: "score_result", feedback }, "*");
-            } else {
-                throw new Error("AI không trả về kết quả hợp lệ.");
+                statusDiv.innerText = "Trạng thái: Đã có kết quả!";
+                addLog("Chấm điểm hoàn tất.");
             }
-
         } catch (err) {
             addLog("Lỗi: " + err.message);
             statusDiv.innerText = "Trạng thái: Lỗi.";
-            resultDiv.innerText = "Lỗi: " + err.message;
-            resultDiv.style.display = "block";
         } finally {
             analyzeBtn.disabled = false;
         }
-    }
-
-    analyzeBtn.onclick = () => {
-        const file = audioInput.files[0];
-        if(!file) return alert("Vui lòng chọn file âm thanh!");
-        processAndScore(file, apiKeyInput.value.trim(), scriptInput.value.trim());
     };
 </script>
-
 </body>
 </html>

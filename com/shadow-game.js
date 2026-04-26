@@ -108,8 +108,7 @@ export const ShadowGame = {
     },
 
     async aiScoreVoice(fileId) {
-        const item = await this.dbOp('readonly', 'voices', 'get', fileId);
-        if (!item) return this.showToast("❌ Không tìm thấy bản ghi.");
+        if (!fileId) return this.showToast("❌ Không có ID file.");
         this.getEl('scoreResultPanel').style.display = 'block';
         this.getEl('saveScore').style.display = 'none';
         const reportEl = this.getEl('aiReport');

@@ -42,14 +42,19 @@ export const ShadowGame = {
     async dbOp(mode, storeName, action, data) {
         const tx = this.db.transaction(storeName, mode);
         const store = tx.objectStore(storeName);
-        return new Promise(res => {
+        return new Promise((res, rej) => {
             let req;
             if (action === 'put') req = store.put(data);
             else if (action === 'get') req = store.get(data);
             else if (action === 'clear') req = store.clear();
             else if (action === 'delete') req = store.delete(data);
             else req = store.getAll();
+            
             req.onsuccess = () => res(req.result);
+            req.onerror = () => {
+                console.error(`[ERR] DB Op Fail: ${action} on ${storeName}`);
+                rej(req.error);
+            };
         });
     },
 
@@ -112,13 +117,13 @@ export const ShadowGame = {
             this.getEl('scoreResultPanel').style.display = 'none';
         };
         this.getEl('saveScore').onclick = async () => {
-            console.log("[LOG] Save Score - Updating INPUT DATA in SCORE store");
+            console.log("[LOG] Save Score - Updating SCORE-CHECK-INPUT in SCORE store");
             const area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
             
-            // [LOG] Lưu thông tin chấm điểm gồm script, file ghi âm vào DB: SCORE và key là INPUT DATA
+            // [LOG] Lưu thông tin chấm điểm gồm script, file ghi âm vào DB: SCORE và key là SCORE-CHECK-INPUT
             await this.dbOp('readwrite', 'SCORE', 'put', { 
-                id: "INPUT DATA",
+                id: "SCORE-CHECK-INPUT",
                 script: script,
                 browserScript: this.history.join(" "),
                 blob: this._tempBlob,
@@ -134,13 +139,17 @@ export const ShadowGame = {
     async aiScoreVoice(fileId) {
         if (!fileId) return this.showToast("❌ Không có ID file.");
 
-        console.log(`[LOG] Chấm điểm - Đồng bộ INPUT DATA cho: ${fileId}`);
+        console.log(`[LOG] Chấm điểm - Đồng bộ SCORE-CHECK-INPUT cho: ${fileId}`);
         
         const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
         if (currentData) {
-            // [LOG] Chép dữ liệu từ voices sang SCORE với key INPUT DATA
-            await this.dbOp('readwrite', 'SCORE', 'put', { ...currentData, id: "INPUT DATA" });
-            console.log("[LOG] Đã chuẩn bị INPUT DATA trong store SCORE thành công.");
+            // [LOG] Chép dữ liệu từ voices sang SCORE với key SCORE-CHECK-INPUT
+            // Đảm bảo await hoàn tất trước khi mở link checker
+            await this.dbOp('readwrite', 'SCORE', 'put', { 
+                ...currentData, 
+                id: "SCORE-CHECK-INPUT" 
+            });
+            console.log("[LOG] Đã lưu thành công SCORE-CHECK-INPUT vào IndexedDB.");
         }
         
         const checkerUrl = "checker.html"; 

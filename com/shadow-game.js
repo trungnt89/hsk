@@ -24,7 +24,17 @@ export const ShadowGame = {
     async initDB() {
         return new Promise(res => {
             const req = indexedDB.open("ShadowVoiceDB", 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore("voices", { keyPath: "id" });
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                // Tạo store lưu trữ danh sách voice
+                if (!db.objectStoreNames.contains("voices")) {
+                    db.createObjectStore("voices", { keyPath: "id" });
+                }
+                // [LOG] Tạo store SCORE để lưu dữ liệu đầu vào cho việc chấm điểm
+                if (!db.objectStoreNames.contains("SCORE")) {
+                    db.createObjectStore("SCORE", { keyPath: "id" });
+                }
+            };
             req.onsuccess = e => { this.db = e.target.result; res(); };
         });
     },
@@ -102,13 +112,13 @@ export const ShadowGame = {
             this.getEl('scoreResultPanel').style.display = 'none';
         };
         this.getEl('saveScore').onclick = async () => {
-            console.log("[LOG] Save Score - Updating SCORE_CHECK_KEY");
+            console.log("[LOG] Save Score - Updating INPUT DATA in SCORE store");
             const area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
             
-            // Chờ xác nhận lưu thành công vào IndexedDB
-            await this.dbOp('readwrite', 'voices', 'put', { 
-                id: "SCORE_CHECK_KEY",
+            // [LOG] Lưu thông tin chấm điểm gồm script, file ghi âm vào DB: SCORE và key là INPUT DATA
+            await this.dbOp('readwrite', 'SCORE', 'put', { 
+                id: "INPUT DATA",
                 script: script,
                 browserScript: this.history.join(" "),
                 blob: this._tempBlob,
@@ -124,13 +134,13 @@ export const ShadowGame = {
     async aiScoreVoice(fileId) {
         if (!fileId) return this.showToast("❌ Không có ID file.");
 
-        console.log(`[LOG] Chấm điểm - Đồng bộ SCORE_CHECK_KEY cho: ${fileId}`);
+        console.log(`[LOG] Chấm điểm - Đồng bộ INPUT DATA cho: ${fileId}`);
         
-        // Chờ lưu hoàn tất vào IndexedDB mới thực hiện các bước tiếp theo
         const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
         if (currentData) {
-            await this.dbOp('readwrite', 'voices', 'put', { ...currentData, id: "SCORE_CHECK_KEY" });
-            console.log("[LOG] Đã ghi đè SCORE_CHECK_KEY thành công.");
+            // [LOG] Chép dữ liệu từ voices sang SCORE với key INPUT DATA
+            await this.dbOp('readwrite', 'SCORE', 'put', { ...currentData, id: "INPUT DATA" });
+            console.log("[LOG] Đã chuẩn bị INPUT DATA trong store SCORE thành công.");
         }
         
         const checkerUrl = "checker.html"; 

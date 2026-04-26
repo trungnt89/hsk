@@ -163,11 +163,9 @@ let rawData = [], colHira = "", colKanji = "";
 // --- ĐIỀU HƯỚNG BÀN PHÍM ---
 window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
-        // YÊU CẦU: Tự động quay về đầu list nếu hết list hiện tại, không chuyển trang
         let nextIdx = (currentIndex + 1) >= currentList.length ? 0 : currentIndex + 1;
         select(nextIdx);
     } else if (e.key === 'ArrowUp') {
-        // Quay về cuối list nếu đang ở đầu list
         let prevIdx = (currentIndex <= 0) ? (currentList.length > 0 ? currentList.length - 1 : 0) : currentIndex - 1;
         select(prevIdx);
     } else if (e.key === 'ArrowRight') {
@@ -182,7 +180,10 @@ window.addEventListener('keydown', (e) => {
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
 window.onload = function() {
+    console.log("[SYSTEM] Khởi tạo...");
     loadSettings();
+    // Đảm bảo log ra giá trị sau khi loadSettings
+    console.log("[SYSTEM] Giọng đọc hiện tại:", document.getElementById("voice-select").value);
     loadAppData();
 };
 
@@ -196,6 +197,7 @@ function saveSettings() {
         showInfo: showInfo,
         isShuffle: isShuffle
     };
+    console.log("[LOCAL] Lưu cấu hình:", settings);
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
@@ -363,7 +365,11 @@ async function select(i) {
 
 async function speak(text) {
     if (!text) return;
-    await speakCommon({ text: text, voice: document.getElementById("voice-select").value, rate: document.getElementById("rate-select").value });
+    const selectedVoice = document.getElementById("voice-select").value;
+    const selectedRate = document.getElementById("rate-select").value;
+    // Log ra giá trị thực tế truyền vào thư viện
+    console.log(`[TTS] Voice: ${selectedVoice} | Rate: ${selectedRate}`);
+    await speakCommon({ text: text, voice: selectedVoice, rate: selectedRate });
 }
 
 function togglePlay() {

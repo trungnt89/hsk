@@ -54,10 +54,13 @@
 </div>
 
 <script>
-    const DB_NAME = 'ShadowVoiceDB'; // Tên DB từ Module
-    const STORE_NAME = 'voices';     // Store chứa blob/script
-    const SETTINGS_DB = 'JP_Score_DB_v1';
-    const SETTINGS_STORE = 'settings';
+    // Database chứa dữ liệu ghi âm (của module ShadowGame)
+    const SHADOW_DB_NAME = 'ShadowVoiceDB'; 
+    const SHADOW_STORE_NAME = 'voices';     
+
+    // Database chứa settings (API Key)
+    const SETTINGS_DB_NAME = 'JP_Score_DB_v1';
+    const SETTINGS_STORE_NAME = 'settings';
 
     const apiKeyInput = document.getElementById('apiKey');
     const scriptInput = document.getElementById('originalScript');
@@ -78,54 +81,68 @@
 
     async function initSettingsDB() {
         return new Promise(res => {
-            const req = indexedDB.open(SETTINGS_DB, 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore(SETTINGS_STORE);
+            const req = indexedDB.open(SETTINGS_DB_NAME, 1);
+            req.onupgradeneeded = e => {
+                if (!e.target.result.objectStoreNames.contains(SETTINGS_STORE_NAME)) {
+                    e.target.result.createObjectStore(SETTINGS_STORE_NAME);
+                }
+            };
             req.onsuccess = () => res(req.result);
         });
     }
 
-    // Lấy dữ liệu âm thanh/script từ Module ShadowGame
-    async function loadDataFromModule(fileId) {
+    async function loadDataFromShadowModule(fileId) {
         return new Promise(res => {
-            const req = indexedDB.open(DB_NAME, 1);
+            const req = indexedDB.open(SHADOW_DB_NAME, 1);
             req.onsuccess = e => {
                 try {
-                    const tx = e.target.result.transaction(STORE_NAME, 'readonly');
-                    const store = tx.objectStore(STORE_NAME);
+                    const db = e.target.result;
+                    const tx = db.transaction(SHADOW_STORE_NAME, 'readonly');
+                    const store = tx.objectStore(SHADOW_STORE_NAME);
                     const getReq = store.get(fileId);
                     getReq.onsuccess = () => res(getReq.result);
-                } catch (err) { res(null); }
+                    getReq.onerror = () => res(null);
+                } catch (err) { 
+                    addLog("Lỗi truy cập Store ShadowVoiceDB: " + err.message);
+                    res(null); 
+                }
             };
             req.onerror = () => res(null);
         });
     }
 
     window.onload = async () => {
-        // Load API Key
+        // 1. Load API Key từ Settings DB
         const db = await initSettingsDB();
-        const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get('api_key');
+        const tx = db.transaction(SETTINGS_STORE_NAME, 'readonly');
+        const store = tx.objectStore(SETTINGS_STORE_NAME);
+        const req = store.get('api_key');
         req.onsuccess = () => { if(req.result) apiKeyInput.value = req.result; };
 
-        // Xử lý fileId từ URL
+        // 2. Xử lý fileId từ URL
         const fileId = new URLSearchParams(window.location.search).get('fileId');
         if (fileId) {
-            addLog(`Đang tìm dữ liệu cho ID: ${fileId}`);
-            const data = await loadDataFromModule(fileId);
+            addLog(`Đang truy xuất dữ liệu fileId: ${fileId}`);
+            const data = await loadDataFromShadowModule(fileId);
             if (data) {
                 scriptInput.value = data.script || "";
                 if (data.blob) {
                     currentBlob = data.blob;
-                    audioPreview.src = URL.createObjectURL(data.blob);
+                    const url = URL.createObjectURL(data.blob);
+                    audioPreview.src = url;
                     audioPreview.style.display = "block";
-                    addLog("✅ Đã nạp Script và Audio từ bộ nhớ.");
+                    addLog("✅ Đã nạp thành công Audio và Script.");
                 }
+            } else {
+                addLog("⚠️ Không tìm thấy dữ liệu trong bộ nhớ trình duyệt.");
             }
         }
     };
 
     apiKeyInput.onchange = async () => {
         const db = await initSettingsDB();
-        db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(apiKeyInput.value.trim(), 'api_key');
+        const tx = db.transaction(SETTINGS_STORE_NAME, 'readwrite');
+        tx.objectStore(SETTINGS_STORE_NAME).put(apiKeyInput.value.trim(), 'api_key');
         addLog("Đã lưu API Key.");
     };
 
@@ -134,6 +151,7 @@
         if (currentBlob) {
             audioPreview.src = URL.createObjectURL(currentBlob);
             audioPreview.style.display = "block";
+            addLog("Đã nạp file từ máy tính.");
         }
     };
 
@@ -150,7 +168,7 @@
         analyzeBtn.disabled = true;
         statusDiv.innerText = "Trạng thái: Đang chấm điểm...";
         resultDiv.style.display = "none";
-        addLog("Bắt đầu gọi Gemini 2.5 Flash...");
+        addLog("Đang gửi yêu cầu tới Gemini 2.5 Flash...");
 
         try {
             const base64Data = await new Promise(res => {
@@ -159,7 +177,6 @@
                 r.readAsDataURL(file);
             });
 
-            // GIỮ NGUYÊN MODEL 2.5 FLASH THEO YÊU CẦU
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
             const response = await fetch(url, {
@@ -169,10 +186,10 @@
                     contents: [{
                         parts: [
                             { text: `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
-                            KỊCH BẢN GỐC: "${script || 'Không cung cấp'}"
+                            KỊCH BẢN GỐC: "${script || 'Hãy tự nhận diện'}"
                             YÊU CẦU:
-                            1. SO SÁNH nội dung nói.
-                            2. NHẬN XÉT CHI TIẾT phát âm và Pitch Accent.
+                            1. SO SÁNH nội dung.
+                            2. NHẬN XÉT phát âm & Pitch Accent.
                             3. CHẤM ĐIỂM /100.
                             4. KHUYÊN CẢI THIỆN.` },
                             { inline_data: { mime_type: "audio/mp4", data: base64Data } }
@@ -187,8 +204,8 @@
             if (data.candidates && data.candidates.length > 0) {
                 resultDiv.innerText = data.candidates[0].content.parts[0].text;
                 resultDiv.style.display = "block";
-                statusDiv.innerText = "Trạng thái: Đã có kết quả!";
-                addLog("Chấm điểm hoàn tất.");
+                statusDiv.innerText = "Trạng thái: Hoàn tất!";
+                addLog("Phân tích thành công.");
             }
         } catch (err) {
             addLog("Lỗi: " + err.message);

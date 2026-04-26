@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Full Optimized & Fixed Audio Source (iPhone Support)
+ * ShadowGame Module - Fixed Audio Source & UI Overflow
  */
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
@@ -45,8 +45,9 @@ export const ShadowGame = {
             #gamePanel { display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden; }
             .sg-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:450px; background:white; border-radius:16px; padding:15px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10001; }
             .content-area mark { background: #fef08a; font-weight: bold; }
-            .ai-score-btn { background: #0ea5e9; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; border: none; margin-left: 5px; }
-            .ai-comment-btn { background: #64748b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; border: none; margin-left: 5px; }
+            .ai-score-btn { background: #0ea5e9; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; }
+            .ai-comment-btn { background: #64748b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; }
+            .voice-item-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; justify-content: flex-end; }
             #aiReport { font-size:13px; line-height:1.5; color:#334155; white-space: pre-wrap; margin-top:10px; }
         `;
         document.head.appendChild(style);
@@ -219,54 +220,66 @@ export const ShadowGame = {
         panel.style.display = 'block';
         const itemsWrap = this.getEl('voiceItems'); 
         itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">🔄 Đang tải...</div>`;
+        
         if (sync) {
             const allItems = await this.dbOp('readonly', 'voices', 'getAll');
             const toDelete = allItems.filter(v => String(v.lessonId) === String(this.lessonId));
             for (const item of toDelete) await this.dbOp('readwrite', 'voices', 'delete', item.id);
         }
-        let files = await this.dbOp('readonly', 'voices', 'getAll');
-        files = files.filter(v => String(v.lessonId) === String(this.lessonId));
-        if (sync || files.length === 0) {
+        
+        let localFiles = await this.dbOp('readonly', 'voices', 'getAll');
+        localFiles = localFiles.filter(v => String(v.lessonId) === String(this.lessonId));
+        
+        if (sync || localFiles.length === 0) {
             const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
-            files = res.data || [];
-            for (const f of files) {
+            const serverFiles = res.data || [];
+            for (const f of serverFiles) {
                 const existing = await this.dbOp('readonly', 'voices', 'get', f.id);
                 if (!existing) await this.dbOp('readwrite', 'voices', 'put', { ...f, lessonId: this.lessonId });
+                else await this.dbOp('readwrite', 'voices', 'put', { ...existing, ...f });
             }
+            localFiles = await this.dbOp('readonly', 'voices', 'getAll');
+            localFiles = localFiles.filter(v => String(v.lessonId) === String(this.lessonId));
         }
-        itemsWrap.innerHTML = files.length === 0 ? `<div style="padding:20px; text-align:center; color:#94a3b8;">Chưa có bản ghi nào.</div>` : "";
-        files.sort((a,b) => (b.date || 0) - (a.date || 0)).forEach(async f => {
+
+        itemsWrap.innerHTML = localFiles.length === 0 ? `<div style="padding:20px; text-align:center; color:#94a3b8;">Chưa có bản ghi nào.</div>` : "";
+        
+        localFiles.sort((a,b) => (b.date || 0) - (a.date || 0)).forEach(async f => {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
-            const cached = await this.dbOp('readonly', 'voices', 'get', f.id);
-            let audioSrc = cached && cached.blob ? URL.createObjectURL(cached.blob) : "";
+            
+            let audioSrc = f.blob ? URL.createObjectURL(f.blob) : "";
             let scoreDisplay = (f.score && f.score !== "N/A") ? `<b style="color:#059669">${f.score}</b>` : `<span style="color:#94a3b8">---</span>`;
+            
             item.innerHTML = `
                 <div style="font-size:11px; color:#64748b; margin-bottom:4px; word-break:break-all;">📄 ${f.name || 'Ghi âm mới'}</div>
-                <div style="font-size:12px; display:flex; justify-content:space-between">
-                    <span>🕒 ${(f.date ? new Date(f.date).toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" }) : "N/A")} | ⭐: ${scoreDisplay}</span>
-                    <div>
-                        ${(f.aiFeedback || (cached && cached.aiFeedback)) ? `<button class="ai-comment-btn" data-id="${f.id}">💬 Nhận xét</button>` : ''}
-                        <button class="ai-score-btn" data-id="${f.id}">🤖 Chấm điểm</button>
+                <div style="font-size:11px; display:flex; justify-content:space-between; align-items: flex-start; gap: 5px;">
+                    <span style="flex: 1;">🕒 ${(f.date ? new Date(f.date).toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" }) : "N/A")} <br> ⭐: ${scoreDisplay}</span>
+                    <div class="voice-item-actions">
+                        ${f.aiFeedback ? `<button class="ai-comment-btn">💬 Nhận xét</button>` : ''}
+                        <button class="ai-score-btn">🤖 Chấm điểm</button>
                     </div>
                 </div>
                 <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
                 <div style="text-align:right; margin-top:5px;"><span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span></div>`;
+            
+            // Nếu chưa có âm thanh local, tải từ server
             if (!audioSrc && f.id) {
                 this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
                     if (res.data) {
                         const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });
                         const aud = item.querySelector('audio');
                         if (aud) aud.src = URL.createObjectURL(b);
-                        this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b, lessonId: this.lessonId });
+                        this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b });
                     }
                 });
             }
+
             item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.id);
             const commentBtn = item.querySelector('.ai-comment-btn');
             if (commentBtn) {
                 commentBtn.onclick = () => {
-                    this.getEl('aiReport').innerText = f.aiFeedback || (cached && cached.aiFeedback);
+                    this.getEl('aiReport').innerText = f.aiFeedback;
                     this.getEl('scoreResultPanel').style.display = 'block';
                     this.getEl('saveScore').style.display = 'none';
                 };

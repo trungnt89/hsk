@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Fixed Audio Source & UI Overflow
+ * ShadowGame Module - Updated sorting by formattedDate string
  */
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
@@ -198,6 +198,8 @@ export const ShadowGame = {
             let area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
             const fileName = `Shadow_${this.lessonId}_${Date.now()}.mp4`;
+            const formattedDate = new Date().toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" }).replace(' ', '-').replace(/-/g, '/').replace(/\//, '/').replace(' ', '-'); // Giữ format chuỗi đồng nhất
+            
             const res = await this.api({}, "POST", { 
                 action: "uploadVoice", base64, fileName, lessonId: this.lessonId, 
                 score: "N/A", script: script, browserScript: browserScript 
@@ -205,7 +207,7 @@ export const ShadowGame = {
             if (res.status === 'success') {
                 await this.dbOp('readwrite', 'voices', 'put', { 
                     id: res.id, blob, name: fileName, date: Date.now(), 
-                    formattedDate: new Date().toLocaleString(), lessonId: this.lessonId, 
+                    formattedDate: res.formattedDate || formattedDate, lessonId: this.lessonId, 
                     score: "N/A", script, browserScript 
                 });
                 this.updateBadgeCounts();
@@ -244,17 +246,18 @@ export const ShadowGame = {
 
         itemsWrap.innerHTML = localFiles.length === 0 ? `<div style="padding:20px; text-align:center; color:#94a3b8;">Chưa có bản ghi nào.</div>` : "";
         
-        localFiles.sort((a,b) => (b.date || 0) - (a.date || 0)).forEach(async f => {
+        // Sắp xếp giảm dần theo chuỗi formattedDate trực tiếp
+        localFiles.sort((a, b) => (b.formattedDate || "").localeCompare(a.formattedDate || "")).forEach(async f => {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
             
             let audioSrc = f.blob ? URL.createObjectURL(f.blob) : "";
-            let scoreDisplay = (f.score && f.score !== "N/A") ? `<b style="color:#059669">${f.score}</b>` : `<span style="color:#94a3b8">---</span>`;
+            let scoreDisplay = (f.score && f.score !== "N/A" && f.score !== 0) ? `<b style="color:#059669">${f.score}</b>` : `<span style="color:#94a3b8">---</span>`;
             
             item.innerHTML = `
                 <div style="font-size:11px; color:#64748b; margin-bottom:4px; word-break:break-all;">📄 ${f.name || 'Ghi âm mới'}</div>
                 <div style="font-size:11px; display:flex; justify-content:space-between; align-items: flex-start; gap: 5px;">
-                    <span style="flex: 1;">🕒 ${(f.date ? new Date(f.date).toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" }) : "N/A")} <br> ⭐: ${scoreDisplay}</span>
+                    <span style="flex: 1;">🕒 ${f.formattedDate || "N/A"} <br> ⭐: ${scoreDisplay}</span>
                     <div class="voice-item-actions">
                         ${f.aiFeedback ? `<button class="ai-comment-btn">💬 Nhận xét</button>` : ''}
                         <button class="ai-score-btn">🤖 Chấm điểm</button>
@@ -263,7 +266,6 @@ export const ShadowGame = {
                 <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
                 <div style="text-align:right; margin-top:5px;"><span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span></div>`;
             
-            // Nếu chưa có âm thanh local, tải từ server
             if (!audioSrc && f.id) {
                 this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
                     if (res.data) {

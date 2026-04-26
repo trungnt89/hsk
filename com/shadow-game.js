@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Sắp xếp giảm dần theo chuỗi formattedDate (Mới nhất lên đầu)
+ * ShadowGame Module - Sửa lỗi sắp xếp và hiển thị thời gian JSON
  */
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
@@ -102,6 +102,7 @@ export const ShadowGame = {
     },
 
     async aiScoreVoice(id) {
+        console.log("aiScoreVoice id:", id);
         const item = await this.dbOp('readonly', 'voices', 'get', id);
         if (!item) return this.showToast("❌ Không tìm thấy bản ghi.");
         this.getEl('scoreResultPanel').style.display = 'block';
@@ -127,6 +128,7 @@ export const ShadowGame = {
     },
 
     async updateBadgeCounts() {
+        console.log("Updating badges...");
         try {
             const res = await this.api({ type: 'countVoiceByLesson' });
             if (res.status === "success") {
@@ -140,6 +142,7 @@ export const ShadowGame = {
     },
 
     async init() {
+        console.log("ShadowGame Init");
         await this.initDB(); 
         this.buildUI(); 
         this.injectRequiredClasses();
@@ -169,6 +172,7 @@ export const ShadowGame = {
     toggle() { this.isListening ? this.stop() : this.start(); },
 
     async start() {
+        console.log("Recording start");
         this.isListening = true; this.history = []; this.audioChunks = []; this._tempBlob = null;
         this.getEl('gamePanel').style.display = 'flex';
         this.getEl('btnMic').innerHTML = '🛑';
@@ -185,6 +189,7 @@ export const ShadowGame = {
     },
 
     stop() {
+        console.log("Recording stop");
         this.isListening = false; this.getEl('btnMic').innerHTML = '🎤';
         this.recognition?.stop(); this.showFinalResult(); this.mediaRecorder?.stop();
     },
@@ -245,7 +250,7 @@ export const ShadowGame = {
 
         itemsWrap.innerHTML = localFiles.length === 0 ? `<div style="padding:20px; text-align:center; color:#94a3b8;">Chưa có bản ghi nào.</div>` : "";
         
-        // Sắp xếp giảm dần theo chuỗi formattedDate trực tiếp (Mới nhất lên đầu)
+        // Yêu cầu 1: Sắp xếp giảm dần theo formattedDate (Sẽ chính xác sau khi sửa GAS định dạng HH)
         localFiles.sort((a, b) => (b.formattedDate || "").localeCompare(a.formattedDate || "")).forEach(async f => {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
@@ -256,7 +261,7 @@ export const ShadowGame = {
             item.innerHTML = `
                 <div style="font-size:11px; color:#64748b; margin-bottom:4px; word-break:break-all;">📄 ${f.name || 'Ghi âm mới'}</div>
                 <div style="font-size:11px; display:flex; justify-content:space-between; align-items: flex-start; gap: 5px;">
-                    <span style="flex: 1;">🕒 ${f.formattedDate || "N/A"} <br> ⭐: ${scoreDisplay}</span>
+                    <span style="flex: 1;">🕒 ${f.formattedDate} <br> ⭐: ${scoreDisplay}</span>
                     <div class="voice-item-actions">
                         ${f.aiFeedback ? `<button class="ai-comment-btn">💬 Nhận xét</button>` : ''}
                         <button class="ai-score-btn">🤖 Chấm điểm</button>
@@ -266,7 +271,7 @@ export const ShadowGame = {
                 <div style="text-align:right; margin-top:5px;"><span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span></div>`;
             
             if (!audioSrc && f.id) {
-                this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
+                this.api({ type: 'getFileBlob', fileId: f.fileId }).then(res => {
                     if (res.data) {
                         const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });
                         const aud = item.querySelector('audio');
@@ -291,6 +296,7 @@ export const ShadowGame = {
     },
 
     async deleteVoice(id, el) {
+        console.log("Deleting voice:", id);
         if (!confirm("Xóa bản ghi?")) return;
         const res = await this.api({}, "POST", { action: "deleteVoice", fileId: id });
         if (res.status === 'success') {

@@ -3,36 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japanese Pronunciation Master</title>
+    <title>Học Tiếng Nhật cùng Gemini</title>
     <style>
-        :root { --primary: #007bff; --bg: #f4f7f9; --text: #2d3436; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #1e3799; margin-bottom: 30px; }
-        .section { margin-bottom: 25px; }
+        :root { --primary: #007bff; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
+        .card { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1e3799; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        input[type="text"]:focus { border-color: var(--primary); outline: none; }
-        button { background: var(--primary); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; }
-        button:hover { background: #0056b3; transform: translateY(-2px); }
-        button:disabled { background: #b2bec3; cursor: not-allowed; transform: none; }
-        #status { margin: 15px 0; font-size: 14px; color: #636e72; }
-        #result { margin-top: 30px; padding: 20px; background: #f1f2f6; border-left: 6px solid var(--primary); border-radius: 5px; white-space: pre-wrap; display: none; }
-        .log-box { margin-top: 30px; background: #2d3436; color: #00ff00; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:disabled { background: #ccc; }
+        #status { margin: 15px 0; font-weight: bold; color: #555; }
+        #result { margin-top: 25px; padding: 20px; background: #fff; border-left: 5px solid var(--primary); border-radius: 4px; white-space: pre-wrap; display: none; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+        .log-box { margin-top: 20px; background: #2d3436; color: #00ff00; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Phân tích Phát âm Nhật ngữ</h1>
-
-    <div class="section">
-        <label for="apiKey">Gemini API Key:</label>
-        <input type="text" id="apiKey" placeholder="Dán API Key vào đây (Sẽ tự động lưu)...">
+<div class="card">
+    <h2>Phân tích Phát âm Nhật ngữ</h2>
+    
+    <div class="form-group">
+        <label>Gemini API Key:</label>
+        <input type="text" id="apiKey" placeholder="Nhập API Key từ Google AI Studio...">
     </div>
 
-    <div class="section">
-        <label for="audioFile">Chọn file ghi âm (m4a, mp3, wav, aac...):</label>
+    <div class="form-group">
+        <label>Chọn file ghi âm:</label>
         <input type="file" id="audioFile" accept="audio/*">
     </div>
 
@@ -41,129 +39,120 @@
     <div id="status">Trạng thái: Sẵn sàng</div>
     <div id="result"></div>
 
-    <div class="log-box" id="logBox">Logs: Hệ thống khởi tạo hoàn tất.</div>
+    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>
 </div>
-<script>
-    const DB_NAME = 'JP_Pronunciation_DB';
-    const STORE_NAME = 'config';
-    const KEY_NAME = 'gemini_api_key';
 
+<script>
+    const DB_NAME = 'JP_Pron_DB';
+    const STORE_NAME = 'settings';
     const apiKeyInput = document.getElementById('apiKey');
-    const audioInput = document.getElementById('audioFile');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const resultDiv = document.getElementById('result');
     const statusDiv = document.getElementById('status');
     const logBox = document.getElementById('logBox');
 
-    function logger(msg) {
-        const time = new Date().toLocaleTimeString();
-        logBox.innerText += `\n[${time}] ${msg}`;
+    function addLog(msg) {
+        const t = new Date().toLocaleTimeString();
+        logBox.innerText += `\n[${t}] ${msg}`;
         logBox.scrollTop = logBox.scrollHeight;
+        console.log(`[${t}] ${msg}`);
     }
 
-    async function getDB() {
-        return new Promise((resolve) => {
+    // --- XỬ LÝ INDEXEDDB ---
+    async function initDB() {
+        return new Promise(res => {
             const req = indexedDB.open(DB_NAME, 1);
-            req.onupgradeneeded = (e) => e.target.result.createObjectStore(STORE_NAME);
-            req.onsuccess = () => resolve(req.result);
+            req.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME);
+            req.onsuccess = () => res(req.result);
         });
     }
 
-    async function loadSavedKey() {
-        const db = await getDB();
-        const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(KEY_NAME);
-        req.onsuccess = () => { if (req.result) apiKeyInput.value = req.result; };
-    }
+    window.onload = async () => {
+        const db = await initDB();
+        const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get('api_key');
+        req.onsuccess = () => { if(req.result) apiKeyInput.value = req.result; };
+    };
 
-    async function saveKey(val) {
-        const db = await getDB();
-        db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(val, KEY_NAME);
-        logger("Đã lưu API Key.");
-    }
+    apiKeyInput.onchange = async () => {
+        const db = await initDB();
+        db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(apiKeyInput.value.trim(), 'api_key');
+        addLog("Đã lưu API Key.");
+    };
 
-    window.onload = loadSavedKey;
-    apiKeyInput.onchange = (e) => saveKey(e.target.value);
-
+    // --- GỬI API ---
     analyzeBtn.onclick = async () => {
-        const file = audioInput.files[0];
-        const key = apiKeyInput.value;
+        const file = document.getElementById('audioFile').files[0];
+        const key = apiKeyInput.value.trim();
 
-        if (!key || !file) {
-            alert("Vui lòng nhập API Key và chọn file!");
-            return;
-        }
+        if(!file || !key) return alert("Vui lòng chọn file và nhập Key!");
 
         analyzeBtn.disabled = true;
+        statusDiv.innerText = "Đang xử lý...";
         resultDiv.style.display = "none";
-        statusDiv.innerText = "Đang phân tích...";
-        logger(`Đang xử lý: ${file.name}`);
 
         try {
-            const base64Data = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.readAsDataURL(file);
+            const base64Data = await new Promise(res => {
+                const r = new FileReader();
+                r.onload = () => res(r.result.split(',')[1]);
+                r.readAsDataURL(file);
             });
 
-            // FIX: Sử dụng gemini-1.5-flash-latest để đảm bảo model luôn được tìm thấy
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${key}`;
+            // Danh sách các Endpoint tiềm năng để thử nếu gặp lỗi 404
+            const endpoints = [
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+                `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`
+            ];
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: "Bạn là giáo viên tiếng Nhật. Hãy nghe file này và nhận xét phát âm, transcript lại nội dung bằng tiếng Việt." },
-                            { inline_data: { mime_type: file.type || 'audio/mpeg', data: base64Data } }
-                        ]
-                    }]
-                })
-            });
+            let success = false;
+            for (let url of endpoints) {
+                if (success) break;
+                addLog(`Thử Endpoint: ${url.split('?')[0]}`);
+                
+                try {
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: "Bạn là giáo viên tiếng Nhật bản ngữ. Hãy nghe file này, transcript (Kanji/Kana) và nhận xét phát âm bằng tiếng Việt." },
+                                    { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
+                                ]
+                            }]
+                        })
+                    });
 
-            const data = await response.json();
+                    const data = await resp.json();
 
-            if (data.error) {
-                // Nếu vẫn lỗi, thử hạ cấp xuống v1beta (dành cho một số tài khoản chưa cập nhật v1)
-                if (data.error.message.includes("not found")) {
-                    logger("Thử lại với Endpoint dự phòng...");
-                    return retryWithBeta(key, base64Data, file.type || 'audio/mpeg');
+                    if (data.error) {
+                        addLog(`Lỗi từ Endpoint này: ${data.error.message}`);
+                        continue; // Thử Endpoint tiếp theo
+                    }
+
+                    if (data.candidates && data.candidates.length > 0) {
+                        resultDiv.innerText = data.candidates[0].content.parts[0].text;
+                        resultDiv.style.display = "block";
+                        statusDiv.innerText = "Hoàn tất!";
+                        addLog("Phân tích thành công.");
+                        success = true;
+                    }
+                } catch (e) {
+                    addLog("Lỗi kết nối mạng.");
                 }
-                throw new Error(data.error.message);
             }
 
-            resultDiv.innerText = data.candidates[0].content.parts[0].text;
-            resultDiv.style.display = "block";
-            statusDiv.innerText = "Hoàn tất!";
-            logger("Thành công.");
+            if (!success) throw new Error("Không thể kết nối với bất kỳ Endpoint nào của Gemini. Kiểm tra lại Key của bạn.");
 
         } catch (err) {
-            logger("Lỗi: " + err.message);
-            alert("Lỗi: " + err.message);
+            addLog("Lỗi cuối cùng: " + err.message);
+            statusDiv.innerText = "Gặp lỗi.";
+            resultDiv.innerText = "Lỗi: " + err.message;
+            resultDiv.style.display = "block";
         } finally {
             analyzeBtn.disabled = false;
         }
     };
-
-    // Hàm dự phòng nếu bản v1 chưa khả dụng với tài khoản của bạn
-    async function retryWithBeta(key, base64, mime) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-        try {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: "Nhận xét phát âm file này bằng tiếng Việt." }, { inline_data: { mime_type: mime, data: base64 } }] }]
-                })
-            });
-            const data = await res.json();
-            resultDiv.innerText = data.candidates[0].content.parts[0].text;
-            resultDiv.style.display = "block";
-            statusDiv.innerText = "Hoàn tất (via Beta)!";
-        } catch (e) {
-            logger("Lỗi dự phòng: " + e.message);
-        }
-    }
 </script>
 
 </body>

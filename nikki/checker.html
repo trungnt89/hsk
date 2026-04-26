@@ -13,7 +13,6 @@
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #444; }
         input[type="text"], input[type="file"], textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
         textarea { height: 100px; resize: vertical; font-family: inherit; }
-        input[type="text"]:focus, textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 5px rgba(0,123,255,0.2); }
         button { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         button:hover { background: var(--primary); transform: translateY(-1px); }
         button:disabled { background: #ccc; cursor: not-allowed; }
@@ -50,9 +49,12 @@
     <div id="status">Trạng thái: Sẵn sàng</div>
     <div id="result"></div>
 
-    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng với model Gemini 2.5 Flash.</div>
+    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>
 </div>
+
 <script>
+    // --- CẤU HÌNH ---
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
     const SHADOW_DB_NAME = 'ShadowVoiceDB'; 
     const SHADOW_STORE_NAME = 'voices';     
     const SETTINGS_DB_NAME = 'JP_Score_DB_v1';
@@ -105,42 +107,25 @@
     }
 
     window.onload = async () => {
-        addLog("🚀 Đang khởi tạo hệ thống...");
-
-        // 1. Load API Key và Log trạng thái
+        addLog("🚀 Khởi tạo hệ thống...");
         const db = await initSettingsDB();
         const tx = db.transaction(SETTINGS_STORE_NAME, 'readonly');
         const store = tx.objectStore(SETTINGS_STORE_NAME);
         const req = store.get('api_key');
-        req.onsuccess = () => { 
-            if(req.result) {
-                apiKeyInput.value = req.result;
-                addLog("🔑 Đã nạp API Key từ bộ nhớ.");
-            } else {
-                addLog("ℹ️ Chưa có API Key trong bộ nhớ.");
-            }
-        };
+        req.onsuccess = () => { if(req.result) { apiKeyInput.value = req.result; addLog("🔑 Đã nạp API Key."); }};
 
-        // 2. Load dữ liệu từ URL fileId và Log trạng thái
         const fileId = new URLSearchParams(window.location.search).get('fileId');
         if (fileId) {
-            addLog(`🔍 Đang truy xuất dữ liệu từ Database cho fileId: ${fileId}`);
+            addLog(`🔍 Truy xuất dữ liệu cho fileId: ${fileId}`);
             const data = await loadDataFromShadowModule(fileId);
             if (data) {
-                // Đổ thông tin vào form
                 scriptInput.value = data.script || "";
-                if (data.script) addLog("📝 Đã nạp Script từ Database.");
-                
                 if (data.blob) {
                     currentBlob = data.blob;
-                    const url = URL.createObjectURL(data.blob);
-                    audioPreview.src = url;
+                    audioPreview.src = URL.createObjectURL(data.blob);
                     audioPreview.style.display = "block";
-                    addLog(`🎵 Đã nạp Audio từ Database (${(data.blob.size / 1024).toFixed(1)} KB).`);
+                    addLog("🎵 Đã nạp Audio & Script tự động.");
                 }
-                addLog("✅ Hoàn tất load dữ liệu tự động.");
-            } else {
-                addLog("⚠️ Không tìm thấy dữ liệu ứng với fileId này.");
             }
         }
     };
@@ -150,7 +135,7 @@
         const db = await initSettingsDB();
         const tx = db.transaction(SETTINGS_STORE_NAME, 'readwrite');
         tx.objectStore(SETTINGS_STORE_NAME).put(val, 'api_key');
-        addLog(`🔑 Đã cập nhật và lưu API Key mới (Độ dài: ${val.length}).`);
+        addLog("🔑 Đã cập nhật API Key.");
     };
 
     audioInput.onchange = (e) => {
@@ -159,14 +144,7 @@
             currentBlob = file;
             audioPreview.src = URL.createObjectURL(file);
             audioPreview.style.display = "block";
-            addLog(`📂 Đã nạp file từ máy tính: ${file.name} (${(file.size / 1024).toFixed(1)} KB).`);
-        }
-    };
-
-    scriptInput.oninput = () => {
-        // Log nhẹ khi người dùng tự gõ script
-        if (scriptInput.value.length % 10 === 0) { // Giảm tần suất log
-             console.log("Script updated...");
+            addLog(`📂 Đã chọn file: ${file.name}`);
         }
     };
 
@@ -175,60 +153,64 @@
         const script = scriptInput.value.trim();
         const file = currentBlob;
 
-        // Log kiểm tra trước khi gửi
-        addLog("🧪 Kiểm tra thông tin trước khi gửi:");
-        addLog(`- API Key: ${key ? "Đã sẵn sàng" : "❌ Thiếu"}`);
-        addLog(`- Script: ${script ? (script.substring(0, 15) + "...") : "⚠️ Trống (AI sẽ tự nhận diện)"}`);
-        addLog(`- Audio File: ${file ? "Đã nạp" : "❌ Thiếu"}`);
-
         if(!file || !key) {
-            alert("Vui lòng cung cấp API Key và dữ liệu âm thanh!");
-            addLog("❌ Hủy yêu cầu: Thiếu thông tin bắt buộc.");
+            alert("Vui lòng cung cấp API Key và Audio!");
             return;
         }
 
         analyzeBtn.disabled = true;
-        statusDiv.innerText = "Trạng thái: Đang chấm điểm...";
+        statusDiv.innerText = "Trạng thái: Đang phân tích...";
         resultDiv.style.display = "none";
-        addLog("⏳ Đang mã hóa âm thanh & Gọi Gemini 2.5 Flash...");
+        addLog("⏳ Đang gửi dữ liệu tới Gemini AI...");
 
         try {
-            const base64Data = await new Promise((resolve, reject) => {
+            const base64Data = await new Promise((resolve) => {
                 const r = new FileReader();
                 r.onload = () => resolve(r.result.split(',')[1]);
-                r.onerror = () => reject(new Error("Lỗi đọc file âm thanh."));
                 r.readAsDataURL(file);
             });
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
-
-            const response = await fetch(url, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
-                            KỊCH BẢN GỐC: "${script || 'Hãy tự nhận diện'}"
-                            YÊU CẦU:
-                            1. SO SÁNH nội dung.
-                            2. NHẬN XÉT phát âm & Pitch Accent.
-                            3. CHẤM ĐIỂM /100.
-                            4. KHUYÊN CẢI THIỆN.` },
-                            { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
-                        ]
-                    }]
+                    contents: [{ parts: [
+                        { text: `Bạn là chuyên gia ngôn ngữ Nhật. Hãy so sánh kịch bản "${script}" với file ghi âm này. 
+                        Yêu cầu: 1. So sánh chi tiết, 2. Nhận xét Pitch Accent, 3. Chấm điểm trên thang 1000 (Ghi rõ ví dụ: 850/1000), 4. Lời khuyên. 
+                        Ngôn ngữ trả về: Tiếng Việt.` },
+                        { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
+                    ]}]
                 })
             });
 
             const data = await response.json();
-            if (data.error) throw new Error(data.error.message);
-
-            if (data.candidates && data.candidates.length > 0) {
-                resultDiv.innerText = data.candidates[0].content.parts[0].text;
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                const aiText = data.candidates[0].content.parts[0].text;
+                resultDiv.innerText = aiText;
                 resultDiv.style.display = "block";
-                statusDiv.innerText = "Trạng thái: Đ đã có kết quả!";
-                addLog("✅ Chấm điểm hoàn tất. Đã nhận kết quả từ AI.");
+                statusDiv.innerText = "Trạng thái: Hoàn tất!";
+                addLog("✅ Đã nhận kết quả từ AI.");
+
+                // ĐỒNG BỘ LÊN GOOGLE SHEET
+                const fileId = new URLSearchParams(window.location.search).get('fileId');
+                if (fileId) {
+                    addLog("📡 Đang đồng bộ điểm số lên Google Sheet...");
+                    const scoreMatch = aiText.match(/(\d+)\/1000/);
+                    const scoreValue = scoreMatch ? scoreMatch[1] : "0";
+
+                    // Gửi request POST tới GAS
+                    fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify({
+                            action: 'updateAssessment',
+                            fileId: fileId,
+                            score: scoreValue,
+                            feedback: aiText
+                        })
+                    });
+                    addLog("📊 Đã gửi yêu cầu lưu điểm thành công.");
+                }
             }
         } catch (err) {
             addLog("❌ Lỗi: " + err.message);

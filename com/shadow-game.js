@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Hỗ trợ xóa sạch cache khi Tải lại
+ * ShadowGame Module - Sửa lỗi sắp xếp và hiển thị thời gian JSON
  */
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
@@ -14,7 +14,6 @@ export const ShadowGame = {
     getEl: (id) => document.getElementById(id),
 
     async api(params = {}, method = 'GET', body = null) {
-        console.log(`[API] ${method} params:`, params);
         const url = new URL(RECORD_GAS_URL);
         if (method === 'GET') Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
         const res = await fetch(url, { method, body: body ? JSON.stringify(body) : null });
@@ -33,13 +32,7 @@ export const ShadowGame = {
         const tx = this.db.transaction(storeName, mode);
         const store = tx.objectStore(storeName);
         return new Promise(res => {
-            let req;
-            if (action === 'put') req = store.put(data);
-            else if (action === 'get') req = store.get(data);
-            else if (action === 'clear') req = store.clear();
-            else if (action === 'delete') req = store.delete(data);
-            else req = store.getAll();
-            
+            const req = action === 'put' ? store.put(data) : (action === 'get' ? store.get(data) : store.getAll());
             req.onsuccess = () => res(req.result);
         });
     },
@@ -108,9 +101,9 @@ export const ShadowGame = {
         };
     },
 
-    async aiScoreVoice(id) {
+    async aiScoreVoice(fileId) {
         console.log("aiScoreVoice id:", id);
-        const item = await this.dbOp('readonly', 'voices', 'get', id);
+        const item = await this.dbOp('readonly', 'voices', 'get', fileId);
         if (!item) return this.showToast("❌ Không tìm thấy bản ghi.");
         this.getEl('scoreResultPanel').style.display = 'block';
         this.getEl('saveScore').style.display = 'none';
@@ -119,7 +112,7 @@ export const ShadowGame = {
         try {
             const res = await this.api({}, "POST", { 
                 action: "assessVoice", 
-                id: id, 
+                fileId: fileId, 
                 script: item.script || "" 
             });
             if (res.status === "success") {
@@ -235,8 +228,9 @@ export const ShadowGame = {
         itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">🔄 Đang tải...</div>`;
         
         if (sync) {
-            console.log("[LOG] Xóa toàn bộ cache IndexedDB để tải mới...");
-            await this.dbOp('readwrite', 'voices', 'clear');
+            const allItems = await this.dbOp('readonly', 'voices', 'getAll');
+            const toDelete = allItems.filter(v => String(v.lessonId) === String(this.lessonId));
+            for (const item of toDelete) await this.dbOp('readwrite', 'voices', 'delete', item.id);
         }
         
         let localFiles = await this.dbOp('readonly', 'voices', 'getAll');
@@ -256,6 +250,7 @@ export const ShadowGame = {
 
         itemsWrap.innerHTML = localFiles.length === 0 ? `<div style="padding:20px; text-align:center; color:#94a3b8;">Chưa có bản ghi nào.</div>` : "";
         
+        // Yêu cầu 1: Sắp xếp giảm dần theo formattedDate (Sẽ chính xác sau khi sửa GAS định dạng HH)
         localFiles.sort((a, b) => (b.formattedDate || "").localeCompare(a.formattedDate || "")).forEach(async f => {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
@@ -275,8 +270,8 @@ export const ShadowGame = {
                 <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
                 <div style="text-align:right; margin-top:5px;"><span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span></div>`;
             
-            if (!audioSrc && f.id) {
-                this.api({ type: 'getFileBlob', id: f.id }).then(res => {
+            if (!audioSrc && f.fileId) {
+                this.api({ type: 'getFileBlob', fileId: f.fileId }).then(res => {
                     if (res.data) {
                         const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });
                         const aud = item.querySelector('audio');
@@ -286,7 +281,7 @@ export const ShadowGame = {
                 });
             }
 
-            item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.id);
+            item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.fileId);
             const commentBtn = item.querySelector('.ai-comment-btn');
             if (commentBtn) {
                 commentBtn.onclick = () => {
@@ -295,17 +290,17 @@ export const ShadowGame = {
                     this.getEl('saveScore').style.display = 'none';
                 };
             }
-            item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.id, item);
+            item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.fileId, item);
             itemsWrap.appendChild(item);
         });
     },
 
-    async deleteVoice(id, el) {
-        console.log("Deleting voice:", id);
+    async deleteVoice(fileId, el) {
+        console.log("Deleting voice:", fileId);
         if (!confirm("Xóa bản ghi?")) return;
-        const res = await this.api({}, "POST", { action: "deleteVoice", id: id });
+        const res = await this.api({}, "POST", { action: "deleteVoice", fileId: fileId });
         if (res.status === 'success') {
-            await this.dbOp('readwrite', 'voices', 'delete', id);
+            await this.dbOp('readwrite', 'voices', 'delete', fileId);
             el.remove(); this.updateBadgeCounts();
         }
     },

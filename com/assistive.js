@@ -1,6 +1,6 @@
 (function() {
     function initAssistiveTouch() {
-        console.log("[AssistiveTouch] Khởi tạo menu..."); // Log khởi tạo
+        console.log("[AssistiveTouch] Khởi tạo menu..."); 
         if (!document.body) {
             console.error("[AssistiveTouch] document.body không tồn tại.");
             return;
@@ -39,8 +39,9 @@
                 <div class="menu-item" ${nav('pmp/index.html')}><div class="item-icon">📘</div><span class="item-label">PMP</span></div>
                 <div class="menu-item" ${nav('n1/index.html')}><div class="item-icon">🇯🇵</div><span class="item-label">Japan</span></div>
                 <div class="menu-item" ${nav('hsk/index.html')}><div class="item-icon">🇨🇳</div><span class="item-label">HSK</span></div>
-				<div class="menu-item" ${nav('nikki/index.html')}><div class="item-icon">📒</div><span class="item-label">NIKKI</span></div>
-				<div class="menu-item" ${nav('mp3/index.html')}><div class="item-icon">🧭</div><span class="item-label">MP3</span></div>
+                <div class="menu-item" ${nav('nikki/index.html')}><div class="item-icon">📒</div><span class="item-label">NIKKI</span></div>
+                <div class="menu-item" ${nav('mp3/index.html')}><div class="item-icon">🧭</div><span class="item-label">MP3</span></div>
+				<div class="menu-item" ${nav('link/index.html')}><div class="item-icon">🔗</div><span class="item-label">Links</span></div>
             </div>
             <div class="menu-section-title">Hệ thống</div>
             <div class="menu-grid">

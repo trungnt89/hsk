@@ -108,44 +108,18 @@ export const ShadowGame = {
     },
 
     async aiScoreVoice(fileId) {
-    if (!fileId) return this.showToast("❌ Không có ID file.");
+        if (!fileId) return this.showToast("❌ Không có ID file.");
 
-    this.getEl('scoreResultPanel').style.display = 'block';
-    this.getEl('saveScore').style.display = 'none';
-    const reportEl = this.getEl('aiReport');
-    
-    reportEl.innerText = "⏳ Server đang chấm điểm...";
-    console.log(`[LOG] Đang gửi yêu cầu chấm điểm cho fileId: ${fileId}`);
-
-    try {
-			// Gửi request lên GAS - Chỉ gửi fileId, không dùng biến 'item' chưa khai báo
-			const res = await this.api({}, "POST", { 
-				action: "assessVoice", 
-				fileId: fileId
-				// Bỏ dòng script: item.script vì GAS sẽ tự tìm dựa trên fileId
-			});
-
-			if (res.status === "success") {
-				const resultText = `[Điểm: ${res.data.score}/1000]\n\n${res.data.feedback}`;
-				reportEl.innerText = resultText;
-
-				// Sau khi thành công, mới lấy dữ liệu local để cập nhật lịch sử (nếu cần)
-				const localItem = await this.dbOp('readonly', 'voices', 'get', fileId);
-				if (localItem) {
-					await this.dbOp('readwrite', 'voices', 'put', { 
-						...localItem, 
-						score: res.data.score, 
-						aiFeedback: resultText 
-					});
-				}
-			} else {
-				reportEl.innerText = "❌ Lỗi: " + (res.message || "GAS không phản hồi thành công");
-			}
-		} catch (e) { 
-			console.error("[ERROR] API Call failed:", e);
-			reportEl.innerText = "❌ Lỗi kết nối server."; 
-		}
-	},
+        console.log(`[LOG] Chuyển tới trang chấm điểm cho fileId: ${fileId}`);
+        
+        // Đường dẫn đến file HTML chấm điểm
+        const checkerUrl = "checker.html"; 
+        const finalUrl = `${checkerUrl}?fileId=${encodeURIComponent(fileId)}`;
+        
+        // Mở trang chấm điểm trong tab mới
+        window.open(finalUrl, '_blank');
+        this.showToast("🚀 Đang mở trang phân tích...");
+    },
 
     async updateBadgeCounts() {
         try {
@@ -221,7 +195,6 @@ export const ShadowGame = {
             const script = area ? area.innerText.trim() : "";
             const fileName = `Shadow_${this.lessonId}_${Date.now()}.mp4`;
             
-            // SỬA ĐỔI: Thêm log khi upload
             console.log("[LOG] Uploading to Drive...");
             const res = await this.api({}, "POST", { 
                 action: "uploadVoice", base64, fileName, lessonId: this.lessonId, 

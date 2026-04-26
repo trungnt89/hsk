@@ -103,10 +103,10 @@ export const ShadowGame = {
         };
         this.getEl('saveScore').onclick = async () => {
             console.log("[LOG] Save Score - Updating SCORE_CHECK_KEY");
-            let area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
+            const area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
             
-            // Chỉ thực hiện lưu vào key yêu cầu
+            // Chờ xác nhận lưu thành công vào IndexedDB
             await this.dbOp('readwrite', 'voices', 'put', { 
                 id: "SCORE_CHECK_KEY",
                 script: script,
@@ -126,10 +126,11 @@ export const ShadowGame = {
 
         console.log(`[LOG] Chấm điểm - Đồng bộ SCORE_CHECK_KEY cho: ${fileId}`);
         
-        // Chỉ lấy data của fileId và lưu vào SCORE_CHECK_KEY
+        // Chờ lưu hoàn tất vào IndexedDB mới thực hiện các bước tiếp theo
         const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
         if (currentData) {
             await this.dbOp('readwrite', 'voices', 'put', { ...currentData, id: "SCORE_CHECK_KEY" });
+            console.log("[LOG] Đã ghi đè SCORE_CHECK_KEY thành công.");
         }
         
         const checkerUrl = "checker.html"; 

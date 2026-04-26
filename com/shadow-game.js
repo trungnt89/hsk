@@ -102,6 +102,20 @@ export const ShadowGame = {
             this.getEl('scoreResultPanel').style.display = 'none';
         };
         this.getEl('saveScore').onclick = async () => {
+            console.log("[LOG] Save Score - Updating SCORE_CHECK_KEY");
+            let area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
+            const script = area ? area.innerText.trim() : "";
+            
+            // Chỉ thực hiện lưu vào key yêu cầu
+            await this.dbOp('readwrite', 'voices', 'put', { 
+                id: "SCORE_CHECK_KEY",
+                script: script,
+                browserScript: this.history.join(" "),
+                blob: this._tempBlob,
+                lessonId: this.lessonId,
+                date: Date.now()
+            });
+
             await this.uploadToDrive(this._tempBlob);
             this.getEl('scoreResultPanel').style.display = 'none';
         };
@@ -110,13 +124,16 @@ export const ShadowGame = {
     async aiScoreVoice(fileId) {
         if (!fileId) return this.showToast("❌ Không có ID file.");
 
-        console.log(`[LOG] Chuyển tới trang chấm điểm cho fileId: ${fileId}`);
+        console.log(`[LOG] Chấm điểm - Đồng bộ SCORE_CHECK_KEY cho: ${fileId}`);
         
-        // Đường dẫn đến file HTML chấm điểm
+        // Chỉ lấy data của fileId và lưu vào SCORE_CHECK_KEY
+        const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
+        if (currentData) {
+            await this.dbOp('readwrite', 'voices', 'put', { ...currentData, id: "SCORE_CHECK_KEY" });
+        }
+        
         const checkerUrl = "checker.html"; 
         const finalUrl = `${checkerUrl}?fileId=${encodeURIComponent(fileId)}`;
-        
-        // Mở trang chấm điểm trong tab mới
         window.open(finalUrl, '_blank');
         this.showToast("🚀 Đang mở trang phân tích...");
     },

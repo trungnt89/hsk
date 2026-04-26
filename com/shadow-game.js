@@ -119,7 +119,7 @@ export const ShadowGame = {
         try {
             const res = await this.api({}, "POST", { 
                 action: "assessVoice", 
-                fileId: id, 
+                id: id, 
                 script: item.script || "" 
             });
             if (res.status === "success") {
@@ -275,8 +275,8 @@ export const ShadowGame = {
                 <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
                 <div style="text-align:right; margin-top:5px;"><span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span></div>`;
             
-            if (!audioSrc && f.fileId) {
-                this.api({ type: 'getFileBlob', fileId: f.fileId }).then(res => {
+            if (!audioSrc && f.id) {
+                this.api({ type: 'getFileBlob', id: f.id }).then(res => {
                     if (res.data) {
                         const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });
                         const aud = item.querySelector('audio');
@@ -303,7 +303,7 @@ export const ShadowGame = {
     async deleteVoice(id, el) {
         console.log("Deleting voice:", id);
         if (!confirm("Xóa bản ghi?")) return;
-        const res = await this.api({}, "POST", { action: "deleteVoice", fileId: id });
+        const res = await this.api({}, "POST", { action: "deleteVoice", id: id });
         if (res.status === 'success') {
             await this.dbOp('readwrite', 'voices', 'delete', id);
             el.remove(); this.updateBadgeCounts();

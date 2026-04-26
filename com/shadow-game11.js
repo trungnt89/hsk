@@ -181,14 +181,6 @@ export const ShadowGame = {
 
     async init() {
         console.log("[LOG] ShadowGame Init");
-
-        // Bắt lỗi toàn cục window.onerror
-        window.onerror = (msg, url, line, col, error) => {
-            console.error(`[ERR_WINDOW] ${msg} at ${line}:${col}`, error);
-            alert(`Lỗi hệ thống: ${msg}\nTại: ${line}:${col}`);
-            return false;
-        };
-
         await this.initDB(); 
         this.buildUI(); 
         this.injectRequiredClasses();
@@ -218,33 +210,19 @@ export const ShadowGame = {
     toggle() { this.isListening ? this.stop() : this.start(); },
 
     async start() {
-        try {
-            console.log("[LOG] Start Recording Attempt");
-            this.isListening = true; this.history = []; this.audioChunks = []; this._tempBlob = null;
-            this.getEl('gamePanel').style.display = 'flex';
-            this.getEl('btnMic').innerHTML = '🛑';
-            this.recognition?.start();
-
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            console.log("[LOG] Mic Stream Acquired");
-
-            this.mediaRecorder = new MediaRecorder(stream);
-            this.mediaRecorder.ondataavailable = e => {
-                if (e.data.size > 0) this.audioChunks.push(e.data);
-            };
-            this.mediaRecorder.onstop = async () => {
-                console.log("[LOG] MediaRecorder Stopped. Chunks:", this.audioChunks.length);
-                const blob = new Blob(this.audioChunks, { type: 'audio/mp4' });
-                this._tempBlob = blob;
-                stream.getTracks().forEach(t => t.stop());
-            };
-            this.mediaRecorder.start();
-        } catch (err) {
-            console.error("[ERR] Recording Start Fail:", err);
-            this.showToast(`❌ Lỗi mic: ${err.message}`);
-            alert("Không thể khởi động ghi âm. Vui lòng kiểm tra quyền truy cập Microphone.\nChi tiết: " + err.message);
-            this.stop();
-        }
+        this.isListening = true; this.history = []; this.audioChunks = []; this._tempBlob = null;
+        this.getEl('gamePanel').style.display = 'flex';
+        this.getEl('btnMic').innerHTML = '🛑';
+        this.recognition?.start();
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.mediaRecorder = new MediaRecorder(stream);
+        this.mediaRecorder.ondataavailable = e => this.audioChunks.push(e.data);
+        this.mediaRecorder.onstop = async () => {
+            const blob = new Blob(this.audioChunks, { type: 'audio/mp4' });
+            this._tempBlob = blob;
+            stream.getTracks().forEach(t => t.stop());
+        };
+        this.mediaRecorder.start();
     },
 
     stop() {
@@ -253,8 +231,7 @@ export const ShadowGame = {
     },
 
     async uploadToDrive(blob) {
-        if (!blob || blob.size === 0) { console.error("[ERR] Blob is empty or null"); return; }
-        console.log("[LOG] Uploading Blob size:", blob.size);
+        if (!blob) return;
         const reader = new FileReader(); reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];

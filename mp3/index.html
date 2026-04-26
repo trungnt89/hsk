@@ -165,7 +165,13 @@
                 list.appendChild(div);
             });
             restoreAlarmSettings();
-        } catch (e) { log(e.message); }
+        } catch (e) { 
+            log(e.message); 
+            if (e.status === 401 || (e.result && e.result.error && e.result.error.code === 401)) {
+                log("401 Unauthorized detected in listFiles");
+                handleSignoutClick();
+            }
+        }
     }
 
     function confirmAndUnlock() {
@@ -233,6 +239,11 @@
         try {
             const token = gapi.client.getToken().access_token;
             const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (resp.status === 401) {
+                log("401 Unauthorized detected in fetch");
+                handleSignoutClick();
+                return;
+            }
             const blob = await resp.blob();
             await saveMusicToCache(id, blob);
             setAudioSource(audio, blob, id);

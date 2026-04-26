@@ -55,9 +55,13 @@
 
 <div id="sidebar">
     <div class="sidebar-header">MENU ĐIỀU HƯỚNG</div>
-    <div class="menu-item" onclick="loadInternal(this, 'https://vercel.com/trungnt6541s-projects/hsk/deployments')">Vercel Deployments</div>
-    <div class="menu-item" onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc/edit?gid=0#gid=0')">Google Sheets</div>
-    <div class="menu-item" onclick="loadInternal(this, 'https://aistudio.google.com/spend?project=gen-lang-client-0273316723')">AI Studio Spend</div>
+	
+    <div class="menu-item" 
+		onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc/edit?gid=0#gid=0')">LOG</div>
+    <div class="menu-item" 
+		onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/13lnWD6MxoMJNSn9iPqbJVDpyghthMt4JhjuiSE3F064/edit?gid=858088211#gid=858088211')">VoiceRecorder</div>
+    <div class="menu-item" 
+		onclick="loadInternal(this, 'https://aistudio.google.com/spend?project=gen-lang-client-0273316723')">AI Studio Spend</div>
 </div>
 
 <div id="content">
@@ -82,23 +86,18 @@
 
         const frame = document.getElementById('main-frame');
         
-        /* Mẹo: Thêm tham số ngẫu nhiên để tránh cache 
-           và sử dụng thuộc tính loading="lazy"
-        */
-        const finalUrl = url + (url.includes('?') ? '&' : '?') + 'view=iframe_mode';
-        
-        writeLog(`Đang thử nạp URL: ${url}`);
+        writeLog(`Đang khởi tạo nạp URL: ${url}`);
         frame.src = url;
 
         // Kiểm tra sau 2 giây xem có lỗi hiển thị không
         setTimeout(() => {
-            writeLog("Kiểm tra trạng thái: Nếu khung hình trắng, website đích đang chặn Frame.");
-            writeLog("Giải pháp: Cần cài đặt Extension 'Ignore X-Frame-Options' trên trình duyệt để bypass.");
+            writeLog("Trạng thái nạp: Hoàn tất kiểm tra cơ bản.");
+            writeLog("Lưu ý: Nếu màn hình trắng, hãy kiểm tra Extension 'Ignore X-Frame-Options'.");
         }, 2000);
     }
 
     window.onload = () => {
-        writeLog("Hệ thống Dashboard sẵn sàng.");
+        writeLog("Hệ thống Dashboard đã khởi động.");
         const first = document.querySelector('.menu-item');
         if(first) first.click();
     }

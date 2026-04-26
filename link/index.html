@@ -58,17 +58,6 @@
             border: none;
             background: white;
         }
-
-        #log-area {
-            height: 100px;
-            background: #000;
-            color: #0f0;
-            font-family: monospace;
-            font-size: 11px;
-            padding: 10px;
-            overflow-y: auto;
-            border-top: 1px solid #333;
-        }
     </style>
 </head>
 <body>
@@ -80,11 +69,7 @@
     <div class="menu-item" onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/13lnWD6MxoMJNSn9iPqbJVDpyghthMt4JhjuiSE3F064/edit?gid=858088211#gid=858088211')">Google Voice</div>
     <div class="menu-item" onclick="openExternal(this, 'https://platform.deepseek.com/usage')">DeepSeek Usage ↗</div>
     <div class="menu-item" onclick="loadInternal(this, 'https://aistudio.google.com/spend?project=gen-lang-client-0273316723')">Gemine Usage</div>
-	
-	<div class="menu-item" onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k/edit?gid=0#gid=0')">NIKKI</div>
-	
-	
-	
+    <div class="menu-item" onclick="loadInternal(this, 'https://docs.google.com/spreadsheets/d/1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k/edit?gid=0#gid=0')">NIKKI</div>
 </div>
 
 <div id="content">
@@ -92,51 +77,29 @@
         <button class="btn-open" onclick="openCurrentInNewWindow()">Mở sang cửa sổ mới ↗</button>
     </div>
     <iframe id="main-frame" src="about:blank"></iframe>
-    <div id="log-area"></div>
 </div>
 
 <script>
-    function writeLog(msg) {
-        const log = document.getElementById('log-area');
-        log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-        log.scrollTop = log.scrollHeight;
-        console.log(msg);
-    }
-
     function openCurrentInNewWindow() {
         const url = document.getElementById('main-frame').src;
         if (url && url !== 'about:blank') {
-            writeLog(`--- Thao tác: Mở URL hiện tại (${url}) ra cửa sổ mới ---`);
             window.open(url, '_blank');
-        } else {
-            writeLog("!!! Cảnh báo: Không có URL nào đang được nạp trong frame.");
         }
     }
 
     function openExternal(el, url) {
-        writeLog(`--- Mở link ngoài trong tab mới: ${url} ---`);
         document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
         el.classList.add('active');
         window.open(url, '_blank');
     }
 
     function loadInternal(el, url) {
-        writeLog("--- Yêu cầu tải nội dung nội bộ ---");
         document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
         el.classList.add('active');
-
-        const frame = document.getElementById('main-frame');
-        writeLog(`Đang khởi tạo nạp URL: ${url}`);
-        frame.src = url;
-
-        setTimeout(() => {
-            writeLog("Trạng thái nạp: Hoàn tất kiểm tra cơ bản.");
-        }, 2000);
+        document.getElementById('main-frame').src = url;
     }
 
     window.onload = () => {
-        writeLog("Hệ thống Dashboard đã khởi động.");
-        // Tự động click vào mục đầu tiên có thể load nội bộ
         const firstInternal = document.querySelector('.menu-item[onclick^="loadInternal"]');
         if(firstInternal) firstInternal.click();
     }

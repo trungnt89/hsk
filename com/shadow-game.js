@@ -270,7 +270,7 @@ export const ShadowGame = {
                 <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
                 <div style="text-align:right; margin-top:5px;"><span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span></div>`;
             
-            if (!audioSrc && f.id) {
+            if (!audioSrc && f.fileId) {
                 this.api({ type: 'getFileBlob', fileId: f.fileId }).then(res => {
                     if (res.data) {
                         const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });

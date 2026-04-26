@@ -115,12 +115,16 @@ export const ShadowGame = {
         const reportEl = this.getEl('aiReport');
         reportEl.innerText = "⏳ Server đang chấm điểm...";
         try {
+            // SỬA ĐỔI: Gửi request chấm điểm lên GAS
             const res = await this.api({}, "POST", { 
-                action: "assessVoice", fileId: fileId, script: item.script || "" 
+                action: "assessVoice", 
+                fileId: fileId, 
+                script: item.script || "" 
             });
             if (res.status === "success") {
                 const resultText = `[Điểm: ${res.data.score}/1000]\n\n${res.data.feedback}`;
                 reportEl.innerText = resultText;
+                // Lưu lại kết quả vào IndexedDB cục bộ
                 await this.dbOp('readwrite', 'voices', 'put', { ...item, score: res.data.score, aiFeedback: resultText });
             } else {
                 reportEl.innerText = "❌ Lỗi: " + res.message;
@@ -201,6 +205,9 @@ export const ShadowGame = {
             let area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
             const fileName = `Shadow_${this.lessonId}_${Date.now()}.mp4`;
+            
+            // SỬA ĐỔI: Thêm log khi upload
+            console.log("[LOG] Uploading to Drive...");
             const res = await this.api({}, "POST", { 
                 action: "uploadVoice", base64, fileName, lessonId: this.lessonId, 
                 score: "N/A", script: script, browserScript: browserScript 
@@ -291,6 +298,7 @@ export const ShadowGame = {
 
     async deleteVoice(fileId, el) {
         if (!confirm("Xóa bản ghi?")) return;
+        console.log(`[LOG] Deleting voice: ${fileId}`);
         const res = await this.api({}, "POST", { action: "deleteVoice", fileId: fileId });
         if (res.status === 'success') {
             await this.dbOp('readwrite', 'voices', 'delete', fileId);

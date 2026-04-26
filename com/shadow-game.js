@@ -1,6 +1,15 @@
 /**
- * ShadowGame Module - Hỗ trợ xóa sạch IndexedDB khi Tải lại
+ * ShadowGame Module - Hỗ trợ hiển thị nhận xét AI dạng HTML chuyên nghiệp
  */
+
+// 1. Nhúng thư viện Marked (Nếu file này là module, hãy đảm bảo script marked đã có ở file HTML cha, 
+// hoặc dùng import từ CDN nếu môi trường cho phép)
+if (typeof marked === 'undefined') {
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/npm/marked/marked.min.js";
+    document.head.appendChild(script);
+}
+
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
 export const ShadowGame = {
@@ -67,16 +76,18 @@ export const ShadowGame = {
             .ai-score-btn { background: #0ea5e9; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; }
             .ai-comment-btn { background: #64748b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; }
             .voice-item-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; justify-content: flex-end; }
-            #aiReport { font-size:13px; line-height:1.6; color:#334155; margin-top:10px; }
             
-            /* Chỉ sửa phần hiển thị full màn hình cho bảng nhận xét */
+            /* Định dạng HTML Nhận xét từ AI để chuyên nghiệp hơn */
+            #aiReport { font-size:13px; line-height:1.6; color:#334155; }
+            #aiReport h1, #aiReport h2, #aiReport h3 { color: #1e3799; margin-top: 15px; margin-bottom: 5px; }
+            #aiReport ul, #aiReport ol { padding-left: 20px; }
+            #aiReport table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 12px; }
+            #aiReport table, #aiReport th, #aiReport td { border: 1px solid #ddd; padding: 6px; }
+            #aiReport th { background-color: #f8f9fa; }
+            #aiReport blockquote { border-left: 4px solid #cbd5e1; padding-left: 10px; font-style: italic; color: #64748b; }
+            
             .full-screen-panel { width: 100vw !important; height: 100vh !important; max-width: 100vw !important; top: 0 !important; left: 0 !important; transform: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column; }
             .full-screen-panel #scoreReasoning { flex-grow: 1; max-height: unset !important; }
-
-            /* Định dạng HTML Nhận xét từ AI */
-            .ai-res-title { font-weight: bold; color: #1e3799; border-bottom: 1px solid #e2e8f0; margin-top: 10px; margin-bottom: 5px; display: block; }
-            .ai-res-err { color: #d63031; background: #fff5f5; padding: 4px 8px; border-radius: 4px; margin: 4px 0; border-left: 3px solid #ff7675; }
-            .ai-res-bold { background: #fef08a; padding: 0 2px; border-radius: 2px; font-weight: bold; }
         `;
         document.head.appendChild(style);
     },
@@ -146,11 +157,9 @@ export const ShadowGame = {
 
     async aiScoreVoice(fileId) {
         if (!fileId) return this.showToast("❌ Không có ID file.");
-        console.log(`[LOG] Chấm điểm - Đồng bộ SCORE-CHECK-INPUT cho: ${fileId}`);
         const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
         if (currentData) {
             await this.dbOp('readwrite', 'SCORE', 'put', { ...currentData, id: "SCORE-CHECK-INPUT" });
-            console.log("[LOG] Đã lưu thành công SCORE-CHECK-INPUT vào IndexedDB.");
         }
         const checkerUrl = "checker.html"; 
         const finalUrl = `${checkerUrl}?fileId=${encodeURIComponent(fileId)}`;
@@ -232,7 +241,6 @@ export const ShadowGame = {
             const script = area ? area.innerText.trim() : "";
             const fileName = `Shadow_${this.lessonId}_${Date.now()}.mp4`;
             
-            console.log("[LOG] Uploading to Drive...");
             const res = await this.api({}, "POST", { 
                 action: "uploadVoice", base64, fileName, lessonId: this.lessonId, 
                 score: "N/A", script: script, browserScript: browserScript 
@@ -257,7 +265,6 @@ export const ShadowGame = {
         itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">🔄 Đang tải...</div>`;
         
         if (sync) {
-            console.log("[LOG] Xóa toàn bộ IndexedDB để đồng bộ mới từ server...");
             await this.dbOp('readwrite', 'voices', 'clear');
         }
         
@@ -308,20 +315,15 @@ export const ShadowGame = {
             }
 
             item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.fileId);
+            
+            // SỬA ĐỔI: Sử dụng marked.js để render HTML
             const commentBtn = item.querySelector('.ai-comment-btn');
             if (commentBtn) {
                 commentBtn.onclick = () => {
-                    const raw = f.aiFeedback || "";
-                    const html = raw
-                        .replace(/\*\*(.*?)\*\*/g, '<span class="ai-res-bold">$1</span>')
-                        .replace(/^\d\.\s(.*)/gm, '<span class="ai-res-title">$1</span>')
-                        .split('\n').map(line => {
-                            if (line.trim().startsWith('*')) return `<div class="ai-res-err">${line.replace('*', '').trim()}</div>`;
-                            return `<div>${line}</div>`;
-                        }).join('');
-                    
-                    this.getEl('aiReport').innerHTML = html;
-                    this.getEl('scoreResultPanel').classList.add('full-screen-panel'); // Kích hoạt full màn hình
+                    const raw = f.aiFeedback || "(Chưa có nhận xét)";
+                    // Render bằng marked.js
+                    this.getEl('aiReport').innerHTML = typeof marked !== 'undefined' ? marked.parse(raw) : raw;
+                    this.getEl('scoreResultPanel').classList.add('full-screen-panel');
                     this.getEl('scoreResultPanel').style.display = 'block';
                     this.getEl('saveScore').style.display = 'none';
                 };

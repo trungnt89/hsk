@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; display: flex; height: 100vh; background: #f0f2f5; }
+        
+        /* Sidebar styling */
+        #sidebar {
+            width: 260px;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        #sidebar h2 {
+            padding: 0 20px 20px;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #34495e;
+            margin-bottom: 10px;
+        }
+        .menu-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
+            color: #bdc3c7;
+            text-decoration: none;
+            display: block;
+        }
+        .menu-item:hover {
+            background: #34495e;
+            color: white;
+            border-left: 4px solid #3498db;
+        }
+        .menu-item.active {
+            background: #34495e;
+            color: white;
+            border-left: 4px solid #3498db;
+        }
+
+        /* Content Area */
+        #content-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        iframe {
+            width: 100%;
+            flex-grow: 1;
+            border: none;
+            background: white;
+        }
+
+        /* Log console styling */
+        #log-console {
+            height: 120px;
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            padding: 10px;
+            overflow-y: auto;
+            border-top: 2px solid #444;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Menu Điều Hướng</h2>
+    <a class="menu-item" onclick="loadPage(this, 'https://vercel.com/trungnt6541s-projects/hsk/deployments')">Vercel Deployments</a>
+    <a class="menu-item" onclick="loadPage(this, 'https://docs.google.com/spreadsheets/d/1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc/edit?gid=0#gid=0')">Google Sheets</a>
+    <a class="menu-item" onclick="loadPage(this, 'https://aistudio.google.com/spend?project=gen-lang-client-0273316723')">AI Studio Spend</a>
+</div>
+
+<div id="content-area">
+    <iframe id="display-frame" name="display-frame"></iframe>
+    <div id="log-console">
+        <div>[SYSTEM] Khởi tạo hệ thống...</div>
+    </div>
+</div>
+
+<script>
+    function addLog(message) {
+        const consoleElem = document.getElementById('log-console');
+        const time = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.textContent = `[${time}] ${message}`;
+        consoleElem.appendChild(logEntry);
+        consoleElem.scrollTop = consoleElem.scrollHeight;
+        console.log(`[LOG]: ${message}`);
+    }
+
+    function loadPage(element, url) {
+        addLog(`Đang yêu cầu tải: ${url}`);
+        
+        // Cập nhật giao diện menu
+        document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+        element.classList.add('active');
+        
+        // Cập nhật iframe
+        const frame = document.getElementById('display-frame');
+        frame.src = url;
+        
+        addLog(`Iframe src đã được cập nhật thành: ${url}`);
+    }
+
+    // Tự động load trang đầu tiên
+    window.onload = () => {
+        addLog("Ứng dụng đã sẵn sàng.");
+        const firstMenu = document.querySelector('.menu-item');
+        if (firstMenu) firstMenu.click();
+    };
+</script>
+
+</body>
+</html>

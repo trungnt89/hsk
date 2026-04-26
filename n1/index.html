@@ -160,14 +160,16 @@ let page = 1, isShuffle = false, isPlaying = false, showInfo = true;
 let displayMode = 'word', autoTimer = null, currentIndex = -1, currentList = [], currentTab = 'todo';
 let rawData = [], colHira = "", colKanji = "";
 
-// --- CẬP NHẬT: ĐIỀU HƯỚNG BÀN PHÍM ---
+// --- ĐIỀU HƯỚNG BÀN PHÍM ---
 window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
-        if (currentIndex < currentList.length - 1) select(currentIndex + 1);
-        else nextPage();
+        // YÊU CẦU: Tự động quay về đầu list nếu hết list hiện tại, không chuyển trang
+        let nextIdx = (currentIndex + 1) >= currentList.length ? 0 : currentIndex + 1;
+        select(nextIdx);
     } else if (e.key === 'ArrowUp') {
-        if (currentIndex > 0) select(currentIndex - 1);
-        else prevPage();
+        // Quay về cuối list nếu đang ở đầu list
+        let prevIdx = (currentIndex <= 0) ? (currentList.length > 0 ? currentList.length - 1 : 0) : currentIndex - 1;
+        select(prevIdx);
     } else if (e.key === 'ArrowRight') {
         haptic();
         toggleInfo();
@@ -180,13 +182,11 @@ window.addEventListener('keydown', (e) => {
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
 window.onload = function() {
-    console.log("[SYSTEM] Khởi tạo ứng dụng...");
     loadSettings();
     loadAppData();
 };
 
 function saveSettings() {
-    console.log("[LOCAL] Lưu cấu hình.");
     const settings = {
         voice: document.getElementById("voice-select").value,
         limit: document.getElementById("limit-select").value,
@@ -227,7 +227,6 @@ function loadSettings() {
 }
 
 async function loadAppData() {
-    console.log(`[SYSTEM] Tải dữ liệu từ MimikaraN1.json`);
     showToast("Đang nạp...");
     try {
         const response = await fetch('MimikaraN1.json');

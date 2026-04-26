@@ -69,10 +69,6 @@ export const ShadowGame = {
             .voice-item-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; justify-content: flex-end; }
             #aiReport { font-size:13px; line-height:1.6; color:#334155; margin-top:10px; }
             
-            /* Chỉ sửa phần hiển thị full màn hình cho bảng nhận xét */
-            .full-screen-panel { width: 100vw !important; height: 100vh !important; max-width: 100vw !important; top: 0 !important; left: 0 !important; transform: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column; }
-            .full-screen-panel #scoreReasoning { flex-grow: 1; max-height: unset !important; }
-
             /* Định dạng HTML Nhận xét từ AI */
             .ai-res-title { font-weight: bold; color: #1e3799; border-bottom: 1px solid #e2e8f0; margin-top: 10px; margin-bottom: 5px; display: block; }
             .ai-res-err { color: #d63031; background: #fff5f5; padding: 4px 8px; border-radius: 4px; margin: 4px 0; border-left: 3px solid #ff7675; }
@@ -122,7 +118,6 @@ export const ShadowGame = {
         
         this.getEl('cancelScore').onclick = () => {
             this.getEl('scoreResultPanel').style.display = 'none';
-            this.getEl('scoreResultPanel').classList.remove('full-screen-panel');
         };
         this.getEl('saveScore').onclick = async () => {
             console.log("[LOG] Save Score - Updating SCORE-CHECK-INPUT in SCORE store");
@@ -140,18 +135,23 @@ export const ShadowGame = {
 
             await this.uploadToDrive(this._tempBlob);
             this.getEl('scoreResultPanel').style.display = 'none';
-            this.getEl('scoreResultPanel').classList.remove('full-screen-panel');
         };
     },
 
     async aiScoreVoice(fileId) {
         if (!fileId) return this.showToast("❌ Không có ID file.");
+
         console.log(`[LOG] Chấm điểm - Đồng bộ SCORE-CHECK-INPUT cho: ${fileId}`);
+        
         const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
         if (currentData) {
-            await this.dbOp('readwrite', 'SCORE', 'put', { ...currentData, id: "SCORE-CHECK-INPUT" });
+            await this.dbOp('readwrite', 'SCORE', 'put', { 
+                ...currentData, 
+                id: "SCORE-CHECK-INPUT" 
+            });
             console.log("[LOG] Đã lưu thành công SCORE-CHECK-INPUT vào IndexedDB.");
         }
+        
         const checkerUrl = "checker.html"; 
         const finalUrl = `${checkerUrl}?fileId=${encodeURIComponent(fileId)}`;
         window.open(finalUrl, '_blank');
@@ -311,6 +311,7 @@ export const ShadowGame = {
             const commentBtn = item.querySelector('.ai-comment-btn');
             if (commentBtn) {
                 commentBtn.onclick = () => {
+                    // FORMAT NHẬN XÉT SANG HTML CỤC BỘ
                     const raw = f.aiFeedback || "";
                     const html = raw
                         .replace(/\*\*(.*?)\*\*/g, '<span class="ai-res-bold">$1</span>')
@@ -321,7 +322,6 @@ export const ShadowGame = {
                         }).join('');
                     
                     this.getEl('aiReport').innerHTML = html;
-                    this.getEl('scoreResultPanel').classList.add('full-screen-panel'); // Kích hoạt full màn hình
                     this.getEl('scoreResultPanel').style.display = 'block';
                     this.getEl('saveScore').style.display = 'none';
                 };

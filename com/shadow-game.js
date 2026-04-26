@@ -26,9 +26,9 @@ export const ShadowGame = {
             const req = indexedDB.open("ShadowVoiceDB", 1);
             req.onupgradeneeded = e => {
                 const db = e.target.result;
-                // Tạo store lưu trữ danh sách voice
+                // Tạo store lưu trữ danh sách voice - Thống nhất dùng fileId làm key
                 if (!db.objectStoreNames.contains("voices")) {
-                    db.createObjectStore("voices", { keyPath: "id" });
+                    db.createObjectStore("voices", { keyPath: "fileId" });
                 }
                 // [LOG] Tạo store SCORE để lưu dữ liệu đầu vào cho việc chấm điểm
                 if (!db.objectStoreNames.contains("SCORE")) {
@@ -121,7 +121,6 @@ export const ShadowGame = {
             const area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
             
-            // [LOG] Lưu thông tin chấm điểm gồm script, file ghi âm vào DB: SCORE và key là SCORE-CHECK-INPUT
             await this.dbOp('readwrite', 'SCORE', 'put', { 
                 id: "SCORE-CHECK-INPUT",
                 script: script,
@@ -141,10 +140,9 @@ export const ShadowGame = {
 
         console.log(`[LOG] Chấm điểm - Đồng bộ SCORE-CHECK-INPUT cho: ${fileId}`);
         
+        // Thống nhất lấy ra bằng fileId vì keyPath đã đổi sang fileId
         const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
         if (currentData) {
-            // [LOG] Chép dữ liệu từ voices sang SCORE với key SCORE-CHECK-INPUT
-            // Đảm bảo await hoàn tất trước khi mở link checker
             await this.dbOp('readwrite', 'SCORE', 'put', { 
                 ...currentData, 
                 id: "SCORE-CHECK-INPUT" 
@@ -239,7 +237,7 @@ export const ShadowGame = {
             });
             if (res.status === 'success') {
                 await this.dbOp('readwrite', 'voices', 'put', { 
-                    id: res.id, blob, name: fileName, date: Date.now(), 
+                    fileId: res.id, blob, name: fileName, date: Date.now(), 
                     formattedDate: res.formattedDate, lessonId: this.lessonId, 
                     score: "N/A", script, browserScript 
                 });
@@ -268,7 +266,7 @@ export const ShadowGame = {
             const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
             const serverFiles = res.data || [];
             for (const f of serverFiles) {
-                const existing = await this.dbOp('readonly', 'voices', 'get', f.id);
+                const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
                 if (!existing) await this.dbOp('readwrite', 'voices', 'put', { ...f, lessonId: this.lessonId });
                 else await this.dbOp('readwrite', 'voices', 'put', { ...existing, ...f });
             }

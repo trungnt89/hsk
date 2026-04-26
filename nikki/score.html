@@ -3,49 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japanese Pronunciation Analyzer v2026</title>
+    <title>Chuyên Gia Phát Âm Tiếng Nhật</title>
     <style>
         :root { --primary: #1e3799; --accent: #007bff; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
-        .card { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; color: #333; line-height: 1.6; }
+        .card { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 15px; }
         .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        button:hover { background: var(--primary); }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #status { margin: 15px 0; font-weight: bold; color: #555; display: flex; align-items: center; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #444; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        input[type="text"]:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 5px rgba(0,123,255,0.2); }
+        button { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: var(--primary); transform: translateY(-1px); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        #status { margin: 15px 0; font-weight: bold; color: #666; display: flex; align-items: center; }
         #status::before { content: "●"; margin-right: 8px; color: #28a745; }
-        #result { margin-top: 25px; padding: 20px; background: #fff; border-left: 6px solid var(--primary); border-radius: 4px; white-space: pre-wrap; display: none; line-height: 1.6; border: 1px solid #eee; }
-        .log-box { margin-top: 20px; background: #2d3436; color: #00ff00; padding: 15px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 11px; max-height: 150px; overflow-y: auto; }
+        #result { margin-top: 25px; padding: 25px; background: #fff; border-left: 6px solid var(--primary); border-radius: 4px; white-space: pre-wrap; display: none; border: 1px solid #e1e8ed; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .log-box { margin-top: 30px; background: #2d3436; color: #00ff00; padding: 15px; border-radius: 8px; font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; max-height: 180px; overflow-y: auto; border: 1px solid #000; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Phân tích Phát âm Nhật ngữ (Gemini 2.5)</h2>
+    <h2>Phân Tích Phát Âm Nhật Ngữ</h2>
     
     <div class="form-group">
         <label>Gemini API Key:</label>
-        <input type="text" id="apiKey" placeholder="Nhập API Key của bạn...">
+        <input type="text" id="apiKey" placeholder="Nhập API Key để bắt đầu...">
     </div>
 
     <div class="form-group">
-        <label>Chọn file ghi âm (.m4a, .mp3, .wav):</label>
+        <label>Chọn file ghi âm giọng nói của bạn (.m4a, .mp3, .wav):</label>
         <input type="file" id="audioFile" accept="audio/*">
     </div>
 
-    <button id="analyzeBtn">Bắt đầu phân tích</button>
+    <button id="analyzeBtn">Gửi Nhận Xét</button>
 
     <div id="status">Trạng thái: Sẵn sàng</div>
     <div id="result"></div>
 
-    <div class="log-box" id="logBox">Logs: Đã nhận diện model gemini-2.5-flash từ hệ thống.</div>
+    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng cho model Gemini 2.5.</div>
 </div>
 
 <script>
-    const DB_NAME = 'JP_Pron_v2026';
+    const DB_NAME = 'JP_Pron_v2026_Final';
     const STORE_NAME = 'settings';
     const apiKeyInput = document.getElementById('apiKey');
     const analyzeBtn = document.getElementById('analyzeBtn');
@@ -59,7 +60,6 @@
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // --- CƠ CHẾ LƯU TRỮ ---
     async function initDB() {
         return new Promise(res => {
             const req = indexedDB.open(DB_NAME, 1);
@@ -77,22 +77,22 @@
     apiKeyInput.onchange = async () => {
         const db = await initDB();
         db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(apiKeyInput.value.trim(), 'api_key');
-        addLog("Đã cập nhật API Key vào IndexedDB.");
+        addLog("Đã lưu API Key.");
     };
 
-    // --- XỬ LÝ CHÍNH ---
     analyzeBtn.onclick = async () => {
         const file = document.getElementById('audioFile').files[0];
         const key = apiKeyInput.value.trim();
 
         if(!file || !key) {
-            alert("Vui lòng kiểm tra lại Key và File!");
+            alert("Vui lòng cung cấp đầy đủ API Key và chọn file âm thanh!");
             return;
         }
 
         analyzeBtn.disabled = true;
-        statusDiv.innerText = "Trạng thái: Đang phân tích (Gemini 2.5 Flash)...";
+        statusDiv.innerText = "Trạng thái: Đang phân tích âm thanh...";
         resultDiv.style.display = "none";
+        addLog(`Bắt đầu xử lý file: ${file.name}`);
 
         try {
             const base64Data = await new Promise(res => {
@@ -101,45 +101,38 @@
                 r.readAsDataURL(file);
             });
 
-            // Sử dụng chính xác model "gemini-2.5-flash" từ ảnh của bạn
+            // Sử dụng chính xác model gemini-2.5-flash theo danh sách của bạn
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
-            addLog("Đang gửi yêu cầu tới model: gemini-2.5-flash");
-
-            const resp = await fetch(url, {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{
                         parts: [
-                            { text: "Bạn là chuyên gia tiếng Nhật. Hãy nghe file này, ghi lại nội dung (transcript) và nhận xét phát âm, ngữ điệu (pitch accent) chi tiết bằng tiếng Việt." },
+                            { text: "Bạn là một giáo viên tiếng Nhật bản xứ chuyên nghiệp. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:\n1. Ghi lại nội dung (transcript) file âm thanh bằng Kanji và Hiragana.\n2. Nhận xét chi tiết về phát âm và ngữ điệu (Pitch Accent).\n3. Chỉ ra lỗi sai cụ thể và hướng dẫn cách sửa.\n4. Đánh giá mức độ giống người bản xứ của người nói.\nLưu ý: Luôn trả lời bằng tiếng Việt rõ ràng, mạch lạc." },
                             { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
                         ]
-                    }],
-                    generationConfig: {
-                        temperature: 1,
-                        topP: 0.95,
-                        topK: 64
-                    }
+                    }]
                 })
             });
 
-            const data = await resp.json();
+            const data = await response.json();
 
             if (data.error) throw new Error(data.error.message);
 
             if (data.candidates && data.candidates.length > 0) {
                 resultDiv.innerText = data.candidates[0].content.parts[0].text;
                 resultDiv.style.display = "block";
-                statusDiv.innerText = "Trạng thái: Hoàn tất.";
-                addLog("Thành công.");
+                statusDiv.innerText = "Trạng thái: Hoàn tất phân tích.";
+                addLog("Thành công: Đã nhận phản hồi từ AI.");
             } else {
-                throw new Error("Không nhận được kết quả từ AI.");
+                throw new Error("Không nhận được phản hồi từ AI. Hãy thử lại.");
             }
 
         } catch (err) {
             addLog("Lỗi: " + err.message);
-            statusDiv.innerText = "Trạng thái: Gặp lỗi.";
+            statusDiv.innerText = "Trạng thái: Lỗi.";
             resultDiv.innerText = "Chi tiết lỗi: " + err.message;
             resultDiv.style.display = "block";
         } finally {

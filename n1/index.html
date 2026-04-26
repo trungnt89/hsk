@@ -180,9 +180,7 @@ window.addEventListener('keydown', (e) => {
 function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
 
 window.onload = function() {
-    console.log("[SYSTEM] Khởi tạo...");
     loadSettings();
-    console.log("[SYSTEM] Giọng đọc hiện tại:", document.getElementById("voice-select").value);
     loadAppData();
 };
 
@@ -288,7 +286,6 @@ function toggleDisplayMode() {
     document.getElementById('mode-btn').classList.toggle('active-blue', displayMode === 'example');
     saveSettings();
     render(true);
-    // Tự động đọc lại mục hiện tại khi chuyển chế độ
     if (currentIndex !== -1) select(currentIndex);
 }
 
@@ -372,7 +369,6 @@ async function speak(text) {
     if (!text) return;
     const selectedVoice = document.getElementById("voice-select").value;
     const selectedRate = document.getElementById("rate-select").value;
-    console.log(`[TTS] Voice: ${selectedVoice} | Rate: ${selectedRate}`);
     await speakCommon({ text: text, voice: selectedVoice, rate: selectedRate });
 }
 
@@ -391,7 +387,17 @@ function togglePlay() {
 }
 
 function stopLoop() { isPlaying = false; document.getElementById('play-btn').innerText = '▶'; clearInterval(autoTimer); }
-function switchTab(type) { currentTab = type; page = 1; currentIndex = -1; render(); }
+
+function switchTab(type) { 
+    currentTab = type; 
+    page = 1; 
+    currentIndex = -1; 
+    document.getElementById('tab-todo').classList.toggle('active', type === 'todo');
+    document.getElementById('tab-done').classList.toggle('active', type === 'done');
+    document.getElementById('tab-done').classList.toggle('done-mode', type === 'done');
+    render(); 
+}
+
 function toggleInfo() { showInfo = !showInfo; saveSettings(); render(true); }
 function toggleShuffle() { isShuffle = !isShuffle; saveSettings(); render(); }
 function prevPage() { if(page > 1) { page--; currentIndex = -1; render(); } }

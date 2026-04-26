@@ -3,34 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Học Tiếng Nhật cùng Gemini</title>
+    <title>Japanese Pronunciation Analyzer v2026</title>
     <style>
-        :root { --primary: #007bff; --bg: #f8f9fa; }
+        :root { --primary: #1e3799; --accent: #007bff; --bg: #f0f2f5; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
-        .card { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #1e3799; margin-bottom: 25px; }
+        .card { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; }
         input[type="text"], input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { background: var(--primary); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:disabled { background: #ccc; }
-        #status { margin: 15px 0; font-weight: bold; color: #555; }
-        #result { margin-top: 25px; padding: 20px; background: #fff; border-left: 5px solid var(--primary); border-radius: 4px; white-space: pre-wrap; display: none; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
-        .log-box { margin-top: 20px; background: #2d3436; color: #00ff00; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; }
+        button { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        button:hover { background: var(--primary); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #status { margin: 15px 0; font-weight: bold; color: #555; display: flex; align-items: center; }
+        #status::before { content: "●"; margin-right: 8px; color: #28a745; }
+        #result { margin-top: 25px; padding: 20px; background: #fff; border-left: 6px solid var(--primary); border-radius: 4px; white-space: pre-wrap; display: none; line-height: 1.6; border: 1px solid #eee; }
+        .log-box { margin-top: 20px; background: #2d3436; color: #00ff00; padding: 15px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 11px; max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Phân tích Phát âm Nhật ngữ</h2>
+    <h2>Phân tích Phát âm Nhật ngữ (Gemini 2.5)</h2>
     
     <div class="form-group">
         <label>Gemini API Key:</label>
-        <input type="text" id="apiKey" placeholder="Nhập API Key từ Google AI Studio...">
+        <input type="text" id="apiKey" placeholder="Nhập API Key của bạn...">
     </div>
 
     <div class="form-group">
-        <label>Chọn file ghi âm:</label>
+        <label>Chọn file ghi âm (.m4a, .mp3, .wav):</label>
         <input type="file" id="audioFile" accept="audio/*">
     </div>
 
@@ -39,11 +41,11 @@
     <div id="status">Trạng thái: Sẵn sàng</div>
     <div id="result"></div>
 
-    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>
+    <div class="log-box" id="logBox">Logs: Đã nhận diện model gemini-2.5-flash từ hệ thống.</div>
 </div>
 
 <script>
-    const DB_NAME = 'JP_Pron_DB';
+    const DB_NAME = 'JP_Pron_v2026';
     const STORE_NAME = 'settings';
     const apiKeyInput = document.getElementById('apiKey');
     const analyzeBtn = document.getElementById('analyzeBtn');
@@ -55,10 +57,9 @@
         const t = new Date().toLocaleTimeString();
         logBox.innerText += `\n[${t}] ${msg}`;
         logBox.scrollTop = logBox.scrollHeight;
-        console.log(`[${t}] ${msg}`);
     }
 
-    // --- XỬ LÝ INDEXEDDB ---
+    // --- CƠ CHẾ LƯU TRỮ ---
     async function initDB() {
         return new Promise(res => {
             const req = indexedDB.open(DB_NAME, 1);
@@ -76,18 +77,21 @@
     apiKeyInput.onchange = async () => {
         const db = await initDB();
         db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(apiKeyInput.value.trim(), 'api_key');
-        addLog("Đã lưu API Key.");
+        addLog("Đã cập nhật API Key vào IndexedDB.");
     };
 
-    // --- GỬI API ---
+    // --- XỬ LÝ CHÍNH ---
     analyzeBtn.onclick = async () => {
         const file = document.getElementById('audioFile').files[0];
         const key = apiKeyInput.value.trim();
 
-        if(!file || !key) return alert("Vui lòng chọn file và nhập Key!");
+        if(!file || !key) {
+            alert("Vui lòng kiểm tra lại Key và File!");
+            return;
+        }
 
         analyzeBtn.disabled = true;
-        statusDiv.innerText = "Đang xử lý...";
+        statusDiv.innerText = "Trạng thái: Đang phân tích (Gemini 2.5 Flash)...";
         resultDiv.style.display = "none";
 
         try {
@@ -97,57 +101,46 @@
                 r.readAsDataURL(file);
             });
 
-            // Danh sách các Endpoint tiềm năng để thử nếu gặp lỗi 404
-            const endpoints = [
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
-                `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`,
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`
-            ];
+            // Sử dụng chính xác model "gemini-2.5-flash" từ ảnh của bạn
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
-            let success = false;
-            for (let url of endpoints) {
-                if (success) break;
-                addLog(`Thử Endpoint: ${url.split('?')[0]}`);
-                
-                try {
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [
-                                    { text: "Bạn là giáo viên tiếng Nhật bản ngữ. Hãy nghe file này, transcript (Kanji/Kana) và nhận xét phát âm bằng tiếng Việt." },
-                                    { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
-                                ]
-                            }]
-                        })
-                    });
+            addLog("Đang gửi yêu cầu tới model: gemini-2.5-flash");
 
-                    const data = await resp.json();
-
-                    if (data.error) {
-                        addLog(`Lỗi từ Endpoint này: ${data.error.message}`);
-                        continue; // Thử Endpoint tiếp theo
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: "Bạn là chuyên gia tiếng Nhật. Hãy nghe file này, ghi lại nội dung (transcript) và nhận xét phát âm, ngữ điệu (pitch accent) chi tiết bằng tiếng Việt." },
+                            { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: 1,
+                        topP: 0.95,
+                        topK: 64
                     }
+                })
+            });
 
-                    if (data.candidates && data.candidates.length > 0) {
-                        resultDiv.innerText = data.candidates[0].content.parts[0].text;
-                        resultDiv.style.display = "block";
-                        statusDiv.innerText = "Hoàn tất!";
-                        addLog("Phân tích thành công.");
-                        success = true;
-                    }
-                } catch (e) {
-                    addLog("Lỗi kết nối mạng.");
-                }
+            const data = await resp.json();
+
+            if (data.error) throw new Error(data.error.message);
+
+            if (data.candidates && data.candidates.length > 0) {
+                resultDiv.innerText = data.candidates[0].content.parts[0].text;
+                resultDiv.style.display = "block";
+                statusDiv.innerText = "Trạng thái: Hoàn tất.";
+                addLog("Thành công.");
+            } else {
+                throw new Error("Không nhận được kết quả từ AI.");
             }
 
-            if (!success) throw new Error("Không thể kết nối với bất kỳ Endpoint nào của Gemini. Kiểm tra lại Key của bạn.");
-
         } catch (err) {
-            addLog("Lỗi cuối cùng: " + err.message);
-            statusDiv.innerText = "Gặp lỗi.";
-            resultDiv.innerText = "Lỗi: " + err.message;
+            addLog("Lỗi: " + err.message);
+            statusDiv.innerText = "Trạng thái: Gặp lỗi.";
+            resultDiv.innerText = "Chi tiết lỗi: " + err.message;
             resultDiv.style.display = "block";
         } finally {
             analyzeBtn.disabled = false;

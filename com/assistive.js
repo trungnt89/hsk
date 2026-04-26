@@ -14,7 +14,7 @@
             .menu-container { position: relative; background: rgba(28,28,30,0.96); padding: 20px; border-radius: 30px; width: 90%; max-width: 400px; font-family: -apple-system, sans-serif; box-sizing: border-box; border: 0.5px solid rgba(255,255,255,0.1); }
             .menu-section-title { color: #8e8e93; font-size: 10px; font-weight: 700; text-transform: uppercase; margin: 5px 0 12px 4px; border-bottom: 0.5px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
             .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-            .menu-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.1s; }
+            .menu-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.1s; text-decoration: none; color: inherit; }
             .menu-item:active { transform: scale(0.9); }
             .item-icon { width: 52px; height: 52px; background: #3a3a3c; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 6px; }
             .item-label { font-size: 11px; font-weight: 600; text-align: center; color: #fff; }`;
@@ -23,30 +23,26 @@
         const btn = Object.assign(document.createElement('div'), { id: 'assistive-touch' });
         const menu = Object.assign(document.createElement('div'), { id: 'assistive-menu' });
         
-        const nav = (path) => {
-            return `onclick="console.log('[Navigation] Chuyển hướng tới: ${path}'); location.href='../${path}'"`;
-        };
-
         menu.innerHTML = `<div class="menu-container">
             <div class="menu-section-title">Năng suất</div>
             <div class="menu-grid">
-                <div class="menu-item" ${nav('index.html')}><div class="item-icon">🏠</div><span class="item-label">Home</span></div>
-                <div class="menu-item" ${nav('task/index.html')}><div class="item-icon">📊</div><span class="item-label">Tasks</span></div>
-                <div class="menu-item" ${nav('pomodoro/index.html')}><div class="item-icon">🍅</div><span class="item-label">Pomo</span></div>
+                <a class="menu-item" href="../index.html" onclick="console.log('[Navigation] Click: Home')"><div class="item-icon">🏠</div><span class="item-label">Home</span></a>
+                <a class="menu-item" href="../task/index.html" onclick="console.log('[Navigation] Click: Tasks')"><div class="item-icon">📊</div><span class="item-label">Tasks</span></a>
+                <a class="menu-item" href="../pomodoro/index.html" onclick="console.log('[Navigation] Click: Pomo')"><div class="item-icon">🍅</div><span class="item-label">Pomo</span></a>
             </div>
             <div class="menu-section-title">Học tập</div>
             <div class="menu-grid">
-                <div class="menu-item" ${nav('pmp/index.html')}><div class="item-icon">📘</div><span class="item-label">PMP</span></div>
-                <div class="menu-item" ${nav('n1/index.html')}><div class="item-icon">🇯🇵</div><span class="item-label">Japan</span></div>
-                <div class="menu-item" ${nav('hsk/index.html')}><div class="item-icon">🇨🇳</div><span class="item-label">HSK</span></div>
-                <div class="menu-item" ${nav('nikki/index.html')}><div class="item-icon">📒</div><span class="item-label">NIKKI</span></div>
-                <div class="menu-item" ${nav('mp3/index.html')}><div class="item-icon">🧭</div><span class="item-label">MP3</span></div>
-				<div class="menu-item" ${nav('link/index.html')}><div class="item-icon">🔗</div><span class="item-label">Links</span></div>
+                <a class="menu-item" href="../pmp/index.html" onclick="console.log('[Navigation] Click: PMP')"><div class="item-icon">📘</div><span class="item-label">PMP</span></a>
+                <a class="menu-item" href="../n1/index.html" onclick="console.log('[Navigation] Click: Japan')"><div class="item-icon">🇯🇵</div><span class="item-label">Japan</span></a>
+                <a class="menu-item" href="../hsk/index.html" onclick="console.log('[Navigation] Click: HSK')"><div class="item-icon">🇨🇳</div><span class="item-label">HSK</span></a>
+                <a class="menu-item" href="../nikki/index.html" onclick="console.log('[Navigation] Click: NIKKI')"><div class="item-icon">📒</div><span class="item-label">NIKKI</span></a>
+                <a class="menu-item" href="../mp3/index.html" onclick="console.log('[Navigation] Click: MP3')"><div class="item-icon">🧭</div><span class="item-label">MP3</span></a>
+                <a class="menu-item" href="../link/index.html" onclick="console.log('[Navigation] Click: Links')"><div class="item-icon">🔗</div><span class="item-label">Links</span></a>
             </div>
             <div class="menu-section-title">Hệ thống</div>
             <div class="menu-grid">
-                <div class="menu-item" ${nav('db/index.html')}><div class="item-icon">🗄️</div><span class="item-label">DB</span></div>
-                <div class="menu-item" ${nav('log/index.html')}><div class="item-icon">📜</div><span class="item-label">Logs</span></div>
+                <a class="menu-item" href="../db/index.html" onclick="console.log('[Navigation] Click: DB')"><div class="item-icon">🗄️</div><span class="item-label">DB</span></a>
+                <a class="menu-item" href="../log/index.html" onclick="console.log('[Navigation] Click: Logs')"><div class="item-icon">📜</div><span class="item-label">Logs</span></a>
                 <div class="menu-item" onclick="console.log('[System] Reloading...'); location.reload()"><div class="item-icon">🔄</div><span class="item-label">Reload</span></div>
             </div></div>`;
 

@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chuyên Gia Chấm Điểm Phát Âm Nhật Ngữ</title>
-	<script src="../com/assistive.js"></script>
+    <script src="../com/assistive.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root { --primary: #1e3799; --accent: #007bff; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; color: #333; line-height: 1.6; }
@@ -19,7 +20,16 @@
         button:disabled { background: #ccc; cursor: not-allowed; }
         #status { margin: 15px 0; font-weight: bold; color: #666; display: flex; align-items: center; }
         #status::before { content: "●"; margin-right: 8px; color: #e67e22; }
-        #result { margin-top: 25px; padding: 25px; background: #fff; border-left: 6px solid var(--primary); border-radius: 4px; white-space: pre-wrap; display: none; border: 1px solid #e1e8ed; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        
+        /* Cập nhật style cho Result để hiển thị HTML đẹp hơn */
+        #result { margin-top: 25px; padding: 25px; background: #fff; border-left: 6px solid var(--primary); border-radius: 4px; display: none; border: 1px solid #e1e8ed; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        #result h1, #result h2, #result h3 { color: var(--primary); margin-top: 15px; }
+        #result ul, #result ol { padding-left: 20px; }
+        #result blockquote { border-left: 4px solid #ccc; padding-left: 15px; font-style: italic; color: #555; }
+        #result table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+        #result table, #result th, #result td { border: 1px solid #ddd; padding: 8px; }
+        #result th { background-color: #f2f2f2; }
+
         .log-box { margin-top: 30px; background: #2d3436; color: #00ff00; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; }
         #audioPreview { margin-top: 10px; width: 100%; height: 40px; display: none; }
     </style>
@@ -171,7 +181,6 @@
                 r.readAsDataURL(file);
             });
 
-            // Sử dụng model gemini-2.5-flash theo source mẫu
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
             const response = await fetch(url, {
@@ -189,7 +198,7 @@
                             3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó.
                             4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.
                             
-                            Định dạng câu trả lời rõ ràng, dễ đọc bằng tiếng Việt.` },
+                            Sử dụng định dạng Markdown (tiêu đề, danh sách, bảng) để trình bày rõ ràng.` },
                         { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
                     ]}]
                 })
@@ -200,10 +209,12 @@
 
             if (data.candidates && data.candidates[0].content.parts[0].text) {
                 const aiText = data.candidates[0].content.parts[0].text;
-                resultDiv.innerText = aiText;
+                
+                // Chuyển đổi Markdown sang HTML trước khi hiển thị
+                resultDiv.innerHTML = marked.parse(aiText);
                 resultDiv.style.display = "block";
                 statusDiv.innerText = "Trạng thái: Hoàn tất!";
-                addLog("✅ Đã nhận kết quả từ AI.");
+                addLog("✅ Đã nhận và hiển thị kết quả định dạng HTML.");
 
                 // ĐỒNG BỘ LÊN GOOGLE SHEET
                 const fileId = new URLSearchParams(window.location.search).get('fileId');

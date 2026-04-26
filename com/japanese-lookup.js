@@ -1,6 +1,7 @@
 /**
- * Japanese Lookup & Highlight Manager - Version 2026.36
+ * Japanese Lookup & Highlight Manager - Version 2026.36.1
  * - Feature: Optimized for Safari iOS (iPhone)
+ * - Logic: Only look up 1-character strings if they are Kanji
  * - Strict Limit: No lookup for selections > 6 words or > 50 characters
  * - Integrity: Preserving all Kanji Details and GAS Logic
  */
@@ -40,6 +41,7 @@ const JapaneseLookup = (() => {
             const res = await fetch("../com/kanjimini.json");
             const data = await res.json();
             kanjiDict = data.reduce((acc, curr) => { acc[curr.w] = curr.h; return acc; }, {});
+            console.log("[Log] Kanji dictionary loaded.");
         } catch (e) { console.warn("[Log] kanjimini.json error."); }
     };
 
@@ -119,7 +121,10 @@ const JapaneseLookup = (() => {
                     fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji: item.phonetic, meaning: detailed, googleMeaning: item.short_mean }) });
                 }
             }
-        } catch (e) { showPopup(text, "Lỗi kết nối", "", "", false); }
+        } catch (e) { 
+            console.error("[Log] Lookup error:", e);
+            showPopup(text, "Lỗi kết nối", "", "", false); 
+        }
     }
 
     const Module = {
@@ -132,7 +137,11 @@ const JapaneseLookup = (() => {
                 data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji, googleMeaning: w.googleMeaning || "" }));
                 dataLoaded = true;
                 Module.applyHighlight();
-            } catch (e) { dataLoaded = true; }
+                console.log("[Log] Data initialized from GAS.");
+            } catch (e) { 
+                console.warn("[Log] GAS load failed.");
+                dataLoaded = true; 
+            }
 
             document.addEventListener('mousedown', (e) => {
                 if (e.target.closest('.ja-stored-highlight')) {
@@ -149,10 +158,20 @@ const JapaneseLookup = (() => {
                 const selText = selection.toString().trim();
                 if (!selText) return;
                 
-                // CHẶN TRA CỨU ĐOẠN DÀI (> 6 từ hoặc > 50 ký tự)
-                const wordCount = selText.split("").length;
-				console.log("wordCount="+wordCount);
-                if (wordCount > 6 || selText.length > 50) return;
+                const wordCount = selText.length;
+                console.log("[Log] Selection detected: " + selText + " (Length: " + wordCount + ")");
+
+                // CHẶN TRA CỨU ĐOẠN DÀI
+                if (wordCount > 6 || selText.length > 50) {
+                    console.log("[Log] Selection exceeds limits.");
+                    return;
+                }
+
+                // YÊU CẦU 1: Chỉ dịch 1 ký tự nếu là Kanji
+                if (wordCount === 1 && !/[\u4e00-\u9fff]/.test(selText)) {
+                    console.log("[Log] Single character is Hiragana/Katakana/Romaji. Skipping.");
+                    return;
+                }
 
                 if (/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(selText)) {
                     lookupNew(selText);
@@ -214,6 +233,7 @@ const JapaneseLookup = (() => {
                     p.normalize();
                 }
             });
+            console.log("[Log] Deleting word: " + word);
             fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "deleteWord", word: word }) });
         }
     };

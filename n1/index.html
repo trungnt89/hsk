@@ -192,7 +192,8 @@ function saveSettings() {
         rate: document.getElementById("rate-select").value,
         displayMode: displayMode,
         showInfo: showInfo,
-        isShuffle: isShuffle
+        isShuffle: isShuffle,
+        currentUnit: document.getElementById("sheet-select").value
     };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
@@ -232,6 +233,13 @@ async function loadAppData() {
         const units = [...new Set(jsonData.map(item => item.unit))].sort((a, b) => a - b);
         const selectEl = document.getElementById("sheet-select");
         selectEl.innerHTML = units.map(u => `<option value="${u}">Unit ${u}</option>`).join('');
+        
+        const saved = localStorage.getItem(SETTINGS_KEY);
+        if (saved) {
+            const settings = JSON.parse(saved);
+            if (settings.currentUnit) selectEl.value = settings.currentUnit;
+        }
+
         const statusMap = await fetchAllStatusFromGAS();
         rawData = jsonData.map(item => {
             const wordKey = item.word ? item.word.trim() : "";
@@ -260,7 +268,7 @@ async function fetchAllStatusFromGAS() {
     return {};
 }
 
-async function changeSheet() { page = 1; currentIndex = -1; if(isPlaying) stopLoop(); render(); }
+async function changeSheet() { page = 1; currentIndex = -1; if(isPlaying) stopLoop(); saveSettings(); render(); }
 function forceReloadFromCloud() { loadAppData(); }
 
 async function toggleMaster(word, statusValue, elementIdx) {

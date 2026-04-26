@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Server-side AI Scoring (GAS)
+ * ShadowGame Module - Full Optimized & Fixed Audio Source (iPhone Support)
  */
 const RECORD_GAS_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
 
@@ -45,9 +45,6 @@ export const ShadowGame = {
             #gamePanel { display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden; }
             .sg-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:450px; background:white; border-radius:16px; padding:15px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10001; }
             .content-area mark { background: #fef08a; font-weight: bold; }
-            .ai-score-btn { background: #0ea5e9; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; border: none; margin-left: 5px; }
-            .ai-comment-btn { background: #64748b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; border: none; margin-left: 5px; }
-            #aiReport { font-size:13px; line-height:1.5; color:#334155; white-space: pre-wrap; margin-top:10px; }
         `;
         document.head.appendChild(style);
     },
@@ -68,19 +65,17 @@ export const ShadowGame = {
             <div id="voiceListPanel" class="sg-panel">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee;">
                     <span id="closeList" style="cursor:pointer">✕ Đóng</span>
-                    <b>🎙️ Bản ghi & AI Chấm điểm</b>
+                    <b>🎙️ Ghi âm</b>
                     <span id="refreshList" style="cursor:pointer">🔄 Tải lại</span>
                 </div>
                 <div id="voiceItems" style="max-height:60vh; overflow-y:auto;"></div>
             </div>
             <div id="scoreResultPanel" class="sg-panel" style="z-index:10005;">
-                <h3 style="text-align:center">🤖 Kết quả AI Phân tích</h3>
-                <div id="scoreReasoning" style="max-height:350px; overflow:auto; border:1px solid #e2e8f0; padding:10px; border-radius:8px;">
-                    <div id="aiReport">Đang chờ phân tích...</div>
-                </div>
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button id="closeScore" style="flex:1; padding:12px; background:#1e293b; color:#fff; border-radius:8px; cursor:pointer; border:none; font-weight:600;">Đóng</button>
-                    <button id="saveScore" style="flex:1; padding:12px; background:#059669; color:#fff; border-radius:8px; cursor:pointer; border:none; font-weight:600;">Lưu ghi âm</button>
+                <h3 style="text-align:center">Nội dung đã đọc</h3>
+                <div id="scoreReasoning" style="font-size:16px; margin:15px 0; max-height:300px; overflow:auto; word-break:break-word; line-height:1.6; color:#334155; border:1px solid #e2e8f0; padding:10px; border-radius:8px;"></div>
+                <div style="display:flex; gap:10px;">
+                    <button id="cancelScore" style="flex:1; padding:12px; background:#f1f5f9; color:#475569; border-radius:8px; cursor:pointer; border:1px solid #cbd5e1; font-weight:600;">Hủy</button>
+                    <button id="saveScore" style="flex:1; padding:12px; background:#1e293b; color:#fff; border-radius:8px; cursor:pointer; border:none; font-weight:600;">Lưu</button>
                 </div>
             </div>`;
         document.body.appendChild(wrap);
@@ -91,52 +86,19 @@ export const ShadowGame = {
         this.getEl('refreshList').onclick = () => this.toggleVoiceList(true);
         this.getEl('closeList').onclick = () => this.getEl('voiceListPanel').style.display = 'none';
         
-        this.getEl('closeScore').onclick = () => {
+        this.getEl('cancelScore').onclick = () => {
+            console.log("[ShadowGame] User cancelled save.");
             this.getEl('scoreResultPanel').style.display = 'none';
         };
         this.getEl('saveScore').onclick = async () => {
-            if(this._tempBlob) {
-                this.getEl('saveScore').disabled = true;
-                this.getEl('saveScore').innerText = "Đang lưu...";
-                await this.uploadToDrive(this._tempBlob);
-                this.getEl('saveScore').disabled = false;
-                this.getEl('saveScore').innerText = "Lưu ghi âm";
-                this.getEl('scoreResultPanel').style.display = 'none';
-            }
+            console.log("[ShadowGame] User confirmed save.");
+            await this.uploadToDrive(this._tempBlob);
+            this.getEl('scoreResultPanel').style.display = 'none';
         };
     },
 
-    // --- AI SCORING LOGIC (GO TO GAS) ---
-    async aiScoreVoice(id) {
-        const item = await this.dbOp('readonly', 'voices', 'get', id);
-        if (!item) return this.showToast("❌ Không tìm thấy bản ghi.");
-
-        this.getEl('scoreResultPanel').style.display = 'block';
-        this.getEl('saveScore').style.display = 'none';
-        const reportEl = this.getEl('aiReport');
-        reportEl.innerText = "⏳ Đang gửi yêu cầu chấm điểm tới Server...";
-
-        try {
-            const res = await this.api({}, "POST", { 
-                action: "assessVoice", 
-                fileId: id, 
-                script: item.script || "" 
-            });
-
-            if (res.status === "success") {
-                const resultText = `[Điểm: ${res.data.score}/1000]\n\n${res.data.feedback}`;
-                reportEl.innerText = resultText;
-                // Cache local
-                await this.dbOp('readwrite', 'voices', 'put', { ...item, score: res.data.score, aiFeedback: resultText });
-            } else {
-                reportEl.innerText = "❌ Lỗi Server: " + res.message;
-            }
-        } catch (e) {
-            reportEl.innerText = "❌ Lỗi kết nối: " + e.message;
-        }
-    },
-
     async updateBadgeCounts() {
+        console.log("[ShadowGame] Updating badge counts...");
         try {
             const res = await this.api({ type: 'countVoiceByLesson' });
             if (res.status === "success") {
@@ -193,6 +155,7 @@ export const ShadowGame = {
         this.mediaRecorder.onstop = async () => {
             const blob = new Blob(this.audioChunks, { type: 'audio/mp4' });
             this._tempBlob = blob;
+            console.log("[ShadowGame] Recording stopped, waiting for user decision.");
             stream.getTracks().forEach(t => t.stop());
         };
         this.mediaRecorder.start();
@@ -209,23 +172,36 @@ export const ShadowGame = {
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
             const browserScript = this.history.join(" ");
-            let area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
+            
+            let area = document.querySelector('.content-area.active');
+            if (!area) {
+                area = Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
+            }
             const script = area ? area.innerText.trim() : "";
             
             const fileName = `Shadow_${this.lessonId}_${Date.now()}.mp4`;
             const res = await this.api({}, "POST", { 
-                action: "uploadVoice", base64, fileName, lessonId: this.lessonId, 
-                script: script, browserScript: browserScript 
+                action: "uploadVoice", 
+                base64, 
+                fileName, 
+                lessonId: this.lessonId, 
+                score: "N/A", 
+                script: script, 
+                browserScript: browserScript 
             });
 
             if (res.status === 'success') {
                 await this.dbOp('readwrite', 'voices', 'put', { 
-                    id: res.id, blob, name: fileName, date: Date.now(), 
-                    formattedDate: new Date().toLocaleString(), lessonId: this.lessonId, 
-                    score: "N/A", script, browserScript 
+                    id: res.id, blob, name: fileName, 
+                    date: Date.now(), 
+                    formattedDate: new Date().toLocaleString(), 
+                    lessonId: this.lessonId, 
+                    score: "N/A", 
+                    script, 
+                    browserScript 
                 });
                 this.updateBadgeCounts();
-                this.showToast("✅ Đã lưu lên Drive!");
+                this.showToast("✅ Đã lưu!");
             }
         };
     },
@@ -235,34 +211,44 @@ export const ShadowGame = {
         if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
         panel.style.display = 'block';
         const itemsWrap = this.getEl('voiceItems'); 
-        itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">🔄 Đang tải...</div>`;
+        itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">🔄 Đang tải danh sách...</div>`;
 
         if (sync) {
             const allItems = await this.dbOp('readonly', 'voices', 'getAll');
             const toDelete = allItems.filter(v => String(v.lessonId) === String(this.lessonId));
-            for (const item of toDelete) await this.dbOp('readwrite', 'voices', 'delete', item.id);
+            for (const item of toDelete) {
+                const tx = this.db.transaction("voices", "readwrite");
+                tx.objectStore("voices").delete(item.id);
+            }
         }
 
-        let res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
-        let files = res.data || [];
+        let files = await this.dbOp('readonly', 'voices', 'getAll');
+        files = files.filter(v => String(v.lessonId) === String(this.lessonId));
+
+        if (sync || files.length === 0) {
+            const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
+            files = res.data || [];
+            for (const f of files) {
+                const existing = await this.dbOp('readonly', 'voices', 'get', f.id);
+                if (!existing) await this.dbOp('readwrite', 'voices', 'put', { ...f, lessonId: this.lessonId });
+            }
+        }
 
         itemsWrap.innerHTML = "";
-        files.forEach(async f => {
+        if (files.length === 0) {
+            itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#94a3b8;">Chưa có bản ghi nào.</div>`;
+            return;
+        }
+
+        files.sort((a,b) => (b.date || 0) - (a.date || 0)).forEach(async f => {
             const item = document.createElement('div');
             item.style.padding = "10px"; item.style.borderBottom = "1px solid #eee";
             const cached = await this.dbOp('readonly', 'voices', 'get', f.id);
             let audioSrc = cached && cached.blob ? URL.createObjectURL(cached.blob) : "";
-            let scoreDisplay = f.score && f.score !== "N/A" && f.score !== 0 ? `<b style="color:#059669">${f.score}</b>` : `<span style="color:#94a3b8">---</span>`;
             
             item.innerHTML = `
-                <div style="font-size:11px; color:#64748b; margin-bottom:4px; word-break:break-all;">📄 ${f.name || 'Ghi âm'}</div>
-                <div style="font-size:12px; display:flex; justify-content:space-between">
-                    <span>🕒 ${f.formattedDate || "N/A"} | ⭐ Điểm: ${scoreDisplay}</span>
-                    <div>
-                        ${(f.aiFeedback || (cached && cached.aiFeedback)) ? `<button class="ai-comment-btn" data-id="${f.id}">💬 Nhận xét</button>` : ''}
-                        <button class="ai-score-btn" data-id="${f.id}">🤖 Chấm điểm</button>
-                    </div>
-                </div>
+                <div style="font-size:11px; color:#64748b; margin-bottom:4px; word-break:break-all;">📄 ${f.name || 'Ghi âm mới'}</div>
+                <div style="font-size:12px; display:flex; justify-content:space-between"><span>🕒 ${(f.date ? new Date(f.date).toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" }) : "N/A")}</span></div>
                 <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:32px; margin-top:5px"></audio>
                 <div style="text-align:right; margin-top:5px;">
                     <span class="del-btn" style="color:red; cursor:pointer; font-size:11px">🗑️ Xóa</span>
@@ -272,20 +258,12 @@ export const ShadowGame = {
                 this.api({ type: 'getFileBlob', fileId: f.id }).then(res => {
                     if (res.data) {
                         const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });
+                        const newSrc = URL.createObjectURL(b);
                         const aud = item.querySelector('audio');
-                        if (aud) aud.src = URL.createObjectURL(b);
+                        if (aud) aud.src = newSrc;
                         this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b, lessonId: this.lessonId });
                     }
                 });
-            }
-            item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.id);
-            const commentBtn = item.querySelector('.ai-comment-btn');
-            if (commentBtn) {
-                commentBtn.onclick = () => {
-                    this.getEl('aiReport').innerText = f.aiFeedback || (cached && cached.aiFeedback);
-                    this.getEl('scoreResultPanel').style.display = 'block';
-                    this.getEl('saveScore').style.display = 'none';
-                };
             }
             item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.id, item);
             itemsWrap.appendChild(item);
@@ -296,23 +274,36 @@ export const ShadowGame = {
         if (!confirm("Xóa bản ghi?")) return;
         const res = await this.api({}, "POST", { action: "deleteVoice", fileId: id });
         if (res.status === 'success') {
-            await this.dbOp('readwrite', 'voices', 'delete', id);
+            const tx = this.db.transaction("voices", "readwrite"); tx.objectStore("voices").delete(id);
             el.remove(); this.updateBadgeCounts();
         }
     },
 
     handleVoiceInput(text, isFinal) {
+        //if (isFinal) { this.highlightInBody(text); this.history.push(text); }
         this.currentInterim = text;
         this.getEl('gameHistory').innerText = this.history.join(" ");
         this.getEl('gameCurrent').innerText = text;
-        if (isFinal) this.history.push(text);
+    },
+
+    highlightInBody(text) {
+        let area = document.querySelector('.content-area.active');
+        if (!area) area = Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
+        if (!area) return;
+        const walk = document.createTreeWalker(area, NodeFilter.SHOW_TEXT);
+        let n; while(n = walk.nextNode()) {
+            if (n.textContent.includes(text)) {
+                const s = document.createElement('mark'); s.innerText = text;
+                n.replaceWith(n.textContent.split(text)[0], s, n.textContent.split(text)[1]);
+            }
+        }
     },
 
     showFinalResult() {
         const spokenText = this.history.join(" ");
-        this.getEl('aiReport').innerText = "Văn bản nhận diện được:\n" + (spokenText || "(Không có âm thanh)");
+        console.log("[ShadowGame] Displaying read text:", spokenText);
+        this.getEl('scoreReasoning').innerText = spokenText || "(Không có dữ liệu âm thanh)";
         this.getEl('scoreResultPanel').style.display = 'block';
-        this.getEl('saveScore').style.display = 'block';
     },
 
     showToast(m) {

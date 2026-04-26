@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Japanese Audio Analyzer - Universal Support</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background-color: #f8f9fa; color: #333; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 10px; font-weight: 600; color: #495057; }
+        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; box-sizing: border-box; transition: border-color 0.3s; }
+        input[type="text"]:focus { border-color: #007bff; outline: none; }
+        input[type="file"] { width: 100%; padding: 10px; background: #f1f3f5; border-radius: 8px; border: 2px dashed #dee2e6; cursor: pointer; }
+        button { background-color: #007bff; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        button:hover { background-color: #0056b3; transform: translateY(-1px); }
+        button:disabled { background-color: #adb5bd; cursor: not-allowed; transform: none; }
+        #status { margin: 15px 0; font-size: 14px; font-weight: 500; color: #6c757d; display: flex; align-items: center; }
+        #status::before { content: "●"; margin-right: 8px; color: #28a745; }
+        #result { margin-top: 30px; padding: 25px; background: #fff; border-left: 6px solid #007bff; border-radius: 8px; white-space: pre-wrap; line-height: 1.7; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e9ecef; }
+        .log-box { margin-top: 25px; font-family: 'Courier New', monospace; font-size: 12px; color: #666; background: #f1f3f5; padding: 15px; border-radius: 8px; max-height: 150px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2 style="margin-top:0; color: #212529;">Phân tích Audio Đa định dạng</h2>
+    
+    <div class="form-group">
+        <label for="apiKey">Gemini API Key:</label>
+        <input type="text" id="apiKey" placeholder="Nhập API Key (Sẽ lưu vào IndexedDB)...">
+    </div>
+
+    <div class="form-group">
+        <label for="audioFile">Chọn file âm thanh (m4a, mp3, wav, aac, ogg, flac...):</label>
+        <input type="file" id="audioFile" accept="audio/*">
+    </div>
+
+    <button id="analyzeBtn">Phân tích phát âm</button>
+
+    <div id="status">Sẵn sàng</div>
+    <div id="result"></div>
+
+    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>
+</div>
+
+<script>
+    const DB_NAME = 'JapaneseAppDB';
+    const STORE_NAME = 'settings';
+    const API_KEY_INDEX = 'gemini_api_key';
+
+    const apiKeyInput = document.getElementById('apiKey');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const status = document.getElementById('status');
+    const resultDiv = document.getElementById('result');
+    const logBox = document.getElementById('logBox');
+
+    function addLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        logBox.innerText += `\n[${timestamp}] ${message}`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // --- XỬ LÝ INDEXEDDB ---
+    async function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onupgradeneeded = (e) => e.target.result.createObjectStore(STORE_NAME);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject("Lỗi DB");
+        });
+    }
+
+    async function saveKey(val) {
+        const db = await initDB();
+        db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(val, API_KEY_INDEX);
+        addLog("Đã lưu API Key.");
+    }
+
+    async function getKey() {
+        const db = await initDB();
+        return new Promise(res => {
+            const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(API_KEY_INDEX);
+            req.onsuccess = () => res(req.result);
+        });
+    }
+
+    // --- TỰ ĐỘNG NHẬN DIỆN MIME TYPE ---
+    function getMimeType(file) {
+        if (file.type) return file.type; // Ưu tiên MIME type từ trình duyệt
+        
+        const extension = file.name.split('.').pop().toLowerCase();
+        const map = {
+            'm4a': 'audio/mp4',
+            'mp3': 'audio/mpeg',
+            'wav': 'audio/wav',
+            'aac': 'audio/aac',
+            'ogg': 'audio/ogg',
+            'flac': 'audio/flac'
+        };
+        return map[extension] || 'audio/mpeg';
+    }
+
+    window.onload = async () => {
+        const saved = await getKey();
+        if (saved) apiKeyInput.value = saved;
+    };
+
+    apiKeyInput.onchange = () => saveKey(apiKeyInput.value);
+
+    // --- XỬ LÝ CHÍNH ---
+    analyzeBtn.onclick = async () => {
+        const file = document.getElementById('audioFile').files[0];
+        const key = apiKeyInput.value;
+
+        if (!key || !file) {
+            alert("Thiếu API Key hoặc File!");
+            return;
+        }
+
+        analyzeBtn.disabled = true;
+        status.innerText = "Đang xử lý...";
+        resultDiv.style.display = "none";
+
+        try {
+            const mimeType = getMimeType(file);
+            addLog(`Xử lý file: ${file.name} | Định dạng: ${mimeType}`);
+
+            const base64Data = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(file);
+            });
+
+            addLog("Đang gửi yêu cầu tới Gemini 1.5 Flash...");
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: "Hãy nghe file âm thanh tiếng Nhật này và nhận xét chi tiết phát âm, trường âm và Pitch Accent bằng tiếng Việt." },
+                            { inline_data: { mime_type: mimeType, data: base64Data } }
+                        ]
+                    }]
+                })
+            });
+
+            const data = await response.json();
+            if (data.candidates) {
+                resultDiv.innerText = data.candidates[0].content.parts[0].text;
+                resultDiv.style.display = "block";
+                status.innerText = "Hoàn thành.";
+                addLog("Thành công!");
+            } else {
+                throw new Error(data.error?.message || "Lỗi phản hồi API");
+            }
+        } catch (e) {
+            addLog("Lỗi: " + e.message);
+            status.innerText = "Gặp lỗi.";
+        } finally {
+            analyzeBtn.disabled = false;
+        }
+    };
+</script>
+
+</body>
+</html>

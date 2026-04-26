@@ -26,11 +26,9 @@ export const ShadowGame = {
             const req = indexedDB.open("ShadowVoiceDB", 1);
             req.onupgradeneeded = e => {
                 const db = e.target.result;
-                // Tạo store lưu trữ danh sách voice - Thống nhất dùng fileId làm key
                 if (!db.objectStoreNames.contains("voices")) {
                     db.createObjectStore("voices", { keyPath: "fileId" });
                 }
-                // [LOG] Tạo store SCORE để lưu dữ liệu đầu vào cho việc chấm điểm
                 if (!db.objectStoreNames.contains("SCORE")) {
                     db.createObjectStore("SCORE", { keyPath: "id" });
                 }
@@ -69,7 +67,12 @@ export const ShadowGame = {
             .ai-score-btn { background: #0ea5e9; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; }
             .ai-comment-btn { background: #64748b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; }
             .voice-item-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; justify-content: flex-end; }
-            #aiReport { font-size:13px; line-height:1.5; color:#334155; white-space: pre-wrap; margin-top:10px; }
+            #aiReport { font-size:13px; line-height:1.6; color:#334155; margin-top:10px; }
+            
+            /* Định dạng HTML Nhận xét từ AI */
+            .ai-res-title { font-weight: bold; color: #1e3799; border-bottom: 1px solid #e2e8f0; margin-top: 10px; margin-bottom: 5px; display: block; }
+            .ai-res-err { color: #d63031; background: #fff5f5; padding: 4px 8px; border-radius: 4px; margin: 4px 0; border-left: 3px solid #ff7675; }
+            .ai-res-bold { background: #fef08a; padding: 0 2px; border-radius: 2px; font-weight: bold; }
         `;
         document.head.appendChild(style);
     },
@@ -140,7 +143,6 @@ export const ShadowGame = {
 
         console.log(`[LOG] Chấm điểm - Đồng bộ SCORE-CHECK-INPUT cho: ${fileId}`);
         
-        // Thống nhất lấy ra bằng fileId vì keyPath đã đổi sang fileId
         const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
         if (currentData) {
             await this.dbOp('readwrite', 'SCORE', 'put', { 
@@ -309,7 +311,17 @@ export const ShadowGame = {
             const commentBtn = item.querySelector('.ai-comment-btn');
             if (commentBtn) {
                 commentBtn.onclick = () => {
-                    this.getEl('aiReport').innerText = f.aiFeedback;
+                    // FORMAT NHẬN XÉT SANG HTML CỤC BỘ
+                    const raw = f.aiFeedback || "";
+                    const html = raw
+                        .replace(/\*\*(.*?)\*\*/g, '<span class="ai-res-bold">$1</span>')
+                        .replace(/^\d\.\s(.*)/gm, '<span class="ai-res-title">$1</span>')
+                        .split('\n').map(line => {
+                            if (line.trim().startsWith('*')) return `<div class="ai-res-err">${line.replace('*', '').trim()}</div>`;
+                            return `<div>${line}</div>`;
+                        }).join('');
+                    
+                    this.getEl('aiReport').innerHTML = html;
                     this.getEl('scoreResultPanel').style.display = 'block';
                     this.getEl('saveScore').style.display = 'none';
                 };
@@ -321,7 +333,6 @@ export const ShadowGame = {
 
     async deleteVoice(fileId, el) {
         if (!confirm("Xóa bản ghi?")) return;
-        console.log(`[LOG] Deleting voice: ${fileId}`);
         const res = await this.api({}, "POST", { action: "deleteVoice", fileId: fileId });
         if (res.status === 'success') {
             await this.dbOp('readwrite', 'voices', 'delete', fileId);

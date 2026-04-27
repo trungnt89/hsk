@@ -21,6 +21,7 @@
         #status { margin: 15px 0; font-weight: bold; color: #666; display: flex; align-items: center; }
         #status::before { content: "●"; margin-right: 8px; color: #e67e22; }
         
+        /* Cập nhật style cho Result để hiển thị HTML đẹp hơn */
         #result { margin-top: 25px; padding: 25px; background: #fff; border-left: 6px solid var(--primary); border-radius: 4px; display: none; border: 1px solid #e1e8ed; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         #result h1, #result h2, #result h3 { color: var(--primary); margin-top: 15px; }
         #result ul, #result ol { padding-left: 20px; }
@@ -63,6 +64,7 @@
 </div>
 
 <script>
+    // --- CẤU HÌNH ---
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
     const SHADOW_DB_NAME = 'ShadowVoiceDB'; 
     const SHADOW_STORE_NAME = 'voices';     
@@ -170,7 +172,7 @@
         analyzeBtn.disabled = true;
         statusDiv.innerText = "Trạng thái: Đang phân tích...";
         resultDiv.style.display = "none";
-        addLog("⏳ Bắt đầu quá trình phân tích với cơ chế chuyển đổi model...");
+        addLog("⏳ Đang gửi dữ liệu tới Gemini AI (Model 2.5 Flash)...");
 
         try {
             const base64Data = await new Promise((resolve) => {
@@ -179,62 +181,42 @@
                 r.readAsDataURL(file);
             });
 
-            // Cơ chế chuyển đổi Model (Fallback)
-            const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
-            let responseData = null;
-            let lastError = "";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 
-            for (let modelName of models) {
-                addLog(`🔄 Đang thử sử dụng model: ${modelName}...`);
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [
+                        { text: `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
+                            
+                            KỊCH BẢN GỐC: "${script || 'Không cung cấp - Hãy tự nhận diện nội dung'}"
+                            
+                            YÊU CẦU:
+                            1. SO SÁNH: Đối chiếu giữa kịch bản gốc và những gì người nói thực tế đã nói. Chỉ ra các từ bị nói sai, nói thiếu hoặc biến âm.
+                            2. NHẬN XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
+                            3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó.
+                            4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.
+                            
+                            Sử dụng định dạng Markdown (tiêu đề, danh sách, bảng) để trình bày rõ ràng.` },
+                        { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
+                    ]}]
+                })
+            });
 
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [
-                                { text: `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
-                                    KỊCH BẢN GỐC: "${script || 'Không cung cấp - Hãy tự nhận diện nội dung'}"
-                                    YÊU CẦU:
-                                    1. SO SÁNH: Đối chiếu giữa kịch bản gốc và những gì người nói thực tế đã nói. Chỉ ra các từ bị nói sai, nói thiếu hoặc biến âm.
-                                    2. NHẬN XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
-                                    3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó.
-                                    4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.
-                                    Sử dụng định dạng Markdown (tiêu đề, danh sách, bảng) để trình bày rõ ràng.` },
-                                { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
-                            ]}]
-                        })
-                    });
-
-                    responseData = await response.json();
-                    if (responseData.error) {
-                        lastError = responseData.error.message;
-                        addLog(`⚠️ Model ${modelName} lỗi hoặc quá tải: ${lastError}`);
-                        continue;
-                    }
-                    
-                    if (responseData.candidates) {
-                        addLog(`✅ Thành công với model: ${modelName}`);
-                        break;
-                    }
-                } catch (e) {
-                    lastError = e.message;
-                    addLog(`❗ Lỗi kết nối tới ${modelName}: ${e.message}`);
-                }
-            }
-
-            const data = responseData;
-            if (!data || data.error) throw new Error(lastError || "Không thể kết nối tới bất kỳ Model nào.");
+            const data = await response.json();
+            if (data.error) throw new Error(data.error.message);
 
             if (data.candidates && data.candidates[0].content.parts[0].text) {
                 const aiText = data.candidates[0].content.parts[0].text;
                 
+                // Chuyển đổi Markdown sang HTML trước khi hiển thị
                 resultDiv.innerHTML = marked.parse(aiText);
                 resultDiv.style.display = "block";
                 statusDiv.innerText = "Trạng thái: Hoàn tất!";
                 addLog("✅ Đã nhận và hiển thị kết quả định dạng HTML.");
 
+                // ĐỒNG BỘ LÊN GOOGLE SHEET
                 const fileId = new URLSearchParams(window.location.search).get('fileId');
                 if (fileId) {
                     addLog("📡 Đang đồng bộ điểm số lên Google Sheet...");

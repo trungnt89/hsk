@@ -179,8 +179,8 @@
                 r.readAsDataURL(file);
             });
 
-            // Cơ chế chuyển đổi Model (Fallback)
-            const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+            // Cơ chế chuyển đổi Model (Fallback) với định dạng ID chuẩn
+            const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
             let responseData = null;
             let lastError = "";
 
@@ -210,7 +210,7 @@
                     responseData = await response.json();
                     if (responseData.error) {
                         lastError = responseData.error.message;
-                        addLog(`⚠️ Model ${modelName} lỗi hoặc quá tải: ${lastError}`);
+                        addLog(`⚠️ Model ${modelName} báo lỗi: ${lastError}`);
                         continue;
                     }
                     

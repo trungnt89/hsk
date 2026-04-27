@@ -72,13 +72,6 @@ export const ShadowGame = {
             .sg-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0; }
             #gamePanel { display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden; }
             .sg-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:450px; background:white; border-radius:16px; padding:15px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10001; }
-            
-            /* Iframe Panel CSS */
-            #iframeScorePanel { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:white; z-index:20000; flex-direction:column; }
-            .iframe-header { height:50px; display:flex; align-items:center; padding:0 15px; background:#f8f9fa; border-bottom:1px solid #ddd; }
-            .back-btn { padding:8px 15px; background:#1e293b; color:white; border-radius:6px; border:none; cursor:pointer; font-size:14px; font-weight:bold; }
-            #scoreIframe { flex-grow:1; border:none; width:100%; height:calc(100% - 50px); }
-
             .content-area mark { background: #fef08a; font-weight: bold; }
             .ai-score-btn { background: #0ea5e9; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; font-weight: 600; }
             .ai-comment-btn { background: #64748b; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; }
@@ -130,13 +123,6 @@ export const ShadowGame = {
                     <button id="cancelScore" style="flex:1; padding:12px; background:#f1f5f9; color:#475569; border-radius:8px; cursor:pointer; border:1px solid #cbd5e1; font-weight:600;">Đóng</button>
                     <button id="saveScore" style="flex:1; padding:12px; background:#1e293b; color:#fff; border-radius:8px; cursor:pointer; border:none; font-weight:600;">Lưu</button>
                 </div>
-            </div>
-            <div id="iframeScorePanel">
-                <div class="iframe-header">
-                    <button id="btnBackFromIframe" class="back-btn">⬅ Trở về</button>
-                    <span style="margin-left:auto; font-weight:bold; font-size:14px; color:#334155;">Phân tích & Chấm điểm</span>
-                </div>
-                <iframe id="scoreIframe"></iframe>
             </div>`;
         document.body.appendChild(wrap);
         document.body.style.paddingBottom = "80px";
@@ -146,12 +132,6 @@ export const ShadowGame = {
         this.getEl('refreshList').onclick = () => this.toggleVoiceList(true);
         this.getEl('closeList').onclick = () => this.getEl('voiceListPanel').style.display = 'none';
         
-        this.getEl('btnBackFromIframe').onclick = () => {
-            console.log("[LOG] Back to main game from Iframe");
-            this.getEl('iframeScorePanel').style.display = 'none';
-            this.getEl('scoreIframe').src = 'about:blank';
-        };
-
         this.getEl('cancelScore').onclick = () => {
             this.getEl('scoreResultPanel').style.display = 'none';
             this.getEl('scoreResultPanel').classList.remove('full-screen-panel');
@@ -179,10 +159,15 @@ export const ShadowGame = {
     async aiScoreVoice(fileId) {
         console.log(`[LOG] aiScoreVoice start for fileId: ${fileId}`);
         if (!fileId) return this.showToast("❌ Không có ID file.");
-
-        const panel = this.getEl('iframeScorePanel');
-        const iframe = this.getEl('scoreIframe');
         
+        // TRICK CHO IOS: Mở window mới ngay lập tức trước bất kỳ lệnh await nào
+        const newWindow = window.open('about:blank', '_blank');
+        if (!newWindow) {
+            console.error("[ERR] Popup blocked");
+            this.showToast("⚠️ Vui lòng cho phép bật popup");
+            return;
+        }
+
         try {
             const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
             if (currentData) {
@@ -191,12 +176,12 @@ export const ShadowGame = {
             }
             
             const finalUrl = `checker.html?fileId=${encodeURIComponent(fileId)}`;
-            iframe.src = finalUrl;
-            panel.style.display = 'flex';
-            console.log(`[LOG] Opened Iframe for: ${finalUrl}`);
+            newWindow.location.href = finalUrl; // Chuyển hướng window đã mở sang URL thật
+            console.log(`[LOG] Redirected window to: ${finalUrl}`);
             this.showToast("🚀 Đang mở trang phân tích...");
         } catch (err) {
             console.error("[ERR] aiScoreVoice failed:", err);
+            newWindow.close();
             this.showToast("❌ Lỗi xử lý dữ liệu");
         }
     },

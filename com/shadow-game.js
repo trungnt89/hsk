@@ -29,6 +29,7 @@ export const ShadowGame = {
     },
 
     async initDB() {
+        console.log("[LOG] Initializing IndexedDB");
         return new Promise(res => {
             const req = indexedDB.open("ShadowVoiceDB", 1);
             req.onupgradeneeded = e => {
@@ -45,6 +46,7 @@ export const ShadowGame = {
     },
 
     async dbOp(mode, storeName, action, data) {
+        console.log(`[LOG] DB Op: ${action} on ${storeName}`, data ? "with data" : "");
         const tx = this.db.transaction(storeName, mode);
         const store = tx.objectStore(storeName);
         return new Promise((res, rej) => {
@@ -135,7 +137,7 @@ export const ShadowGame = {
             this.getEl('scoreResultPanel').classList.remove('full-screen-panel');
         };
         this.getEl('saveScore').onclick = async () => {
-            console.log("[LOG] Save Score");
+            console.log("[LOG] Save Score Triggered");
             const area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
             
@@ -155,19 +157,38 @@ export const ShadowGame = {
     },
 
     async aiScoreVoice(fileId) {
+        console.log(`[LOG] aiScoreVoice start for fileId: ${fileId}`);
         if (!fileId) return this.showToast("❌ Không có ID file.");
-        const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
-        if (currentData) {
-            await this.dbOp('readwrite', 'SCORE', 'put', { ...currentData, id: "SCORE-CHECK-INPUT" });
+        
+        // TRICK CHO IOS: Mở window mới ngay lập tức trước bất kỳ lệnh await nào
+        const newWindow = window.open('about:blank', '_blank');
+        if (!newWindow) {
+            console.error("[ERR] Popup blocked");
+            this.showToast("⚠️ Vui lòng cho phép bật popup");
+            return;
         }
-        const checkerUrl = "checker.html"; 
-        const finalUrl = `${checkerUrl}?fileId=${encodeURIComponent(fileId)}`;
-        window.open(finalUrl, '_blank');
-        this.showToast("🚀 Đang mở trang phân tích...");
+
+        try {
+            const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
+            if (currentData) {
+                await this.dbOp('readwrite', 'SCORE', 'put', { ...currentData, id: "SCORE-CHECK-INPUT" });
+                console.log("[LOG] Updated SCORE-CHECK-INPUT in DB");
+            }
+            
+            const finalUrl = `checker.html?fileId=${encodeURIComponent(fileId)}`;
+            newWindow.location.href = finalUrl; // Chuyển hướng window đã mở sang URL thật
+            console.log(`[LOG] Redirected window to: ${finalUrl}`);
+            this.showToast("🚀 Đang mở trang phân tích...");
+        } catch (err) {
+            console.error("[ERR] aiScoreVoice failed:", err);
+            newWindow.close();
+            this.showToast("❌ Lỗi xử lý dữ liệu");
+        }
     },
 
     async updateBadgeCounts() {
         try {
+            console.log("[LOG] Updating Badge Counts");
             const res = await this.api({ type: 'countVoiceByLesson' });
             if (res.status === "success") {
                 document.querySelectorAll("div.diary-date > span").forEach(el => el.innerText = "0");
@@ -176,13 +197,12 @@ export const ShadowGame = {
                     if (span) span.innerText = count;
                 }
             }
-        } catch (e) { console.error("Badge update fail", e); }
+        } catch (e) { console.error("[ERR] Badge update fail", e); }
     },
 
     async init() {
-        console.log("[LOG] ShadowGame Init");
+        console.log("[LOG] ShadowGame Init Started");
 
-        // Bắt lỗi toàn cục window.onerror
         window.onerror = (msg, url, line, col, error) => {
             console.error(`[ERR_WINDOW] ${msg} at ${line}:${col}`, error);
             alert(`Lỗi hệ thống: ${msg}\nTại: ${line}:${col}`);
@@ -211,7 +231,10 @@ export const ShadowGame = {
                 }
                 if (interim) this.handleVoiceInput(interim, false);
             };
-            this.recognition.onend = () => this.isListening && this.recognition.start();
+            this.recognition.onend = () => {
+                console.log("[LOG] SpeechRecognition Ended");
+                this.isListening && this.recognition.start();
+            };
         }
     },
 
@@ -248,6 +271,7 @@ export const ShadowGame = {
     },
 
     stop() {
+        console.log("[LOG] Stopping Recording");
         this.isListening = false; this.getEl('btnMic').innerHTML = '🎤';
         this.recognition?.stop(); this.showFinalResult(); this.mediaRecorder?.stop();
     },
@@ -280,6 +304,7 @@ export const ShadowGame = {
     },
 
     async toggleVoiceList(sync = false) {
+        console.log("[LOG] Toggle Voice List. Sync:", sync);
         const panel = this.getEl('voiceListPanel');
         if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
         panel.style.display = 'block';
@@ -358,6 +383,7 @@ export const ShadowGame = {
 
     async deleteVoice(fileId, el) {
         if (!confirm("Xóa bản ghi này?")) return;
+        console.log(`[LOG] Deleting voice: ${fileId}`);
         const res = await this.api({}, "POST", { action: "deleteVoice", fileId: fileId });
         if (res.status === 'success') {
             await this.dbOp('readwrite', 'voices', 'delete', fileId);

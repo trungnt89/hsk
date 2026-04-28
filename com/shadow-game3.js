@@ -1,6 +1,5 @@
 /**
- * ShadowGame Module - Optimized for iPhone (Base64 over JSON)
- * Guiding Principle: Invisible Personalization & High Performance
+ * ShadowGame Module - Sử dụng link audio trực tiếp
  */
 
 if (typeof marked === 'undefined') {
@@ -47,7 +46,7 @@ export const ShadowGame = {
     },
 
     async dbOp(mode, storeName, action, data) {
-        console.log(`[LOG] DB Op: ${action} on ${storeName}`);
+        console.log(`[LOG] DB Op: ${action} on ${storeName}`, data ? "with data" : "");
         const tx = this.db.transaction(storeName, mode);
         const store = tx.objectStore(storeName);
         return new Promise((res, rej) => {
@@ -66,23 +65,6 @@ export const ShadowGame = {
         });
     },
 
-    // Hàm bổ trợ giải mã Base64 sang Blob tối ưu cho Mobile
-    base64ToBlob(base64, type) {
-        const cleanBase64 = base64.replace(/\s/g, '');
-        const byteCharacters = atob(cleanBase64);
-        const byteArrays = [];
-
-        for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-            const slice = byteCharacters.slice(offset, offset + 512);
-            const byteNumbers = new Array(slice.length);
-            for (let i = 0; i < slice.length; i++) {
-                byteNumbers[i] = slice.charCodeAt(i);
-            }
-            byteArrays.push(new Uint8Array(byteNumbers));
-        }
-        return new Blob(byteArrays, { type: type });
-    },
-
     injectCSS() {
         const style = document.createElement('style');
         style.textContent = `
@@ -90,15 +72,28 @@ export const ShadowGame = {
             .sg-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0; user-select: none; }
             #gamePanel { display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden; }
             .sg-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:450px; background:white; border-radius:16px; padding:15px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10001; }
+            
             #iframeScorePanel { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:white; z-index:20000; flex-direction:column; }
             .iframe-header { height:50px; display:flex; align-items:center; padding:0 15px; background:#f8f9fa; border-bottom:1px solid #ddd; }
             .back-btn { padding:8px 15px; background:#1e293b; color:white; border-radius:6px; border:none; cursor:pointer; font-size:14px; font-weight:bold; }
             #scoreIframe { flex-grow:1; border:none; width:100%; height:calc(100% - 50px); }
             .list-action-btn { cursor:pointer; font-size:13px; user-select:none; -webkit-user-select:none; padding: 2px 4px; }
+
+            .content-area mark { background: #fef08a; font-weight: bold; }
             .ai-score-btn { background: #0ea5e9; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; font-weight: 600; }
             .ai-comment-btn { background: #64748b; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; }
+            .voice-item-actions { display: flex; gap: 4px; align-items: center; }
+            
             #aiReport { font-size:13px; line-height:1.6; color:#334155; }
+            #aiReport h1, #aiReport h2, #aiReport h3 { color: #1e3799; margin-top: 15px; margin-bottom: 5px; }
+            #aiReport ul, #aiReport ol { padding-left: 20px; }
+            #aiReport table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 12px; }
+            #aiReport table, #aiReport th, #aiReport td { border: 1px solid #ddd; padding: 6px; }
+            #aiReport th { background-color: #f8f9fa; }
+            #aiReport blockquote { border-left: 4px solid #cbd5e1; padding-left: 10px; font-style: italic; color: #64748b; }
+            
             .full-screen-panel { width: 100vw !important; height: 100vh !important; max-width: 100vw !important; top: 0 !important; left: 0 !important; transform: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column; }
+            .full-screen-panel #scoreReasoning { flex-grow: 1; max-height: unset !important; }
             .score-badge { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 14px; border: 1px solid #bbf7d0; display: inline-block; min-width: 35px; text-align: center; }
             .voice-item { padding: 8px; border-bottom: 1px solid #f1f5f9; position: relative; }
         `;
@@ -154,20 +149,29 @@ export const ShadowGame = {
         this.getEl('refreshList').onclick = () => this.toggleVoiceList(true);
         this.getEl('clearAndRefresh').onclick = () => this.clearAndRefresh();
         this.getEl('closeList').onclick = () => this.getEl('voiceListPanel').style.display = 'none';
+        
         this.getEl('btnBackFromIframe').onclick = () => {
             this.getEl('iframeScorePanel').style.display = 'none';
             this.getEl('scoreIframe').src = 'about:blank';
         };
+
         this.getEl('cancelScore').onclick = () => {
             this.getEl('scoreResultPanel').style.display = 'none';
             this.getEl('scoreResultPanel').classList.remove('full-screen-panel');
         };
         this.getEl('saveScore').onclick = async () => {
-            let area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
+            const area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
+            
             await this.dbOp('readwrite', 'SCORE', 'put', { 
-                id: "SCORE-CHECK-INPUT", script: script, browserScript: this.history.join(" "), blob: this._tempBlob, lessonId: this.lessonId, date: Date.now()
+                id: "SCORE-CHECK-INPUT",
+                script: script,
+                browserScript: this.history.join(" "),
+                blob: this._tempBlob,
+                lessonId: this.lessonId,
+                date: Date.now()
             });
+
             await this.uploadToDrive(this._tempBlob);
             this.getEl('scoreResultPanel').style.display = 'none';
         };
@@ -184,7 +188,9 @@ export const ShadowGame = {
             }
             iframe.src = `checker.html?fileId=${encodeURIComponent(fileId)}`;
             panel.style.display = 'flex';
-        } catch (err) { this.showToast("❌ Lỗi dữ liệu"); }
+        } catch (err) {
+            this.showToast("❌ Lỗi dữ liệu");
+        }
     },
 
     async updateBadgeCounts() {
@@ -192,8 +198,8 @@ export const ShadowGame = {
             const res = await this.api({ type: 'countVoiceByLesson' });
             if (res.status === "success") {
                 document.querySelectorAll("div.diary-date > span").forEach(el => el.innerText = "0");
-                for (const [lId, count] of Object.entries(res.data)) {
-                    const span = document.querySelector(`#item-${lId} div.diary-date span`);
+                for (const [lessonId, count] of Object.entries(res.data)) {
+                    const span = document.querySelector(`#item-${lessonId} div.diary-date span`);
                     if (span) span.innerText = count;
                 }
             }
@@ -201,9 +207,8 @@ export const ShadowGame = {
     },
 
     async init() {
-        console.log("[LOG] Initializing ShadowGame");
-        await this.initDB();
-        this.buildUI();
+        await this.initDB(); 
+        this.buildUI(); 
         this.injectRequiredClasses();
         this._lastLessonId = this.lessonId;
         setInterval(() => {
@@ -213,7 +218,6 @@ export const ShadowGame = {
             }
         }, 2000);
         setTimeout(() => this.updateBadgeCounts(), 3000);
-
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SR) {
             this.recognition = new SR(); this.recognition.continuous = true; this.recognition.interimResults = true; this.recognition.lang = 'ja-JP';
@@ -351,22 +355,28 @@ export const ShadowGame = {
             item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.fileId, item);
             itemsWrap.appendChild(item);
 
-            // Xử lý tải Base64 từ JSON và giải mã sang Blob
             if (!f.blob && f.fileId) {
                 const statusEl = item.querySelector('.load-status');
+                statusEl.innerText = "⏳ Đang tải...";
                 try {
                     const resData = await this.api({ type: 'getFileBlob', fileId: f.fileId });
                     if (resData && resData.data) {
-                        const b = this.base64ToBlob(resData.data, "audio/mpeg");
+                        const cleanBase64 = resData.data.replace(/\s/g, '');
+                        const byteCharacters = atob(cleanBase64);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        const b = new Blob([new Uint8Array(byteNumbers)], { type: "audio/mpeg" });
                         const aud = item.querySelector('audio');
-                        if (aud) aud.src = URL.createObjectURL(b);
-                        
+                        if (aud) {
+                            aud.src = URL.createObjectURL(b);
+                            aud.load(); 
+                        }
                         await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b });
                         statusEl.innerText = "";
                     }
                 } catch (e) {
                     statusEl.innerText = "❌ Lỗi";
-                    console.error("[ERR] Base64 Decode Fail", e);
+                    console.error("[ERR] Download voice failed", e);
                 }
             }
         }

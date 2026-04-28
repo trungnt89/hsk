@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Phiên bản tối ưu nguồn Audio trực tiếp
+ * ShadowGame Module - Hỗ trợ hiển thị nhận xét AI dạng HTML chuyên nghiệp
  */
 
 if (typeof marked === 'undefined') {
@@ -151,6 +151,7 @@ export const ShadowGame = {
         this.getEl('closeList').onclick = () => this.getEl('voiceListPanel').style.display = 'none';
         
         this.getEl('btnBackFromIframe').onclick = () => {
+            console.log("[LOG] Back to main game from Iframe");
             this.getEl('iframeScorePanel').style.display = 'none';
             this.getEl('scoreIframe').src = 'about:blank';
         };
@@ -160,6 +161,7 @@ export const ShadowGame = {
             this.getEl('scoreResultPanel').classList.remove('full-screen-panel');
         };
         this.getEl('saveScore').onclick = async () => {
+            console.log("[LOG] Save Score Triggered");
             const area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
             
@@ -174,27 +176,38 @@ export const ShadowGame = {
 
             await this.uploadToDrive(this._tempBlob);
             this.getEl('scoreResultPanel').style.display = 'none';
+            this.getEl('scoreResultPanel').classList.remove('full-screen-panel');
         };
     },
 
     async aiScoreVoice(fileId) {
+        console.log(`[LOG] aiScoreVoice start for fileId: ${fileId}`);
         if (!fileId) return this.showToast("❌ Không có ID file.");
+
         const panel = this.getEl('iframeScorePanel');
         const iframe = this.getEl('scoreIframe');
+        
         try {
             const currentData = await this.dbOp('readonly', 'voices', 'get', fileId);
             if (currentData) {
                 await this.dbOp('readwrite', 'SCORE', 'put', { ...currentData, id: "SCORE-CHECK-INPUT" });
+                console.log("[LOG] Updated SCORE-CHECK-INPUT in DB");
             }
-            iframe.src = `checker.html?fileId=${encodeURIComponent(fileId)}`;
+            
+            const finalUrl = `checker.html?fileId=${encodeURIComponent(fileId)}`;
+            iframe.src = finalUrl;
             panel.style.display = 'flex';
+            console.log(`[LOG] Opened Iframe for: ${finalUrl}`);
+            this.showToast("🚀 Đang mở trang phân tích...");
         } catch (err) {
-            this.showToast("❌ Lỗi dữ liệu");
+            console.error("[ERR] aiScoreVoice failed:", err);
+            this.showToast("❌ Lỗi xử lý dữ liệu");
         }
     },
 
     async updateBadgeCounts() {
         try {
+            console.log("[LOG] Updating Badge Counts");
             const res = await this.api({ type: 'countVoiceByLesson' });
             if (res.status === "success") {
                 document.querySelectorAll("div.diary-date > span").forEach(el => el.innerText = "0");
@@ -203,10 +216,18 @@ export const ShadowGame = {
                     if (span) span.innerText = count;
                 }
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("[ERR] Badge update fail", e); }
     },
 
     async init() {
+        console.log("[LOG] ShadowGame Init Started");
+
+        window.onerror = (msg, url, line, col, error) => {
+            console.error(`[ERR_WINDOW] ${msg} at ${line}:${col}`, error);
+            alert(`Lỗi hệ thống: ${msg}\nTại: ${line}:${col}`);
+            return false;
+        };
+
         await this.initDB(); 
         this.buildUI(); 
         this.injectRequiredClasses();
@@ -217,7 +238,7 @@ export const ShadowGame = {
                 this.updateBadgeCounts();
             }
         }, 2000);
-        setTimeout(() => this.updateBadgeCounts(), 3000);
+        setTimeout(() => this.updateBadgeCounts(), 5000);
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SR) {
             this.recognition = new SR(); this.recognition.continuous = true; this.recognition.interimResults = true; this.recognition.lang = 'ja-JP';
@@ -229,7 +250,10 @@ export const ShadowGame = {
                 }
                 if (interim) this.handleVoiceInput(interim, false);
             };
-            this.recognition.onend = () => { this.isListening && this.recognition.start(); };
+            this.recognition.onend = () => {
+                console.log("[LOG] SpeechRecognition Ended");
+                this.isListening && this.recognition.start();
+            };
         }
     },
 
@@ -237,40 +261,54 @@ export const ShadowGame = {
 
     async start() {
         try {
+            console.log("[LOG] Start Recording Attempt");
             this.isListening = true; this.history = []; this.audioChunks = []; this._tempBlob = null;
             this.getEl('gamePanel').style.display = 'flex';
             this.getEl('btnMic').innerHTML = '🛑';
             this.recognition?.start();
+
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            console.log("[LOG] Mic Stream Acquired");
+
             this.mediaRecorder = new MediaRecorder(stream);
-            this.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) this.audioChunks.push(e.data); };
+            this.mediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) this.audioChunks.push(e.data);
+            };
             this.mediaRecorder.onstop = async () => {
+                console.log("[LOG] MediaRecorder Stopped. Chunks:", this.audioChunks.length);
                 const blob = new Blob(this.audioChunks, { type: 'audio/mp4' });
                 this._tempBlob = blob;
                 stream.getTracks().forEach(t => t.stop());
             };
             this.mediaRecorder.start();
         } catch (err) {
+            console.error("[ERR] Recording Start Fail:", err);
             this.showToast(`❌ Lỗi mic: ${err.message}`);
+            alert("Không thể khởi động ghi âm. Vui lòng kiểm tra quyền truy cập Microphone.\nChi tiết: " + err.message);
             this.stop();
         }
     },
 
     stop() {
+        console.log("[LOG] Stopping Recording");
         this.isListening = false; this.getEl('btnMic').innerHTML = '🎤';
         this.recognition?.stop(); this.showFinalResult(); this.mediaRecorder?.stop();
     },
 
     async clearAndRefresh() {
-        if (!confirm("Xóa cache local bài học này?")) return;
+        if (!confirm("Xóa cache local của bài học này và tải lại từ Server?")) return;
+        console.log("[LOG] Clear & Refresh for lesson:", this.lessonId);
         const allLocal = await this.dbOp('readonly', 'voices', 'getAll');
         const toDelete = allLocal.filter(v => String(v.lessonId) === String(this.lessonId));
-        for (const item of toDelete) await this.dbOp('readwrite', 'voices', 'delete', item.fileId);
+        for (const item of toDelete) {
+            await this.dbOp('readwrite', 'voices', 'delete', item.fileId);
+        }
         this.toggleVoiceList(true);
     },
 
     async uploadToDrive(blob) {
-        if (!blob || blob.size === 0) return;
+        if (!blob || blob.size === 0) { console.error("[ERR] Blob is empty or null"); return; }
+        console.log("[LOG] Uploading Blob size:", blob.size);
         const reader = new FileReader(); reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64 = reader.result.split(',')[1];
@@ -281,13 +319,13 @@ export const ShadowGame = {
             
             const res = await this.api({}, "POST", { 
                 action: "uploadVoice", base64, fileName, lessonId: this.lessonId, 
-                score: "N/A", script, browserScript 
+                score: "N/A", script: script, browserScript: browserScript 
             });
             if (res.status === 'success') {
                 await this.dbOp('readwrite', 'voices', 'put', { 
                     fileId: res.id, blob, name: fileName, date: Date.now(), 
                     formattedDate: res.formattedDate, lessonId: this.lessonId, 
-                    score: "N/A", script, browserScript, downloadUrl: res.downloadUrl
+                    score: "N/A", script, browserScript 
                 });
                 this.updateBadgeCounts();
                 this.showToast("✅ Đã lưu!");
@@ -296,18 +334,23 @@ export const ShadowGame = {
     },
 
     async toggleVoiceList(sync = false) {
+        console.log("[LOG] Toggle Voice List. Sync:", sync);
         const panel = this.getEl('voiceListPanel');
         if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
         panel.style.display = 'block';
         const itemsWrap = this.getEl('voiceItems'); 
-        itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b; font-size:12px;">🔄 Đang tải...</div>`;
+        itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b; font-size:12px;">🔄 Đang tải dữ liệu...</div>`;
         
         const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
         const serverFiles = res.data || [];
 
         for (const f of serverFiles) {
             const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
-            await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: existing?.blob || null, lessonId: this.lessonId });
+            if (existing && existing.blob) {
+                await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: existing.blob, lessonId: this.lessonId });
+            } else {
+                await this.dbOp('readwrite', 'voices', 'put', { ...f, lessonId: this.lessonId });
+            }
         }
         
         let localFiles = await this.dbOp('readonly', 'voices', 'getAll');
@@ -323,32 +366,24 @@ export const ShadowGame = {
             let audioSrc = (f.blob && f.blob instanceof Blob) ? URL.createObjectURL(f.blob) : "";
             let scoreDisplay = (f.score && f.score !== "N/A" && f.score !== 0) ? `<span class="score-badge">${f.score}</span>` : `<span style="color:#94a3b8; font-size:10px;">---</span>`;
             
-            // Link dự phòng trực tiếp
-            const directLink = f.downloadUrl || `https://docs.google.com/uc?export=download&id=${f.fileId}`;
-
             item.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                     <div style="font-size:10px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">📄 ${f.name || 'Ghi âm mới'}</div>
                     <div class="load-status" style="font-size:9px; color:#f59e0b;">${f.blob ? '' : '⏳ Chờ tải...'}</div>
-                    <div style="display:flex; gap:8px;">
-                        <a href="${directLink}" target="_blank" title="Tải về máy" style="text-decoration:none; font-size:12px;">💾</a>
-                        <span class="del-btn" style="color:#ef4444; cursor:pointer; font-size:12px; user-select:none;">🗑️</span>
-                    </div>
+                    <span class="del-btn" style="color:#ef4444; cursor:pointer; font-size:12px; user-select:none;">🗑️</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
                     <div style="flex-shrink:0;">${scoreDisplay}</div>
                     <div style="flex-grow:1; font-size:10px; color:#475569; line-height:1.2;">🕒 ${f.formattedDate}</div>
-                    <div class="voice-item-actions" style="display:flex; gap:6px; align-items:center;">
-                        ${f.aiFeedback ? `<button class="ai-comment-btn" title="Nhận xét">💬</button>` : ''}
+                    <div class="voice-item-actions">
+                        ${f.aiFeedback ? `<button class="ai-comment-btn" title="Xem nhận xét">💬</button>` : ''}
                         <button class="ai-score-btn">🤖 Chấm</button>
                     </div>
                 </div>
-                <audio controls playsinline webkit-playsinline preload="none" style="width:100%; height:28px;">
-                    <source src="${audioSrc}" type="audio/mpeg">
-                    <source src="${directLink}" type="audio/mpeg">
-                </audio>`;
+                <audio controls playsinline webkit-playsinline preload="none" src="${audioSrc}" style="width:100%; height:28px;"></audio>`;
             
             item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.fileId);
+            
             const commentBtn = item.querySelector('.ai-comment-btn');
             if (commentBtn) {
                 commentBtn.onclick = () => {
@@ -373,16 +408,17 @@ export const ShadowGame = {
                         const byteNumbers = new Array(byteCharacters.length);
                         for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
                         const b = new Blob([new Uint8Array(byteNumbers)], { type: "audio/mpeg" });
+                        
                         const aud = item.querySelector('audio');
                         if (aud) {
-                            const source = aud.querySelector('source');
-                            if(source) source.src = URL.createObjectURL(b);
+                            aud.src = URL.createObjectURL(b);
                             aud.load(); 
                         }
                         await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b });
                         statusEl.innerText = "";
                     }
                 } catch (e) {
+                    console.error("[ERR] Download fail", e);
                     statusEl.innerText = "❌ Lỗi";
                 }
             }
@@ -391,6 +427,7 @@ export const ShadowGame = {
 
     async deleteVoice(fileId, el) {
         if (!confirm("Xóa bản ghi này?")) return;
+        console.log(`[LOG] Deleting voice: ${fileId}`);
         const res = await this.api({}, "POST", { action: "deleteVoice", fileId: fileId });
         if (res.status === 'success') {
             await this.dbOp('readwrite', 'voices', 'delete', fileId);

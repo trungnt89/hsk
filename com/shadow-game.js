@@ -344,7 +344,7 @@ export const ShadowGame = {
 				<audio controls playsinline webkit-playsinline preload="none" style="width:100%; height:28px;">
                     <source src="${audioSrc}" type="audio/mpeg">
                 </audio>
-                <iframe src="${finalSrc}" width="100%" height="150" style="border:none; margin-top:-50px;" allow="autoplay"></iframe>`;
+                <iframe src="${finalSrc}" width="100%" height="30" style="border:none;" allow="autoplay"></iframe>`;
             
             item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.fileId);
             const commentBtn = item.querySelector('.ai-comment-btn');

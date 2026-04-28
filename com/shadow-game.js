@@ -115,8 +115,11 @@ export const ShadowGame = {
             <div id="voiceListPanel" class="sg-panel">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom: 5px;">
                     <span id="closeList" style="cursor:pointer; font-size:13px; color:#64748b;">✕ Đóng</span>
-                    <b style="font-size:14px;">🎙️ Ghi âm</b>
-                    <span id="refreshList" style="cursor:pointer; font-size:13px; color:#0ea5e9;">🔄 Tải lại</span>
+                    <b style="font-size:14px;">🎙️ List</b>
+                    <div style="display:flex; gap:10px;">
+                        <span id="clearAndRefresh" style="cursor:pointer; font-size:13px; color:#ef4444;">🔥 Xóa & Tải</span>
+                        <span id="refreshList" style="cursor:pointer; font-size:13px; color:#0ea5e9;">🔄 Tải lại</span>
+                    </div>
                 </div>
                 <div id="voiceItems" style="max-height:65vh; overflow-y:auto;"></div>
             </div>
@@ -143,6 +146,7 @@ export const ShadowGame = {
         this.getEl('btnMic').onclick = () => this.toggle();
         this.getEl('btnList').onclick = () => this.toggleVoiceList();
         this.getEl('refreshList').onclick = () => this.toggleVoiceList(true);
+        this.getEl('clearAndRefresh').onclick = () => this.clearAndRefresh();
         this.getEl('closeList').onclick = () => this.getEl('voiceListPanel').style.display = 'none';
         
         this.getEl('btnBackFromIframe').onclick = () => {
@@ -290,6 +294,19 @@ export const ShadowGame = {
         this.recognition?.stop(); this.showFinalResult(); this.mediaRecorder?.stop();
     },
 
+    async clearAndRefresh() {
+        if (!confirm("Xóa cache local của bài học này và tải lại từ Server?")) return;
+        console.log("[LOG] Clear & Refresh for lesson:", this.lessonId);
+        const allLocal = await this.dbOp('readonly', 'voices', 'getAll');
+        // Chỉ xóa các file thuộc lesson hiện tại
+        const toDelete = allLocal.filter(v => String(v.lessonId) === String(this.lessonId));
+        for (const item of toDelete) {
+            await this.dbOp('readwrite', 'voices', 'delete', item.fileId);
+        }
+        // Gọi toggleVoiceList(true) để sync lại từ server
+        this.toggleVoiceList(true);
+    },
+
     async uploadToDrive(blob) {
         if (!blob || blob.size === 0) { console.error("[ERR] Blob is empty or null"); return; }
         console.log("[LOG] Uploading Blob size:", blob.size);
@@ -381,14 +398,12 @@ export const ShadowGame = {
             item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.fileId, item);
             itemsWrap.appendChild(item);
 
-            // Tải tuần tự file âm thanh nếu chưa có trong DB
             if (!f.blob && f.fileId) {
                 const statusEl = item.querySelector('.load-status');
                 statusEl.innerText = "⏳ Đang tải...";
                 try {
                     const resData = await this.api({ type: 'getFileBlob', fileId: f.fileId });
                     if (resData.data) {
-                        // iOS Fix: Làm sạch Base64 và ép kiểu mpeg
                         const cleanBase64 = resData.data.replace(/\s/g, '');
                         const byteCharacters = atob(cleanBase64);
                         const byteNumbers = new Array(byteCharacters.length);
@@ -398,7 +413,7 @@ export const ShadowGame = {
                         const aud = item.querySelector('audio');
                         if (aud) {
                             aud.src = URL.createObjectURL(b);
-                            aud.load(); // Safari Fix: nạp dữ liệu
+                            aud.load(); 
                         }
                         await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b });
                         statusEl.innerText = "";

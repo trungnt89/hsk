@@ -1,6 +1,5 @@
 /**
- * ShadowGame Module - Optimized for iPhone (Base64 over JSON)
- * Guiding Principle: Invisible Personalization & High Performance
+ * ShadowGame Module - Fixed IDBDatabase Connection & Optimized for iPhone
  */
 
 if (typeof marked === 'undefined') {
@@ -31,7 +30,7 @@ export const ShadowGame = {
 
     async initDB() {
         console.log("[LOG] Initializing IndexedDB");
-        return new Promise(res => {
+        return new Promise((res, rej) => {
             const req = indexedDB.open("ShadowVoiceDB", 1);
             req.onupgradeneeded = e => {
                 const db = e.target.result;
@@ -42,42 +41,53 @@ export const ShadowGame = {
                     db.createObjectStore("SCORE", { keyPath: "id" });
                 }
             };
-            req.onsuccess = e => { this.db = e.target.result; res(); };
-        });
-    },
-
-    async dbOp(mode, storeName, action, data) {
-        console.log(`[LOG] DB Op: ${action} on ${storeName}`);
-        const tx = this.db.transaction(storeName, mode);
-        const store = tx.objectStore(storeName);
-        return new Promise((res, rej) => {
-            let req;
-            if (action === 'put') req = store.put(data);
-            else if (action === 'get') req = store.get(data);
-            else if (action === 'clear') req = store.clear();
-            else if (action === 'delete') req = store.delete(data);
-            else req = store.getAll();
-            
-            req.onsuccess = () => res(req.result);
-            req.onerror = () => {
-                console.error(`[ERR] DB Op Fail: ${action} on ${storeName}`);
-                rej(req.error);
+            req.onsuccess = e => { 
+                this.db = e.target.result; 
+                this.db.onclose = () => { this.db = null; };
+                res(this.db); 
+            };
+            req.onerror = e => {
+                console.error("[ERR] Failed to open IDB", e);
+                rej(e);
             };
         });
     },
 
-    // Hàm bổ trợ giải mã Base64 sang Blob tối ưu cho Mobile
+    async dbOp(mode, storeName, action, data) {
+        if (!this.db) {
+            console.warn(`[LOG] Database connection lost. Re-opening for ${action}...`);
+            await this.initDB();
+        }
+
+        try {
+            const tx = this.db.transaction(storeName, mode);
+            const store = tx.objectStore(storeName);
+            return new Promise((res, rej) => {
+                let req;
+                if (action === 'put') req = store.put(data);
+                else if (action === 'get') req = store.get(data);
+                else if (action === 'clear') req = store.clear();
+                else if (action === 'delete') req = store.delete(data);
+                else req = store.getAll();
+                
+                req.onsuccess = () => res(req.result);
+                req.onerror = () => rej(req.error);
+            });
+        } catch (err) {
+            console.error(`[ERR] DB Transaction failed: ${err.message}`);
+            if (err.name === 'InvalidStateError') this.db = null;
+            throw err;
+        }
+    },
+
     base64ToBlob(base64, type) {
         const cleanBase64 = base64.replace(/\s/g, '');
         const byteCharacters = atob(cleanBase64);
         const byteArrays = [];
-
         for (let offset = 0; offset < byteCharacters.length; offset += 512) {
             const slice = byteCharacters.slice(offset, offset + 512);
             const byteNumbers = new Array(slice.length);
-            for (let i = 0; i < slice.length; i++) {
-                byteNumbers[i] = slice.charCodeAt(i);
-            }
+            for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
             byteArrays.push(new Uint8Array(byteNumbers));
         }
         return new Blob(byteArrays, { type: type });
@@ -174,7 +184,7 @@ export const ShadowGame = {
     },
 
     async aiScoreVoice(fileId) {
-        if (!fileId) return this.showToast("❌ Không có ID file.");
+        if (!fileId) return;
         const panel = this.getEl('iframeScorePanel');
         const iframe = this.getEl('scoreIframe');
         try {
@@ -201,7 +211,6 @@ export const ShadowGame = {
     },
 
     async init() {
-        console.log("[LOG] Initializing ShadowGame");
         await this.initDB();
         this.buildUI();
         this.injectRequiredClasses();
@@ -301,9 +310,18 @@ export const ShadowGame = {
         const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
         const serverFiles = res.data || [];
 
+        // MỚI: Tải Blobs hàng loạt từ GAS theo LessonId để tối ưu hiệu năng
+        const resBlobs = await this.api({ type: 'getFilesBlobByLesson', lessonId: this.lessonId });
+        const serverBlobs = resBlobs.data || {};
+
         for (const f of serverFiles) {
             const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
-            await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: existing?.blob || null, lessonId: this.lessonId });
+            let blob = existing?.blob || null;
+            // Nếu local chưa có nhưng Server trả về Blob hàng loạt thì cập nhật
+            if (!blob && serverBlobs[f.fileId]) {
+                blob = this.base64ToBlob(serverBlobs[f.fileId], "audio/mpeg");
+            }
+            await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: blob, lessonId: this.lessonId });
         }
         
         let localFiles = await this.dbOp('readonly', 'voices', 'getAll');
@@ -322,7 +340,7 @@ export const ShadowGame = {
             item.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                     <div style="font-size:10px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">📄 ${f.name || 'Ghi âm mới'}</div>
-                    <div class="load-status" style="font-size:9px; color:#f59e0b;">${f.blob ? '' : '⏳ Chờ tải...'}</div>
+                    <div class="load-status" style="font-size:9px; color:#f59e0b;"></div>
                     <span class="del-btn" style="color:#ef4444; cursor:pointer; font-size:12px; user-select:none;">🗑️</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
@@ -350,25 +368,6 @@ export const ShadowGame = {
             }
             item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.fileId, item);
             itemsWrap.appendChild(item);
-
-            // Xử lý tải Base64 từ JSON và giải mã sang Blob
-            if (!f.blob && f.fileId) {
-                const statusEl = item.querySelector('.load-status');
-                try {
-                    const resData = await this.api({ type: 'getFileBlob', fileId: f.fileId });
-                    if (resData && resData.data) {
-                        const b = this.base64ToBlob(resData.data, "audio/mpeg");
-                        const aud = item.querySelector('audio');
-                        if (aud) aud.src = URL.createObjectURL(b);
-                        
-                        await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b });
-                        statusEl.innerText = "";
-                    }
-                } catch (e) {
-                    statusEl.innerText = "❌ Lỗi";
-                    console.error("[ERR] Base64 Decode Fail", e);
-                }
-            }
         }
     },
 

@@ -325,37 +325,35 @@ export const ShadowGame = {
         const itemsWrap = this.getEl('voiceItems'); 
         itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b; font-size:12px;">🔄 Đang tải dữ liệu...</div>`;
         
-        // 1. Tải danh sách file ghi âm mới nhất từ server
         const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
         const serverFiles = res.data || [];
 
-        // 2. Kiểm tra xem trong danh sách trên file nào đã có trong indexdb thì lấy từ indexdb (giữ lại blob)
         for (const f of serverFiles) {
             const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
-            
             if (existing && existing.blob) {
-                // Giữ lại blob cũ để không phải tải lại audio
                 await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: existing.blob, lessonId: this.lessonId });
             } else {
-                // Cập nhật thông tin metadata mới
                 await this.dbOp('readwrite', 'voices', 'put', { ...f, lessonId: this.lessonId });
             }
         }
         
         let localFiles = await this.dbOp('readonly', 'voices', 'getAll');
         localFiles = localFiles.filter(v => String(v.lessonId) === String(this.lessonId));
+        localFiles.sort((a, b) => (b.formattedDate || "").localeCompare(a.formattedDate || ""));
 
         itemsWrap.innerHTML = localFiles.length === 0 ? `<div style="padding:20px; text-align:center; color:#94a3b8; font-size:12px;">Chưa có bản ghi nào.</div>` : "";
         
-        localFiles.sort((a, b) => (b.formattedDate || "").localeCompare(a.formattedDate || "")).forEach(async f => {
+        for (const f of localFiles) {
             const item = document.createElement('div');
             item.className = "voice-item";
+            item.id = `voice-item-${f.fileId}`;
             let audioSrc = f.blob ? URL.createObjectURL(f.blob) : "";
             let scoreDisplay = (f.score && f.score !== "N/A" && f.score !== 0) ? `<span class="score-badge">${f.score}</span>` : `<span style="color:#94a3b8; font-size:10px;">---</span>`;
             
             item.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                    <div style="font-size:10px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%;">📄 ${f.name || 'Ghi âm mới'}</div>
+                    <div style="font-size:10px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">📄 ${f.name || 'Ghi âm mới'}</div>
+                    <div class="load-status" style="font-size:9px; color:#f59e0b;">${f.blob ? '' : '⏳ Chờ tải...'}</div>
                     <span class="del-btn" style="color:#ef4444; cursor:pointer; font-size:12px;">🗑️</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
@@ -368,17 +366,6 @@ export const ShadowGame = {
                 </div>
                 <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:28px;"></audio>`;
             
-            if (!audioSrc && f.fileId) {
-                this.api({ type: 'getFileBlob', fileId: f.fileId }).then(res => {
-                    if (res.data) {
-                        const b = new Blob([new Uint8Array(atob(res.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });
-                        const aud = item.querySelector('audio');
-                        if (aud) aud.src = URL.createObjectURL(b);
-                        this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b });
-                    }
-                });
-            }
-
             item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.fileId);
             
             const commentBtn = item.querySelector('.ai-comment-btn');
@@ -393,7 +380,26 @@ export const ShadowGame = {
             }
             item.querySelector('.del-btn').onclick = () => this.deleteVoice(f.fileId, item);
             itemsWrap.appendChild(item);
-        });
+
+            // Tải tuần tự file âm thanh nếu chưa có trong DB
+            if (!f.blob && f.fileId) {
+                const statusEl = item.querySelector('.load-status');
+                statusEl.innerText = "⏳ Đang tải...";
+                try {
+                    const resData = await this.api({ type: 'getFileBlob', fileId: f.fileId });
+                    if (resData.data) {
+                        const b = new Blob([new Uint8Array(atob(resData.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });
+                        const aud = item.querySelector('audio');
+                        if (aud) aud.src = URL.createObjectURL(b);
+                        await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b });
+                        statusEl.innerText = "";
+                    }
+                } catch (e) {
+                    console.error("[ERR] Download fail", e);
+                    statusEl.innerText = "❌ Lỗi";
+                }
+            }
+        }
     },
 
     async deleteVoice(fileId, el) {

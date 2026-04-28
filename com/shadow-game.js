@@ -339,8 +339,10 @@ export const ShadowGame = {
                         <button class="ai-score-btn">🤖 Chấm</button>
                     </div>
                 </div>
-                <audio controls playsinline webkit-playsinline preload="none" style="width:100%; height:28px;">
+				<audio controls playsinline webkit-playsinline preload="none" style="width:100%; height:28px;">
                     <source src="${audioSrc}" type="audio/mpeg">
+                </audio>
+                <audio controls playsinline webkit-playsinline preload="none" style="width:100%; height:28px;">
                     <source src="${directAudioUrl}" type="audio/mpeg">
                 </audio>`;
             

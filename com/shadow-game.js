@@ -347,7 +347,7 @@ export const ShadowGame = {
             const item = document.createElement('div');
             item.className = "voice-item";
             item.id = `voice-item-${f.fileId}`;
-            let audioSrc = f.blob ? URL.createObjectURL(f.blob) : "";
+            let audioSrc = (f.blob && f.blob instanceof Blob) ? URL.createObjectURL(f.blob) : "";
             let scoreDisplay = (f.score && f.score !== "N/A" && f.score !== 0) ? `<span class="score-badge">${f.score}</span>` : `<span style="color:#94a3b8; font-size:10px;">---</span>`;
             
             item.innerHTML = `
@@ -364,7 +364,7 @@ export const ShadowGame = {
                         <button class="ai-score-btn">🤖 Chấm</button>
                     </div>
                 </div>
-                <audio controls playsinline webkit-playsinline src="${audioSrc}" style="width:100%; height:28px;"></audio>`;
+                <audio controls playsinline webkit-playsinline preload="none" src="${audioSrc}" style="width:100%; height:28px;"></audio>`;
             
             item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.fileId);
             
@@ -388,9 +388,18 @@ export const ShadowGame = {
                 try {
                     const resData = await this.api({ type: 'getFileBlob', fileId: f.fileId });
                     if (resData.data) {
-                        const b = new Blob([new Uint8Array(atob(resData.data).split("").map(c => c.charCodeAt(0)))], { type: "audio/mp4" });
+                        // iOS Fix: Làm sạch Base64 và ép kiểu mpeg
+                        const cleanBase64 = resData.data.replace(/\s/g, '');
+                        const byteCharacters = atob(cleanBase64);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        const b = new Blob([new Uint8Array(byteNumbers)], { type: "audio/mpeg" });
+                        
                         const aud = item.querySelector('audio');
-                        if (aud) aud.src = URL.createObjectURL(b);
+                        if (aud) {
+                            aud.src = URL.createObjectURL(b);
+                            aud.load(); // Safari Fix: nạp dữ liệu
+                        }
                         await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b });
                         statusEl.innerText = "";
                     }

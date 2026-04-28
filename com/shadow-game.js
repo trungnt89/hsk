@@ -69,7 +69,7 @@ export const ShadowGame = {
         const style = document.createElement('style');
         style.textContent = `
             #shadow-game-wrapper { display: flex; align-items: center; gap: 10px; padding: 8px 12px; min-height: 60px; width: 100%; position: fixed; bottom: 0; left: 0; background: #fff; z-index: 999; border-top: 2px solid #cbd5e1; box-sizing: border-box; }
-            .sg-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0; }
+            .sg-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink:0; user-select: none; }
             #gamePanel { display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden; }
             .sg-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:450px; background:white; border-radius:16px; padding:15px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10001; }
             
@@ -77,6 +77,7 @@ export const ShadowGame = {
             .iframe-header { height:50px; display:flex; align-items:center; padding:0 15px; background:#f8f9fa; border-bottom:1px solid #ddd; }
             .back-btn { padding:8px 15px; background:#1e293b; color:white; border-radius:6px; border:none; cursor:pointer; font-size:14px; font-weight:bold; }
             #scoreIframe { flex-grow:1; border:none; width:100%; height:calc(100% - 50px); }
+            .list-action-btn { cursor:pointer; font-size:13px; user-select:none; -webkit-user-select:none; padding: 2px 4px; }
 
             .content-area mark { background: #fef08a; font-weight: bold; }
             .ai-score-btn { background: #0ea5e9; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; font-weight: 600; }
@@ -114,11 +115,11 @@ export const ShadowGame = {
             </div>
             <div id="voiceListPanel" class="sg-panel">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom: 5px;">
-                    <span id="closeList" style="cursor:pointer; font-size:13px; color:#64748b;">✕ Đóng</span>
+                    <span id="closeList" style="cursor:pointer; font-size:13px; color:#64748b; user-select:none;">✕ Đóng</span>
                     <b style="font-size:14px;">🎙️ List</b>
-                    <div style="display:flex; gap:10px;">
-                        <div id="clearAndRefresh" style="cursor:pointer; font-size:13px; color:#ef4444;">🔥 Xóa/Tải</div>
-                        <div id="refreshList" style="cursor:pointer; font-size:13px; color:#0ea5e9;">🔄 Tải lại</div>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <span id="clearAndRefresh" class="list-action-btn" style="color:#ef4444;">🔥 Xóa & Tải</span>
+                        <span id="refreshList" class="list-action-btn" style="color:#0ea5e9;">🔄 Tải lại</span>
                     </div>
                 </div>
                 <div id="voiceItems" style="max-height:65vh; overflow-y:auto;"></div>
@@ -298,12 +299,10 @@ export const ShadowGame = {
         if (!confirm("Xóa cache local của bài học này và tải lại từ Server?")) return;
         console.log("[LOG] Clear & Refresh for lesson:", this.lessonId);
         const allLocal = await this.dbOp('readonly', 'voices', 'getAll');
-        // Chỉ xóa các file thuộc lesson hiện tại
         const toDelete = allLocal.filter(v => String(v.lessonId) === String(this.lessonId));
         for (const item of toDelete) {
             await this.dbOp('readwrite', 'voices', 'delete', item.fileId);
         }
-        // Gọi toggleVoiceList(true) để sync lại từ server
         this.toggleVoiceList(true);
     },
 
@@ -371,7 +370,7 @@ export const ShadowGame = {
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                     <div style="font-size:10px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">📄 ${f.name || 'Ghi âm mới'}</div>
                     <div class="load-status" style="font-size:9px; color:#f59e0b;">${f.blob ? '' : '⏳ Chờ tải...'}</div>
-                    <span class="del-btn" style="color:#ef4444; cursor:pointer; font-size:12px;">🗑️</span>
+                    <span class="del-btn" style="color:#ef4444; cursor:pointer; font-size:12px; user-select:none;">🗑️</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
                     <div style="flex-shrink:0;">${scoreDisplay}</div>

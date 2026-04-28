@@ -73,7 +73,6 @@ export const ShadowGame = {
             #gamePanel { display:none; flex-grow: 1; background:#1e293b; color:#f1f5f9; padding: 6px 14px; border-radius: 12px; align-items: center; gap: 10px; overflow: hidden; }
             .sg-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:450px; background:white; border-radius:16px; padding:15px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10001; }
             
-            /* Iframe Panel CSS */
             #iframeScorePanel { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:white; z-index:20000; flex-direction:column; }
             .iframe-header { height:50px; display:flex; align-items:center; padding:0 15px; background:#f8f9fa; border-bottom:1px solid #ddd; }
             .back-btn { padding:8px 15px; background:#1e293b; color:white; border-radius:6px; border:none; cursor:pointer; font-size:14px; font-weight:bold; }
@@ -326,24 +325,25 @@ export const ShadowGame = {
         const itemsWrap = this.getEl('voiceItems'); 
         itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b; font-size:12px;">🔄 Đang tải dữ liệu...</div>`;
         
-        if (sync) {
-            await this.dbOp('readwrite', 'voices', 'clear');
+        // 1. Tải danh sách file ghi âm mới nhất từ server
+        const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
+        const serverFiles = res.data || [];
+
+        // 2. Kiểm tra xem trong danh sách trên file nào đã có trong indexdb thì lấy từ indexdb (giữ lại blob)
+        for (const f of serverFiles) {
+            const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
+            
+            if (existing && existing.blob) {
+                // Giữ lại blob cũ để không phải tải lại audio
+                await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: existing.blob, lessonId: this.lessonId });
+            } else {
+                // Cập nhật thông tin metadata mới
+                await this.dbOp('readwrite', 'voices', 'put', { ...f, lessonId: this.lessonId });
+            }
         }
         
         let localFiles = await this.dbOp('readonly', 'voices', 'getAll');
         localFiles = localFiles.filter(v => String(v.lessonId) === String(this.lessonId));
-        
-        if (sync || localFiles.length === 0) {
-            const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
-            const serverFiles = res.data || [];
-            for (const f of serverFiles) {
-                const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
-                if (!existing) await this.dbOp('readwrite', 'voices', 'put', { ...f, lessonId: this.lessonId });
-                else await this.dbOp('readwrite', 'voices', 'put', { ...existing, ...f });
-            }
-            localFiles = await this.dbOp('readonly', 'voices', 'getAll');
-            localFiles = localFiles.filter(v => String(v.lessonId) === String(this.lessonId));
-        }
 
         itemsWrap.innerHTML = localFiles.length === 0 ? `<div style="padding:20px; text-align:center; color:#94a3b8; font-size:12px;">Chưa có bản ghi nào.</div>` : "";
         

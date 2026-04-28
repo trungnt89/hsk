@@ -40,6 +40,9 @@ export const ShadowGame = {
                 if (!db.objectStoreNames.contains("SCORE")) {
                     db.createObjectStore("SCORE", { keyPath: "id" });
                 }
+                if (!db.objectStoreNames.contains("lesson_caches")) {
+                    db.createObjectStore("lesson_caches", { keyPath: "id" });
+                }
             };
             req.onsuccess = e => { 
                 this.db = e.target.result; 
@@ -175,6 +178,7 @@ export const ShadowGame = {
         this.getEl('saveScore').onclick = async () => {
             let area = document.querySelector('.content-area.active') || Array.from(document.querySelectorAll('.content-area')).find(el => getComputedStyle(el).display !== 'none');
             const script = area ? area.innerText.trim() : "";
+            await this.dbOp('readwrite', 'lesson_caches', 'delete', this.lessonId);
             await this.dbOp('readwrite', 'SCORE', 'put', { 
                 id: "SCORE-CHECK-INPUT", script: script, browserScript: this.history.join(" "), blob: this._tempBlob, lessonId: this.lessonId, date: Date.now()
             });
@@ -268,6 +272,7 @@ export const ShadowGame = {
 
     async clearAndRefresh() {
         if (!confirm("Xóa cache local bài học này?")) return;
+        await this.dbOp('readwrite', 'lesson_caches', 'delete', this.lessonId);
         const allLocal = await this.dbOp('readonly', 'voices', 'getAll');
         const toDelete = allLocal.filter(v => String(v.lessonId) === String(this.lessonId));
         for (const item of toDelete) await this.dbOp('readwrite', 'voices', 'delete', item.fileId);
@@ -289,6 +294,7 @@ export const ShadowGame = {
                 score: "N/A", script, browserScript 
             });
             if (res.status === 'success') {
+                await this.dbOp('readwrite', 'lesson_caches', 'delete', this.lessonId);
                 await this.dbOp('readwrite', 'voices', 'put', { 
                     fileId: res.id, blob, name: fileName, date: Date.now(), 
                     formattedDate: res.formattedDate, lessonId: this.lessonId, 
@@ -305,23 +311,35 @@ export const ShadowGame = {
         if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
         panel.style.display = 'block';
         const itemsWrap = this.getEl('voiceItems'); 
-        itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b; font-size:12px;">🔄 Đang tải...</div>`;
         
+        const cachedEntry = await this.dbOp('readonly', 'lesson_caches', 'get', this.lessonId);
+        if (!cachedEntry) {
+            itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b; font-size:12px;">🔄 Đang tải...</div>`;
+        }
+
         const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
         const serverFiles = res.data || [];
 
-        // MỚI: Tải Blobs hàng loạt từ GAS theo LessonId để tối ưu hiệu năng
-        const resBlobs = await this.api({ type: 'getFilesBlobByLesson', lessonId: this.lessonId });
-        const serverBlobs = resBlobs.data || {};
+        const serverDataStr = JSON.stringify(serverFiles);
+        const cachedDataStr = JSON.stringify(cachedEntry?.data || []);
 
-        for (const f of serverFiles) {
-            const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
-            let blob = existing?.blob || null;
-            // Nếu local chưa có nhưng Server trả về Blob hàng loạt thì cập nhật
-            if (!blob && serverBlobs[f.fileId]) {
-                blob = this.base64ToBlob(serverBlobs[f.fileId], "audio/mpeg");
+        if (serverDataStr !== cachedDataStr || sync) {
+            console.log("[LOG] Data changed, updating IndexedDB...");
+            await this.dbOp('readwrite', 'lesson_caches', 'put', { id: this.lessonId, data: serverFiles });
+
+            // MỚI: Tải Blobs hàng loạt từ GAS theo LessonId để tối ưu hiệu năng
+            const resBlobs = await this.api({ type: 'getFilesBlobByLesson', lessonId: this.lessonId });
+            const serverBlobs = resBlobs.data || {};
+
+            for (const f of serverFiles) {
+                const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
+                let blob = existing?.blob || null;
+                // Nếu local chưa có nhưng Server trả về Blob hàng loạt thì cập nhật
+                if (!blob && serverBlobs[f.fileId]) {
+                    blob = this.base64ToBlob(serverBlobs[f.fileId], "audio/mpeg");
+                }
+                await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: blob, lessonId: this.lessonId });
             }
-            await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: blob, lessonId: this.lessonId });
         }
         
         let localFiles = await this.dbOp('readonly', 'voices', 'getAll');
@@ -375,6 +393,7 @@ export const ShadowGame = {
         if (!confirm("Xóa bản ghi này?")) return;
         const res = await this.api({}, "POST", { action: "deleteVoice", fileId: fileId });
         if (res.status === 'success') {
+            await this.dbOp('readwrite', 'lesson_caches', 'delete', this.lessonId);
             await this.dbOp('readwrite', 'voices', 'delete', fileId);
             el.remove(); this.updateBadgeCounts();
         }

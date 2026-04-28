@@ -328,23 +328,19 @@ export const ShadowGame = {
         panel.style.display = 'block';
         panel.classList.add('full-screen-list'); 
         
-        if (sync) this.setListLoading(true);
-        
         const itemsWrap = this.getEl('voiceItems'); 
-        
-        const cachedEntry = await this.dbOp('readonly', 'lesson_caches', 'get', this.lessonId);
-        if (!cachedEntry) {
-            itemsWrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b; font-size:12px;">🔄 Đang tải...</div>`;
-        }
+        if (sync) this.setListLoading(true);
 
+        // 1. Tải metadata danh sách từ server
         const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
         const serverFiles = res.data || [];
+        const cachedEntry = await this.dbOp('readonly', 'lesson_caches', 'get', this.lessonId);
 
-        const serverDataStr = JSON.stringify(serverFiles);
-        const cachedDataStr = JSON.stringify(cachedEntry?.data || []);
+        // 2. So sánh logic cập nhật
+        const isChanged = JSON.stringify(serverFiles) !== JSON.stringify(cachedEntry?.data || []);
 
-        if (serverDataStr !== cachedDataStr || sync) {
-            console.log("[LOG] Data changed, updating IndexedDB...");
+        if (isChanged || sync) {
+            console.log("[LOG] Syncing data...");
             await this.dbOp('readwrite', 'lesson_caches', 'put', { id: this.lessonId, data: serverFiles });
 
             const resBlobs = await this.api({ type: 'getFilesBlobByLesson', lessonId: this.lessonId });
@@ -352,7 +348,8 @@ export const ShadowGame = {
 
             for (const f of serverFiles) {
                 const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
-                let blob = existing?.blob || null;
+                // LOGIC: Lấy từ indexdb nếu có, không thì mới tải từ serverBlobs
+                let blob = (existing && existing.blob) ? existing.blob : null;
                 if (!blob && serverBlobs[f.fileId]) {
                     blob = this.base64ToBlob(serverBlobs[f.fileId], "audio/mpeg");
                 }

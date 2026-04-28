@@ -323,10 +323,6 @@ export const ShadowGame = {
             let audioSrc = (f.blob && f.blob instanceof Blob) ? URL.createObjectURL(f.blob) : "";
             let scoreDisplay = (f.score && f.score !== "N/A" && f.score !== 0) ? `<span class="score-badge">${f.score}</span>` : `<span style="color:#94a3b8; font-size:10px;">---</span>`;
             
-            const directAudioUrl = f.downloadUrl || `https://docs.google.com/uc?export=download&id=${f.fileId}`;
-
-			const finalSrc = `https://drive.google.com/file/d/${f.fileId}/preview`;
-
             item.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                     <div style="font-size:10px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">📄 ${f.name || 'Ghi âm mới'}</div>
@@ -341,10 +337,9 @@ export const ShadowGame = {
                         <button class="ai-score-btn">🤖 Chấm</button>
                     </div>
                 </div>
-				<audio controls playsinline webkit-playsinline preload="none" style="width:100%; height:28px;">
+                <audio controls playsinline webkit-playsinline preload="auto" style="width:100%; height:32px; margin-top:4px;">
                     <source src="${audioSrc}" type="audio/mpeg">
-                </audio>
-                <iframe src="${finalSrc}" width="100%" height="30" style="border:none;" allow="autoplay"></iframe>`;
+                </audio>`;
             
             item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.fileId);
             const commentBtn = item.querySelector('.ai-comment-btn');
@@ -365,7 +360,7 @@ export const ShadowGame = {
                 statusEl.innerText = "⏳ Đang tải...";
                 try {
                     const resData = await this.api({ type: 'getFileBlob', fileId: f.fileId });
-                    if (resData.data) {
+                    if (resData && resData.data) {
                         const cleanBase64 = resData.data.replace(/\s/g, '');
                         const byteCharacters = atob(cleanBase64);
                         const byteNumbers = new Array(byteCharacters.length);
@@ -373,8 +368,7 @@ export const ShadowGame = {
                         const b = new Blob([new Uint8Array(byteNumbers)], { type: "audio/mpeg" });
                         const aud = item.querySelector('audio');
                         if (aud) {
-                            const source = aud.querySelector('source');
-                            if(source) source.src = URL.createObjectURL(b);
+                            aud.src = URL.createObjectURL(b);
                             aud.load(); 
                         }
                         await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: b });
@@ -382,6 +376,7 @@ export const ShadowGame = {
                     }
                 } catch (e) {
                     statusEl.innerText = "❌ Lỗi";
+                    console.error("[ERR] Download voice failed", e);
                 }
             }
         }

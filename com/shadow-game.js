@@ -273,14 +273,13 @@ export const ShadowGame = {
     },
 
     async clearAndRefresh() {
-        if (!confirm("Xóa cache local bài học này?")) return;
-        console.log("[LOG] Clear and Refresh clicked");
+        if (!confirm("Xóa toàn bộ cache và tải lại tất cả file âm thanh?")) return;
         this.setListLoading(true);
         await this.dbOp('readwrite', 'lesson_caches', 'delete', this.lessonId);
         const allLocal = await this.dbOp('readonly', 'voices', 'getAll');
         const toDelete = allLocal.filter(v => String(v.lessonId) === String(this.lessonId));
         for (const item of toDelete) await this.dbOp('readwrite', 'voices', 'delete', item.fileId);
-        await this.toggleVoiceList(true);
+        await this.toggleVoiceList(true, true);
         this.setListLoading(false);
     },
 
@@ -321,7 +320,7 @@ export const ShadowGame = {
         });
     },
 
-    async toggleVoiceList(sync = false) {
+    async toggleVoiceList(sync = false, forceFullSync = false) {
         const panel = this.getEl('voiceListPanel');
         if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
         
@@ -336,11 +335,11 @@ export const ShadowGame = {
         const serverFiles = res.data || [];
         const cachedEntry = await this.dbOp('readonly', 'lesson_caches', 'get', this.lessonId);
 
-        // 2. So sánh logic cập nhật
+        // 2. So sánh logic cập nhật: Chỉ tải blobs nếu có thay đổi hoặc lệnh force
         const isChanged = JSON.stringify(serverFiles) !== JSON.stringify(cachedEntry?.data || []);
 
-        if (isChanged || sync) {
-            console.log("[LOG] Syncing data...");
+        if (isChanged || forceFullSync) {
+            console.log("[LOG] Syncing voice blobs data...");
             await this.dbOp('readwrite', 'lesson_caches', 'put', { id: this.lessonId, data: serverFiles });
 
             const resBlobs = await this.api({ type: 'getFilesBlobByLesson', lessonId: this.lessonId });
@@ -348,13 +347,15 @@ export const ShadowGame = {
 
             for (const f of serverFiles) {
                 const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
-                // LOGIC: Lấy từ indexdb nếu có, không thì mới tải từ serverBlobs
                 let blob = (existing && existing.blob) ? existing.blob : null;
                 if (!blob && serverBlobs[f.fileId]) {
                     blob = this.base64ToBlob(serverBlobs[f.fileId], "audio/mpeg");
                 }
                 await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: blob, lessonId: this.lessonId });
             }
+        } else if (sync) {
+            // "Tải lại" mà metadata không đổi: Chỉ cập nhật metadata cache
+            await this.dbOp('readwrite', 'lesson_caches', 'put', { id: this.lessonId, data: serverFiles });
         }
         
         if (sync) this.setListLoading(false);

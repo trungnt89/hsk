@@ -112,8 +112,10 @@ export const ShadowGame = {
             .ai-comment-btn { background: #64748b; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; border: none; white-space: nowrap; }
             #aiReport { font-size:13px; line-height:1.6; color:#334155; }
             .full-screen-panel { width: 100vw !important; height: 100vh !important; max-width: 100vw !important; top: 0 !important; left: 0 !important; transform: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column; }
+            .full-screen-list { width: 100vw !important; height: 100vh !important; max-width: 100vw !important; top: 0 !important; left: 0 !important; transform: none !important; border-radius: 0 !important; }
             .score-badge { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 14px; border: 1px solid #bbf7d0; display: inline-block; min-width: 35px; text-align: center; }
             .voice-item { padding: 8px; border-bottom: 1px solid #f1f5f9; position: relative; }
+            .btn-locked { opacity: 0.5; pointer-events: none; }
         `;
         document.head.appendChild(style);
     },
@@ -140,7 +142,7 @@ export const ShadowGame = {
                         <span id="refreshList" class="list-action-btn" style="color:#0ea5e9;">🔄 Tải lại</span>
                     </div>
                 </div>
-                <div id="voiceItems" style="max-height:65vh; overflow-y:auto;"></div>
+                <div id="voiceItems" style="max-height:85vh; overflow-y:auto;"></div>
             </div>
             <div id="scoreResultPanel" class="sg-panel" style="z-index:10005;">
                 <h3 style="text-align:center">🤖 Phân tích & Chấm điểm</h3>
@@ -272,11 +274,14 @@ export const ShadowGame = {
 
     async clearAndRefresh() {
         if (!confirm("Xóa cache local bài học này?")) return;
+        console.log("[LOG] Clear and Refresh clicked");
+        this.setListLoading(true);
         await this.dbOp('readwrite', 'lesson_caches', 'delete', this.lessonId);
         const allLocal = await this.dbOp('readonly', 'voices', 'getAll');
         const toDelete = allLocal.filter(v => String(v.lessonId) === String(this.lessonId));
         for (const item of toDelete) await this.dbOp('readwrite', 'voices', 'delete', item.fileId);
-        this.toggleVoiceList(true);
+        await this.toggleVoiceList(true);
+        this.setListLoading(false);
     },
 
     async uploadToDrive(blob) {
@@ -306,10 +311,25 @@ export const ShadowGame = {
         };
     },
 
+    setListLoading(isLoading) {
+        const btns = [this.getEl('clearAndRefresh'), this.getEl('refreshList')];
+        btns.forEach(btn => {
+            if (btn) {
+                isLoading ? btn.classList.add('btn-locked') : btn.classList.remove('btn-locked');
+                btn.innerText = isLoading ? "⏳ Đang xử lý..." : (btn.id === 'refreshList' ? "🔄 Tải lại" : "🔥 Xóa & Tải");
+            }
+        });
+    },
+
     async toggleVoiceList(sync = false) {
         const panel = this.getEl('voiceListPanel');
         if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
+        
         panel.style.display = 'block';
+        panel.classList.add('full-screen-list'); 
+        
+        if (sync) this.setListLoading(true);
+        
         const itemsWrap = this.getEl('voiceItems'); 
         
         const cachedEntry = await this.dbOp('readonly', 'lesson_caches', 'get', this.lessonId);
@@ -327,14 +347,12 @@ export const ShadowGame = {
             console.log("[LOG] Data changed, updating IndexedDB...");
             await this.dbOp('readwrite', 'lesson_caches', 'put', { id: this.lessonId, data: serverFiles });
 
-            // MỚI: Tải Blobs hàng loạt từ GAS theo LessonId để tối ưu hiệu năng
             const resBlobs = await this.api({ type: 'getFilesBlobByLesson', lessonId: this.lessonId });
             const serverBlobs = resBlobs.data || {};
 
             for (const f of serverFiles) {
                 const existing = await this.dbOp('readonly', 'voices', 'get', f.fileId);
                 let blob = existing?.blob || null;
-                // Nếu local chưa có nhưng Server trả về Blob hàng loạt thì cập nhật
                 if (!blob && serverBlobs[f.fileId]) {
                     blob = this.base64ToBlob(serverBlobs[f.fileId], "audio/mpeg");
                 }
@@ -342,6 +360,8 @@ export const ShadowGame = {
             }
         }
         
+        if (sync) this.setListLoading(false);
+
         let localFiles = await this.dbOp('readonly', 'voices', 'getAll');
         localFiles = localFiles.filter(v => String(v.lessonId) === String(this.lessonId));
         localFiles.sort((a, b) => (b.formattedDate || "").localeCompare(a.formattedDate || ""));

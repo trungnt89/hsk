@@ -117,7 +117,7 @@ export const ShadowGame = {
                     <span id="closeList" style="cursor:pointer; font-size:13px; color:#64748b;">✕ Đóng</span>
                     <b style="font-size:14px;">🎙️ List</b>
                     <div style="display:flex; gap:10px;">
-                        <span id="clearAndRefresh" style="cursor:pointer; font-size:13px; color:#ef4444;">🔥 Xóa & Tải</span>
+                        <span id="clearAndRefresh" style="cursor:pointer; font-size:13px; color:#ef4444;">🔥 Xóa/Tải</span>
                         <span id="refreshList" style="cursor:pointer; font-size:13px; color:#0ea5e9;">🔄 Tải lại</span>
                     </div>
                 </div>

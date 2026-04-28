@@ -279,7 +279,7 @@ export const ShadowGame = {
         const allLocal = await this.dbOp('readonly', 'voices', 'getAll');
         const toDelete = allLocal.filter(v => String(v.lessonId) === String(this.lessonId));
         for (const item of toDelete) await this.dbOp('readwrite', 'voices', 'delete', item.fileId);
-        await this.toggleVoiceList(true, true);
+        await this.toggleVoiceList(true);
         this.setListLoading(false);
     },
 
@@ -320,7 +320,7 @@ export const ShadowGame = {
         });
     },
 
-    async toggleVoiceList(sync = false, forceFullSync = false) {
+    async toggleVoiceList(sync = false) {
         const panel = this.getEl('voiceListPanel');
         if (!sync && panel.style.display === 'block') return panel.style.display = 'none';
         
@@ -330,18 +330,14 @@ export const ShadowGame = {
         const itemsWrap = this.getEl('voiceItems'); 
         if (sync) this.setListLoading(true);
 
-        // 1. Tải metadata danh sách từ server
         const res = await this.api({ type: 'listVoice', lessonId: this.lessonId });
         const serverFiles = res.data || [];
         const cachedEntry = await this.dbOp('readonly', 'lesson_caches', 'get', this.lessonId);
-
-        // 2. So sánh logic cập nhật: Chỉ tải blobs nếu có thay đổi hoặc lệnh force
         const isChanged = JSON.stringify(serverFiles) !== JSON.stringify(cachedEntry?.data || []);
 
-        if (isChanged || forceFullSync) {
-            console.log("[LOG] Syncing voice blobs data...");
+        if (isChanged || sync) {
+            console.log("[LOG] Syncing data...");
             await this.dbOp('readwrite', 'lesson_caches', 'put', { id: this.lessonId, data: serverFiles });
-
             const resBlobs = await this.api({ type: 'getFilesBlobByLesson', lessonId: this.lessonId });
             const serverBlobs = resBlobs.data || {};
 
@@ -353,15 +349,13 @@ export const ShadowGame = {
                 }
                 await this.dbOp('readwrite', 'voices', 'put', { ...f, blob: blob, lessonId: this.lessonId });
             }
-        } else if (sync) {
-            // "Tải lại" mà metadata không đổi: Chỉ cập nhật metadata cache
-            await this.dbOp('readwrite', 'lesson_caches', 'put', { id: this.lessonId, data: serverFiles });
         }
         
         if (sync) this.setListLoading(false);
 
-        let localFiles = await this.dbOp('readonly', 'voices', 'getAll');
-        localFiles = localFiles.filter(v => String(v.lessonId) === String(this.lessonId));
+        // FIX: Lọc chính xác theo lessonId trước khi render lên UI
+        const allLocal = await this.dbOp('readonly', 'voices', 'getAll');
+        const localFiles = allLocal.filter(v => String(v.lessonId) === String(this.lessonId));
         localFiles.sort((a, b) => (b.formattedDate || "").localeCompare(a.formattedDate || ""));
 
         itemsWrap.innerHTML = localFiles.length === 0 ? `<div style="padding:20px; text-align:center; color:#94a3b8; font-size:12px;">Chưa có bản ghi nào.</div>` : "";

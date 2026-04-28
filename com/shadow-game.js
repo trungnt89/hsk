@@ -1,5 +1,5 @@
 /**
- * ShadowGame Module - Phiên bản tối ưu nguồn Audio trực tiếp
+ * ShadowGame Module - Sử dụng link audio trực tiếp
  */
 
 if (typeof marked === 'undefined') {
@@ -323,17 +323,13 @@ export const ShadowGame = {
             let audioSrc = (f.blob && f.blob instanceof Blob) ? URL.createObjectURL(f.blob) : "";
             let scoreDisplay = (f.score && f.score !== "N/A" && f.score !== 0) ? `<span class="score-badge">${f.score}</span>` : `<span style="color:#94a3b8; font-size:10px;">---</span>`;
             
-            // Link dự phòng trực tiếp
-            const directLink = f.downloadUrl || `https://docs.google.com/uc?export=download&id=${f.fileId}`;
+            const directAudioUrl = f.downloadUrl || `https://docs.google.com/uc?export=download&id=${f.fileId}`;
 
             item.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                     <div style="font-size:10px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">📄 ${f.name || 'Ghi âm mới'}</div>
                     <div class="load-status" style="font-size:9px; color:#f59e0b;">${f.blob ? '' : '⏳ Chờ tải...'}</div>
-                    <div style="display:flex; gap:8px;">
-                        <a href="${directLink}" target="_blank" title="Tải về máy" style="text-decoration:none; font-size:12px;">💾</a>
-                        <span class="del-btn" style="color:#ef4444; cursor:pointer; font-size:12px; user-select:none;">🗑️</span>
-                    </div>
+                    <span class="del-btn" style="color:#ef4444; cursor:pointer; font-size:12px; user-select:none;">🗑️</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
                     <div style="flex-shrink:0;">${scoreDisplay}</div>
@@ -345,7 +341,7 @@ export const ShadowGame = {
                 </div>
                 <audio controls playsinline webkit-playsinline preload="none" style="width:100%; height:28px;">
                     <source src="${audioSrc}" type="audio/mpeg">
-                    <source src="${directLink}" type="audio/mpeg">
+                    <source src="${directAudioUrl}" type="audio/mpeg">
                 </audio>`;
             
             item.querySelector('.ai-score-btn').onclick = () => this.aiScoreVoice(f.fileId);

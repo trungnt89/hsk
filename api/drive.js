@@ -2,6 +2,7 @@ const { google } = require('googleapis');
 const { Readable } = require('stream');
 
 export default async function handler(req, res) {
+    // Khởi tạo Auth từ biến môi trường GOOGLE_SERVICE_ACCOUNT_KEY
     const auth = new google.auth.GoogleAuth({
         credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY),
         scopes: ['https://www.googleapis.com/auth/drive'],
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
     const { id } = req.query;
 
     try {
-        // --- 1. STREAM FILE (ĐỂ PHÁT NHẠC) ---
+        // --- 1. PHÁT FILE (STREAM) ---
         if (method === 'GET' && id) {
             console.log(`[LOG] Đang stream file ID: ${id}`);
             const metadata = await drive.files.get({ fileId: id, fields: 'mimeType, size' });
@@ -23,18 +24,19 @@ export default async function handler(req, res) {
             return response.data.pipe(res);
         }
 
-        // --- 2. LIST FILES (LẤY DANH SÁCH MP3) ---
+        // --- 2. LẤY DANH SÁCH (AUDIO & MP4) ---
         if (method === 'GET') {
-            console.log("[LOG] Truy vấn danh sách file mp3 từ Drive...");
+            console.log("[LOG] Đang truy vấn danh sách Audio và MP4...");
             const response = await drive.files.list({
-                q: "mimeType='audio/mpeg' and trashed=false",
-                fields: 'files(id, name)',
-                pageSize: 20
+                // Lọc tất cả audio và video mp4
+                q: "(mimeType contains 'audio/' or mimeType = 'video/mp4') and trashed=false",
+                fields: 'files(id, name, mimeType)',
+                pageSize: 100
             });
             return res.status(200).json(response.data.files);
         }
 
-        // --- 3. UPLOAD FILE (LƯU GHI ÂM) ---
+        // --- 3. GHI FILE (UPLOAD) ---
         if (method === 'POST') {
             const { name, base64Audio } = req.body;
             console.log(`[LOG] Bắt đầu upload file: ${name}`);
@@ -46,7 +48,7 @@ export default async function handler(req, res) {
 
             const fileMetadata = {
                 name: name.endsWith('.mp3') ? name : `${name}.mp3`,
-                mimeType: 'audio/mpeg'
+                mimeType: 'audio/mpeg' // Ép kiểu về audio để dễ quản lý
             };
 
             const media = {
@@ -60,12 +62,12 @@ export default async function handler(req, res) {
                 fields: 'id',
             });
 
-            console.log(`[LOG] Upload thành công. File ID mới: ${file.data.id}`);
+            console.log(`[LOG] Upload thành công. ID: ${file.data.id}`);
             return res.status(200).json({ success: true, id: file.data.id });
         }
 
     } catch (err) {
-        console.error(`[LOG] Lỗi tại API: ${err.message}`);
+        console.error(`[LOG] Lỗi hệ thống: ${err.message}`);
         return res.status(500).json({ error: err.message });
     }
 }

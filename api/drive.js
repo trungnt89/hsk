@@ -3,11 +3,9 @@ const { Readable } = require('stream');
 
 export default async function handler(req, res) {
     const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: "Missing Token" });
+    if (!authHeader) return res.status(401).json({ error: "Thiếu Refresh Token" });
 
-    // Token gửi từ Client (là Refresh Token vĩnh viễn)
     const clientRefreshToken = authHeader.split(' ')[1];
-
     const oauth2Client = new google.auth.OAuth2(
         process.env.OAUTH_CLIENT_ID,
         process.env.OAUTH_CLIENT_SECRET
@@ -19,7 +17,7 @@ export default async function handler(req, res) {
     try {
         const { method, query, body } = req;
 
-        // --- LẤY DANH SÁCH FILE ---
+        // 1. LẤY DANH SÁCH FILE AUDIO
         if (method === 'GET' && !query.id) {
             const response = await drive.files.list({
                 q: "trashed=false and (mimeType contains 'audio/' or mimeType = 'video/mp4')",
@@ -29,14 +27,14 @@ export default async function handler(req, res) {
             return res.status(200).json(response.data.files);
         }
 
-        // --- TẢI FILE ĐỂ PHÁT ---
+        // 2. TẢI FILE ĐỂ PHÁT
         if (method === 'GET' && query.id) {
             const response = await drive.files.get({ fileId: query.id, alt: 'media' }, { responseType: 'stream' });
             res.setHeader('Content-Type', 'audio/mpeg');
             return response.data.pipe(res);
         }
 
-        // --- UPLOAD FILE GHI ÂM ---
+        // 3. UPLOAD FILE GHI ÂM
         if (method === 'POST') {
             const { name, base64Audio } = body;
             const buffer = Buffer.from(base64Audio, 'base64');
@@ -47,15 +45,14 @@ export default async function handler(req, res) {
             const fileMetadata = {
                 name: name.endsWith('.mp3') ? name : `${name}.mp3`,
                 mimeType: 'audio/mpeg',
-                parents: ['1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm'] // FOLDER_ID của bạn
+                parents: ['1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm'] // ID Thư mục của bạn
             };
 
             const media = { mimeType: 'audio/mpeg', body: bufferStream };
-            const file = await drive.files.create({ resource: fileMetadata, media: media, fields: 'id' });
-            return res.status(200).json({ success: true, id: file.data.id });
+            await drive.files.create({ resource: fileMetadata, media: media, fields: 'id' });
+            return res.status(200).json({ success: true });
         }
     } catch (err) {
-        console.error("[LOG] Server Error:", err.message);
         return res.status(500).json({ error: err.message });
     }
 }

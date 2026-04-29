@@ -3,131 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drive Multimedia Manager</title>
+    <title>Drive Media Pro</title>
     <style>
-        :root {
-            --primary: #2563eb;
-            --danger: #dc2626;
-            --success: #16a34a;
-            --bg: #f8fafc;
-        }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; display: flex; justify-content: center; }
+        :root { --p: #2563eb; --d: #ef4444; --s: #22c55e; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f1f5f9; margin: 0; padding: 15px; display: flex; justify-content: center; }
+        .app { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         
-        .app-container { 
-            width: 100%; 
-            max-width: 900px; /* Mở rộng không gian hiển thị */
-            display: grid;
-            grid-template-columns: 1fr 350px; /* Chia cột: Danh sách bên trái, Ghi âm bên phải */
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .app-container { grid-template-columns: 1fr; }
-        }
-
-        .card { 
-            background: white; 
-            padding: 24px; 
-            border-radius: 16px; 
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); 
-            box-sizing: border-box;
-        }
-
-        /* Danh sách file */
-        .file-list { 
-            margin-top: 15px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 12px;
-            max-height: 600px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-
-        .file-item { 
-            padding: 15px; 
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px; 
-            font-size: 13px; 
-            cursor: pointer; 
-            transition: all 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        .file-item:hover { 
-            border-color: var(--primary);
-            background: #eff6ff;
-            transform: translateY(-2px);
-        }
-
-        .file-icon { font-size: 24px; margin-bottom: 8px; }
-
-        /* Trình phát đa phương tiện */
-        .media-viewer {
-            margin-top: 20px;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            display: none;
-            width: 100%;
-        }
-
+        /* Media Player */
+        #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 15px; }
         video, audio { width: 100%; display: block; }
-
-        /* Vùng ghi âm */
-        .recorder-zone { text-align: center; }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            background: #e2e8f0;
-            margin-bottom: 15px;
-        }
-        .status-recording { background: #fee2e2; color: #dc2626; animation: blink 1s infinite; }
         
-        button { 
-            width: 100%; 
-            padding: 14px; 
-            margin: 8px 0; 
-            border-radius: 10px; 
-            border: none; 
-            font-weight: 800; 
-            cursor: pointer; 
-            text-transform: uppercase;
-        }
-        .btn-rec { background: var(--danger); color: white; }
+        /* List */
+        .list { max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; }
+        .item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .item:hover { background: #f8fafc; color: var(--p); }
+        
+        /* Recorder */
+        .rec-box { text-align: center; border-top: 2px solid #f1f5f9; margin-top: 15px; padding-top: 15px; }
+        button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-start { background: var(--d); color: white; }
         .btn-stop { background: #64748b; color: white; }
-        .btn-save { background: var(--success); color: white; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        @keyframes blink { 50% { opacity: 0.5; } }
+        .btn-save { background: var(--s); color: white; }
+        button:disabled { opacity: 0.4; }
+        
+        .recording-dot { width: 10px; height: 10px; background: var(--d); border-radius: 50%; display: inline-block; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app">
     <div class="card">
-        <h2 style="margin:0 0 10px 0; color: #1e293b;">📂 Media Library</h2>
-        <div id="media-display" class="media-viewer"></div>
-        <div id="fileList" class="file-list">Đang tải dữ liệu...</div>
-    </div>
+        <h3 style="margin:0 0 15px 0">📂 Media Library</h3>
+        
+        <div id="media-view"></div>
 
-    <div class="card recorder-zone">
-        <h3 style="margin-top:0">🎙️ Recorder</h3>
-        <div id="status" class="status-badge">Sẵn sàng</div>
-        
-        <button id="startBtn" class="btn-rec" onclick="startRec()">Bắt đầu ghi</button>
-        <button id="stopBtn" class="btn-stop" onclick="stopRec()" disabled>Dừng ghi</button>
-        <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>Lưu lên Drive (GAS)</button>
-        
-        <div style="margin-top: 20px; font-size: 11px; color: #94a3b8;">
-            Lưu ý: File sẽ được tự động chuyển tiếp qua Vercel đến GAS và lưu vào thư mục Drive của bạn.
+        <div id="fileList" class="list">Đang tải...</div>
+
+        <div class="rec-box">
+            <div id="rec-status" style="font-size:12px; margin-bottom:10px; font-weight:bold"></div>
+            <button id="startBtn" class="btn-start" onclick="startRec()">BẮT ĐẦU GHI ÂM</button>
+            <button id="stopBtn" class="btn-stop" onclick="stopRec()" disabled>DỪNG</button>
+            <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>LƯU LÊN DRIVE</button>
         </div>
     </div>
 </div>
@@ -137,44 +55,33 @@
 
     window.onload = loadFiles;
 
-    // 1. Tải danh sách file
     async function loadFiles() {
         const listDiv = document.getElementById('fileList');
         try {
             const res = await fetch('/api/drive');
             const files = await res.json();
-            listDiv.innerHTML = files.map(f => {
-                const isVideo = f.mimeType.includes('video');
-                return `
-                    <div class="file-item" onclick="playMedia('${f.id}', '${f.mimeType}', '${f.name}')">
-                        <div class="file-icon">${isVideo ? '🎥' : '🎵'}</div>
-                        <div style="word-break: break-all;">${f.name}</div>
-                    </div>
-                `;
-            }).join('');
-        } catch (e) {
-            listDiv.innerHTML = 'Lỗi kết nối server.';
-        }
+            listDiv.innerHTML = files.map(f => `
+                <div class="item" onclick="playMedia('${f.id}', '${f.mimeType}')">
+                    ${f.mimeType.includes('video') ? '🎥' : '🎵'} 
+                    <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${f.name}</span>
+                </div>
+            `).join('');
+        } catch (e) { listDiv.innerHTML = "Lỗi kết nối."; }
     }
 
-    // 2. Trình phát đa phương tiện (Tự động nhận diện Audio/Video)
-    function playMedia(id, mimeType, name) {
-        const viewer = document.getElementById('media-display');
-        viewer.style.display = 'block';
+    function playMedia(id, mimeType) {
+        const view = document.getElementById('media-view');
+        view.style.display = 'block';
+        const url = `/api/drive?id=${id}`;
         
-        // Tạo URL stream qua Vercel
-        // Lưu ý: Route GET /api/drive?id=xxx cần trả về stream file như đã viết ở bản trước
-        const streamUrl = `/api/drive?id=${id}`;
-
         if (mimeType.includes('video')) {
-            viewer.innerHTML = `<video src="${streamUrl}" controls autoplay></video>`;
+            view.innerHTML = `<video src="${url}" controls autoplay></video>`;
         } else {
-            viewer.innerHTML = `<div style="padding:20px"><div style="color:white; margin-bottom:10px; font-size:12px;">🔊 ${name}</div><audio src="${streamUrl}" controls autoplay></audio></div>`;
+            view.innerHTML = `<div style="padding:10px"><audio src="${url}" controls autoplay></audio></div>`;
         }
-        viewer.scrollIntoView({ behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 3. Logic Ghi âm
     async function startRec() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRec = new MediaRecorder(stream);
@@ -185,53 +92,39 @@
             document.getElementById('uploadBtn').disabled = false;
         };
         mediaRec.start();
-        
         document.getElementById('startBtn').disabled = true;
         document.getElementById('stopBtn').disabled = false;
-        const status = document.getElementById('status');
-        status.innerText = "🔴 ĐANG GHI ÂM...";
-        status.className = "status-badge status-recording";
+        document.getElementById('rec-status').innerHTML = '<span class="recording-dot"></span> ĐANG GHI...';
     }
 
     function stopRec() {
         mediaRec.stop();
         document.getElementById('startBtn').disabled = false;
         document.getElementById('stopBtn').disabled = true;
-        const status = document.getElementById('status');
-        status.innerText = "Đã ghi xong";
-        status.className = "status-badge";
+        document.getElementById('rec-status').innerText = 'Đã ghi xong';
     }
 
-    // 4. Upload qua Vercel -> GAS
     async function upload() {
         const btn = document.getElementById('uploadBtn');
-        btn.innerText = "⏳ ĐANG XỬ LÝ...";
+        btn.innerText = "⏳ ĐANG LƯU...";
         btn.disabled = true;
 
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
-            try {
-                const res = await fetch('/api/drive', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        name: `Rec_${new Date().getTime()}.mp3`, 
-                        base64Audio 
-                    })
-                });
-                const result = await res.json();
-                if (result.status === "success") {
-                    alert("✅ Đã lưu lên Drive!");
-                    loadFiles();
-                } else {
-                    alert("Lỗi: " + result.message);
-                }
-            } catch (e) {
-                alert("Lỗi server");
-            } finally {
-                btn.innerText = "LƯU LÊN DRIVE (GAS)";
+            const res = await fetch('/api/drive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: `Rec_${Date.now()}.mp3`, base64Audio })
+            });
+            const result = await res.json();
+            if (result.status === "success") {
+                alert("Đã lưu!");
+                location.reload();
+            } else {
+                alert("Lỗi: " + result.message);
+                btn.disabled = false;
             }
         };
     }

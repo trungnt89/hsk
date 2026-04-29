@@ -6,28 +6,30 @@
     <title>Drive Media Player</title>
     <style>
         body { font-family: sans-serif; background: #0f172a; color: white; margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .app { width: 100%; max-width: 600px; }
-        .card { background: #1e293b; padding: 20px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        #media-box { width: 100%; background: #000; border-radius: 10px; margin-bottom: 15px; display: none; }
+        .app { width: 100%; max-width: 500px; }
+        .card { background: #1e293b; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 20px; }
         video, audio { width: 100%; display: block; }
-        .list { max-height: 450px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #334155; border-radius: 10px; }
+        .list { max-height: 400px; overflow-y: auto; border: 1px solid #334155; border-radius: 10px; margin-bottom: 20px; }
         .item { padding: 12px; border-bottom: 1px solid #334155; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
-        .item:hover { background: #2d3748; }
-        .rec-area { border-top: 1px solid #334155; padding-top: 20px; text-align: center; }
-        button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+        .item:hover { background: #334155; }
+        .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rec-box { border-top: 1px solid #334155; padding-top: 20px; text-align: center; }
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; }
         .btn-rec { background: #ef4444; color: white; }
         .btn-save { background: #10b981; color: white; }
+        #status { font-size: 12px; margin-bottom: 10px; color: #94a3b8; }
     </style>
 </head>
 <body>
 <div class="app">
     <div class="card">
-        <div id="media-box"></div>
-        <div class="list" id="fileList">Đang tải danh sách file từ thư mục...</div>
-        <div class="rec-area">
-            <div id="status" style="font-size:12px; margin-bottom:10px"></div>
-            <button id="startBtn" class="btn-rec" onclick="startRec()">BẮT ĐẦU GHI ÂM</button>
-            <button id="stopBtn" style="background:#4b5563; color:white" onclick="stopRec()" disabled>DỪNG</button>
+        <div id="media-view"></div>
+        <div id="fileList" class="list">Đang tải danh sách...</div>
+        <div class="rec-box">
+            <div id="status">Sẵn sàng</div>
+            <button id="startBtn" class="btn-rec" onclick="startRec()">BẮT ĐẦU GHI</button>
+            <button id="stopBtn" style="background:#475569; color:white" onclick="stopRec()" disabled>DỪNG</button>
             <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>LƯU LÊN DRIVE (GAS)</button>
         </div>
     </div>
@@ -39,19 +41,23 @@
     async function loadFiles() {
         const res = await fetch('/api/drive');
         const files = await res.json();
-        document.getElementById('fileList').innerHTML = files.map(f => `
-            <div class="item" onclick="playMedia('${f.id}', '${f.mimeType}', '${f.name}')">
-                ${f.mimeType.includes('video') ? '🎥' : '🎵'} ${f.name}
-            </div>
-        `).join('');
+        document.getElementById('fileList').innerHTML = files.map(f => {
+            // SỬA LỖI Tên file có xuống dòng hoặc dấu nháy
+            const cleanName = f.name.replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'");
+            return `
+                <div class="item" onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
+                    <span>${f.mimeType.includes('video') ? '🎥' : '🎵'}</span>
+                    <div class="item-text">${f.name}</div>
+                </div>
+            `;
+        }).join('');
     }
 
     function playMedia(id, mimeType, name) {
-        const box = document.getElementById('media-box');
-        box.style.display = 'block';
+        const view = document.getElementById('media-view');
+        view.style.display = 'block';
         const url = `/api/drive?id=${id}`;
-        box.innerHTML = mimeType.includes('video') ? 
-            `<video src="${url}" controls autoplay></video>` : 
+        view.innerHTML = mimeType.includes('video') ? `<video src="${url}" controls autoplay></video>` : 
             `<div style="padding:15px; text-align:center; font-size:12px">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
     }
 
@@ -60,36 +66,21 @@
         mediaRec = new MediaRecorder(stream);
         chunks = [];
         mediaRec.ondataavailable = e => chunks.push(e.data);
-        mediaRec.onstop = () => {
-            audioBlob = new Blob(chunks, { type: 'audio/mpeg' });
-            document.getElementById('uploadBtn').disabled = false;
-        };
+        mediaRec.onstop = () => { audioBlob = new Blob(chunks, { type: 'audio/mpeg' }); document.getElementById('uploadBtn').disabled = false; };
         mediaRec.start();
-        document.getElementById('startBtn').disabled = true;
-        document.getElementById('stopBtn').disabled = false;
+        document.getElementById('startBtn').disabled = true; document.getElementById('stopBtn').disabled = false;
         document.getElementById('status').innerText = "🔴 Đang ghi...";
     }
 
-    function stopRec() {
-        mediaRec.stop();
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('stopBtn').disabled = true;
-        document.getElementById('status').innerText = "Đã xong";
-    }
+    function stopRec() { mediaRec.stop(); document.getElementById('startBtn').disabled = false; document.getElementById('stopBtn').disabled = true; document.getElementById('status').innerText = "Xong"; }
 
     async function upload() {
-        const btn = document.getElementById('uploadBtn');
-        btn.innerText = "ĐANG LƯU...";
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
+        const btn = document.getElementById('uploadBtn'); btn.innerText = "ĐANG LƯU...";
+        const reader = new FileReader(); reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
-            const res = await fetch('/api/drive', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: `Rec_${Date.now()}.mp3`, base64Audio })
-            });
-            if (res.ok) { alert("Thành công!"); location.reload(); }
+            const res = await fetch('/api/drive', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: `Rec_${Date.now()}.mp3`, base64Audio }) });
+            if (res.ok) location.reload();
         };
     }
 </script>

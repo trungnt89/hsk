@@ -2,229 +2,137 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drive Media Player & Recorder</title>
+    <title>Drive Client Token Auth</title>
     <style>
-        :root { 
-            --primary: #2563eb; 
-            --danger: #dc2626; 
-            --success: #16a34a; 
-            --bg: #f8fafc;
-        }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
-        .app-card { 
-            max-width: 600px; 
-            margin: auto; 
-            background: white; 
-            padding: 30px; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); 
-        }
-        h2 { margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.5rem; }
-        
-        /* Danh sách file */
-        .list-container { 
-            height: 300px; 
-            overflow-y: auto; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 12px; 
-            margin: 20px 0;
-            background: #ffffff;
-        }
-        .file-item { 
-            display: flex; 
-            align-items: center; 
-            padding: 14px; 
-            border-bottom: 1px solid #f1f5f9; 
-            cursor: pointer; 
-            transition: all 0.2s;
-        }
-        .file-item:hover { background: #eff6ff; color: var(--primary); }
-        .file-item:last-child { border-bottom: none; }
-        .icon { font-size: 1.3rem; margin-right: 12px; }
-        .badge { font-size: 0.65rem; background: #f1f5f9; padding: 3px 8px; border-radius: 6px; margin-left: auto; font-weight: bold; }
-
-        /* Khu vực ghi âm */
-        .recorder-box { 
-            background: #fff1f2; 
-            border: 2px dashed #fecaca; 
-            padding: 25px; 
-            border-radius: 16px; 
-            text-align: center; 
-        }
-        .timer { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; font-family: monospace; }
-        
-        button { 
-            padding: 12px 24px; 
-            border-radius: 10px; 
-            border: none; 
-            font-weight: 600; 
-            cursor: pointer; 
-            transition: transform 0.1s, opacity 0.2s; 
-            margin: 5px; 
-        }
-        button:active { transform: scale(0.95); }
-        .btn-start { background: var(--danger); color: white; }
-        .btn-stop { background: #475569; color: white; }
-        .btn-save { background: var(--success); color: white; }
-        button:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
-
-        #status { font-size: 0.85rem; margin-top: 15px; color: #64748b; font-weight: 500; }
-        audio { width: 100%; margin-top: 20px; border-radius: 8px; }
+        body { font-family: sans-serif; padding: 20px; background: #f8fafc; }
+        .box { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; }
+        .file-list { height: 150px; overflow-y: auto; border: 1px solid #f1f5f9; margin: 15px 0; font-size: 14px; }
+        .item { padding: 8px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+        .item:hover { background: #f0f9ff; }
+        button { padding: 10px; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; }
+        .btn-blue { background: #3b82f6; color: white; width: 100%; }
+        .recorder { border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="app-card">
-    <h2>📁 Thư viện Media</h2>
-    <div id="fileList" class="list-container">
-        <p style="padding:20px; text-align:center; color:#94a3b8;">Đang quét dữ liệu Drive...</p>
-    </div>
+<div class="box">
+    <h3>🔑 Cấu hình Token</h3>
+    <input type="password" id="tokenInput" placeholder="Dán Access Token của bạn vào đây">
+    <button class="btn-blue" onclick="saveToken()">Lưu Token vào IndexedDB</button>
 
-    <div class="recorder-box">
-        <h3 style="margin-top:0">🎙️ Ghi âm & Tải lên</h3>
-        <div id="timer" class="timer">00:00</div>
-        <div class="controls">
-            <button id="bStart" class="btn-start" onclick="startRecording()">Bắt đầu</button>
-            <button id="bStop" class="btn-stop" onclick="stopRecording()" disabled>Dừng</button>
-            <button id="bSave" class="btn-save" onclick="uploadToServer()" disabled>Lưu lên Drive</button>
-        </div>
-        <audio id="audioPreview" controls></audio>
-        <div id="status">Trạng thái: Sẵn sàng</div>
+    <div class="file-list" id="list">Danh sách file sẽ hiện ở đây...</div>
+    <button onclick="fetchFiles()" style="font-size: 12px;">🔄 Làm mới danh sách</button>
+
+    <div class="recorder">
+        <button id="startBtn" style="background:#ef4444; color:white" onclick="startRec()">Ghi âm</button>
+        <button id="stopBtn" onclick="stopRec()" disabled>Dừng</button>
+        <button id="saveBtn" style="background:#22c55e; color:white" onclick="upload()" disabled>Lưu lên Drive</button>
+        <audio id="preview" controls style="width: 100%; margin-top: 15px;"></audio>
     </div>
 </div>
 
 <script>
-    let mediaRecorder;
-    let audioChunks = [];
-    let audioBlob;
-    let startTime;
-    let timerInterval;
+    let mediaRec, chunks = [], audioBlob;
+    const dbName = "ClientAuthDB";
 
-    // 1. Tải danh sách file từ Drive
-    async function loadFiles() {
-        try {
-            const res = await fetch('/api/drive');
-            const data = await res.json();
-            const list = document.getElementById('fileList');
-            
-            if (data.length === 0) {
-                list.innerHTML = '<p style="padding:20px; text-align:center; color:#94a3b8;">Thư mục trống.</p>';
-                return;
-            }
-
-            list.innerHTML = data.map(f => {
-                const isVideo = f.mimeType.includes('video');
-                const ext = f.mimeType.split('/')[1].toUpperCase();
-                return `
-                    <div class="file-item" onclick="playFile('${f.id}')">
-                        <span class="icon">${isVideo ? '🎥' : '🎵'}</span>
-                        <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.name}</span>
-                        <span class="badge">${ext}</span>
-                    </div>
-                `;
-            }).join('');
-        } catch (e) {
-            console.error("[LOG] Lỗi load file:", e);
-            document.getElementById('fileList').innerHTML = '<p style="padding:20px; color:red;">Không thể kết nối API.</p>';
-        }
+    // --- 1. INDEXEDDB: LƯU VÀ LẤY TOKEN ---
+    function getDB() {
+        return new Promise((resolve) => {
+            const req = indexedDB.open(dbName, 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore("auth");
+            req.onsuccess = e => resolve(e.target.result);
+        });
     }
 
-    // 2. Phát file
-    function playFile(id) {
-        const player = document.getElementById('audioPreview');
-        player.src = `/api/drive?id=${id}`;
-        player.play();
-        document.getElementById('status').innerText = "Trạng thái: Đang phát file từ Drive...";
+    async function saveToken() {
+        const token = document.getElementById('tokenInput').value;
+        const db = await getDB();
+        const tx = db.transaction("auth", "readwrite");
+        tx.objectStore("auth").put(token, "current_token");
+        alert("Đã lưu token vào trình duyệt!");
     }
 
-    // 3. Ghi âm
-    async function startRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
-                document.getElementById('audioPreview').src = URL.createObjectURL(audioBlob);
-                document.getElementById('bSave').disabled = false;
-                clearInterval(timerInterval);
-            };
-
-            mediaRecorder.start();
-            
-            // UI Update
-            document.getElementById('bStart').disabled = true;
-            document.getElementById('bStop').disabled = false;
-            document.getElementById('bSave').disabled = true;
-            document.getElementById('status').innerText = "Trạng thái: 🔴 Đang ghi âm...";
-            
-            // Timer
-            startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 1000);
-        } catch (err) {
-            alert("Không thể truy cập Microphone: " + err.message);
-        }
+    async function getToken() {
+        const db = await getDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction("auth", "readonly");
+            const req = tx.objectStore("auth").get("current_token");
+            req.onsuccess = () => resolve(req.result);
+        });
     }
 
-    function stopRecording() {
-        if (mediaRecorder) {
-            mediaRecorder.stop();
-            document.getElementById('bStart').disabled = false;
-            document.getElementById('bStop').disabled = true;
-            document.getElementById('status').innerText = "Trạng thái: Đã dừng. Chờ lưu...";
-        }
+    // --- 2. API CALL: GỬI TOKEN TRONG HEADER ---
+    async function fetchFiles() {
+        const token = await getToken();
+        if(!token) return alert("Vui lòng nhập token trước!");
+
+        const res = await fetch('/api/drive', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if(data.error) return alert(data.error);
+
+        document.getElementById('list').innerHTML = data.map(f => 
+            `<div class="item" onclick="play('${f.id}')">🎵 ${f.name}</div>`
+        ).join('');
     }
 
-    // 4. Upload lên Server (Vercel) -> Drive
-    async function uploadToServer() {
-        const statusLabel = document.getElementById('status');
-        statusLabel.innerText = "Trạng thái: ⏳ Đang upload lên Drive...";
-        document.getElementById('bSave').disabled = true;
-
+    async function upload() {
+        const token = await getToken();
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
-            // Đặt tên theo thời gian thực tại Việt Nam
-            const now = new Date();
-            const fileName = `Record_${now.getFullYear()}${now.getMonth()+1}${now.getDate()}_${now.getHours()}${now.getMinutes()}.mp3`;
-
-            try {
-                const res = await fetch('/api/drive', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: fileName, base64Audio })
-                });
-
-                if (res.ok) {
-                    statusLabel.innerText = "Trạng thái: ✅ Đã lưu thành công!";
-                    alert("Thông báo: Ghi âm [" + fileName + "] đã được lưu lên Google Drive!");
-                    loadFiles(); // Refresh danh sách
-                } else {
-                    throw new Error("Server trả về lỗi.");
-                }
-            } catch (e) {
-                console.error(e);
-                statusLabel.innerText = "Trạng thái: ❌ Lỗi upload.";
-                alert("Lỗi: Không thể lưu file lên Drive. Hãy kiểm tra lại cấu hình Vercel.");
-                document.getElementById('bSave').disabled = false;
+            const res = await fetch('/api/drive', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: `Rec_${Date.now()}.mp3`, base64Audio })
+            });
+            if(res.ok) {
+                alert("Đã lưu lên Drive!");
+                fetchFiles();
             }
         };
     }
 
-    // Helper: Đồng hồ đếm giây
-    function updateTimer() {
-        const seconds = Math.floor((Date.now() - startTime) / 1000);
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        document.getElementById('timer').innerText = `${m}:${s}`;
+    // --- 3. RECORDER LOGIC (Rút gọn) ---
+    async function startRec() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRec = new MediaRecorder(stream);
+        chunks = [];
+        mediaRec.ondataavailable = e => chunks.push(e.data);
+        mediaRec.onstop = () => {
+            audioBlob = new Blob(chunks, { type: 'audio/mpeg' });
+            document.getElementById('preview').src = URL.createObjectURL(audioBlob);
+            document.getElementById('saveBtn').disabled = false;
+        };
+        mediaRec.start();
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
     }
 
-    // Chạy khi load trang
-    window.onload = loadFiles;
+    function stopRec() {
+        mediaRec.stop();
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+    }
+
+    async function play(id) {
+        const token = await getToken();
+        const player = document.getElementById('preview');
+        // Đối với phát nhạc, chúng ta fetch blob để gắn token vào header
+        const res = await fetch(`/api/drive?id=${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const blob = await res.blob();
+        player.src = URL.createObjectURL(blob);
+        player.play();
+    }
 </script>
 </body>
 </html>

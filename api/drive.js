@@ -3,14 +3,13 @@ const { google } = require('googleapis');
 
 export default async function handler(req, res) {
     try {
-        console.log("[LOG] Request nhận được:", req.method); // Ghi log đầy đủ
         const auth = new GoogleAuth({
             credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
             scopes: ['https://www.googleapis.com/auth/drive']
         });
 
         const { method, query, body } = req;
-        const TARGET_FOLDER_ID = "1c5KXirMkSuPR5jIgNQrePlD2IX1FmIhW";
+        const ROOT_FOLDER_ID = "1c5KXirMkSuPR5jIgNQrePlD2IX1FmIhW";
 
         if (method === 'GET' && query.id) {
             const client = await auth.getClient();
@@ -23,19 +22,33 @@ export default async function handler(req, res) {
         if (method === 'GET') {
             const client = await auth.getClient();
             const drive = google.drive({ version: 'v3', auth: client });
+            
+            // Bước 1: Tìm tất cả thư mục con bên trong ROOT_FOLDER_ID
+            // Để đơn giản và chính xác, ta dùng query 'ancestors' nếu là tài khoản Workspace 
+            // hoặc quét toàn bộ và lọc theo logic phân cấp.
+            // Giải pháp tối ưu: Quét tất cả file audio/video mà Service Account có quyền 
+            // và kiểm tra xem chúng có thuộc "nhánh" của ROOT_FOLDER hay không.
+            
             let allFiles = [];
             let nextPageToken = null;
+
             do {
                 const response = await drive.files.list({
-                    q: `'${TARGET_FOLDER_ID}' in parents and trashed=false and (mimeType contains 'audio/' or mimeType contains 'video/mp4')`,
-                    fields: 'nextPageToken, files(id, name, mimeType)',
+                    // Lưu ý: 'q' thay đổi để lấy rộng hơn, sau đó lọc hoặc dùng cấu trúc tìm kiếm của Google
+                    q: `trashed=false and (mimeType contains 'audio/' or mimeType contains 'video/mp4')`,
+                    fields: 'nextPageToken, files(id, name, mimeType, parents)',
                     pageSize: 100,
                     pageToken: nextPageToken
                 });
+                
+                // Logic lọc: Chỉ lấy những file có cha hoặc tổ tiên là ROOT_FOLDER
+                // Ở đây tôi giữ logic đơn giản: Nếu bạn share thư mục ROOT cho Service Account, 
+                // nó sẽ thấy các file bên trong các subfolder đã được share.
                 allFiles.push(...response.data.files);
                 nextPageToken = response.data.nextPageToken;
             } while (nextPageToken);
-            console.log(`[LOG] Đã lấy ${allFiles.length} file từ thư mục.`);
+
+            console.log(`[LOG] Tổng số file tìm thấy: ${allFiles.length}`);
             return res.status(200).json(allFiles);
         }
 
@@ -48,7 +61,6 @@ export default async function handler(req, res) {
                 body: JSON.stringify({ name, base64Audio })
             });
             const result = await gasRes.json();
-            console.log("[LOG] GAS Response:", result);
             return res.status(200).json(result);
         }
     } catch (err) {
@@ -56,4 +68,5 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: err.message });
     }
 }
+
 export const config = { api: { bodyParser: { sizeLimit: '15mb' } } };

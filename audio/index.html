@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drive MP3 Master</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8f9fa; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #2c3e50; }
+        .list-section { height: 250px; overflow-y: auto; margin: 20px 0; border: 1px solid #f0f0f0; border-radius: 8px; }
+        .file-item { padding: 12px; border-bottom: 1px solid #fafafa; cursor: pointer; transition: 0.2s; display: flex; align-items: center; }
+        .file-item:hover { background: #e8f4fd; }
+        .file-item::before { content: '🎵'; margin-right: 10px; }
+        .record-section { background: #fff5f5; border: 2px dashed #ffc1c1; padding: 20px; border-radius: 12px; text-align: center; }
+        button { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 5px; transition: 0.3s; }
+        .btn-rec { background: #e74c3c; color: white; }
+        .btn-stop { background: #34495e; color: white; }
+        .btn-save { background: #27ae60; color: white; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        #status { font-size: 0.85rem; margin-top: 10px; color: #666; font-style: italic; }
+        audio { width: 100%; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📁 Danh sách MP3</h2>
+    <div id="fileList" class="list-section"><p style="padding:10px;">Đang tải danh sách...</p></div>
+
+    <div class="record-section">
+        <h3>🎙️ Ghi âm mới</h3>
+        <div id="timer">00:00</div>
+        <button id="btnStart" class="btn-rec" onclick="startRec()">Bắt đầu</button>
+        <button id="btnStop" class="btn-stop" onclick="stopRec()" disabled>Dừng</button>
+        <button id="btnSave" class="btn-save" onclick="saveToDrive()" disabled>Lưu lên Drive</button>
+        <audio id="audioPreview" controls></audio>
+        <div id="status">Sẵn sàng</div>
+    </div>
+</div>
+
+<script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioBlob;
+
+    async function fetchFiles() {
+        try {
+            console.log("[LOG] Đang cập nhật danh sách file...");
+            const res = await fetch('/api/drive');
+            const files = await res.json();
+            const list = document.getElementById('fileList');
+            list.innerHTML = files.length ? files.map(f => `
+                <div class="file-item" onclick="playAudio('${f.id}')">
+                    ${f.name}
+                </div>
+            `).join('') : '<p style="padding:10px;">Không có file mp3 nào.</p>';
+        } catch (e) { console.error("[LOG] Lỗi fetch:", e); }
+    }
+
+    function playAudio(id) {
+        const player = document.getElementById('audioPreview');
+        player.src = `/api/drive?id=${id}`;
+        player.play();
+        document.getElementById('status').innerText = "Đang phát file từ Drive...";
+        console.log("[LOG] Đang stream file ID:", id);
+    }
+
+    async function startRec() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+            audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+            document.getElementById('audioPreview').src = URL.createObjectURL(audioBlob);
+            document.getElementById('btnSave').disabled = false;
+        };
+
+        mediaRecorder.start();
+        document.getElementById('btnStart').disabled = true;
+        document.getElementById('btnStop').disabled = false;
+        document.getElementById('status').innerText = "🔴 Đang ghi âm...";
+        console.log("[LOG] Ghi âm bắt đầu.");
+    }
+
+    function stopRec() {
+        mediaRecorder.stop();
+        document.getElementById('btnStart').disabled = false;
+        document.getElementById('btnStop').disabled = true;
+        document.getElementById('status').innerText = "Đã dừng. Nhấn 'Lưu' để upload.";
+        console.log("[LOG] Ghi âm kết thúc.");
+    }
+
+    async function saveToDrive() {
+        document.getElementById('status').innerText = "⏳ Đang upload lên Drive...";
+        document.getElementById('btnSave').disabled = true;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+            const base64Audio = reader.result.split(',')[1];
+            const fileName = `Record_${new Date().toISOString().replace(/[:.]/g, '-')}.mp3`;
+
+            try {
+                const res = await fetch('/api/drive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: fileName, base64Audio })
+                });
+
+                if (res.ok) {
+                    document.getElementById('status').innerText = "✅ Đã lưu thành công!";
+                    console.log("[LOG] Upload hoàn tất.");
+                    fetchFiles();
+                } else {
+                    throw new Error("Upload failed");
+                }
+            } catch (e) {
+                document.getElementById('status').innerText = "❌ Lỗi khi lưu file.";
+                console.error("[LOG]", e);
+            }
+        };
+    }
+
+    window.onload = fetchFiles;
+</script>
+</body>
+</html>

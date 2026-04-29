@@ -2,73 +2,121 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Service Account Audio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drive Audio Manager</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f0f2f5; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: inline-block; }
-        .btn { padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; margin: 10px; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        .file-list { margin: 20px 0; max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
+        .file-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; display: flex; align-items: center; }
+        .file-item:hover { background: #f0f7ff; }
+        .recorder-zone { border-top: 2px solid #eee; pt: 20px; text-align: center; }
+        button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
         .btn-rec { background: #ff4757; color: white; }
+        .btn-stop { background: #576574; color: white; }
         .btn-save { background: #2ed573; color: white; }
+        #status { font-size: 12px; color: #666; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🎤 Ghi âm & Tự động lưu</h2>
-    <div id="status">Sẵn sàng</div>
-    <button id="startBtn" class="btn-rec" onclick="startRecording()">Bắt đầu</button>
-    <button id="stopBtn" class="btn" style="background:#747d8c; color:white" onclick="stopRecording()" disabled>Dừng</button>
-    <button id="uploadBtn" class="btn-save" onclick="uploadToVercel()" disabled>Lưu vào Drive</button>
-    <br><br>
-    <audio id="preview" controls></audio>
+    <h3 style="margin-top:0">📂 Danh sách File (Audio/MP4)</h3>
+    <div id="fileList" class="file-list">Đang tải danh sách...</div>
+
+    <div class="recorder-zone">
+        <h3>🎙️ Ghi âm mới</h3>
+        <div id="status">Nhấn Bắt đầu để ghi âm</div>
+        <button id="startBtn" class="btn-rec" onclick="startRec()">BẮT ĐẦU GHI</button>
+        <button id="stopBtn" class="btn-stop" onclick="stopRec()" disabled>DỪNG</button>
+        <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>LƯU LÊN DRIVE (QUA GAS)</button>
+        <audio id="preview" controls style="width:100%; margin-top:10px; display:none"></audio>
+    </div>
 </div>
 
 <script>
     let mediaRec, chunks = [], audioBlob;
 
-    async function startRecording() {
+    // 1. Tự động lấy danh sách file khi load trang
+    window.onload = loadFiles;
+
+    async function loadFiles() {
+        const listDiv = document.getElementById('fileList');
+        try {
+            const res = await fetch('/api/drive');
+            const files = await res.json();
+            if (files.length === 0) {
+                listDiv.innerHTML = '<div class="file-item">Không có file nào</div>';
+                return;
+            }
+            listDiv.innerHTML = files.map(f => `
+                <div class="file-item">
+                    ${f.mimeType.includes('video') ? '🎥' : '🎵'} ${f.name}
+                </div>
+            `).join('');
+        } catch (e) {
+            listDiv.innerHTML = '<div class="file-item" style="color:red">Lỗi tải danh sách</div>';
+        }
+    }
+
+    // 2. Logic ghi âm
+    async function startRec() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRec = new MediaRecorder(stream);
         chunks = [];
         mediaRec.ondataavailable = e => chunks.push(e.data);
         mediaRec.onstop = () => {
             audioBlob = new Blob(chunks, { type: 'audio/mpeg' });
-            document.getElementById('preview').src = URL.createObjectURL(audioBlob);
+            const player = document.getElementById('preview');
+            player.src = URL.createObjectURL(audioBlob);
+            player.style.display = 'block';
             document.getElementById('uploadBtn').disabled = false;
         };
         mediaRec.start();
         document.getElementById('startBtn').disabled = true;
         document.getElementById('stopBtn').disabled = false;
-        document.getElementById('status').innerText = "🔴 Đang ghi...";
+        document.getElementById('status').innerText = "🔴 Đang ghi âm...";
     }
 
-    function stopRecording() {
+    function stopRec() {
         mediaRec.stop();
         document.getElementById('startBtn').disabled = false;
         document.getElementById('stopBtn').disabled = true;
-        document.getElementById('status').innerText = "Đã xong";
+        document.getElementById('status').innerText = "Đã ghi xong. Sẵn sàng lưu.";
     }
 
-    async function uploadToVercel() {
-        document.getElementById('uploadBtn').innerText = "⏳ Đang tải...";
+    // 3. Lưu file qua Vercel -> GAS
+    async function upload() {
+        const btn = document.getElementById('uploadBtn');
+        btn.innerText = "⏳ ĐANG GỬI SANG GAS...";
+        btn.disabled = true;
+
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
-            const res = await fetch('/api/drive', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    name: `Audio_${new Date().getTime()}.mp3`, 
-                    base64Audio 
-                })
-            });
-            const result = await res.json();
-            if (result.status === "success") {
-                alert("Đã lưu lên Drive qua Service Account!");
-                location.reload();
-            } else {
-                alert("Lỗi: " + result.message);
+            try {
+                const res = await fetch('/api/drive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name: `Rec_${Date.now()}.mp3`, 
+                        base64Audio 
+                    })
+                });
+                const result = await res.json();
+                if (result.status === "success") {
+                    alert("✅ GAS đã lưu file thành công!");
+                    loadFiles(); // Refresh danh sách
+                    document.getElementById('preview').style.display = 'none';
+                    document.getElementById('status').innerText = "Đã lưu xong!";
+                } else {
+                    alert("❌ Lỗi từ GAS: " + result.message);
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                alert("❌ Lỗi kết nối server Vercel");
+                btn.disabled = false;
             }
         };
     }

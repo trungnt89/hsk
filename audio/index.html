@@ -1,116 +1,33 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drive Audio & MP4 Player</title>
-    <style>
-        :root { --primary: #2563eb; --danger: #dc2626; --success: #16a34a; }
-        body { font-family: -apple-system, sans-serif; background: #f1f5f9; padding: 20px; }
-        .app-card { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .file-list { height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin: 20px 0; }
-        .file-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
-        .file-item:hover { background: #eff6ff; }
-        .icon { font-size: 1.2rem; margin-right: 12px; }
-        .badge { font-size: 0.7rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: auto; }
-        .recorder { background: #fff1f2; border: 2px dashed #fecaca; padding: 20px; border-radius: 12px; text-align: center; }
-        button { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; margin: 5px; }
-        .btn-start { background: var(--danger); color: white; }
-        .btn-stop { background: #475569; color: white; }
-        .btn-upload { background: var(--success); color: white; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-        #status { font-size: 0.8rem; margin-top: 10px; color: #64748b; }
-        audio { width: 100%; margin-top: 15px; }
-    </style>
-</head>
-<body>
+async function uploadToServer() {
+    const statusEl = document.getElementById('status');
+    statusEl.innerText = "⏳ Đang upload lên Drive...";
+    document.getElementById('bSave').disabled = true;
 
-<div class="app-card">
-    <h2 style="margin-top:0">📂 Thư viện Media</h2>
-    <div id="fileList" class="file-list"><p style="padding:20px">Đang quét Drive...</p></div>
-
-    <div class="recorder">
-        <h3 style="margin-top:0">🎙️ Ghi âm & Tải lên</h3>
-        <button id="bStart" class="btn-start" onclick="startRecording()">Bắt đầu</button>
-        <button id="bStop" class="btn-stop" onclick="stopRecording()" disabled>Dừng</button>
-        <button id="bSave" class="btn-upload" onclick="uploadToServer()" disabled>Lưu lên Drive</button>
-        <audio id="player" controls></audio>
-        <div id="status">Sẵn sàng</div>
-    </div>
-</div>
-
-<script>
-    let recorder;
-    let chunks = [];
-    let blob;
-
-    async function loadList() {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = async () => {
+        const base64Audio = reader.result.split(',')[1];
+        const name = `Record_${new Date().toLocaleString('vi-VN').replace(/[/, :]/g, '-')}.mp3`;
+        
         try {
-            const res = await fetch('/api/drive');
-            const data = await res.json();
-            const list = document.getElementById('fileList');
-            list.innerHTML = data.length ? data.map(f => {
-                const isVideo = f.mimeType.includes('video');
-                const ext = f.mimeType.split('/')[1].toUpperCase();
-                return `
-                    <div class="file-item" onclick="play('${f.id}')">
-                        <span class="icon">${isVideo ? '🎥' : '🎵'}</span>
-                        <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${f.name}</span>
-                        <span class="badge">${ext}</span>
-                    </div>
-                `;
-            }).join('') : '<p style="padding:20px">Trống.</p>';
-        } catch (e) { console.error("[LOG] Lỗi danh sách:", e); }
-    }
-
-    function play(id) {
-        const audio = document.getElementById('player');
-        audio.src = `/api/drive?id=${id}`;
-        audio.play();
-        document.getElementById('status').innerText = "Đang phát từ Drive...";
-    }
-
-    async function startRecording() {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recorder = new MediaRecorder(stream);
-        chunks = [];
-        recorder.ondataavailable = e => chunks.push(e.data);
-        recorder.onstop = () => {
-            blob = new Blob(chunks, { type: 'audio/mpeg' });
-            document.getElementById('player').src = URL.createObjectURL(blob);
-            document.getElementById('bSave').disabled = false;
-        };
-        recorder.start();
-        document.getElementById('bStart').disabled = true;
-        document.getElementById('bStop').disabled = false;
-        document.getElementById('status').innerText = "🔴 Đang ghi âm...";
-    }
-
-    function stopRecording() {
-        recorder.stop();
-        document.getElementById('bStart').disabled = false;
-        document.getElementById('bStop').disabled = true;
-    }
-
-    async function uploadToServer() {
-        document.getElementById('status').innerText = "⏳ Đang upload...";
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = async () => {
-            const base64Audio = reader.result.split(',')[1];
-            const name = `Record_${Date.now()}.mp3`;
             const res = await fetch('/api/drive', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, base64Audio })
             });
+
             if(res.ok) {
-                document.getElementById('status').innerText = "✅ Thành công!";
-                loadList();
+                // THÊM THÔNG BÁO Ở ĐÂY
+                statusEl.innerText = "✅ Đã lưu file thành công!";
+                alert("Chúc mừng! File ghi âm đã được lưu an toàn trên Google Drive.");
+                loadList(); // Tải lại danh sách file
+            } else {
+                throw new Error("Lỗi Server");
             }
-        };
-    }
-    window.onload = loadList;
-</script>
-</body>
-</html>
+        } catch (e) {
+            statusEl.innerText = "❌ Lỗi khi lưu file.";
+            alert("Có lỗi xảy ra, vui lòng kiểm tra lại kết nối hoặc quyền truy cập.");
+            document.getElementById('bSave').disabled = false;
+        }
+    };
+}

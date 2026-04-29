@@ -37,34 +37,37 @@ export default async function handler(req, res) {
         }
 
         // --- 3. GHI FILE (UPLOAD) ---
-        if (method === 'POST') {
-            const { name, base64Audio } = req.body;
-            console.log(`[LOG] Bắt đầu upload file: ${name}`);
+        // --- 3. GHI FILE (UPLOAD) ---
+		if (method === 'POST') {
+			const { name, base64Audio } = req.body;
+			console.log(`[LOG] Bắt đầu upload file: ${name}`);
 
-            const buffer = Buffer.from(base64Audio, 'base64');
-            const bufferStream = new Readable();
-            bufferStream.push(buffer);
-            bufferStream.push(null);
+			const buffer = Buffer.from(base64Audio, 'base64');
+			const bufferStream = new Readable();
+			bufferStream.push(buffer);
+			bufferStream.push(null);
 
-            const fileMetadata = {
-                name: name.endsWith('.mp3') ? name : `${name}.mp3`,
-                mimeType: 'audio/mpeg' // Ép kiểu về audio để dễ quản lý
-            };
+			const fileMetadata = {
+				name: name.endsWith('.mp3') ? name : `${name}.mp3`,
+				mimeType: 'audio/mpeg',
+				// THÊM DÒNG NÀY: Dán ID thư mục của bạn vào đây
+				parents: ['ID_THU_MUC_CUA_BAN'] 
+			};
 
-            const media = {
-                mimeType: 'audio/mpeg',
-                body: bufferStream,
-            };
+			const media = {
+				mimeType: 'audio/mpeg',
+				body: bufferStream,
+			};
 
-            const file = await drive.files.create({
-                resource: fileMetadata,
-                media: media,
-                fields: 'id',
-            });
+			const file = await drive.files.create({
+				resource: fileMetadata,
+				media: media,
+				fields: 'id',
+			});
 
-            console.log(`[LOG] Upload thành công. ID: ${file.data.id}`);
-            return res.status(200).json({ success: true, id: file.data.id });
-        }
+			console.log(`[LOG] Upload thành công vào thư mục chỉ định. ID: ${file.data.id}`);
+			return res.status(200).json({ success: true, id: file.data.id });
+		}
 
     } catch (err) {
         console.error(`[LOG] Lỗi hệ thống: ${err.message}`);

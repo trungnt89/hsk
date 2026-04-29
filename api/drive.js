@@ -51,7 +51,7 @@ export default async function handler(req, res) {
 				name: name.endsWith('.mp3') ? name : `${name}.mp3`,
 				mimeType: 'audio/mpeg',
 				// THÊM DÒNG NÀY: Dán ID thư mục của bạn vào đây
-				parents: ['ID_THU_MUC_CUA_BAN'] 
+				parents: ['1Z-YuFfWP5bFhdBdXoXE4qiIlOMpoBB8_'] 
 			};
 
 			const media = {

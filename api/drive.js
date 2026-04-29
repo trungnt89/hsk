@@ -36,35 +36,39 @@ export default async function handler(req, res) {
         }
 
         // --- 3. GHI FILE (UPLOAD) ---
-        if (method === 'POST') {
-            const { name, base64Audio } = req.body;
-            const buffer = Buffer.from(base64Audio, 'base64');
-            const bufferStream = new Readable();
-            bufferStream.push(buffer);
-            bufferStream.push(null);
+        // --- 3. GHI FILE (UPLOAD) ---
+		if (method === 'POST') {
+			const { name, base64Audio } = req.body;
+			const buffer = Buffer.from(base64Audio, 'base64');
+			const bufferStream = new Readable();
+			bufferStream.push(buffer);
+			bufferStream.push(null);
 
-            const fileMetadata = {
-                name: name.endsWith('.mp3') ? name : `${name}.mp3`,
-                mimeType: 'audio/mpeg',
-                // ID thư mục từ ảnh bạn gửi
-                parents: ['1Z-YuFfWP5bFhdBdXoXE4qiIlOMpoBB8_'] 
-            };
+			const fileMetadata = {
+				name: name.endsWith('.mp3') ? name : `${name}.mp3`,
+				mimeType: 'audio/mpeg',
+				// Đảm bảo ID thư mục này là chính xác
+				parents: ['1Z-YuFfWP5bFhdBdXoXE4qiIlOMpoBB8_'] 
+			};
 
-            const media = {
-                mimeType: 'audio/mpeg',
-                body: bufferStream,
-            };
+			const media = {
+				mimeType: 'audio/mpeg',
+				body: bufferStream,
+			};
 
-            const file = await drive.files.create({
-                resource: fileMetadata,
-                media: media,
-                fields: 'id',
-                // FIX LỖI QUOTA: Cho phép ghi vào thư mục được chia sẻ
-                supportsAllDrives: true 
-            });
+			// CHỈNH SỬA QUAN TRỌNG Ở ĐÂY
+			const file = await drive.files.create({
+				resource: fileMetadata,
+				media: media,
+				fields: 'id',
+				// Bắt buộc thêm 2 dòng này để làm việc với thư mục được chia sẻ
+				supportsAllDrives: true,
+				keepRevisionForever: false
+			});
 
-            return res.status(200).json({ success: true, id: file.data.id });
-        }
+			console.log(`[LOG] Upload thành công. ID: ${file.data.id}`);
+			return res.status(200).json({ success: true, id: file.data.id });
+		}
 
     } catch (err) {
         console.error(`[LOG] Lỗi hệ thống: ${err.message}`);

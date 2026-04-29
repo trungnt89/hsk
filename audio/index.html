@@ -2,97 +2,30 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drive Audio Pro</title>
+    <title>Service Account Audio</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .token-view { background: #1a202c; color: #48bb78; padding: 10px; border-radius: 6px; font-size: 10px; word-break: break-all; margin: 10px 0; display: none; }
-        .file-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .file-item:hover { background: #edf2f7; }
-        .recorder-box { text-align: center; border: 2px dashed #cbd5e0; padding: 20px; border-radius: 10px; margin-top: 20px; }
-        button { padding: 10px 15px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; margin: 5px; }
-        .btn-auth { background: #4285f4; color: white; width: 100%; }
-        .btn-rec { background: #e53e3e; color: white; }
-        .btn-save { background: #38a169; color: white; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f0f2f5; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: inline-block; }
+        .btn { padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; margin: 10px; }
+        .btn-rec { background: #ff4757; color: white; }
+        .btn-save { background: #2ed573; color: white; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🎶 Drive Recorder</h2>
-    
-    <button id="authBtn" class="btn-auth" onclick="askToken()">🔗 Kết nối Drive (Nhập Refresh Token)</button>
-    <div id="tokenDisplay" class="token-view"></div>
-
-    <div id="fileList" style="max-height: 200px; overflow-y: auto; margin: 15px 0;"></div>
-
-    <div id="appBody" style="display: none;">
-        <div class="recorder-box">
-            <div id="status">Sẵn sàng ghi âm</div>
-            <button id="startBtn" class="btn-rec" onclick="startRecording()">Bắt đầu ghi</button>
-            <button id="stopBtn" style="background:#718096; color:white" onclick="stopRecording()" disabled>Dừng</button>
-            <button id="uploadBtn" class="btn-save" onclick="uploadAudio()" disabled>Lưu lên Drive</button>
-            <audio id="preview" controls style="width: 100%; margin-top: 10px;"></audio>
-        </div>
-    </div>
+<div class="card">
+    <h2>🎤 Ghi âm & Tự động lưu</h2>
+    <div id="status">Sẵn sàng</div>
+    <button id="startBtn" class="btn-rec" onclick="startRecording()">Bắt đầu</button>
+    <button id="stopBtn" class="btn" style="background:#747d8c; color:white" onclick="stopRecording()" disabled>Dừng</button>
+    <button id="uploadBtn" class="btn-save" onclick="uploadToVercel()" disabled>Lưu vào Drive</button>
+    <br><br>
+    <audio id="preview" controls></audio>
 </div>
 
 <script>
-    let mediaRec, chunks = [], audioBlob, db;
+    let mediaRec, chunks = [], audioBlob;
 
-    // Khởi tạo IndexedDB
-    const req = indexedDB.open("DriveAuth", 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore("keys");
-    req.onsuccess = e => {
-        db = e.target.result;
-        checkLogin();
-    };
-
-    async function checkLogin() {
-        const tx = db.transaction("keys", "readonly");
-        const store = tx.objectStore("keys");
-        const saved = store.get("refresh_token");
-        saved.onsuccess = () => {
-            if (saved.result) {
-                showApp(saved.result);
-            }
-        };
-    }
-
-    function askToken() {
-        const t = prompt("Hãy dán Refresh Token lấy từ OAuth Playground vào đây:");
-        if (t) {
-            db.transaction("keys", "readwrite").objectStore("keys").put(t, "refresh_token");
-            location.reload();
-        }
-    }
-
-    function showApp(token) {
-        document.getElementById('authBtn').style.display = 'none';
-        document.getElementById('appBody').style.display = 'block';
-        const display = document.getElementById('tokenDisplay');
-        display.innerText = "REFRESH_TOKEN: " + token;
-        display.style.display = 'block';
-        loadFiles(token);
-    }
-
-    async function loadFiles(token) {
-        const res = await fetch('/api/drive', { headers: { 'Authorization': `Bearer ${token}` } });
-        const files = await res.json();
-        document.getElementById('fileList').innerHTML = files.map(f => `
-            <div class="file-item" onclick="playFile('${f.id}')">🎵 ${f.name}</div>
-        `).join('');
-    }
-
-    function playFile(id) {
-        const token = document.getElementById('tokenDisplay').innerText.replace("REFRESH_TOKEN: ", "");
-        const audio = document.getElementById('preview');
-        audio.src = `/api/drive?id=${id}&token=${token}`; // Truyền qua query hoặc header tùy chỉnh
-        audio.play();
-    }
-
-    // LOGIC GHI ÂM
     async function startRecording() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRec = new MediaRecorder(stream);
@@ -106,31 +39,36 @@
         mediaRec.start();
         document.getElementById('startBtn').disabled = true;
         document.getElementById('stopBtn').disabled = false;
-        document.getElementById('status').innerText = "🔴 Đang ghi âm...";
+        document.getElementById('status').innerText = "🔴 Đang ghi...";
     }
 
     function stopRecording() {
         mediaRec.stop();
         document.getElementById('startBtn').disabled = false;
         document.getElementById('stopBtn').disabled = true;
-        document.getElementById('status').innerText = "Đã ghi xong";
+        document.getElementById('status').innerText = "Đã xong";
     }
 
-    async function uploadAudio() {
-        const token = document.getElementById('tokenDisplay').innerText.replace("REFRESH_TOKEN: ", "");
-        document.getElementById('uploadBtn').innerText = "Đang tải lên...";
+    async function uploadToVercel() {
+        document.getElementById('uploadBtn').innerText = "⏳ Đang tải...";
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
             const res = await fetch('/api/drive', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: `Rec_${Date.now()}.mp3`, base64Audio })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    name: `Audio_${new Date().getTime()}.mp3`, 
+                    base64Audio 
+                })
             });
-            if (res.ok) {
-                alert("Thành công!");
+            const result = await res.json();
+            if (result.status === "success") {
+                alert("Đã lưu lên Drive qua Service Account!");
                 location.reload();
+            } else {
+                alert("Lỗi: " + result.message);
             }
         };
     }

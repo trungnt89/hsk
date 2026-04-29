@@ -1,60 +1,49 @@
-const { google } = require('googleapis');
-const { Readable } = require('stream');
+const { GoogleAuth } = require('google-auth-library');
 
 export default async function handler(req, res) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: "Thiếu Refresh Token" });
+    // 1. Chỉ chấp nhận phương thức POST để upload
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    const clientRefreshToken = authHeader.split(' ')[1];
-    const oauth2Client = new google.auth.OAuth2(
-        process.env.OAUTH_CLIENT_ID,
-        process.env.OAUTH_CLIENT_SECRET
-    );
-
-    oauth2Client.setCredentials({ refresh_token: clientRefreshToken });
-    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    console.log("[LOG] Bắt đầu quá trình chuyển tiếp dữ liệu sang GAS...");
 
     try {
-        const { method, query, body } = req;
+        const { name, base64Audio } = req.body;
 
-        // 1. LẤY DANH SÁCH FILE AUDIO
-        if (method === 'GET' && !query.id) {
-            const response = await drive.files.list({
-                q: "trashed=false and (mimeType contains 'audio/' or mimeType = 'video/mp4')",
-                fields: 'files(id, name, mimeType)',
-                pageSize: 50
-            });
-            return res.status(200).json(response.data.files);
-        }
+        // 2. Xác thực Service Account (Lấy từ Environment Variables trên Vercel)
+        // Bạn cần dán nội dung file JSON của Service Account vào biến SERVICE_ACCOUNT_KEY
+        const auth = new GoogleAuth({
+            credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
+            scopes: ['https://www.googleapis.com/auth/drive']
+        });
 
-        // 2. TẢI FILE ĐỂ PHÁT
-        if (method === 'GET' && query.id) {
-            const response = await drive.files.get({ fileId: query.id, alt: 'media' }, { responseType: 'stream' });
-            res.setHeader('Content-Type', 'audio/mpeg');
-            return response.data.pipe(res);
-        }
+        const client = await auth.getClient();
+        const tokenResponse = await client.getAccessToken();
+        const accessToken = tokenResponse.token;
 
-        // 3. UPLOAD FILE GHI ÂM
-        if (method === 'POST') {
-            const { name, base64Audio } = body;
-            const buffer = Buffer.from(base64Audio, 'base64');
-            const bufferStream = new Readable();
-            bufferStream.push(buffer);
-            bufferStream.push(null);
+        // 3. Link GAS của bạn
+        const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
 
-            const fileMetadata = {
-                name: name.endsWith('.mp3') ? name : `${name}.mp3`,
-                mimeType: 'audio/mpeg',
-                parents: ['1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm'] // ID Thư mục của bạn
-            };
+        // 4. Gửi dữ liệu sang GAS kèm theo mã xác thực Bearer Token
+        const response = await fetch(gasUrl, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, base64Audio })
+        });
 
-            const media = { mimeType: 'audio/mpeg', body: bufferStream };
-            await drive.files.create({ resource: fileMetadata, media: media, fields: 'id' });
-            return res.status(200).json({ success: true });
-        }
+        const result = await response.json();
+        console.log("[LOG] GAS Response:", result);
+
+        return res.status(200).json(result);
+
     } catch (err) {
+        console.error("[LOG] Lỗi Server:", err.message);
         return res.status(500).json({ error: err.message });
     }
 }
 
-export const config = { api: { bodyParser: { sizeLimit: '15mb' } } };
+// Cấu hình giới hạn dung lượng file gửi lên (15MB)
+export const config = {
+    api: { bodyParser: { sizeLimit: '15mb' } }
+};

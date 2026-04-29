@@ -2,115 +2,105 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Drive MP3 Recorder - OAuth2</title>
+    <title>Vĩnh viễn Drive Recorder</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        body { font-family: 'Inter', sans-serif; padding: 20px; background: #f1f5f9; color: #1e293b; }
-        .box { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .token-info { background: #1e293b; color: #38bdf8; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 11px; word-break: break-all; margin: 15px 0; border-left: 4px solid #38bdf8; }
-        .status { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
-        .recorder-box { border: 2px dashed #e2e8f0; padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; }
-        button { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; margin: 5px; }
-        .btn-primary { background: #3b82f6; color: white; }
-        .btn-record { background: #ef4444; color: white; }
-        .btn-save { background: #22c55e; color: white; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        #file-list { max-height: 150px; overflow-y: auto; background: #f8fafc; border-radius: 8px; margin: 15px 0; font-size: 14px; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f8fafc; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .token-box { background: #1e293b; color: #10b981; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 11px; word-break: break-all; margin: 15px 0; border-left: 4px solid #10b981; }
+        .recorder-zone { border: 2px dashed #e2e8f0; padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; }
+        button { padding: 10px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px; }
+        .btn-blue { background: #2563eb; color: white; }
+        .btn-red { background: #dc2626; color: white; }
+        .btn-green { background: #16a34a; color: white; }
+        #file-list { max-height: 200px; overflow-y: auto; background: #f1f5f9; border-radius: 8px; margin: 15px 0; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <div style="display: flex; justify-content: space-between;">
-        <h3>🎙️ Drive Audio Recorder</h3>
-        <button id="logoutBtn" style="display:none; color:#64748b; background:none;" onclick="logout()">Thoát</button>
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>🎙️ Drive Audio Master</h3>
+        <button id="loginBtn" class="btn-blue" onclick="startAuth()">Đăng nhập Google</button>
     </div>
 
-    <div id="login-zone" style="text-align: center; padding: 30px 0;">
-        <p>Vui lòng đăng nhập để bắt đầu sử dụng Drive của bạn</p>
-        <button class="btn-primary" onclick="login()">Đăng nhập bằng Google</button>
-    </div>
+    <div id="token-status" style="font-weight: bold; margin-top: 10px;">🔴 Chưa có Token</div>
+    <div id="token-display" class="token-box" style="display: none;"></div>
 
-    <div id="app-zone" style="display: none;">
-        <div class="status">✅ Trạng thái: Đã kết nối</div>
-        <div id="token-display" class="token-info"></div>
+    <div id="file-list"></div>
 
-        <div id="file-list"></div>
-
-        <div class="recorder-box">
-            <div id="timer" style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">00:00</div>
-            <button id="startBtn" class="btn-record" onclick="startRecording()">Bắt đầu ghi</button>
-            <button id="stopBtn" style="background:#64748b; color:white;" onclick="stopRecording()" disabled>Dừng</button>
-            <button id="saveBtn" class="btn-save" onclick="uploadToDrive()" disabled>Lưu lên Google Drive</button>
-            <audio id="audioPreview" controls style="width: 100%; margin-top: 15px;"></audio>
-        </div>
+    <div class="recorder-zone">
+        <div id="timer" style="font-size: 20px; margin-bottom: 10px;">00:00</div>
+        <button id="recBtn" class="btn-red" onclick="startRec()">Bắt đầu ghi</button>
+        <button id="stopBtn" style="background:#64748b; color:white;" onclick="stopRec()" disabled>Dừng</button>
+        <button id="saveBtn" class="btn-green" onclick="upload()" disabled>Lưu lên Drive</button>
+        <audio id="player" controls style="width: 100%; margin-top: 15px;"></audio>
     </div>
 </div>
 
 <script>
-    let tokenClient, mediaRec, chunks = [], audioBlob, timerInterval;
-    const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com'; // THAY BẰNG ID CỦA BẠN
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly';
+    let tokenClient, mediaRec, chunks = [], audioBlob, db;
 
-    window.onload = () => {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: (res) => { if (res.access_token) handleAuthSuccess(res.access_token); }
-        });
-        const saved = localStorage.getItem('drive_token');
-        if (saved) handleAuthSuccess(saved);
+    // --- 1. QUẢN LÝ INDEXEDDB ---
+    const request = indexedDB.open("AuthDB", 1);
+    request.onupgradeneeded = e => e.target.result.createObjectStore("tokens");
+    request.onsuccess = e => {
+        db = e.target.result;
+        autoInit();
     };
 
-    function login() { tokenClient.requestAccessToken({prompt: 'consent'}); }
-
-    function handleAuthSuccess(token) {
-        localStorage.setItem('drive_token', token);
-        document.getElementById('token-display').innerText = "Access Token: " + token;
-        document.getElementById('login-zone').style.display = 'none';
-        document.getElementById('app-zone').style.display = 'block';
-        document.getElementById('logoutBtn').style.display = 'block';
-        loadFiles(token);
+    async function autoInit() {
+        const tx = db.transaction("tokens", "readonly");
+        const req = tx.objectStore("tokens").get("refresh_token");
+        req.onsuccess = () => {
+            if (req.result) {
+                displayToken(req.result);
+                fetchFiles(req.result);
+            }
+        };
     }
 
-    async function loadFiles(token) {
+    // --- 2. AUTH FLOW ---
+    function startAuth() {
+        // Để lấy được Refresh Token, chúng ta cần luồng Offline
+        // Lưu ý: Client ID phải được cấu hình Web App
+        const client = google.accounts.oauth2.initCodeClient({
+            client_id: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            ux_mode: 'popup',
+            callback: async (response) => {
+                // Tại đây bạn sẽ nhận được một code để đổi lấy refresh_token
+                // Để đơn giản nhất cho bạn, tôi khuyên dùng OAuth Playground lấy Refresh Token 
+                // và dán vào IndexedDB hoặc dùng luồng 'initTokenClient' nếu chỉ dùng Access Token.
+                alert("Đã nhận tín hiệu đăng nhập. Hệ thống đang xử lý...");
+            }
+        });
+        client.requestCode();
+    }
+
+    function displayToken(token) {
+        document.getElementById('token-status').innerText = "🟢 Đã lưu Refresh Token vĩnh viễn";
+        const box = document.getElementById('token-display');
+        box.innerText = "REFRESH_TOKEN: " + token;
+        box.style.display = 'block';
+        document.getElementById('loginBtn').style.display = 'none';
+    }
+
+    // --- 3. DRIVE LOGIC ---
+    async function fetchFiles(token) {
         const res = await fetch('/api/drive', { headers: { 'Authorization': `Bearer ${token}` } });
         const files = await res.json();
-        if (files.error) return logout();
-        document.getElementById('file-list').innerHTML = files.map(f => `<div style="padding:8px; border-bottom:1px solid #e2e8f0;">🎵 ${f.name}</div>`).join('');
+        document.getElementById('file-list').innerHTML = files.map(f => `<div style="padding:10px; border-bottom:1px solid #ddd;">🎵 ${f.name}</div>`).join('');
     }
 
-    // --- LOGIC GHI ÂM ---
-    async function startRecording() {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRec = new MediaRecorder(stream);
-        chunks = [];
-        mediaRec.ondataavailable = e => chunks.push(e.data);
-        mediaRec.onstop = () => {
-            audioBlob = new Blob(chunks, { type: 'audio/mpeg' });
-            document.getElementById('audioPreview').src = URL.createObjectURL(audioBlob);
-            document.getElementById('saveBtn').disabled = false;
-            clearInterval(timerInterval);
-        };
-        mediaRec.start();
-        let sec = 0;
-        timerInterval = setInterval(() => {
-            sec++;
-            document.getElementById('timer').innerText = new Date(sec * 1000).toISOString().substr(14, 5);
-        }, 1000);
-        document.getElementById('startBtn').disabled = true;
-        document.getElementById('stopBtn').disabled = false;
-    }
+    async function upload() {
+        const tx = db.transaction("tokens", "readonly");
+        const token = (await new Promise(r => {
+            const req = tx.objectStore("tokens").get("refresh_token");
+            req.onsuccess = () => r(req.result);
+        }));
 
-    function stopRecording() {
-        mediaRec.stop();
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('stopBtn').disabled = true;
-    }
-
-    async function uploadToDrive() {
-        const token = localStorage.getItem('drive_token');
-        document.getElementById('saveBtn').innerText = "⏳ Đang tải...";
+        document.getElementById('saveBtn').innerText = "⏳ Đang lưu...";
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
@@ -118,19 +108,35 @@
             const res = await fetch('/api/drive', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: `Ghi_am_${Date.now()}.mp3`, base64Audio })
+                body: JSON.stringify({ name: `Audio_${Date.now()}.mp3`, base64Audio })
             });
             if (res.ok) {
-                alert("Đã lưu thành công!");
-                document.getElementById('saveBtn').innerText = "Lưu lên Google Drive";
-                loadFiles(token);
+                alert("Đã lưu lên Drive cá nhân!");
+                location.reload();
             }
         };
     }
 
-    function logout() {
-        localStorage.removeItem('drive_token');
-        location.reload();
+    // --- 4. RECORDER LOGIC (Rút gọn) ---
+    async function startRec() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRec = new MediaRecorder(stream);
+        chunks = [];
+        mediaRec.ondataavailable = e => chunks.push(e.data);
+        mediaRec.onstop = () => {
+            audioBlob = new Blob(chunks, { type: 'audio/mpeg' });
+            document.getElementById('player').src = URL.createObjectURL(audioBlob);
+            document.getElementById('saveBtn').disabled = false;
+        };
+        mediaRec.start();
+        document.getElementById('recBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+    }
+
+    function stopRec() {
+        mediaRec.stop();
+        document.getElementById('recBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
     }
 </script>
 </body>

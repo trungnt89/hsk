@@ -3,31 +3,37 @@ const { Readable } = require('stream');
 
 export default async function handler(req, res) {
     const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: "Yêu cầu đăng nhập." });
+    if (!authHeader) return res.status(401).json({ error: "Chưa có Token." });
 
-    const token = authHeader.split(' ')[1];
+    const clientRefreshToken = authHeader.split(' ')[1];
+
+    // Cấu hình OAuth2 Client
     const oauth2Client = new google.auth.OAuth2(
         process.env.OAUTH_CLIENT_ID,
         process.env.OAUTH_CLIENT_SECRET
     );
 
-    oauth2Client.setCredentials({ access_token: token });
+    // Sử dụng Refresh Token gửi từ Client
+    oauth2Client.setCredentials({
+        refresh_token: clientRefreshToken
+    });
+
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    const { method } = req;
 
     try {
-        const { method } = req;
-
-        // --- LẤY DANH SÁCH FILE ---
+        // 1. LẤY DANH SÁCH FILE AUDIO
         if (method === 'GET') {
             const response = await drive.files.list({
                 q: "trashed=false and (mimeType contains 'audio/' or mimeType = 'video/mp4')",
                 fields: 'files(id, name, mimeType)',
                 pageSize: 50
             });
+            console.log("[LOG] Đã lấy danh sách file.");
             return res.status(200).json(response.data.files);
         }
 
-        // --- LƯU FILE GHI ÂM (MP3) ---
+        // 2. LƯU FILE GHI ÂM (POST)
         if (method === 'POST') {
             const { name, base64Audio } = req.body;
             const buffer = Buffer.from(base64Audio, 'base64');
@@ -47,10 +53,11 @@ export default async function handler(req, res) {
                 media: media,
                 fields: 'id'
             });
+            console.log(`[LOG] Upload thành công: ${file.data.id}`);
             return res.status(200).json({ success: true, id: file.data.id });
         }
     } catch (err) {
-        console.error("[LOG] Lỗi:", err.message);
+        console.error("[LOG] Lỗi hệ thống:", err.message);
         return res.status(500).json({ error: err.message });
     }
 }

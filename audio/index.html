@@ -15,17 +15,14 @@
         .tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: bold; font-size: 13px; }
         .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
         
-        /* Layout: Button hình vuông bên trái, Script bên phải cùng chiều cao */
         .rec-box { background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: flex-start; }
         .rec-controls { display: flex; flex-direction: column; gap: 4px; align-items: center; }
         
-        /* Button hình vuông khớp với chiều cao script */
-        .btn-main { width: 65px; height: 65px; padding: 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 10px; line-height: 1.2; flex-shrink: 0; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .btn-main { width: 65px; height: 65px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 10px; line-height: 1.2; flex-shrink: 0; display: flex; align-items: center; justify-content: center; text-align: center; }
         .btn-rec { background: #2563eb; color: white; transition: all 0.3s; }
         .btn-rec.recording { background: #ef4444; animation: pulse 1.5s infinite; }
         
-        /* Chữ nhỏ ở dưới button */
-        #status { font-size: 8px; color: #64748b; font-weight: bold; text-transform: uppercase; text-align: center; width: 65px; white-space: nowrap; overflow: hidden; }
+        #status { font-size: 8px; color: #64748b; font-weight: bold; text-transform: uppercase; text-align: center; width: 65px; }
         
         #voice-script { flex: 1; padding: 8px; border: 1px dashed #2563eb; border-radius: 8px; background: #eff6ff; font-size: 13px; color: #1e40af; height: 65px; overflow-y: auto; font-style: italic; text-align: left; line-height: 1.4; display: block; word-break: break-word; box-sizing: border-box; }
 
@@ -33,16 +30,19 @@
         .tab-content { display: none; flex-direction: column; height: auto; min-height: 100%; }
         .tab-content.active { display: flex; }
 
-        #text-display { padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; font-size: 16px; line-height: 1.7; white-space: pre-wrap; color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        #text-display { padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; font-size: 16px; line-height: 1.7; white-space: pre-wrap; color: #334155; }
         
-        .list { border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow: hidden; }
-        .item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 5px; }
-        .item.selected { background: #f0f7ff; border-left: 4px solid #2563eb; }
-        .item-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .item-text { flex: 1; word-break: break-all; font-size: 13px; font-weight: 500; }
-        .item-btns { display: flex; gap: 8px; justify-content: flex-end; }
-        .btn-action { padding: 5px 10px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; }
-        .btn-delete { color: #ef4444; border-color: #fee2e2; background: #fef2f2; }
+        /* List UI Updated: Mỗi item là 1 card, các nút icon thẳng hàng tên */
+        .list { display: flex; flex-direction: column; gap: 8px; }
+        .item { padding: 10px 12px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .item.selected { background: #f0f7ff; border-color: #2563eb; border-left-width: 4px; }
+        .item-row { display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; min-width: 0; }
+        .item-text { flex: 1; word-break: break-all; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .item-btns { display: flex; gap: 5px; flex-shrink: 0; }
+        .btn-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .btn-icon:hover { background: #f8fafc; }
+        .btn-delete-icon { color: #ef4444; border-color: #fee2e2; background: #fef2f2; }
 
         #media-view { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; background: #000; border-radius: 25px; overflow: hidden; z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: none; }
         video, audio { width: 100%; display: block; height: 40px; }
@@ -90,7 +90,7 @@
     };
 
     function initSpeechRecognition() {
-        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const Speech = window.webkitSpeechRecognition || window.SpeechRecognition;
         if (Speech) {
             recognition = new Speech();
             recognition.continuous = true;
@@ -135,7 +135,7 @@
                     const data = getRequest.result;
                     if (data && data.paragraph) document.getElementById('text-display').innerText = data.paragraph;
                 };
-            } catch (e) {}
+            } catch (e) { console.error("DB error", e); }
         };
     }
 
@@ -145,12 +145,13 @@
             const res = await fetch(`/api/drive?identifier=${identifier}`);
             const files = await res.json();
             renderFiles(files);
-        } catch (err) {}
+        } catch (err) { console.error("Load failed", err); }
     }
 
     function renderFiles(files) {
         const container = document.getElementById('fileList');
         if (!files || files.length === 0) { container.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8">Danh sách trống</div>'; return; }
+        
         container.innerHTML = files.map(f => `
             <div class="item" id="item-${f.id}">
                 <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}')">
@@ -158,8 +159,9 @@
                     <div class="item-text">${f.name}</div>
                 </div>
                 <div class="item-btns">
-                    <button class="btn-action">Score</button>
-                    <button class="btn-action btn-delete" onclick="deleteFile('${f.id}')">Xóa</button>
+                    <button class="btn-icon" title="Chi tiết">📄</button>
+                    <button class="btn-icon" title="Score">🎯</button>
+                    <button class="btn-icon btn-delete-icon" onclick="deleteFile('${f.id}')" title="Xóa">🗑️</button>
                 </div>
             </div>`).join('');
     }
@@ -177,27 +179,27 @@
     }
 
     async function startRec() {
-        console.log("Starting recording...");
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRec = new MediaRecorder(stream);
-        chunks = [];
-        mediaRec.ondataavailable = e => chunks.push(e.data);
-        mediaRec.onstop = async () => {
-            const rawBlob = new Blob(chunks);
-            audioBlob = isIOS() ? new Blob(chunks, { type: 'audio/mp4' }) : await convertToMp3(rawBlob);
-            if (confirm("Lưu bản ghi này?")) upload();
-        };
-        mediaRec.start();
-        if (recognition) {
-            document.getElementById('voice-script').innerText = "...";
-            recognition.start();
-        }
-        isRecording = true;
-        updateUI(true);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRec = new MediaRecorder(stream);
+            chunks = [];
+            mediaRec.ondataavailable = e => chunks.push(e.data);
+            mediaRec.onstop = async () => {
+                const rawBlob = new Blob(chunks);
+                audioBlob = isIOS() ? new Blob(chunks, { type: 'audio/mp4' }) : await convertToMp3(rawBlob);
+                if (confirm("Lưu bản ghi này?")) upload();
+            };
+            mediaRec.start();
+            if (recognition) {
+                document.getElementById('voice-script').innerText = "...";
+                recognition.start();
+            }
+            isRecording = true;
+            updateUI(true);
+        } catch (e) { alert("Không thể truy cập microphone"); }
     }
 
     function stopRec() {
-        console.log("Stopping recording...");
         mediaRec.stop();
         mediaRec.stream.getTracks().forEach(t => t.stop());
         if (recognition) recognition.stop();
@@ -244,7 +246,6 @@
     }
 
     async function upload() {
-        console.log("Uploading file...");
         document.getElementById('status').innerText = "ĐANG LƯU";
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
@@ -258,8 +259,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: fileName, base64Audio, identifier })
                 });
+                console.log("Upload Success");
                 location.reload();
-            } catch (err) { document.getElementById('status').innerText = "LỖI LƯU"; }
+            } catch (err) { 
+                document.getElementById('status').innerText = "LỖI LƯU";
+                console.error("Upload Error", err);
+            }
         };
     }
 </script>

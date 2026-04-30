@@ -6,32 +6,37 @@
     <title>Drive Media Player Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .app { width: 100%; max-width: 500px; display: flex; flex-direction: column; min-height: 90vh; }
+        body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 10px; display: flex; justify-content: center; }
+        /* Yêu cầu 1: Độ rộng full page */
+        .app { width: 100%; max-width: 100%; display: flex; flex-direction: column; min-height: 95vh; }
         
         .tabs { display: flex; gap: 5px; margin-bottom: 10px; }
-        .tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: bold; }
+        .tab-btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: bold; }
         .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
         .tab-content { display: none; flex-direction: column; flex: 1; }
         .tab-content.active { display: flex; }
 
-        .card { background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column; }
+        .card { background: #ffffff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column; }
         
-        #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; position: sticky; bottom: 0; margin-top: 20px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.2); }
-        video, audio { width: 100%; display: block; }
+        /* Yêu cầu 4: Cho nhỏ lại để không chiếm diện tích */
+        #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; position: sticky; bottom: 0; margin-top: 10px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.2); }
+        video, audio { width: 100%; display: block; height: 45px; }
         
-        .list { flex: 1; max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; background: #fff; }
+        .list { flex: 1; max-height: 500px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; background: #fff; }
         #text-display { flex: 1; padding: 15px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fdfdfd; font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 10px; min-height: 150px; overflow-y: auto; }
         #voice-script { padding: 10px; border: 1px dashed #2563eb; border-radius: 10px; background: #eff6ff; font-size: 14px; color: #1e40af; min-height: 60px; margin-bottom: 10px; font-style: italic; }
         
-        .item { padding: 12px 15px; border-bottom: 1px solid #f8fafc; display: flex; flex-direction: column; gap: 8px; }
+        .item { padding: 12px 15px; border-bottom: 1px solid #f8fafc; display: flex; flex-direction: column; gap: 5px; }
         .item-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .item-text { flex: 1; word-break: break-all; font-size: 14px; font-weight: 500; }
-        .item-btns { display: flex; gap: 5px; }
-        .btn-action { flex: 1; padding: 6px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold; }
+        .item-text { flex: 1; word-break: break-all; font-size: 13px; font-weight: 500; }
+        
+        /* Yêu cầu 2: Thêm các nút chức năng */
+        .item-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 5px; }
+        .btn-action { padding: 6px 12px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold; }
+        .btn-delete { color: #ef4444; border-color: #fee2e2; background: #fef2f2; }
 
         .rec-box { border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; }
-        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; }
+        .btn-main { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; }
         .btn-rec { background: #2563eb; color: white; transition: all 0.3s; }
         .btn-rec.recording { background: #ef4444; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
@@ -46,18 +51,16 @@
     </div>
 
     <div class="card">
-        <!-- Tab 1: Văn bản & Ghi âm -->
         <div id="tab1" class="tab-content active">
             <div id="voice-script">Script từ giọng nói sẽ hiển thị tại đây...</div>
             <div id="text-display">Đang tải nội dung...</div>
             
             <div class="rec-box">
                 <div id="status">Sẵn sàng</div>
-                <button id="mainRecBtn" class="btn-rec" onclick="toggleRec()">BẮT ĐẦU GHI ÂM</button>
+                <button id="mainRecBtn" class="btn-main btn-rec" onclick="toggleRec()">BẮT ĐẦU GHI ÂM</button>
             </div>
         </div>
 
-        <!-- Tab 2: Danh sách file -->
         <div id="tab2" class="tab-content">
             <div id="fileList" class="list">Đang tải danh sách...</div>
         </div>
@@ -136,20 +139,48 @@
     function renderFiles(files) {
         const container = document.getElementById('fileList');
         if (!files || files.length === 0) { container.innerHTML = '<div style="padding:15px;text-align:center">Trống</div>'; return; }
+        
+        // Yêu cầu 2: Thêm UI Điểm, Chi tiết, Xóa
         container.innerHTML = files.map(f => `
             <div class="item">
-                <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}', '${f.name.replace(/'/g, "\\'")}')">
+                <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}')">
                     <span>${f.mimeType.includes('video') ? '🎥' : '🎵'}</span>
                     <div class="item-text">${f.name}</div>
+                </div>
+                <div class="item-btns">
+                    <button class="btn-action">Điểm</button>
+                    <button class="btn-action">Chi tiết</button>
+                    <button class="btn-action btn-delete" onclick="deleteFile('${f.id}')">Xóa</button>
                 </div>
             </div>`).join('');
     }
 
-    function playMedia(id, mimeType, name) {
+    // Yêu cầu 3: Click xóa gửi action lên server
+    async function deleteFile(fileId) {
+        if (!confirm("Bạn có chắc chắn muốn xóa file này không?")) return;
+        
+        try {
+            const res = await fetch(`/api/drive?id=${fileId}`, { method: 'DELETE' });
+            if (res.ok) {
+                alert("Đã xóa file thành công");
+                loadFiles(); // Load lại danh sách
+            } else {
+                alert("Lỗi khi xóa file");
+            }
+        } catch (err) {
+            console.error("Delete error:", err);
+        }
+    }
+
+    function playMedia(id, mimeType) {
         const view = document.getElementById('media-view');
         view.style.display = 'block';
         const url = `/api/drive?id=${id}`;
-        view.innerHTML = mimeType.includes('video') ? `<video src="${url}" controls autoplay playsinline></video>` : `<div style="padding:15px; color:white">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
+        
+        // Yêu cầu 4: Không hiện tên, cho nhỏ lại
+        view.innerHTML = mimeType.includes('video') 
+            ? `<video src="${url}" controls autoplay playsinline></video>` 
+            : `<audio src="${url}" controls autoplay></audio>`;
     }
 
     async function startRec() {

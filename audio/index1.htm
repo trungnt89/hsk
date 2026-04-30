@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drive Media Player</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 15px; display: flex; justify-content: center; }
+        .app { width: 100%; max-width: 500px; }
+        .card { background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 20px; }
+        video, audio { width: 100%; display: block; }
+        .list { max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; background: #fff; }
+        .item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; transition: background 0.2s; -webkit-tap-highlight-color: transparent; }
+        .item:active { background: #f1f5f9; }
+        .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+        .rec-box { border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; }
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; font-size: 14px; }
+        .btn-rec { background: #ef4444; color: white; }
+        .btn-save { background: #10b981; color: white; }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        #status { font-size: 12px; margin-bottom: 10px; color: #64748b; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="card">
+        <div id="media-view"></div>
+        <div id="fileList" class="list">Đang tải danh sách...</div>
+        <div class="rec-box">
+            <div id="status">Sẵn sàng</div>
+            <button id="startBtn" class="btn-rec" onclick="startRec()">BẮT ĐẦU GHI ÂM</button>
+            <button id="stopBtn" style="background:#64748b; color:white" onclick="stopRec()" disabled>DỪNG</button>
+            <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>LƯU LÊN DRIVE (GAS)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let mediaRec, chunks = [], audioBlob;
+    window.onload = loadFiles;
+
+    async function loadFiles() {
+        try {
+            const res = await fetch('/api/drive');
+            const files = await res.json();
+            
+            document.getElementById('fileList').innerHTML = files.map(f => {
+                const cleanName = f.name.replace(/['"]/g, '').replace(/[\r\n]+/g, ' ');
+                const displayName = f.name.length > 30 ? f.name.substring(0, 27) + "..." : f.name;
+                // Nhận diện icon dựa trên đuôi file hoặc mimeType
+                const isVideo = f.mimeType.includes('video') || f.name.endsWith('.mp4') || f.name.endsWith('.webm');
+
+                return `
+                    <div class="item" onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
+                        <span>${isVideo ? '🎥' : '🎵'}</span>
+                        <div class="item-text">${displayName}</div>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error("Lỗi tải danh sách:", err);
+            document.getElementById('fileList').innerText = "Không thể tải danh sách.";
+        }
+    }
+
+    function playMedia(id, mimeType, name) {
+        const view = document.getElementById('media-view');
+        view.style.display = 'block';
+        const url = `/api/drive?id=${id}`;
+        
+        // Kiểm tra xem là video hay audio dựa trên mimeType hoặc extension
+        const isVideo = mimeType.includes('video') || name.toLowerCase().endsWith('.mp4') || name.toLowerCase().endsWith('.webm');
+
+        if (isVideo) {
+            // playsinline giúp video không tự bung full màn hình trên iPhone
+            view.innerHTML = `
+                <video controls autoplay playsinline>
+                    <source src="${url}" type="${mimeType}">
+                    Trình duyệt của bạn không hỗ trợ xem video.
+                </video>`;
+        } else {
+            view.innerHTML = `
+                <div style="padding:15px; text-align:center;">
+                    <div style="font-size:12px; font-weight:bold; margin-bottom:10px;">${name}</div>
+                    <audio controls autoplay>
+                        <source src="${url}" type="${mimeType}">
+                    </audio>
+                </div>`;
+        }
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function startRec() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            // iPhone/Safari ưu tiên audio/mp4 (đây chính là m4a)
+            const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
+            
+            mediaRec = new MediaRecorder(stream);
+            chunks = [];
+            
+            mediaRec.ondataavailable = e => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
+
+            mediaRec.onstop = () => { 
+                audioBlob = new Blob(chunks, { type: mimeType }); 
+                document.getElementById('uploadBtn').disabled = false; 
+                console.log("Recording stopped, type:", mimeType);
+            };
+
+            mediaRec.start();
+            document.getElementById('startBtn').disabled = true; 
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('status').innerText = "🔴 ĐANG GHI ÂM...";
+        } catch (err) {
+            alert("Không thể truy cập Microphone: " + err.message);
+        }
+    }
+
+    function stopRec() { 
+        mediaRec.stop(); 
+        mediaRec.stream.getTracks().forEach(track => track.stop()); // Tắt đèn báo ghi âm
+        document.getElementById('startBtn').disabled = false; 
+        document.getElementById('stopBtn').disabled = true; 
+        document.getElementById('status').innerText = "Đã xong"; 
+    }
+
+    async function upload() {
+        const btn = document.getElementById('uploadBtn'); 
+        btn.innerText = "⏳ ĐANG LƯU...";
+        btn.disabled = true;
+
+        const reader = new FileReader(); 
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+            const base64Audio = reader.result.split(',')[1];
+            // Xác định đuôi file dựa trên blob type
+            const ext = audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
+            
+            try {
+                const res = await fetch('/api/drive', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        name: `Rec_${Date.now()}.${ext}`, 
+                        base64Audio,
+                        mimeType: audioBlob.type
+                    }) 
+                });
+                if (res.ok) {
+                    location.reload();
+                }
+            } catch (err) {
+                console.error("Upload failed:", err);
+                btn.innerText = "LỖI - THỬ LẠI";
+                btn.disabled = false;
+            }
+        };
+    }
+</script>
+</body>
+</html>

@@ -1,333 +1,179 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Drive Media Player Pro</title>
-  <style>
-    :root { --primary: #3b82f6; --danger: #ef4444; --success: #10b981; --bg: #f8fafc; }
-    body { 
-      font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background: var(--bg); margin: 0; padding: 15px; color: #1e293b; 
-      display: flex; justify-content: center; 
-    }
-    .app { width: 100%; max-width: 500px; }
-    .card { background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
-    
-    /* Player area */
-    #media-view { 
-      background: #000; border-radius: 14px; overflow: hidden; 
-      display: none; margin-bottom: 20px; animation: slideDown 0.3s ease-out; 
-    }
-    video, audio { width: 100%; display: block; }
-    
-    /* List container */
-    .list { 
-      max-height: 420px; overflow-y: auto; border: 1px solid #e2e8f0; 
-      border-radius: 12px; margin-bottom: 20px; background: #fff;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    /* Folder UI */
-    .folder-group { border-bottom: 1px solid #f1f5f9; }
-    .folder-header { 
-      padding: 12px 15px; font-size: 12px; font-weight: 800; 
-      background: #f8fafc; color: #475569; text-transform: uppercase; 
-      display: flex; justify-content: space-between; align-items: center;
-      cursor: pointer; user-select: none; transition: background 0.2s;
-      position: sticky; top: 0; z-index: 10;
-    }
-    .folder-header:hover { background: #f1f5f9; }
-    .folder-header::after {
-      content: '▶'; font-size: 10px; transition: transform 0.3s; color: #94a3b8;
-    }
-    .folder-header.open::after { transform: rotate(90deg); }
-
-    .folder-content { display: none; overflow: hidden; background: #fff; }
-    .folder-content.open { display: block; }
-
-    /* Item UI */
-    .item { 
-      padding: 14px 15px; border-bottom: 1px solid #f8fafc; 
-      display: flex; align-items: center; gap: 12px; cursor: pointer; 
-      transition: background 0.1s; padding-left: 25px;
-    }
-    .item:active { background: #f1f5f9; }
-    .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
-    
-    /* Control Buttons */
-    .rec-box { border-top: 2px dashed #f1f5f9; padding-top: 20px; text-align: center; }
-    #status { font-size: 13px; margin-bottom: 12px; color: #64748b; font-weight: 600; }
-    button { 
-      width: 100%; padding: 15px; border-radius: 12px; border: none; 
-      font-weight: 700; font-size: 14px; margin: 5px 0; cursor: pointer; 
-      transition: transform 0.1s, opacity 0.2s; 
-    }
-    button:active { transform: scale(0.98); }
-    .btn-rec { background: var(--danger); color: #fff; }
-    .btn-stop { background: #64748b; color: #fff; }
-    .btn-save { background: var(--success); color: #fff; }
-    button:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
-
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drive Media Player Pro</title>
+    <!-- Nhúng thư viện LameJS để convert MP3 trên PC -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 15px; display: flex; justify-content: center; }
+        .app { width: 100%; max-width: 500px; }
+        .card { background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 20px; }
+        video, audio { width: 100%; display: block; }
+        .list { max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; background: #fff; }
+        .item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; transition: background 0.2s; }
+        .item:hover { background: #f1f5f9; color: #2563eb; }
+        .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+        .rec-box { border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; }
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; transition: 0.2s; }
+        .btn-rec { background: #ef4444; color: white; }
+        .btn-save { background: #10b981; color: white; }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        #status { font-size: 12px; margin-bottom: 10px; color: #64748b; font-weight: bold; }
+    </style>
 </head>
 <body>
-
 <div class="app">
-  <div class="card">
-    <div id="media-view"></div>
-    <div id="fileList" class="list">Đang tải dữ liệu...</div>
-    
-    <div class="rec-box">
-      <div id="status">Hệ thống sẵn sàng</div>
-      <button id="startBtn" class="btn-rec">BẮT ĐẦU GHI ÂM</button>
-      <button id="stopBtn" class="btn-stop" disabled>DỪNG</button>
-      <button id="uploadBtn" class="btn-save" disabled>LƯU LÊN DRIVE</button>
+    <div class="card">
+        <div id="media-view"></div>
+        <div id="fileList" class="list">Đang tải danh sách...</div>
+        <div class="rec-box">
+            <div id="status">Sẵn sàng</div>
+            <button id="startBtn" class="btn-rec" onclick="startRec()">BẮT ĐẦU GHI ÂM</button>
+            <button id="stopBtn" style="background:#64748b; color:white" onclick="stopRec()" disabled>DỪNG</button>
+            <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>LƯU LÊN DRIVE</button>
+        </div>
     </div>
-  </div>
 </div>
 
 <script>
-/**
- * BIẾN TOÀN CỤC & DOM CACHE
- */
-let mediaRec, chunks = [], audioBlob;
-const dom = {
-  list: document.getElementById('fileList'),
-  view: document.getElementById('media-view'),
-  status: document.getElementById('status'),
-  btnStart: document.getElementById('startBtn'),
-  btnStop: document.getElementById('stopBtn'),
-  btnUpload: document.getElementById('uploadBtn')
-};
+    let mediaRec, chunks = [], audioBlob;
+    const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-// Khởi chạy ứng dụng
-window.onload = loadFiles;
-dom.btnStart.onclick = startRec;
-dom.btnStop.onclick = stopRec;
-dom.btnUpload.onclick = upload;
+    window.onload = loadFiles;
 
-/**
- * TẢI DỮ LIỆU VÀ NHÓM THEO PARENT ID
- */
-async function loadFiles() {
-  try {
-    const res = await fetch(`/api/drive?_ts=${Date.now()}`, { cache: 'no-store' });
-    const result = await res.json();
-    const rawData = result.data || result;
-    
-    if (!Array.isArray(rawData)) throw new Error("Format error");
-
-    const grouped = rawData.reduce((acc, f) => {
-      const pId = (f.parents && f.parents.length > 0) ? f.parents[0] : 'CHUNG';
-      if (!acc[pId]) acc[pId] = [];
-      acc[pId].push(f);
-      return acc;
-    }, {});
-
-    renderFast(grouped);
-  } catch (e) {
-    dom.list.innerHTML = '<div style="padding:20px; color:red; text-align:center;">Lỗi kết nối máy chủ</div>';
-  }
-}
-
-/**
- * RENDER TỐI ƯU (DÙNG DOCUMENTFRAGMENT - KHÔNG INNERHTML TRONG LOOP)
- */
-function renderFast(grouped) {
-  const fragment = document.createDocumentFragment();
-  dom.list.textContent = ''; // Clear danh sách cũ
-
-  Object.entries(grouped).forEach(([parentId, files]) => {
-    // 1. Tạo Group Container
-    const groupDiv = document.createElement('div');
-    groupDiv.className = 'folder-group';
-
-    // 2. Tạo Header
-    const header = document.createElement('div');
-    header.className = 'folder-header';
-    header.textContent = parentId === 'CHUNG' ? '📁 Mục Chung' : `📁 Thư mục: ${parentId.slice(0,8)}...`;
-    
-    // 3. Tạo Vùng chứa file
-    const content = document.createElement('div');
-    content.className = 'folder-content';
-
-    // Sự kiện đóng/mở folder
-    header.addEventListener('click', () => {
-      header.classList.toggle('open');
-      content.classList.toggle('open');
-    });
-
-    // 4. Duyệt file và tạo Element
-    files.forEach(f => {
-      const isVideo = f.mimeType?.includes('video') || /\.(mp4|webm|mov)$/i.test(f.name);
-      
-      const item = document.createElement('div');
-      item.className = 'item';
-      
-      // Tạo icon
-      const icon = document.createElement('span');
-      icon.style.fontSize = '18px';
-      icon.textContent = isVideo ? '🎥' : '🎵';
-      
-      // Tạo tên file
-      const text = document.createElement('div');
-      text.className = 'item-text';
-      text.textContent = f.name;
-
-      item.appendChild(icon);
-      item.appendChild(text);
-
-      // Sự kiện chọn file để phát
-      item.addEventListener('click', (e) => {
-        e.stopPropagation(); // Không làm đóng/mở folder khi chọn file
-        playMedia(f.id, f.mimeType, f.name);
-      });
-
-      content.appendChild(item);
-    });
-
-    groupDiv.appendChild(header);
-    groupDiv.appendChild(content);
-    fragment.appendChild(groupDiv);
-  });
-
-  // Đẩy toàn bộ vào DOM 1 lần duy nhất
-  dom.list.appendChild(fragment);
-}
-
-/**
- * PHÁT MEDIA
- */
-function playMedia(id, mimeType, name) {
-  dom.view.style.display = 'block';
-  dom.view.textContent = ''; // Xóa trình phát cũ
-  
-  const url = `/api/drive?id=${id}`;
-  const isVideo = mimeType?.includes('video') || /\.(mp4|webm|mov)$/i.test(name);
-
-  if (isVideo) {
-    const video = document.createElement('video');
-    video.controls = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.style.width = '100%';
-    
-    const source = document.createElement('source');
-    source.src = url;
-    source.type = mimeType;
-    
-    video.appendChild(source);
-    dom.view.appendChild(video);
-  } else {
-    const playerBox = document.createElement('div');
-    playerBox.style.padding = '20px';
-    playerBox.style.textAlign = 'center';
-    
-    const title = document.createElement('div');
-    title.style.cssText = 'font-size:12px; color:#94a3b8; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis;';
-    title.textContent = name;
-
-    const audio = document.createElement('audio');
-    audio.controls = true;
-    audio.autoplay = true;
-    audio.style.width = '100%';
-    
-    const source = document.createElement('source');
-    source.src = url;
-    source.type = mimeType;
-
-    audio.appendChild(source);
-    playerBox.appendChild(title);
-    playerBox.appendChild(audio);
-    dom.view.appendChild(playerBox);
-  }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-/**
- * GHI ÂM (HỖ TRỢ IPHONE)
- */
-async function startRec() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
-    // Không truyền mimeType, để trình duyệt tự chọn mặc định
-    mediaRec = new MediaRecorder(stream); 
-    chunks = [];
-
-    mediaRec.ondataavailable = e => e.data.size > 0 && chunks.push(e.data);
-    
-    mediaRec.onstop = () => {
-      // Lấy mimeType mặc định mà trình duyệt vừa dùng để ghi
-      const actualType = mediaRec.mimeType; 
-	  alert(actualType);
-      audioBlob = new Blob(chunks, { type: actualType });
-      
-      console.log("Định dạng trình duyệt đã chọn:", actualType);
-      dom.btnUpload.disabled = false;
-    };
-
-    mediaRec.start();
-    dom.btnStart.disabled = true;
-    dom.btnStop.disabled = false;
-    dom.status.innerText = '🔴 ĐANG GHI ÂM (Mặc định)...';
-  } catch (err) {
-    alert('Không thể truy cập Micro.');
-  }
-}
-
-function stopRec() {
-  if (mediaRec && mediaRec.state !== 'inactive') {
-    mediaRec.stop();
-    mediaRec.stream.getTracks().forEach(t => t.stop());
-    dom.btnStart.disabled = false;
-    dom.btnStop.disabled = true;
-    dom.status.innerText = 'Đã hoàn thành ghi âm';
-  }
-}
-
-/**
- * TẢI LÊN DRIVE
- */
-async function upload() {
-  dom.btnUpload.innerText = '⏳ ĐANG TẢI LÊN...';
-  dom.btnUpload.disabled = true;
-
-  const reader = new FileReader();
-  reader.readAsDataURL(audioBlob);
-  reader.onloadend = async () => {
-    const base64Audio = reader.result.split(',')[1];
-    const ext = audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
-	alert(audioBlob.type);
-
-	const d = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' });
-	const name = `Rec_${d.slice(0,10).replace(/-/g,'')}_${d.slice(11,19).replace(/:/g,'')}${new Date().getMilliseconds().toString().padStart(3,'0')}.${ext}`;
-
-    try {
-      const response = await fetch('/api/drive', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name: name, 
-          base64Audio, 
-          mimeType: audioBlob.type 
-        })
-      });
-
-      if (response.ok) {
-        dom.status.innerText = '✅ Đã lưu thành công!';
-        loadFiles();
-      } else throw new Error();
-    } catch (e) {
-      dom.status.innerText = '❌ Lỗi tải lên';
-      dom.btnUpload.disabled = false;
-    } finally {
-      dom.btnUpload.innerText = 'LƯU LÊN DRIVE';
+    async function loadFiles() {
+        try {
+            const res = await fetch(`/api/drive?_ts=${Date.now()}`);
+            const files = await res.json();
+            document.getElementById('fileList').innerHTML = files.map(f => {
+                const cleanName = f.name.replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'");
+                const displayName = f.name.length > 35 ? f.name.substring(0, 32) + "..." : f.name;
+                return `
+                    <div class="item" onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
+                        <span>${f.mimeType.includes('video') ? '🎥' : '🎵'}</span>
+                        <div class="item-text">${displayName}</div>
+                    </div>`;
+            }).join('');
+        } catch (err) {
+            console.error("Error loading files", err);
+        }
     }
-  };
-}
+
+    function playMedia(id, mimeType, name) {
+        const view = document.getElementById('media-view');
+        view.style.display = 'block';
+        const url = `/api/drive?id=${id}`;
+        view.innerHTML = mimeType.includes('video') ? 
+            `<video src="${url}" controls autoplay playsinline></video>` : 
+            `<div style="padding:15px; text-align:center; font-size:12px;">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function startRec() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRec = new MediaRecorder(stream);
+            chunks = [];
+            mediaRec.ondataavailable = e => chunks.push(e.data);
+            
+            mediaRec.onstop = async () => {
+                const rawBlob = new Blob(chunks);
+                
+                // NẾU LÀ PC (KHÔNG PHẢI IPHONE): Chuyển đổi sang MP3 thực thụ
+                if (!isIOS()) {
+                    document.getElementById('status').innerText = "⏳ ĐANG CONVERT MP3...";
+                    audioBlob = await convertToMp3(rawBlob);
+                } else {
+                    // IPHONE: Giữ nguyên định dạng gốc (thường là m4a/aac)
+                    audioBlob = new Blob(chunks, { type: 'audio/mp4' });
+                }
+                
+                document.getElementById('uploadBtn').disabled = false;
+                document.getElementById('status').innerText = "✅ Đã xử lý xong file";
+            };
+
+            mediaRec.start();
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('status').innerText = "🔴 ĐANG GHI ÂM...";
+        } catch (err) {
+            alert("Không thể truy cập Micro");
+        }
+    }
+
+    function stopRec() {
+        mediaRec.stop();
+        mediaRec.stream.getTracks().forEach(t => t.stop());
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+    }
+
+    // HÀM QUAN TRỌNG: Dùng LameJS convert sang MP3 (dành cho PC)
+    async function convertToMp3(blob) {
+        const arrayBuffer = await blob.arrayBuffer();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        
+        const samples = audioBuffer.getChannelData(0); // Lấy kênh Mono
+        const sampleRate = audioBuffer.sampleRate;
+        const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
+        const mp3Data = [];
+
+        // Convert Float32 sang Int16
+        const samplesInt16 = new Int16Array(samples.length);
+        for (let i = 0; i < samples.length; i++) {
+            let s = Math.max(-1, Math.min(1, samples[i]));
+            samplesInt16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+
+        const blockSize = 1152;
+        for (let i = 0; i < samplesInt16.length; i += blockSize) {
+            const chunk = samplesInt16.subarray(i, i + blockSize);
+            const mp3buf = mp3encoder.encodeBuffer(chunk);
+            if (mp3buf.length > 0) mp3Data.push(mp3buf);
+        }
+        
+        const endBuf = mp3encoder.flush();
+        if (endBuf.length > 0) mp3Data.push(endBuf);
+
+        return new Blob(mp3Data, { type: 'audio/mp3' });
+    }
+
+    async function upload() {
+        const btn = document.getElementById('uploadBtn');
+        btn.innerText = "⏳ ĐANG TẢI LÊN...";
+        btn.disabled = true;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+            const base64Audio = reader.result.split(',')[1];
+            // Đặt đuôi file tùy theo thiết bị
+            const ext = isIOS() ? 'm4a' : 'mp3';
+            const fileName = `Rec_${new Date().getTime()}.${ext}`;
+
+            try {
+                const res = await fetch('/api/drive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name: fileName, 
+                        base64Audio: base64Audio,
+                        mimeType: audioBlob.type 
+                    })
+                });
+                if (res.ok) {
+                    location.reload();
+                }
+            } catch (err) {
+                btn.innerText = "LỖI - THỬ LẠI";
+                btn.disabled = false;
+            }
+        };
+    }
 </script>
 </body>
 </html>

@@ -20,13 +20,22 @@
         .btn-save { background: #10b981; color: white; }
         button:disabled { opacity: 0.3; cursor: not-allowed; }
         #status { font-size: 12px; margin-bottom: 10px; color: #64748b; font-weight: bold; }
+        .folder-header {
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #f1f5f9;
+            color: #334155;
+        }
     </style>
 </head>
+
 <body>
 <div class="app">
     <div class="card">
         <div id="media-view"></div>
         <div id="fileList" class="list">Đang tải danh sách...</div>
+
         <div class="rec-box">
             <div id="status">Sẵn sàng</div>
             <button id="startBtn" class="btn-rec" onclick="startRec()">BẮT ĐẦU GHI ÂM</button>
@@ -37,130 +46,142 @@
 </div>
 
 <script>
-    let mediaRec, chunks = [], audioBlob;
-    window.onload = loadFiles;
+let mediaRec, chunks = [], audioBlob;
+window.onload = loadFiles;
 
-    async function loadFiles() {
-        try {
-            const res = await fetch('/api/drive');
-            const files = await res.json();
-            
-            document.getElementById('fileList').innerHTML = files.map(f => {
+/* ===========================
+   LOAD FILES – GROUP BY FOLDER
+   =========================== */
+async function loadFiles() {
+    try {
+        const res = await fetch('/api/drive');
+        const result = await res.json();
+        const grouped = result.data || {};
+
+        const container = document.getElementById('fileList');
+        container.innerHTML = '';
+
+        Object.entries(grouped).forEach(([folderName, files]) => {
+            container.innerHTML += `
+                <div class="folder-header">📁 ${folderName}</div>
+            `;
+
+            files.forEach(f => {
                 const cleanName = f.name.replace(/['"]/g, '').replace(/[\r\n]+/g, ' ');
-                const displayName = f.name.length > 30 ? f.name.substring(0, 27) + "..." : f.name;
-                // Nhận diện icon dựa trên đuôi file hoặc mimeType
-                const isVideo = f.mimeType.includes('video') || f.name.endsWith('.mp4') || f.name.endsWith('.webm');
+                const displayName = f.name.length > 30
+                    ? f.name.substring(0, 27) + "..."
+                    : f.name;
 
-                return `
-                    <div class="item" onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
+                const isVideo =
+                    f.mimeType.includes('video') ||
+                    f.name.endsWith('.mp4') ||
+                    f.name.endsWith('.webm');
+
+                container.innerHTML += `
+                    <div class="item"
+                         onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
                         <span>${isVideo ? '🎥' : '🎵'}</span>
                         <div class="item-text">${displayName}</div>
                     </div>
                 `;
-            }).join('');
-        } catch (err) {
-            console.error("Lỗi tải danh sách:", err);
-            document.getElementById('fileList').innerText = "Không thể tải danh sách.";
-        }
+            });
+        });
+    } catch (err) {
+        console.error("Lỗi tải danh sách:", err);
+        document.getElementById('fileList').innerText = "Không thể tải danh sách.";
+    }
+}
+
+/* ===========================
+   PLAYER
+   =========================== */
+function playMedia(id, mimeType, name) {
+    const view = document.getElementById('media-view');
+    view.style.display = 'block';
+    const url = `/api/drive?id=${id}`;
+
+    const isVideo =
+        mimeType.includes('video') ||
+        name.toLowerCase().endsWith('.mp4') ||
+        name.toLowerCase().endsWith('.webm');
+
+    if (isVideo) {
+        view.innerHTML = `
+            <video controls autoplay playsinline>
+                ${url}
+            </video>
+        `;
+    } else {
+        view.innerHTML = `
+            <div style="padding:15px; text-align:center;">
+                <div style="font-size:12px; font-weight:bold; margin-bottom:10px;">${name}</div>
+                <audio controls autoplay>
+                    ${url}
+                </audio>
+            </div>
+        `;
     }
 
-    function playMedia(id, mimeType, name) {
-        const view = document.getElementById('media-view');
-        view.style.display = 'block';
-        const url = `/api/drive?id=${id}`;
-        
-        // Kiểm tra xem là video hay audio dựa trên mimeType hoặc extension
-        const isVideo = mimeType.includes('video') || name.toLowerCase().endsWith('.mp4') || name.toLowerCase().endsWith('.webm');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
-        if (isVideo) {
-            // playsinline giúp video không tự bung full màn hình trên iPhone
-            view.innerHTML = `
-                <video controls autoplay playsinline>
-                    <source src="${url}" type="${mimeType}">
-                    Trình duyệt của bạn không hỗ trợ xem video.
-                </video>`;
-        } else {
-            view.innerHTML = `
-                <div style="padding:15px; text-align:center;">
-                    <div style="font-size:12px; font-weight:bold; margin-bottom:10px;">${name}</div>
-                    <audio controls autoplay>
-                        <source src="${url}" type="${mimeType}">
-                    </audio>
-                </div>`;
-        }
-        
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+/* ===========================
+   RECORD
+   =========================== */
+async function startRec() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
 
-    async function startRec() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            
-            // iPhone/Safari ưu tiên audio/mp4 (đây chính là m4a)
-            const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
-            
-            mediaRec = new MediaRecorder(stream);
-            chunks = [];
-            
-            mediaRec.ondataavailable = e => {
-                if (e.data.size > 0) chunks.push(e.data);
-            };
+    mediaRec = new MediaRecorder(stream);
+    chunks = [];
 
-            mediaRec.onstop = () => { 
-                audioBlob = new Blob(chunks, { type: mimeType }); 
-                document.getElementById('uploadBtn').disabled = false; 
-                console.log("Recording stopped, type:", mimeType);
-            };
+    mediaRec.ondataavailable = e => e.data.size && chunks.push(e.data);
+    mediaRec.onstop = () => {
+        audioBlob = new Blob(chunks, { type: mimeType });
+        document.getElementById('uploadBtn').disabled = false;
+    };
 
-            mediaRec.start();
-            document.getElementById('startBtn').disabled = true; 
-            document.getElementById('stopBtn').disabled = false;
-            document.getElementById('status').innerText = "🔴 ĐANG GHI ÂM...";
-        } catch (err) {
-            alert("Không thể truy cập Microphone: " + err.message);
-        }
-    }
+    mediaRec.start();
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('stopBtn').disabled = false;
+    document.getElementById('status').innerText = "🔴 ĐANG GHI ÂM...";
+}
 
-    function stopRec() { 
-        mediaRec.stop(); 
-        mediaRec.stream.getTracks().forEach(track => track.stop()); // Tắt đèn báo ghi âm
-        document.getElementById('startBtn').disabled = false; 
-        document.getElementById('stopBtn').disabled = true; 
-        document.getElementById('status').innerText = "Đã xong"; 
-    }
+function stopRec() {
+    mediaRec.stop();
+    mediaRec.stream.getTracks().forEach(t => t.stop());
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = true;
+    document.getElementById('status').innerText = "Đã xong";
+}
 
-    async function upload() {
-        const btn = document.getElementById('uploadBtn'); 
-        btn.innerText = "⏳ ĐANG LƯU...";
-        btn.disabled = true;
+/* ===========================
+   UPLOAD
+   =========================== */
+async function upload() {
+    const btn = document.getElementById('uploadBtn');
+    btn.innerText = "⏳ ĐANG LƯU...";
+    btn.disabled = true;
 
-        const reader = new FileReader(); 
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-            const base64Audio = reader.result.split(',')[1];
-            // Xác định đuôi file dựa trên blob type
-            const ext = audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
-            
-            try {
-                const res = await fetch('/api/drive', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ 
-                        name: `Rec_${Date.now()}.${ext}`, 
-                        base64Audio,
-                        mimeType: audioBlob.type
-                    }) 
-                });
-                if (res.ok) {
-                    location.reload();
-                }
-            } catch (err) {
-                console.error("Upload failed:", err);
-                btn.innerText = "LỖI - THỬ LẠI";
-                btn.disabled = false;
-            }
-        };
-    }
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = async () => {
+        const base64Audio = reader.result.split(',')[1];
+        const ext = audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
+
+        await fetch('/api/drive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: `Rec_${Date.now()}.${ext}`,
+                base64Audio,
+                mimeType: audioBlob.type
+            })
+        });
+
+        location.reload();
+    };
+}
 </script>
 </body>
 </html>

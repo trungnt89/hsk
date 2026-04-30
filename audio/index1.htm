@@ -7,27 +7,32 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
     <style>
         body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .app { width: 100%; max-width: 500px; }
-        .card { background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .app { width: 100%; max-width: 500px; display: flex; flex-direction: column; min-height: 90vh; }
+        .card { background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column; }
         
-        /* Media Player */
-        #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 20px; }
+        /* Media Player - FIXED AT BOTTOM */
+        #media-view { 
+            background: #000; border-radius: 12px; overflow: hidden; display: none; 
+            position: sticky; bottom: 0; margin-top: 20px; z-index: 100;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+        }
         video, audio { width: 100%; display: block; }
         
         /* List UI */
-        .list { max-height: 450px; overflow-y: auto; border: 1px solid #e2e880; border-radius: 10px; margin-bottom: 20px; background: #fff; }
+        .list { flex: 1; max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; background: #fff; }
         
-        /* Cấu trúc item mới để chứa các nút */
         .item { padding: 12px 15px; border-bottom: 1px solid #f8fafc; display: flex; flex-direction: column; gap: 8px; }
         .item:last-child { border-bottom: none; }
+        
         .item-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .item-row:hover { color: #2563eb; }
-        .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
         
-        /* Style cho 3 nút mới */
+        /* Hiển thị full tên file */
+        .item-text { flex: 1; word-break: break-all; font-size: 14px; font-weight: 500; }
+        
         .item-btns { display: flex; gap: 5px; }
-        .btn-sm { flex: 1; padding: 5px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold; }
-        .btn-sm:hover { background: #f1f5f9; }
+        .btn-action { flex: 1; padding: 6px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold; }
+        .btn-action:hover { background: #f1f5f9; }
 
         /* Recording Controls */
         .rec-box { border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; }
@@ -41,14 +46,16 @@
 <body>
 <div class="app">
     <div class="card">
-        <div id="media-view"></div>
         <div id="fileList" class="list">Đang tải danh sách...</div>
+        
         <div class="rec-box">
             <div id="status">Sẵn sàng</div>
             <button id="startBtn" class="btn-rec" onclick="startRec()">BẮT ĐẦU GHI ÂM</button>
             <button id="stopBtn" style="background:#64748b; color:white" onclick="stopRec()" disabled>DỪNG</button>
             <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>LƯU LÊN DRIVE</button>
         </div>
+
+        <div id="media-view"></div>
     </div>
 </div>
 
@@ -91,24 +98,28 @@
         const container = document.getElementById('fileList');
         container.innerHTML = '';
 
+        if (!files || files.length === 0) {
+            container.innerHTML = '<div style="padding:15px;text-align:center">Trống</div>';
+            return;
+        }
+
         const itemsHtml = files.map(f => {
             const cleanName = f.name.replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'");
-            const displayName = f.name.length > 30 ? f.name.substring(0, 27) + "..." : f.name;
             return `
                 <div class="item">
                     <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
                         <span>${f.mimeType.includes('video') ? '🎥' : '🎵'}</span>
-                        <div class="item-text">${displayName}</div>
+                        <div class="item-text">${f.name}</div>
                     </div>
                     <div class="item-btns">
-                        <button class="btn-sm" onclick="console.log('Score')">Score</button>
-                        <button class="btn-sm" onclick="console.log('Detail')">Detail</button>
-                        <button class="btn-sm" onclick="console.log('Delete')" style="color:red">Delete</button>
+                        <button class="btn-action" onclick="console.log('Score')">Score</button>
+                        <button class="btn-action" onclick="console.log('Detail')">Detail</button>
+                        <button class="btn-action" onclick="console.log('Delete')" style="color:red">Delete</button>
                     </div>
                 </div>`;
         }).join('');
 
-        container.innerHTML = itemsHtml || '<div style="padding:15px;text-align:center">Trống</div>';
+        container.innerHTML = itemsHtml;
     }
 
     function playMedia(id, mimeType, name) {
@@ -117,8 +128,7 @@
         const url = `/api/drive?id=${id}`;
         view.innerHTML = mimeType.includes('video') ? 
             `<video src="${url}" controls autoplay playsinline></video>` : 
-            `<div style="padding:15px; text-align:center; font-size:12px; font-weight:bold">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+            `<div style="padding:15px; text-align:center; font-size:12px; font-weight:bold; color:white">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
     }
 
     async function startRec() {

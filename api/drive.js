@@ -14,7 +14,7 @@ export default async function handler(req, res) {
         const drive = await getDriveClient(auth);
         const { method, query, body, headers } = req;
 
-        console.log(`[LOG] Action: ${method} - Query: ${JSON.stringify(query)}`); // Luôn ghi log
+        console.log(`[LOG] Action: ${method} - Query: ${JSON.stringify(query)}`);
 
         switch (method) {
             case 'GET':
@@ -30,15 +30,15 @@ export default async function handler(req, res) {
                 return await handleUploadFile(body, res);
 
             case 'DELETE':
-                // 5. Xử lý xóa trực tiếp qua Method DELETE
-                return await handleDeleteFile(drive, query, res);
+                // 4. Xử lý xóa trực tiếp qua Method DELETE (Gọi sang GAS để đảm bảo quyền Owner)
+                return await handleDeleteFile(query, res);
 
             default:
                 res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
                 return res.status(405).end(`Method ${method} Not Allowed`);
         }
     } catch (err) {
-        console.error("[SERVER ERR]", err.message); // Ghi log lỗi đầy đủ
+        console.error("[SERVER ERR]", err.message);
         return res.status(500).json({ error: err.message });
     }
 }
@@ -52,20 +52,24 @@ async function getDriveClient(auth) {
 }
 
 /**
- * BỔ TRỢ 2: Xóa file (Chuyển vào thùng rác thay vì xóa vĩnh viễn)
+ * BỔ TRỢ 2: Xóa file thông qua Google Apps Script (GAS)
  */
-async function handleDeleteFile(drive, query, res) {
+async function handleDeleteFile(query, res) {
     const fileId = query.id || query.fileId;
     if (!fileId) return res.status(400).json({ error: "Missing fileId" });
 
-    // Thay vì drive.files.delete, hãy dùng drive.files.update
-    await drive.files.update({
-        fileId: fileId,
-        resource: { trashed: true } // Đánh dấu là đã cho vào thùng rác
+    const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
+    
+    // Gửi yêu cầu xóa tới GAS với payload chỉ định action delete
+    const gasRes = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', fileId: fileId })
     });
 
-    console.log(`[LOG] Moved to trash success: ${fileId}`);
-    return res.status(200).json({ success: true });
+    const result = await gasRes.json();
+    console.log(`[LOG] Delete file via GAS result for ID: ${fileId}`, result);
+    return res.status(200).json(result);
 }
 
 /**
@@ -142,7 +146,7 @@ async function handleUploadFile(body, res) {
     });
     
     const result = await gasRes.json();
-    console.log(`[LOG] Upload to Drive via GAS success for: ${name}`); // Ghi log
+    console.log(`[LOG] Upload to Drive via GAS success for: ${name}`);
     return res.status(200).json(result);
 }
 

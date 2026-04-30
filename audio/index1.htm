@@ -127,7 +127,7 @@ async function loadFiles() {
     }
 
     const grouped = files.reduce((acc, f) => {
-      const folder = f.parents?.[0] || 'Khác';
+      const folder = (f.parents && f.parents[0]) ? f.parents[0] : 'Khác';
       acc[folder] = acc[folder] || [];
       acc[folder].push(f);
       return acc;

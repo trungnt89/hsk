@@ -65,29 +65,33 @@
 
     window.onload = loadFiles;
 
-    // Hàm lấy tên file theo yêu cầu: id_val_YYYYMMDD_HHMMSSsss
-    function generateFileName(extension) {
-        const now = new Date();
-        const pad = (n, width = 2) => n.toString().padStart(width, '0');
-        
-        // Lấy tham số id từ URL
+    // --- FUNCTION RIÊNG LẤY THÔNG TIN TỪ URL ---
+    function getUrlIdentifier() {
         const urlParams = new URLSearchParams(window.location.search);
-        const idParam = urlParams.get('id') || "unknown";
+        return urlParams.get('id') || "unknown";
+    }
 
+    // Hàm format ngày tháng: YYYYMMDD_HHMMSSsss
+    function getFormattedDate() {
+        const now = new Date();
+        const pad = (n, m = 2) => n.toString().padStart(m, '0');
+        
         const yyyy = now.getFullYear();
         const mm = pad(now.getMonth() + 1);
         const dd = pad(now.getDate());
         const hh = pad(now.getHours());
         const min = pad(now.getMinutes());
         const ss = pad(now.getSeconds());
-        const sss = pad(now.getMilliseconds(), 3); // Lấy miligiây (sss)
+        const sss = pad(now.getMilliseconds(), 3);
 
-        return `id_${idParam}_${yyyy}${mm}${dd}_${hh}${min}${ss}${sss}.${extension}`;
+        return `${yyyy}${mm}${dd}_${hh}${min}${ss}${sss}`;
     }
 
     async function loadFiles() {
+        const identifier = getUrlIdentifier();
         try {
-            const res = await fetch('/api/drive');
+            // Đưa thông tin input vào URL lấy list file
+            const res = await fetch(`/api/drive?identifier=${identifier}`);
             const files = await res.json();
             
             const groups = files.reduce((acc, file) => {
@@ -218,15 +222,16 @@
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
             const extension = isIOS() ? 'm4a' : 'mp3';
+            const identifier = getUrlIdentifier();
             
-            // Sử dụng hàm generateFileName mới
-            const fileName = generateFileName(extension);
+            // Tên file theo format: id_val_YYYYMMDD_HHMMSSsss
+            const fileName = `id_${identifier}_${getFormattedDate()}.${extension}`;
             
             try {
                 const res = await fetch('/api/drive', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: fileName, base64Audio })
+                    body: JSON.stringify({ name: fileName, base64Audio, identifier })
                 });
                 if (res.ok) location.reload();
             } catch (err) {

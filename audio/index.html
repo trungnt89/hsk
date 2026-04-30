@@ -266,7 +266,18 @@
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
             const identifier = getUrlIdentifier();
-            const fileName = `id_${identifier}_${new Date().getTime()}.${isIOS() ? 'm4a' : 'mp3'}`;
+            
+            const now = new Date();
+            const YYYY = now.getFullYear();
+            const MM = String(now.getMonth() + 1).padStart(2, '0');
+            const DD = String(now.getDate()).padStart(2, '0');
+            const HH = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            const sss = String(now.getMilliseconds()).padStart(3, '0');
+            
+            const fileName = `ID_${identifier}_${YYYY}${MM}${DD}_${HH}${mm}${ss}${sss}.${isIOS() ? 'm4a' : 'mp3'}`;
+            
             try {
                 await fetch('/api/drive', {
                     method: 'POST',

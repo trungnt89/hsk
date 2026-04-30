@@ -2,88 +2,85 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Drive Media Player Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 10px; display: flex; justify-content: center; }
-        .app { width: 100%; max-width: 100%; display: flex; flex-direction: column; min-height: 95vh; }
+        body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        .app { width: 100%; max-width: 100%; display: flex; flex-direction: column; height: 100vh; }
         
-        .tabs { display: flex; gap: 5px; margin-bottom: 10px; }
-        .tab-btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: bold; }
+        /* Cố định phần trên cùng */
+        .fixed-header { position: sticky; top: 0; background: #f8fafc; z-index: 1000; padding: 10px; border-bottom: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        
+        .tabs { display: flex; gap: 5px; margin-bottom: 8px; }
+        .tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: bold; font-size: 13px; }
         .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
         
-        /* Tab content có padding-bottom để không bị Player che mất item cuối cùng */
-        .tab-content { display: none; flex-direction: column; flex: 1; position: relative; padding-bottom: 60px; }
-        .tab-content.active { display: flex; }
-
-        .card { background: #ffffff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-        
-        /* Player hiển thị cố định ở dưới cùng của Tab 2 */
-        #media-view { 
-            background: #000; 
-            border-radius: 30px; 
-            overflow: hidden; 
-            display: none; 
-            position: absolute; 
-            bottom: 10px; 
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            z-index: 100; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            border: 1px solid #334155;
-        }
-        video, audio { width: 100%; display: block; height: 38px; }
-        
-        .list { flex: 1; max-height: 450px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
-        #text-display { flex: 1; padding: 15px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fdfdfd; font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 10px; min-height: 150px; overflow-y: auto; }
-        #voice-script { padding: 10px; border: 1px dashed #2563eb; border-radius: 10px; background: #eff6ff; font-size: 14px; color: #1e40af; min-height: 60px; margin-bottom: 10px; font-style: italic; }
-        
-        .item { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 4px; transition: background 0.2s; }
-        .item.selected { background: #f0f7ff; border-left: 4px solid #2563eb; }
-        .item-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .item-text { flex: 1; word-break: break-all; font-size: 13px; font-weight: 500; color: #334155; }
-        .item.selected .item-text { color: #2563eb; }
-        
-        .item-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px; }
-        .btn-action { padding: 4px 10px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; color: #64748b; }
-        .btn-delete { color: #ef4444; border-color: #fee2e2; background: #fef2f2; }
-
-        .rec-box { border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; }
-        .btn-main { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; }
+        .rec-box { background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border: 1px solid #e2e8f0; }
+        #status { font-size: 11px; margin-bottom: 5px; color: #64748b; font-weight: bold; text-transform: uppercase; }
+        .btn-main { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; }
         .btn-rec { background: #2563eb; color: white; transition: all 0.3s; }
         .btn-rec.recording { background: #ef4444; animation: pulse 1.5s infinite; }
+        
+        #voice-script { padding: 8px; border: 1px dashed #2563eb; border-radius: 8px; background: #eff6ff; font-size: 13px; color: #1e40af; min-height: 40px; max-height: 60px; overflow-y: auto; font-style: italic; margin-top: 8px; text-align: left; }
+
+        /* Vùng nội dung có thể cuộn */
+        .content-area { flex: 1; overflow-y: auto; padding: 10px; background: #f1f5f9; }
+        .tab-content { display: none; flex-direction: column; height: auto; min-height: 100%; }
+        .tab-content.active { display: flex; }
+
+        #text-display { padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; font-size: 16px; line-height: 1.7; white-space: pre-wrap; color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        
+        .list { border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow: hidden; }
+        .item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 5px; }
+        .item.selected { background: #f0f7ff; border-left: 4px solid #2563eb; }
+        .item-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .item-text { flex: 1; word-break: break-all; font-size: 13px; font-weight: 500; }
+        .item-btns { display: flex; gap: 8px; justify-content: flex-end; }
+        .btn-action { padding: 5px 10px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; }
+        .btn-delete { color: #ef4444; border-color: #fee2e2; background: #fef2f2; }
+
+        #media-view { 
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            width: 90%; background: #000; border-radius: 25px; overflow: hidden; 
+            z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: none;
+        }
+        video, audio { width: 100%; display: block; height: 40px; }
+
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        #status { font-size: 12px; margin-bottom: 10px; color: #64748b; font-weight: bold; }
     </style>
 </head>
 <body>
 <div class="app">
-    <div class="tabs">
-        <button id="btnTab1" class="tab-btn active" onclick="switchTab(1)">Văn bản (Tab 1)</button>
-        <button id="btnTab2" class="tab-btn" onclick="switchTab(2)">Ghi âm (Tab 2)</button>
+    <!-- CỐ ĐỊNH TRÊN CÙNG -->
+    <div class="fixed-header">
+        <div class="tabs">
+            <button id="btnTab1" class="tab-btn active" onclick="switchTab(1)">VĂN BẢN</button>
+            <button id="btnTab2" class="tab-btn" onclick="switchTab(2)">DANH SÁCH FILE</button>
+        </div>
+        <div class="rec-box">
+            <div id="status">HỆ THỐNG SẴN SÀNG</div>
+            <button id="mainRecBtn" class="btn-main btn-rec" onclick="toggleRec()">BẮT ĐẦU GHI ÂM</button>
+            <div id="voice-script">Script nhận diện giọng nói...</div>
+        </div>
     </div>
 
-    <div class="card">
-        <!-- Tab 1 -->
+    <!-- NỘI DUNG CUỘN PHÍA DƯỚI -->
+    <div class="content-area">
+        <!-- Tab 1: Hiển thị text tiếng Nhật -->
         <div id="tab1" class="tab-content active">
-            <div id="voice-script">Script từ giọng nói sẽ hiển thị tại đây...</div>
-            <div id="text-display">Đang tải nội dung...</div>
-            <div class="rec-box">
-                <div id="status">Sẵn sàng</div>
-                <button id="mainRecBtn" class="btn-main btn-rec" onclick="toggleRec()">BẮT ĐẦU GHI ÂM</button>
-            </div>
+            <div id="text-display">Đang tải nội dung văn bản...</div>
         </div>
 
-        <!-- Tab 2 -->
+        <!-- Tab 2: Danh sách file -->
         <div id="tab2" class="tab-content">
-            <div id="fileList" class="list">Đang tải danh sách...</div>
-            <!-- Player được đặt bên trong Tab 2 -->
-            <div id="media-view"></div>
+            <div id="fileList" class="list">Đang tải danh sách file...</div>
         </div>
     </div>
 </div>
+
+<!-- Player cố định dưới cùng của màn hình khi phát nhạc -->
+<div id="media-view"></div>
 
 <script>
     let mediaRec, chunks = [], audioBlob, recognition;
@@ -120,10 +117,12 @@
         document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === tabIndex - 1));
         document.querySelectorAll('.tab-content').forEach((content, i) => content.classList.toggle('active', i === tabIndex - 1));
         
-        // Khi chuyển về Tab 1, tạm dừng nhạc (nếu muốn) hoặc chỉ cần ẩn Tab 2 là Player tự ẩn theo
-        const audio = document.querySelector('#media-view audio, #media-view video');
-        if (tabIndex === 1 && audio) {
-            // Tùy chọn: audio.pause(); 
+        // Chỉ hiển thị player ở Tab 2
+        const player = document.getElementById('media-view');
+        if (tabIndex === 1) {
+            player.style.display = 'none';
+        } else if (player.innerHTML !== "") {
+            player.style.display = 'block';
         }
     }
 
@@ -160,7 +159,7 @@
 
     function renderFiles(files) {
         const container = document.getElementById('fileList');
-        if (!files || files.length === 0) { container.innerHTML = '<div style="padding:15px;text-align:center">Trống</div>'; return; }
+        if (!files || files.length === 0) { container.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8">Danh sách trống</div>'; return; }
         
         container.innerHTML = files.map(f => `
             <div class="item" id="item-${f.id}">
@@ -169,19 +168,10 @@
                     <div class="item-text">${f.name}</div>
                 </div>
                 <div class="item-btns">
-                    <button class="btn-action">Điểm</button>
-                    <button class="btn-action">Chi tiết</button>
+                    <button class="btn-action">Score</button>
                     <button class="btn-action btn-delete" onclick="deleteFile('${f.id}')">Xóa</button>
                 </div>
             </div>`).join('');
-    }
-
-    async function deleteFile(fileId) {
-        if (!confirm("Bạn có chắc chắn muốn xóa file này không?")) return;
-        try {
-            const res = await fetch(`/api/drive?id=${fileId}`, { method: 'DELETE' });
-            if (res.ok) loadFiles();
-        } catch (err) { console.error(err); }
     }
 
     function playMedia(id, mimeType) {
@@ -206,11 +196,13 @@
         mediaRec.onstop = async () => {
             const rawBlob = new Blob(chunks);
             audioBlob = isIOS() ? new Blob(chunks, { type: 'audio/mp4' }) : await convertToMp3(rawBlob);
-            if (confirm("Ghi âm hoàn tất. Bạn có muốn LƯU lên Drive không?")) upload();
-            else document.getElementById('status').innerText = "Đã hủy lưu";
+            if (confirm("Lưu bản ghi này?")) upload();
         };
         mediaRec.start();
-        if (recognition) recognition.start();
+        if (recognition) {
+            document.getElementById('voice-script').innerText = "...";
+            recognition.start();
+        }
         isRecording = true;
         updateUI(true);
     }
@@ -233,7 +225,7 @@
         } else {
             btn.innerText = "BẮT ĐẦU GHI ÂM";
             btn.classList.remove('recording');
-            status.innerText = "Đã dừng";
+            status.innerText = "HỆ THỐNG SẴN SÀNG";
         }
     }
 
@@ -274,7 +266,7 @@
                     body: JSON.stringify({ name: fileName, base64Audio, identifier })
                 });
                 location.reload();
-            } catch (err) { document.getElementById('status').innerText = "Lỗi upload"; }
+            } catch (err) { document.getElementById('status').innerText = "LỖI LƯU FILE"; }
         };
     }
 </script>

@@ -68,6 +68,13 @@
         .ai-btn { color: var(--ai-color); }
         .ai-btn.generated { color: #27ae60; }
         .loading-text { text-align: center; padding: 40px; font-size: 0.9rem; color: var(--text-light); }
+
+        /* Popup Modal Styles */
+        .audio-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .audio-modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 80%; background: white; border-radius: 12px; overflow: hidden; }
+        .audio-modal-header { padding: 10px; background: #eee; display: flex; justify-content: flex-end; border-bottom: 1px solid #ddd; }
+        .close-modal { cursor: pointer; font-size: 24px; font-weight: bold; padding: 0 10px; line-height: 20px; color: #666; }
+        iframe#audioFrame { width: 100%; height: calc(100% - 40px); border: none; }
     </style>
 </head>
 <body>
@@ -120,6 +127,14 @@
         <div id="tab-paragraph" class="tab-content"><div id="paragraphContainer"></div></div>
         <div id="tab-conversation" class="tab-content"><div id="conversationContainer"></div></div>
     </main>
+
+    <!-- Audio Modal -->
+    <div id="audioModal" class="audio-modal">
+        <div class="audio-modal-content">
+            <div class="audio-modal-header"><span class="close-modal" onclick="closeAudioModal()">&times;</span></div>
+            <iframe id="audioFrame" src=""></iframe>
+        </div>
+    </div>
 
     <script>
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
@@ -234,7 +249,6 @@
             const div = document.createElement('div');
             div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
             div.id = `item-${item.id}`;
-            // [LOG] Cập nhật onclick để không bị overlap với các nút chức năng
             div.onclick = (e) => {
                 if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger')) {
                     selectRecord(item.id);
@@ -268,22 +282,22 @@
         }
 
         /**
-         * [LOG] Xử lý click vào badge record: Chọn trước, mở danh sách sau
+         * [LOG] Xử lý click vào badge record: Mở trang /audio/index.html trong iframe popup
          */
         function handleRecordBadgeClick(id) {
-            console.log(`[LOG] Triggering voice list for ID: ${id}`);
-            // Đảm bảo item này được chọn và URL được cập nhật
+            console.log(`[LOG] Opening audio popup for ID: ${id}`);
             selectRecord(id);
-            
-            // Đợi một chút để module ShadowGame nhận diện sự thay đổi (nếu có) rồi trigger click
-            setTimeout(() => {
-                const btnList = document.getElementById('btnList');
-                if (btnList) {
-                    btnList.click();
-                } else {
-                    console.warn("[System] Không tìm thấy #btnList của module");
-                }
-            }, 50);
+            const modal = document.getElementById('audioModal');
+            const iframe = document.getElementById('audioFrame');
+            iframe.src = `/audio/index.html?id=${id}`;
+            modal.style.display = 'block';
+        }
+
+        function closeAudioModal() {
+            console.log("[LOG] Closing audio popup");
+            const modal = document.getElementById('audioModal');
+            document.getElementById('audioFrame').src = "";
+            modal.style.display = 'none';
         }
 
         function saveDiary() {

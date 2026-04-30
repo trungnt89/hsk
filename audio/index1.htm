@@ -65,12 +65,26 @@
 
     window.onload = loadFiles;
 
+    // Hàm format ngày tháng: YYYYMMDD_HHMMss
+    function getFormattedDate() {
+        const now = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        
+        const yyyy = now.getFullYear();
+        const mm = pad(now.getMonth() + 1);
+        const dd = pad(now.getDate());
+        const hh = pad(now.getHours());
+        const min = pad(now.getMinutes());
+        const ss = pad(now.getSeconds());
+
+        return `${yyyy}${mm}${dd}_${hh}${min}${ss}`;
+    }
+
     async function loadFiles() {
         try {
             const res = await fetch('/api/drive');
             const files = await res.json();
             
-            // Nhóm file theo Parent ID
             const groups = files.reduce((acc, file) => {
                 const parent = (file.parents && file.parents[0]) || "Khác";
                 if (!acc[parent]) acc[parent] = [];
@@ -92,12 +106,10 @@
             const groupDiv = document.createElement('div');
             groupDiv.className = 'folder-group';
 
-            // Tạo Header cho Group
             const header = document.createElement('div');
             header.className = 'folder-header';
             header.innerText = `📁 Thư mục: ${parentId.substring(0, 8)}... (${groups[parentId].length})`;
             
-            // Tạo Content chứa các file
             const content = document.createElement('div');
             content.className = 'folder-content';
 
@@ -106,7 +118,6 @@
                 content.classList.toggle('hidden');
             };
 
-            // Render từng file trong group
             const itemsHtml = groups[parentId].map(f => {
                 const cleanName = f.name.replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'");
                 const displayName = f.name.length > 30 ? f.name.substring(0, 27) + "..." : f.name;
@@ -202,7 +213,9 @@
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
             const extension = isIOS() ? 'm4a' : 'mp3';
-            const fileName = `Rec_${Date.now()}.${extension}`;
+            
+            // Sửa định dạng tên file tại đây
+            const fileName = `Rec_${getFormattedDate()}.${extension}`;
             
             try {
                 const res = await fetch('/api/drive', {

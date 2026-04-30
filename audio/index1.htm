@@ -21,26 +21,41 @@
     }
     video, audio { width: 100%; display: block; }
     
-    /* List styling - Optimized for scrolling */
+    /* List container */
     .list { 
       max-height: 420px; overflow-y: auto; border: 1px solid #e2e8f0; 
       border-radius: 12px; margin-bottom: 20px; background: #fff;
-      -webkit-overflow-scrolling: touch; /* Mượt cho iOS */
+      -webkit-overflow-scrolling: touch;
     }
+
+    /* Folder UI */
+    .folder-group { border-bottom: 1px solid #f1f5f9; }
     .folder-header { 
-      padding: 10px 15px; font-size: 11px; font-weight: 800; 
-      background: #f1f5f9; color: #64748b; text-transform: uppercase; 
-      position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #e2e8f0; 
+      padding: 12px 15px; font-size: 12px; font-weight: 800; 
+      background: #f8fafc; color: #475569; text-transform: uppercase; 
+      display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; user-select: none; transition: background 0.2s;
+      position: sticky; top: 0; z-index: 10;
     }
+    .folder-header:hover { background: #f1f5f9; }
+    .folder-header::after {
+      content: '▶'; font-size: 10px; transition: transform 0.3s; color: #94a3b8;
+    }
+    .folder-header.open::after { transform: rotate(90deg); }
+
+    .folder-content { display: none; overflow: hidden; background: #fff; }
+    .folder-content.open { display: block; }
+
+    /* Item UI */
     .item { 
       padding: 14px 15px; border-bottom: 1px solid #f8fafc; 
       display: flex; align-items: center; gap: 12px; cursor: pointer; 
-      transition: background 0.1s; 
+      transition: background 0.1s; padding-left: 25px;
     }
     .item:active { background: #f1f5f9; }
     .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
     
-    /* Controls */
+    /* Control Buttons */
     .rec-box { border-top: 2px dashed #f1f5f9; padding-top: 20px; text-align: center; }
     #status { font-size: 13px; margin-bottom: 12px; color: #64748b; font-weight: 600; }
     button { 
@@ -61,25 +76,21 @@
 
 <div class="app">
   <div class="card">
-    <!-- Khu vực phát Media -->
     <div id="media-view"></div>
-
-    <!-- Danh sách file -->
     <div id="fileList" class="list">Đang tải dữ liệu...</div>
     
-    <!-- Khu vực điều khiển ghi âm -->
     <div class="rec-box">
       <div id="status">Hệ thống sẵn sàng</div>
       <button id="startBtn" class="btn-rec">BẮT ĐẦU GHI ÂM</button>
       <button id="stopBtn" class="btn-stop" disabled>DỪNG</button>
-      <button id="uploadBtn" class="btn-save" disabled>LƯU LÊN CLOUD DRIVE</button>
+      <button id="uploadBtn" class="btn-save" disabled>LƯU LÊN DRIVE</button>
     </div>
   </div>
 </div>
 
 <script>
 /**
- * QUẢN LÝ BIẾN TOÀN CỤC
+ * BIẾN TOÀN CỤC & DOM CACHE
  */
 let mediaRec, chunks = [], audioBlob;
 const dom = {
@@ -91,14 +102,14 @@ const dom = {
   btnUpload: document.getElementById('uploadBtn')
 };
 
-// Khởi chạy
+// Khởi chạy ứng dụng
 window.onload = loadFiles;
 dom.btnStart.onclick = startRec;
 dom.btnStop.onclick = stopRec;
 dom.btnUpload.onclick = upload;
 
 /**
- * TẢI FILE & GOM NHÓM THEO PARENT ID (TỐI ƯU RENDER)
+ * TẢI DỮ LIỆU VÀ NHÓM THEO PARENT ID
  */
 async function loadFiles() {
   try {
@@ -108,7 +119,6 @@ async function loadFiles() {
     
     if (!Array.isArray(rawData)) throw new Error("Format error");
 
-    // Nhóm file theo parentId (phần tử đầu tiên của mảng parents)
     const grouped = rawData.reduce((acc, f) => {
       const pId = (f.parents && f.parents.length > 0) ? f.parents[0] : 'CHUNG';
       if (!acc[pId]) acc[pId] = [];
@@ -123,70 +133,125 @@ async function loadFiles() {
 }
 
 /**
- * RENDER TỐC ĐỘ CAO (SỬ DỤNG DOCUMENT FRAGMENT)
+ * RENDER TỐI ƯU (DÙNG DOCUMENTFRAGMENT - KHÔNG INNERHTML TRONG LOOP)
  */
 function renderFast(grouped) {
   const fragment = document.createDocumentFragment();
-  dom.list.textContent = ''; // Xóa nhanh hơn innerHTML = ''
+  dom.list.textContent = ''; // Clear danh sách cũ
 
   Object.entries(grouped).forEach(([parentId, files]) => {
-    // Header Folder
+    // 1. Tạo Group Container
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'folder-group';
+
+    // 2. Tạo Header
     const header = document.createElement('div');
     header.className = 'folder-header';
     header.textContent = parentId === 'CHUNG' ? '📁 Mục Chung' : `📁 Thư mục: ${parentId.slice(0,8)}...`;
-    fragment.appendChild(header);
+    
+    // 3. Tạo Vùng chứa file
+    const content = document.createElement('div');
+    content.className = 'folder-content';
 
-    // Items
+    // Sự kiện đóng/mở folder
+    header.addEventListener('click', () => {
+      header.classList.toggle('open');
+      content.classList.toggle('open');
+    });
+
+    // 4. Duyệt file và tạo Element
     files.forEach(f => {
       const isVideo = f.mimeType?.includes('video') || /\.(mp4|webm|mov)$/i.test(f.name);
+      
       const item = document.createElement('div');
       item.className = 'item';
-      item.innerHTML = `
-        <span style="font-size: 18px;">${isVideo ? '🎥' : '🎵'}</span>
-        <div class="item-text">${f.name}</div>
-      `;
-      // Gán sự kiện trực tiếp để tránh lỗi chuỗi (quote)
-      item.onclick = () => playMedia(f.id, f.mimeType, f.name);
-      fragment.appendChild(item);
+      
+      // Tạo icon
+      const icon = document.createElement('span');
+      icon.style.fontSize = '18px';
+      icon.textContent = isVideo ? '🎥' : '🎵';
+      
+      // Tạo tên file
+      const text = document.createElement('div');
+      text.className = 'item-text';
+      text.textContent = f.name;
+
+      item.appendChild(icon);
+      item.appendChild(text);
+
+      // Sự kiện chọn file để phát
+      item.addEventListener('click', (e) => {
+        e.stopPropagation(); // Không làm đóng/mở folder khi chọn file
+        playMedia(f.id, f.mimeType, f.name);
+      });
+
+      content.appendChild(item);
     });
+
+    groupDiv.appendChild(header);
+    groupDiv.appendChild(content);
+    fragment.appendChild(groupDiv);
   });
 
-  dom.list.appendChild(fragment); // Đẩy vào DOM 1 lần duy nhất
+  // Đẩy toàn bộ vào DOM 1 lần duy nhất
+  dom.list.appendChild(fragment);
 }
 
 /**
- * TRÌNH PHÁT MEDIA
+ * PHÁT MEDIA
  */
 function playMedia(id, mimeType, name) {
   dom.view.style.display = 'block';
-  dom.view.innerHTML = ''; // Giải phóng bộ nhớ player cũ
+  dom.view.textContent = ''; // Xóa trình phát cũ
+  
   const url = `/api/drive?id=${id}`;
   const isVideo = mimeType?.includes('video') || /\.(mp4|webm|mov)$/i.test(name);
 
   if (isVideo) {
-    dom.view.innerHTML = `
-      <video controls autoplay playsinline webkit-playsinline style="width:100%">
-        <source src="${url}" type="${mimeType}">
-      </video>`;
+    const video = document.createElement('video');
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.style.width = '100%';
+    
+    const source = document.createElement('source');
+    source.src = url;
+    source.type = mimeType;
+    
+    video.appendChild(source);
+    dom.view.appendChild(video);
   } else {
-    dom.view.innerHTML = `
-      <div style="padding:20px; background:#fff; text-align:center;">
-        <div style="font-size:12px; color:#94a3b8; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis;">${name}</div>
-        <audio controls autoplay style="width:100%">
-          <source src="${url}" type="${mimeType}">
-        </audio>
-      </div>`;
+    const playerBox = document.createElement('div');
+    playerBox.style.padding = '20px';
+    playerBox.style.textAlign = 'center';
+    
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:12px; color:#94a3b8; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis;';
+    title.textContent = name;
+
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.autoplay = true;
+    audio.style.width = '100%';
+    
+    const source = document.createElement('source');
+    source.src = url;
+    source.type = mimeType;
+
+    audio.appendChild(source);
+    playerBox.appendChild(title);
+    playerBox.appendChild(audio);
+    dom.view.appendChild(playerBox);
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /**
- * LOGIC GHI ÂM (HỖ TRỢ IPHONE M4A)
+ * GHI ÂM (HỖ TRỢ IPHONE)
  */
 async function startRec() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    // Ưu tiên m4a cho iOS, nếu không hỗ trợ thì dùng webm
     const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
     
     mediaRec = new MediaRecorder(stream, { mimeType });
@@ -203,7 +268,7 @@ async function startRec() {
     dom.btnStop.disabled = false;
     dom.status.innerText = '🔴 ĐANG GHI ÂM...';
   } catch (err) {
-    alert('Không thể truy cập Micro. Vui lòng kiểm tra quyền cài đặt.');
+    alert('Không thể truy cập Micro.');
   }
 }
 
@@ -218,10 +283,10 @@ function stopRec() {
 }
 
 /**
- * UPLOAD LÊN SERVER
+ * TẢI LÊN DRIVE
  */
 async function upload() {
-  dom.btnUpload.innerText = '⏳ ĐANG XỬ LÝ...';
+  dom.btnUpload.innerText = '⏳ ĐANG TẢI LÊN...';
   dom.btnUpload.disabled = true;
 
   const reader = new FileReader();
@@ -234,24 +299,22 @@ async function upload() {
       const response = await fetch('/api/drive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: `Rec_${Date.now()}.${ext}`,
-          base64Audio,
-          mimeType: audioBlob.type
+        body: JSON.stringify({ 
+          name: `Rec_${Date.now()}.${ext}`, 
+          base64Audio, 
+          mimeType: audioBlob.type 
         })
       });
 
       if (response.ok) {
-        dom.status.innerText = '✅ Đã lưu lên Drive thành công!';
-        loadFiles(); // Tải lại danh sách
-      } else {
-        throw new Error();
-      }
+        dom.status.innerText = '✅ Đã lưu thành công!';
+        loadFiles();
+      } else throw new Error();
     } catch (e) {
-      dom.status.innerText = '❌ Lỗi khi tải lên';
+      dom.status.innerText = '❌ Lỗi tải lên';
       dom.btnUpload.disabled = false;
     } finally {
-      dom.btnUpload.innerText = 'LƯU LÊN CLOUD DRIVE';
+      dom.btnUpload.innerText = 'LƯU LÊN DRIVE';
     }
   };
 }

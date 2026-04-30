@@ -36,6 +36,11 @@
         .btn-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 14px; transition: all 0.2s; }
         .btn-icon:hover { background: #f8fafc; }
         .btn-delete-icon { color: #ef4444; border-color: #fee2e2; background: #fef2f2; }
+        .toast {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: #fff; padding: 10px 20px; border-radius: 20px;
+            font-size: 13px; z-index: 3000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
         #media-view { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; background: #000; border-radius: 25px; overflow: hidden; z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: none; }
         video, audio { width: 100%; display: block; height: 40px; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
@@ -65,6 +70,7 @@
         </div>
     </div>
 </div>
+<div id="toast" class="toast"></div>
 <div id="media-view"></div>
 
 <script>
@@ -262,6 +268,14 @@
         return new Blob(mp3Data, { type: 'audio/mp3' });
     }
 
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.display = 'block';
+        console.log("Toast notification: " + msg);
+        setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
     async function upload() {
         console.log("Bắt đầu quy trình upload lên Drive API...");
         document.getElementById('status').innerText = "ĐANG LƯU";
@@ -289,7 +303,10 @@
                     body: JSON.stringify({ name: fileName, base64Audio, identifier })
                 });
                 console.log(`Upload thành công: ${fileName}`);
-                location.reload();
+                await loadFiles();
+                showToast("Lưu file thành công!");
+                switchTab(2);
+                document.getElementById('status').innerText = "SẴN SÀNG";
             } catch (err) { 
                 document.getElementById('status').innerText = "LỖI LƯU";
                 console.error("Upload Error", err);

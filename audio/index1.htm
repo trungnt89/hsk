@@ -167,11 +167,20 @@ function playMedia(id, mimeType, name) {
   const url = `/api/drive?id=${id}`;
   const isVideo = mimeType.includes('video');
 
-  view.innerHTML = isVideo
-    ? `<video controls autoplay playsinline src="${5px;text-align:center">
-         <div style="font-size:12px;font-weight:bold;margin-bottom:10px">${name}</div>
-         ${url}</audio>
-       </div>`;
+  if (isVideo) {
+  view.innerHTML = `
+    <video controls autoplay playsinline src="${url}"></video>
+  `;
+} else {
+  view.innerHTML = `
+    <div style="padding:15px; text-align:center;">
+      <div style="font-size:12px;font-weight:bold;margin-bottom:10px;">
+        ${name}
+      </div>
+      <audio controls autoplay src="${url}"></audio>
+    </div>
+  `;
+}
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }

@@ -14,28 +14,21 @@
         #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 20px; }
         video, audio { width: 100%; display: block; }
         
-        /* Grouping UI */
-        .list { max-height: 450px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; background: #fff; }
+        /* List UI */
+        .list { max-height: 450px; overflow-y: auto; border: 1px solid #e2e880; border-radius: 10px; margin-bottom: 20px; background: #fff; }
         
-        .folder-group { border-bottom: 1px solid #e2e8f0; }
-        .folder-header { 
-            background: #f1f5f9; padding: 10px 15px; cursor: pointer; 
-            font-weight: bold; font-size: 13px; display: flex; 
-            justify-content: space-between; align-items: center;
-            user-select: none;
-        }
-        .folder-header:hover { background: #e2e8f0; }
-        .folder-header::after { content: '▼'; font-size: 10px; transition: 0.3s; }
-        .folder-header.closed::after { transform: rotate(-90deg); }
-        
-        .folder-content { display: block; }
-        .folder-content.hidden { display: none; }
-
-        .item { padding: 12px 15px; border-bottom: 1px solid #f8fafc; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; transition: 0.2s; }
+        /* Cấu trúc item mới để chứa các nút */
+        .item { padding: 12px 15px; border-bottom: 1px solid #f8fafc; display: flex; flex-direction: column; gap: 8px; }
         .item:last-child { border-bottom: none; }
-        .item:hover { background: #f1f5f9; color: #2563eb; }
-        .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+        .item-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .item-row:hover { color: #2563eb; }
+        .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
         
+        /* Style cho 3 nút mới */
+        .item-btns { display: flex; gap: 5px; }
+        .btn-sm { flex: 1; padding: 5px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold; }
+        .btn-sm:hover { background: #f1f5f9; }
+
         /* Recording Controls */
         .rec-box { border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; }
         button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; }
@@ -65,17 +58,14 @@
 
     window.onload = loadFiles;
 
-    // --- FUNCTION RIÊNG LẤY THÔNG TIN TỪ URL ---
     function getUrlIdentifier() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('id') || "unknown";
     }
 
-    // Hàm format ngày tháng: YYYYMMDD_HHMMSSsss
     function getFormattedDate() {
         const now = new Date();
         const pad = (n, m = 2) => n.toString().padStart(m, '0');
-        
         const yyyy = now.getFullYear();
         const mm = pad(now.getMonth() + 1);
         const dd = pad(now.getDate());
@@ -83,65 +73,42 @@
         const min = pad(now.getMinutes());
         const ss = pad(now.getSeconds());
         const sss = pad(now.getMilliseconds(), 3);
-
         return `${yyyy}${mm}${dd}_${hh}${min}${ss}${sss}`;
     }
 
     async function loadFiles() {
         const identifier = getUrlIdentifier();
         try {
-            // Đưa thông tin input vào URL lấy list file
             const res = await fetch(`/api/drive?identifier=${identifier}`);
             const files = await res.json();
-            
-            const groups = files.reduce((acc, file) => {
-                const parent = (file.parents && file.parents[0]) || "Khác";
-                if (!acc[parent]) acc[parent] = [];
-                acc[parent].push(file);
-                return acc;
-            }, {});
-
-            renderGroups(groups);
+            renderFiles(files);
         } catch (err) {
             document.getElementById('fileList').innerText = "Lỗi tải dữ liệu";
         }
     }
 
-    function renderGroups(groups) {
+    function renderFiles(files) {
         const container = document.getElementById('fileList');
         container.innerHTML = '';
 
-        Object.keys(groups).forEach(parentId => {
-            const groupDiv = document.createElement('div');
-            groupDiv.className = 'folder-group';
-
-            const header = document.createElement('div');
-            header.className = 'folder-header closed';
-            header.innerText = `📁 Thư mục: ${parentId.substring(0, 8)}... (${groups[parentId].length})`;
-            
-            const content = document.createElement('div');
-            content.className = 'folder-content hidden';
-
-            header.onclick = () => {
-                header.classList.toggle('closed');
-                content.classList.toggle('hidden');
-            };
-
-            const itemsHtml = groups[parentId].map(f => {
-                const cleanName = f.name.replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'");
-                const displayName = f.name.length > 30 ? f.name.substring(0, 27) + "..." : f.name;
-                return `
-                    <div class="item" onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
+        const itemsHtml = files.map(f => {
+            const cleanName = f.name.replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'");
+            const displayName = f.name.length > 30 ? f.name.substring(0, 27) + "..." : f.name;
+            return `
+                <div class="item">
+                    <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
                         <span>${f.mimeType.includes('video') ? '🎥' : '🎵'}</span>
                         <div class="item-text">${displayName}</div>
-                    </div>`;
-            }).join('');
+                    </div>
+                    <div class="item-btns">
+                        <button class="btn-sm" onclick="console.log('Score')">Score</button>
+                        <button class="btn-sm" onclick="console.log('Detail')">Detail</button>
+                        <button class="btn-sm" onclick="console.log('Delete')" style="color:red">Delete</button>
+                    </div>
+                </div>`;
+        }).join('');
 
-            content.innerHTML = itemsHtml;
-            groupDiv.appendChild(header);
-            groupDiv.appendChild(content);
-            container.appendChild(groupDiv);
-        });
+        container.innerHTML = itemsHtml || '<div style="padding:15px;text-align:center">Trống</div>';
     }
 
     function playMedia(id, mimeType, name) {
@@ -159,7 +126,6 @@
         mediaRec = new MediaRecorder(stream);
         chunks = [];
         mediaRec.ondataavailable = e => chunks.push(e.data);
-        
         mediaRec.onstop = async () => {
             const rawBlob = new Blob(chunks);
             if (!isIOS()) {
@@ -171,7 +137,6 @@
             document.getElementById('uploadBtn').disabled = false;
             document.getElementById('status').innerText = "✅ Sẵn sàng tải lên";
         };
-
         mediaRec.start();
         document.getElementById('startBtn').disabled = true;
         document.getElementById('stopBtn').disabled = false;
@@ -194,13 +159,11 @@
         const sampleRate = audioBuffer.sampleRate;
         const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
         const mp3Data = [];
-
         const samplesInt16 = new Int16Array(samples.length);
         for (let i = 0; i < samples.length; i++) {
             let s = Math.max(-1, Math.min(1, samples[i]));
             samplesInt16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
-
         const blockSize = 1152;
         for (let i = 0; i < samplesInt16.length; i += blockSize) {
             const chunk = samplesInt16.subarray(i, i + blockSize);
@@ -216,17 +179,13 @@
         const btn = document.getElementById('uploadBtn');
         btn.innerText = "⏳ ĐANG LƯU...";
         btn.disabled = true;
-
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
             const extension = isIOS() ? 'm4a' : 'mp3';
             const identifier = getUrlIdentifier();
-            
-            // Tên file theo format: id_val_YYYYMMDD_HHMMSSsss
             const fileName = `id_${identifier}_${getFormattedDate()}.${extension}`;
-            
             try {
                 const res = await fetch('/api/drive', {
                     method: 'POST',

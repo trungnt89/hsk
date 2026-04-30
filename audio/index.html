@@ -12,33 +12,34 @@
         .tabs { display: flex; gap: 5px; margin-bottom: 10px; }
         .tab-btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: bold; }
         .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
-        .tab-content { display: none; flex-direction: column; flex: 1; }
+        
+        /* Tab content có padding-bottom để không bị Player che mất item cuối cùng */
+        .tab-content { display: none; flex-direction: column; flex: 1; position: relative; padding-bottom: 60px; }
         .tab-content.active { display: flex; }
 
-        .card { background: #ffffff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column; position: relative; }
+        .card { background: #ffffff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
         
-        /* Yêu cầu 1: Thu nhỏ Player, bo tròn và đặt cố định nổi lên trên */
+        /* Player hiển thị cố định ở dưới cùng của Tab 2 */
         #media-view { 
             background: #000; 
             border-radius: 30px; 
             overflow: hidden; 
             display: none; 
-            position: fixed; 
-            bottom: 80px; 
+            position: absolute; 
+            bottom: 10px; 
             left: 50%;
             transform: translateX(-50%);
-            width: 85%;
-            z-index: 1000; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 90%;
+            z-index: 100; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
             border: 1px solid #334155;
         }
         video, audio { width: 100%; display: block; height: 38px; }
         
-        .list { flex: 1; max-height: 500px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; background: #fff; }
+        .list { flex: 1; max-height: 450px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
         #text-display { flex: 1; padding: 15px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fdfdfd; font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 10px; min-height: 150px; overflow-y: auto; }
         #voice-script { padding: 10px; border: 1px dashed #2563eb; border-radius: 10px; background: #eff6ff; font-size: 14px; color: #1e40af; min-height: 60px; margin-bottom: 10px; font-style: italic; }
         
-        /* Yêu cầu 2: Thiết kế lại item và trạng thái Selected */
         .item { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 4px; transition: background 0.2s; }
         .item.selected { background: #f0f7ff; border-left: 4px solid #2563eb; }
         .item-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
@@ -60,11 +61,12 @@
 <body>
 <div class="app">
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab(1)">Văn bản (Tab 1)</button>
-        <button class="tab-btn" onclick="switchTab(2)">Ghi âm (Tab 2)</button>
+        <button id="btnTab1" class="tab-btn active" onclick="switchTab(1)">Văn bản (Tab 1)</button>
+        <button id="btnTab2" class="tab-btn" onclick="switchTab(2)">Ghi âm (Tab 2)</button>
     </div>
 
     <div class="card">
+        <!-- Tab 1 -->
         <div id="tab1" class="tab-content active">
             <div id="voice-script">Script từ giọng nói sẽ hiển thị tại đây...</div>
             <div id="text-display">Đang tải nội dung...</div>
@@ -74,11 +76,12 @@
             </div>
         </div>
 
+        <!-- Tab 2 -->
         <div id="tab2" class="tab-content">
             <div id="fileList" class="list">Đang tải danh sách...</div>
+            <!-- Player được đặt bên trong Tab 2 -->
+            <div id="media-view"></div>
         </div>
-
-        <div id="media-view"></div>
     </div>
 </div>
 
@@ -116,6 +119,12 @@
     function switchTab(tabIndex) {
         document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === tabIndex - 1));
         document.querySelectorAll('.tab-content').forEach((content, i) => content.classList.toggle('active', i === tabIndex - 1));
+        
+        // Khi chuyển về Tab 1, tạm dừng nhạc (nếu muốn) hoặc chỉ cần ẩn Tab 2 là Player tự ẩn theo
+        const audio = document.querySelector('#media-view audio, #media-view video');
+        if (tabIndex === 1 && audio) {
+            // Tùy chọn: audio.pause(); 
+        }
     }
 
     function getUrlIdentifier() {
@@ -171,18 +180,12 @@
         if (!confirm("Bạn có chắc chắn muốn xóa file này không?")) return;
         try {
             const res = await fetch(`/api/drive?id=${fileId}`, { method: 'DELETE' });
-            if (res.ok) {
-                loadFiles();
-            } else {
-                alert("Lỗi khi xóa file");
-            }
+            if (res.ok) loadFiles();
         } catch (err) { console.error(err); }
     }
 
     function playMedia(id, mimeType) {
-        // Xóa class selected của tất cả các item
         document.querySelectorAll('.item').forEach(el => el.classList.remove('selected'));
-        // Thêm class selected cho item hiện tại
         const currentItem = document.getElementById(`item-${id}`);
         if (currentItem) currentItem.classList.add('selected');
 

@@ -252,21 +252,27 @@ function playMedia(id, mimeType, name) {
 async function startRec() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
     
-    mediaRec = new MediaRecorder(stream, { mimeType });
+    // Không truyền mimeType, để trình duyệt tự chọn mặc định
+    mediaRec = new MediaRecorder(stream); 
     chunks = [];
 
     mediaRec.ondataavailable = e => e.data.size > 0 && chunks.push(e.data);
+    
     mediaRec.onstop = () => {
-      audioBlob = new Blob(chunks, { type: mimeType });
+      // Lấy mimeType mặc định mà trình duyệt vừa dùng để ghi
+      const actualType = mediaRec.mimeType; 
+	  alert(actualType);
+      audioBlob = new Blob(chunks, { type: actualType });
+      
+      console.log("Định dạng trình duyệt đã chọn:", actualType);
       dom.btnUpload.disabled = false;
     };
 
     mediaRec.start();
     dom.btnStart.disabled = true;
     dom.btnStop.disabled = false;
-    dom.status.innerText = '🔴 ĐANG GHI ÂM...';
+    dom.status.innerText = '🔴 ĐANG GHI ÂM (Mặc định)...';
   } catch (err) {
     alert('Không thể truy cập Micro.');
   }

@@ -52,14 +52,19 @@ async function getDriveClient(auth) {
 }
 
 /**
- * BỔ TRỢ 2: Xóa file khỏi Google Drive
+ * BỔ TRỢ 2: Xóa file (Chuyển vào thùng rác thay vì xóa vĩnh viễn)
  */
 async function handleDeleteFile(drive, query, res) {
     const fileId = query.id || query.fileId;
     if (!fileId) return res.status(400).json({ error: "Missing fileId" });
 
-    await drive.files.delete({ fileId: fileId });
-    console.log(`[LOG] Deleted file success: ${fileId}`); // Ghi log đầy đủ
+    // Thay vì drive.files.delete, hãy dùng drive.files.update
+    await drive.files.update({
+        fileId: fileId,
+        resource: { trashed: true } // Đánh dấu là đã cho vào thùng rác
+    });
+
+    console.log(`[LOG] Moved to trash success: ${fileId}`);
     return res.status(200).json({ success: true });
 }
 

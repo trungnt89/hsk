@@ -8,45 +8,32 @@
     <style>
         body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
         .app { width: 100%; max-width: 100%; display: flex; flex-direction: column; height: 100vh; }
-        
         .fixed-header { position: sticky; top: 0; background: #f8fafc; z-index: 1000; padding: 10px; border-bottom: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        
         .tabs { display: flex; gap: 5px; margin-bottom: 8px; }
         .tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: bold; font-size: 13px; }
         .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
-        
         .rec-box { background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: flex-start; }
         .rec-controls { display: flex; flex-direction: column; gap: 4px; align-items: center; }
-        
         .btn-main { width: 65px; height: 65px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 10px; line-height: 1.2; flex-shrink: 0; display: flex; align-items: center; justify-content: center; text-align: center; }
         .btn-rec { background: #2563eb; color: white; transition: all 0.3s; }
         .btn-rec.recording { background: #ef4444; animation: pulse 1.5s infinite; }
-        
         #status { font-size: 8px; color: #64748b; font-weight: bold; text-transform: uppercase; text-align: center; width: 65px; }
-        
         #voice-script { flex: 1; padding: 8px; border: 1px dashed #2563eb; border-radius: 8px; background: #eff6ff; font-size: 13px; color: #1e40af; height: 65px; overflow-y: auto; font-style: italic; text-align: left; line-height: 1.4; display: block; word-break: break-word; box-sizing: border-box; }
-
         .content-area { flex: 1; overflow-y: auto; padding: 10px; background: #f1f5f9; }
         .tab-content { display: none; flex-direction: column; height: auto; min-height: 100%; }
         .tab-content.active { display: flex; }
-
         #text-display { padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; font-size: 16px; line-height: 1.7; white-space: pre-wrap; color: #334155; }
-        
-        /* List UI Updated: Mỗi item là 1 card, các nút icon thẳng hàng tên */
         .list { display: flex; flex-direction: column; gap: 8px; }
         .item { padding: 10px 12px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
         .item.selected { background: #f0f7ff; border-color: #2563eb; border-left-width: 4px; }
         .item-row { display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; min-width: 0; }
         .item-text { flex: 1; word-break: break-all; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
         .item-btns { display: flex; gap: 5px; flex-shrink: 0; }
         .btn-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 14px; transition: all 0.2s; }
         .btn-icon:hover { background: #f8fafc; }
         .btn-delete-icon { color: #ef4444; border-color: #fee2e2; background: #fef2f2; }
-
         #media-view { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; background: #000; border-radius: 25px; overflow: hidden; z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: none; }
         video, audio { width: 100%; display: block; height: 40px; }
-
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
@@ -65,7 +52,6 @@
             <div id="voice-script">Script nhận diện giọng nói...</div>
         </div>
     </div>
-
     <div class="content-area">
         <div id="tab1" class="tab-content active">
             <div id="text-display">Đang tải nội dung văn bản...</div>
@@ -75,7 +61,6 @@
         </div>
     </div>
 </div>
-
 <div id="media-view"></div>
 
 <script>
@@ -84,6 +69,7 @@
     const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     window.onload = async () => {
+        console.log("Ứng dụng bắt đầu khởi tạo...");
         await loadFiles();
         await loadDiaryParagraph();
         initSpeechRecognition();
@@ -92,6 +78,7 @@
     function initSpeechRecognition() {
         const Speech = window.webkitSpeechRecognition || window.SpeechRecognition;
         if (Speech) {
+            console.log("Khởi tạo Speech Recognition thành công.");
             recognition = new Speech();
             recognition.continuous = true;
             recognition.interimResults = true;
@@ -101,6 +88,8 @@
                 for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i][0].transcript;
                 document.getElementById('voice-script').innerText = transcript;
             };
+        } else {
+            console.warn("Trình duyệt không hỗ trợ Speech Recognition.");
         }
     }
 
@@ -110,6 +99,7 @@
     }
 
     function switchTab(tabIndex) {
+        console.log(`Chuyển sang Tab: ${tabIndex}`);
         document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === tabIndex - 1));
         document.querySelectorAll('.tab-content').forEach((content, i) => content.classList.toggle('active', i === tabIndex - 1));
         const player = document.getElementById('media-view');
@@ -124,6 +114,7 @@
 
     async function loadDiaryParagraph() {
         const id = getUrlIdentifier();
+        console.log(`Đang truy vấn IndexedDB cho ID: ${id}`);
         const request = indexedDB.open("DiaryDB");
         request.onsuccess = (event) => {
             const db = event.target.result;
@@ -133,14 +124,20 @@
                 const getRequest = store.get(Number(id));
                 getRequest.onsuccess = () => {
                     const data = getRequest.result;
-                    if (data && data.paragraph) document.getElementById('text-display').innerText = data.paragraph;
+                    if (data && data.paragraph) {
+                        console.log("Tải nội dung văn bản thành công.");
+                        document.getElementById('text-display').innerText = data.paragraph;
+                    } else {
+                        console.warn("Không tìm thấy dữ liệu văn bản.");
+                    }
                 };
-            } catch (e) { console.error("DB error", e); }
+            } catch (e) { console.error("Lỗi truy xuất IndexedDB:", e); }
         };
     }
 
     async function loadFiles() {
         const identifier = getUrlIdentifier();
+        console.log(`Đang tải danh sách file từ Drive (Identifier: ${identifier})...`);
         try {
             const res = await fetch(`/api/drive?identifier=${identifier}`);
             const files = await res.json();
@@ -151,7 +148,6 @@
     function renderFiles(files) {
         const container = document.getElementById('fileList');
         if (!files || files.length === 0) { container.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8">Danh sách trống</div>'; return; }
-        
         container.innerHTML = files.map(f => `
             <div class="item" id="item-${f.id}">
                 <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}')">
@@ -166,7 +162,20 @@
             </div>`).join('');
     }
 
+    async function deleteFile(id) {
+        if (!confirm("Bạn có chắc chắn muốn xóa file này?")) return;
+        console.log(`Đang thực hiện xóa file ID: ${id}`);
+        try {
+            await fetch(`/api/drive?id=${id}`, { method: 'DELETE' });
+            console.log("Xóa file thành công.");
+            await loadFiles();
+        } catch (err) {
+            console.error("Lỗi khi xóa file:", err);
+        }
+    }
+
     function playMedia(id, mimeType) {
+        console.log(`Đang phát media ID: ${id}, MimeType: ${mimeType}`);
         document.querySelectorAll('.item').forEach(el => el.classList.remove('selected'));
         const currentItem = document.getElementById(`item-${id}`);
         if (currentItem) currentItem.classList.add('selected');
@@ -180,11 +189,13 @@
 
     async function startRec() {
         try {
+            console.log("Yêu cầu quyền truy cập Micro...");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRec = new MediaRecorder(stream);
             chunks = [];
             mediaRec.ondataavailable = e => chunks.push(e.data);
             mediaRec.onstop = async () => {
+                console.log("Dừng ghi âm, bắt đầu xử lý file...");
                 const rawBlob = new Blob(chunks);
                 audioBlob = isIOS() ? new Blob(chunks, { type: 'audio/mp4' }) : await convertToMp3(rawBlob);
                 if (confirm("Lưu bản ghi này?")) upload();
@@ -196,10 +207,11 @@
             }
             isRecording = true;
             updateUI(true);
-        } catch (e) { alert("Không thể truy cập microphone"); }
+        } catch (e) { console.error("Lỗi microphone:", e); alert("Không thể truy cập microphone"); }
     }
 
     function stopRec() {
+        console.log("Gửi lệnh stop recording.");
         mediaRec.stop();
         mediaRec.stream.getTracks().forEach(t => t.stop());
         if (recognition) recognition.stop();
@@ -224,6 +236,7 @@
     }
 
     async function convertToMp3(blob) {
+        console.log("Bắt đầu chuyển đổi sang MP3 bằng lamejs...");
         const arrayBuffer = await blob.arrayBuffer();
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
@@ -246,6 +259,7 @@
     }
 
     async function upload() {
+        console.log("Bắt đầu quy trình upload lên Drive API...");
         document.getElementById('status').innerText = "ĐANG LƯU";
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
@@ -259,7 +273,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: fileName, base64Audio, identifier })
                 });
-                console.log("Upload Success");
+                console.log(`Upload thành công: ${fileName}`);
                 location.reload();
             } catch (err) { 
                 document.getElementById('status').innerText = "LỖI LƯU";

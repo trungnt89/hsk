@@ -9,7 +9,6 @@
         body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 15px; display: flex; justify-content: center; }
         .app { width: 100%; max-width: 500px; display: flex; flex-direction: column; min-height: 90vh; }
         
-        /* Tabs UI */
         .tabs { display: flex; gap: 5px; margin-bottom: 10px; }
         .tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: bold; }
         .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
@@ -18,61 +17,47 @@
 
         .card { background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column; }
         
-        /* Media Player - FIXED AT BOTTOM */
-        #media-view { 
-            background: #000; border-radius: 12px; overflow: hidden; display: none; 
-            position: sticky; bottom: 0; margin-top: 20px; z-index: 100;
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
-        }
+        #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; position: sticky; bottom: 0; margin-top: 20px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.2); }
         video, audio { width: 100%; display: block; }
         
-        /* Content UI */
         .list { flex: 1; max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; background: #fff; }
-        #text-display { flex: 1; padding: 15px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fdfdfd; font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 20px; min-height: 200px; overflow-y: auto; }
+        #text-display { flex: 1; padding: 15px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fdfdfd; font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 10px; min-height: 150px; overflow-y: auto; }
+        #voice-script { padding: 10px; border: 1px dashed #2563eb; border-radius: 10px; background: #eff6ff; font-size: 14px; color: #1e40af; min-height: 60px; margin-bottom: 20px; font-style: italic; }
         
         .item { padding: 12px 15px; border-bottom: 1px solid #f8fafc; display: flex; flex-direction: column; gap: 8px; }
-        .item:last-child { border-bottom: none; }
-        
         .item-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .item-row:hover { color: #2563eb; }
         .item-text { flex: 1; word-break: break-all; font-size: 14px; font-weight: 500; }
-        
         .item-btns { display: flex; gap: 5px; }
         .btn-action { flex: 1; padding: 6px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold; }
-        .btn-action:hover { background: #f1f5f9; }
 
-        /* Recording Controls */
         .rec-box { border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; }
         button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; }
-        .btn-rec { background: #ef4444; color: white; }
-        .btn-save { background: #10b981; color: white; }
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        .btn-rec { background: #2563eb; color: white; transition: all 0.3s; }
+        .btn-rec.recording { background: #ef4444; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         #status { font-size: 12px; margin-bottom: 10px; color: #64748b; font-weight: bold; }
     </style>
 </head>
 <body>
 <div class="app">
     <div class="tabs">
-        <button id="btn-t1" class="tab-btn active" onclick="switchTab(1)">Văn bản (Tab 1)</button>
-        <button id="btn-t2" class="tab-btn" onclick="switchTab(2)">Ghi âm (Tab 2)</button>
+        <button class="tab-btn active" onclick="switchTab(1)">Văn bản (Tab 1)</button>
+        <button class="tab-btn" onclick="switchTab(2)">Ghi âm (Tab 2)</button>
     </div>
 
     <div class="card">
-        <!-- Tab 1: Text Display -->
         <div id="tab1" class="tab-content active">
             <div id="text-display">Đang tải nội dung...</div>
+            <div id="voice-script">Script từ giọng nói sẽ hiển thị tại đây...</div>
         </div>
 
-        <!-- Tab 2: File List -->
         <div id="tab2" class="tab-content">
             <div id="fileList" class="list">Đang tải danh sách...</div>
         </div>
         
         <div class="rec-box">
             <div id="status">Sẵn sàng</div>
-            <button id="startBtn" class="btn-rec" onclick="startRec()">BẮT ĐẦU GHI ÂM</button>
-            <button id="stopBtn" style="background:#64748b; color:white" onclick="stopRec()" disabled>DỪNG</button>
-            <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>LƯU LÊN DRIVE</button>
+            <button id="mainRecBtn" class="btn-rec" onclick="toggleRec()">BẮT ĐẦU GHI ÂM</button>
         </div>
 
         <div id="media-view"></div>
@@ -80,23 +65,39 @@
 </div>
 
 <script>
-    let mediaRec, chunks = [], audioBlob;
+    let mediaRec, chunks = [], audioBlob, recognition;
+    let isRecording = false;
     const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     window.onload = async () => {
-        console.log("System: Application started.");
         await loadFiles();
         await loadDiaryParagraph();
+        initSpeechRecognition();
     };
 
+    function initSpeechRecognition() {
+        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (Speech) {
+            recognition = new Speech();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'ja-JP';
+            recognition.onresult = (e) => {
+                let transcript = "";
+                for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+                document.getElementById('voice-script').innerText = transcript;
+            };
+        }
+    }
+
+    function toggleRec() {
+        if (!isRecording) startRec();
+        else stopRec();
+    }
+
     function switchTab(tabIndex) {
-        console.log(`System: Switching to Tab ${tabIndex}`);
-        document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-            btn.classList.toggle('active', i === tabIndex - 1);
-        });
-        document.querySelectorAll('.tab-content').forEach((content, i) => {
-            content.classList.toggle('active', i === tabIndex - 1);
-        });
+        document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === tabIndex - 1));
+        document.querySelectorAll('.tab-content').forEach((content, i) => content.classList.toggle('active', i === tabIndex - 1));
     }
 
     function getUrlIdentifier() {
@@ -106,13 +107,6 @@
 
     async function loadDiaryParagraph() {
         const id = getUrlIdentifier();
-        console.log(`IndexedDB: Fetching paragraph for ID: ${id}`);
-        
-        if (id === "unknown") {
-            document.getElementById('text-display').innerText = "Không tìm thấy ID trong URL.";
-            return;
-        }
-
         const request = indexedDB.open("DiaryDB");
         request.onsuccess = (event) => {
             const db = event.target.result;
@@ -120,21 +114,11 @@
                 const transaction = db.transaction(["diaries"], "readonly");
                 const store = transaction.objectStore("diaries");
                 const getRequest = store.get(Number(id));
-
                 getRequest.onsuccess = () => {
                     const data = getRequest.result;
-                    if (data && data.paragraph) {
-                        console.log("IndexedDB: Success.");
-                        document.getElementById('text-display').innerText = data.paragraph;
-                        document.getElementById('status').innerText = "Đã nhận dữ liệu văn bản";
-                    } else {
-                        document.getElementById('text-display').innerText = "Không tìm thấy nội dung cho ID này.";
-                    }
+                    if (data && data.paragraph) document.getElementById('text-display').innerText = data.paragraph;
                 };
-            } catch (e) {
-                console.error("IndexedDB error", e);
-                document.getElementById('text-display').innerText = "Lỗi truy cập Database.";
-            }
+            } catch (e) { console.error(e); }
         };
     }
 
@@ -144,43 +128,26 @@
             const res = await fetch(`/api/drive?identifier=${identifier}`);
             const files = await res.json();
             renderFiles(files);
-        } catch (err) {
-            document.getElementById('fileList').innerText = "Lỗi tải danh sách file";
-        }
+        } catch (err) { }
     }
 
     function renderFiles(files) {
         const container = document.getElementById('fileList');
-        container.innerHTML = '';
-        if (!files || files.length === 0) {
-            container.innerHTML = '<div style="padding:15px;text-align:center">Trống</div>';
-            return;
-        }
-        const itemsHtml = files.map(f => {
-            const cleanName = f.name.replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'");
-            return `
-                <div class="item">
-                    <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
-                        <span>${f.mimeType.includes('video') ? '🎥' : '🎵'}</span>
-                        <div class="item-text">${f.name}</div>
-                    </div>
-                    <div class="item-btns">
-                        <button class="btn-action" onclick="console.log('Score')">Score</button>
-                        <button class="btn-action" onclick="console.log('Detail')">Detail</button>
-                        <button class="btn-action" onclick="console.log('Delete')" style="color:red">Delete</button>
-                    </div>
-                </div>`;
-        }).join('');
-        container.innerHTML = itemsHtml;
+        if (!files || files.length === 0) { container.innerHTML = '<div style="padding:15px;text-align:center">Trống</div>'; return; }
+        container.innerHTML = files.map(f => `
+            <div class="item">
+                <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}', '${f.name.replace(/'/g, "\\'")}')">
+                    <span>${f.mimeType.includes('video') ? '🎥' : '🎵'}</span>
+                    <div class="item-text">${f.name}</div>
+                </div>
+            </div>`).join('');
     }
 
     function playMedia(id, mimeType, name) {
         const view = document.getElementById('media-view');
         view.style.display = 'block';
         const url = `/api/drive?id=${id}`;
-        view.innerHTML = mimeType.includes('video') ? 
-            `<video src="${url}" controls autoplay playsinline></video>` : 
-            `<div style="padding:15px; text-align:center; font-size:12px; font-weight:bold; color:white">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
+        view.innerHTML = mimeType.includes('video') ? `<video src="${url}" controls autoplay playsinline></video>` : `<div style="padding:15px; color:white">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
     }
 
     async function startRec() {
@@ -190,27 +157,36 @@
         mediaRec.ondataavailable = e => chunks.push(e.data);
         mediaRec.onstop = async () => {
             const rawBlob = new Blob(chunks);
-            if (!isIOS()) {
-                document.getElementById('status').innerText = "⏳ ĐANG CONVERT MP3...";
-                audioBlob = await convertToMp3(rawBlob);
-            } else {
-                audioBlob = new Blob(chunks, { type: 'audio/mp4' });
-            }
-            document.getElementById('uploadBtn').disabled = false;
-            document.getElementById('status').innerText = "✅ Sẵn sàng tải lên";
+            audioBlob = isIOS() ? new Blob(chunks, { type: 'audio/mp4' }) : await convertToMp3(rawBlob);
+            if (confirm("Ghi âm hoàn tất. Bạn có muốn LƯU lên Drive không?")) upload();
+            else document.getElementById('status').innerText = "Đã hủy lưu";
         };
         mediaRec.start();
-        document.getElementById('startBtn').disabled = true;
-        document.getElementById('stopBtn').disabled = false;
-        document.getElementById('status').innerText = "🔴 ĐANG GHI ÂM...";
+        if (recognition) recognition.start();
+        isRecording = true;
+        updateUI(true);
     }
 
     function stopRec() {
         mediaRec.stop();
         mediaRec.stream.getTracks().forEach(t => t.stop());
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('stopBtn').disabled = true;
-        document.getElementById('status').innerText = "Đã dừng";
+        if (recognition) recognition.stop();
+        isRecording = false;
+        updateUI(false);
+    }
+
+    function updateUI(rec) {
+        const btn = document.getElementById('mainRecBtn');
+        const status = document.getElementById('status');
+        if (rec) {
+            btn.innerText = "DỪNG GHI ÂM";
+            btn.classList.add('recording');
+            status.innerText = "🔴 ĐANG GHI ÂM...";
+        } else {
+            btn.innerText = "BẮT ĐẦU GHI ÂM";
+            btn.classList.remove('recording');
+            status.innerText = "Đã dừng";
+        }
     }
 
     async function convertToMp3(blob) {
@@ -218,17 +194,15 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
         const samples = audioBuffer.getChannelData(0);
-        const sampleRate = audioBuffer.sampleRate;
-        const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
-        const mp3Data = [];
+        const mp3encoder = new lamejs.Mp3Encoder(1, audioBuffer.sampleRate, 128);
         const samplesInt16 = new Int16Array(samples.length);
         for (let i = 0; i < samples.length; i++) {
             let s = Math.max(-1, Math.min(1, samples[i]));
             samplesInt16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
-        const blockSize = 1152;
-        for (let i = 0; i < samplesInt16.length; i += blockSize) {
-            const chunk = samplesInt16.subarray(i, i + blockSize);
+        const mp3Data = [];
+        for (let i = 0; i < samplesInt16.length; i += 1152) {
+            const chunk = samplesInt16.subarray(i, i + 1152);
             const mp3buf = mp3encoder.encodeBuffer(chunk);
             if (mp3buf.length > 0) mp3Data.push(mp3buf);
         }
@@ -238,27 +212,21 @@
     }
 
     async function upload() {
-        const btn = document.getElementById('uploadBtn');
-        btn.innerText = "⏳ ĐANG LƯU...";
-        btn.disabled = true;
+        document.getElementById('status').innerText = "⏳ ĐANG LƯU...";
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
-            const extension = isIOS() ? 'm4a' : 'mp3';
             const identifier = getUrlIdentifier();
-            const fileName = `id_${identifier}_${new Date().getTime()}.${extension}`;
+            const fileName = `id_${identifier}_${new Date().getTime()}.${isIOS() ? 'm4a' : 'mp3'}`;
             try {
-                const res = await fetch('/api/drive', {
+                await fetch('/api/drive', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: fileName, base64Audio, identifier })
                 });
-                if (res.ok) location.reload();
-            } catch (err) {
-                btn.innerText = "LỖI - THỬ LẠI";
-                btn.disabled = false;
-            }
+                location.reload();
+            } catch (err) { document.getElementById('status').innerText = "Lỗi upload"; }
         };
     }
 </script>

@@ -7,7 +7,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
     <style>
         body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 10px; display: flex; justify-content: center; }
-        /* Yêu cầu 1: Độ rộng full page */
         .app { width: 100%; max-width: 100%; display: flex; flex-direction: column; min-height: 95vh; }
         
         .tabs { display: flex; gap: 5px; margin-bottom: 10px; }
@@ -16,23 +15,38 @@
         .tab-content { display: none; flex-direction: column; flex: 1; }
         .tab-content.active { display: flex; }
 
-        .card { background: #ffffff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column; }
+        .card { background: #ffffff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex: 1; display: flex; flex-direction: column; position: relative; }
         
-        /* Yêu cầu 4: Cho nhỏ lại để không chiếm diện tích */
-        #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; position: sticky; bottom: 0; margin-top: 10px; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.2); }
-        video, audio { width: 100%; display: block; height: 45px; }
+        /* Yêu cầu 1: Thu nhỏ Player, bo tròn và đặt cố định nổi lên trên */
+        #media-view { 
+            background: #000; 
+            border-radius: 30px; 
+            overflow: hidden; 
+            display: none; 
+            position: fixed; 
+            bottom: 80px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            z-index: 1000; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+        }
+        video, audio { width: 100%; display: block; height: 38px; }
         
         .list { flex: 1; max-height: 500px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; background: #fff; }
         #text-display { flex: 1; padding: 15px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fdfdfd; font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 10px; min-height: 150px; overflow-y: auto; }
         #voice-script { padding: 10px; border: 1px dashed #2563eb; border-radius: 10px; background: #eff6ff; font-size: 14px; color: #1e40af; min-height: 60px; margin-bottom: 10px; font-style: italic; }
         
-        .item { padding: 12px 15px; border-bottom: 1px solid #f8fafc; display: flex; flex-direction: column; gap: 5px; }
+        /* Yêu cầu 2: Thiết kế lại item và trạng thái Selected */
+        .item { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 4px; transition: background 0.2s; }
+        .item.selected { background: #f0f7ff; border-left: 4px solid #2563eb; }
         .item-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .item-text { flex: 1; word-break: break-all; font-size: 13px; font-weight: 500; }
+        .item-text { flex: 1; word-break: break-all; font-size: 13px; font-weight: 500; color: #334155; }
+        .item.selected .item-text { color: #2563eb; }
         
-        /* Yêu cầu 2: Thêm các nút chức năng */
-        .item-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 5px; }
-        .btn-action { padding: 6px 12px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold; }
+        .item-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px; }
+        .btn-action { padding: 4px 10px; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; cursor: pointer; color: #64748b; }
         .btn-delete { color: #ef4444; border-color: #fee2e2; background: #fef2f2; }
 
         .rec-box { border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; }
@@ -54,7 +68,6 @@
         <div id="tab1" class="tab-content active">
             <div id="voice-script">Script từ giọng nói sẽ hiển thị tại đây...</div>
             <div id="text-display">Đang tải nội dung...</div>
-            
             <div class="rec-box">
                 <div id="status">Sẵn sàng</div>
                 <button id="mainRecBtn" class="btn-main btn-rec" onclick="toggleRec()">BẮT ĐẦU GHI ÂM</button>
@@ -140,9 +153,8 @@
         const container = document.getElementById('fileList');
         if (!files || files.length === 0) { container.innerHTML = '<div style="padding:15px;text-align:center">Trống</div>'; return; }
         
-        // Yêu cầu 2: Thêm UI Điểm, Chi tiết, Xóa
         container.innerHTML = files.map(f => `
-            <div class="item">
+            <div class="item" id="item-${f.id}">
                 <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}')">
                     <span>${f.mimeType.includes('video') ? '🎥' : '🎵'}</span>
                     <div class="item-text">${f.name}</div>
@@ -155,29 +167,29 @@
             </div>`).join('');
     }
 
-    // Yêu cầu 3: Click xóa gửi action lên server
     async function deleteFile(fileId) {
         if (!confirm("Bạn có chắc chắn muốn xóa file này không?")) return;
-        
         try {
-            const res = await fetch(`/api/drive?fileId=${fileId}`, { method: 'DELETE' });
+            const res = await fetch(`/api/drive?id=${fileId}`, { method: 'DELETE' });
             if (res.ok) {
-                alert("Đã xóa file thành công");
-                loadFiles(); // Load lại danh sách
+                loadFiles();
             } else {
                 alert("Lỗi khi xóa file");
             }
-        } catch (err) {
-            console.error("Delete error:", err);
-        }
+        } catch (err) { console.error(err); }
     }
 
     function playMedia(id, mimeType) {
+        // Xóa class selected của tất cả các item
+        document.querySelectorAll('.item').forEach(el => el.classList.remove('selected'));
+        // Thêm class selected cho item hiện tại
+        const currentItem = document.getElementById(`item-${id}`);
+        if (currentItem) currentItem.classList.add('selected');
+
         const view = document.getElementById('media-view');
         view.style.display = 'block';
         const url = `/api/drive?id=${id}`;
         
-        // Yêu cầu 4: Không hiện tên, cho nhỏ lại
         view.innerHTML = mimeType.includes('video') 
             ? `<video src="${url}" controls autoplay playsinline></video>` 
             : `<audio src="${url}" controls autoplay></audio>`;

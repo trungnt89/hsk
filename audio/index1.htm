@@ -7,7 +7,7 @@
     <!-- Nhúng thư viện LameJS để convert MP3 trên PC -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 15px; display: flex; justify-content: center; }
+        body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 15px; display: flex; justify-content: center; }
         .app { width: 100%; max-width: 500px; }
         .card { background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         #media-view { background: #000; border-radius: 12px; overflow: hidden; display: none; margin-bottom: 20px; }
@@ -17,7 +17,7 @@
         .item:hover { background: #f1f5f9; color: #2563eb; }
         .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
         .rec-box { border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; }
-        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; transition: 0.2s; }
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; }
         .btn-rec { background: #ef4444; color: white; }
         .btn-save { background: #10b981; color: white; }
         button:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -33,24 +33,26 @@
             <div id="status">Sẵn sàng</div>
             <button id="startBtn" class="btn-rec" onclick="startRec()">BẮT ĐẦU GHI ÂM</button>
             <button id="stopBtn" style="background:#64748b; color:white" onclick="stopRec()" disabled>DỪNG</button>
-            <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>LƯU LÊN DRIVE</button>
+            <button id="uploadBtn" class="btn-save" onclick="upload()" disabled>LƯU LÊN DRIVE (GAS)</button>
         </div>
     </div>
 </div>
 
 <script>
     let mediaRec, chunks = [], audioBlob;
+    
+    // Kiểm tra môi trường iOS
     const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     window.onload = loadFiles;
 
     async function loadFiles() {
         try {
-            const res = await fetch(`/api/drive?_ts=${Date.now()}`);
+            const res = await fetch('/api/drive');
             const files = await res.json();
             document.getElementById('fileList').innerHTML = files.map(f => {
                 const cleanName = f.name.replace(/[\r\n]+/g, ' ').replace(/'/g, "\\'");
-                const displayName = f.name.length > 35 ? f.name.substring(0, 32) + "..." : f.name;
+                const displayName = f.name.length > 30 ? f.name.substring(0, 27) + "..." : f.name;
                 return `
                     <div class="item" onclick="playMedia('${f.id}', '${f.mimeType}', '${cleanName}')">
                         <span>${f.mimeType.includes('video') ? '🎥' : '🎵'}</span>
@@ -58,7 +60,7 @@
                     </div>`;
             }).join('');
         } catch (err) {
-            console.error("Error loading files", err);
+            console.error("[LOG] Error loading files:", err);
         }
     }
 
@@ -68,40 +70,36 @@
         const url = `/api/drive?id=${id}`;
         view.innerHTML = mimeType.includes('video') ? 
             `<video src="${url}" controls autoplay playsinline></video>` : 
-            `<div style="padding:15px; text-align:center; font-size:12px;">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
+            `<div style="padding:15px; text-align:center; font-size:12px; color:#1e293b; font-weight:bold">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     async function startRec() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRec = new MediaRecorder(stream);
-            chunks = [];
-            mediaRec.ondataavailable = e => chunks.push(e.data);
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRec = new MediaRecorder(stream);
+        chunks = [];
+        mediaRec.ondataavailable = e => chunks.push(e.data);
+        
+        mediaRec.onstop = async () => {
+            const rawBlob = new Blob(chunks);
             
-            mediaRec.onstop = async () => {
-                const rawBlob = new Blob(chunks);
-                
-                // NẾU LÀ PC (KHÔNG PHẢI IPHONE): Chuyển đổi sang MP3 thực thụ
-                if (!isIOS()) {
-                    document.getElementById('status').innerText = "⏳ ĐANG CONVERT MP3...";
-                    audioBlob = await convertToMp3(rawBlob);
-                } else {
-                    // IPHONE: Giữ nguyên định dạng gốc (thường là m4a/aac)
-                    audioBlob = new Blob(chunks, { type: 'audio/mp4' });
-                }
-                
-                document.getElementById('uploadBtn').disabled = false;
-                document.getElementById('status').innerText = "✅ Đã xử lý xong file";
-            };
+            // Nếu không phải iPhone (PC/Android), convert sang MP3 bằng lamejs
+            if (!isIOS()) {
+                document.getElementById('status').innerText = "⏳ ĐANG CONVERT MP3...";
+                audioBlob = await convertToMp3(rawBlob);
+            } else {
+                // Nếu là iPhone, giữ nguyên định dạng Safari (thường là mp4/aac)
+                audioBlob = new Blob(chunks, { type: 'audio/mp4' });
+            }
+            
+            document.getElementById('uploadBtn').disabled = false;
+            document.getElementById('status').innerText = "✅ Ghi âm sẵn sàng";
+        };
 
-            mediaRec.start();
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('stopBtn').disabled = false;
-            document.getElementById('status').innerText = "🔴 ĐANG GHI ÂM...";
-        } catch (err) {
-            alert("Không thể truy cập Micro");
-        }
+        mediaRec.start();
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        document.getElementById('status').innerText = "🔴 ĐANG GHI ÂM...";
     }
 
     function stopRec() {
@@ -109,20 +107,19 @@
         mediaRec.stream.getTracks().forEach(t => t.stop());
         document.getElementById('startBtn').disabled = false;
         document.getElementById('stopBtn').disabled = true;
+        document.getElementById('status').innerText = "Đã xong";
     }
 
-    // HÀM QUAN TRỌNG: Dùng LameJS convert sang MP3 (dành cho PC)
+    // Hàm bổ sung: Convert dữ liệu thô sang MP3
     async function convertToMp3(blob) {
         const arrayBuffer = await blob.arrayBuffer();
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-        
-        const samples = audioBuffer.getChannelData(0); // Lấy kênh Mono
+        const samples = audioBuffer.getChannelData(0);
         const sampleRate = audioBuffer.sampleRate;
         const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
         const mp3Data = [];
 
-        // Convert Float32 sang Int16
         const samplesInt16 = new Int16Array(samples.length);
         for (let i = 0; i < samples.length; i++) {
             let s = Math.max(-1, Math.min(1, samples[i]));
@@ -135,40 +132,36 @@
             const mp3buf = mp3encoder.encodeBuffer(chunk);
             if (mp3buf.length > 0) mp3Data.push(mp3buf);
         }
-        
-        const endBuf = mp3encoder.flush();
-        if (endBuf.length > 0) mp3Data.push(endBuf);
+        const flush = mp3encoder.flush();
+        if (flush.length > 0) mp3Data.push(flush);
 
         return new Blob(mp3Data, { type: 'audio/mp3' });
     }
 
     async function upload() {
         const btn = document.getElementById('uploadBtn');
-        btn.innerText = "⏳ ĐANG TẢI LÊN...";
+        btn.innerText = "⏳ ĐANG LƯU...";
         btn.disabled = true;
 
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
-            // Đặt đuôi file tùy theo thiết bị
-            const ext = isIOS() ? 'm4a' : 'mp3';
-            const fileName = `Rec_${new Date().getTime()}.${ext}`;
-
+            // Đặt tên file đúng định dạng tùy theo máy ghi
+            const extension = isIOS() ? 'm4a' : 'mp3';
+            const fileName = `Rec_${Date.now()}.${extension}`;
+            
             try {
                 const res = await fetch('/api/drive', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        name: fileName, 
-                        base64Audio: base64Audio,
-                        mimeType: audioBlob.type 
-                    })
+                    body: JSON.stringify({ name: fileName, base64Audio })
                 });
                 if (res.ok) {
                     location.reload();
                 }
             } catch (err) {
+                console.error("[LOG] Upload failed:", err);
                 btn.innerText = "LỖI - THỬ LẠI";
                 btn.disabled = false;
             }

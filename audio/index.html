@@ -160,7 +160,7 @@
         if (!confirm("Bạn có chắc chắn muốn xóa file này không?")) return;
         
         try {
-            const res = await fetch(`/api/drive?act=del&fileId=${fileId}`;
+            const res = await fetch(`/api/drive?fileId=${fileId}`, { method: 'DELETE' });
             if (res.ok) {
                 alert("Đã xóa file thành công");
                 loadFiles(); // Load lại danh sách

@@ -293,7 +293,8 @@ async function upload() {
   reader.readAsDataURL(audioBlob);
   reader.onloadend = async () => {
     const base64Audio = reader.result.split(',')[1];
-    const ext = audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
+    //const ext = audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
+	alert(audioBlob.type);
 
 	const d = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' });
 	const name = `Rec_${d.slice(0,10).replace(/-/g,'')}_${d.slice(11,19).replace(/:/g,'')}${new Date().getMilliseconds().toString().padStart(3,'0')}.${ext}`;

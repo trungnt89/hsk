@@ -128,7 +128,7 @@
     async function loadDiaryParagraph() {
         const id = getUrlIdentifier();
         console.log(`Đang truy vấn IndexedDB 'DiaryDB' cho ID: ${id}`);
-        const request = indexedDB.open("DiaryDB", 1);
+        const request = indexedDB.open("DiaryDB", 2);
         
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
@@ -225,7 +225,7 @@
                 });
                 tx.oncomplete = () => {
                     console.log("Đã lưu vào IndexedDB. Chuyển hướng...");
-                    window.location.href = `nikki/checker.html?id=${getUrlIdentifier()}&fileId=${id}`;
+                    window.location.href = `../nikki/checker.html?id=${getUrlIdentifier()}&fileId=${id}`;
                 };
             };
         } catch (err) {

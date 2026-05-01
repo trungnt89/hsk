@@ -128,9 +128,22 @@
     async function loadDiaryParagraph() {
         const id = getUrlIdentifier();
         console.log(`Đang truy vấn IndexedDB 'DiaryDB' cho ID: ${id}`);
-        const request = indexedDB.open("DiaryDB");
+        const request = indexedDB.open("DiaryDB", 1);
+        
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains("diaries")) {
+                db.createObjectStore("diaries", { keyPath: "id" });
+            }
+        };
+
         request.onsuccess = (event) => {
             const db = event.target.result;
+            if (!db.objectStoreNames.contains("diaries")) {
+                console.warn("Object store 'diaries' not found even after upgrade.");
+                document.getElementById('text-display').innerText = "Vui lòng kiểm tra dữ liệu DiaryDB.";
+                return;
+            }
             try {
                 const transaction = db.transaction(["diaries"], "readonly");
                 const store = transaction.objectStore("diaries");
@@ -184,6 +197,7 @@
 
     async function goToDetails(id, name) {
         showToast("Đang tải file xuống...");
+        const paragraph = document.getElementById('text-display').innerText;
         try {
             const res = await fetch(`/api/drive?id=${id}`);
             if (!res.ok) throw new Error("Fetch failed");
@@ -201,10 +215,17 @@
                 const db = e.target.result;
                 const tx = db.transaction("media", "readwrite");
                 const store = tx.objectStore("media");
-                store.put({ id: "current_media", blob: blob, name: name, fileId: id, ts: Date.now() });
+                store.put({ 
+                    id: "current_media", 
+                    blob: blob, 
+                    name: name, 
+                    paragraph: paragraph, 
+                    fileId: id, 
+                    ts: Date.now() 
+                });
                 tx.oncomplete = () => {
                     console.log("Đã lưu vào IndexedDB. Chuyển hướng...");
-                    window.location.href = `../nikki/checker.html?id=${getUrlIdentifier()}&fileId=${id}`;
+                    window.location.href = `nikki/checker.html?id=${getUrlIdentifier()}&fileId=${id}`;
                 };
             };
         } catch (err) {

@@ -135,7 +135,6 @@ async function handleUploadFile(drive, body, res) {
     if (!base64Audio) return res.status(400).json({ error: "Missing base64 data" });
 
     try {
-        // Chuyển base64 thành Stream
         const buffer = Buffer.from(base64Audio, 'base64');
         const bufferStream = new Readable();
         bufferStream.push(buffer);
@@ -147,7 +146,7 @@ async function handleUploadFile(drive, body, res) {
         };
 
         const media = {
-            mimeType: 'audio/mpeg', // Mặc định audio, có thể điều chỉnh theo nhu cầu
+            mimeType: 'audio/mpeg',
             body: bufferStream,
         };
 
@@ -155,12 +154,23 @@ async function handleUploadFile(drive, body, res) {
             requestBody: fileMetadata,
             media: media,
             fields: 'id, name',
+            // Bắt buộc thêm các flag dưới đây để hỗ trợ upload vào thư mục được chia sẻ
+            supportsAllDrives: true, 
+            keepRevisionForever: false
         });
 
         console.log(`[LOG] Upload to Drive via SA success: ${response.data.name}`);
         return res.status(200).json(response.data);
     } catch (err) {
+        // Log chi tiết lỗi để kiểm tra nếu vẫn fail
         console.error(`[UPLOAD ERR]`, err.message);
+        
+        if (err.message.includes("storage quota")) {
+            return res.status(507).json({ 
+                error: "Dung lượng SA bị chặn. Kiểm tra: 1. Folder đã share quyền 'Editor' cho SA chưa? 2. Tài khoản cá nhân có đầy dung lượng không?" 
+            });
+        }
+        
         return res.status(500).json({ error: err.message });
     }
 }

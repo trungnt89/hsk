@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chuyên Gia Chấm Điểm Phát Âm Nhật Ngữ</title>
-    <script src="../com/assistive.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root { --primary: #1e3799; --accent: #007bff; --bg: #f4f7f6; }
@@ -59,13 +58,13 @@
     <div id="status">Trạng thái: Sẵn sàng</div>
     <div id="result"></div>
 
-    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng với model Gemini 2.5 Flash.</div>
+    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>
 </div>
 
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
-    const SHADOW_DB_NAME = 'ShadowVoiceDB'; 
-    const SHADOW_STORE_NAME = 'voices';     
+    const DB_NAME = 'MediaCacheDB'; 
+    const STORE_NAME = 'media';     
     const SETTINGS_DB_NAME = 'JP_Score_DB_v1';
     const SETTINGS_STORE_NAME = 'settings';
 
@@ -98,15 +97,18 @@
         });
     }
 
-    async function loadDataFromShadowModule(fileId) {
+    async function loadDataFromCache() {
         return new Promise(res => {
-            const req = indexedDB.open(SHADOW_DB_NAME, 1);
+            const req = indexedDB.open(DB_NAME, 1);
             req.onsuccess = e => {
                 try {
                     const db = e.target.result;
-                    const tx = db.transaction(SHADOW_STORE_NAME, 'readonly');
-                    const store = tx.objectStore(SHADOW_STORE_NAME);
-                    const getReq = store.get(fileId);
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        return res(null);
+                    }
+                    const tx = db.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const getReq = store.get('current_media');
                     getReq.onsuccess = () => res(getReq.result);
                     getReq.onerror = () => res(null);
                 } catch (err) { res(null); }
@@ -117,25 +119,32 @@
 
     window.onload = async () => {
         addLog("🚀 Khởi tạo hệ thống...");
-        const db = await initSettingsDB();
-        const tx = db.transaction(SETTINGS_STORE_NAME, 'readonly');
-        const store = tx.objectStore(SETTINGS_STORE_NAME);
-        const req = store.get('api_key');
-        req.onsuccess = () => { if(req.result) { apiKeyInput.value = req.result; addLog("🔑 Đã nạp API Key."); }};
-
-        const fileId = new URLSearchParams(window.location.search).get('fileId');
-        if (fileId) {
-            addLog(`🔍 Truy xuất dữ liệu cho fileId: ${fileId}`);
-            const data = await loadDataFromShadowModule(fileId);
-            if (data) {
-                scriptInput.value = data.script || "";
-                if (data.blob) {
-                    currentBlob = data.blob;
-                    audioPreview.src = URL.createObjectURL(data.blob);
-                    audioPreview.style.display = "block";
-                    addLog("🎵 Đã nạp Audio & Script tự động.");
-                }
+        
+        // Load API Key
+        const settingsDb = await initSettingsDB();
+        const txSettings = settingsDb.transaction(SETTINGS_STORE_NAME, 'readonly');
+        const settingsStore = txSettings.objectStore(SETTINGS_STORE_NAME);
+        const reqSettings = settingsStore.get('api_key');
+        reqSettings.onsuccess = () => { 
+            if(reqSettings.result) { 
+                apiKeyInput.value = reqSettings.result; 
+                addLog("🔑 Đã nạp API Key."); 
             }
+        };
+
+        // Load data from MediaCacheDB
+        addLog("🔍 Truy xuất dữ liệu từ MediaCacheDB...");
+        const data = await loadDataFromCache();
+        if (data) {
+            scriptInput.value = data.paragraph || "";
+            if (data.blob) {
+                currentBlob = data.blob;
+                audioPreview.src = URL.createObjectURL(data.blob);
+                audioPreview.style.display = "block";
+                addLog("🎵 Đã nạp Audio & Script tự động.");
+            }
+        } else {
+            addLog("⚠️ Không tìm thấy dữ liệu trong MediaCacheDB.");
         }
     };
 
@@ -170,7 +179,7 @@
         analyzeBtn.disabled = true;
         statusDiv.innerText = "Trạng thái: Đang phân tích...";
         resultDiv.style.display = "none";
-        addLog("⏳ Bắt đầu quá trình phân tích với cơ chế chuyển đổi model...");
+        addLog("⏳ Bắt đầu quá trình phân tích...");
 
         try {
             const base64Data = await new Promise((resolve) => {
@@ -179,8 +188,6 @@
                 r.readAsDataURL(file);
             });
 
-            // Cơ chế chuyển đổi Model (Fallback) với định dạng ID chuẩn
-            //const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
 			const models = ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash'];
             let responseData = null;
             let lastError = "";
@@ -225,20 +232,19 @@
                 }
             }
 
-            const data = responseData;
-            if (!data || data.error) throw new Error(lastError || "Không thể kết nối tới bất kỳ Model nào.");
+            if (!responseData || responseData.error) throw new Error(lastError || "Không thể kết nối tới bất kỳ Model nào.");
 
-            if (data.candidates && data.candidates[0].content.parts[0].text) {
-                const aiText = data.candidates[0].content.parts[0].text;
+            if (responseData.candidates && responseData.candidates[0].content.parts[0].text) {
+                const aiText = responseData.candidates[0].content.parts[0].text;
                 
                 resultDiv.innerHTML = marked.parse(aiText);
                 resultDiv.style.display = "block";
                 statusDiv.innerText = "Trạng thái: Hoàn tất!";
-                addLog("✅ Đã nhận và hiển thị kết quả định dạng HTML.");
+                addLog("✅ Đã nhận và hiển thị kết quả.");
 
-                const fileId = new URLSearchParams(window.location.search).get('fileId');
-                if (fileId) {
-                    addLog("📡 Đang đồng bộ điểm số lên Google Sheet...");
+                const fileIdFromUrl = new URLSearchParams(window.location.search).get('fileId');
+                if (fileIdFromUrl) {
+                    addLog("📡 Đang đồng bộ điểm số...");
                     const scoreMatch = aiText.match(/(\d+)\/1000/);
                     const scoreValue = scoreMatch ? scoreMatch[1] : "0";
 
@@ -247,7 +253,7 @@
                         mode: 'no-cors',
                         body: JSON.stringify({
                             action: 'updateAssessment',
-                            fileId: fileId,
+                            fileId: fileIdFromUrl,
                             score: scoreValue,
                             feedback: aiText
                         })

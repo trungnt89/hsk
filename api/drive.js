@@ -1,6 +1,5 @@
 const { GoogleAuth } = require('google-auth-library');
 const { google } = require('googleapis');
-const { Readable } = require('stream');
 
 /**
  * FUNCTION MAIN (API HANDLER)
@@ -19,18 +18,20 @@ export default async function handler(req, res) {
 
         switch (method) {
             case 'GET':
+                // 1. Xử lý Stream (Nếu có ID)
                 if (query.id) {
                     return await handleStreamMedia(drive, query.id, headers, res);
                 }
+                // 2. Xử lý danh sách (Mặc định)
                 return await handleListFiles(drive, query.identifier, res);
 
             case 'POST':
-                // Chuyển sang xử lý trực tiếp qua SA
-                return await handleUploadFile(drive, body, res);
+                // 3. Xử lý Upload
+                return await handleUploadFile(body, res);
 
             case 'DELETE':
-                // Chuyển sang xử lý trực tiếp qua SA
-                return await handleDeleteFile(drive, query, res);
+                // 4. Xử lý xóa trực tiếp qua Method DELETE (Gọi sang GAS để đảm bảo quyền Owner)
+                return await handleDeleteFile(query, res);
 
             default:
                 res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
@@ -51,24 +52,28 @@ async function getDriveClient(auth) {
 }
 
 /**
- * BỔ TRỢ 2: Xóa file trực tiếp qua Service Account
+ * BỔ TRỢ 2: Xóa file thông qua Google Apps Script (GAS)
  */
-async function handleDeleteFile(drive, query, res) {
+async function handleDeleteFile(query, res) {
     const fileId = query.id || query.fileId;
     if (!fileId) return res.status(400).json({ error: "Missing fileId" });
 
-    try {
-        await drive.files.delete({ fileId: fileId });
-        console.log(`[LOG] Delete file success for ID: ${fileId}`);
-        return res.status(200).json({ status: 'success', fileId });
-    } catch (err) {
-        console.error(`[DELETE ERR]`, err.message);
-        return res.status(500).json({ error: err.message });
-    }
+    const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
+    
+    // Gửi yêu cầu xóa tới GAS với payload chỉ định action delete
+    const gasRes = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', fileId: fileId })
+    });
+
+    const result = await gasRes.json();
+    console.log(`[LOG] Delete file via GAS result for ID: ${fileId}`, result);
+    return res.status(200).json(result);
 }
 
 /**
- * BỔ TRỢ 3: Stream media (Giữ nguyên)
+ * BỔ TRỢ 3: Stream media (hỗ trợ tua video/audio)
  */
 async function handleStreamMedia(drive, fileId, headers, res) {
     const meta = await drive.files.get({ fileId: fileId, fields: 'size, mimeType' });
@@ -102,7 +107,7 @@ async function handleStreamMedia(drive, fileId, headers, res) {
 }
 
 /**
- * BỔ TRỢ 4: Lấy danh sách file (Giữ nguyên)
+ * BỔ TRỢ 4: Lấy danh sách file theo identifier
  */
 async function handleListFiles(drive, identifier, res) {
     let allFiles = [];
@@ -128,51 +133,21 @@ async function handleListFiles(drive, identifier, res) {
 }
 
 /**
- * BỔ TRỢ 5: Upload file trực tiếp qua Service Account
+ * BỔ TRỢ 5: Upload file qua Google Apps Script
  */
-async function handleUploadFile(drive, body, res) {
+async function handleUploadFile(body, res) {
     const { name, base64Audio, identifier } = body;
-    if (!base64Audio) return res.status(400).json({ error: "Missing base64 data" });
-
-    try {
-        const buffer = Buffer.from(base64Audio, 'base64');
-        const bufferStream = new Readable();
-        bufferStream.push(buffer);
-        bufferStream.push(null);
-
-        const fileMetadata = {
-            name: `id_${identifier}_${name}`,
-            parents: ['1Z-YuFfWP5bFhdBdXoXE4qiIlOMpoBB8_'] 
-        };
-
-        const media = {
-            mimeType: 'audio/mpeg',
-            body: bufferStream,
-        };
-
-        const response = await drive.files.create({
-            requestBody: fileMetadata,
-            media: media,
-            fields: 'id, name',
-            // Bắt buộc thêm các flag dưới đây để hỗ trợ upload vào thư mục được chia sẻ
-            supportsAllDrives: true, 
-            keepRevisionForever: false
-        });
-
-        console.log(`[LOG] Upload to Drive via SA success: ${response.data.name}`);
-        return res.status(200).json(response.data);
-    } catch (err) {
-        // Log chi tiết lỗi để kiểm tra nếu vẫn fail
-        console.error(`[UPLOAD ERR]`, err.message);
-        
-        if (err.message.includes("storage quota")) {
-            return res.status(507).json({ 
-                error: "Dung lượng SA bị chặn. Kiểm tra: 1. Folder đã share quyền 'Editor' cho SA chưa? 2. Tài khoản cá nhân có đầy dung lượng không?" 
-            });
-        }
-        
-        return res.status(500).json({ error: err.message });
-    }
+    const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
+    
+    const gasRes = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, base64Audio, identifier })
+    });
+    
+    const result = await gasRes.json();
+    console.log(`[LOG] Upload to Drive via GAS success for: ${name}`);
+    return res.status(200).json(result);
 }
 
 export const config = { api: { bodyParser: { sizeLimit: '15mb' } } };

@@ -175,11 +175,42 @@
                     <div class="item-text">${f.name}</div>
                 </div>
                 <div class="item-btns">
-                    <button class="btn-icon" title="Chi tiết">📄</button>
+                    <button class="btn-icon" title="Chi tiết" onclick="goToDetails('${f.id}', '${f.name}')">📄</button>
                     <button class="btn-icon" title="Score">🎯</button>
                     <button class="btn-icon btn-delete-icon" onclick="deleteFile('${f.id}')" title="Xóa">🗑️</button>
                 </div>
             </div>`).join('');
+    }
+
+    async function goToDetails(id, name) {
+        showToast("Đang tải file xuống...");
+        try {
+            const res = await fetch(`/api/drive?id=${id}`);
+            if (!res.ok) throw new Error("Fetch failed");
+            const blob = await res.blob();
+            
+            const dbReq = indexedDB.open("MediaCacheDB", 1);
+            dbReq.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains("media")) {
+                    db.createObjectStore("media", { keyPath: "id" });
+                }
+            };
+            
+            dbReq.onsuccess = (e) => {
+                const db = e.target.result;
+                const tx = db.transaction("media", "readwrite");
+                const store = tx.objectStore("media");
+                store.put({ id: "current_media", blob: blob, name: name, fileId: id, ts: Date.now() });
+                tx.oncomplete = () => {
+                    console.log("Đã lưu vào IndexedDB. Chuyển hướng...");
+                    window.location.href = `nikki/checker.html?id=${getUrlIdentifier()}&fileId=${id}`;
+                };
+            };
+        } catch (err) {
+            console.error("Lỗi goToDetails:", err);
+            showToast("Lỗi khi chuẩn bị chi tiết.");
+        }
     }
 
     async function deleteFile(id) {

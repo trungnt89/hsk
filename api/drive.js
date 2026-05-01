@@ -115,7 +115,7 @@ async function handleListFiles(drive, identifier, res) {
     let driveQuery = `trashed=false and (mimeType contains 'audio/' or mimeType contains 'video/')`;
     
     if (identifier) {
-        driveQuery += ` and name contains 'id_${identifier}_'`;
+        driveQuery += ` and name contains '_${identifier}_'`;
     }
 
     do {

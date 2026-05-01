@@ -80,6 +80,7 @@
 
     window.onload = async () => {
         console.log("Ứng dụng bắt đầu khởi tạo...");
+        console.log("ID nhận diện từ URL:", getUrlIdentifier());
         await loadFiles();
         await loadDiaryParagraph();
         initSpeechRecognition();
@@ -88,7 +89,7 @@
     function initSpeechRecognition() {
         const Speech = window.webkitSpeechRecognition || window.SpeechRecognition;
         if (Speech) {
-            console.log("Khởi tạo Speech Recognition thành công.");
+            console.log("Khởi tạo Speech Recognition (ja-JP)...");
             recognition = new Speech();
             recognition.continuous = true;
             recognition.interimResults = true;
@@ -96,8 +97,10 @@
             recognition.onresult = (e) => {
                 let transcript = "";
                 for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+                console.log("Nội dung nhận diện:", transcript);
                 document.getElementById('voice-script').innerText = transcript;
             };
+            recognition.onerror = (e) => console.error("Speech Recognition Error:", e.error);
         } else {
             console.warn("Trình duyệt không hỗ trợ Speech Recognition.");
         }
@@ -124,7 +127,7 @@
 
     async function loadDiaryParagraph() {
         const id = getUrlIdentifier();
-        console.log(`Đang truy vấn IndexedDB cho ID: ${id}`);
+        console.log(`Đang truy vấn IndexedDB 'DiaryDB' cho ID: ${id}`);
         const request = indexedDB.open("DiaryDB");
         request.onsuccess = (event) => {
             const db = event.target.result;
@@ -138,26 +141,33 @@
                         console.log("Tải nội dung văn bản thành công.");
                         document.getElementById('text-display').innerText = data.paragraph;
                     } else {
-                        console.warn("Không tìm thấy dữ liệu văn bản.");
+                        console.warn("Không tìm thấy dữ liệu cho ID này trong IndexedDB.");
+                        document.getElementById('text-display').innerText = "Không tìm thấy nội dung.";
                     }
                 };
             } catch (e) { console.error("Lỗi truy xuất IndexedDB:", e); }
         };
+        request.onerror = (e) => console.error("Lỗi mở IndexedDB:", e);
     }
 
     async function loadFiles() {
         const identifier = getUrlIdentifier();
-        console.log(`Đang tải danh sách file từ Drive (Identifier: ${identifier})...`);
+        console.log(`Đang fetch danh sách file từ API: /api/drive?identifier=${identifier}`);
         try {
             const res = await fetch(`/api/drive?identifier=${identifier}`);
             const files = await res.json();
+            console.log("Dữ liệu file nhận được:", files);
             renderFiles(files);
-        } catch (err) { console.error("Load failed", err); }
+        } catch (err) { console.error("Lỗi khi fetch file từ Drive:", err); }
     }
 
     function renderFiles(files) {
         const container = document.getElementById('fileList');
-        if (!files || files.length === 0) { container.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8">Danh sách trống</div>'; return; }
+        if (!files || files.length === 0) { 
+            console.log("Danh sách file trống.");
+            container.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8">Danh sách trống</div>'; 
+            return; 
+        }
         container.innerHTML = files.map(f => `
             <div class="item" id="item-${f.id}">
                 <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}')">
@@ -174,24 +184,27 @@
 
     async function deleteFile(id) {
         if (!confirm("Bạn có chắc chắn muốn xóa file này?")) return;
-        console.log(`Đang thực hiện xóa file ID: ${id}`);
+        console.log(`Bắt đầu xóa file ID: ${id}`);
         try {
             await fetch(`/api/drive?id=${id}`, { method: 'DELETE' });
-            console.log("Xóa file thành công.");
+            console.log("Xóa file thành công trên Server.");
             await loadFiles();
+            showToast("Đã xóa file.");
         } catch (err) {
             console.error("Lỗi khi xóa file:", err);
+            showToast("Lỗi khi xóa file.");
         }
     }
 
     function playMedia(id, mimeType) {
-        console.log(`Đang phát media ID: ${id}, MimeType: ${mimeType}`);
+        console.log(`Phát media: ID=${id}, Type=${mimeType}`);
         document.querySelectorAll('.item').forEach(el => el.classList.remove('selected'));
         const currentItem = document.getElementById(`item-${id}`);
         if (currentItem) currentItem.classList.add('selected');
+        
         const view = document.getElementById('media-view');
         view.style.display = 'block';
-        const url = `/api/drive?id=${id}`;
+        const url = `/api/drive?id=${id}&t=${Date.now()}`;
         view.innerHTML = mimeType.includes('video') 
             ? `<video src="${url}" controls autoplay playsinline></video>` 
             : `<audio src="${url}" controls autoplay></audio>`;
@@ -199,31 +212,38 @@
 
     async function startRec() {
         try {
-            console.log("Yêu cầu quyền truy cập Micro...");
+            console.log("--- Bắt đầu yêu cầu Microphone ---");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRec = new MediaRecorder(stream);
             chunks = [];
             mediaRec.ondataavailable = e => chunks.push(e.data);
             mediaRec.onstop = async () => {
-                console.log("Dừng ghi âm, bắt đầu xử lý file...");
+                console.log("MediaRecorder đã dừng. Đang đóng gói dữ liệu...");
                 const rawBlob = new Blob(chunks);
                 audioBlob = isIOS() ? new Blob(chunks, { type: 'audio/mp4' }) : await convertToMp3(rawBlob);
+                console.log("AudioBlob hoàn tất:", audioBlob.type, audioBlob.size, "bytes");
                 if (confirm("Lưu bản ghi này?")) upload();
             };
             mediaRec.start();
             if (recognition) {
                 document.getElementById('voice-script').innerText = "...";
                 recognition.start();
+                console.log("Speech Recognition started.");
             }
             isRecording = true;
             updateUI(true);
-        } catch (e) { console.error("Lỗi microphone:", e); alert("Không thể truy cập microphone"); }
+        } catch (e) { 
+            console.error("Lỗi microphone/MediaRecorder:", e); 
+            alert("Không thể truy cập microphone. Vui lòng kiểm tra quyền truy cập."); 
+        }
     }
 
     function stopRec() {
-        console.log("Gửi lệnh stop recording.");
-        mediaRec.stop();
-        mediaRec.stream.getTracks().forEach(t => t.stop());
+        console.log("Gửi lệnh dừng ghi âm.");
+        if (mediaRec && mediaRec.state !== "inactive") {
+            mediaRec.stop();
+            mediaRec.stream.getTracks().forEach(t => t.stop());
+        }
         if (recognition) recognition.stop();
         isRecording = false;
         updateUI(false);
@@ -265,6 +285,7 @@
         }
         const flush = mp3encoder.flush();
         if (flush.length > 0) mp3Data.push(flush);
+        console.log("Kết thúc nén MP3.");
         return new Blob(mp3Data, { type: 'audio/mp3' });
     }
 
@@ -272,12 +293,12 @@
         const t = document.getElementById('toast');
         t.innerText = msg;
         t.style.display = 'block';
-        console.log("Toast notification: " + msg);
+        console.log("Thông báo (Toast):", msg);
         setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
     async function upload() {
-        console.log("Bắt đầu quy trình upload lên Drive API...");
+        console.log("Chuẩn bị upload dữ liệu lên Drive...");
         document.getElementById('status').innerText = "ĐANG LƯU";
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
@@ -286,30 +307,28 @@
             const identifier = getUrlIdentifier();
             
             const now = new Date();
-            const YYYY = now.getFullYear();
-            const MM = String(now.getMonth() + 1).padStart(2, '0');
-            const DD = String(now.getDate()).padStart(2, '0');
-            const HH = String(now.getHours()).padStart(2, '0');
-            const mm = String(now.getMinutes()).padStart(2, '0');
-            const ss = String(now.getSeconds()).padStart(2, '0');
-            const sss = String(now.getMilliseconds()).padStart(3, '0');
+            const fileName = `REC_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}_${identifier}.${isIOS() ? 'm4a' : 'mp3'}`;
             
-            const fileName = `REC_${YYYY}${MM}${DD}_${HH}${mm}${ss}${sss}_${identifier}.${isIOS() ? 'm4a' : 'mp3'}`;
-            
+            console.log("Tên file upload:", fileName);
             try {
-                await fetch('/api/drive', {
+                const res = await fetch('/api/drive', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: fileName, base64Audio, identifier })
                 });
-                console.log(`Upload thành công: ${fileName}`);
-                await loadFiles();
-                showToast("Lưu file thành công!");
-                switchTab(2);
-                document.getElementById('status').innerText = "SẴN SÀNG";
+                if (res.ok) {
+                    console.log("Upload thành công.");
+                    await loadFiles();
+                    showToast("Lưu file thành công!");
+                    switchTab(2);
+                } else {
+                    throw new Error("Server response not OK");
+                }
             } catch (err) { 
-                document.getElementById('status').innerText = "LỖI LƯU";
-                console.error("Upload Error", err);
+                console.error("Lỗi trong quá trình upload:", err);
+                showToast("Lỗi khi lưu file!");
+            } finally {
+                document.getElementById('status').innerText = "SẴN SÀNG";
             }
         };
     }

@@ -15,28 +15,36 @@
         
         h2 { text-align: left; color: var(--primary); margin: 0 0 15px 0; font-size: 1.2rem; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         
-        /* Layout nhỏ gọn cho phần load thông tin */
-        .config-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: start;
+        /* Tab Styles */
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 15px; gap: 5px; }
+        .tab-btn { 
+            padding: 10px 20px; border: none; background: #eee; cursor: pointer; 
+            font-weight: bold; border-radius: 8px 8px 0 0; transition: 0.3s;
+            font-size: 13px;
+        }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Script Display Style */
+        #scriptDisplay { 
+            padding: 12px; background: #fffbe6; border: 1px solid #ffe58f; 
+            border-radius: 4px; font-size: 15px; min-height: 40px; margin-bottom: 10px;
+            white-space: pre-wrap;
         }
 
-        .form-group { margin-bottom: 5px; flex: 1; min-width: 200px; }
-        .form-group:nth-child(2) { flex: 2; min-width: 300px; }
-        label { display: block; margin-bottom: 4px; font-weight: bold; color: #555; font-size: 0.85rem; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; color: #555; font-size: 0.85rem; }
         
-        input[type="text"], input[type="file"], textarea { 
+        input[type="text"], textarea { 
             width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; outline: none;
         }
-        textarea { height: 60px; resize: vertical; }
         
         /* Nút bấm và Trạng thái */
         .action-row { display: flex; align-items: center; gap: 15px; margin-top: 5px; padding-top: 10px; border-top: 1px dashed #eee; }
-        button { background: var(--accent); color: white; border: none; padding: 10px 25px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; width: auto; }
-        button:hover { background: var(--primary); }
-        button:disabled { background: #ccc; }
+        button#analyzeBtn { background: var(--accent); color: white; border: none; padding: 10px 25px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; width: auto; }
+        button#analyzeBtn:hover { background: var(--primary); }
+        button#analyzeBtn:disabled { background: #ccc; }
         
         #status { font-weight: bold; color: #666; font-size: 0.85rem; display: flex; align-items: center; }
         #status::before { content: "●"; margin-right: 5px; color: #e67e22; }
@@ -53,40 +61,43 @@
         #result th { background-color: #f8f9fa; }
 
         .log-box { margin-top: 15px; background: #2d3436; color: #00ff00; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 10px; max-height: 100px; overflow-y: auto; }
-        #audioPreview { margin-top: 5px; width: 100%; height: 30px; display: none; }
+        #audioPreview { margin-top: 5px; width: 100%; height: 40px; display: none; }
 
-        /* Mặc định ẩn vùng API Key */
-        details summary { cursor: pointer; color: var(--accent); font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; outline: none; }
-        details[open] summary { margin-bottom: 5px; }
-
-        @media (max-width: 900px) {
-            .config-grid { flex-direction: column; }
-            .form-group { width: 100%; }
+        @media (max-width: 600px) {
+            .action-row { flex-direction: column; align-items: flex-start; }
+            button#analyzeBtn { width: 100%; }
         }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Phân Tích</h2>
+    <h2>Phân Tích Phát Âm</h2>
     
-    <div class="config-grid">
-        <details class="form-group">
-            <summary>Cấu hình Gemini API Key</summary>
-            <div style="padding-top: 5px;">
-                <input type="text" id="apiKey" placeholder="Nhập API Key...">
-            </div>
-        </details>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('mainTab')">Nội Dung Phân Tích</button>
+        <button class="tab-btn" onclick="openTab('configTab')">Cấu Hình</button>
+    </div>
 
+    <div id="mainTab" class="tab-content active">
         <div class="form-group">
-            <label>Kịch bản gốc (Script tiếng Nhật):</label>
-            <textarea id="originalScript" placeholder="Nhập văn bản tiếng Nhật..."></textarea>
+            <label>Kịch bản gốc (Script):</label>
+            <div id="scriptDisplay">Đang tải kịch bản...</div>
+            <textarea id="originalScript" style="display:none;"></textarea>
         </div>
 
         <div class="form-group">
-            <label>Âm thanh phân tích:</label>
+            <label>Âm thanh thực tế:</label>
             <audio id="audioPreview" controls></audio>
         </div>
+    </div>
+
+    <div id="configTab" class="tab-content">
+        <div class="form-group">
+            <label>Cài đặt Gemini API Key:</label>
+            <input type="text" id="apiKey" placeholder="Dán API Key vào đây...">
+        </div>
+        <p style="font-size: 0.75rem; color: #777;">* API Key được lưu trữ cục bộ trong trình duyệt của bạn.</p>
     </div>
 
     <div class="action-row">
@@ -107,11 +118,22 @@
 
     const apiKeyInput = document.getElementById('apiKey');
     const scriptInput = document.getElementById('originalScript');
+    const scriptDisplay = document.getElementById('scriptDisplay');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const resultDiv = document.getElementById('result');
     const statusDiv = document.getElementById('status');
     const logBox = document.getElementById('logBox');
     const audioPreview = document.getElementById('audioPreview');
+
+    function openTab(tabName) {
+        const contents = document.querySelectorAll('.tab-content');
+        const buttons = document.querySelectorAll('.tab-btn');
+        contents.forEach(c => c.classList.remove('active'));
+        buttons.forEach(b => b.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        event.currentTarget.classList.add('active');
+        addLog("📂 Chuyển sang tab: " + tabName);
+    }
 
     function updateStatusWithScore(text, score) {
         let scoreHtml = score ? `<span class="score-tag">${score}/1000</span>` : "";
@@ -159,7 +181,7 @@
     }
 
     window.onload = async () => {
-        addLog("🚀 Khởi tạo UI nhỏ gọn...");
+        addLog("🚀 Khởi tạo UI Tab...");
         const settingsDb = await initSettingsDB();
         const txSettings = settingsDb.transaction(SETTINGS_STORE_NAME, 'readonly');
         const settingsStore = txSettings.objectStore(SETTINGS_STORE_NAME);
@@ -184,6 +206,7 @@
             const data = await loadDataFromCache();
             if (data) {
                 scriptInput.value = data.paragraph || "";
+                scriptDisplay.innerText = data.paragraph || "Không có kịch bản.";
                 if (data.blob) {
                     currentBlob = data.blob;
                     audioPreview.src = URL.createObjectURL(data.blob);
@@ -238,7 +261,7 @@
             for (let modelName of models) {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
                 try {					
-					 const response = await fetch(url, {
+                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -247,7 +270,7 @@
                                     KỊCH BẢN GỐC: "${script || 'Không cung cấp - Hãy tự nhận diện nội dung'}"
                                     YÊU CẦU:
                                     1. SO SÁNH: Đối chiếu giữa kịch bản gốc và những gì người nói thực tế đã nói. Chỉ ra các từ bị nói sai, nói thiếu hoặc biến âm.
-                                    2. NHẬN XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
+                                    2. NHẬT XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
                                     3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó mà không phải nhiều hơn hay ít hơn 50 điểm.
                                     4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.
                                     Sử dụng định dạng Markdown (tiêu đề, danh sách, bảng) để trình bày rõ ràng.` },

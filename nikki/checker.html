@@ -13,7 +13,9 @@
         /* Full màn hình */
         .card { width: 100%; max-width: 100%; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         
-        h2 { text-align: left; color: var(--primary); margin: 0 0 5px 0; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        /* Header hàng ngang */
+        .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; margin-bottom: 8px; padding-bottom: 5px; }
+        h2 { text-align: left; color: var(--primary); margin: 0; font-size: 1rem; }
         
         /* Tab Styles */
         .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 5px; gap: 5px; position: sticky; top: 0; z-index: 100; background: white; }
@@ -40,23 +42,23 @@
             width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; outline: none;
         }
         
-        /* Nút bấm và Điểm số */
-        .action-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed #eee; }
-        button#analyzeBtn { background: var(--accent); color: white; border: none; padding: 6px 15px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; margin-bottom: 10px; }
+        /* Nút bấm và Audio hàng ngang */
+        .audio-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+        button#analyzeBtn { background: var(--accent); color: white; border: none; padding: 8px 15px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         button#analyzeBtn:hover { background: var(--primary); }
         button#analyzeBtn:disabled { background: #ccc; }
         
         #scoreDisplay { font-weight: bold; color: #c0c0c0; font-size: 1.2rem; font-family: monospace; }
+        #audioPreview { flex-grow: 1; height: 35px; display: none; }
 
         /* Khu vực kết quả */
         #result { 
             padding: 15px; background: #fff; border-top: 4px solid var(--primary); 
             border-radius: 4px; border: 1px solid #e1e8ed;
-            overflow-x: hidden; /* Không để text trượt ngang */
+            overflow-x: hidden; 
         }
         #result h1, #result h2, #result h3 { color: var(--primary); margin-top: 10px; font-size: 1.1rem; }
         
-        /* Mặc định bảng trong result */
         #result table { 
             border-collapse: collapse; 
             margin: 10px 0; 
@@ -69,11 +71,10 @@
         }
         #result th { background-color: #f8f9fa; }
 
-        .log-box { margin-top: 15px; background: #2d3436; color: #00ff00; padding: 10px; border-radius: 4px; font-family: monospace;  max-height: 100px; overflow-y: auto; }
-        #audioPreview { margin-top: 5px; width: 100%; height: 40px; display: none; }
+        .log-box { margin-top: 15px; background: #2d3436; color: #00ff00; padding: 10px; border-radius: 4px; font-family: monospace;  max-height: 100px; overflow-y: auto; font-size: 11px; }
 
         @media (max-width: 600px) {
-            .action-row { flex-direction: row; }
+            .audio-row { flex-direction: column; align-items: stretch; }
             button#analyzeBtn { width: 100%; }
         }
     </style>
@@ -81,10 +82,8 @@
 <body>
 
 <div class="card">
-    <h2>Phân Tích Phát Âm</h2>
-    
-    <div class="action-row">
-        <div></div>
+    <div class="header-container">
+        <h2>Phân Tích Phát Âm</h2>
         <div id="scoreDisplay">000</div>
     </div>
 
@@ -95,9 +94,8 @@
     </div>
 
     <div id="mainTab" class="tab-content active">
-        <button id="analyzeBtn">Bắt đầu phân tích</button>
-        <div class="form-group">
-            <label>Âm thanh thực tế:</label>
+        <div class="audio-row">
+            <button id="analyzeBtn">Bắt đầu phân tích</button>
             <audio id="audioPreview" controls></audio>
         </div>
 

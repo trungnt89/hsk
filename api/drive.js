@@ -27,7 +27,8 @@ export default async function handler(req, res) {
                 if (query.id) {
                     return await handleStreamMedia(drive, query.id, headers, res);
                 }
-                return await handleListFiles(drive, query.identifier, res);
+                // Mặc định lấy list file kèm điểm số
+                return await handleListFilesWithScores(drive, auth, query.identifier, res);
 
             case 'POST':
                 return await handleUploadFile(body, res);
@@ -46,41 +47,73 @@ export default async function handler(req, res) {
 }
 
 /**
- * BỔ TRỢ 0: Lấy điểm số và phân tích dựa trên cấu trúc Sheet mới
+ * Lấy toàn bộ dữ liệu điểm số từ Sheets
+ */
+async function fetchAllScores(auth) {
+    const client = await auth.getClient();
+    const sheets = google.sheets({ version: 'v4', auth: client });
+    const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
+    const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'Score!A:F', 
+    });
+    return response.data.values || [];
+}
+
+/**
+ * BỔ TRỢ 0: Lấy điểm số lẻ theo lessonId
  */
 async function handleGetScoreByLesson(auth, lessonId, res) {
     try {
-        const client = await auth.getClient();
-        const sheets = google.sheets({ version: 'v4', auth: client });
-        const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
-
-        // 1. Tìm FileID từ lessonId (Dựa trên ảnh: LessonID cột A, FileID cột B)
-        const scoreSheetRes = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: 'Score!A:F', // Lấy rộng ra đến cột F để bao quát hết các cột
-        });
-
-        const rows = scoreSheetRes.data.values || [];
-        
-        // Tìm hàng có LessonID (Cột A - index 0) khớp với lessonId truyền vào
+        const rows = await fetchAllScores(auth);
         const record = rows.find(row => row[0] === lessonId);
 
         if (!record) {
             return res.status(404).json({ error: "No record found for this lessonId" });
         }
 
-        // Theo cấu trúc ảnh: 
-        // A(0): LessonID, B(1): FileID, C(2): Nội dung, D(3): Điểm, E(4): Phân tích
         return res.status(200).json({
             lessonId: record[0],
             fileId: record[1] || null,
             score: (record.length > 3 && record[3] !== "") ? record[3] : null,
             analysis: (record.length > 4 && record[4] !== "") ? record[4] : null
         });
-
     } catch (err) {
         console.error("[SCORE ERR]", err.message);
-        throw err;
+        return res.status(500).json({ error: err.message });
+    }
+}
+
+/**
+ * FUNCTION TỔNG: Mapping danh sách file với điểm số
+ */
+async function handleListFilesWithScores(drive, auth, identifier, res) {
+    try {
+        const [files, scoreRows] = await Promise.all([
+            fetchFiles(drive, identifier),
+            fetchAllScores(auth)
+        ]);
+
+        // Tạo Map từ fileId (Cột B - index 1) để tìm kiếm nhanh
+        const scoreMap = new Map();
+        scoreRows.forEach(row => {
+            if (row[1]) {
+                scoreMap.set(row[1], {
+                    score: (row.length > 3 && row[3] !== "") ? row[3] : null,
+                    analysis: (row.length > 4 && row[4] !== "") ? row[4] : null
+                });
+            }
+        });
+
+        const combined = files.map(file => {
+            const scoreData = scoreMap.get(file.id) || { score: null, analysis: null };
+            return { ...file, ...scoreData };
+        });
+
+        return res.status(200).json(combined);
+    } catch (err) {
+        console.error("[LIST SCORE ERR]", err.message);
+        return res.status(500).json({ error: err.message });
     }
 }
 
@@ -93,20 +126,17 @@ async function getDriveClient(auth) {
 }
 
 /**
- * BỔ TRỢ 2: Xóa file thông qua Google Apps Script (GAS)
+ * BỔ TRỢ 2: Xóa file
  */
 async function handleDeleteFile(query, res) {
     const fileId = query.id || query.fileId;
     if (!fileId) return res.status(400).json({ error: "Missing fileId" });
-
     const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
-    
     const gasRes = await fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete', fileId: fileId })
     });
-
     const result = await gasRes.json();
     return res.status(200).json(result);
 }
@@ -124,12 +154,10 @@ async function handleStreamMedia(drive, fileId, headers, res) {
         const start = parseInt(parts[0], 10);
         const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
         const chunksize = (end - start) + 1;
-
         const response = await drive.files.get(
             { fileId: fileId, alt: 'media' },
             { responseType: 'stream', headers: { Range: `bytes=${start}-${end}` } }
         );
-
         res.writeHead(206, {
             'Content-Range': `bytes ${start}-${end}/${fileSize}`,
             'Accept-Ranges': 'bytes',
@@ -146,16 +174,13 @@ async function handleStreamMedia(drive, fileId, headers, res) {
 }
 
 /**
- * BỔ TRỢ 4: Lấy danh sách file
+ * BỔ TRỢ 4: Fetch dữ liệu file raw từ Drive
  */
-async function handleListFiles(drive, identifier, res) {
+async function fetchFiles(drive, identifier) {
     let allFiles = [];
     let nextPageToken = null;
     let driveQuery = `trashed=false and (mimeType contains 'audio/' or mimeType contains 'video/')`;
-    
-    if (identifier) {
-        driveQuery += ` and name contains '_${identifier}_'`;
-    }
+    if (identifier) driveQuery += ` and name contains '_${identifier}_'`;
 
     do {
         const response = await drive.files.list({
@@ -167,8 +192,12 @@ async function handleListFiles(drive, identifier, res) {
         allFiles.push(...response.data.files);
         nextPageToken = response.data.nextPageToken;
     } while (nextPageToken);
+    return allFiles;
+}
 
-    return res.status(200).json(allFiles);
+async function handleListFiles(drive, identifier, res) {
+    const files = await fetchFiles(drive, identifier);
+    return res.status(200).json(files);
 }
 
 /**
@@ -177,13 +206,11 @@ async function handleListFiles(drive, identifier, res) {
 async function handleUploadFile(body, res) {
     const { name, base64Audio, identifier } = body;
     const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
-    
     const gasRes = await fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, base64Audio, identifier })
     });
-    
     const result = await gasRes.json();
     return res.status(200).json(result);
 }

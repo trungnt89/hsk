@@ -217,13 +217,20 @@
 
             for (let modelName of models) {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
-                try {
-                    const response = await fetch(url, {
+                try {					
+					 const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contents: [{ parts: [
-                                { text: `Bạn là chuyên gia ngôn ngữ Nhật Bản. Hãy so sánh kịch bản "${script}" với file ghi âm, chấm điểm /1000 và nhận xét chi tiết bằng tiếng Việt.` },
+                                { text: `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
+                                    KỊCH BẢN GỐC: "${script || 'Không cung cấp - Hãy tự nhận diện nội dung'}"
+                                    YÊU CẦU:
+                                    1. SO SÁNH: Đối chiếu giữa kịch bản gốc và những gì người nói thực tế đã nói. Chỉ ra các từ bị nói sai, nói thiếu hoặc biến âm.
+                                    2. NHẬN XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
+                                    3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó mà không phải nhiều hơn hay ít hơn 50 điểm.
+                                    4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.
+                                    Sử dụng định dạng Markdown (tiêu đề, danh sách, bảng) để trình bày rõ ràng.` },
                                 { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
                             ]}]
                         })

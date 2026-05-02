@@ -98,14 +98,14 @@
 
     <div id="mainTab" class="tab-content active">
         <div class="form-group">
-            <label>Kịch bản gốc (Script):</label>
-            <div id="scriptDisplay">Đang tải kịch bản...</div>
-            <textarea id="originalScript" style="display:none;"></textarea>
+            <label>Âm thanh thực tế:</label>
+            <audio id="audioPreview" controls></audio>
         </div>
 
         <div class="form-group">
-            <label>Âm thanh thực tế:</label>
-            <audio id="audioPreview" controls></audio>
+            <label>Kịch bản gốc (Script):</label>
+            <div id="scriptDisplay">Đang tải kịch bản...</div>
+            <textarea id="originalScript" style="display:none;"></textarea>
         </div>
     </div>
 
@@ -149,6 +149,7 @@
         const targetBtn = document.getElementById('btn-' + tabName);
         if(targetBtn) targetBtn.classList.add('active');
         addLog("📂 Chuyển sang tab: " + tabName);
+        localStorage.setItem('activeTab', tabName);
     }
 
     function updateStatusWithScore(text, score) {
@@ -198,6 +199,9 @@
 
     window.onload = async () => {
         addLog("🚀 Khởi tạo UI Tab...");
+        const savedTab = localStorage.getItem('activeTab');
+        if (savedTab) openTab(savedTab);
+        
         const settingsDb = await initSettingsDB();
         const txSettings = settingsDb.transaction(SETTINGS_STORE_NAME, 'readonly');
         const settingsStore = txSettings.objectStore(SETTINGS_STORE_NAME);

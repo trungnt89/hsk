@@ -198,14 +198,14 @@
                     <div class="item-text">${f.name}</div>
                 </div>
                 <div class="item-btns">
-                    <button class="btn-icon" title="Chi tiết" onclick="goToDetails('${f.id}', '${f.name}', '${f.score || 0}', '${f.comment || ''}')">📄</button>
+                    <button class="btn-icon" title="Chi tiết" onclick="goToDetails('${f.id}', '${f.name}', '${f.score || 0}', '${f.analysis || ''}')">📄</button>
                     <button class="btn-icon btn-delete-icon" onclick="deleteFile('${f.id}')" title="Xóa">🗑️</button>
                 </div>
             </div>`;
         }).join('');
     }
 
-    async function goToDetails(id, name, score, comment) {
+    async function goToDetails(id, name, score, analysis) {
         showToast("Đang tải file xuống...");
         const paragraph = document.getElementById('text-display').innerText;
         try {
@@ -231,7 +231,7 @@
                     name: name, 
                     paragraph: paragraph, 
                     score: score,
-                    comment: comment,
+                    analysis: analysis,
                     fileId: id, 
                     ts: Date.now() 
                 });

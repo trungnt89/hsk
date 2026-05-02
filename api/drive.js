@@ -27,7 +27,7 @@ export default async function handler(req, res) {
                 if (query.id) {
                     return await handleStreamMedia(drive, query.id, headers, res);
                 }
-                // Mặc định lấy list file kèm điểm số
+                // Mặc định lấy list file kèm điểm số, identifier đóng vai trò LessonID
                 return await handleListFilesWithScores(drive, auth, query.identifier, res);
 
             case 'POST':
@@ -47,9 +47,9 @@ export default async function handler(req, res) {
 }
 
 /**
- * Lấy toàn bộ dữ liệu điểm số từ Sheets
+ * Lấy dữ liệu điểm số từ Sheets (Có lọc theo LessonID nếu có)
  */
-async function fetchAllScores(auth) {
+async function fetchAllScores(auth, lessonId = null) {
     const client = await auth.getClient();
     const sheets = google.sheets({ version: 'v4', auth: client });
     const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
@@ -57,7 +57,13 @@ async function fetchAllScores(auth) {
         spreadsheetId,
         range: 'Score!A:F', 
     });
-    return response.data.values || [];
+    
+    const rows = response.data.values || [];
+    if (lessonId) {
+        // Lọc dữ liệu dựa trên LessonID ở cột A (index 0)
+        return rows.filter(row => row[0] === lessonId);
+    }
+    return rows;
 }
 
 /**
@@ -65,8 +71,8 @@ async function fetchAllScores(auth) {
  */
 async function handleGetScoreByLesson(auth, lessonId, res) {
     try {
-        const rows = await fetchAllScores(auth);
-        const record = rows.find(row => row[0] === lessonId);
+        const rows = await fetchAllScores(auth, lessonId);
+        const record = rows[0]; // Vì đã lọc nên lấy phần tử đầu tiên
 
         if (!record) {
             return res.status(404).json({ error: "No record found for this lessonId" });
@@ -89,15 +95,15 @@ async function handleGetScoreByLesson(auth, lessonId, res) {
  */
 async function handleListFilesWithScores(drive, auth, identifier, res) {
     try {
+        // identifier ở đây chính là LessonID dùng để lọc Sheet
         const [files, scoreRows] = await Promise.all([
             fetchFiles(drive, identifier),
-            fetchAllScores(auth)
+            fetchAllScores(auth, identifier)
         ]);
 
-        // Tạo Map từ fileId (Cột B - index 1) để tìm kiếm nhanh
         const scoreMap = new Map();
         scoreRows.forEach(row => {
-            if (row[1]) {
+            if (row[1]) { // row[1] là FileID
                 scoreMap.set(row[1], {
                     score: (row.length > 3 && row[3] !== "") ? row[3] : null,
                     analysis: (row.length > 4 && row[4] !== "") ? row[4] : null

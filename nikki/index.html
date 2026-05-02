@@ -135,6 +135,7 @@
         <div class="audio-modal-content">
             <div class="audio-modal-header">
                 <button class="modal-btn close-modal-btn" onclick="closeAudioModal()">✕ ĐÓNG</button>
+                <button class="modal-btn" style="color:#059669;" onclick="reloadAudioModal()">F5 RELOAD</button>
                 <button class="modal-btn back-modal-btn" onclick="backAudioModal()">BACK ↩</button>
             </div>
             <iframe id="audioFrame" src=""></iframe>
@@ -305,6 +306,12 @@
         function backAudioModal() {
             const iframe = document.getElementById('audioFrame');
             if (iframe.contentWindow) iframe.contentWindow.history.back();
+        }
+
+        function reloadAudioModal() {
+            console.log("[LOG] Reloading audio popup");
+            const iframe = document.getElementById('audioFrame');
+            if (iframe.src) iframe.src = iframe.src;
         }
 
         function saveDiary() {

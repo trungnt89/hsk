@@ -91,7 +91,7 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyHaN7aostdFCFCnR7i-aBCCbYmyaREoxICcu8OzzLZztDpPFP1aGwBUUz-y0forKnSqw/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
     const DB_NAME = 'MediaCacheDB'; 
     const STORE_NAME = 'media';     
     const SETTINGS_DB_NAME = 'JP_Score_DB_v1';
@@ -254,10 +254,11 @@
                     fetch(WEB_APP_URL, {
                         method: 'POST', mode: 'no-cors',
                         body: JSON.stringify({
-                            action: 'updateAssessment',
+                            action: 'score',
+							script:script,
                             fileId: fileIdFromUrl,
                             score: scoreMatch ? scoreMatch[1] : "0",
-                            feedback: aiText
+                            analysis: aiText
                         })
                     });
                 }

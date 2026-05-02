@@ -58,13 +58,9 @@
         }
         #result h1, #result h2, #result h3 { color: var(--primary); margin-top: 10px; font-size: 1.1rem; }
         
-        /* Chỉ cho phép bảng trượt ngang */
+        /* Mặc định bảng trong result */
         #result table { 
-            display: block; 
-            overflow-x: auto; 
             border-collapse: collapse; 
-            width: 1200px !important; /* Cố định độ rộng bảng 1200px */
-            max-width: 1200px;
             margin: 10px 0; 
             font-size: 13px; 
             -webkit-overflow-scrolling: touch;
@@ -219,6 +215,7 @@
 
         if (urlAnalysis) {
             resultDiv.innerHTML = marked.parse(decodeURIComponent(urlAnalysis));
+            wrapTablesInDiv(resultDiv);
             updateStatusWithScore("Trạng thái: Đã nạp kết quả.", urlScore);
             addLog("📥 Đã tải thông tin từ URL.");
             openTab('resultTab');
@@ -236,6 +233,7 @@
                 const scoreMatch = data.analysis ? data.analysis.match(/(\d+)\/1000/) : null;
                 if (data.analysis) {
                     resultDiv.innerHTML = marked.parse(data.analysis);
+                    wrapTablesInDiv(resultDiv);
                     updateStatusWithScore("Trạng thái: Đã có.", scoreMatch ? scoreMatch[1] : null);
                     addLog("📝 Đã hiển thị nhận xét từ bộ nhớ đệm.");
                 }
@@ -304,6 +302,7 @@
             if (responseData && responseData.candidates) {
                 const aiText = responseData.candidates[0].content.parts[0].text;
                 resultDiv.innerHTML = marked.parse(aiText);
+                wrapTablesInDiv(resultDiv);
                 const scoreMatch = aiText.match(/(\d+)\/1000/);
                 updateStatusWithScore("Trạng thái: Hoàn tất!", scoreMatch ? scoreMatch[1] : null);
                 addLog("✅ Đã hiển thị kết quả.");
@@ -334,6 +333,23 @@
             analyzeBtn.disabled = false;
         }
     };
+
+    // Hàm bao bảng trong div để scroll ngang
+    function wrapTablesInDiv(container) {
+        const tables = container.querySelectorAll('table');
+        tables.forEach(table => {
+            if (!table.parentElement.classList.contains('table-wrapper')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'table-wrapper';
+                wrapper.style.width = '100%';
+                wrapper.style.overflowX = 'auto';
+                table.style.width = '1200px';
+                table.style.minWidth = '1200px';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+            }
+        });
+    }
 </script>
 </body>
 </html>

@@ -25,8 +25,8 @@ export default async function handler(req, res) {
                 if (query.id) {
                     return await handleStreamMedia(drive, query.id, headers, res);
                 }
-                // 2. Xử lý danh sách (Mặc định)
-                return await handleListFiles(drive, query.identifier, res);
+                // 2. Xử lý danh sách (Mặc định) - Truyền thêm auth vào đây
+                return await handleListFiles(drive, auth, query.identifier, res);
 
             case 'POST':
                 // 3. Xử lý Upload
@@ -63,7 +63,6 @@ async function handleDeleteFile(query, res) {
 
     const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
     
-    // Gửi yêu cầu xóa tới GAS với payload chỉ định action delete
     const gasRes = await fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -112,7 +111,7 @@ async function handleStreamMedia(drive, fileId, headers, res) {
 /**
  * BỔ TRỢ 4: Lấy danh sách file theo identifier kèm điểm số từ Sheets
  */
-async function handleListFiles(drive, identifier, res) {
+async function handleListFiles(drive, auth, identifier, res) {
     let allFiles = [];
     let nextPageToken = null;
     let driveQuery = `trashed=false and (mimeType contains 'audio/' or mimeType contains 'video/')`;
@@ -122,20 +121,19 @@ async function handleListFiles(drive, identifier, res) {
     }
 
     // 1. Lấy dữ liệu điểm số từ Google Sheets qua Service Account
-    const authClient = await drive.context._options.auth.getClient();
-    const sheets = google.sheets({ version: 'v4', auth: authClient });
-    const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
-    
     const scoreMap = new Map();
     try {
+        const authClient = await auth.getClient();
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+        const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
+        
         const scoreData = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: 'Score!A:D', // Cột A: FileID, Cột C: Score, Cột D: Analysis
+            range: 'Score!A:D',
         });
 
         if (scoreData.data.values) {
             scoreData.data.values.forEach(row => {
-                // row[0] là fileId, row[2] là điểm, row[3] là phân tích
                 scoreMap.set(row[0], { 
                     score: row[2] || null, 
                     analysis: row[3] || null 
@@ -144,7 +142,6 @@ async function handleListFiles(drive, identifier, res) {
         }
     } catch (sheetErr) {
         console.error("[SHEET ERR]", sheetErr.message);
-        // Tiếp tục xử lý lấy file ngay cả khi lỗi lấy điểm
     }
 
     // 2. Lấy danh sách file từ Drive

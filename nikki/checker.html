@@ -18,7 +18,7 @@
         /* Tab Styles */
         .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 15px; gap: 5px; }
         .tab-btn { 
-            padding: 10px 20px; border: none; background: #eee; cursor: pointer; 
+            padding: 10px 15px; border: none; background: #eee; cursor: pointer; 
             font-weight: bold; border-radius: 8px 8px 0 0; transition: 0.3s;
             font-size: 13px;
         }
@@ -52,8 +52,8 @@
 
         /* Khu vực kết quả */
         #result { 
-            margin-top: 15px; padding: 15px; background: #fff; border-top: 4px solid var(--primary); 
-            border-radius: 4px; border: 1px solid #e1e8ed; display: none;
+            padding: 15px; background: #fff; border-top: 4px solid var(--primary); 
+            border-radius: 4px; border: 1px solid #e1e8ed;
         }
         #result h1, #result h2, #result h3 { color: var(--primary); margin-top: 10px; font-size: 1.1rem; }
         #result table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
@@ -75,8 +75,9 @@
     <h2>Phân Tích Phát Âm</h2>
     
     <div class="tabs">
-        <button class="tab-btn active" onclick="openTab('mainTab')">Nội Dung Phân Tích</button>
-        <button class="tab-btn" onclick="openTab('configTab')">Cấu Hình</button>
+        <button class="tab-btn active" id="btn-mainTab" onclick="openTab('mainTab')">Nội Dung Phân Tích</button>
+        <button class="tab-btn" id="btn-resultTab" onclick="openTab('resultTab')">Kết Quả</button>
+        <button class="tab-btn" id="btn-configTab" onclick="openTab('configTab')">Cấu Hình</button>
     </div>
 
     <div id="mainTab" class="tab-content active">
@@ -92,6 +93,10 @@
         </div>
     </div>
 
+    <div id="resultTab" class="tab-content">
+        <div id="result">Chưa có kết quả phân tích.</div>
+    </div>
+
     <div id="configTab" class="tab-content">
         <div class="form-group">
             <label>Cài đặt Gemini API Key:</label>
@@ -105,7 +110,6 @@
         <div id="status">Trạng thái: Sẵn sàng</div>
     </div>
 
-    <div id="result"></div>
     <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>
 </div>
 
@@ -131,7 +135,8 @@
         contents.forEach(c => c.classList.remove('active'));
         buttons.forEach(b => b.classList.remove('active'));
         document.getElementById(tabName).classList.add('active');
-        event.currentTarget.classList.add('active');
+        const targetBtn = document.getElementById('btn-' + tabName);
+        if(targetBtn) targetBtn.classList.add('active');
         addLog("📂 Chuyển sang tab: " + tabName);
     }
 
@@ -199,9 +204,9 @@
 
         if (urlAnalysis) {
             resultDiv.innerHTML = marked.parse(decodeURIComponent(urlAnalysis));
-            resultDiv.style.display = "block";
             updateStatusWithScore("Trạng thái: Đã nạp kết quả.", urlScore);
             addLog("📥 Đã tải thông tin từ URL.");
+            openTab('resultTab');
         } else {
             const data = await loadDataFromCache();
             if (data) {
@@ -216,7 +221,6 @@
                 const scoreMatch = data.analysis ? data.analysis.match(/(\d+)\/1000/) : null;
                 if (data.analysis) {
                     resultDiv.innerHTML = marked.parse(data.analysis);
-                    resultDiv.style.display = "block";
                     updateStatusWithScore("Trạng thái: Đã tải kết quả cũ.", scoreMatch ? scoreMatch[1] : null);
                     addLog("📝 Đã hiển thị nhận xét từ bộ nhớ đệm.");
                 }
@@ -244,7 +248,6 @@
 
         analyzeBtn.disabled = true;
         statusDiv.innerText = "Trạng thái: Đang xử lý...";
-        resultDiv.style.display = "none";
         addLog("⏳ Đang gửi dữ liệu tới Gemini...");
 
         try {
@@ -286,10 +289,10 @@
             if (responseData && responseData.candidates) {
                 const aiText = responseData.candidates[0].content.parts[0].text;
                 resultDiv.innerHTML = marked.parse(aiText);
-                resultDiv.style.display = "block";
                 const scoreMatch = aiText.match(/(\d+)\/1000/);
                 updateStatusWithScore("Trạng thái: Hoàn tất!", scoreMatch ? scoreMatch[1] : null);
                 addLog("✅ Đã hiển thị kết quả.");
+                openTab('resultTab');
 
                 const urlParamsSync = new URLSearchParams(window.location.search);
                 const fileIdFromUrl = urlParamsSync.get('fileId');

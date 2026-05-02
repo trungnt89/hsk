@@ -17,13 +17,14 @@
         
         /* Layout nhỏ gọn cho phần load thông tin */
         .config-grid {
-            display: grid;
-            grid-template-columns: 250px 1fr 300px;
-            gap: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             align-items: start;
         }
 
-        .form-group { margin-bottom: 10px; }
+        .form-group { margin-bottom: 5px; flex: 1; min-width: 200px; }
+        .form-group:nth-child(2) { flex: 2; min-width: 300px; }
         label { display: block; margin-bottom: 4px; font-weight: bold; color: #555; font-size: 0.85rem; }
         
         input[type="text"], input[type="file"], textarea { 
@@ -39,6 +40,7 @@
         
         #status { font-weight: bold; color: #666; font-size: 0.85rem; display: flex; align-items: center; }
         #status::before { content: "●"; margin-right: 5px; color: #e67e22; }
+        .score-tag { background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; margin-left: 8px; font-size: 12px; }
 
         /* Khu vực kết quả */
         #result { 
@@ -54,7 +56,8 @@
         #audioPreview { margin-top: 5px; width: 100%; height: 30px; display: none; }
 
         @media (max-width: 900px) {
-            .config-grid { grid-template-columns: 1fr; }
+            .config-grid { flex-direction: column; }
+            .form-group { width: 100%; }
         }
     </style>
 </head>
@@ -105,6 +108,11 @@
     const statusDiv = document.getElementById('status');
     const logBox = document.getElementById('logBox');
     const audioPreview = document.getElementById('audioPreview');
+
+    function updateStatusWithScore(text, score) {
+        let scoreHtml = score ? `<span class="score-tag">${score}/1000</span>` : "";
+        statusDiv.innerHTML = `${text}${scoreHtml}`;
+    }
 
     let currentBlob = null;
 
@@ -159,7 +167,6 @@
             }
         };
 
-        // Kiểm tra thông tin từ URL
         const urlParams = new URLSearchParams(window.location.search);
         const urlScore = urlParams.get('score');
         const urlAnalysis = urlParams.get('analysis');
@@ -167,10 +174,9 @@
         if (urlAnalysis) {
             resultDiv.innerHTML = marked.parse(decodeURIComponent(urlAnalysis));
             resultDiv.style.display = "block";
-            statusDiv.innerText = urlScore ? `Trạng thái: Điểm số ${urlScore}/1000` : "Trạng thái: Đã nạp nhận xét.";
+            updateStatusWithScore("Trạng thái: Đã nạp kết quả.", urlScore);
             addLog("📥 Đã tải thông tin từ URL.");
         } else {
-            // Nếu không có URL thì mới load từ Cache (indexdb)
             const data = await loadDataFromCache();
             if (data) {
                 scriptInput.value = data.paragraph || "";
@@ -180,10 +186,11 @@
                     audioPreview.style.display = "block";
                     addLog("🎵 Đã nạp Audio & Script.");
                 }
+                const scoreMatch = data.analysis ? data.analysis.match(/(\d+)\/1000/) : null;
                 if (data.analysis) {
                     resultDiv.innerHTML = marked.parse(data.analysis);
                     resultDiv.style.display = "block";
-                    statusDiv.innerText = "Trạng thái: Đã tải kết quả cũ.";
+                    updateStatusWithScore("Trạng thái: Đã tải kết quả cũ.", scoreMatch ? scoreMatch[1] : null);
                     addLog("📝 Đã hiển thị nhận xét từ bộ nhớ đệm.");
                 }
             }
@@ -263,13 +270,12 @@
                 const aiText = responseData.candidates[0].content.parts[0].text;
                 resultDiv.innerHTML = marked.parse(aiText);
                 resultDiv.style.display = "block";
-                statusDiv.innerText = "Trạng thái: Hoàn tất!";
+                const scoreMatch = aiText.match(/(\d+)\/1000/);
+                updateStatusWithScore("Trạng thái: Hoàn tất!", scoreMatch ? scoreMatch[1] : null);
                 addLog("✅ Đã hiển thị kết quả.");
 
-                // Đồng bộ điểm
                 const fileIdFromUrl = new URLSearchParams(window.location.search).get('fileId');
                 if (fileIdFromUrl) {
-                    const scoreMatch = aiText.match(/(\d+)\/1000/);
                     fetch(WEB_APP_URL, {
                         method: 'POST', mode: 'no-cors',
                         body: JSON.stringify({

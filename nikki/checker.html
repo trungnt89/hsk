@@ -40,15 +40,13 @@
             width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; outline: none;
         }
         
-        /* Nút bấm và Trạng thái */
-        .action-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed #eee; }
-        button#analyzeBtn { background: var(--accent); color: white; border: none; padding: 6px 15px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; width: auto; }
+        /* Nút bấm và Điểm số */
+        .action-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed #eee; }
+        button#analyzeBtn { background: var(--accent); color: white; border: none; padding: 6px 15px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; margin-bottom: 10px; }
         button#analyzeBtn:hover { background: var(--primary); }
         button#analyzeBtn:disabled { background: #ccc; }
         
-        #status { font-weight: bold; color: #666; font-size: 0.85rem; display: flex; align-items: center; }
-        #status::before { content: "●"; margin-right: 5px; color: #e67e22; }
-        .score-tag { background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; margin-left: 8px; font-size: 12px; }
+        #scoreDisplay { font-weight: bold; color: #c0c0c0; font-size: 1.2rem; font-family: monospace; }
 
         /* Khu vực kết quả */
         #result { 
@@ -75,7 +73,7 @@
         #audioPreview { margin-top: 5px; width: 100%; height: 40px; display: none; }
 
         @media (max-width: 600px) {
-            .action-row { flex-direction: column; align-items: flex-start; }
+            .action-row { flex-direction: row; }
             button#analyzeBtn { width: 100%; }
         }
     </style>
@@ -86,8 +84,8 @@
     <h2>Phân Tích Phát Âm</h2>
     
     <div class="action-row">
-        <button id="analyzeBtn">Bắt đầu phân tích</button>
-        <div id="status">Trạng thái: Sẵn sàng</div>
+        <div></div>
+        <div id="scoreDisplay">000</div>
     </div>
 
     <div class="tabs">
@@ -97,6 +95,7 @@
     </div>
 
     <div id="mainTab" class="tab-content active">
+        <button id="analyzeBtn">Bắt đầu phân tích</button>
         <div class="form-group">
             <label>Âm thanh thực tế:</label>
             <audio id="audioPreview" controls></audio>
@@ -136,7 +135,7 @@
     const scriptDisplay = document.getElementById('scriptDisplay');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const resultDiv = document.getElementById('result');
-    const statusDiv = document.getElementById('status');
+    const scoreDisplay = document.getElementById('scoreDisplay');
     const logBox = document.getElementById('logBox');
     const audioPreview = document.getElementById('audioPreview');
 
@@ -153,8 +152,11 @@
     }
 
     function updateStatusWithScore(text, score) {
-        let scoreHtml = score ? `<span class="score-tag">${score}/1000</span>` : "";
-        statusDiv.innerHTML = `${text}${scoreHtml}`;
+        if(score) {
+            const formattedScore = String(score).padStart(3, '0');
+            scoreDisplay.innerText = formattedScore;
+            scoreDisplay.style.color = "#ef4444";
+        }
     }
 
     let currentBlob = null;
@@ -220,7 +222,7 @@
         if (urlAnalysis) {
             resultDiv.innerHTML = marked.parse(decodeURIComponent(urlAnalysis));
             wrapTablesInDiv(resultDiv);
-            updateStatusWithScore("Trạng thái: Đã nạp kết quả.", urlScore);
+            updateStatusWithScore("", urlScore);
             addLog("📥 Đã tải thông tin từ URL.");
             openTab('resultTab');
         } else {
@@ -238,7 +240,7 @@
                 if (data.analysis) {
                     resultDiv.innerHTML = marked.parse(data.analysis);
                     wrapTablesInDiv(resultDiv);
-                    updateStatusWithScore("Trạng thái: Đã có.", scoreMatch ? scoreMatch[1] : null);
+                    updateStatusWithScore("", scoreMatch ? scoreMatch[1] : null);
                     addLog("📝 Đã hiển thị nhận xét từ bộ nhớ đệm.");
                 }
             }
@@ -264,7 +266,6 @@
         }
 
         analyzeBtn.disabled = true;
-        statusDiv.innerText = "Trạng thái: Đang xử lý...";
         addLog("⏳ Đang gửi dữ liệu tới Gemini...");
 
         try {
@@ -308,7 +309,7 @@
                 resultDiv.innerHTML = marked.parse(aiText);
                 wrapTablesInDiv(resultDiv);
                 const scoreMatch = aiText.match(/(\d+)\/1000/);
-                updateStatusWithScore("Trạng thái: Hoàn tất!", scoreMatch ? scoreMatch[1] : null);
+                updateStatusWithScore("", scoreMatch ? scoreMatch[1] : null);
                 addLog("✅ Đã hiển thị kết quả.");
                 openTab('resultTab');
 
@@ -332,13 +333,11 @@
             } else { throw new Error(lastError || "Lỗi AI"); }
         } catch (err) {
             addLog("❌ Lỗi: " + err.message);
-            statusDiv.innerText = "Trạng thái: Thất bại.";
         } finally {
             analyzeBtn.disabled = false;
         }
     };
 
-    // Hàm bao bảng trong div để scroll ngang
     function wrapTablesInDiv(container) {
         const tables = container.querySelectorAll('table');
         tables.forEach(table => {

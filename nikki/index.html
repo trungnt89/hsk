@@ -485,5 +485,34 @@
         function resetSpeakBtns() { const b = document.getElementById('btnMainSpeak'); b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
         function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
     </script>
+    <script>
+        // Sau khi load 5s thì gọi dữ liệu summary
+        setTimeout(() => {
+            updateLessonSummaries();
+        }, 5000);
+
+        async function updateLessonSummaries() {
+            const SUMMARY_URL = 'https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec?action=summary';
+            try {
+                console.log("[System] Fetching summary data...");
+                const res = await fetch(SUMMARY_URL);
+                const result = await res.json();
+                if (result.status === 'success' && result.data) {
+                    const badges = document.querySelectorAll('.count-trigger');
+                    badges.forEach(badge => {
+                        // Lấy ID từ hàm onclick (handleRecordBadgeClick('ID'))
+                        const onclickAttr = badge.getAttribute('onclick');
+                        const match = onclickAttr.match(/'([^']+)'/);
+                        if (match && match[1]) {
+                            const id = match[1];
+                            if (result.data[id]) {
+                                badge.innerHTML = "🎙️ " + result.data[id];
+                            }
+                        }
+                    });
+                }
+            } catch (err) { console.error("[Summary Error]:", err); }
+        }
+    </script>
 </body>
 </html>

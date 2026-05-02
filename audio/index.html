@@ -119,7 +119,7 @@
 
     function getUrlIdentifier() {
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('id') || "unknown";
+        return urlParams.get('id') || urlParams.get('lessionId');
     }
 
     async function loadDiaryParagraph() {
@@ -213,7 +213,7 @@
                     ts: Date.now() 
                 });
                 tx.oncomplete = () => {
-                    window.location.href = `../nikki/checker.html?id=${getUrlIdentifier()}&fileId=${id}`;
+                    window.location.href = `../nikki/checker.html?lessionId=${getUrlIdentifier()}&fileId=${id}`;
                 };
             };
         } catch (err) {

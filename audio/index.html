@@ -198,14 +198,14 @@
                     <div class="item-text">${f.name}</div>
                 </div>
                 <div class="item-btns">
-                    <button class="btn-icon" title="Chi tiết" onclick="goToDetails('${f.id}', '${f.name}')">📄</button>
+                    <button class="btn-icon" title="Chi tiết" onclick="goToDetails('${f.id}', '${f.name}', '${f.score || 0}', '${f.comment || ''}')">📄</button>
                     <button class="btn-icon btn-delete-icon" onclick="deleteFile('${f.id}')" title="Xóa">🗑️</button>
                 </div>
             </div>`;
         }).join('');
     }
 
-    async function goToDetails(id, name) {
+    async function goToDetails(id, name, score, comment) {
         showToast("Đang tải file xuống...");
         const paragraph = document.getElementById('text-display').innerText;
         try {
@@ -230,6 +230,8 @@
                     blob: blob, 
                     name: name, 
                     paragraph: paragraph, 
+                    score: score,
+                    comment: comment,
                     fileId: id, 
                     ts: Date.now() 
                 });
@@ -373,7 +375,7 @@
             
             console.log("Tên file upload:", fileName);
             try {
-                const res = await fetch('/api/drive', {
+                const res = await fetch(`/api/drive`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: fileName, base64Audio, identifier })

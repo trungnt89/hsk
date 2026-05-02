@@ -6,59 +6,153 @@
     <title>Chuyên Gia Chấm Điểm Phát Âm Nhật Ngữ</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        :root { --primary: #1e3799; --accent: #007bff; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; color: #333; line-height: 1.6; }
-        .card { max-width: 850px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 15px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #444; }
-        input[type="text"], input[type="file"], textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
-        textarea { height: 100px; resize: vertical; font-family: inherit; }
-        button { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        :root { --primary: #1e3799; --accent: #007bff; --bg: #f0f2f5; }
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 20px; 
+            color: #333; 
+            line-height: 1.6;
+            /* Thay đổi: Cho phép cuộn trang */
+            overflow-y: auto; 
+        }
+
+        .container {
+            /* Thay đổi: Không chia cột, căn giữa */
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel-left, .panel-right {
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        h2 { 
+            font-size: 1.3rem; 
+            text-align: center; 
+            color: var(--primary); 
+            margin: 0 0 20px 0; 
+            border-bottom: 2px solid #eee; 
+            padding-bottom: 15px; 
+        }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.95rem; color: #444; }
+        
+        input[type="text"], input[type="file"], textarea { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            outline: none; 
+        }
+        
+        input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+        
+        textarea { height: 150px; resize: vertical; font-family: inherit; }
+        
+        button { 
+            background: var(--accent); 
+            color: white; 
+            border: none; 
+            padding: 15px; 
+            width: 100%; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            margin-top: 10px;
+        }
+        
         button:hover { background: var(--primary); transform: translateY(-1px); }
         button:disabled { background: #ccc; cursor: not-allowed; }
-        #status { margin: 15px 0; font-weight: bold; color: #666; display: flex; align-items: center; }
-        #status::before { content: "●"; margin-right: 8px; color: #e67e22; }
-        
-        #result { margin-top: 25px; padding: 25px; background: #fff; border-left: 6px solid var(--primary); border-radius: 4px; display: none; border: 1px solid #e1e8ed; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        #result h1, #result h2, #result h3 { color: var(--primary); margin-top: 15px; }
-        #result ul, #result ol { padding-left: 20px; }
-        #result blockquote { border-left: 4px solid #ccc; padding-left: 15px; font-style: italic; color: #555; }
-        #result table { border-collapse: collapse; width: 100%; margin: 15px 0; }
-        #result table, #result th, #result td { border: 1px solid #ddd; padding: 8px; }
-        #result th { background-color: #f2f2f2; }
 
-        .log-box { margin-top: 30px; background: #2d3436; color: #00ff00; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; }
-        #audioPreview { margin-top: 10px; width: 100%; height: 40px; display: none; }
+        #status { 
+            margin: 15px 0; 
+            font-weight: bold; 
+            color: #666; 
+            font-size: 0.9rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 8px; 
+        }
+        #status::before { content: "●"; margin-right: 8px; color: #e67e22; }
+
+        #result { 
+            line-height: 1.7; 
+            padding: 10px;
+        }
+        #result h1, #result h2, #result h3 { color: var(--primary); margin-top: 20px; }
+        #result table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+        #result table, #result th, #result td { border: 1px solid #ddd; padding: 10px; }
+        #result th { background-color: #f8f9fa; }
+
+        .log-box { 
+            margin-top: 20px; 
+            background: #2d3436; 
+            color: #00ff00; 
+            padding: 15px; 
+            border-radius: 8px; 
+            font-family: 'Consolas', monospace; 
+            font-size: 11px; 
+            height: 150px; 
+            overflow-y: auto; 
+        }
+
+        #audioPreview { margin-top: 15px; width: 100%; height: 40px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Phân Tích & Chấm Điểm Phát Âm</h2>
-    
-    <div class="form-group">
-        <label>Gemini API Key:</label>
-        <input type="text" id="apiKey" placeholder="Nhập API Key...">
+<div class="container">
+    <!-- KHỐI ĐIỀU KHIỂN -->
+    <div class="panel-left">
+        <h2>Cấu Hình & Nhập Liệu</h2>
+        
+        <div class="form-group">
+            <label>Gemini API Key:</label>
+            <input type="text" id="apiKey" placeholder="Nhập API Key...">
+        </div>
+
+        <div class="form-group">
+            <label>Kịch bản gốc (Script):</label>
+            <textarea id="originalScript" placeholder="Nhập đoạn văn bản tiếng Nhật..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>File ghi âm:</label>
+            <input type="file" id="audioFile" accept="audio/*">
+            <audio id="audioPreview" controls></audio>
+        </div>
+
+        <button id="analyzeBtn">Phân Tích & Chấm Điểm</button>
+
+        <div id="status">Trạng thái: Sẵn sàng</div>
+
+        <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>
     </div>
 
-    <div class="form-group">
-        <label>Kịch bản gốc (Script tiếng Nhật):</label>
-        <textarea id="originalScript" placeholder="Nhập đoạn văn bản tiếng Nhật bạn định nói vào đây..."></textarea>
+    <!-- KHỐI KẾT QUẢ -->
+    <div class="panel-right">
+        <h2>Kết Quả Phân Tích</h2>
+        <div id="result">
+            <p style="text-align: center; color: #999;">Chưa có dữ liệu phân tích. Vui lòng tải file và nhấn nút phía trên.</p>
+        </div>
     </div>
-
-    <div class="form-group">
-        <label>File ghi âm (.m4a, .mp3, .wav):</label>
-        <input type="file" id="audioFile" accept="audio/*">
-        <audio id="audioPreview" controls></audio>
-    </div>
-
-    <button id="analyzeBtn">Phân Tích & Chấm Điểm</button>
-
-    <div id="status">Trạng thái: Sẵn sàng</div>
-    <div id="result"></div>
-
-    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>
 </div>
 
 <script>
@@ -118,9 +212,7 @@
     }
 
     window.onload = async () => {
-        addLog("🚀 Khởi tạo hệ thống...");
-        
-        // Load API Key
+        addLog("🚀 Khởi tạo hệ thống giao diện đơn cột...");
         const settingsDb = await initSettingsDB();
         const txSettings = settingsDb.transaction(SETTINGS_STORE_NAME, 'readonly');
         const settingsStore = txSettings.objectStore(SETTINGS_STORE_NAME);
@@ -132,7 +224,6 @@
             }
         };
 
-        // Load data from MediaCacheDB
         addLog("🔍 Truy xuất dữ liệu từ MediaCacheDB...");
         const data = await loadDataFromCache();
         if (data) {
@@ -178,7 +269,7 @@
 
         analyzeBtn.disabled = true;
         statusDiv.innerText = "Trạng thái: Đang phân tích...";
-        resultDiv.style.display = "none";
+        resultDiv.innerHTML = "<p style='text-align:center;'>⌛ Đang phân tích, vui lòng chờ giây lát...</p>";
         addLog("⏳ Bắt đầu quá trình phân tích...");
 
         try {
@@ -188,7 +279,7 @@
                 r.readAsDataURL(file);
             });
 
-			const models = ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash'];
+            const models = ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash'];
             let responseData = null;
             let lastError = "";
 
@@ -236,9 +327,7 @@
 
             if (responseData.candidates && responseData.candidates[0].content.parts[0].text) {
                 const aiText = responseData.candidates[0].content.parts[0].text;
-                
                 resultDiv.innerHTML = marked.parse(aiText);
-                resultDiv.style.display = "block";
                 statusDiv.innerText = "Trạng thái: Hoàn tất!";
                 addLog("✅ Đã nhận và hiển thị kết quả.");
 
@@ -266,8 +355,7 @@
         } catch (err) {
             addLog("❌ Lỗi: " + err.message);
             statusDiv.innerText = "Trạng thái: Lỗi.";
-            resultDiv.innerText = "Lỗi: " + err.message;
-            resultDiv.style.display = "block";
+            resultDiv.innerHTML = `<div style="color:red; padding:10px;">Lỗi: ${err.message}</div>`;
         } finally {
             analyzeBtn.disabled = false;
         }

@@ -274,13 +274,17 @@
                 updateStatusWithScore("Trạng thái: Hoàn tất!", scoreMatch ? scoreMatch[1] : null);
                 addLog("✅ Đã hiển thị kết quả.");
 
-                const fileIdFromUrl = new URLSearchParams(window.location.search).get('fileId');
+                const urlParamsSync = new URLSearchParams(window.location.search);
+                const fileIdFromUrl = urlParamsSync.get('fileId');
+                const lessionID = urlParamsSync.get('lessionId');
+
                 if (fileIdFromUrl) {
                     fetch(WEB_APP_URL, {
                         method: 'POST', mode: 'no-cors',
                         body: JSON.stringify({
                             action: 'score',
-							script:script,
+                            script: script,
+                            lessionID: lessionID,
                             fileId: fileIdFromUrl,
                             score: scoreMatch ? scoreMatch[1] : "0",
                             analysis: aiText

@@ -159,20 +159,33 @@
             }
         };
 
-        const data = await loadDataFromCache();
-        if (data) {
-            scriptInput.value = data.paragraph || "";
-            if (data.blob) {
-                currentBlob = data.blob;
-                audioPreview.src = URL.createObjectURL(data.blob);
-                audioPreview.style.display = "block";
-                addLog("🎵 Đã nạp Audio & Script.");
-            }
-            if (data.analysis) {
-                resultDiv.innerHTML = marked.parse(data.analysis);
-                resultDiv.style.display = "block";
-                statusDiv.innerText = "Trạng thái: Đã tải kết quả cũ.";
-                addLog("📝 Đã hiển thị nhận xét từ bộ nhớ đệm.");
+        // Kiểm tra thông tin từ URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlScore = urlParams.get('score');
+        const urlAnalysis = urlParams.get('analysis');
+
+        if (urlAnalysis) {
+            resultDiv.innerHTML = marked.parse(decodeURIComponent(urlAnalysis));
+            resultDiv.style.display = "block";
+            statusDiv.innerText = urlScore ? `Trạng thái: Điểm số ${urlScore}/1000` : "Trạng thái: Đã nạp nhận xét.";
+            addLog("📥 Đã tải thông tin từ URL.");
+        } else {
+            // Nếu không có URL thì mới load từ Cache (indexdb)
+            const data = await loadDataFromCache();
+            if (data) {
+                scriptInput.value = data.paragraph || "";
+                if (data.blob) {
+                    currentBlob = data.blob;
+                    audioPreview.src = URL.createObjectURL(data.blob);
+                    audioPreview.style.display = "block";
+                    addLog("🎵 Đã nạp Audio & Script.");
+                }
+                if (data.analysis) {
+                    resultDiv.innerHTML = marked.parse(data.analysis);
+                    resultDiv.style.display = "block";
+                    statusDiv.innerText = "Trạng thái: Đã tải kết quả cũ.";
+                    addLog("📝 Đã hiển thị nhận xét từ bộ nhớ đệm.");
+                }
             }
         }
     };

@@ -8,27 +8,61 @@
     <style>
         :root { --primary: #1e3799; --accent: #007bff; --bg: #f4f7f6; }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 5px; color: #333; line-height: 1.5; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 0; 
+            color: #333; 
+            line-height: 1.5;
+            height: 100vh;
+            overflow: hidden;
+        }
         
-        /* Full màn hình */
-        .card { width: 100%; max-width: 100%; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .card { 
+            width: 100%; 
+            max-width: 100%; 
+            background: white; 
+            padding: 8px; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
         
-        /* Header hàng ngang */
-        .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; margin-bottom: 8px; padding-bottom: 5px; }
+        .header-container { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #eee; 
+            margin-bottom: 8px; 
+            padding-bottom: 5px;
+            flex-shrink: 0;
+        }
         h2 { text-align: left; color: var(--primary); margin: 0; font-size: 1rem; }
         
-        /* Tab Styles */
-        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 5px; gap: 5px; position: sticky; top: 0; z-index: 100; background: white; }
+        .tabs { 
+            display: flex; 
+            border-bottom: 2px solid #ddd; 
+            margin-bottom: 5px; 
+            gap: 5px; 
+            background: white; 
+            flex-shrink: 0;
+        }
         .tab-btn { 
             padding: 6px 10px; border: none; background: #eee; cursor: pointer; 
             font-weight: bold; border-radius: 8px 8px 0 0; transition: 0.3s;
             font-size: 13px;
         }
         .tab-btn.active { background: var(--primary); color: white; }
-        .tab-content { display: none; }
+        
+        .tab-content { 
+            display: none; 
+            flex: 1; 
+            overflow-y: auto; 
+            padding-right: 5px;
+        }
         .tab-content.active { display: block; }
 
-        /* Script Display Style */
         #scriptDisplay { 
             padding: 12px; background: #fffbe6; border: 1px solid #ffe58f; 
             border-radius: 4px; font-size: 15px; min-height: 40px; margin-bottom: 10px;
@@ -42,7 +76,6 @@
             width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; outline: none;
         }
         
-        /* Nút bấm và Audio hàng ngang */
         .audio-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
         button#analyzeBtn { background: var(--accent); color: white; border: none; padding: 8px 15px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         button#analyzeBtn:hover { background: var(--primary); }
@@ -51,7 +84,6 @@
         #scoreDisplay { font-weight: bold; color: #c0c0c0; font-size: 1.2rem; font-family: monospace; }
         #audioPreview { flex-grow: 1; height: 35px; display: none; }
 
-        /* Khu vực kết quả */
         #result { 
             padding: 15px; background: #fff; border-top: 4px solid var(--primary); 
             border-radius: 4px; border: 1px solid #e1e8ed;
@@ -70,8 +102,6 @@
             word-break: break-word;
         }
         #result th { background-color: #f8f9fa; }
-
-        .log-box { margin-top: 15px; background: #2d3436; color: #00ff00; padding: 10px; border-radius: 4px; font-family: monospace;  max-height: 100px; overflow-y: auto; font-size: 11px; }
 
         @media (max-width: 600px) {
             .audio-row { align-items: center; }
@@ -117,8 +147,6 @@
         </div>
         <p style="font-size: 0.75rem; color: #777;">* API Key được lưu trữ cục bộ trong trình duyệt của bạn.</p>
     </div>
-
-    <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>
 </div>
 
 <script>
@@ -134,7 +162,6 @@
     const analyzeBtn = document.getElementById('analyzeBtn');
     const resultDiv = document.getElementById('result');
     const scoreDisplay = document.getElementById('scoreDisplay');
-    const logBox = document.getElementById('logBox');
     const audioPreview = document.getElementById('audioPreview');
 
     function openTab(tabName) {
@@ -145,7 +172,6 @@
         document.getElementById(tabName).classList.add('active');
         const targetBtn = document.getElementById('btn-' + tabName);
         if(targetBtn) targetBtn.classList.add('active');
-        addLog("📂 Chuyển sang tab: " + tabName);
         localStorage.setItem('activeTab', tabName);
     }
 
@@ -158,12 +184,6 @@
     }
 
     let currentBlob = null;
-
-    function addLog(msg) {
-        const t = new Date().toLocaleTimeString();
-        logBox.innerText += `\n[${t}] ${msg}`;
-        logBox.scrollTop = logBox.scrollHeight;
-    }
 
     async function initSettingsDB() {
         return new Promise(res => {
@@ -198,7 +218,6 @@
     }
 
     window.onload = async () => {
-        addLog("🚀 Khởi tạo UI Tab...");
         const savedTab = localStorage.getItem('activeTab');
         if (savedTab) openTab(savedTab);
         
@@ -209,7 +228,6 @@
         reqSettings.onsuccess = () => { 
             if(reqSettings.result) { 
                 apiKeyInput.value = reqSettings.result; 
-                addLog("🔑 Đã nạp API Key."); 
             }
         };
 
@@ -221,7 +239,6 @@
             resultDiv.innerHTML = marked.parse(decodeURIComponent(urlAnalysis));
             wrapTablesInDiv(resultDiv);
             updateStatusWithScore("", urlScore);
-            addLog("📥 Đã tải thông tin từ URL.");
             openTab('resultTab');
         } else {
             const data = await loadDataFromCache();
@@ -232,14 +249,12 @@
                     currentBlob = data.blob;
                     audioPreview.src = URL.createObjectURL(data.blob);
                     audioPreview.style.display = "block";
-                    addLog("🎵 Đã nạp Audio & Script từ IndexedDB.");
                 }
                 const scoreMatch = data.analysis ? data.analysis.match(/(\d+)\/1000/) : null;
                 if (data.analysis) {
                     resultDiv.innerHTML = marked.parse(data.analysis);
                     wrapTablesInDiv(resultDiv);
                     updateStatusWithScore("", scoreMatch ? scoreMatch[1] : null);
-                    addLog("📝 Đã hiển thị nhận xét từ bộ nhớ đệm.");
                 }
             }
         }
@@ -250,7 +265,6 @@
         const db = await initSettingsDB();
         const tx = db.transaction(SETTINGS_STORE_NAME, 'readwrite');
         tx.objectStore(SETTINGS_STORE_NAME).put(val, 'api_key');
-        addLog("🔑 Đã cập nhật API Key.");
     };
 
     analyzeBtn.onclick = async () => {
@@ -264,7 +278,6 @@
         }
 
         analyzeBtn.disabled = true;
-        addLog("⏳ Đang gửi dữ liệu tới Gemini...");
 
         try {
             const base64Data = await new Promise((resolve) => {
@@ -279,7 +292,7 @@
 
             for (let modelName of models) {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
-                try {					
+                try {                    
                      const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -308,7 +321,6 @@
                 wrapTablesInDiv(resultDiv);
                 const scoreMatch = aiText.match(/(\d+)\/1000/);
                 updateStatusWithScore("", scoreMatch ? scoreMatch[1] : null);
-                addLog("✅ Đã hiển thị kết quả.");
                 openTab('resultTab');
 
                 const urlParamsSync = new URLSearchParams(window.location.search);
@@ -330,7 +342,7 @@
                 }
             } else { throw new Error(lastError || "Lỗi AI"); }
         } catch (err) {
-            addLog("❌ Lỗi: " + err.message);
+            alert("Lỗi: " + err.message);
         } finally {
             analyzeBtn.disabled = false;
         }

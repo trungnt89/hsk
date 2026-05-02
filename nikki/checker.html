@@ -16,7 +16,7 @@
         h2 { text-align: left; color: var(--primary); margin: 0 0 15px 0; font-size: 1.2rem; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         
         /* Tab Styles */
-        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 15px; gap: 5px; }
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 15px; gap: 5px; position: sticky; top: 0; z-index: 100; background: white; }
         .tab-btn { 
             padding: 10px 15px; border: none; background: #eee; cursor: pointer; 
             font-weight: bold; border-radius: 8px 8px 0 0; transition: 0.3s;
@@ -41,7 +41,7 @@
         }
         
         /* Nút bấm và Trạng thái */
-        .action-row { display: flex; align-items: center; gap: 15px; margin-top: 5px; padding-top: 10px; border-top: 1px dashed #eee; }
+        .action-row { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
         button#analyzeBtn { background: var(--accent); color: white; border: none; padding: 10px 25px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; width: auto; }
         button#analyzeBtn:hover { background: var(--primary); }
         button#analyzeBtn:disabled { background: #ccc; }
@@ -78,6 +78,11 @@
 <div class="card">
     <h2>Phân Tích Phát Âm</h2>
     
+    <div class="action-row">
+        <button id="analyzeBtn">Bắt đầu phân tích</button>
+        <div id="status">Trạng thái: Sẵn sàng</div>
+    </div>
+
     <div class="tabs">
         <button class="tab-btn active" id="btn-mainTab" onclick="openTab('mainTab')">Nội Dung Phân Tích</button>
         <button class="tab-btn" id="btn-resultTab" onclick="openTab('resultTab')">Kết Quả</button>
@@ -107,11 +112,6 @@
             <input type="text" id="apiKey" placeholder="Dán API Key vào đây...">
         </div>
         <p style="font-size: 0.75rem; color: #777;">* API Key được lưu trữ cục bộ trong trình duyệt của bạn.</p>
-    </div>
-
-    <div class="action-row">
-        <button id="analyzeBtn">Bắt đầu phân tích</button>
-        <div id="status">Trạng thái: Sẵn sàng</div>
     </div>
 
     <div class="log-box" id="logBox">Logs: Hệ thống đã sẵn sàng.</div>

@@ -8,7 +8,10 @@ export default async function handler(req, res) {
     try {
         const auth = new GoogleAuth({
             credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
-            scopes: ['https://www.googleapis.com/auth/drive']
+            scopes: [
+                'https://www.googleapis.com/auth/drive',
+                'https://www.googleapis.com/auth/spreadsheets.readonly'
+            ]
         });
 
         const drive = await getDriveClient(auth);
@@ -107,7 +110,7 @@ async function handleStreamMedia(drive, fileId, headers, res) {
 }
 
 /**
- * BỔ TRỢ 4: Lấy danh sách file theo identifier
+ * BỔ TRỢ 4: Lấy danh sách file theo identifier kèm điểm số từ Sheets
  */
 async function handleListFiles(drive, identifier, res) {
     let allFiles = [];
@@ -118,6 +121,33 @@ async function handleListFiles(drive, identifier, res) {
         driveQuery += ` and name contains '_${identifier}_'`;
     }
 
+    // 1. Lấy dữ liệu điểm số từ Google Sheets qua Service Account
+    const authClient = await drive.context._options.auth.getClient();
+    const sheets = google.sheets({ version: 'v4', auth: authClient });
+    const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
+    
+    const scoreMap = new Map();
+    try {
+        const scoreData = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'Score!A:D', // Cột A: FileID, Cột C: Score, Cột D: Analysis
+        });
+
+        if (scoreData.data.values) {
+            scoreData.data.values.forEach(row => {
+                // row[0] là fileId, row[2] là điểm, row[3] là phân tích
+                scoreMap.set(row[0], { 
+                    score: row[2] || null, 
+                    analysis: row[3] || null 
+                });
+            });
+        }
+    } catch (sheetErr) {
+        console.error("[SHEET ERR]", sheetErr.message);
+        // Tiếp tục xử lý lấy file ngay cả khi lỗi lấy điểm
+    }
+
+    // 2. Lấy danh sách file từ Drive
     do {
         const response = await drive.files.list({
             q: driveQuery,
@@ -129,7 +159,17 @@ async function handleListFiles(drive, identifier, res) {
         nextPageToken = response.data.nextPageToken;
     } while (nextPageToken);
 
-    return res.status(200).json(allFiles);
+    // 3. Kết hợp dữ liệu
+    const enrichedFiles = allFiles.map(file => {
+        const scoreInfo = scoreMap.get(file.id) || { score: null, analysis: null };
+        return {
+            ...file,
+            score: scoreInfo.score,
+            analysis: scoreInfo.analysis
+        };
+    });
+
+    return res.status(200).json(enrichedFiles);
 }
 
 /**

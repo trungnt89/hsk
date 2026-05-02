@@ -1,12 +1,12 @@
 --------------------------------------------
 NGUYÊN TĂC SỬA :
-1.liệt kê chỗ sửa đổi và lý do
+1.Liệt kê chỗ sửa đổi và lý do
 2.Git diff check sai khác
-3.Sửa lại nếu sửa ngoài 2 cho đến khi nào chỉ sửa các nội dung đã git diff tại 2,nếu không thì sửa lại.
+3.Sửa lại nếu sửa ngoài 2 cho đến khi nào chỉ sửa các nội dung đã git diff tại 2,nếu không thì sửa lại.Báo cáo hoàn thành bước 3 nếu đã check.
+4.Tiền hành lại bước 3 một lần nữa để chắc chắn không sửa code ngoài yêu cầu.Báo cáo hoàn thành bước 4 nếu đã check.
 --------------------------------------------
 YÊU CẦU : 
-1. Khi click vào button Detail"count-trigger" thì hiển thị popup frame, nút tắt popup frame chuyển sang bên trái, nút back trở lại trang trước trong frame ở bên phải. Trong frame sẽ chuyển đi nhiều trang nên cần nút back này. 
-2. Nut back va Close chỉ để icon không để text
+1. Khi lưu điểm , nếu đã tồn tại rồi thì ghi đè row, ko thêm mới row
 
 --------------------------------------------
 SRC BASE : 

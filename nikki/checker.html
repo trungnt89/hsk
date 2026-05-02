@@ -54,13 +54,24 @@
         #result { 
             padding: 15px; background: #fff; border-top: 4px solid var(--primary); 
             border-radius: 4px; border: 1px solid #e1e8ed;
-            overflow-x: auto;
+            overflow-x: hidden; /* Cố định vùng chứa nội dung text */
         }
         #result h1, #result h2, #result h3 { color: var(--primary); margin-top: 10px; font-size: 1.1rem; }
-        #result table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; min-width: 1200px; }
+        
+        /* Chỉ cho phép bảng trượt ngang */
+        #result table { 
+            display: block; 
+            overflow-x: auto; 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin: 10px 0; 
+            font-size: 13px; 
+            -webkit-overflow-scrolling: touch;
+        }
         #result table, #result th, #result td { 
             border: 1px solid #ddd; padding: 6px; 
             word-break: break-word;
+            min-width: 150px; /* Đảm bảo các cột đủ rộng để kích hoạt scroll */
         }
         #result th { background-color: #f8f9fa; }
 

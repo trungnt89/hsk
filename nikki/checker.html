@@ -103,6 +103,10 @@
         }
         #result th { background-color: #f8f9fa; }
 
+        /* Toast Styling */
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity 0.5s; z-index: 1000; pointer-events: none; }
+        .toast.show { opacity: 1; }
+
         @media (max-width: 600px) {
             .audio-row { align-items: center; }
             button#analyzeBtn { width: auto; }
@@ -148,6 +152,9 @@
         <p style="font-size: 0.75rem; color: #777;">* API Key được lưu trữ cục bộ trong trình duyệt của bạn.</p>
     </div>
 </div>
+
+<!-- Toast element -->
+<div id="toast" class="toast"></div>
 
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
@@ -338,7 +345,7 @@
                             score: scoreMatch ? scoreMatch[1] : "0",
                             analysis: aiText
                         })
-                    });
+                    }).then(() => showToast("Đã gửi yêu cầu lưu điểm lên Sheet!"));
                 }
             } else { throw new Error(lastError || "Lỗi AI"); }
         } catch (err) {
@@ -347,6 +354,13 @@
             analyzeBtn.disabled = false;
         }
     };
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
 
     function wrapTablesInDiv(container) {
         const tables = container.querySelectorAll('table');

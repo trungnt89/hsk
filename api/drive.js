@@ -21,19 +21,23 @@ export default async function handler(req, res) {
 
         switch (method) {
             case 'GET':
+                // 0. Xử lý lấy điểm số và phân tích theo lessonId (Yêu cầu mới)
+                if (query.action === 'getScore' && query.lessonId) {
+                    return await handleGetScoreByLesson(auth, query.lessonId, res);
+                }
                 // 1. Xử lý Stream (Nếu có ID)
                 if (query.id) {
                     return await handleStreamMedia(drive, query.id, headers, res);
                 }
-                // 2. Xử lý danh sách (Mặc định) - Truyền thêm auth vào đây
-                return await handleListFiles(drive, auth, query.identifier, res);
+                // 2. Xử lý danh sách (Mặc định)
+                return await handleListFiles(drive, query.identifier, res);
 
             case 'POST':
                 // 3. Xử lý Upload
                 return await handleUploadFile(body, res);
 
             case 'DELETE':
-                // 4. Xử lý xóa trực tiếp qua Method DELETE (Gọi sang GAS để đảm bảo quyền Owner)
+                // 4. Xử lý xóa trực tiếp qua Method DELETE
                 return await handleDeleteFile(query, res);
 
             default:
@@ -43,6 +47,60 @@ export default async function handler(req, res) {
     } catch (err) {
         console.error("[SERVER ERR]", err.message);
         return res.status(500).json({ error: err.message });
+    }
+}
+
+/**
+ * BỔ TRỢ 0: Lấy điểm số và phân tích từ Google Sheet qua SA
+ */
+async function handleGetScoreByLesson(auth, lessonId, res) {
+    try {
+        const client = await auth.getClient();
+        const sheets = google.sheets({ version: 'v4', auth: client });
+        const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
+
+        // 1. Tìm FileID từ sheet FileList dựa trên lessonId (Cột D)
+        const fileListRes = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'FileList!A:D',
+        });
+
+        const fileRows = fileListRes.data.values || [];
+        const fileRecord = fileRows.find(row => row[3] === lessonId);
+
+        if (!fileRecord) {
+            return res.status(404).json({ error: "No file found for this lessonId" });
+        }
+
+        const targetFileId = fileRecord[0];
+
+        // 2. Lấy điểm và phân tích từ sheet Score dựa trên FileID (Cột A)
+        const scoreRes = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'Score!A:D',
+        });
+
+        const scoreRows = scoreRes.data.values || [];
+        const scoreRecord = scoreRows.find(row => row[0] === targetFileId);
+
+        if (!scoreRecord) {
+            return res.status(200).json({ 
+                fileId: targetFileId,
+                score: null, 
+                analysis: null,
+                message: "Score not yet available"
+            });
+        }
+
+        return res.status(200).json({
+            fileId: targetFileId,
+            score: (scoreRecord.length > 2 && scoreRecord[2] !== "") ? scoreRecord[2] : null,
+            analysis: (scoreRecord.length > 3 && scoreRecord[3] !== "") ? scoreRecord[3] : null
+        });
+
+    } catch (err) {
+        console.error("[SCORE ERR]", err.message);
+        throw err;
     }
 }
 
@@ -75,7 +133,7 @@ async function handleDeleteFile(query, res) {
 }
 
 /**
- * BỔ TRỢ 3: Stream media (hỗ trợ tua video/audio)
+ * BỔ TRỢ 3: Stream media
  */
 async function handleStreamMedia(drive, fileId, headers, res) {
     const meta = await drive.files.get({ fileId: fileId, fields: 'size, mimeType' });
@@ -109,9 +167,9 @@ async function handleStreamMedia(drive, fileId, headers, res) {
 }
 
 /**
- * BỔ TRỢ 4: Lấy danh sách file theo identifier kèm điểm số từ Sheets
+ * BỔ TRỢ 4: Lấy danh sách file theo identifier
  */
-async function handleListFiles(drive, auth, identifier, res) {
+async function handleListFiles(drive, identifier, res) {
     let allFiles = [];
     let nextPageToken = null;
     let driveQuery = `trashed=false and (mimeType contains 'audio/' or mimeType contains 'video/')`;
@@ -120,31 +178,6 @@ async function handleListFiles(drive, auth, identifier, res) {
         driveQuery += ` and name contains '_${identifier}_'`;
     }
 
-    // 1. Lấy dữ liệu điểm số từ Google Sheets qua Service Account
-    const scoreMap = new Map();
-    try {
-        const authClient = await auth.getClient();
-        const sheets = google.sheets({ version: 'v4', auth: authClient });
-        const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
-        
-        const scoreData = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: 'Score!A:D',
-        });
-
-        if (scoreData.data.values) {
-            scoreData.data.values.forEach(row => {
-                scoreMap.set(row[0], { 
-                    score: row[2] || null, 
-                    analysis: row[3] || null 
-                });
-            });
-        }
-    } catch (sheetErr) {
-        console.error("[SHEET ERR]", sheetErr.message);
-    }
-
-    // 2. Lấy danh sách file từ Drive
     do {
         const response = await drive.files.list({
             q: driveQuery,
@@ -156,17 +189,7 @@ async function handleListFiles(drive, auth, identifier, res) {
         nextPageToken = response.data.nextPageToken;
     } while (nextPageToken);
 
-    // 3. Kết hợp dữ liệu
-    const enrichedFiles = allFiles.map(file => {
-        const scoreInfo = scoreMap.get(file.id) || { score: null, analysis: null };
-        return {
-            ...file,
-            score: scoreInfo.score,
-            analysis: scoreInfo.analysis
-        };
-    });
-
-    return res.status(200).json(enrichedFiles);
+    return res.status(200).json(allFiles);
 }
 
 /**

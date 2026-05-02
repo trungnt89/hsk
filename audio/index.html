@@ -185,12 +185,11 @@
             return; 
         }
         container.innerHTML = files.map(f => {
-            // Lấy điểm số từ localStorage theo nguyên tắc filename + id
-            const scoreKey = f.name + f.id;
-            const score = localStorage.getItem(scoreKey);
-            const displayScore = score ? String(score).padStart(3, '0') : "000";
-            const scoreClass = score ? "score-red" : "score-gray";
-            console.log(`Render file: ${f.name}, ScoreKey: ${scoreKey}, Score: ${score}`);
+            // Điểm số sẽ lấy từ server trả về (thuộc tính f.score)
+            const score = f.score;
+            const displayScore = (score !== undefined && score !== null) ? String(score).padStart(3, '0') : "000";
+            const scoreClass = (score !== undefined && score !== null) ? "score-red" : "score-gray";
+            console.log(`Render file: ${f.name}, Score từ server: ${score}`);
             
             return `
             <div class="item" id="item-${f.id}">

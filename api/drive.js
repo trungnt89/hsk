@@ -21,23 +21,18 @@ export default async function handler(req, res) {
 
         switch (method) {
             case 'GET':
-                // 0. Xử lý lấy điểm số và phân tích theo lessonId (Yêu cầu mới)
                 if (query.action === 'getScore' && query.lessonId) {
                     return await handleGetScoreByLesson(auth, query.lessonId, res);
                 }
-                // 1. Xử lý Stream (Nếu có ID)
                 if (query.id) {
                     return await handleStreamMedia(drive, query.id, headers, res);
                 }
-                // 2. Xử lý danh sách (Mặc định)
                 return await handleListFiles(drive, query.identifier, res);
 
             case 'POST':
-                // 3. Xử lý Upload
                 return await handleUploadFile(body, res);
 
             case 'DELETE':
-                // 4. Xử lý xóa trực tiếp qua Method DELETE
                 return await handleDeleteFile(query, res);
 
             default:
@@ -51,7 +46,7 @@ export default async function handler(req, res) {
 }
 
 /**
- * BỔ TRỢ 0: Lấy điểm số và phân tích từ Google Sheet qua SA
+ * BỔ TRỢ 0: Lấy điểm số và phân tích dựa trên cấu trúc Sheet mới
  */
 async function handleGetScoreByLesson(auth, lessonId, res) {
     try {
@@ -59,43 +54,28 @@ async function handleGetScoreByLesson(auth, lessonId, res) {
         const sheets = google.sheets({ version: 'v4', auth: client });
         const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
 
-        // 1. Tìm FileID từ sheet FileList dựa trên lessonId (Cột D)
-        const fileListRes = await sheets.spreadsheets.values.get({
+        // 1. Tìm FileID từ lessonId (Dựa trên ảnh: LessonID cột A, FileID cột B)
+        const scoreSheetRes = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: 'FileList!A:D',
+            range: 'Score!A:F', // Lấy rộng ra đến cột F để bao quát hết các cột
         });
 
-        const fileRows = fileListRes.data.values || [];
-        const fileRecord = fileRows.find(row => row[3] === lessonId);
+        const rows = scoreSheetRes.data.values || [];
+        
+        // Tìm hàng có LessonID (Cột A - index 0) khớp với lessonId truyền vào
+        const record = rows.find(row => row[0] === lessonId);
 
-        if (!fileRecord) {
-            return res.status(404).json({ error: "No file found for this lessonId" });
+        if (!record) {
+            return res.status(404).json({ error: "No record found for this lessonId" });
         }
 
-        const targetFileId = fileRecord[0];
-
-        // 2. Lấy điểm và phân tích từ sheet Score dựa trên FileID (Cột A)
-        const scoreRes = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: 'Score!A:D',
-        });
-
-        const scoreRows = scoreRes.data.values || [];
-        const scoreRecord = scoreRows.find(row => row[0] === targetFileId);
-
-        if (!scoreRecord) {
-            return res.status(200).json({ 
-                fileId: targetFileId,
-                score: null, 
-                analysis: null,
-                message: "Score not yet available"
-            });
-        }
-
+        // Theo cấu trúc ảnh: 
+        // A(0): LessonID, B(1): FileID, C(2): Nội dung, D(3): Điểm, E(4): Phân tích
         return res.status(200).json({
-            fileId: targetFileId,
-            score: (scoreRecord.length > 2 && scoreRecord[2] !== "") ? scoreRecord[2] : null,
-            analysis: (scoreRecord.length > 3 && scoreRecord[3] !== "") ? scoreRecord[3] : null
+            lessonId: record[0],
+            fileId: record[1] || null,
+            score: (record.length > 3 && record[3] !== "") ? record[3] : null,
+            analysis: (record.length > 4 && record[4] !== "") ? record[4] : null
         });
 
     } catch (err) {
@@ -128,7 +108,6 @@ async function handleDeleteFile(query, res) {
     });
 
     const result = await gasRes.json();
-    console.log(`[LOG] Delete file via GAS result for ID: ${fileId}`, result);
     return res.status(200).json(result);
 }
 
@@ -167,7 +146,7 @@ async function handleStreamMedia(drive, fileId, headers, res) {
 }
 
 /**
- * BỔ TRỢ 4: Lấy danh sách file theo identifier
+ * BỔ TRỢ 4: Lấy danh sách file
  */
 async function handleListFiles(drive, identifier, res) {
     let allFiles = [];
@@ -193,7 +172,7 @@ async function handleListFiles(drive, identifier, res) {
 }
 
 /**
- * BỔ TRỢ 5: Upload file qua Google Apps Script
+ * BỔ TRỢ 5: Upload file
  */
 async function handleUploadFile(body, res) {
     const { name, base64Audio, identifier } = body;
@@ -206,7 +185,6 @@ async function handleUploadFile(body, res) {
     });
     
     const result = await gasRes.json();
-    console.log(`[LOG] Upload to Drive via GAS success for: ${name}`);
     return res.status(200).json(result);
 }
 

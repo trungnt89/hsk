@@ -55,6 +55,10 @@
         .log-box { margin-top: 15px; background: #2d3436; color: #00ff00; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 10px; max-height: 100px; overflow-y: auto; }
         #audioPreview { margin-top: 5px; width: 100%; height: 30px; display: none; }
 
+        /* Mặc định ẩn vùng API Key */
+        details summary { cursor: pointer; color: var(--accent); font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; outline: none; }
+        details[open] summary { margin-bottom: 5px; }
+
         @media (max-width: 900px) {
             .config-grid { flex-direction: column; }
             .form-group { width: 100%; }
@@ -67,10 +71,12 @@
     <h2>Phân Tích</h2>
     
     <div class="config-grid">
-        <div class="form-group">
-            <label>Gemini API Key:</label>
-            <input type="text" id="apiKey" placeholder="Nhập API Key...">
-        </div>
+        <details class="form-group">
+            <summary>Cấu hình Gemini API Key</summary>
+            <div style="padding-top: 5px;">
+                <input type="text" id="apiKey" placeholder="Nhập API Key...">
+            </div>
+        </details>
 
         <div class="form-group">
             <label>Kịch bản gốc (Script tiếng Nhật):</label>
@@ -78,8 +84,7 @@
         </div>
 
         <div class="form-group">
-            <label>File ghi âm:</label>
-            <input type="file" id="audioFile" accept="audio/*">
+            <label>Âm thanh phân tích:</label>
             <audio id="audioPreview" controls></audio>
         </div>
     </div>
@@ -96,13 +101,12 @@
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
     const DB_NAME = 'MediaCacheDB'; 
-    const STORE_NAME = 'media';     
+    const STORE_NAME = 'media';      
     const SETTINGS_DB_NAME = 'JP_Score_DB_v1';
     const SETTINGS_STORE_NAME = 'settings';
 
     const apiKeyInput = document.getElementById('apiKey');
     const scriptInput = document.getElementById('originalScript');
-    const audioInput = document.getElementById('audioFile');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const resultDiv = document.getElementById('result');
     const statusDiv = document.getElementById('status');
@@ -184,7 +188,7 @@
                     currentBlob = data.blob;
                     audioPreview.src = URL.createObjectURL(data.blob);
                     audioPreview.style.display = "block";
-                    addLog("🎵 Đã nạp Audio & Script.");
+                    addLog("🎵 Đã nạp Audio & Script từ IndexedDB.");
                 }
                 const scoreMatch = data.analysis ? data.analysis.match(/(\d+)\/1000/) : null;
                 if (data.analysis) {
@@ -205,23 +209,13 @@
         addLog("🔑 Đã cập nhật API Key.");
     };
 
-    audioInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            currentBlob = file;
-            audioPreview.src = URL.createObjectURL(file);
-            audioPreview.style.display = "block";
-            addLog(`📂 Đã chọn: ${file.name}`);
-        }
-    };
-
     analyzeBtn.onclick = async () => {
         const key = apiKeyInput.value.trim();
         const script = scriptInput.value.trim();
         const file = currentBlob;
 
         if(!file || !key) {
-            alert("Thiếu API Key hoặc Audio!");
+            alert("Thiếu API Key hoặc Audio (Chưa có dữ liệu từ DB)!");
             return;
         }
 

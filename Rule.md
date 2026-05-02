@@ -6,6 +6,7 @@ NGUYÊN TĂC SỬA :
 --------------------------------------------
 YÊU CẦU : 
 1. Khi click vào button Detail"count-trigger" thì hiển thị popup frame, nút tắt popup frame chuyển sang bên trái, nút back trở lại trang trước trong frame ở bên phải. Trong frame sẽ chuyển đi nhiều trang nên cần nút back này. 
+2. Nut back va Close chỉ để icon không để text
 
 --------------------------------------------
 SRC BASE : 

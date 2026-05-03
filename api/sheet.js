@@ -4,6 +4,9 @@ const { google } = require('googleapis');
 /**
  * GOOGLE SHEETS API - CLEAN VERSION
  * Tách biệt logic xử lý dữ liệu và logic phản hồi API
+ * Example : 
+ *    https://hsk-gilt.vercel.app/api/sheet?spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score&act=read
+ *    https://hsk-gilt.vercel.app/api/sheet?spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score&act=getByVal&pos=0&val=1776989931734
  */
 
 export default async function handler(req, res) {
@@ -78,11 +81,12 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
 async function handleGetByVal(sheets, spreadsheetId, sheetName, pos, val) {
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rows = response.data.values || [];
-    const idx = rows.findIndex(row => row[parseInt(pos, 10)] == val);
+    // Sửa lỗi: Sử dụng filter để lấy tất cả các row khớp giá trị
+    const results = rows.filter(row => row[parseInt(pos, 10)] == val);
 
-    if (idx === -1) throw { message: "Value not found", code: 404 };
+    if (results.length === 0) throw { message: "Value not found", code: 404 };
 
-    return { rowID: idx + 1, data: rows[idx] };
+    return { total: results.length, data: results };
 }
 
 async function handleUpdateByRowID(sheets, spreadsheetId, sheetName, rowID, rawData) {

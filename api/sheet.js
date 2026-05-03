@@ -58,6 +58,7 @@ export default async function handler(req, res) {
 }
 
 async function handleRead(sheets, spreadsheetId, sheetName) {
+    console.log(`[LOG] handleRead: Reading data from ${sheetName}`);
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     return { values: response.data.values || [] };
 }
@@ -99,22 +100,27 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
 }
 
 async function handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
+    console.log(`[LOG] handleReadByPosVal: Searching ${sheetName} at index ${pos} for value "${val}"`);
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rows = response.data.values || [];
     const results = rows
         .map((row, index) => ({ rowID: index + 1, data: row }))
         .filter(item => item.data[parseInt(pos, 10)] == val);
 
+    console.log(`[LOG] handleReadByPosVal: Found ${results.length} matches`);
     if (results.length === 0) throw { message: "Value not found", code: 404 };
     return { total: results.length, values: results };
 }
 
 async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, rawData) {
+    console.log(`[LOG] handleUpdateByPosVal: Starting update process for ${val}`);
     try {
         const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
         const rowID = search.values[0].rowID;
+        console.log(`[LOG] handleUpdateByPosVal: Target RowID determined as ${rowID}`);
         const data = parseData(rawData);
         const rowValues = Array.isArray(data) ? data : [data];
+        console.log(`[LOG] handleUpdateByPosVal: Updating with rowValues:`, JSON.stringify(rowValues));
         
         await sheets.spreadsheets.values.update({
             spreadsheetId,
@@ -134,12 +140,14 @@ async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, 
 }
 
 async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
+    console.log(`[LOG] handleDeleteByPosVal: Deleting record where index ${pos} is "${val}"`);
     const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
     const rowID = search.values[0].rowID;
     const sheetRes = await sheets.spreadsheets.get({ spreadsheetId });
     const sheet = sheetRes.data.sheets.find(s => s.properties.title === sheetName);
     if (!sheet) throw new Error("Sheet name not found");
     const sheetId = sheet.properties.sheetId;
+    console.log(`[LOG] handleDeleteByPosVal: Resolved SheetID: ${sheetId}, RowID: ${rowID}`);
 
     await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
@@ -160,13 +168,19 @@ async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) 
 }
 
 function parseData(input) {
+    console.log(`[LOG] parseData Input:`, typeof input === 'string' ? input : JSON.stringify(input));
     if (typeof input === 'string') {
         try { 
             let p = JSON.parse(input);
-            // Nếu parse ra object có key data, lấy data bên trong (fix deep nesting)
-            return (p && typeof p === 'object' && p.data && !Array.isArray(p)) ? p.data : p;
-        } catch (e) { return [input]; }
+            let result = (p && typeof p === 'object' && p.data && !Array.isArray(p)) ? p.data : p;
+            console.log(`[LOG] parseData Output (String Parse):`, JSON.stringify(result));
+            return result;
+        } catch (e) { 
+            console.log(`[LOG] parseData Output (Fallback to Array):`, JSON.stringify([input]));
+            return [input]; 
+        }
     }
+    console.log(`[LOG] parseData Output (Direct):`, JSON.stringify(input));
     return input;
 }
 

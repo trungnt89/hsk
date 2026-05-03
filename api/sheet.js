@@ -70,8 +70,12 @@ async function handleRead(sheets, spreadsheetId, sheetName) {
 }
 
 async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
+    console.log("[LOG] Step 1: Receiving rawData", rawData);
     const data = parseData(rawData);
-    const rowValues = Array.isArray(data) ? data : [data];
+    // Đảm bảo rowValues là mảng phẳng (không lồng mảng)
+    const rowValues = Array.isArray(data) ? (Array.isArray(data[0]) ? data[0] : data) : [data];
+    console.log("[LOG] Step 2: Formatted rowValues", rowValues);
+
     const response = await sheets.spreadsheets.values.append({
         spreadsheetId,
         range: `${sheetName}!A1`,
@@ -79,6 +83,7 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
         insertDataOption: 'INSERT_ROWS',
         requestBody: { values: [rowValues] },
     });
+    console.log("[LOG] Step 3: Google API Response", response.data.updates);
     return { success: true, details: response.data };
 }
 

@@ -121,7 +121,7 @@ const JapaneseLookup = (() => {
                     savedWordsMap.set(text, { meaning: detailed, romaji: item.phonetic, googleMeaning: item.short_mean });
                     Module.applyHighlight();
                     const ts = new Date().toLocaleString('ja-JP');
-                    fetch(`${CONFIG.API_URL}?sheet=${CONFIG.sheet}&spread=${CONFIG.spread}&act=add`, { 
+                    fetch(`${CONFIG.API_URL}?sheet=${CONFIG.sheet}&spread=${CONFIG.spread}&act=updateByPosVal&pos=1&val=${encodeURIComponent(text)}`, { 
                         method: "POST", 
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ data: [ts, text, item.phonetic, item.short_mean || detailed] }) 

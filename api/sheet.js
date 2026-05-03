@@ -3,11 +3,7 @@ const { google } = require('googleapis');
 
 /**
  * GOOGLE SHEETS API - CLEAN VERSION
- * Tách biệt logic xử lý dữ liệu và logic phản hồi API
- * Example : 
- *    https://hsk-gilt.vercel.app/api/sheet?
- *      spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score
- *      spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score&act=readByPosVal&pos=0&val=1776989931734
+ * Hỗ trợ bóc tách dữ liệu lồng nhau từ Frontend {data: {data: []}}
  */
 
 export default async function handler(req, res) {
@@ -30,9 +26,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: "Missing spreadsheetId or sheetName" });
         }
 
-        // BIẾN CHỨA KẾT QUẢ CUỐI CÙNG
         let result;
-
         switch (action) {
             case 'read':
                 result = await handleRead(sheets, spreadsheetId, sheetName);
@@ -53,7 +47,6 @@ export default async function handler(req, res) {
                 return res.status(400).json({ error: "Invalid action" });
         }
 
-        // PHẢN HỒI DUY NHẤT TẠI ĐÂY
         return res.status(200).json(result);
 
     } catch (err) {
@@ -62,19 +55,27 @@ export default async function handler(req, res) {
     }
 }
 
-// --- CÁC HÀM LOGIC CHỈ TRẢ VỀ DATA, KHÔNG DÙNG RES ---
-
 async function handleRead(sheets, spreadsheetId, sheetName) {
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     return { values: response.data.values || [] };
 }
 
 async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
-    console.log("[LOG] Step 1: Receiving rawData", rawData);
-    const data = parseData(rawData);
-    // Đảm bảo rowValues là mảng phẳng (không lồng mảng)
+    console.log("[LOG] Step 1: Receiving rawData", JSON.stringify(rawData));
+    
+    if (rawData === undefined || rawData === null) {
+        throw new Error("Dữ liệu gửi lên (data) bị trống!");
+    }
+
+    let data = parseData(rawData);
+    
+    // Xử lý trường hợp Frontend gửi {data: [...]} thay vì [...] trực tiếp
+    if (data && typeof data === 'object' && data.data && !Array.isArray(data)) {
+        data = data.data;
+    }
+
     const rowValues = Array.isArray(data) ? (Array.isArray(data[0]) ? data[0] : data) : [data];
-    console.log("[LOG] Step 2: Formatted rowValues", rowValues);
+    console.log("[LOG] Step 2: Formatted rowValues", JSON.stringify(rowValues));
 
     const response = await sheets.spreadsheets.values.append({
         spreadsheetId,
@@ -83,6 +84,7 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
         insertDataOption: 'INSERT_ROWS',
         requestBody: { values: [rowValues] },
     });
+    
     console.log("[LOG] Step 3: Google API Response", response.data.updates);
     return { success: true, details: response.data };
 }
@@ -90,20 +92,17 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
 async function handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rows = response.data.values || [];
-    // Trả về danh sách object kèm rowID (index + 1) để hỗ trợ update
     const results = rows
         .map((row, index) => ({ rowID: index + 1, data: row }))
         .filter(item => item.data[parseInt(pos, 10)] == val);
 
     if (results.length === 0) throw { message: "Value not found", code: 404 };
-
     return { total: results.length, values: results };
 }
 
 async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, rawData) {
-    const search = await handleGetByVal(sheets, spreadsheetId, sheetName, pos, val);
+    const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
     const rowID = search.values[0].rowID;
-    
     const data = parseData(rawData);
     const rowValues = Array.isArray(data) ? data : [data];
     
@@ -117,10 +116,8 @@ async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, 
 }
 
 async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
-    const search = await handleGetByVal(sheets, spreadsheetId, sheetName, pos, val);
+    const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
     const rowID = search.values[0].rowID;
-
-    // Lấy sheetId để thực hiện yêu cầu deleteDimension
     const sheetRes = await sheets.spreadsheets.get({ spreadsheetId });
     const sheet = sheetRes.data.sheets.find(s => s.properties.title === sheetName);
     if (!sheet) throw new Error("Sheet name not found");
@@ -141,13 +138,16 @@ async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) 
             }]
         }
     });
-
     return { success: true, deletedRow: rowID };
 }
 
 function parseData(input) {
     if (typeof input === 'string') {
-        try { return JSON.parse(input); } catch (e) { return [input]; }
+        try { 
+            let p = JSON.parse(input);
+            // Nếu parse ra object có key data, lấy data bên trong (fix deep nesting)
+            return (p && typeof p === 'object' && p.data && !Array.isArray(p)) ? p.data : p;
+        } catch (e) { return [input]; }
     }
     return input;
 }

@@ -9,7 +9,7 @@
 const JapaneseLookup = (() => {
     const CONFIG = {
         vercel_api: "/api/mazii", 
-        gas_url: "https://hsk-gilt.vercel.app/api/sheet?sheet=SavedWords&act=read&spread=1PYwmqxUS_AbkFGapkwMTsEJE5Vx9p6R7pO4YFfiniXI"
+        gas_url: "https://hsk-gilt.vercel.app/api/sheet?sheet=SavedWords&spread=1PYwmqxUS_AbkFGapkwMTsEJE5Vx9p6R7pO4YFfiniXI"
     };
 
     const style = document.createElement('style');
@@ -118,7 +118,8 @@ const JapaneseLookup = (() => {
                 if (!savedWordsMap.has(text)) {
                     savedWordsMap.set(text, { meaning: detailed, romaji: item.phonetic, googleMeaning: item.short_mean });
                     Module.applyHighlight();
-                    fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveWord", word: text, romaji: item.phonetic, meaning: detailed, googleMeaning: item.short_mean }) });
+                    const ts = new Date().toLocaleString('ja-JP');
+                    fetch(CONFIG.gas_url + "&act=add", { method: "POST", body: JSON.stringify({ data: [ts, text, item.phonetic, item.short_mean || detailed] }) });
                 }
             }
         } catch (e) { 
@@ -132,7 +133,7 @@ const JapaneseLookup = (() => {
             createUI();
             await loadKanjiDict();
             try {
-                const res = await fetch(CONFIG.gas_url + "&v=" + Date.now());
+                const res = await fetch(CONFIG.gas_url + "&act=read&v=" + Date.now());
                 const data = await res.json();
                 data.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
                 dataLoaded = true;
@@ -161,13 +162,11 @@ const JapaneseLookup = (() => {
                 const wordCount = selText.length;
                 console.log("[Log] Selection detected: " + selText + " (Length: " + wordCount + ")");
 
-                // CHẶN TRA CỨU ĐOẠN DÀI
                 if (wordCount > 6 || selText.length > 50) {
                     console.log("[Log] Selection exceeds limits.");
                     return;
                 }
 
-                // YÊU CẦU 1: Chỉ dịch 1 ký tự nếu là Kanji
                 if (wordCount === 1 && !/[\u4e00-\u9fff]/.test(selText)) {
                     console.log("[Log] Single character is Hiragana/Katakana/Romaji. Skipping.");
                     return;
@@ -234,7 +233,7 @@ const JapaneseLookup = (() => {
                 }
             });
             console.log("[Log] Deleting word: " + word);
-            fetch(CONFIG.gas_url, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "deleteWord", word: word }) });
+            fetch(CONFIG.gas_url + "&act=deleteByPosVal&pos=1&val=" + encodeURIComponent(word), { method: "POST" });
         }
     };
 

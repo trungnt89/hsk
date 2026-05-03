@@ -220,17 +220,19 @@
         }
 
         async function callGAS(paramsObj) {
-            console.log("[API Action]:", paramsObj.action);
-            const params = new URLSearchParams();
-            params.append('spread', SPREAD_ID);
-            params.append('sheet', SHEET_NAME);
-            for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
             try {
-                const response = await fetch(VERCEL_URL, { method: 'POST', body: params });
+                const url = new URL(VERCEL_URL);
+                url.searchParams.append('spread', SPREAD_ID);
+                url.searchParams.append('sheet', SHEET_NAME);
+                const response = await fetch(url.toString(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(paramsObj)
+                });
                 return await response.json();
             } catch (e) {
                 console.error("[Sync Error]:", e);
-                return { status: 'error', message: "Lỗi kết nối" };
+                return { status: 'error', message: "Lỗi kết nối server" };
             }
         }
 
@@ -318,15 +320,16 @@
             if (iframe.src) iframe.src = iframe.src;
         }
 
-        function saveDiary() {
+        async function saveDiary() {
             const text = document.getElementById('diaryInput').value.trim();
-            if(!text) return;
+            if (!text) return;
             const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
-            const newItem = {id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0};
+            const newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0 };
             currentDiaries.unshift(newItem);
             saveToIDB(currentDiaries); renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';
-            callGAS({action:'create', id, date, text});
+            const rowData = [id, date, text, "", "", false, 0];
+            await callGAS({ action: 'add', data: JSON.stringify(rowData) });
             selectRecord(id, true);
         }
 
@@ -338,22 +341,24 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function updateDiary() {
+        async function updateDiary() {
             const text = document.getElementById('diaryInput').value.trim();
             const idx = currentDiaries.findIndex(i => i.id == editingId);
             if (idx === -1) return;
-            currentDiaries[idx].text = text;
+            const item = currentDiaries[idx];
+            item.text = text;
             saveToIDB(currentDiaries); renderList(currentDiaries);
             const tid = editingId;
             clearEditMode();
-            callGAS({action:'handleUpdateByPosVal', id: tid, text});
+            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, item.pinned, item.voiceCount];
+            await callGAS({ action: 'updateByPosVal', pos: 0, val: tid, data: JSON.stringify(rowData) });
         }
 
-        function deleteDiary(id) {
-            if(confirm("Xóa nhật ký này?")) {
+        async function deleteDiary(id) {
+            if (confirm("Xóa nhật ký này?")) {
                 currentDiaries = currentDiaries.filter(i => i.id != id);
                 saveToIDB(currentDiaries); renderList(currentDiaries);
-                callGAS({action:'handleDeleteByPosVal', id});
+                await callGAS({ action: 'deleteByPosVal', pos: 0, val: id });
             }
         }
 

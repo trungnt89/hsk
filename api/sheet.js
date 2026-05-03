@@ -81,12 +81,14 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
 async function handleGetByVal(sheets, spreadsheetId, sheetName, pos, val) {
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rows = response.data.values || [];
-    // Sửa lỗi: Sử dụng filter để lấy tất cả các row khớp giá trị
-    const results = rows.filter(row => row[parseInt(pos, 10)] == val);
+    // Trả về danh sách object kèm rowID (index + 1) để hỗ trợ update
+    const results = rows
+        .map((row, index) => ({ rowID: index + 1, data: row }))
+        .filter(item => item.data[parseInt(pos, 10)] == val);
 
     if (results.length === 0) throw { message: "Value not found", code: 404 };
 
-    return { total: results.length, data: results };
+    return { total: results.length, values: results };
 }
 
 async function handleUpdateByRowID(sheets, spreadsheetId, sheetName, rowID, rawData) {

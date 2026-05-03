@@ -12,8 +12,14 @@ export default async function handler(req, res) {
     const sheetName = query?.sheet || query?.sheetName || body?.sheet || body?.sheetName;
     const action = query?.act || body?.act || query?.action || body?.action || 'read';
 
+    // Xử lý lỗi truyền param: Kiểm tra cả query và body cho pos, val và data
+    const pos = query?.pos !== undefined ? query?.pos : body?.pos;
+    const val = query?.val !== undefined ? query?.val : body?.val;
+    const rawData = query?.data || body?.data;
+
     console.log(`[LOG] Action: ${action}`);
     console.log(`[LOG] Target: SpreadID: ${spreadsheetId}, Sheet: ${sheetName}`);
+    console.log(`[LOG] Params: pos=${pos}, val=${val}`);
     console.log(`[LOG] Raw Body:`, JSON.stringify(body));
 
     try {
@@ -25,6 +31,7 @@ export default async function handler(req, res) {
         const sheets = google.sheets({ version: 'v4', auth: client });
 
         if (!spreadsheetId || !sheetName) {
+            console.error("[LOG] Error: Missing spreadsheetId or sheetName");
             return res.status(400).json({ error: "Missing spreadsheetId or sheetName" });
         }
 
@@ -34,18 +41,19 @@ export default async function handler(req, res) {
                 result = await handleRead(sheets, spreadsheetId, sheetName);
                 break;
             case 'add':
-                result = await handleAdd(sheets, spreadsheetId, sheetName, query?.data || body?.data);
+                result = await handleAdd(sheets, spreadsheetId, sheetName, rawData);
                 break;
             case 'readByPosVal':
-                result = await handleReadByPosVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val);
+                result = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
                 break;
             case 'updateByPosVal':
-                result = await handleUpdateByPosVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val, query?.data || body?.data);
+                result = await handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, rawData);
                 break;
             case 'deleteByPosVal':
-                result = await handleDeleteByPosVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val);
+                result = await handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val);
                 break;
             default:
+                console.warn(`[LOG] Warning: Invalid action received: ${action}`);
                 return res.status(400).json({ error: "Invalid action" });
         }
 
@@ -60,26 +68,29 @@ export default async function handler(req, res) {
 async function handleRead(sheets, spreadsheetId, sheetName) {
     console.log(`[LOG] handleRead: Reading data from ${sheetName}`);
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
+    const rowCount = response.data.values ? response.data.values.length : 0;
+    console.log(`[LOG] handleRead: Success. Total rows read: ${rowCount}`);
     return { values: response.data.values || [] };
 }
 
 async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
-    console.log("[LOG] Step 1: Receiving rawData", JSON.stringify(rawData));
+    console.log("[LOG] handleAdd - Step 1: Receiving rawData", JSON.stringify(rawData));
     
     if (rawData === undefined || rawData === null) {
+        console.error("[LOG] handleAdd Error: Data is null or undefined");
         throw new Error("Dữ liệu gửi lên (data) bị trống!");
     }
 
     let data = parseData(rawData);
-    console.log("[LOG] Step 1.5: Data after parseData:", JSON.stringify(data));
+    console.log("[LOG] handleAdd - Step 1.5: Data after parseData:", JSON.stringify(data));
     
-    // Xử lý trường hợp Frontend gửi {data: [...]} thay vì [...] trực tiếp
     if (data && typeof data === 'object' && data.data && !Array.isArray(data)) {
+        console.log("[LOG] handleAdd: Unpacking nested {data: ...} object");
         data = data.data;
     }
 
     const rowValues = Array.isArray(data) ? (Array.isArray(data[0]) ? data[0] : data) : [data];
-    console.log("[LOG] Step 2: Formatted rowValues", JSON.stringify(rowValues));
+    console.log("[LOG] handleAdd - Step 2: Formatted rowValues", JSON.stringify(rowValues));
 
     let response;
     try {
@@ -91,16 +102,22 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
             requestBody: { values: [rowValues] },
         });
     } catch (gErr) {
-        console.error("[LOG] Step 3 - ERROR: Google API Append Failed:", gErr.response?.data || gErr.message);
+        console.error("[LOG] handleAdd - Step 3 - ERROR: Google API Append Failed:", gErr.response?.data || gErr.message);
         throw gErr;
     }
     
-    console.log("[LOG] Step 4: Google API Response", response.data.updates);
+    console.log("[LOG] handleAdd - Step 4: Google API Response", response.data.updates);
     return { success: true, details: response.data };
 }
 
 async function handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
     console.log(`[LOG] handleReadByPosVal: Searching ${sheetName} at index ${pos} for value "${val}"`);
+    
+    if (pos === undefined || val === undefined) {
+        console.error("[LOG] handleReadByPosVal Error: Missing pos or val");
+        throw new Error("Missing search parameters: pos or val");
+    }
+
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rows = response.data.values || [];
     const results = rows
@@ -118,9 +135,15 @@ async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, 
         const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
         const rowID = search.values[0].rowID;
         console.log(`[LOG] handleUpdateByPosVal: Target RowID determined as ${rowID}`);
-        const data = parseData(rawData);
-        const rowValues = Array.isArray(data) ? data : [data];
-        console.log(`[LOG] handleUpdateByPosVal: Updating with rowValues:`, JSON.stringify(rowValues));
+        
+        let data = parseData(rawData);
+        // Đồng bộ logic xử lý data lồng nhau giống handleAdd
+        if (data && typeof data === 'object' && data.data && !Array.isArray(data)) {
+            data = data.data;
+        }
+        
+        const rowValues = Array.isArray(data) ? (Array.isArray(data[0]) ? data[0] : data) : [data];
+        console.log(`[LOG] handleUpdateByPosVal: Updating row ${rowID} with values:`, JSON.stringify(rowValues));
         
         await sheets.spreadsheets.values.update({
             spreadsheetId,
@@ -128,13 +151,14 @@ async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, 
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [rowValues] },
         });
+        console.log(`[LOG] handleUpdateByPosVal: Update successful for row ${rowID}`);
         return { success: true, action: "update", updatedRow: rowID };
     } catch (err) {
-        // Nếu không tìm thấy dòng hiện tại, thực hiện thêm mới (Insert)
         if (err.code === 404 || err.message === "Value not found") {
-            console.log("[LOG] Value not found, switching to handleAdd");
+            console.log("[LOG] handleUpdateByPosVal: Value not found, switching to handleAdd");
             return await handleAdd(sheets, spreadsheetId, sheetName, rawData);
         }
+        console.error("[LOG] handleUpdateByPosVal Error:", err.message);
         throw err;
     }
 }
@@ -143,9 +167,14 @@ async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) 
     console.log(`[LOG] handleDeleteByPosVal: Deleting record where index ${pos} is "${val}"`);
     const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
     const rowID = search.values[0].rowID;
+    
     const sheetRes = await sheets.spreadsheets.get({ spreadsheetId });
     const sheet = sheetRes.data.sheets.find(s => s.properties.title === sheetName);
-    if (!sheet) throw new Error("Sheet name not found");
+    if (!sheet) {
+        console.error(`[LOG] handleDeleteByPosVal Error: Sheet ${sheetName} not found`);
+        throw new Error("Sheet name not found");
+    }
+    
     const sheetId = sheet.properties.sheetId;
     console.log(`[LOG] handleDeleteByPosVal: Resolved SheetID: ${sheetId}, RowID: ${rowID}`);
 
@@ -164,23 +193,20 @@ async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) 
             }]
         }
     });
+    console.log(`[LOG] handleDeleteByPosVal: Delete successful for rowID ${rowID}`);
     return { success: true, deletedRow: rowID };
 }
 
 function parseData(input) {
-    console.log(`[LOG] parseData Input:`, typeof input === 'string' ? input : JSON.stringify(input));
     if (typeof input === 'string') {
         try { 
             let p = JSON.parse(input);
             let result = (p && typeof p === 'object' && p.data && !Array.isArray(p)) ? p.data : p;
-            console.log(`[LOG] parseData Output (String Parse):`, JSON.stringify(result));
             return result;
         } catch (e) { 
-            console.log(`[LOG] parseData Output (Fallback to Array):`, JSON.stringify([input]));
             return [input]; 
         }
     }
-    console.log(`[LOG] parseData Output (Direct):`, JSON.stringify(input));
     return input;
 }
 

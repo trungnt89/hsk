@@ -11,7 +11,11 @@ export default async function handler(req, res) {
     const spreadsheetId = query?.spread || query?.spreadsheetId || body?.spread || body?.spreadsheetId;
     const sheetName = query?.sheet || query?.sheetName || body?.sheet || body?.sheetName;
     const action = query?.act || body?.act || 'read';
-console.log(body);
+
+    console.log(`[LOG] Action: ${action}`);
+    console.log(`[LOG] Target: SpreadID: ${spreadsheetId}, Sheet: ${sheetName}`);
+    console.log(`[LOG] Raw Body:`, JSON.stringify(body));
+
     try {
         const auth = new GoogleAuth({
             credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
@@ -19,8 +23,6 @@ console.log(body);
         });
         const client = await auth.getClient();
         const sheets = google.sheets({ version: 'v4', auth: client });
-
-        console.log(`[LOG] [${new Date().toISOString()}] Action: ${action}`);
 
         if (!spreadsheetId || !sheetName) {
             return res.status(400).json({ error: "Missing spreadsheetId or sheetName" });
@@ -68,6 +70,7 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
     }
 
     let data = parseData(rawData);
+    console.log("[LOG] Step 1.5: Data after parseData:", JSON.stringify(data));
     
     // Xử lý trường hợp Frontend gửi {data: [...]} thay vì [...] trực tiếp
     if (data && typeof data === 'object' && data.data && !Array.isArray(data)) {
@@ -77,15 +80,21 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
     const rowValues = Array.isArray(data) ? (Array.isArray(data[0]) ? data[0] : data) : [data];
     console.log("[LOG] Step 2: Formatted rowValues", JSON.stringify(rowValues));
 
-    const response = await sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range: `${sheetName}!A1`,
-        valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
-        requestBody: { values: [rowValues] },
-    });
+    let response;
+    try {
+        response = await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range: `${sheetName}!A1`,
+            valueInputOption: 'USER_ENTERED',
+            insertDataOption: 'INSERT_ROWS',
+            requestBody: { values: [rowValues] },
+        });
+    } catch (gErr) {
+        console.error("[LOG] Step 3 - ERROR: Google API Append Failed:", gErr.response?.data || gErr.message);
+        throw gErr;
+    }
     
-    console.log("[LOG] Step 3: Google API Response", response.data.updates);
+    console.log("[LOG] Step 4: Google API Response", response.data.updates);
     return { success: true, details: response.data };
 }
 

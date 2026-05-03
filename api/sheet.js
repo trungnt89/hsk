@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     const { method, query, body } = req;
     const spreadsheetId = query.spread || query.spreadsheetId || body.spread || body.spreadsheetId;
     const sheetName = query.sheet || query.sheetName || body.sheet || body.sheetName;
-    const action = query.act || body.act;
+    const action = query.act || body.act || "read";
 
     try {
         const auth = new GoogleAuth({

@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     const spreadsheetId = query?.spread || query?.spreadsheetId || body?.spread || body?.spreadsheetId;
     const sheetName = query?.sheet || query?.sheetName || body?.sheet || body?.sheetName;
     const action = query?.act || body?.act || 'read';
-
+console.log(body);
     try {
         const auth = new GoogleAuth({
             credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),

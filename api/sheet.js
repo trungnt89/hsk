@@ -11,10 +11,10 @@ const { google } = require('googleapis');
 
 export default async function handler(req, res) {
     const { method, query, body } = req;
-    const spreadsheetId = query.spread || query.spreadsheetId || body.spread || body.spreadsheetId;
-    const sheetName = query.sheet || query.sheetName || body.sheet || body.sheetName;
-    const action = query.act || body.act;
-    action = (action=="")? action : 'read';
+    const spreadsheetId = query?.spread || query?.spreadsheetId || body?.spread || body?.spreadsheetId;
+    const sheetName = query?.sheet || query?.sheetName || body?.sheet || body?.sheetName;
+    const action = query?.act || body?.act || 'read';
+
     try {
         const auth = new GoogleAuth({
             credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
@@ -37,13 +37,13 @@ export default async function handler(req, res) {
                 result = await handleRead(sheets, spreadsheetId, sheetName);
                 break;
             case 'add':
-                result = await handleAdd(sheets, spreadsheetId, sheetName, query.data || body.data);
+                result = await handleAdd(sheets, spreadsheetId, sheetName, query?.data || body?.data);
                 break;
             case 'getByVal':
-                result = await handleGetByVal(sheets, spreadsheetId, sheetName, query.pos, query.val);
+                result = await handleGetByVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val);
                 break;
             case 'updateByRowID':
-                result = await handleUpdateByRowID(sheets, spreadsheetId, sheetName, query.rowID || body.rowID, query.data || body.data);
+                result = await handleUpdateByRowID(sheets, spreadsheetId, sheetName, query?.rowID || body?.rowID, query?.data || body?.data);
                 break;
             default:
                 return res.status(400).json({ error: "Invalid action" });

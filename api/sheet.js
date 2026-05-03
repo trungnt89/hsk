@@ -110,18 +110,27 @@ async function handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
 }
 
 async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, rawData) {
-    const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
-    const rowID = search.values[0].rowID;
-    const data = parseData(rawData);
-    const rowValues = Array.isArray(data) ? data : [data];
-    
-    await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${sheetName}!A${rowID}`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [rowValues] },
-    });
-    return { success: true, updatedRow: rowID };
+    try {
+        const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
+        const rowID = search.values[0].rowID;
+        const data = parseData(rawData);
+        const rowValues = Array.isArray(data) ? data : [data];
+        
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${sheetName}!A${rowID}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [rowValues] },
+        });
+        return { success: true, action: "update", updatedRow: rowID };
+    } catch (err) {
+        // Nếu không tìm thấy dòng hiện tại, thực hiện thêm mới (Insert)
+        if (err.code === 404 || err.message === "Value not found") {
+            console.log("[LOG] Value not found, switching to handleAdd");
+            return await handleAdd(sheets, spreadsheetId, sheetName, rawData);
+        }
+        throw err;
+    }
 }
 
 async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) {

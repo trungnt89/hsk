@@ -212,7 +212,7 @@
                 const data = await res.json();
                 if (data.values) {
                     currentDiaries = data.values.map(r => ({
-                        id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: r[5] === 'true', voiceCount: parseInt(r[6] || 0)
+                        id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0)
                     })).reverse();
                     await saveToIDB(currentDiaries);
                     renderList(currentDiaries);

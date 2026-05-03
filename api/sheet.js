@@ -26,7 +26,7 @@ export default async function handler(req, res) {
 
         console.log(`[LOG] [${new Date().toISOString()}] Action: ${action}`);
 
-        if (!spreadsheetId || !sheetName || !action) {
+        if (!spreadsheetId || !sheetName) {
             return res.status(400).json({ error: "Missing spreadsheetId, sheetName or act" });
         }
 

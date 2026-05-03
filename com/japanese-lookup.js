@@ -38,13 +38,39 @@ const JapaneseLookup = (() => {
     let popup = null, isHighlighting = false, dataLoaded = false, kanjiDict = null;
     let savedWordsMap = new Map();
 
+    const initDB = () => new Promise((res, rej) => {
+        const req = indexedDB.open("JA_Lookup_DB", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("cache");
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+    });
+
+    const getDBData = (db, key) => new Promise(res => {
+        const tx = db.transaction("cache", "readonly");
+        const req = tx.objectStore("cache").get(key);
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => res(null);
+    });
+
+    const saveDBData = (db, key, val) => {
+        const tx = db.transaction("cache", "readwrite");
+        tx.objectStore("cache").put(val, key);
+    };
+
     const loadKanjiDict = async () => {
         try {
-            const res = await fetch("../com/kanjimini.json");
-            const data = await res.json();
+            const db = await initDB();
+            let data = await getDBData(db, "kanji_json");
+            if (!data) {
+                console.log("[Log] Fetching kanjimini.json from server...");
+                const res = await fetch("../com/kanjimini.json");
+                data = await res.json();
+                saveDBData(db, "kanji_json", data);
+            } else {
+                console.log("[Log] Kanji loaded from IndexedDB.");
+            }
             kanjiDict = data.reduce((acc, curr) => { acc[curr.w] = curr.h; return acc; }, {});
-            console.log("[Log] Kanji dictionary loaded.");
-        } catch (e) { console.warn("[Log] kanjimini.json error."); }
+        } catch (e) { console.warn("[Log] Kanji Load Error:", e); }
     };
 
     const getHanViet = (text) => {

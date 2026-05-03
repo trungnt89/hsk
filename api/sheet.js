@@ -5,16 +5,15 @@ const { google } = require('googleapis');
  * GOOGLE SHEETS API - CLEAN VERSION
  * Tách biệt logic xử lý dữ liệu và logic phản hồi API
  * Example : 
- *    https://hsk-gilt.vercel.app/api/sheet?
- *    	spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score
- *    	spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score&act=getByVal&pos=0&val=1776989931734
+ *    https://hsk-gilt.vercel.app/api/sheet?spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score&act=read
+ *    https://hsk-gilt.vercel.app/api/sheet?spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score&act=getByVal&pos=0&val=1776989931734
  */
 
 export default async function handler(req, res) {
     const { method, query, body } = req;
     const spreadsheetId = query.spread || query.spreadsheetId || body.spread || body.spreadsheetId;
     const sheetName = query.sheet || query.sheetName || body.sheet || body.sheetName;
-    const action = query.act || body.act || "read";
+    const action = query.act || body.act || 'read';
 
     try {
         const auth = new GoogleAuth({
@@ -27,7 +26,7 @@ export default async function handler(req, res) {
         console.log(`[LOG] [${new Date().toISOString()}] Action: ${action}`);
 
         if (!spreadsheetId || !sheetName) {
-            return res.status(400).json({ error: "Missing spreadsheetId, sheetName or act" });
+            return res.status(400).json({ error: "Missing spreadsheetId or sheetName" });
         }
 
         // BIẾN CHỨA KẾT QUẢ CUỐI CÙNG

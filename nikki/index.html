@@ -207,25 +207,16 @@
 
         async function loadDiaries() {
             try {
-                const res = await fetch(`${VERCEL_URL}?spread=${SPREAD_ID}&sheet=${SHEET_NAME}`);
+                const url = `${VERCEL_URL}?spread=${SPREAD_ID}&sheet=${SHEET_NAME}`;
+                const res = await fetch(url);
                 const data = await res.json();
-                if (data.values && data.values.length > 1) {
-                    // Bỏ dòng tiêu đề (data.values[0])
-                    currentDiaries = data.values.slice(1).map(row => ({
-                        id: row[0],
-                        date: row[1],
-                        text: row[2],
-                        paragraph: row[3] || "",
-                        conversation: row[4] || "",
-                        pinned: row[5] === "TRUE" || row[5] === true,
-                        voiceCount: 0 // Will be updated by summary
-                    })).sort((a, b) => b.id - a.id);
-                    
+                if (data.status === 'success') {
+                    currentDiaries = data.data;
                     await saveToIDB(currentDiaries);
                     renderList(currentDiaries);
                     if (selectedDiaryId) selectRecord(selectedDiaryId);
                 }
-            } catch (err) { console.warn("[Sync] Offline mode or API Error", err); }
+            } catch (err) { console.warn("[Sync] Offline mode"); }
         }
 
         async function callGAS(paramsObj) {
@@ -233,21 +224,9 @@
             const params = new URLSearchParams();
             params.append('spread', SPREAD_ID);
             params.append('sheet', SHEET_NAME);
-            
-            // Map action names to Vercel requirements
-            let action = paramsObj.action;
-            if (action === 'delete') action = 'handleDeleteByPosVal';
-            if (action === 'update' || action === 'update_pin') action = 'handleUpdateByPosVal';
-            
-            for (const key in paramsObj) {
-                if (paramsObj[key] != null && key !== 'action') {
-                    params.append(key, paramsObj[key]);
-                }
-            }
-            params.append('action', action);
-
+            for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
             try {
-                const response = await fetch(`${VERCEL_URL}?${params.toString()}`);
+                const response = await fetch(VERCEL_URL, { method: 'POST', body: params });
                 return await response.json();
             } catch (e) {
                 console.error("[Sync Error]:", e);
@@ -367,14 +346,14 @@
             saveToIDB(currentDiaries); renderList(currentDiaries);
             const tid = editingId;
             clearEditMode();
-            callGAS({action:'update', id: tid, text});
+            callGAS({action:'handleUpdateByPosVal', id: tid, text});
         }
 
         function deleteDiary(id) {
             if(confirm("Xóa nhật ký này?")) {
                 currentDiaries = currentDiaries.filter(i => i.id != id);
                 saveToIDB(currentDiaries); renderList(currentDiaries);
-                callGAS({action:'delete', id});
+                callGAS({action:'handleDeleteByPosVal', id});
             }
         }
 
@@ -391,7 +370,7 @@
             const isPinning = !currentDiaries[idx].pinned;
             currentDiaries[idx].pinned = isPinning;
             saveToIDB(currentDiaries); renderList(currentDiaries);
-            callGAS({action:'update_pin', id, pinned: isPinning});
+            callGAS({action:'handleUpdateByPosVal', id, pinned: isPinning});
         }
 
         async function askAI(id, content) {

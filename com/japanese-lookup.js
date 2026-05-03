@@ -9,7 +9,7 @@
 const JapaneseLookup = (() => {
     const CONFIG = {
         vercel_api: "/api/mazii", 
-        gas_url: "https://script.google.com/macros/s/AKfycbxRsR4M3R0rjz3i0u2kz6Pg-ME3IeDYs8-7GE0MrjRaakfxQBory3JMtjjgVw3lTbqI/exec"
+        gas_url: "https://hsk-gilt.vercel.app/api/sheet?sheet=SavedWords&act=read&spread=1PYwmqxUS_AbkFGapkwMTsEJE5Vx9p6R7pO4YFfiniXI"
     };
 
     const style = document.createElement('style');
@@ -132,14 +132,14 @@ const JapaneseLookup = (() => {
             createUI();
             await loadKanjiDict();
             try {
-                const res = await fetch(CONFIG.gas_url + "?type=words&v=" + Date.now());
+                const res = await fetch(CONFIG.gas_url + "&v=" + Date.now());
                 const data = await res.json();
-                data.forEach(w => savedWordsMap.set(w.word, { meaning: w.meaning, romaji: w.romaji, googleMeaning: w.googleMeaning || "" }));
+                data.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
                 dataLoaded = true;
                 Module.applyHighlight();
-                console.log("[Log] Data initialized from GAS.");
+                console.log("[Log] Data initialized from Vercel API.");
             } catch (e) { 
-                console.warn("[Log] GAS load failed.");
+                console.warn("[Log] API load failed.");
                 dataLoaded = true; 
             }
 

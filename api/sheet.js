@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     const { method, query, body } = req;
     const spreadsheetId = query?.spread || query?.spreadsheetId || body?.spread || body?.spreadsheetId;
     const sheetName = query?.sheet || query?.sheetName || body?.sheet || body?.sheetName;
-    const action = query?.act || body?.act || 'read';
+    const action = query?.act || body?.act || query?.action || body?.action || 'read';
 
     console.log(`[LOG] Action: ${action}`);
     console.log(`[LOG] Target: SpreadID: ${spreadsheetId}, Sheet: ${sheetName}`);

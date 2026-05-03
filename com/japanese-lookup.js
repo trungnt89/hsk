@@ -221,7 +221,7 @@ const JapaneseLookup = (() => {
             document.getElementById('ja-count').textContent = savedWordsMap.size;
             document.getElementById('ja-list').innerHTML = Array.from(savedWordsMap.entries()).reverse().map(([word, data]) => `
                 <div class="ja-word-item">
-                    <div style="flex:1"><b>${word}</b> <small style="color:#dc2626; font-weight:bold;">${getHanViet(word)}</small><br><span style="font-size:13px; color:#475569;">${data.googleMeaning || data.meaning}</span></div>
+                    <div style="flex:1"><b>${word}</b> <small style="color:#dc2626; font-weight:bold;">${getHanViet(word)}</small> <small style="color:#64748b;">(${data.romaji || ''})</small><br><span style="font-size:13px; color:#475569;">${data.googleMeaning || data.meaning}</span></div>
                     <button class="ja-del-btn" onclick="JapaneseLookup.deleteFromList('${word}', this.parentElement)">Xóa</button>
                 </div>
             `).join('') || '<div style="padding:20px; text-align:center;">Trống.</div>';

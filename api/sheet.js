@@ -5,8 +5,9 @@ const { google } = require('googleapis');
  * GOOGLE SHEETS API - CLEAN VERSION
  * Tách biệt logic xử lý dữ liệu và logic phản hồi API
  * Example : 
- *    https://hsk-gilt.vercel.app/api/sheet?spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score&act=read
- *    https://hsk-gilt.vercel.app/api/sheet?spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score&act=getByVal&pos=0&val=1776989931734
+ *    https://hsk-gilt.vercel.app/api/sheet?
+ *    	spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score
+ *    	spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A&sheet=Score&act=getByVal&pos=0&val=1776989931734
  */
 
 export default async function handler(req, res) {

@@ -39,8 +39,8 @@ export default async function handler(req, res) {
             case 'add':
                 result = await handleAdd(sheets, spreadsheetId, sheetName, query?.data || body?.data);
                 break;
-            case 'readByRowID':
-                result = await handleGetByVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val);
+            case 'readByPosVal':
+                result = await handleReadByPosVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val);
                 break;
             case 'updateByPosVal':
                 result = await handleUpdateByPosVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val, query?.data || body?.data);
@@ -81,7 +81,7 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
     return { success: true, details: response.data };
 }
 
-async function handleGetByVal(sheets, spreadsheetId, sheetName, pos, val) {
+async function handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rows = response.data.values || [];
     // Trả về danh sách object kèm rowID (index + 1) để hỗ trợ update

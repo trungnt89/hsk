@@ -141,9 +141,7 @@
     </div>
 
     <script>
-        const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/sheet';
-        const SPREAD_ID = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
-        const SHEET_NAME = 'LIST';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
         let currentDiaries = [];
         let editingId = null;
         let selectedDiaryId = localStorage.getItem("diary_selected_id") || null;
@@ -207,47 +205,23 @@
 
         async function loadDiaries() {
             try {
-                const res = await fetch(`${VERCEL_URL}?spread=${SPREAD_ID}&sheet=${SHEET_NAME}`);
+                const res = await fetch(GAS_URL);
                 const data = await res.json();
-                if (data.values && data.values.length > 1) {
-                    // Bỏ dòng tiêu đề (data.values[0])
-                    currentDiaries = data.values.slice(1).map(row => ({
-                        id: row[0],
-                        date: row[1],
-                        text: row[2],
-                        paragraph: row[3] || "",
-                        conversation: row[4] || "",
-                        pinned: row[5] === "TRUE" || row[5] === true,
-                        voiceCount: 0 // Will be updated by summary
-                    })).sort((a, b) => b.id - a.id);
-                    
+                if (data.status === 'success') {
+                    currentDiaries = data.data;
                     await saveToIDB(currentDiaries);
                     renderList(currentDiaries);
                     if (selectedDiaryId) selectRecord(selectedDiaryId);
                 }
-            } catch (err) { console.warn("[Sync] Offline mode or API Error", err); }
+            } catch (err) { console.warn("[Sync] Offline mode"); }
         }
 
         async function callGAS(paramsObj) {
-            console.log("[API Action]:", paramsObj.action);
+            console.log("[GAS Action]:", paramsObj.action);
             const params = new URLSearchParams();
-            params.append('spread', SPREAD_ID);
-            params.append('sheet', SHEET_NAME);
-            
-            // Map action names to Vercel requirements
-            let action = paramsObj.action;
-            if (action === 'delete') action = 'handleDeleteByPosVal';
-            if (action === 'update' || action === 'update_pin') action = 'handleUpdateByPosVal';
-            
-            for (const key in paramsObj) {
-                if (paramsObj[key] != null && key !== 'action') {
-                    params.append(key, paramsObj[key]);
-                }
-            }
-            params.append('action', action);
-
+            for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
             try {
-                const response = await fetch(`${VERCEL_URL}?${params.toString()}`);
+                const response = await fetch(`${GAS_URL}?${params.toString()}`);
                 return await response.json();
             } catch (e) {
                 console.error("[Sync Error]:", e);
@@ -272,7 +246,7 @@
             }
 
             displayData.forEach((item) => container.appendChild(createItemEl(item)));
-            updateLessonSummaries(); 
+            updateLessonSummaries(); // Cập nhật lại số count sau khi render lại list
         }
 
         function createItemEl(item) {
@@ -513,6 +487,7 @@
         function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
     </script>
     <script>
+        // Sau khi load 5s thì gọi dữ liệu summary
         setTimeout(() => {
             updateLessonSummaries();
         }, 5000);
@@ -526,6 +501,7 @@
                 if (result.status === 'success' && result.data) {
                     const badges = document.querySelectorAll('.count-trigger');
                     badges.forEach(badge => {
+                        // Lấy ID từ hàm onclick (handleRecordBadgeClick('ID'))
                         const onclickAttr = badge.getAttribute('onclick');
                         const match = onclickAttr.match(/'([^']+)'/);
                         if (match && match[1]) {

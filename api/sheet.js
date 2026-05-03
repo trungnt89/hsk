@@ -39,11 +39,14 @@ export default async function handler(req, res) {
             case 'add':
                 result = await handleAdd(sheets, spreadsheetId, sheetName, query?.data || body?.data);
                 break;
-            case 'getByVal':
+            case 'readByRowID':
                 result = await handleGetByVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val);
                 break;
-            case 'updateByRowID':
-                result = await handleUpdateByRowID(sheets, spreadsheetId, sheetName, query?.rowID || body?.rowID, query?.data || body?.data);
+            case 'updateByPosVal':
+                result = await handleUpdateByPosVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val, query?.data || body?.data);
+                break;
+            case 'deleteByPosVal':
+                result = await handleDeleteByPosVal(sheets, spreadsheetId, sheetName, query?.pos, query?.val);
                 break;
             default:
                 return res.status(400).json({ error: "Invalid action" });
@@ -91,8 +94,10 @@ async function handleGetByVal(sheets, spreadsheetId, sheetName, pos, val) {
     return { total: results.length, values: results };
 }
 
-async function handleUpdateByRowID(sheets, spreadsheetId, sheetName, rowID, rawData) {
-    if (!rowID) throw new Error("Missing rowID");
+async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, rawData) {
+    const search = await handleGetByVal(sheets, spreadsheetId, sheetName, pos, val);
+    const rowID = search.values[0].rowID;
+    
     const data = parseData(rawData);
     const rowValues = Array.isArray(data) ? data : [data];
     
@@ -103,6 +108,35 @@ async function handleUpdateByRowID(sheets, spreadsheetId, sheetName, rowID, rawD
         requestBody: { values: [rowValues] },
     });
     return { success: true, updatedRow: rowID };
+}
+
+async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
+    const search = await handleGetByVal(sheets, spreadsheetId, sheetName, pos, val);
+    const rowID = search.values[0].rowID;
+
+    // Lấy sheetId để thực hiện yêu cầu deleteDimension
+    const sheetRes = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheet = sheetRes.data.sheets.find(s => s.properties.title === sheetName);
+    if (!sheet) throw new Error("Sheet name not found");
+    const sheetId = sheet.properties.sheetId;
+
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+            requests: [{
+                deleteDimension: {
+                    range: {
+                        sheetId: sheetId,
+                        dimension: 'ROWS',
+                        startIndex: rowID - 1,
+                        endIndex: rowID
+                    }
+                }
+            }]
+        }
+    });
+
+    return { success: true, deletedRow: rowID };
 }
 
 function parseData(input) {

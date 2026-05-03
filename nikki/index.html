@@ -207,11 +207,13 @@
 
         async function loadDiaries() {
             try {
-                const url = `${VERCEL_URL}?spread=${SPREAD_ID}&sheet=${SHEET_NAME}`;
+                const url = `${VERCEL_URL}?spread=${SPREAD_ID}&sheet=${SHEET_NAME}&act=read`;
                 const res = await fetch(url);
                 const data = await res.json();
-                if (data.status === 'success') {
-                    currentDiaries = data.data;
+                if (data.values) {
+                    currentDiaries = data.values.map(r => ({
+                        id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: r[5] === 'true', voiceCount: parseInt(r[6] || 0)
+                    })).reverse();
                     await saveToIDB(currentDiaries);
                     renderList(currentDiaries);
                     if (selectedDiaryId) selectRecord(selectedDiaryId);
@@ -222,12 +224,10 @@
         async function callGAS(paramsObj) {
             try {
                 const url = new URL(VERCEL_URL);
-                url.searchParams.append('spread', SPREAD_ID);
-                url.searchParams.append('sheet', SHEET_NAME);
                 const response = await fetch(url.toString(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(paramsObj)
+                    body: JSON.stringify({ ...paramsObj, spread: SPREAD_ID, sheet: SHEET_NAME })
                 });
                 return await response.json();
             } catch (e) {
@@ -239,19 +239,16 @@
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
             container.innerHTML = '';
-            
             const toggleWrapper = document.getElementById('pinToggleWrapper');
             const pinLabel = document.getElementById('pinLabelText');
             if(toggleWrapper) {
                 toggleWrapper.classList.toggle('toggle-active', showPinnedOnly);
                 if(pinLabel) pinLabel.innerText = showPinnedOnly ? "Ghim" : "Tất cả";
             }
-
             let displayData = diaries;
             if (showPinnedOnly) {
                 displayData = diaries.filter(d => d.pinned);
             }
-
             displayData.forEach((item) => container.appendChild(createItemEl(item)));
             updateLessonSummaries(); 
         }
@@ -266,7 +263,6 @@
                     selectRecord(item.id);
                 }
             };
-            
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <div class="diary-date" style="margin-bottom:0;">
@@ -294,19 +290,15 @@
         }
 
         function handleRecordBadgeClick(id) {
-            console.log(`[LOG] Opening audio popup for ID: ${id}`);
             selectRecord(id);
             const modal = document.getElementById('audioModal');
-            const iframe = document.getElementById('audioFrame');
-            iframe.src = `/audio/index.html?id=${id}`;
+            document.getElementById('audioFrame').src = `/audio/index.html?id=${id}`;
             modal.style.display = 'block';
         }
 
         function closeAudioModal() {
-            console.log("[LOG] Closing audio popup");
-            const modal = document.getElementById('audioModal');
             document.getElementById('audioFrame').src = "";
-            modal.style.display = 'none';
+            document.getElementById('audioModal').style.display = 'none';
         }
 
         function backAudioModal() {
@@ -315,7 +307,6 @@
         }
 
         function reloadAudioModal() {
-            console.log("[LOG] Reloading audio popup");
             const iframe = document.getElementById('audioFrame');
             if (iframe.src) iframe.src = iframe.src;
         }
@@ -328,8 +319,8 @@
             currentDiaries.unshift(newItem);
             saveToIDB(currentDiaries); renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';
-            const rowData = [id, date, text, "", "", false, 0];
-            await callGAS({ action: 'add', data: JSON.stringify(rowData) });
+            const rowData = [id, date, text, "", "", "false", 0];
+            await callGAS({ act: 'add', data: JSON.stringify(rowData) });
             selectRecord(id, true);
         }
 
@@ -350,15 +341,15 @@
             saveToIDB(currentDiaries); renderList(currentDiaries);
             const tid = editingId;
             clearEditMode();
-            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, item.pinned, item.voiceCount];
-            await callGAS({ action: 'updateByPosVal', pos: 0, val: tid, data: JSON.stringify(rowData) });
+            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
+            await callGAS({ act: 'updateByPosVal', pos: 0, val: tid, data: JSON.stringify(rowData) });
         }
 
         async function deleteDiary(id) {
             if (confirm("Xóa nhật ký này?")) {
                 currentDiaries = currentDiaries.filter(i => i.id != id);
                 saveToIDB(currentDiaries); renderList(currentDiaries);
-                await callGAS({ action: 'deleteByPosVal', pos: 0, val: id });
+                await callGAS({ act: 'deleteByPosVal', pos: 0, val: id });
             }
         }
 
@@ -366,23 +357,23 @@
             showPinnedOnly = !showPinnedOnly;
             localStorage.setItem("diary_show_pinned_only", showPinnedOnly);
             renderList(currentDiaries);
-            console.log("[Filter] Pinned Only:", showPinnedOnly);
         }
 
-        function togglePin(id) {
+        async function togglePin(id) {
             const idx = currentDiaries.findIndex(d => d.id == id);
             if (idx === -1) return;
-            const isPinning = !currentDiaries[idx].pinned;
-            currentDiaries[idx].pinned = isPinning;
+            const item = currentDiaries[idx];
+            item.pinned = !item.pinned;
             saveToIDB(currentDiaries); renderList(currentDiaries);
-            callGAS({action:'handleUpdateByPosVal', id, pinned: isPinning});
+            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
+            await callGAS({ act: 'updateByPosVal', pos: 0, val: id, data: JSON.stringify(rowData) });
         }
 
         async function askAI(id, content) {
             selectRecord(id); switchTab(1);
             const pContainer = document.getElementById('paragraphContainer'), cContainer = document.getElementById('conversationContainer');
             pContainer.innerHTML = cContainer.innerHTML = '<p class="loading-text">🤖 AI đang biên soạn nội dung...</p>';
-            const res = await callGAS({ action: 'ask_ai_proxy', id, content });
+            const res = await callGAS({ act: 'ask_ai_proxy', id, content });
             if (res.status === 'success') {
                 const idx = currentDiaries.findIndex(d => d.id == id);
                 if (idx !== -1) {
@@ -392,12 +383,11 @@
                 }
             }else{
                 alert(res.message);
-                document.getElementById("tab-btn-0").click();
+                switchTab(0);
             }
         }
 
         function switchTab(index) {
-            console.log("[Tab] Switched to:", index);
             currentTabIndex = index;
             localStorage.setItem("diary_current_tab", index);
             document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
@@ -421,21 +411,12 @@
         function updateAIView() {
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
             if (!item) return;
-
             const pContent = item.paragraph;
             const cContent = item.conversation;
-
             document.getElementById('paragraphContainer').innerHTML = pContent ? `<div id="p-content" class="ai-content-box">${pContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
             document.getElementById('conversationContainer').innerHTML = cContent ? `<div id="c-content" class="ai-content-box">${cContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
-
             const btnSpeak = document.getElementById('btnMainSpeak');
-            if (currentTabIndex === 1) {
-                btnSpeak.disabled = !pContent;
-            } else if (currentTabIndex === 2) {
-                btnSpeak.disabled = !cContent;
-            } else {
-                btnSpeak.disabled = true;
-            }
+            btnSpeak.disabled = (currentTabIndex === 1) ? !pContent : (currentTabIndex === 2 ? !cContent : true);
         }
 
         function loadTTSSettings() {
@@ -455,31 +436,23 @@
             isRepeating = !isRepeating; 
             document.getElementById("btnRepeat").classList.toggle("active", isRepeating); 
             saveTTSSettings(); 
-            const btn = document.getElementById('btnMainSpeak');
-            if (btn.classList.contains("playing")) {
-                handleGlobalSpeak(); 
-                handleGlobalSpeak(); 
+            if (document.getElementById('btnMainSpeak').classList.contains("playing")) {
+                handleGlobalSpeak(); handleGlobalSpeak(); 
             }
         }
 
         async function speakText(elId, btnId) {
             const el = document.getElementById(elId), btn = document.getElementById(btnId);
             if(!el || !window.speakCommon) return;
-            
             btn.classList.add("playing"); btn.innerHTML = '⏹ Dừng';
-            const statusKey = `Diary_AI_${selectedDiaryId}`;
-            
             await window.speakCommon({ 
                 text: el.innerText, 
                 voice: document.getElementById("voiceSelect").value, 
                 rate: document.getElementById("rateSelect").value, 
-                filename: statusKey,
+                filename: `Diary_AI_${selectedDiaryId}`,
                 loop: isRepeating 
             });
-
-            if (!isRepeating) {
-                resetSpeakBtns();
-            }
+            if (!isRepeating) resetSpeakBtns();
         }
 
         function handleGlobalSpeak() {
@@ -497,29 +470,18 @@
         function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
     </script>
     <script>
-        setTimeout(() => {
-            updateLessonSummaries();
-        }, 5000);
-
+        setTimeout(() => { updateLessonSummaries(); }, 5000);
         async function updateLessonSummaries() {
             const SUMMARY_URL = 'https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec?action=summary';
             try {
-                console.log("[System] Fetching summary data...");
                 const res = await fetch(SUMMARY_URL);
                 const result = await res.json();
                 if (result.status === 'success' && result.data) {
-                    const badges = document.querySelectorAll('.count-trigger');
-                    badges.forEach(badge => {
-                        const onclickAttr = badge.getAttribute('onclick');
-                        const match = onclickAttr.match(/'([^']+)'/);
-                        if (match && match[1]) {
-                            const id = match[1];
-                            if (result.data[id]) {
-                                badge.innerHTML = "🎙️ " + result.data[id];
-                                if (parseInt(result.data[id]) > 0) {
-                                    badge.style.backgroundColor = '#e67e22';
-                                }
-                            }
+                    document.querySelectorAll('.count-trigger').forEach(badge => {
+                        const match = badge.getAttribute('onclick').match(/'([^']+)'/);
+                        if (match && match[1] && result.data[match[1]]) {
+                            badge.innerHTML = "🎙️ " + result.data[match[1]];
+                            if (parseInt(result.data[match[1]]) > 0) badge.style.backgroundColor = '#e67e22';
                         }
                     });
                 }

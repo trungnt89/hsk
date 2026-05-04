@@ -98,7 +98,6 @@ export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
 }
 
 /** Hàm ghi log */
-/** Hàm ghi log - Ghi lên đầu sheet */
 export async function writeLog(content, type) {
     const sid = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', sn = 'Logs';
     type = type || "COM";
@@ -108,26 +107,26 @@ export async function writeLog(content, type) {
         const now = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false });
         const time = now.replace(/\//g, '/').replace(', ', '-').replace(/:/g, '');
 
-        // Lấy thông tin sheet và dữ liệu hiện tại
         const ss = await cachedSheetsClient.spreadsheets.get({ spreadsheetId: sid });
         const sheetId = ss.data.sheets.find(s => s.properties.title === sn).properties.sheetId;
         const { data: { values = [] } } = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId: sid, range: sn });
 
-        // Nếu đủ 100 dòng, xóa dòng cuối cùng (dòng thứ 100 hiện tại) để giữ giới hạn
+        // Chỉ xóa dòng cuối cùng nếu tổng số dòng đạt ngưỡng 100 trở lên
         if (values.length >= 100) {
+            const lastIdx = values.length - 1;
             await cachedSheetsClient.spreadsheets.batchUpdate({
                 spreadsheetId: sid,
-                requestBody: { requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: 99, endIndex: 100 } } }] }
+                requestBody: { requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: lastIdx, endIndex: lastIdx + 1 } } }] }
             });
         }
 
-        // Chèn một dòng trống mới ở vị trí đầu tiên (A1)
+        // Chèn dòng trống mới ở vị trí đầu tiên
         await cachedSheetsClient.spreadsheets.batchUpdate({
             spreadsheetId: sid,
             requestBody: { requests: [{ insertDimension: { range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 }, inheritFromBefore: false } }] }
         });
 
-        // Ghi dữ liệu log vào dòng trống vừa tạo
+        // Cập nhật nội dung log vào dòng mới chèn
         await cachedSheetsClient.spreadsheets.values.update({
             spreadsheetId: sid, range: `${sn}!A1`, 
             valueInputOption: 'USER_ENTERED',

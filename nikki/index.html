@@ -128,7 +128,6 @@
         <div id="tab-conversation" class="tab-content"><div id="conversationContainer"></div></div>
     </main>
 
-    <!-- Audio Modal -->
     <div id="audioModal" class="audio-modal">
         <div class="audio-modal-content">
             <div class="audio-modal-header">
@@ -168,9 +167,16 @@
 
         async function loadDiaries() {
             try {
-                const url = `${VERCEL_URL}?sheet=DairyList&act=read&spread=1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k`;
-                const res = await fetch(url);
-                const data = await res.json();
+                const response = await fetch(VERCEL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        sheet: 'DairyList', 
+                        act: 'read', 
+                        spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' 
+                    })
+                });
+                const data = await response.json();
                 if (data.values) {
                     currentDiaries = data.values.map(r => ({
                         id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0)
@@ -187,7 +193,7 @@
                 const response = await fetch(url.toString(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...paramsObj, spread: SPREAD_ID, sheet: SHEET_NAME })
+                    body: JSON.stringify({ ...paramsObj})
                 });
                 return await response.json();
             } catch (e) {
@@ -444,9 +450,16 @@
     </script>
     <script>
         async function getLessonTotalScore() {
-            const url = `${VERCEL_URL}?sheet=ScoreList&spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A`;
             try {
-                const res = await fetch(url);
+                const res = await fetch(VERCEL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        sheet: 'ScoreList', 
+                        act: 'read', 
+                        spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A' 
+                    })
+                });
                 const result = await res.json();
                 if (result.values && Array.isArray(result.values)) {
                     document.querySelectorAll('.count-trigger').forEach(badge => {

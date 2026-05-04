@@ -86,7 +86,7 @@
     async function loadFiles() {
         const lessionId = getUrlLessionId();
         try {
-            const res = await fetch(`/api/file?lessionId=${lessionId}`);
+            const res = await fetch(`/api/gfile?lessionId=${lessionId}`);
             const files = await res.json();
             renderFiles(files);
         } catch (err) {
@@ -125,7 +125,7 @@
     function playMedia(id, mimeType, name) {
         const view = document.getElementById('media-view');
         view.style.display = 'block';
-        const url = `/api/file?id=${id}`;
+        const url = `/api/gfile?id=${id}`;
         view.innerHTML = mimeType.includes('video') ? 
             `<video src="${url}" controls autoplay playsinline></video>` : 
             `<div style="padding:15px; text-align:center; font-size:12px; font-weight:bold; color:white">${name}<audio src="${url}" controls autoplay style="margin-top:10px"></audio></div>`;
@@ -197,7 +197,7 @@
             const lessionId = getUrlLessionId();
             const fileName = `id_${lessionId}_${getFormattedDate()}.${extension}`;
             try {
-                const res = await fetch('/api/file', {
+                const res = await fetch('/api/gfile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: fileName, base64Audio, lessionId })

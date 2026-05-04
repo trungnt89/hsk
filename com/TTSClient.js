@@ -123,7 +123,7 @@
         }
 
         // 2. Gọi API TTS
-        const url = `https://hsk-gilt.vercel.app/api/tts_test?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
+        const url = `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
         
         try {
             console.log("[TTS Log] Fetching from API...");

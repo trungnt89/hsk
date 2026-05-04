@@ -264,7 +264,7 @@
                 displayData = diaries.filter(d => d.pinned);
             }
             displayData.forEach((item) => container.appendChild(createItemEl(item)));
-            updateLessonSummaries(); 
+            getLessonTotalScore(); 
         }
 
         function createItemEl(item) {
@@ -484,7 +484,7 @@
         function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
     </script>
     <script>
-        async function updateLessonSummaries() {
+        async function getLessonTotalScore() {
             const url = `${VERCEL_URL}?sheet=ScoreList&spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A`;
             try {
                 const res = await fetch(url);

@@ -82,7 +82,7 @@
     const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     window.onload = async () => {
-        console.log("Ứng dụng bắt đầu khởi tạo...");
+        console.log("[Log] Ứng dụng bắt đầu khởi tạo...");
         await loadFiles();
         await loadDiaryParagraph();
         initSpeechRecognition();
@@ -105,7 +105,7 @@
                 for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i][0].transcript;
                 document.getElementById('voice-script').innerText = transcript;
             };
-            recognition.onerror = (e) => console.error("Speech Recognition Error:", e.error);
+            recognition.onerror = (e) => console.error("[Log] Speech Recognition Error:", e.error);
         }
     }
 
@@ -115,6 +115,7 @@
     }
 
     function switchTab(tabIndex) {
+        console.log("[Log] Chuyển sang Tab:", tabIndex);
         localStorage.setItem('lastTab', tabIndex);
         document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === tabIndex - 1));
         document.querySelectorAll('.tab-content').forEach((content, i) => content.classList.toggle('active', i === tabIndex - 1));
@@ -125,36 +126,51 @@
 
     function getUrlIdentifier() {
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('id') || urlParams.get('lessionId');
+        const lessionId = urlParams.get('lessionId') || urlParams.get('id');
+        console.log("[Log] URL Identifier (lessionId):", lessionId);
+        return lessionId;
     }
 
     async function loadDiaryParagraph() {
         const id = getUrlIdentifier();
-        const request = indexedDB.open("DiaryDB", 1);
-        request.onsuccess = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains("diaries")) return;
-            try {
-                const transaction = db.transaction(["diaries"], "readonly");
-                const store = transaction.objectStore("diaries");
-                const getRequest = store.get(Number(id));
-                getRequest.onsuccess = () => {
-                    const data = getRequest.result;
-                    if (data && data.paragraph) {
-                        document.getElementById('text-display').innerText = data.paragraph;
-                    }
-                };
-            } catch (e) { console.error(e); }
-        };
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabValue = urlParams.get('tab') || "0";
+        console.log("[Log] Bắt đầu loadDiaryParagraph. ID:", id, "Tab:", tabValue);
+        
+        try {
+            // Sửa lại URL API theo yêu cầu
+            const apiUrl = `https://hsk-gilt.vercel.app/api/sheet?sheet=DairyList&spread=1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k&pos=0&val=${id}&action=readByPosVal`;
+            console.log("[Log] Fetching API:", apiUrl);
+            
+            const res = await fetch(apiUrl);
+            const json = await res.json();
+            console.log("[Log] Kết quả API nhận được:", json);
+
+            if (json.values && json.values.length > 0) {
+                const dataRow = json.values[0].data;
+                // Nếu tab=0 ở 1 thì giá trị lấy là cột thứ 3 (index 2), nếu tab=1 thì lấy giá trị ở cột thứ 4 (index 3)
+                const textContent = (tabValue === "0") ? dataRow[2] : dataRow[3];
+                
+                document.getElementById('text-display').innerText = textContent || "Nội dung trống";
+                console.log("[Log] Đã cập nhật văn bản hiển thị từ cột index:", (tabValue === "0" ? 2 : 3));
+            } else {
+                document.getElementById('text-display').innerText = "Không tìm thấy dữ liệu cho ID này.";
+                console.log("[Log] API trả về mảng values trống.");
+            }
+        } catch (e) { 
+            console.error("[Log] Lỗi khi load diary paragraph:", e);
+            document.getElementById('text-display').innerText = "Lỗi khi tải dữ liệu từ máy chủ.";
+        }
     }
 
     async function loadFiles() {
         const identifier = getUrlIdentifier();
+        console.log("[Log] Đang tải danh sách file cho identifier:", identifier);
         try {
             const res = await fetch(`/api/drive?identifier=${identifier}`);
             const files = await res.json();
             renderFiles(files);
-        } catch (err) { console.error(err); }
+        } catch (err) { console.error("[Log] Lỗi loadFiles:", err); }
     }
 
     function renderFiles(files) {
@@ -219,10 +235,12 @@
                     ts: Date.now() 
                 });
                 tx.oncomplete = () => {
+                    console.log("[Log] Lưu cache thành công, chuyển hướng...");
                     window.location.href = `../nikki/checker.html?lessionId=${getUrlIdentifier()}&fileId=${id}`;
                 };
             };
         } catch (err) {
+            console.error("[Log] Lỗi goToDetails:", err);
             showToast("Lỗi khi chuẩn bị chi tiết.");
         }
     }
@@ -239,6 +257,7 @@
     }
 
     function playMedia(id, mimeType) {
+        console.log("[Log] Phát file:", id);
         document.querySelectorAll('.item').forEach(el => el.classList.remove('selected'));
         const currentItem = document.getElementById(`item-${id}`);
         if (currentItem) currentItem.classList.add('selected');
@@ -253,6 +272,7 @@
 
     async function startRec() {
         try {
+            console.log("[Log] Bắt đầu ghi âm...");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRec = new MediaRecorder(stream);
             chunks = [];
@@ -270,11 +290,13 @@
             isRecording = true;
             updateUI(true);
         } catch (e) { 
+            console.error("[Log] Lỗi microphone:", e);
             alert("Không thể truy cập microphone."); 
         }
     }
 
     function stopRec() {
+        console.log("[Log] Dừng ghi âm...");
         if (mediaRec && mediaRec.state !== "inactive") {
             mediaRec.stop();
             mediaRec.stream.getTracks().forEach(t => t.stop());
@@ -301,6 +323,7 @@
     }
 
     async function convertToMp3(blob) {
+        console.log("[Log] Đang chuyển đổi sang MP3...");
         const arrayBuffer = await blob.arrayBuffer();
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
@@ -330,6 +353,7 @@
     }
 
     async function upload() {
+        console.log("[Log] Đang upload file...");
         document.getElementById('status').innerText = "ĐANG LƯU";
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
@@ -350,6 +374,7 @@
                     switchTab(2);
                 }
             } catch (err) { 
+                console.error("[Log] Lỗi upload:", err);
                 showToast("Lỗi khi lưu file!");
             } finally {
                 document.getElementById('status').innerText = "SẴN SÀNG";

@@ -98,7 +98,6 @@ export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
 }
 
 /** Hàm ghi log */
-/** Hàm ghi log - Ghi lên đầu sheet & Khắc phục lỗi index dòng cuối */
 export async function writeLog(content, type) {
     const sid = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', sn = 'Logs';
     type = type || "COM";
@@ -108,40 +107,21 @@ export async function writeLog(content, type) {
         const now = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false });
         const time = now.replace(/\//g, '/').replace(', ', '-').replace(/:/g, '');
 
-        // Lấy thông tin sheet và dữ liệu hiện tại
-        const ss = await cachedSheetsClient.spreadsheets.get({ spreadsheetId: sid });
-        const sheetId = ss.data.sheets.find(s => s.properties.title === sn).properties.sheetId;
-        const { data: { values = [] } } = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId: sid, range: sn });
-
-        // Nếu vượt quá hoặc bằng 100 dòng, xóa chính xác dòng cuối cùng hiện có
-        if (values.length >= 100) {
-            const rowCount = values.length;
-            await cachedSheetsClient.spreadsheets.batchUpdate({
-                spreadsheetId: sid,
-                requestBody: { requests: [{ 
-                    deleteDimension: { 
-                        range: { 
-                            sheetId, 
-                            dimension: 'ROWS', 
-                            startIndex: rowCount - 1, // Index của dòng cuối cùng
-                            endIndex: rowCount 
-                        } 
-                    } 
-                }] }
-            });
-        }
-
-        // Chèn dòng trống mới ở vị trí đầu tiên (A1)
-        await cachedSheetsClient.spreadsheets.batchUpdate({
-            spreadsheetId: sid,
-            requestBody: { requests: [{ insertDimension: { range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 }, inheritFromBefore: false } }] }
+        // 1. Lấy toàn bộ dữ liệu hiện có (tối đa 100 dòng đầu)
+        const { data: { values = [] } } = await cachedSheetsClient.spreadsheets.values.get({ 
+            spreadsheetId: sid, 
+            range: `${sn}!A1:C100` 
         });
 
-        // Ghi nội dung vào dòng mới chèn
+        // 2. Tạo mảng mới: [Log mới nhất] + [Dữ liệu cũ], sau đó cắt lấy đúng 100 dòng
+        const newLogs = [[time, type, content], ...values].slice(0, 100);
+
+        // 3. Ghi đè toàn bộ mảng mới vào dải ô từ A1
         await cachedSheetsClient.spreadsheets.values.update({
-            spreadsheetId: sid, range: `${sn}!A1`, 
+            spreadsheetId: sid,
+            range: `${sn}!A1`,
             valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [[time, type, content]] }
+            requestBody: { values: newLogs }
         });
 
     } catch (e) {

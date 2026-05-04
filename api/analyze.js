@@ -88,6 +88,6 @@ export default async (req, res) => {
     function writeLog(message) {
         const timestamp = new Date().toISOString();
         console.log(`[LOG] [${timestamp}] ${message}`);
-        util.writeLog(message, "AI TEXT");
+        util.writeLog(message, "AI SCORE");
     }
 };

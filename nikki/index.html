@@ -141,9 +141,13 @@
     </div>
 
     <script>
+        // CONFIG URLS
         const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/sheet';
         const SPREAD_ID = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
         const SHEET_NAME = 'DairyList';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
+        const SUMMARY_URL = 'https://hsk-gilt.vercel.app/api/sheet?sheet=ScoreList&spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
+
         let currentDiaries = [];
         let editingId = null;
         let selectedDiaryId = localStorage.getItem("diary_selected_id") || null;
@@ -236,8 +240,7 @@
             }
         }
 
-		async function callGAS(paramsObj) {
-			const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
+        async function callGAS(paramsObj) {
             console.log("[GAS Action]:", paramsObj.action);
             const params = new URLSearchParams();
             for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
@@ -249,7 +252,7 @@
                 return { status: 'error', message: "Lỗi kết nối" };
             }
         }
-		
+        
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
             container.innerHTML = '';
@@ -485,7 +488,6 @@
     </script>
     <script>
         async function updateLessonSummaries() {
-            const SUMMARY_URL = 'https://hsk-gilt.vercel.app/api/sheet?sheet=ScoreList&spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
             try {
                 const res = await fetch(SUMMARY_URL);
                 const result = await res.json();

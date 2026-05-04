@@ -97,26 +97,27 @@ export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
     return { success: true, deletedRow: rowID };
 }
 
-/** Hàm ghi log */
+/** Hàm ghi log - Định dạng: YYYY/MM/DD-HH:MM:SS */
 export async function writeLog(content, type) {
     const sid = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', sn = 'Logs';
     type = type || "COM";
     try {
         await ensureAuthenticated();
 
+        // Lấy thời gian JST và format thành YYYY/MM/DD-HH:MM:SS
         const now = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false });
-        const time = now.replace(/\//g, '/').replace(', ', '-').replace(/:/g, '');
+        const time = now.replace(', ', '-'); 
 
-        // 1. Lấy toàn bộ dữ liệu hiện có (tối đa 100 dòng đầu)
+        // 1. Lấy tối đa 100 dòng cũ để dịch chuyển dữ liệu
         const { data: { values = [] } } = await cachedSheetsClient.spreadsheets.values.get({ 
             spreadsheetId: sid, 
             range: `${sn}!A1:C100` 
         });
 
-        // 2. Tạo mảng mới: [Log mới nhất] + [Dữ liệu cũ], sau đó cắt lấy đúng 100 dòng
+        // 2. Chèn log mới vào đầu mảng và cắt lấy 100 phần tử đầu tiên
         const newLogs = [[time, type, content], ...values].slice(0, 100);
 
-        // 3. Ghi đè toàn bộ mảng mới vào dải ô từ A1
+        // 3. Ghi đè lại toàn bộ mảng lên Sheet (tránh tạo dòng trống dư thừa)
         await cachedSheetsClient.spreadsheets.values.update({
             spreadsheetId: sid,
             range: `${sn}!A1`,

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drive Media Player Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f8fafc; color: #1e293b; margin: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        .app { width: 100%; max-width: 100%; display: flex; flex-direction: column; height: 100vh; }
+        .fixed-header { position: sticky; top: 0; background: #f8fafc; z-index: 1000; padding: 10px; border-bottom: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .tabs { display: flex; gap: 5px; margin-bottom: 8px; }
+        .tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+        .rec-box { background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: flex-start; }
+        .rec-controls { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+        .btn-main { width: 65px; height: 65px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 10px; line-height: 1.2; flex-shrink: 0; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .btn-rec { background: #2563eb; color: white; transition: all 0.3s; }
+        .btn-rec.recording { background: #ef4444; animation: pulse 1.5s infinite; }
+        #status { font-size: 8px; color: #64748b; font-weight: bold; text-transform: uppercase; text-align: center; width: 65px; }
+        #voice-script { flex: 1; padding: 8px; border: 1px dashed #2563eb; border-radius: 8px; background: #eff6ff; font-size: 14px; color: #1e40af; height: 65px; overflow-y: auto; text-align: left; line-height: 1.4; display: block; word-break: break-word; box-sizing: border-box; }
+        .content-area { flex: 1; overflow-y: auto; padding: 10px; background: #f1f5f9; padding-bottom: 80px; }
+        .tab-content { display: none; flex-direction: column; height: auto; min-height: 100%; }
+        .tab-content.active { display: flex; }
+        #text-display { padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; font-size: 16px; line-height: 1.7; white-space: pre-wrap; color: #334155; }
+        .list { display: flex; flex-direction: column; gap: 8px; }
+        .item { padding: 10px 12px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .item.selected { background: #f0f7ff; border-color: #2563eb; border-left-width: 4px; }
+        .item-row { display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; min-width: 0; }
+        .item-text { 
+            flex: 1; word-break: break-all; font-size: 12px; font-weight: 500; 
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
+            overflow: hidden; text-overflow: ellipsis; line-height: 1.4;
+        }
+        .item-btns { display: flex; gap: 12px; flex-shrink: 0; }
+        .btn-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 18px; transition: all 0.2s; }
+        .btn-icon:hover { background: #f8fafc; }
+        .btn-delete-icon { color: #ef4444; border-color: #fee2e2; background: #fef2f2; }
+        .score-display { font-family: monospace; font-weight: bold; font-size: 14px; min-width: 30px; text-align: center; }
+        .score-gray { color: #94a3b8; }
+        .score-red { color: #ef4444; }
+        .toast {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: #fff; padding: 10px 20px; border-radius: 20px;
+            font-size: 13px; z-index: 3000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        #media-view { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; background: #000; border-radius: 25px; overflow: hidden; z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: none; }
+        video, audio { width: 100%; display: block; height: 40px; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="fixed-header">
+        <div class="tabs">
+            <button id="btnTab1" class="tab-btn active" onclick="switchTab(1)">VĂN BẢN</button>
+            <button id="btnTab2" class="tab-btn" onclick="switchTab(2)">DANH SÁCH FILE</button>
+        </div>
+        <div class="rec-box">
+            <div class="rec-controls">
+                <button id="mainRecBtn" class="btn-main btn-rec" onclick="toggleRec()">BẮT ĐẦU<br>GHI ÂM</button>
+                <div id="status">SẴN SÀNG</div>
+            </div>
+            <div id="voice-script">Script nhận diện giọng nói...</div>
+        </div>
+    </div>
+    <div class="content-area">
+        <div id="tab1" class="tab-content active">
+            <div id="text-display">Đang tải nội dung văn bản...</div>
+        </div>
+        <div id="tab2" class="tab-content">
+            <div id="fileList" class="list">Đang tải danh sách file...</div>
+        </div>
+    </div>
+</div>
+<div id="toast" class="toast"></div>
+<div id="media-view"></div>
+
+<script>
+    let mediaRec, chunks = [], audioBlob, recognition;
+    let isRecording = false;
+    const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    window.onload = async () => {
+        console.log("[Log] Ứng dụng bắt đầu khởi tạo...");
+        await loadFiles();
+        await loadDiaryParagraph();
+        initSpeechRecognition();
+
+        const lastTab = localStorage.getItem('lastTab');
+        if (lastTab) {
+            switchTab(parseInt(lastTab));
+        }
+    };
+
+    function initSpeechRecognition() {
+        const Speech = window.webkitSpeechRecognition || window.SpeechRecognition;
+        if (Speech) {
+            recognition = new Speech();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'ja-JP';
+            recognition.onresult = (e) => {
+                let transcript = "";
+                for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+                document.getElementById('voice-script').innerText = transcript;
+            };
+            recognition.onerror = (e) => console.error("[Log] Speech Recognition Error:", e.error);
+        }
+    }
+
+    function toggleRec() {
+        if (!isRecording) startRec();
+        else stopRec();
+    }
+
+    function switchTab(tabIndex) {
+        console.log("[Log] Chuyển sang Tab:", tabIndex);
+        localStorage.setItem('lastTab', tabIndex);
+        document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === tabIndex - 1));
+        document.querySelectorAll('.tab-content').forEach((content, i) => content.classList.toggle('active', i === tabIndex - 1));
+        const player = document.getElementById('media-view');
+        if (tabIndex === 1) player.style.display = 'none';
+        else if (player.innerHTML !== "") player.style.display = 'block';
+    }
+
+    function getUrlLessionId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const lessionId = urlParams.get('lessionId') || urlParams.get('id');
+        console.log("[Log] URL LessionId (lessionId):", lessionId);
+        return lessionId;
+    }
+
+    async function loadDiaryParagraph() {
+        const id = getUrlLessionId();
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabValue = urlParams.get('tab') || "0";
+        console.log("[Log] Bắt đầu loadDiaryParagraph. ID:", id, "Tab:", tabValue);
+        
+        try {
+            // Sửa lại URL API theo yêu cầu
+            const apiUrl = 'https://hsk-gilt.vercel.app/api/gsheet';
+            console.log("[Log] Fetching API (POST):", apiUrl);
+            
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sheet: 'DairyList',
+                    spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k',
+                    pos: '0',
+                    val: id,
+                    action: 'readByPosVal'
+                })
+            });
+            const json = await res.json();
+            console.log("[Log] Kết quả API nhận được:", json);
+
+            if (json.values && json.values.length > 0) {
+                const dataRow = json.values[0].data;
+                const textContent = (tabValue === "1") ? dataRow[3] : dataRow[4];
+                
+                document.getElementById('text-display').innerText = textContent || "Nội dung trống";
+                console.log("[Log] Đã cập nhật văn bản hiển thị từ cột index:", (tabValue === "0" ? 2 : 3));
+            } else {
+                document.getElementById('text-display').innerText = "Không tìm thấy dữ liệu cho ID này.";
+                console.log("[Log] API trả về mảng values trống.");
+            }
+        } catch (e) { 
+            console.error("[Log] Lỗi khi load diary paragraph:", e);
+            document.getElementById('text-display').innerText = "Lỗi khi tải dữ liệu từ máy chủ.";
+        }
+    }
+
+    async function loadFiles() {
+        const lessionId = getUrlLessionId();
+        console.log("[Log] Đang tải danh sách file cho lessionId:", lessionId);
+        try {
+            const res = await fetch(`/api/grecorder?lessionId=${lessionId}`);
+            const files = await res.json();
+            renderFiles(files);
+        } catch (err) { console.error("[Log] Lỗi loadFiles:", err); }
+    }
+
+    function renderFiles(files) {
+        const container = document.getElementById('fileList');
+        window.tempFileData = {}; 
+        if (!files || files.length === 0) { 
+            container.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8">Danh sách trống</div>'; 
+            return; 
+        }
+        container.innerHTML = files.map(f => {
+            window.tempFileData[f.id] = f; 
+            const score = f.score;
+            const displayScore = (score !== undefined && score !== null) ? String(score).padStart(3, '0') : "000";
+            const scoreClass = (score !== undefined && score !== null) ? "score-red" : "score-gray";
+            
+            return `
+            <div class="item" id="item-${f.id}">
+                <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}')">
+                    <span class="score-display ${scoreClass}">${displayScore}</span>
+                    <div class="item-text">${f.name}</div>
+                </div>
+                <div class="item-btns">
+                    <button class="btn-icon" title="Chi tiết" onclick="goToDetails('${f.id}')">📄</button>
+                    <button class="btn-icon btn-delete-icon" onclick="deleteFile('${f.id}')" title="Xóa">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function goToDetails(id) {
+        const f = window.tempFileData[id];
+        if (!f) return;
+        const { name, score, analysis } = f;
+        
+        showToast("Đang chuyển trang...");
+        const paragraph = document.getElementById('text-display').innerText;
+        try {
+            const res = await fetch(`/api/grecorder?id=${id}`);
+            if (!res.ok) throw new Error("Fetch failed");
+            const blob = await res.blob();
+            
+            const dbReq = indexedDB.open("MediaCacheDB", 1);
+            dbReq.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains("media")) {
+                    db.createObjectStore("media", { keyPath: "id" });
+                }
+            };
+            
+            dbReq.onsuccess = (e) => {
+                const db = e.target.result;
+                const tx = db.transaction("media", "readwrite");
+                const store = tx.objectStore("media");
+                store.put({ 
+                    id: "current_media", 
+                    blob: blob, 
+                    name: name, 
+                    paragraph: paragraph, 
+                    score: score,
+                    analysis: analysis,
+                    fileId: id, 
+                    ts: Date.now() 
+                });
+                tx.oncomplete = () => {
+                    console.log("[Log] Lưu cache thành công, chuyển hướng...");
+                    window.location.href = `../nikki/checker.html?lessionId=${getUrlLessionId()}&fileId=${id}`;
+                };
+            };
+        } catch (err) {
+            console.error("[Log] Lỗi goToDetails:", err);
+            showToast("Lỗi khi chuẩn bị chi tiết.");
+        }
+    }
+
+    async function deleteFile(id) {
+        if (!confirm("Bạn có chắc chắn muốn xóa file này?")) return;
+        try {
+            await fetch(`/api/grecorder?id=${id}`, { method: 'DELETE' });
+            await loadFiles();
+            showToast("Đã xóa file.");
+        } catch (err) {
+            showToast("Lỗi khi xóa file.");
+        }
+    }
+
+    function playMedia(id, mimeType) {
+        console.log("[Log] Phát file:", id);
+        document.querySelectorAll('.item').forEach(el => el.classList.remove('selected'));
+        const currentItem = document.getElementById(`item-${id}`);
+        if (currentItem) currentItem.classList.add('selected');
+        
+        const view = document.getElementById('media-view');
+        view.style.display = 'block';
+        const url = `/api/grecorder?id=${id}&t=${Date.now()}`;
+        view.innerHTML = mimeType.includes('video') 
+            ? `<video src="${url}" controls autoplay playsinline></video>` 
+            : `<audio src="${url}" controls autoplay></audio>`;
+    }
+
+    async function startRec() {
+        try {
+            console.log("[Log] Bắt đầu ghi âm...");
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRec = new MediaRecorder(stream);
+            chunks = [];
+            mediaRec.ondataavailable = e => chunks.push(e.data);
+            mediaRec.onstop = async () => {
+                const rawBlob = new Blob(chunks);
+                audioBlob = isIOS() ? new Blob(chunks, { type: 'audio/mp4' }) : await convertToMp3(rawBlob);
+                if (confirm("Lưu bản ghi này?")) upload();
+            };
+            mediaRec.start();
+            if (recognition) {
+                document.getElementById('voice-script').innerText = "...";
+                recognition.start();
+            }
+            isRecording = true;
+            updateUI(true);
+        } catch (e) { 
+            console.error("[Log] Lỗi microphone:", e);
+            alert("Không thể truy cập microphone."); 
+        }
+    }
+
+    function stopRec() {
+        console.log("[Log] Dừng ghi âm...");
+        if (mediaRec && mediaRec.state !== "inactive") {
+            mediaRec.stop();
+            mediaRec.stream.getTracks().forEach(t => t.stop());
+        }
+        if (recognition) recognition.stop();
+        isRecording = false;
+        updateUI(false);
+    }
+
+    function updateUI(rec) {
+        const btn = document.getElementById('mainRecBtn');
+        const status = document.getElementById('status');
+        if (rec) {
+            btn.innerHTML = "DỪNG<br>GHI ÂM";
+            btn.classList.add('recording');
+            status.innerText = "ĐANG GHI";
+            status.style.color = "#ef4444";
+        } else {
+            btn.innerHTML = "BẮT ĐẦU<br>GHI ÂM";
+            btn.classList.remove('recording');
+            status.innerText = "SẴN SÀNG";
+            status.style.color = "#64748b";
+        }
+    }
+
+    async function convertToMp3(blob) {
+        console.log("[Log] Đang chuyển đổi sang MP3...");
+        const arrayBuffer = await blob.arrayBuffer();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        const samples = audioBuffer.getChannelData(0);
+        const mp3encoder = new lamejs.Mp3Encoder(1, audioBuffer.sampleRate, 128);
+        const samplesInt16 = new Int16Array(samples.length);
+        for (let i = 0; i < samples.length; i++) {
+            let s = Math.max(-1, Math.min(1, samples[i]));
+            samplesInt16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        const mp3Data = [];
+        for (let i = 0; i < samplesInt16.length; i += 1152) {
+            const chunk = samplesInt16.subarray(i, i + 1152);
+            const mp3buf = mp3encoder.encodeBuffer(chunk);
+            if (mp3buf.length > 0) mp3Data.push(mp3buf);
+        }
+        const flush = mp3encoder.flush();
+        if (flush.length > 0) mp3Data.push(flush);
+        return new Blob(mp3Data, { type: 'audio/mp3' });
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    async function upload() {
+        console.log("[Log] Đang upload file...");
+        document.getElementById('status').innerText = "ĐANG LƯU";
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+            const base64Audio = reader.result.split(',')[1];
+            const lessionId = getUrlLessionId();
+            const now = new Date();
+            const fileName = `REC_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}_${lessionId}.${isIOS() ? 'm4a' : 'mp3'}`;
+            try {
+                const res = await fetch(`/api/grecorder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: fileName, base64Audio, lessionId })
+                });
+                if (res.ok) {
+                    await loadFiles();
+                    showToast("Lưu file thành công!");
+                    switchTab(2);
+                }
+            } catch (err) { 
+                console.error("[Log] Lỗi upload:", err);
+                showToast("Lỗi khi lưu file!");
+            } finally {
+                document.getElementById('status').innerText = "SẴN SÀNG";
+            }
+        };
+    }
+</script>
+</body>
+</html>

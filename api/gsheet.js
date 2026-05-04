@@ -1,10 +1,28 @@
 const { GoogleAuth } = require('google-auth-library');
 const { google } = require('googleapis');
 
+// Biến global lưu trữ kết quả xác thực
+let cachedSheetsClient = null;
+
 /**
  * GOOGLE SHEETS API - CLEAN VERSION
  * Hỗ trợ bóc tách dữ liệu lồng nhau từ Frontend {data: {data: []}}
  */
+
+/**
+ * Hàm xác thực và khởi tạo client
+ */
+async function ensureAuthenticated() {
+    if (cachedSheetsClient) return cachedSheetsClient;
+    console.log("[LOG] Initializing Google Auth...");
+    const auth = new GoogleAuth({
+        credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+    const client = await auth.getClient();
+    cachedSheetsClient = google.sheets({ version: 'v4', auth: client });
+    return cachedSheetsClient;
+}
 
 export default async function handler(req, res) {
     const { method, query, body } = req;
@@ -23,12 +41,8 @@ export default async function handler(req, res) {
     console.log(`[LOG] Raw Body:`, JSON.stringify(body));
 
     try {
-        const auth = new GoogleAuth({
-            credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
-            scopes: ['https://www.googleapis.com/auth/spreadsheets']
-        });
-        const client = await auth.getClient();
-        const sheets = google.sheets({ version: 'v4', auth: client });
+        // Gọi hàm xác thực trước khi xử lý
+        const sheets = await ensureAuthenticated();
 
         if (!spreadsheetId || !sheetName) {
             console.error("[LOG] Error: Missing spreadsheetId or sheetName");
@@ -137,7 +151,6 @@ async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, 
         console.log(`[LOG] handleUpdateByPosVal: Target RowID determined as ${rowID}`);
         
         let data = parseData(rawData);
-        // Đồng bộ logic xử lý data lồng nhau giống handleAdd
         if (data && typeof data === 'object' && data.data && !Array.isArray(data)) {
             data = data.data;
         }

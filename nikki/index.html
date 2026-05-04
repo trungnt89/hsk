@@ -472,9 +472,8 @@
     <script>
         setTimeout(() => { updateLessonSummaries(); }, 5000);
         async function updateLessonSummaries() {
-            const SUMMARY_URL = 'https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec?action=summary';
             try {
-                const res = await fetch(SUMMARY_URL);
+                const res = await fetch(`${VERCEL_URL}?spread=${SPREAD_ID}&act=summary`);
                 const result = await res.json();
                 if (result.status === 'success' && result.data) {
                     document.querySelectorAll('.count-trigger').forEach(badge => {

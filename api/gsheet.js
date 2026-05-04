@@ -8,6 +8,7 @@ import * as util from './util';
 export default async function handler(req, res) {
     const { method, query, body } = req;
 
+    const p = { ...query, ...body };
     const spreadsheetId = p.spread || p.spreadsheetId;
     const sheetName     = p.sheet || p.sheetName;
     const action        = p.act || p.action || 'read';

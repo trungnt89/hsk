@@ -147,10 +147,18 @@ const JapaneseLookup = (() => {
                     savedWordsMap.set(text, { meaning: detailed, romaji: item.phonetic, googleMeaning: item.short_mean });
                     Module.applyHighlight();
                     const ts = new Date().toLocaleString('ja-JP');
-                    fetch(`${CONFIG.API_URL}?sheet=${CONFIG.sheet}&spread=${CONFIG.spread}&act=updateByPosVal&pos=1&val=${encodeURIComponent(text)}`, { 
+                    console.log("[Log] Sending update request for: " + text);
+                    fetch(CONFIG.API_URL, { 
                         method: "POST", 
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: [ts, text, item.phonetic, item.short_mean || detailed] }) 
+                        body: JSON.stringify({ 
+                            sheet: CONFIG.sheet, 
+                            spread: CONFIG.spread, 
+                            act: "updateByPosVal", 
+                            pos: 1, 
+                            val: text, 
+                            data: [ts, text, item.phonetic, item.short_mean || detailed] 
+                        }) 
                     });
                 }
             }
@@ -165,7 +173,12 @@ const JapaneseLookup = (() => {
             createUI();
             await loadKanjiDict();
             try {
-                const res = await fetch(`${CONFIG.API_URL}?sheet=${CONFIG.sheet}&spread=${CONFIG.spread}&act=read&v=${Date.now()}`);
+                console.log("[Log] Fetching data from API...");
+                const res = await fetch(CONFIG.API_URL, {
+                    method: "POST",
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sheet: CONFIG.sheet, spread: CONFIG.spread, act: "read", v: Date.now() })
+                });
                 const data = await res.json();
                 data.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
                 dataLoaded = true;
@@ -265,7 +278,11 @@ const JapaneseLookup = (() => {
                 }
             });
             console.log("[Log] Deleting word: " + word);
-            fetch(`${CONFIG.API_URL}?sheet=${CONFIG.sheet}&spread=${CONFIG.spread}&act=deleteByPosVal&pos=1&val=${encodeURIComponent(word)}`, { method: "POST" });
+            fetch(CONFIG.API_URL, { 
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sheet: CONFIG.sheet, spread: CONFIG.spread, act: "deleteByPosVal", pos: 1, val: word })
+            });
         }
     };
 

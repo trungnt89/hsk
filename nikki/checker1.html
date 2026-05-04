@@ -103,6 +103,7 @@
         }
         #result th { background-color: #f8f9fa; }
 
+        /* Toast Styling */
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity 0.5s; z-index: 1000; pointer-events: none; }
         .toast.show { opacity: 1; }
 
@@ -152,6 +153,7 @@
     </div>
 </div>
 
+<!-- Toast element -->
 <div id="toast" class="toast"></div>
 
 <script>
@@ -273,15 +275,12 @@
     };
 
     analyzeBtn.onclick = async () => {
-        console.log("[LOG] Bắt đầu quá trình phân tích gửi lên Vercel...");
         const key = apiKeyInput.value.trim();
         const script = scriptInput.value.trim();
-        const urlParamsSync = new URLSearchParams(window.location.search);
-        const fileId = urlParamsSync.get('fileId');
-        const lessionId = urlParamsSync.get('lessionId');
+        const file = currentBlob;
 
-        if(!currentBlob || !key) {
-            alert("Thiếu API Key hoặc Audio!");
+        if(!file || !key) {
+            alert("Thiếu API Key hoặc Audio (Chưa có dữ liệu từ DB)!");
             return;
         }
 
@@ -291,39 +290,65 @@
             const base64Data = await new Promise((resolve) => {
                 const r = new FileReader();
                 r.onload = () => resolve(r.result.split(',')[1]);
-                r.readAsDataURL(currentBlob);
+                r.readAsDataURL(file);
             });
 
-            console.log("[LOG] Đang gửi yêu cầu tới server backend /api/analyze...");
-            const response = await fetch('/api/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    apiKey: key,
-                    script: script,
-                    audioBase64: base64Data,
-                    mimeType: currentBlob.type,
-                    fileId: fileId,
-                    lessionId: lessionId,
-                    webAppUrl: WEB_APP_URL
-                })
-            });
+            const models = ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash'];
+            let responseData = null;
+            let lastError = "";
 
-            const result = await response.json();
-
-            if (response.ok) {
-                console.log("[LOG] Nhận kết quả từ Server thành công.");
-                resultDiv.innerHTML = marked.parse(result.analysis);
-                wrapTablesInDiv(resultDiv);
-                updateStatusWithScore("", result.score);
-                openTab('resultTab');
-                showToast("Đã phân tích và đồng bộ dữ liệu!");
-            } else {
-                throw new Error(result.error || "Lỗi không xác định từ server");
+            for (let modelName of models) {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+                try {                    
+                     const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [
+                                { text: `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
+                                    KỊCH BẢN GỐC: "${script || 'Không cung cấp - Hãy tự nhận diện nội dung'}"
+                                    YÊU CẦU:
+                                    1. SO SÁNH: Đối chiếu giữa kịch bản gốc và những gì người nói thực tế đã nói. Chỉ ra các từ bị nói sai, nói thiếu hoặc biến âm.
+                                    2. NHẬT XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
+                                    3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó mà không phải nhiều hơn hay ít hơn 50 điểm.
+                                    4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.
+                                    Sử dụng định dạng Markdown (tiêu đề, danh sách, bảng) để trình bày rõ ràng.` },
+                                { inline_data: { mime_type: file.type || "audio/mp4", data: base64Data } }
+                            ]}]
+                        })
+                    });
+                    responseData = await response.json();
+                    if (responseData.candidates) break;
+                } catch (e) { lastError = e.message; }
             }
 
+            if (responseData && responseData.candidates) {
+                const aiText = responseData.candidates[0].content.parts[0].text;
+                resultDiv.innerHTML = marked.parse(aiText);
+                wrapTablesInDiv(resultDiv);
+                const scoreMatch = aiText.match(/(\d+)\/1000/);
+                updateStatusWithScore("", scoreMatch ? scoreMatch[1] : null);
+                openTab('resultTab');
+
+                const urlParamsSync = new URLSearchParams(window.location.search);
+                const fileIdFromUrl = urlParamsSync.get('fileId');
+                const lessionID = urlParamsSync.get('lessionId');
+
+                if (fileIdFromUrl) {
+                    fetch(WEB_APP_URL, {
+                        method: 'POST', mode: 'no-cors',
+                        body: JSON.stringify({
+                            action: 'score',
+                            script: script,
+                            lessionID: lessionID,
+                            fileId: fileIdFromUrl,
+                            score: scoreMatch ? scoreMatch[1] : "0",
+                            analysis: aiText
+                        })
+                    }).then(() => showToast("Đã gửi yêu cầu lưu điểm lên Sheet!"));
+                }
+            } else { throw new Error(lastError || "Lỗi AI"); }
         } catch (err) {
-            console.error("[LOG] Lỗi phân tích:", err.message);
             alert("Lỗi: " + err.message);
         } finally {
             analyzeBtn.disabled = false;

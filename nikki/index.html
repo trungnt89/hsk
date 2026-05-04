@@ -188,12 +188,14 @@
         }
 
         async function callAPI(paramsObj) {
+            const SPREAD_ID = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
+            const SHEET_NAME = 'DairyList';
             try {
                 const url = new URL(VERCEL_URL);
                 const response = await fetch(url.toString(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...paramsObj})
+                    body: JSON.stringify({ ...paramsObj, spread: SPREAD_ID, sheet: SHEET_NAME })
                 });
                 return await response.json();
             } catch (e) {

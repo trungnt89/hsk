@@ -183,7 +183,7 @@
                         id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0)
                     })).reverse();
                     renderList(currentDiaries);
-                    if (selectedDiaryId) selectRecord(selectedDiaryId);
+                    if (selectedDiaryId) selectRecord(selectedDiaryId, true);
                 }
             } catch (err) { console.warn("[Sync] Offline mode"); }
         }
@@ -376,14 +376,14 @@
             updateAIView();
         }
 
-        function selectRecord(id, scroll = false) {
+        function selectRecord(id, scroll = true) {
             selectedDiaryId = id; localStorage.setItem("diary_selected_id", id);
             const newUrl = new URL(window.location);
             newUrl.searchParams.set('id', id);
             window.history.replaceState({}, '', newUrl); 
             document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
             const el = document.getElementById(`item-${id}`);
-            if (el) { el.classList.add('selected'); if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+            if (el) { el.classList.add('selected'); if (scroll) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }
             updateAIView();
         }
 

@@ -221,7 +221,7 @@
             } catch (err) { console.warn("[Sync] Offline mode"); }
         }
 
-        async function callGAS(paramsObj) {
+        async function callAPI(paramsObj) {
             try {
                 const url = new URL(VERCEL_URL);
                 const response = await fetch(url.toString(), {
@@ -236,6 +236,20 @@
             }
         }
 
+		async function callGAS(paramsObj) {
+			const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
+            console.log("[GAS Action]:", paramsObj.action);
+            const params = new URLSearchParams();
+            for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
+            try {
+                const response = await fetch(`${GAS_URL}?${params.toString()}`);
+                return await response.json();
+            } catch (e) {
+                console.error("[Sync Error]:", e);
+                return { status: 'error', message: "Lỗi kết nối" };
+            }
+        }
+		
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
             container.innerHTML = '';
@@ -320,7 +334,7 @@
             saveToIDB(currentDiaries); renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';
             const rowData = [id, date, text, "", "", "false", 0];
-            await callGAS({ act: 'add', data: JSON.stringify(rowData) });
+            await callAPI({ act: 'add', data: JSON.stringify(rowData) });
             selectRecord(id, true);
         }
 
@@ -342,14 +356,14 @@
             const tid = editingId;
             clearEditMode();
             const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
-            await callGAS({ act: 'updateByPosVal', pos: 0, val: tid, data: JSON.stringify(rowData) });
+            await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, data: JSON.stringify(rowData) });
         }
 
         async function deleteDiary(id) {
             if (confirm("Xóa nhật ký này?")) {
                 currentDiaries = currentDiaries.filter(i => i.id != id);
                 saveToIDB(currentDiaries); renderList(currentDiaries);
-                await callGAS({ act: 'deleteByPosVal', pos: 0, val: id });
+                await callAPI({ act: 'deleteByPosVal', pos: 0, val: id });
             }
         }
 
@@ -366,7 +380,7 @@
             item.pinned = !item.pinned;
             saveToIDB(currentDiaries); renderList(currentDiaries);
             const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
-            await callGAS({ act: 'updateByPosVal', pos: 0, val: id, data: JSON.stringify(rowData) });
+            await callAPI({ act: 'updateByPosVal', pos: 0, val: id, data: JSON.stringify(rowData) });
         }
 
         async function askAI(id, content) {

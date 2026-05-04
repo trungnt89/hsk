@@ -1,4 +1,4 @@
-import * as sheetsUtil from './util';
+import * as util from './util';
 
 /**
  * GOOGLE SHEETS API - CLEAN VERSION
@@ -15,13 +15,13 @@ export default async function handler(req, res) {
     const val = query?.val !== undefined ? query?.val : body?.val;
     const rawData = query?.data || body?.data;
 
-    writeLog(`[LOG] Action: ${action}`);
-    writeLog(`[LOG] Target: SpreadID: ${spreadsheetId}, Sheet: ${sheetName}`);
-    writeLog(`[LOG] Params: pos=${pos}, val=${val}`);
-    writeLog(`[LOG] Raw Body:`, JSON.stringify(body));
+    util.writeLog(`[LOG] Action: ${action}`);
+    util.writeLog(`[LOG] Target: SpreadID: ${spreadsheetId}, Sheet: ${sheetName}`);
+    util.writeLog(`[LOG] Params: pos=${pos}, val=${val}`);
+    util.writeLog(`[LOG] Raw Body:`, JSON.stringify(body));
 
     try {
-        await sheetsUtil.ensureAuthenticated();
+        await util.ensureAuthenticated();
 
         if (!spreadsheetId || !sheetName) {
             console.error("[LOG] Error: Missing spreadsheetId or sheetName");
@@ -31,19 +31,19 @@ export default async function handler(req, res) {
         let result;
         switch (action) {
             case 'read':
-                result = await sheetsUtil.handleRead(spreadsheetId, sheetName);
+                result = await util.handleRead(spreadsheetId, sheetName);
                 break;
             case 'add':
-                result = await sheetsUtil.handleAdd(spreadsheetId, sheetName, rawData);
+                result = await util.handleAdd(spreadsheetId, sheetName, rawData);
                 break;
             case 'readByPosVal':
-                result = await sheetsUtil.handleReadByPosVal(spreadsheetId, sheetName, pos, val);
+                result = await util.handleReadByPosVal(spreadsheetId, sheetName, pos, val);
                 break;
             case 'updateByPosVal':
-                result = await sheetsUtil.handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
+                result = await util.handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
                 break;
             case 'deleteByPosVal':
-                result = await sheetsUtil.handleDeleteByPosVal(spreadsheetId, sheetName, pos, val);
+                result = await util.handleDeleteByPosVal(spreadsheetId, sheetName, pos, val);
                 break;
             default:
                 console.warn(`[LOG] Warning: Invalid action received: ${action}`);

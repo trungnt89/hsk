@@ -21,7 +21,7 @@
         main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         
         .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 10px; font-size: 15px; resize: none; height: 120px; outline: none; display: block; }
+        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8 badge; padding: 10px; font-size: 15px; resize: none; height: 120px; outline: none; display: block; }
         
         .action-area { display: flex; justify-content: flex-end; align-items: center; margin-top: 5px; gap: 8px; }
         .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
@@ -472,15 +472,25 @@
     <script>
         setTimeout(() => { updateLessonSummaries(); }, 5000);
         async function updateLessonSummaries() {
+            const SUMMARY_URL = 'https://hsk-gilt.vercel.app/api/sheet?sheet=Score&spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
             try {
-                const res = await fetch(`${VERCEL_URL}?spread=${SPREAD_ID}&act=summary`);
+                const res = await fetch(SUMMARY_URL);
                 const result = await res.json();
-                if (result.status === 'success' && result.data) {
+                if (result.values && Array.isArray(result.values)) {
                     document.querySelectorAll('.count-trigger').forEach(badge => {
                         const match = badge.getAttribute('onclick').match(/'([^']+)'/);
-                        if (match && match[1] && result.data[match[1]]) {
-                            badge.innerHTML = "🎙️ " + result.data[match[1]];
-                            if (parseInt(result.data[match[1]]) > 0) badge.style.backgroundColor = '#e67e22';
+                        if (match && match[1]) {
+                            const lessonID = match[1];
+                            let count = 0, maxScore = 0;
+                            result.values.forEach(row => {
+                                if (row[0] === lessonID) {
+                                    count++;
+                                    const score = parseInt(row[3]) || 0;
+                                    if (score > maxScore) maxScore = score;
+                                }
+                            });
+                            badge.innerHTML = `🎙️ ${count} | 🏆 ${maxScore}`;
+                            if (count > 0) badge.style.backgroundColor = '#e67e22';
                         }
                     });
                 }

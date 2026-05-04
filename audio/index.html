@@ -176,7 +176,7 @@
         const lessionId = getUrlLessionId();
         console.log("[Log] Đang tải danh sách file cho lessionId:", lessionId);
         try {
-            const res = await fetch(`/api/drive?lessionId=${lessionId}`);
+            const res = await fetch(`/api/file?lessionId=${lessionId}`);
             const files = await res.json();
             renderFiles(files);
         } catch (err) { console.error("[Log] Lỗi loadFiles:", err); }
@@ -217,7 +217,7 @@
         showToast("Đang chuyển trang...");
         const paragraph = document.getElementById('text-display').innerText;
         try {
-            const res = await fetch(`/api/drive?id=${id}`);
+            const res = await fetch(`/api/file?id=${id}`);
             if (!res.ok) throw new Error("Fetch failed");
             const blob = await res.blob();
             
@@ -257,7 +257,7 @@
     async function deleteFile(id) {
         if (!confirm("Bạn có chắc chắn muốn xóa file này?")) return;
         try {
-            await fetch(`/api/drive?id=${id}`, { method: 'DELETE' });
+            await fetch(`/api/file?id=${id}`, { method: 'DELETE' });
             await loadFiles();
             showToast("Đã xóa file.");
         } catch (err) {
@@ -273,7 +273,7 @@
         
         const view = document.getElementById('media-view');
         view.style.display = 'block';
-        const url = `/api/drive?id=${id}&t=${Date.now()}`;
+        const url = `/api/file?id=${id}&t=${Date.now()}`;
         view.innerHTML = mimeType.includes('video') 
             ? `<video src="${url}" controls autoplay playsinline></video>` 
             : `<audio src="${url}" controls autoplay></audio>`;
@@ -372,7 +372,7 @@
             const now = new Date();
             const fileName = `REC_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}_${lessionId}.${isIOS() ? 'm4a' : 'mp3'}`;
             try {
-                const res = await fetch(`/api/drive`, {
+                const res = await fetch(`/api/file`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: fileName, base64Audio, lessionId })

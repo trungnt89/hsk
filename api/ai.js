@@ -85,7 +85,7 @@ async function callDeepSeek(prompt) {
   });
   
   const json = await response.json();
-  writeLog(JSON.stringify(json),"DeepSeek");
+  writeLog(JSON.stringify(json));
   if (!response.ok) {
     throw new Error(`DeepSeek Error: ${json.error?.message || response.statusText}`);
   }

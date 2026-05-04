@@ -16,6 +16,7 @@ export async function ensureAuthenticated() {
 }
 
 export async function handleRead(spreadsheetId, sheetName) {
+    await ensureAuthenticated();
     console.log(`[LOG] handleRead: Reading data from ${sheetName}`);
     const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rowCount = response.data.values ? response.data.values.length : 0;
@@ -24,6 +25,7 @@ export async function handleRead(spreadsheetId, sheetName) {
 }
 
 export async function handleAdd(spreadsheetId, sheetName, rawData) {
+    await ensureAuthenticated();
     console.log("[LOG] handleAdd - Step 1: Receiving rawData", JSON.stringify(rawData));
     if (rawData === undefined || rawData === null) {
         console.error("[LOG] handleAdd Error: Data is null or undefined");
@@ -46,6 +48,7 @@ export async function handleAdd(spreadsheetId, sheetName, rawData) {
 }
 
 export async function handleReadByPosVal(spreadsheetId, sheetName, pos, val) {
+    await ensureAuthenticated();
     console.log(`[LOG] handleReadByPosVal: Searching ${sheetName} at index ${pos} for value "${val}"`);
     const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rows = response.data.values || [];
@@ -57,6 +60,7 @@ export async function handleReadByPosVal(spreadsheetId, sheetName, pos, val) {
 }
 
 export async function handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData) {
+    await ensureAuthenticated();
     try {
         const search = await handleReadByPosVal(spreadsheetId, sheetName, pos, val);
         const rowID = search.values[0].rowID;
@@ -79,6 +83,7 @@ export async function handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, r
 }
 
 export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
+    await ensureAuthenticated();
     const search = await handleReadByPosVal(spreadsheetId, sheetName, pos, val);
     const rowID = search.values[0].rowID;
     const sheetRes = await cachedSheetsClient.spreadsheets.get({ spreadsheetId });
@@ -97,35 +102,26 @@ export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
     return { success: true, deletedRow: rowID };
 }
 
-/** Hàm ghi log - Đảm bảo định dạng: YYYY/MM/DD-HH:MM:SS */
+/** 
+ * Hàm ghi log tối ưu tốc độ (Realtime)
+ * Sử dụng append thay vì read-then-write để giảm độ trễ API.
+ */
 export async function writeLog(content, type) {
     const sid = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', sn = 'Logs';
     type = type || "COM";
     try {
         await ensureAuthenticated();
 
-        // Lấy thời gian JST
         const now = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false });
-        
-        // Thay thế khoảng trắng giữa ngày và giờ bằng dấu gạch ngang
-        // Đảm bảo kết quả luôn là YYYY/MM/DD-HH:MM:SS
         const time = now.replace(/\s+/, '-'); 
 
-        // 1. Lấy tối đa 100 dòng cũ
-        const { data: { values = [] } } = await cachedSheetsClient.spreadsheets.values.get({ 
-            spreadsheetId: sid, 
-            range: `${sn}!A1:C100` 
-        });
-
-        // 2. Chèn log mới vào đầu và giới hạn 100 record
-        const newLogs = [[time, type, content], ...values].slice(0, 100);
-
-        // 3. Ghi đè lên Sheet để tránh phát sinh dòng trống dư thừa
-        await cachedSheetsClient.spreadsheets.values.update({
+        // Ghi trực tiếp vào cuối sheet - Chỉ tốn 1 round-trip
+        await cachedSheetsClient.spreadsheets.values.append({
             spreadsheetId: sid,
             range: `${sn}!A1`,
             valueInputOption: 'USER_ENTERED',
-            requestBody: { values: newLogs }
+            insertDataOption: 'INSERT_ROWS',
+            requestBody: { values: [[time, type, content]] }
         });
 
     } catch (e) {

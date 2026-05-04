@@ -29,6 +29,7 @@ export default async (req, res) => {
                                   4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.`;
         
         writeLog("[LOG] Prompt prepared.");
+		writeLog(promt);
                                   
         const geminiResponse = await fetch(geminiUrl, {
             method: 'POST',

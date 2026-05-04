@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   }
 
   const { content, lessionId } = req.body;
-  const promt = "Bạn là một giáo viên tiếng Nhật.Hãy viết 1 đoạn văn 200 chữ bằng TIẾNG NHẬT trình độ N4,N3 (---PARAGRAPH---) và 1 hội thoại thể lịch sự,trang trọng N4,N3 giữa 2 người A và B (---CONVERSATION---).Yêu cầu: Không lời chào, Không giải thích. Không cần viết cách đọc hira của kanji. Bố cục ,đoạn văn rõ ràng gồm 3 phần: đầu- thân - cuối. 3 Đoạn văn và hội thoại có phân cách xuống dòng,khi xuống dòng thì cách nhau thêm 1 dòng trống nữa đễ nhìn rõ ràng, rành mạch , dễ nhìn cho cả hội thoại và đoạn văn. Viết theo lối văn đoạn mở đầu là mở ra vấn đề,đoạn thân bài là giải thích,diễn giải,quy nạp.Đoạn cuối là kết luận.Cam kết KHÔNG được sử dụng từ vựng,ngữ pháp N2,N1\n\nNội dung: "+content;
+  const promt = "Hãy viết 1 đoạn văn 200 chữ bằng TIẾNG NHẬT trình độ N4,N3 (---PARAGRAPH---) và 1 hội thoại thể lịch sự,trang trọng N4,N3 giữa 2 người A và B (---CONVERSATION---).Yêu cầu: Không lời chào, Không giải thích. Không cần viết cách đọc hira của kanji. Bố cục ,đoạn văn rõ ràng gồm 3 phần: đầu- thân - cuối. 3 Đoạn văn và hội thoại có phân cách xuống dòng,khi xuống dòng thì cách nhau thêm 1 dòng trống nữa đễ nhìn rõ ràng, rành mạch , dễ nhìn cho cả hội thoại và đoạn văn. Viết theo lối văn đoạn mở đầu là mở ra vấn đề,đoạn thân bài là giải thích,diễn giải,quy nạp.Đoạn cuối là kết luận.Cam kết KHÔNG được sử dụng từ vựng,ngữ pháp N2,N1\n\nNội dung: "+content;
   writeLog(`--- Bắt đầu xử lý yêu cầu cho ID: ${lessionId} ---`);
   writeLog(promt);
   let fullText = null;
@@ -21,11 +21,11 @@ export default async function handler(req, res) {
   try {
     // Bước 1: Thử DeepSeek
     try {
-      fullText = await callDeepSeek(content);
+      fullText = await callDeepSeek(promt);
     } catch (e) {
       writeLog(`DeepSeek lỗi: ${e.message}`);
       // Bước 2: Thử Gemini nếu DeepSeek lỗi
-      fullText = await callGemini(content);
+      fullText = await callGemini(promt);
     }
 
     if (!fullText) throw new Error("Cả hai dịch vụ AI đều không phản hồi.");

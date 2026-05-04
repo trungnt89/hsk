@@ -7,14 +7,15 @@ import * as util from './util';
 
 export default async function handler(req, res) {
     const { method, query, body } = req;
-    const spreadsheetId = query?.spread || query?.spreadsheetId || body?.spread || body?.spreadsheetId;
-    const sheetName = query?.sheet || query?.sheetName || body?.sheet || body?.sheetName;
-    const action = query?.act || body?.act || query?.action || body?.action || 'read';
 
-    const pos = query?.pos !== undefined ? query?.pos : body?.pos;
-    const val = query?.val !== undefined ? query?.val : body?.val;
-    const rawData = query?.data || body?.data;
-
+    const spreadsheetId = p.spread || p.spreadsheetId;
+    const sheetName     = p.sheet || p.sheetName;
+    const action        = p.act || p.action || 'read';
+	  
+    const pos     = p.pos;
+    const val     = p.val;
+    const rawData = p.data;
+	
     util.writeLog(`[LOG] Action: ${action}`);
     util.writeLog(`[LOG] Target: SpreadID: ${spreadsheetId}, Sheet: ${sheetName}`);
     util.writeLog(`[LOG] Params: pos=${pos}, val=${val}`);

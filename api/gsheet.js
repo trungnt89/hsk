@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     const val     = p.val;
     const rawData = p.data;
 	
-    util.writeLog(`[LOG] Action: ${action}, Sheet: ${sheetName}, pos=${pos}, val=${val}, SpreadID: ${spreadsheetId}, `);
+    util.writeLog(`Action: ${action}, Sheet: ${sheetName}, pos=${pos}, val=${val}, SpreadID: ${spreadsheetId}, `);
     util.writeLog(JSON.stringify(body));
 
     try {

@@ -95,26 +95,26 @@
         }
 
         async function fetchLogs() {
-            const GAS_URL = "https://script.google.com/macros/s/AKfycbxYrGbKghzwW1cKU37CJf-UFISCcvGkemZlTJZH1GWa7x4qrAOd2UKzVOR3vWAPOtyMww/exec";
+            const API_URL = "https://hsk-gilt.vercel.app/api/gsheet?spreed=1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc&sheet=Logs";
             try {
-                const response = await fetch(GAS_URL);
+                const response = await fetch(API_URL);
                 const data = await response.json();
                 const container = document.getElementById('monitor-box');
                 
-                if (!data || data.length === 0) {
+                if (!data || !data.values || data.values.length === 0) {
                     container.innerHTML = "<div class='loading'>Không có dữ liệu log.</div>";
                     return;
                 }
 
-                container.innerHTML = data.map(log => {
-                    const dt = new Date(log.timestamp);
+                container.innerHTML = data.values.map(log => {
+                    const dt = new Date(log[0].replace(/-/g, ' '));
                     const dateStr = `${(dt.getMonth()+1).toString().padStart(2,'0')}-${dt.getDate().toString().padStart(2,'0')}`;
                     const timeStr = dt.toLocaleTimeString('ja-JP', { hour12:false });
-                    const levelClass = String(log.level).toLowerCase().replace(/\s+/g, '_');
+                    const levelClass = String(log[1]).toLowerCase().replace(/\s+/g, '_');
                     
-                    let displayMsg = log.message;
+                    let displayMsg = log[2];
                     try {
-                        const parsed = (typeof log.message === 'string') ? JSON.parse(log.message) : log.message;
+                        const parsed = (typeof log[2] === 'string') ? JSON.parse(log[2]) : log[2];
                         if (typeof parsed === 'object' && parsed !== null) {
                             displayMsg = JSON.stringify(parsed, null, 2);
                         }
@@ -126,7 +126,7 @@
                                 <span>${dateStr}</span>
                                 <span>${timeStr}</span>
                             </div>
-                            <div class="log-level level-${levelClass}">${log.level}</div>
+                            <div class="log-level level-${levelClass}">${log[1]}</div>
                             <div class="log-msg">${displayMsg}</div>
                         </div>
                     `;

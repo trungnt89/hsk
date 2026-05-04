@@ -16,6 +16,7 @@ export async function ensureAuthenticated() {
 }
 
 export async function handleRead(spreadsheetId, sheetName) {
+    await ensureAuthenticated();
     console.log(`[LOG] handleRead: Reading data from ${sheetName}`);
     const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rowCount = response.data.values ? response.data.values.length : 0;
@@ -24,6 +25,7 @@ export async function handleRead(spreadsheetId, sheetName) {
 }
 
 export async function handleAdd(spreadsheetId, sheetName, rawData) {
+    await ensureAuthenticated();
     console.log("[LOG] handleAdd - Step 1: Receiving rawData", JSON.stringify(rawData));
     if (rawData === undefined || rawData === null) {
         console.error("[LOG] handleAdd Error: Data is null or undefined");
@@ -46,6 +48,7 @@ export async function handleAdd(spreadsheetId, sheetName, rawData) {
 }
 
 export async function handleReadByPosVal(spreadsheetId, sheetName, pos, val) {
+    await ensureAuthenticated();
     console.log(`[LOG] handleReadByPosVal: Searching ${sheetName} at index ${pos} for value "${val}"`);
     const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rows = response.data.values || [];
@@ -57,6 +60,7 @@ export async function handleReadByPosVal(spreadsheetId, sheetName, pos, val) {
 }
 
 export async function handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData) {
+    await ensureAuthenticated();
     try {
         const search = await handleReadByPosVal(spreadsheetId, sheetName, pos, val);
         const rowID = search.values[0].rowID;
@@ -79,6 +83,7 @@ export async function handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, r
 }
 
 export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
+    await ensureAuthenticated();
     const search = await handleReadByPosVal(spreadsheetId, sheetName, pos, val);
     const rowID = search.values[0].rowID;
     const sheetRes = await cachedSheetsClient.spreadsheets.get({ spreadsheetId });

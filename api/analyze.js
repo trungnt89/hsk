@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
         }
 
         console.log("[LOG] Đang gọi Gemini API...");
-        const modelName = 'gemini-1.5-flash'; // Sử dụng bản ổn định nhất
+        const modelName = 'gemini-2.5-flash'; // Sử dụng bản ổn định nhất
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
         const geminiResponse = await fetch(geminiUrl, {

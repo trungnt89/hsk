@@ -8,9 +8,7 @@ NGUYÊN TĂC SỬA :
 6.Xác nhận lại ý kiến "Phát hiện sửa code ngoài yêu cầu" xem có đúng hay không? Báo cáo kết quả
 --------------------------------------------
 YÊU CẦU : 
-1. lưu kanjimini.json vào indexdb nếu chưa tồn tại và lấy từ indexdb để sử dụng
-
-
+1.màu cam khi selected vào lessionID nhạt hơn
 --------------------------------------------
 SRC BASE : 
 --------------------------------------------

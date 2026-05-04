@@ -83,8 +83,9 @@ async function callDeepSeek(prompt) {
       temperature: 0.7
     })
   });
-  writeLog(JSON.stringify(json),"DeepSeek");
+  
   const json = await response.json();
+  writeLog(JSON.stringify(json),"DeepSeek");
   if (!response.ok) {
     throw new Error(`DeepSeek Error: ${json.error?.message || response.statusText}`);
   }

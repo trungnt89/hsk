@@ -3,7 +3,6 @@ import * as util from './util';
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-
 /**
  * Handler chính cho Vercel (Serverless Function)
  */
@@ -13,8 +12,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const { content, id } = req.body;
-  writeLog(`--- Bắt đầu xử lý yêu cầu cho ID: ${id} ---`);
+  const { content, lessionId } = req.body;
+  writeLog(`--- Bắt đầu xử lý yêu cầu cho ID: ${lessionId} ---`);
 
   let fullText = null;
 
@@ -37,11 +36,25 @@ export default async function handler(req, res) {
 
     writeLog('Parsed thành công Paragraph và Conversation');
 
-    // Lưu ý: Việc cập nhật Google Sheet từ Vercel cần sử dụng Google Sheets API (v4)
-    // Ở đây tôi trả về kết quả để Frontend hoặc App Script nhận và tự update
+    // Cập nhật Google Sheet
+    await util.ensureAuthenticated();
+    const spreadsheetId = "1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k";
+    const sheetName = "DairyList";
+    const pos = 0;
+    const val = lessionId;
+    
+    let result = await util.handleReadByPosVal(spreadsheetId, sheetName, pos, val);
+    
+    var rawData = result.values[0].data;
+    rawData[3] = pPart; // Cập nhật vào cột 4 (index 3)
+    rawData[4] = cPart; // Cập nhật vào cột 5 (index 4)
+    
+    await util.handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
+
+    // Trả về kết quả
     return res.status(200).json({
       status: 'success',
-      id: id,
+      id: lessionId,
       paragraph: pPart,
       conversation: cPart
     });
@@ -69,7 +82,7 @@ async function callDeepSeek(prompt) {
       temperature: 0.7
     })
   });
-
+  writeLog(JSON.stringify(json),"DeepSeek");
   const json = await response.json();
   if (!response.ok) {
     throw new Error(`DeepSeek Error: ${json.error?.message || response.statusText}`);
@@ -95,6 +108,7 @@ async function callGemini(prompt) {
   });
 
   const json = await response.json();
+  writeLog(JSON.stringify(json),"Gemini");
   if (!response.ok) {
     throw new Error(`Gemini Error: ${json.error?.message || response.statusText}`);
   }
@@ -103,9 +117,8 @@ async function callGemini(prompt) {
   return json.candidates[0].content.parts[0].text;
 }
 
-
 // Hàm ghi Log (giả lập writeLog của GAS)
 const writeLog = (message) => {
   console.log(`[LOG] [${new Date().toISOString()}] ${message}`);
-  util.writeLog(${message},"AI TEXT"):
+  util.writeLog(message, "AI TEXT");
 };

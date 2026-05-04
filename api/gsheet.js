@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
     try {
         // Gọi hàm xác thực trước khi xử lý
-        const sheets = await ensureAuthenticated();
+        await ensureAuthenticated();
 
         if (!spreadsheetId || !sheetName) {
             console.error("[LOG] Error: Missing spreadsheetId or sheetName");
@@ -52,19 +52,19 @@ export default async function handler(req, res) {
         let result;
         switch (action) {
             case 'read':
-                result = await handleRead(sheets, spreadsheetId, sheetName);
+                result = await handleRead(spreadsheetId, sheetName);
                 break;
             case 'add':
-                result = await handleAdd(sheets, spreadsheetId, sheetName, rawData);
+                result = await handleAdd(spreadsheetId, sheetName, rawData);
                 break;
             case 'readByPosVal':
-                result = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
+                result = await handleReadByPosVal(spreadsheetId, sheetName, pos, val);
                 break;
             case 'updateByPosVal':
-                result = await handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, rawData);
+                result = await handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
                 break;
             case 'deleteByPosVal':
-                result = await handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val);
+                result = await handleDeleteByPosVal(spreadsheetId, sheetName, pos, val);
                 break;
             default:
                 console.warn(`[LOG] Warning: Invalid action received: ${action}`);
@@ -79,15 +79,15 @@ export default async function handler(req, res) {
     }
 }
 
-async function handleRead(sheets, spreadsheetId, sheetName) {
+async function handleRead(spreadsheetId, sheetName) {
     console.log(`[LOG] handleRead: Reading data from ${sheetName}`);
-    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
+    const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rowCount = response.data.values ? response.data.values.length : 0;
     console.log(`[LOG] handleRead: Success. Total rows read: ${rowCount}`);
     return { values: response.data.values || [] };
 }
 
-async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
+async function handleAdd(spreadsheetId, sheetName, rawData) {
     console.log("[LOG] handleAdd - Step 1: Receiving rawData", JSON.stringify(rawData));
     
     if (rawData === undefined || rawData === null) {
@@ -108,7 +108,7 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
 
     let response;
     try {
-        response = await sheets.spreadsheets.values.append({
+        response = await cachedSheetsClient.spreadsheets.values.append({
             spreadsheetId,
             range: `${sheetName}!A1`,
             valueInputOption: 'USER_ENTERED',
@@ -124,7 +124,7 @@ async function handleAdd(sheets, spreadsheetId, sheetName, rawData) {
     return { success: true, details: response.data };
 }
 
-async function handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
+async function handleReadByPosVal(spreadsheetId, sheetName, pos, val) {
     console.log(`[LOG] handleReadByPosVal: Searching ${sheetName} at index ${pos} for value "${val}"`);
     
     if (pos === undefined || val === undefined) {
@@ -132,7 +132,7 @@ async function handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
         throw new Error("Missing search parameters: pos or val");
     }
 
-    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: sheetName });
+    const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: sheetName });
     const rows = response.data.values || [];
     const results = rows
         .map((row, index) => ({ rowID: index + 1, data: row }))
@@ -143,10 +143,10 @@ async function handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
     return { total: results.length, values: results };
 }
 
-async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, rawData) {
+async function handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData) {
     console.log(`[LOG] handleUpdateByPosVal: Starting update process for ${val}`);
     try {
-        const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
+        const search = await handleReadByPosVal(spreadsheetId, sheetName, pos, val);
         const rowID = search.values[0].rowID;
         console.log(`[LOG] handleUpdateByPosVal: Target RowID determined as ${rowID}`);
         
@@ -158,7 +158,7 @@ async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, 
         const rowValues = Array.isArray(data) ? (Array.isArray(data[0]) ? data[0] : data) : [data];
         console.log(`[LOG] handleUpdateByPosVal: Updating row ${rowID} with values:`, JSON.stringify(rowValues));
         
-        await sheets.spreadsheets.values.update({
+        await cachedSheetsClient.spreadsheets.values.update({
             spreadsheetId,
             range: `${sheetName}!A${rowID}`,
             valueInputOption: 'USER_ENTERED',
@@ -169,19 +169,19 @@ async function handleUpdateByPosVal(sheets, spreadsheetId, sheetName, pos, val, 
     } catch (err) {
         if (err.code === 404 || err.message === "Value not found") {
             console.log("[LOG] handleUpdateByPosVal: Value not found, switching to handleAdd");
-            return await handleAdd(sheets, spreadsheetId, sheetName, rawData);
+            return await handleAdd(spreadsheetId, sheetName, rawData);
         }
         console.error("[LOG] handleUpdateByPosVal Error:", err.message);
         throw err;
     }
 }
 
-async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) {
+async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
     console.log(`[LOG] handleDeleteByPosVal: Deleting record where index ${pos} is "${val}"`);
-    const search = await handleReadByPosVal(sheets, spreadsheetId, sheetName, pos, val);
+    const search = await handleReadByPosVal(spreadsheetId, sheetName, pos, val);
     const rowID = search.values[0].rowID;
     
-    const sheetRes = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetRes = await cachedSheetsClient.spreadsheets.get({ spreadsheetId });
     const sheet = sheetRes.data.sheets.find(s => s.properties.title === sheetName);
     if (!sheet) {
         console.error(`[LOG] handleDeleteByPosVal Error: Sheet ${sheetName} not found`);
@@ -191,7 +191,7 @@ async function handleDeleteByPosVal(sheets, spreadsheetId, sheetName, pos, val) 
     const sheetId = sheet.properties.sheetId;
     console.log(`[LOG] handleDeleteByPosVal: Resolved SheetID: ${sheetId}, RowID: ${rowID}`);
 
-    await sheets.spreadsheets.batchUpdate({
+    await cachedSheetsClient.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: {
             requests: [{

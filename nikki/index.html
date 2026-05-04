@@ -146,7 +146,6 @@
         const SPREAD_ID = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
         const SHEET_NAME = 'DairyList';
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
-        const SUMMARY_URL = 'https://hsk-gilt.vercel.app/api/sheet?sheet=ScoreList&spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
 
         let currentDiaries = [];
         let editingId = null;
@@ -488,8 +487,9 @@
     </script>
     <script>
         async function updateLessonSummaries() {
+            const url = `${VERCEL_URL}?sheet=ScoreList&spread=1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A`;
             try {
-                const res = await fetch(SUMMARY_URL);
+                const res = await fetch(url);
                 const result = await res.json();
                 if (result.values && Array.isArray(result.values)) {
                     document.querySelectorAll('.count-trigger').forEach(badge => {

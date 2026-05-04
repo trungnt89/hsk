@@ -188,14 +188,11 @@
         }
 
         async function callAPI(paramsObj) {
-            const SPREAD_ID = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
-            const SHEET_NAME = 'DairyList';
             try {
-                const url = new URL(VERCEL_URL);
-                const response = await fetch(url.toString(), {
+                const response = await fetch(VERCEL_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...paramsObj, spread: SPREAD_ID, sheet: SHEET_NAME })
+                    body: JSON.stringify(paramsObj)
                 });
                 return await response.json();
             } catch (e) {
@@ -301,7 +298,7 @@
             renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';
             const rowData = [id, date, text, "", "", "false", 0];
-            await callAPI({ act: 'add', data: JSON.stringify(rowData) });
+            await callAPI({ act: 'add', sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
             selectRecord(id, true);
         }
 
@@ -323,14 +320,14 @@
             const tid = editingId;
             clearEditMode();
             const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
-            await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, data: JSON.stringify(rowData) });
+            await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
         }
 
         async function deleteDiary(id) {
             if (confirm("Xóa nhật ký này?")) {
                 currentDiaries = currentDiaries.filter(i => i.id != id);
                 renderList(currentDiaries);
-                await callAPI({ act: 'deleteByPosVal', pos: 0, val: id });
+                await callAPI({ act: 'deleteByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' });
             }
         }
 
@@ -347,7 +344,7 @@
             item.pinned = !item.pinned;
             renderList(currentDiaries);
             const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
-            await callAPI({ act: 'updateByPosVal', pos: 0, val: id, data: JSON.stringify(rowData) });
+            await callAPI({ act: 'updateByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
         }
 
         async function askAI(id, content) {

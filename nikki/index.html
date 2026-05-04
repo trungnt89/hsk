@@ -152,39 +152,6 @@
         let currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0;
         let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
 
-        const dbName = "DiaryDB", storeName = "diaries";
-
-        async function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(dbName, 1);
-                request.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains(storeName)) db.createObjectStore(storeName, { keyPath: "id" });
-                };
-                request.onsuccess = (e) => resolve(e.target.result);
-                request.onerror = (e) => reject(e.target.error);
-            });
-        }
-
-        async function saveToIDB(data) {
-            const db = await initDB();
-            const tx = db.transaction(storeName, "readwrite");
-            const store = tx.objectStore(storeName);
-            store.clear();
-            data.forEach(item => store.put(item));
-            return tx.complete;
-        }
-
-        async function getFromIDB() {
-            const db = await initDB();
-            return new Promise((resolve) => {
-                const tx = db.transaction(storeName, "readonly");
-                const store = tx.objectStore(storeName);
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result);
-            });
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
             console.log("[System] App Initialized");
             initApp();
@@ -196,13 +163,6 @@
         });
 
         async function initApp() {
-            const cachedData = await getFromIDB();
-            if (cachedData.length > 0) {
-                currentDiaries = cachedData.sort((a, b) => b.id - a.id);
-                renderList(currentDiaries);
-                if (selectedDiaryId) selectRecord(selectedDiaryId, true);
-                switchTab(currentTabIndex);
-            }
             loadDiaries();
         }
 
@@ -215,7 +175,6 @@
                     currentDiaries = data.values.map(r => ({
                         id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0)
                     })).reverse();
-                    await saveToIDB(currentDiaries);
                     renderList(currentDiaries);
                     if (selectedDiaryId) selectRecord(selectedDiaryId);
                 }
@@ -331,7 +290,7 @@
             const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
             const newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0 };
             currentDiaries.unshift(newItem);
-            saveToIDB(currentDiaries); renderList(currentDiaries);
+            renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';
             const rowData = [id, date, text, "", "", "false", 0];
             await callAPI({ act: 'add', data: JSON.stringify(rowData) });
@@ -352,7 +311,7 @@
             if (idx === -1) return;
             const item = currentDiaries[idx];
             item.text = text;
-            saveToIDB(currentDiaries); renderList(currentDiaries);
+            renderList(currentDiaries);
             const tid = editingId;
             clearEditMode();
             const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
@@ -362,7 +321,7 @@
         async function deleteDiary(id) {
             if (confirm("Xóa nhật ký này?")) {
                 currentDiaries = currentDiaries.filter(i => i.id != id);
-                saveToIDB(currentDiaries); renderList(currentDiaries);
+                renderList(currentDiaries);
                 await callAPI({ act: 'deleteByPosVal', pos: 0, val: id });
             }
         }
@@ -378,7 +337,7 @@
             if (idx === -1) return;
             const item = currentDiaries[idx];
             item.pinned = !item.pinned;
-            saveToIDB(currentDiaries); renderList(currentDiaries);
+            renderList(currentDiaries);
             const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
             await callAPI({ act: 'updateByPosVal', pos: 0, val: id, data: JSON.stringify(rowData) });
         }
@@ -393,7 +352,7 @@
                 if (idx !== -1) {
                     currentDiaries[idx].paragraph = res.paragraph;
                     currentDiaries[idx].conversation = res.conversation;
-                    await saveToIDB(currentDiaries); renderList(currentDiaries); updateAIView();
+                    renderList(currentDiaries); updateAIView();
                 }
             }else{
                 alert(res.message);

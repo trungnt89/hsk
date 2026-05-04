@@ -111,6 +111,14 @@
                     const dateStr = `${(dt.getMonth()+1).toString().padStart(2,'0')}-${dt.getDate().toString().padStart(2,'0')}`;
                     const timeStr = dt.toLocaleTimeString('ja-JP', { hour12:false });
                     const levelClass = String(log.level).toLowerCase().replace(/\s+/g, '_');
+                    
+                    let displayMsg = log.message;
+                    try {
+                        const parsed = (typeof log.message === 'string') ? JSON.parse(log.message) : log.message;
+                        if (typeof parsed === 'object' && parsed !== null) {
+                            displayMsg = JSON.stringify(parsed, null, 2);
+                        }
+                    } catch (e) {}
 
                     return `
                         <div class="log-entry">
@@ -119,7 +127,7 @@
                                 <span>${timeStr}</span>
                             </div>
                             <div class="log-level level-${levelClass}">${log.level}</div>
-                            <div class="log-msg">${log.message}</div>
+                            <div class="log-msg">${displayMsg}</div>
                         </div>
                     `;
                 }).join('');

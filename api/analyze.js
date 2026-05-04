@@ -45,7 +45,7 @@ export default async (req, res) => {
 
         const data = await geminiResponse.json();
         writeLog(JSON.stringify(data));
-		 
+        
         if (!data.candidates || !data.candidates[0]) {
             writeLog("[LOG] Lỗi từ Gemini API: " + JSON.stringify(data));
             throw new Error("Không nhận được phản hồi từ AI");
@@ -83,11 +83,14 @@ export default async (req, res) => {
         writeLog("[LOG] LỖI SERVER: " + error.message);
         return res.status(500).json({ error: error.message });
     }
-
-    // Hàm ghi Log đặt ở cuối (Hoisted)
-    function writeLog(message) {
-        const timestamp = new Date().toISOString();
-        console.log(`[LOG] [${timestamp}] ${message}`);
-        util.writeLog(message, "AI SCORE");
-    }
 };
+
+/**
+ * Hàm ghi Log được đưa ra ngoài scope export để tận dụng tối đa cơ chế Hoisting
+ * Giúp code chính sạch sẽ và không gặp lỗi ReferenceError
+ */
+function writeLog(message) {
+    const timestamp = new Date().toISOString();
+    console.log(`[LOG] [${timestamp}] ${message}`);
+    util.writeLog(message, "AI SCORE");
+}

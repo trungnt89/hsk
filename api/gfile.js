@@ -1,6 +1,11 @@
 const { GoogleAuth } = require('google-auth-library');
 const { google } = require('googleapis');
 
+const CONFIG_URL = {
+    GAS_API: "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec",
+    SPREADSHEET_ID: "1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A"
+};
+
 /**
  * FUNCTION MAIN (API HANDLER)
  */
@@ -52,7 +57,7 @@ export default async function handler(req, res) {
 async function fetchAllScores(auth, lessonId = null) {
     const client = await auth.getClient();
     const sheets = google.sheets({ version: 'v4', auth: client });
-    const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
+    const spreadsheetId = CONFIG_URL.SPREADSHEET_ID;
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: 'ScoreList!A:F', 
@@ -137,7 +142,7 @@ async function getDriveClient(auth) {
 async function handleDeleteFile(query, res) {
     const fileId = query.id || query.fileId;
     if (!fileId) return res.status(400).json({ error: "Missing fileId" });
-    const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
+    const gasUrl = CONFIG_URL.GAS_API;
     const gasRes = await fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,7 +216,7 @@ async function handleListFiles(drive, lessionId, res) {
  */
 async function handleUploadFile(body, res) {
     const { name, base64Audio, lessionId } = body;
-    const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
+    const gasUrl = CONFIG_URL.GAS_API;
     const gasRes = await fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

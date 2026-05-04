@@ -55,7 +55,7 @@ async function fetchAllScores(auth, lessonId = null) {
     const spreadsheetId = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Score!A:F', 
+        range: 'ScoreList!A:F', 
     });
     
     const rows = response.data.values || [];

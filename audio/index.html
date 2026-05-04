@@ -138,21 +138,20 @@
         console.log("[Log] Bắt đầu loadDiaryParagraph. ID:", id, "Tab:", tabValue);
         
         try {
-            const apiUrl = "https://hsk-gilt.vercel.app/api/sheet";
+            // Sửa lại URL API theo yêu cầu
+            const apiUrl = 'https://hsk-gilt.vercel.app/api/sheet';
             console.log("[Log] Fetching API (POST):", apiUrl);
             
-            const bodyData = { 
-                sheet: "DairyList", 
-                spread: "1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k", 
-                pos: "0", 
-                val: id, 
-                action: "readByPosVal" 
-            };
-
             const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyData)
+                body: JSON.stringify({
+                    sheet: 'DairyList',
+                    spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k',
+                    pos: '0',
+                    val: id,
+                    action: 'readByPosVal'
+                })
             });
             const json = await res.json();
             console.log("[Log] Kết quả API nhận được:", json);
@@ -175,13 +174,9 @@
 
     async function loadFiles() {
         const lessionId = getUrlLessionId();
-        console.log("[Log] Đang tải danh sách file (POST) cho lessionId:", lessionId);
+        console.log("[Log] Đang tải danh sách file cho lessionId:", lessionId);
         try {
-            const res = await fetch("/api/drive", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lessionId, action: 'list' })
-            });
+            const res = await fetch(`/api/drive?lessionId=${lessionId}`);
             const files = await res.json();
             renderFiles(files);
         } catch (err) { console.error("[Log] Lỗi loadFiles:", err); }
@@ -222,11 +217,7 @@
         showToast("Đang chuyển trang...");
         const paragraph = document.getElementById('text-display').innerText;
         try {
-            const res = await fetch("/api/drive", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, action: 'getBlob' })
-            });
+            const res = await fetch(`/api/drive?id=${id}`);
             if (!res.ok) throw new Error("Fetch failed");
             const blob = await res.blob();
             
@@ -266,11 +257,7 @@
     async function deleteFile(id) {
         if (!confirm("Bạn có chắc chắn muốn xóa file này?")) return;
         try {
-            await fetch("/api/drive", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, action: 'delete' })
-            });
+            await fetch(`/api/drive?id=${id}`, { method: 'DELETE' });
             await loadFiles();
             showToast("Đã xóa file.");
         } catch (err) {

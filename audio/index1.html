@@ -65,7 +65,7 @@
 
     window.onload = loadFiles;
 
-    function getUrlIdentifier() {
+    function getUrlLessionId() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('id') || "unknown";
     }
@@ -84,9 +84,9 @@
     }
 
     async function loadFiles() {
-        const identifier = getUrlIdentifier();
+        const lessionId = getUrlLessionId();
         try {
-            const res = await fetch(`/api/drive?identifier=${identifier}`);
+            const res = await fetch(`/api/drive?lessionId=${lessionId}`);
             const files = await res.json();
             renderFiles(files);
         } catch (err) {
@@ -194,13 +194,13 @@
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
             const extension = isIOS() ? 'm4a' : 'mp3';
-            const identifier = getUrlIdentifier();
-            const fileName = `id_${identifier}_${getFormattedDate()}.${extension}`;
+            const lessionId = getUrlLessionId();
+            const fileName = `id_${lessionId}_${getFormattedDate()}.${extension}`;
             try {
                 const res = await fetch('/api/drive', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: fileName, base64Audio, identifier })
+                    body: JSON.stringify({ name: fileName, base64Audio, lessionId })
                 });
                 if (res.ok) location.reload();
             } catch (err) {

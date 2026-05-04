@@ -27,8 +27,8 @@ export default async function handler(req, res) {
                 if (query.id) {
                     return await handleStreamMedia(drive, query.id, headers, res);
                 }
-                // Mặc định lấy list file kèm điểm số, identifier đóng vai trò LessonID
-                return await handleListFilesWithScores(drive, auth, query.identifier, res);
+                // Mặc định lấy list file kèm điểm số, lessionId đóng vai trò LessonID
+                return await handleListFilesWithScores(drive, auth, query.lessionId, res);
 
             case 'POST':
                 return await handleUploadFile(body, res);
@@ -93,12 +93,12 @@ async function handleGetScoreByLesson(auth, lessonId, res) {
 /**
  * FUNCTION TỔNG: Mapping danh sách file với điểm số
  */
-async function handleListFilesWithScores(drive, auth, identifier, res) {
+async function handleListFilesWithScores(drive, auth, lessionId, res) {
     try {
-        // identifier ở đây chính là LessonID dùng để lọc Sheet
+        // lessionId ở đây chính là LessonID dùng để lọc Sheet
         const [files, scoreRows] = await Promise.all([
-            fetchFiles(drive, identifier),
-            fetchAllScores(auth, identifier)
+            fetchFiles(drive, lessionId),
+            fetchAllScores(auth, lessionId)
         ]);
 
         const scoreMap = new Map();
@@ -182,11 +182,11 @@ async function handleStreamMedia(drive, fileId, headers, res) {
 /**
  * BỔ TRỢ 4: Fetch dữ liệu file raw từ Drive
  */
-async function fetchFiles(drive, identifier) {
+async function fetchFiles(drive, lessionId) {
     let allFiles = [];
     let nextPageToken = null;
     let driveQuery = `trashed=false and (mimeType contains 'audio/' or mimeType contains 'video/')`;
-    if (identifier) driveQuery += ` and name contains '_${identifier}_'`;
+    if (lessionId) driveQuery += ` and name contains '_${lessionId}_'`;
 
     do {
         const response = await drive.files.list({
@@ -201,8 +201,8 @@ async function fetchFiles(drive, identifier) {
     return allFiles;
 }
 
-async function handleListFiles(drive, identifier, res) {
-    const files = await fetchFiles(drive, identifier);
+async function handleListFiles(drive, lessionId, res) {
+    const files = await fetchFiles(drive, lessionId);
     return res.status(200).json(files);
 }
 
@@ -210,12 +210,12 @@ async function handleListFiles(drive, identifier, res) {
  * BỔ TRỢ 5: Upload file
  */
 async function handleUploadFile(body, res) {
-    const { name, base64Audio, identifier } = body;
+    const { name, base64Audio, lessionId } = body;
     const gasUrl = "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec";
     const gasRes = await fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, base64Audio, identifier })
+        body: JSON.stringify({ name, base64Audio, lessionId })
     });
     const result = await gasRes.json();
     return res.status(200).json(result);

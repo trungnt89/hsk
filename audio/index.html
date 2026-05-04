@@ -124,15 +124,15 @@
         else if (player.innerHTML !== "") player.style.display = 'block';
     }
 
-    function getUrlIdentifier() {
+    function getUrlLessionId() {
         const urlParams = new URLSearchParams(window.location.search);
         const lessionId = urlParams.get('lessionId') || urlParams.get('id');
-        console.log("[Log] URL Identifier (lessionId):", lessionId);
+        console.log("[Log] URL LessionId (lessionId):", lessionId);
         return lessionId;
     }
 
     async function loadDiaryParagraph() {
-        const id = getUrlIdentifier();
+        const id = getUrlLessionId();
         const urlParams = new URLSearchParams(window.location.search);
         const tabValue = urlParams.get('tab') || "0";
         console.log("[Log] Bắt đầu loadDiaryParagraph. ID:", id, "Tab:", tabValue);
@@ -163,10 +163,10 @@
     }
 
     async function loadFiles() {
-        const identifier = getUrlIdentifier();
-        console.log("[Log] Đang tải danh sách file cho identifier:", identifier);
+        const lessionId = getUrlLessionId();
+        console.log("[Log] Đang tải danh sách file cho lessionId:", lessionId);
         try {
-            const res = await fetch(`/api/drive?identifier=${identifier}`);
+            const res = await fetch(`/api/drive?lessionId=${lessionId}`);
             const files = await res.json();
             renderFiles(files);
         } catch (err) { console.error("[Log] Lỗi loadFiles:", err); }
@@ -235,7 +235,7 @@
                 });
                 tx.oncomplete = () => {
                     console.log("[Log] Lưu cache thành công, chuyển hướng...");
-                    window.location.href = `../nikki/checker.html?lessionId=${getUrlIdentifier()}&fileId=${id}`;
+                    window.location.href = `../nikki/checker.html?lessionId=${getUrlLessionId()}&fileId=${id}`;
                 };
             };
         } catch (err) {
@@ -358,14 +358,14 @@
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
             const base64Audio = reader.result.split(',')[1];
-            const identifier = getUrlIdentifier();
+            const lessionId = getUrlLessionId();
             const now = new Date();
-            const fileName = `REC_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}_${identifier}.${isIOS() ? 'm4a' : 'mp3'}`;
+            const fileName = `REC_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}_${lessionId}.${isIOS() ? 'm4a' : 'mp3'}`;
             try {
                 const res = await fetch(`/api/drive`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: fileName, base64Audio, identifier })
+                    body: JSON.stringify({ name: fileName, base64Audio, lessionId })
                 });
                 if (res.ok) {
                     await loadFiles();

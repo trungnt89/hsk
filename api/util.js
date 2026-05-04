@@ -100,6 +100,7 @@ export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
 /** Hàm ghi log */
 export async function writeLog(type, content) {
     const sid = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', sn = 'Logs';
+	type = (type)? type :"COM";
     try {
         await ensureAuthenticated();
 

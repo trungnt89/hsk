@@ -15,10 +15,10 @@ export default async function handler(req, res) {
     const val = query?.val !== undefined ? query?.val : body?.val;
     const rawData = query?.data || body?.data;
 
-    console.log(`[LOG] Action: ${action}`);
-    console.log(`[LOG] Target: SpreadID: ${spreadsheetId}, Sheet: ${sheetName}`);
-    console.log(`[LOG] Params: pos=${pos}, val=${val}`);
-    console.log(`[LOG] Raw Body:`, JSON.stringify(body));
+    writeLog(`[LOG] Action: ${action}`);
+    writeLog(`[LOG] Target: SpreadID: ${spreadsheetId}, Sheet: ${sheetName}`);
+    writeLog(`[LOG] Params: pos=${pos}, val=${val}`);
+    writeLog(`[LOG] Raw Body:`, JSON.stringify(body));
 
     try {
         await sheetsUtil.ensureAuthenticated();

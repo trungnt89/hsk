@@ -97,6 +97,41 @@ export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
     return { success: true, deletedRow: rowID };
 }
 
+/** Hàm ghi log */
+export async function writeLog(type, content) {
+    const sid = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', sn = 'Logs';
+    try {
+        await ensureAuthenticated();
+
+        // Format thời gian JST: YYYY/MM/DD-HHMMSS
+        const now = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false });
+        const time = now.replace(/\//g, '/').replace(', ', '-').replace(/:/g, '');
+
+        // Lấy dữ liệu hiện tại để kiểm tra giới hạn
+        const { data: { values = [] } } = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId: sid, range: sn });
+
+        if (values.length >= 100) {
+            const res = await cachedSheetsClient.spreadsheets.get({ spreadsheetId: sid });
+            const sheetId = res.data.sheets.find(s => s.properties.title === sn).properties.sheetId;
+
+            await cachedSheetsClient.spreadsheets.batchUpdate({
+                spreadsheetId: sid,
+                requestBody: { requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 } } }] }
+            });
+        }
+
+        // Ghi log mới vào cuối sheet
+        await cachedSheetsClient.spreadsheets.values.append({
+            spreadsheetId: sid, range: `${sn}!A1`,
+            valueInputOption: 'USER_ENTERED', 
+            requestBody: { values: [[time, type, content]] }
+        });
+
+    } catch (e) { 
+        console.error("[LOG ERR]", e.message); 
+    }
+}
+
 function parseData(input) {
     if (typeof input === 'string') {
         try { 

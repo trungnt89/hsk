@@ -133,7 +133,7 @@ async function writeLog(type, message) {
     await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify([time, type, message])
+	  body: JSON.stringify({ time, type, message })
     });
   } catch (e) {
     // Chỉ log console nếu log tới server thất bại để tránh vòng lặp vô tận

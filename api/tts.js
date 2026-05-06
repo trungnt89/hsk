@@ -1,5 +1,3 @@
-import * as util from './util';
-
 export const config = {
   runtime: 'edge',
 };
@@ -17,7 +15,7 @@ export default async function handler(req, context) {
     const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
     const filename = `${voice}_${rate}_${text}`;
-    writeLog(`\n=== [NEW REQUEST: ${text}] ===`);
+    console.log(`\n=== [NEW REQUEST: ${text}] ===`);
 
     // 1️⃣ CHECK DRIVE & TRẢ FILE (Sửa lỗi CORS do redirect)
     try {
@@ -29,12 +27,12 @@ export default async function handler(req, context) {
         const returnedName = checkData.filename ? checkData.filename.replace('.mp3', '').trim() : '';
 
         if (checkData.exists && returnedName === filename && checkData.directLink) {
-          writeLog(`[TTS] 🎯 CACHE HIT! Đang proxy file từ Drive thay vì redirect...`);
+          console.log(`[TTS] 🎯 CACHE HIT! Đang proxy file từ Drive thay vì redirect...`);
           
           // Tuyệt đối không Response.redirect nữa để tránh lỗi CORS
           const driveFileRes = await fetch(checkData.directLink);
           if (driveFileRes.ok) {
-            writeLog(`[TTS] ⚡ Lấy file từ Drive thành công lúc: ${Date.now() - startTime}ms`);
+            console.log(`[TTS] ⚡ Lấy file từ Drive thành công lúc: ${Date.now() - startTime}ms`);
             return new Response(driveFileRes.body, {
               headers: { 
                 'Content-Type': 'audio/mpeg',
@@ -65,7 +63,7 @@ export default async function handler(req, context) {
     });
 
     if (!azureResponse.ok || !azureResponse.body) {
-      writeLog(`[Azure Error] Status: ${azureResponse.status}`);
+      console.log(`[Azure Error] Status: ${azureResponse.status}`);
       return new Response("Azure Failed", { status: 500 });
     }
 
@@ -84,7 +82,7 @@ export default async function handler(req, context) {
         }
         
         const audioBuffer = new Uint8Array(await new Blob(chunks).arrayBuffer());
-        writeLog(`[TTS] 🚀 Uploading to Drive... (${audioBuffer.byteLength} bytes)`);
+        console.log(`[TTS] 🚀 Uploading to Drive... (${audioBuffer.byteLength} bytes)`);
         
         // Chuyển đổi sang Base64 thay vì Array.from truyền thống gây nặng RAM
         const base64Data = btoa(String.fromCharCode.apply(null, audioBuffer));
@@ -98,14 +96,14 @@ export default async function handler(req, context) {
             fileDataBase64: base64Data // Truyền bằng chuỗi Base64
           })
         });
-        writeLog(`[TTS] ✅ Lưu Drive XONG lúc: ${Date.now() - startTime}ms`);
-      } catch (e) { writeLog(`[SAVE ERROR]: ${e.message}`); }
+        console.log(`[TTS] ✅ Lưu Drive XONG lúc: ${Date.now() - startTime}ms`);
+      } catch (e) { console.log(`[SAVE ERROR]: ${e.message}`); }
     })();
 
     context.waitUntil(saveTask);
 
     // 4️⃣ PHẢN HỒI STREAMING
-    writeLog(`[TTS] ⚡ BẮT ĐẦU STREAM CHO CLIENT LÚC: ${Date.now() - startTime}ms`);
+    console.log(`[TTS] ⚡ BẮT ĐẦU STREAM CHO CLIENT LÚC: ${Date.now() - startTime}ms`);
     
     return new Response(clientStream, {
       headers: { 
@@ -116,11 +114,7 @@ export default async function handler(req, context) {
     });
 
   } catch (e) {
-    writeLog("[Fatal Error]", e.message);
+    console.log("[Fatal Error]", e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
-}
-
-function writeLog(message) {
-    util.writeLog(message, "SHEET");
 }

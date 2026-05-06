@@ -15,7 +15,7 @@ export default async function handler(req, context) {
     const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
     const filename = `${voice}_${rate}_${text}`;
-    console.log(`\n=== [NEW REQUEST: ${text}] ===`);
+    context.waitUntil(writeLog("TTS", `=== NEW REQ: ${text} ===`));
 
     // 1️⃣ CHECK DRIVE & TRẢ FILE (Sửa lỗi CORS do redirect)
     try {
@@ -27,12 +27,12 @@ export default async function handler(req, context) {
         const returnedName = checkData.filename ? checkData.filename.replace('.mp3', '').trim() : '';
 
         if (checkData.exists && returnedName === filename && checkData.directLink) {
-          console.log(`[TTS] 🎯 CACHE HIT! Đang proxy file từ Drive thay vì redirect...`);
+          context.waitUntil(writeLog("TTS", "[CACHE HIT] Proxying from Drive..."));
           
           // Tuyệt đối không Response.redirect nữa để tránh lỗi CORS
           const driveFileRes = await fetch(checkData.directLink);
           if (driveFileRes.ok) {
-            console.log(`[TTS] ⚡ Lấy file từ Drive thành công lúc: ${Date.now() - startTime}ms`);
+            context.waitUntil(writeLog("TTS", `⚡ DRIVE SUCCESS: ${Date.now() - startTime}ms`));
             return new Response(driveFileRes.body, {
               headers: { 
                 'Content-Type': 'audio/mpeg',
@@ -63,7 +63,7 @@ export default async function handler(req, context) {
     });
 
     if (!azureResponse.ok || !azureResponse.body) {
-      console.log(`[Azure Error] Status: ${azureResponse.status}`);
+      context.waitUntil(writeLog("ERROR", `Azure Error Status: ${azureResponse.status}`));
       return new Response("Azure Failed", { status: 500 });
     }
 
@@ -82,7 +82,7 @@ export default async function handler(req, context) {
         }
         
         const audioBuffer = new Uint8Array(await new Blob(chunks).arrayBuffer());
-        console.log(`[TTS] 🚀 Uploading to Drive... (${audioBuffer.byteLength} bytes)`);
+        context.waitUntil(writeLog("TTS", `🚀 Uploading to Drive (${audioBuffer.byteLength} bytes)`));
         
         // Tối ưu hóa chuyển Base64 theo từng cụm để tránh lỗi Maximum call stack size exceeded
         let binary = '';
@@ -101,14 +101,14 @@ export default async function handler(req, context) {
             fileDataBase64: base64Data // Truyền bằng chuỗi Base64
           })
         });
-        console.log(`[TTS] ✅ Lưu Drive XONG lúc: ${Date.now() - startTime}ms`);
-      } catch (e) { console.log(`[SAVE ERROR]: ${e.message}`); }
+        context.waitUntil(writeLog("TTS", `✅ SAVED DRIVE: ${Date.now() - startTime}ms`));
+      } catch (e) { context.waitUntil(writeLog("ERROR", `[SAVE ERROR]: ${e.message}`)); }
     })();
 
     context.waitUntil(saveTask);
 
     // 4️⃣ PHẢN HỒI STREAMING
-    console.log(`[TTS] ⚡ BẮT ĐẦU STREAM CHO CLIENT LÚC: ${Date.now() - startTime}ms`);
+    context.waitUntil(writeLog("TTS", `⚡ STREAMING START: ${Date.now() - startTime}ms`));
     
     return new Response(clientStream, {
       headers: { 
@@ -119,7 +119,24 @@ export default async function handler(req, context) {
     });
 
   } catch (e) {
-    console.log("[Fatal Error]", e.message);
+    context.waitUntil(writeLog("FATAL", `[Fatal Error]: ${e.message}`));
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+  }
+}
+
+async function writeLog(type, message) {
+  // Định dạng: 2026-5-5-1:49:42 (Múi giờ Tokyo)
+  const time = new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", hour12: false }).replace(/\//g, "-").replace(/ /g, "-");
+  const url = "https://hsk-gilt.vercel.app/api/gSheet?spread=1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc&sheet=Logs&action=add";
+  
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([time, type, message])
+    });
+  } catch (e) {
+    // Chỉ log console nếu log tới server thất bại để tránh vòng lặp vô tận
+    console.error("Log to GSheet failed", e);
   }
 }

@@ -132,7 +132,12 @@ async function writeLog(type, message) {
   
   const rowData = [time, type, message];
 
-  const paramsObj = { act: 'add', sheet: 'Logs', spread: '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', data: JSON.stringify(rowData) };
+  const paramsObj = { 
+	  act: 'add', 
+	  sheet: 'Logs', 
+	  spread: '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', 
+	  data: JSON.stringify(rowData) 
+  };
 
 
 				

@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     const rawData = p.data;
 	
     writeLog(`Action: ${action}, Sheet: ${sheetName}, pos=${pos}, val=${val}, SpreadID: ${spreadsheetId}, `);
-    writeLog(JSON.stringify(body));
+    if(JSON.stringify(body) && JSON.stringify(body)!="") writeLog(JSON.stringify(body));
 
     try {
         await util.ensureAuthenticated();

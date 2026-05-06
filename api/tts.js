@@ -127,14 +127,22 @@ export default async function handler(req, context) {
 async function writeLog(type, message) {
   // Định dạng: 2026-5-5-1:49:42 (Múi giờ Tokyo)
   const time = new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", hour12: false }).replace(/\//g, "-").replace(/ /g, "-");
-  const url = "https://hsk-gilt.vercel.app/api/gSheet?spread=1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc&sheet=Logs&action=add";
+  const url = "https://hsk-gilt.vercel.app/api/gSheet";
   
+  
+  const rowData = [time, type, message];
+
+  const paramsObj = { act: 'add', sheet: 'Logs', spread: '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', data: JSON.stringify(rowData) };
+
+
+				
   try {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-	  body: JSON.stringify({ time, type, message })
-    });
+   		
+ const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(paramsObj)
+                });
   } catch (e) {
     // Chỉ log console nếu log tới server thất bại để tránh vòng lặp vô tận
     console.error("Log to GSheet failed", e);

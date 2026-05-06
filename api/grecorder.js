@@ -1,5 +1,6 @@
 const { GoogleAuth } = require('google-auth-library');
 const { google } = require('googleapis');
+import * as util from './util';
 
 const CONFIG_URL = {
     GAS_API: "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec",
@@ -22,7 +23,7 @@ export default async function handler(req, res) {
         const drive = await getDriveClient(auth);
         const { method, query, body, headers } = req;
 
-        console.log(`[LOG] Action: ${method} - Query: ${JSON.stringify(query)}`);
+        writeLog(`[LOG] Action: ${method} - Query: ${JSON.stringify(query)}`);
 
         switch (method) {
             case 'GET':
@@ -46,7 +47,7 @@ export default async function handler(req, res) {
                 return res.status(405).end(`Method ${method} Not Allowed`);
         }
     } catch (err) {
-        console.error("[SERVER ERR]", err.message);
+        writeLog("[SERVER ERR]", err.message);
         return res.status(500).json({ error: err.message });
     }
 }
@@ -90,7 +91,7 @@ async function handleGetScoreByLesson(auth, lessonId, res) {
             analysis: (record.length > 4 && record[4] !== "") ? record[4] : null
         });
     } catch (err) {
-        console.error("[SCORE ERR]", err.message);
+        writeLog("[SCORE ERR]", err.message);
         return res.status(500).json({ error: err.message });
     }
 }
@@ -123,7 +124,7 @@ async function handleListFilesWithScores(drive, auth, lessionId, res) {
 
         return res.status(200).json(combined);
     } catch (err) {
-        console.error("[LIST SCORE ERR]", err.message);
+        writeLog("[LIST SCORE ERR]", err.message);
         return res.status(500).json({ error: err.message });
     }
 }
@@ -224,6 +225,12 @@ async function handleUploadFile(body, res) {
     });
     const result = await gasRes.json();
     return res.status(200).json(result);
+}
+
+function writeLog(message) {
+    const timestamp = new Date().toISOString();
+    console.log(`[LOG] [${timestamp}] ${message}`);
+    util.writeLog(message, "RECORDER");
 }
 
 export const config = { api: { bodyParser: { sizeLimit: '15mb' } } };

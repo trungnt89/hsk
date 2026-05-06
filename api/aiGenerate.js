@@ -122,5 +122,5 @@ async function callGemini(prompt) {
 // Hàm ghi Log (giả lập writeLog của GAS)
 const writeLog = (message) => {
   console.log(`[LOG] [${new Date().toISOString()}] ${message}`);
-  util.writeLog(message, "AI TEXT");
+  util.writeLog(message, "AI GENERATE");
 };

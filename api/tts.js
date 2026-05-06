@@ -15,7 +15,7 @@ export default async function handler(req, context) {
     const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
     const filename = `${voice}_${rate}_${text}`;
-    console.log(`\n=== [NEW REQUEST: ${text}] ===`);
+    writeLog(`\n=== [NEW REQUEST: ${text}] ===`);
 
     // 1️⃣ CHECK DRIVE & TRẢ FILE (Sửa lỗi CORS do redirect)
     try {
@@ -27,12 +27,12 @@ export default async function handler(req, context) {
         const returnedName = checkData.filename ? checkData.filename.replace('.mp3', '').trim() : '';
 
         if (checkData.exists && returnedName === filename && checkData.directLink) {
-          console.log(`[PERF] 🎯 CACHE HIT! Đang proxy file từ Drive thay vì redirect...`);
+          writeLog(`[TTS] 🎯 CACHE HIT! Đang proxy file từ Drive thay vì redirect...`);
           
           // Tuyệt đối không Response.redirect nữa để tránh lỗi CORS
           const driveFileRes = await fetch(checkData.directLink);
           if (driveFileRes.ok) {
-            console.log(`[PERF] ⚡ Lấy file từ Drive thành công lúc: ${Date.now() - startTime}ms`);
+            writeLog(`[TTS] ⚡ Lấy file từ Drive thành công lúc: ${Date.now() - startTime}ms`);
             return new Response(driveFileRes.body, {
               headers: { 
                 'Content-Type': 'audio/mpeg',
@@ -63,7 +63,7 @@ export default async function handler(req, context) {
     });
 
     if (!azureResponse.ok || !azureResponse.body) {
-      console.error(`[Azure Error] Status: ${azureResponse.status}`);
+      writeLog(`[Azure Error] Status: ${azureResponse.status}`);
       return new Response("Azure Failed", { status: 500 });
     }
 
@@ -82,7 +82,7 @@ export default async function handler(req, context) {
         }
         
         const audioBuffer = new Uint8Array(await new Blob(chunks).arrayBuffer());
-        console.log(`[PERF] 🚀 Uploading to Drive... (${audioBuffer.byteLength} bytes)`);
+        writeLog(`[TTS] 🚀 Uploading to Drive... (${audioBuffer.byteLength} bytes)`);
         
         // Chuyển đổi sang Base64 thay vì Array.from truyền thống gây nặng RAM
         const base64Data = btoa(String.fromCharCode.apply(null, audioBuffer));
@@ -96,14 +96,14 @@ export default async function handler(req, context) {
             fileDataBase64: base64Data // Truyền bằng chuỗi Base64
           })
         });
-        console.log(`[PERF] ✅ Lưu Drive XONG lúc: ${Date.now() - startTime}ms`);
-      } catch (e) { console.error(`[SAVE ERROR]: ${e.message}`); }
+        writeLog(`[TTS] ✅ Lưu Drive XONG lúc: ${Date.now() - startTime}ms`);
+      } catch (e) { writeLog(`[SAVE ERROR]: ${e.message}`); }
     })();
 
     context.waitUntil(saveTask);
 
     // 4️⃣ PHẢN HỒI STREAMING
-    console.log(`[PERF] ⚡ BẮT ĐẦU STREAM CHO CLIENT LÚC: ${Date.now() - startTime}ms`);
+    writeLog(`[TTS] ⚡ BẮT ĐẦU STREAM CHO CLIENT LÚC: ${Date.now() - startTime}ms`);
     
     return new Response(clientStream, {
       headers: { 
@@ -114,7 +114,12 @@ export default async function handler(req, context) {
     });
 
   } catch (e) {
-    console.error("[Fatal Error]", e.message);
+    writeLog("[Fatal Error]", e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
+}
+
+function writeLog(message) {
+    const timestamp = new Date().toISOString();
+    util.writeLog(message, "SHEET");
 }

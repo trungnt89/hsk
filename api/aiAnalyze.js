@@ -1,7 +1,7 @@
 import * as util from './util';
 import fetch from 'node-fetch';
 
-export default async (req, res) => {
+export default async function handler(req, res) {
     writeLog("[LOG] --- Bắt đầu xử lý request phân tích âm thanh ---");
 
     if (req.method !== 'POST') {
@@ -93,5 +93,5 @@ export default async (req, res) => {
 function writeLog(message) {
     const timestamp = new Date().toISOString();
     console.log(`[LOG] [${timestamp}] ${message}`);
-    util.writeLog(message, "AI SCORE");
+    util.writeLog(message, "AI ANALYSIS");
 }

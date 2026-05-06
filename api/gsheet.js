@@ -24,7 +24,7 @@ export default async function handler(req, res) {
         await util.ensureAuthenticated();
 
         if (!spreadsheetId || !sheetName) {
-            console.error("[LOG] Error: Missing spreadsheetId or sheetName");
+            writeLog("[LOG] Error: Missing spreadsheetId or sheetName");
             return res.status(400).json({ error: "Missing spreadsheetId or sheetName" });
         }
 
@@ -46,16 +46,23 @@ export default async function handler(req, res) {
                 result = await util.handleDeleteByPosVal(spreadsheetId, sheetName, pos, val);
                 break;
             default:
-                console.warn(`[LOG] Warning: Invalid action received: ${action}`);
+                writeLog(`[LOG] Warning: Invalid action received: ${action}`);
                 return res.status(400).json({ error: "Invalid action" });
         }
 
         return res.status(200).json(result);
 
     } catch (err) {
-        console.error("[SERVER ERR]", err.message);
+        writeLog("[SERVER ERR]", err.message);
         return res.status(err.code === 404 ? 404 : 500).json({ error: err.message });
     }
+}
+
+
+function writeLog(message) {
+    const timestamp = new Date().toISOString();
+    console.log(`[LOG] [${timestamp}] ${message}`);
+    util.writeLog(message, "SHEET");
 }
 
 export const config = { api: { bodyParser: { sizeLimit: '5mb' } } };

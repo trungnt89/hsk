@@ -1,3 +1,5 @@
+import * as util from './util';
+
 export const config = {
   runtime: 'edge',
 };

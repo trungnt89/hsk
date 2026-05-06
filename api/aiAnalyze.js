@@ -21,12 +21,12 @@ export default async function handler(req, res) {
         const modelName = 'gemini-2.5-flash'; 
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
         const promt = `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
-                                  KỊCH BẢN GỐC: "${script || 'Không cung cấp - Hãy tự nhận diện nội dung'}"
-                                  YÊU CẦU:
-                                  1. SO SÁNH: Đối chiếu giữa kịch bản gốc và những gì người nói thực tế đã nói. Chỉ ra các từ bị nói sai, nói thiếu hoặc biến âm.
-                                  2. NHẬT XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
-                                  3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó.
-                                  4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.`;
+			KỊCH BẢN GỐC: "${script || 'Không cung cấp - Hãy tự nhận diện nội dung'}"
+			YÊU CẦU:
+				1. SO SÁNH: Đối chiếu giữa kịch bản gốc và những gì người nói thực tế đã nói. Chỉ ra các từ bị nói sai, nói thiếu hoặc biến âm.
+				2. NHẬT XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
+				3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó.
+				4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.`;
         
         writeLog("[LOG] Prompt prepared.");
 		writeLog(promt);

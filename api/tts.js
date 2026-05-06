@@ -15,7 +15,7 @@ export default async function handler(req, context) {
     const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
     const filename = `${voice}_${rate}_${text}`;
-    context.waitUntil(writeLog("TTS", `Text2Speed: ${text} ===`));
+    context.waitUntil(writeLog("TTS", `Text2Speed: ${text}`));
 
     // 1️⃣ CHECK DRIVE & TRẢ FILE (Sửa lỗi CORS do redirect)
     try {

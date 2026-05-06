@@ -112,8 +112,14 @@ export async function writeLog(content, type) {
     try {
         await ensureAuthenticated();
 
-        const now = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false });
-        const time = now.replace(/\s+/, '-'); 
+        const d = new Date();
+        const time = [d.getFullYear(), 
+		String(d.getMonth() + 1).padStart(2, '0'), 
+		String(d.getDate()).padStart(2, '0')].join('') 
+		+ '-' 
+		+ [String(d.getHours()).padStart(2, '0'), 
+		String(d.getMinutes()).padStart(2, '0'), 
+		String(d.getSeconds()).padStart(2, '0')].join(':');
 
         // Ghi trực tiếp vào cuối sheet - Chỉ tốn 1 round-trip
         await cachedSheetsClient.spreadsheets.values.append({

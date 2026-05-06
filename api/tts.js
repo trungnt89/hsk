@@ -15,7 +15,7 @@ export default async function handler(req, context) {
     const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
     const filename = `${voice}_${rate}_${text}`;
-    context.waitUntil(writeLog("TTS", `=== NEW REQ: ${text} ===`));
+    context.waitUntil(writeLog("TTS", `Text2Speed: ${text} ===`));
 
     // 1️⃣ CHECK DRIVE & TRẢ FILE (Sửa lỗi CORS do redirect)
     try {
@@ -128,26 +128,20 @@ async function writeLog(type, message) {
   // Định dạng: 2026-5-5-1:49:42 (Múi giờ Tokyo)
   const time = new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", hour12: false }).replace(/\//g, "-").replace(/ /g, "-");
   const url = "https://hsk-gilt.vercel.app/api/gSheet";
-  
-  
   const rowData = [time, type, message];
-
   const paramsObj = { 
 	  act: 'add', 
 	  sheet: 'Logs', 
 	  spread: '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', 
 	  data: JSON.stringify(rowData) 
   };
-
-
 				
   try {
-   		
- const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(paramsObj)
-                });
+	const response = await fetch(url, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(paramsObj)
+	});
   } catch (e) {
     // Chỉ log console nếu log tới server thất bại để tránh vòng lặp vô tận
     console.error("Log to GSheet failed", e);

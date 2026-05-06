@@ -49,7 +49,7 @@ export default async function handler(req, res) {
         
         if (!data.candidates || !data.candidates[0]) {
             writeLog("[LOG] Lỗi từ Gemini API: " + JSON.stringify(data));
-            throw new Error("Không nhận được phản hồi từ AI");
+            throw new Error(JSON.stringify(data));
         }
 
         const aiText = data.candidates[0].content.parts[0].text;

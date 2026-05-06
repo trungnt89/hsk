@@ -113,7 +113,7 @@ export async function writeLog(content, type) {
         await ensureAuthenticated();
 
         const d = new Date();
-        const time = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('') + '-' + [String(d.getHours()).padStart(2, '0'), String(d.getMinutes()).padStart(2, '0'), String(d.getSeconds()).padStart(2, '0')].join(':');
+        const time = d.toISOString().replace(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).*/, '$1$2$3-$4:$5:$6');
 
         // Ghi trực tiếp vào cuối sheet - Chỉ tốn 1 round-trip
         await cachedSheetsClient.spreadsheets.values.append({

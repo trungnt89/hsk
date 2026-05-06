@@ -84,8 +84,13 @@ export default async function handler(req, context) {
         const audioBuffer = new Uint8Array(await new Blob(chunks).arrayBuffer());
         console.log(`[TTS] 🚀 Uploading to Drive... (${audioBuffer.byteLength} bytes)`);
         
-        // Chuyển đổi sang Base64 thay vì Array.from truyền thống gây nặng RAM
-        const base64Data = btoa(String.fromCharCode.apply(null, audioBuffer));
+        // Tối ưu hóa chuyển Base64 theo từng cụm để tránh lỗi Maximum call stack size exceeded
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < audioBuffer.length; i += chunkSize) {
+          binary += String.fromCharCode.apply(null, audioBuffer.subarray(i, i + chunkSize));
+        }
+        const base64Data = btoa(binary);
 
         await fetch(GAS_URL, {
           method: 'POST',

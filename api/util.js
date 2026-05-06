@@ -113,7 +113,7 @@ export async function writeLog(content, type) {
         await ensureAuthenticated();
 
         const d = new Date();
-        const time = d.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\//g, '').replace(/\s+/, '-');
+        const time = d.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\s+/, '-');
 
         // Ghi trực tiếp vào cuối sheet - Chỉ tốn 1 round-trip
         await cachedSheetsClient.spreadsheets.values.append({
@@ -128,7 +128,6 @@ export async function writeLog(content, type) {
         console.error("[LOG ERR]", e.message);
     }
 }
-
 function parseData(input) {
     if (typeof input === 'string') {
         try { 

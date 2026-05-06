@@ -228,8 +228,6 @@ async function handleUploadFile(body, res) {
 }
 
 function writeLog(message) {
-    const timestamp = new Date().toISOString();
-    console.log(`[LOG] [${timestamp}] ${message}`);
     util.writeLog(message, "RECORDER");
 }
 

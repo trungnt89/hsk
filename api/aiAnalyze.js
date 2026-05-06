@@ -91,7 +91,5 @@ export default async function handler(req, res) {
  * Giúp code chính sạch sẽ và không gặp lỗi ReferenceError
  */
 function writeLog(message) {
-    const timestamp = new Date().toISOString();
-    console.log(`[LOG] [${timestamp}] ${message}`);
     util.writeLog(message, "AI ANALYSIS");
 }

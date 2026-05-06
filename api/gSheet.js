@@ -60,7 +60,6 @@ export default async function handler(req, res) {
 
 
 function writeLog(message) {
-    const timestamp = new Date().toISOString();
     util.writeLog(message, "SHEET");
 }
 

@@ -30,7 +30,7 @@ export default async function handler(req, context) {
       return new Response("Azure Body Empty", { status: 500 });
     }
 
-    // Đọc stream và chuyển đổi sang Base64 để thống nhất đầu ra
+    // Chuyển đổi để lưu Drive nhưng vẫn trả về stream cho Client
     const arrayBuffer = await azureResponse.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     
@@ -38,16 +38,16 @@ export default async function handler(req, context) {
     uint8Array.forEach(b => binary += String.fromCharCode(b));
     const base64Data = btoa(binary);
 
-    // 3️⃣ SAVE TO DRIVE (Chạy ngầm) - Truyền trực tiếp base64Data đã convert
+    // 3️⃣ SAVE TO DRIVE (Chạy ngầm)
     context.waitUntil(uploadToDrive(base64Data, filename, context));
 
-    // 4️⃣ PHẢN HỒI BASE64 (Thống nhất với cache)
+    // 4️⃣ PHẢN HỒI STREAMING
     context.waitUntil(writeLog("TTS", `⚡ AZURE COMPLETED`));
     
-    return new Response(JSON.stringify({ base64: base64Data }), {
+    return new Response(arrayBuffer, {
       headers: { 
-        'Content-Type': 'application/json', 
-        'X-Audio-Source': 'Azure-TTS-Base64'
+        'Content-Type': 'audio/mpeg', 
+        'X-Audio-Source': 'Azure-TTS-Streaming'
       }
     });
 
@@ -58,7 +58,7 @@ export default async function handler(req, context) {
 }
 
 /**
- * Hàm kiểm tra file trên Drive và trả về Response JSON Base64 nếu tồn tại
+ * Hàm kiểm tra file trên Drive và trả về Response Streaming
  */
 async function checkDriveCache(filename, context) {
   const checkRes = await fetch(API_URL, {
@@ -83,17 +83,10 @@ async function checkDriveCache(filename, context) {
       if (driveFileRes.ok) {
         context.waitUntil(writeLog("TTS", `⚡ DRIVE SUCCESS`));
         
-        const arrayBuffer = await driveFileRes.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        
-        let binary = '';
-        uint8Array.forEach(b => binary += String.fromCharCode(b));
-        const base64 = btoa(binary);
-
-        return new Response(JSON.stringify({ base64: base64 }), {
+        return new Response(driveFileRes.body, {
           headers: { 
-            'Content-Type': 'application/json',
-            'X-Audio-Source': 'Google-Drive-Cache-Base64'
+            'Content-Type': 'audio/mpeg',
+            'X-Audio-Source': 'Google-Drive-Cache-Streaming'
           }
         });
       }
@@ -129,7 +122,7 @@ async function fetchAzureTTS(text, lang, voice, rate, format, context) {
 }
 
 /**
- * Hàm upload file lên Drive bằng Base64 (Đã tối ưu: nhận Base64 trực tiếp)
+ * Hàm upload file lên Drive bằng Base64
  */
 async function uploadToDrive(base64Data, filename, context) {
   try {
@@ -158,18 +151,18 @@ async function writeLog(type, message) {
   const url = "https://hsk-gilt.vercel.app/api/gSheet";
   const rowData = [time, type, message];
   const paramsObj = { 
-	 act: 'add', 
-	 sheet: 'Logs', 
-	 spread: '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', 
-	 data: JSON.stringify(rowData) 
+    act: 'add', 
+    sheet: 'Logs', 
+    spread: '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', 
+    data: JSON.stringify(rowData) 
   };
 				
   try {
-	await fetch(url, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(paramsObj)
-	});
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(paramsObj)
+    });
   } catch (e) {
     console.error("Log to GSheet failed", e);
   }

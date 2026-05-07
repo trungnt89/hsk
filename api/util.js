@@ -108,12 +108,27 @@ export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
  */
 export async function writeLog(content, type) {
     const sid = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', sn = 'Logs';
+    
+    // Kiểm tra nếu nội dung chứa chính ID của Spreadsheet thì bỏ qua
+    if (typeof content === 'string' && content.includes(sid)) {
+        return;
+    }
+
     type = type || "COM";
     try {
         await ensureAuthenticated();
 
         const d = new Date();
-        const time = d.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\s+/, '-');
+        const time = d.toLocaleString('ja-JP', { 
+            timeZone: 'Asia/Tokyo', 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit', 
+            hour12: false 
+        }).replace(/\s+/, '-');
 
         // Ghi trực tiếp vào cuối sheet - Chỉ tốn 1 round-trip
         await cachedSheetsClient.spreadsheets.values.append({

@@ -1,6 +1,6 @@
 const { GoogleAuth } = require('google-auth-library');
 const { google } = require('googleapis');
-import * as util from './util';
+import * as util from './com/sheet';
 
 const CONFIG_URL = {
     GAS_API: "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec",

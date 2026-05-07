@@ -40,7 +40,7 @@ export async function handleUploadRecorder(body) {
     const gasRes = await fetch(CONFIG_URL.GAS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify({ ...body, action: 'upload' })
     });
     return await gasRes.json();
 }

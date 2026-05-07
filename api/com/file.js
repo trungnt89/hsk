@@ -67,7 +67,7 @@ export async function handleCheckFileExists(fileName) {
     console.log(`[LOG] Kiểm tra tồn tại file: ${fileName}`);
     const { drive } = await ensureAuthenticated();
     const response = await drive.files.list({
-        q: `name = '${fileName}' and trashed = false`,
+        q: `name contains '${fileName}' and trashed = false`,
         fields: 'files(id, name)',
         pageSize: 1
     });

@@ -78,7 +78,7 @@ export async function handleDeleteFile(fileId) {
 // 4. Trả về audio stream cho client (Sử dụng trực tiếp ensureAuthenticated)
 export async function handleReadFileMedia(fileId, headers, res) {
     const sheets = await ensureAuthenticated();
-    const drive = google.drive({ version: 'v3', auth: sheets.authInstance });
+    const drive = google.drive({ version: 'v4', auth: sheets.authInstance });
     
     const meta = await drive.files.get({ fileId: fileId, fields: 'size, mimeType' });
     const fileSize = meta.data.size;

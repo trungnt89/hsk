@@ -7,7 +7,7 @@ export const config = { api: { bodyParser: { sizeLimit: '15mb' } } };
 
 export default async function handler(req, res) {
     const { method, query, body, headers } = req;
-    let action = query.action;
+    let action = query.action || body.action;
 
     try {
         switch (action) {

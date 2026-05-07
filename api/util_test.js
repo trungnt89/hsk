@@ -6,12 +6,14 @@ const CONFIG_URL = {
 };
 
 let cachedSheetsClient = null;
+let cachedAuthInstance = null; // Thêm biến này để lưu Auth client
 
 /**
- * Đảm bảo xác thực và trả về Sheets Client kèm theo đối tượng auth
+ * Đảm bảo xác thực và trả về Sheets Client
  */
 export async function ensureAuthenticated() {
-    if (cachedSheetsClient) return cachedSheetsClient;
+    // Nếu đã có cache cả hai thì trả về Sheets Client
+    if (cachedSheetsClient && cachedAuthInstance) return cachedSheetsClient;
     
     const auth = new GoogleAuth({
         credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
@@ -22,28 +24,28 @@ export async function ensureAuthenticated() {
     });
     
     const client = await auth.getClient();
+    
+    // Lưu biệt lập hai đối tượng
+    cachedAuthInstance = client; 
     cachedSheetsClient = google.sheets({ version: 'v4', auth: client });
     
-    // Gắn ngược client auth vào để các dịch vụ khác (Drive) có thể tái sử dụng
-    cachedSheetsClient.authInstance = client; 
     return cachedSheetsClient;
 }
 
 // 1. Lưu file thông qua GAS
 export async function handleUploadFile(body) {
-    const { name, base64Audio, lessionId } = body;
     const gasRes = await fetch(CONFIG_URL.GAS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, base64Audio, lessionId })
+        body: JSON.stringify(body)
     });
     return await gasRes.json();
 }
 
-// 2. Lấy danh sách file (Sử dụng trực tiếp ensureAuthenticated)
+// 2. Lấy danh sách file (Sử dụng cachedAuthInstance)
 export async function handleGetDriveFileByKw(keyword) {
-    const sheets = await ensureAuthenticated();
-    const drive = google.drive({ version: 'v3', auth: sheets.authInstance });
+    await ensureAuthenticated(); // Đảm bảo đã chạy xác thực
+    const drive = google.drive({ version: 'v3', auth: cachedAuthInstance });
     
     let allFiles = [];
     let nextPageToken = null;
@@ -75,10 +77,10 @@ export async function handleDeleteFile(fileId) {
     return await gasRes.json();
 }
 
-// 4. Trả về audio stream cho client (Sử dụng trực tiếp ensureAuthenticated)
+// 4. Trả về audio stream cho client (Sử dụng cachedAuthInstance)
 export async function handleReadFileMedia(fileId, headers, res) {
-    const sheets = await ensureAuthenticated();
-    const drive = google.drive({ version: 'v4', auth: sheets.authInstance });
+    await ensureAuthenticated();
+    const drive = google.drive({ version: 'v3', auth: cachedAuthInstance });
     
     const meta = await drive.files.get({ fileId: fileId, fields: 'size, mimeType' });
     const fileSize = meta.data.size;

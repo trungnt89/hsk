@@ -77,7 +77,7 @@ export async function handleCheckFileExist(fileName) {
         return file.id;
     }
     console.log(`[LOG] File không tồn tại.`);
-    return null;
+    return "";
 }
 
 // 2. Lấy danh sách file (Sử dụng cachedDriveClient từ ensureAuthenticated)

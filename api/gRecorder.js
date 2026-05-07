@@ -9,12 +9,6 @@ export default async function handler(req, res) {
     const { method, query, body, headers } = req;
     let action = query.action;
 
-    if (!action) {
-        if (method === 'POST') action = 'upload';
-        else if (method === 'DELETE') action = 'delete';
-        else if (method === 'GET') action = (query.id) ? 'audio' : 'list';
-    }
-    
     try {
         switch (action) {
             case 'audio':

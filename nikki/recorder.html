@@ -176,7 +176,7 @@
         const lessionId = getUrlLessionId();
         console.log("[Log] Đang tải danh sách file cho lessionId:", lessionId);
         try {
-            const res = await fetch(`/api/gRecorder?lessionId=${lessionId}`);
+            const res = await fetch(`/api/gRecorder?lessionId=${lessionId}&action=list`);
             const files = await res.json();
             renderFiles(files);
         } catch (err) { console.error("[Log] Lỗi loadFiles:", err); }
@@ -217,7 +217,7 @@
         showToast("Đang chuyển trang...");
         const paragraph = document.getElementById('text-display').innerText;
         try {
-            const res = await fetch(`/api/gRecorder?id=${id}`);
+            const res = await fetch(`/api/gRecorder?id=${id}&action=audio`);
             if (!res.ok) throw new Error("Fetch failed");
             const blob = await res.blob();
             
@@ -257,7 +257,7 @@
     async function deleteFile(id) {
         if (!confirm("Bạn có chắc chắn muốn xóa file này?")) return;
         try {
-            await fetch(`/api/gRecorder?id=${id}`, { method: 'DELETE' });
+            await fetch(`/api/gRecorder?id=${id}&action=delete`, { method: 'DELETE' });
             await loadFiles();
             showToast("Đã xóa file.");
         } catch (err) {
@@ -273,7 +273,7 @@
         
         const view = document.getElementById('media-view');
         view.style.display = 'block';
-        const url = `/api/gRecorder?id=${id}&t=${Date.now()}`;
+        const url = `/api/gRecorder?id=${id}&action=audio&t=${Date.now()}`;
         view.innerHTML = mimeType.includes('video') 
             ? `<video src="${url}" controls autoplay playsinline></video>` 
             : `<audio src="${url}" controls autoplay></audio>`;
@@ -375,7 +375,7 @@
                 const res = await fetch(`/api/gRecorder`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: fileName, base64Audio, lessionId })
+                    body: JSON.stringify({ action: 'upload', name: fileName, base64Audio, lessionId })
                 });
                 if (res.ok) {
                     await loadFiles();

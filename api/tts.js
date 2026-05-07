@@ -30,20 +30,24 @@ export default async function handler(req, context) {
       return new Response("Azure Body Empty", { status: 500 });
     }
 
-    // Nhân đôi luồng dữ liệu
-    const [clientStream, saveStream] = azureResponse.body.tee();
-
-    // 3️⃣ SAVE TO DRIVE (Chạy ngầm)
-    context.waitUntil(uploadToDrive(saveStream, filename, context));
-
-    // 4️⃣ PHẢN HỒI STREAMING
-    context.waitUntil(writeLog("TTS", `⚡ STREAMING START`));
+    // Đọc stream và chuyển đổi sang Base64 để thống nhất đầu ra
+    const arrayBuffer = await azureResponse.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
     
-    return new Response(clientStream, {
+    let binary = '';
+    uint8Array.forEach(b => binary += String.fromCharCode(b));
+    const base64Data = btoa(binary);
+
+    // 3️⃣ SAVE TO DRIVE (Chạy ngầm) - Truyền trực tiếp base64Data đã convert
+    context.waitUntil(uploadToDrive(base64Data, filename, context));
+
+    // 4️⃣ PHẢN HỒI BASE64 (Thống nhất với cache)
+    context.waitUntil(writeLog("TTS", `⚡ AZURE COMPLETED`));
+    
+    return new Response(JSON.stringify({ base64: base64Data }), {
       headers: { 
-        'Content-Type': 'audio/mpeg', 
-        'X-Audio-Source': 'Azure-Streaming',
-        'Transfer-Encoding': 'chunked' 
+        'Content-Type': 'application/json', 
+        'X-Audio-Source': 'Azure-TTS-Base64'
       }
     });
 
@@ -54,7 +58,7 @@ export default async function handler(req, context) {
 }
 
 /**
- * Hàm kiểm tra file trên Drive và trả về Response nếu tồn tại
+ * Hàm kiểm tra file trên Drive và trả về Response JSON Base64 nếu tồn tại
  */
 async function checkDriveCache(filename, context) {
   const checkRes = await fetch(API_URL, {
@@ -78,10 +82,18 @@ async function checkDriveCache(filename, context) {
       const driveFileRes = await fetch(checkData.directLink);
       if (driveFileRes.ok) {
         context.waitUntil(writeLog("TTS", `⚡ DRIVE SUCCESS`));
-        return new Response(driveFileRes.body, {
+        
+        const arrayBuffer = await driveFileRes.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        let binary = '';
+        uint8Array.forEach(b => binary += String.fromCharCode(b));
+        const base64 = btoa(binary);
+
+        return new Response(JSON.stringify({ base64: base64 }), {
           headers: { 
-            'Content-Type': 'audio/mpeg',
-            'X-Audio-Source': 'Google-Drive-Cache'
+            'Content-Type': 'application/json',
+            'X-Audio-Source': 'Google-Drive-Cache-Base64'
           }
         });
       }
@@ -117,28 +129,12 @@ async function fetchAzureTTS(text, lang, voice, rate, format, context) {
 }
 
 /**
- * Hàm upload file lên Drive bằng Base64
+ * Hàm upload file lên Drive bằng Base64 (Đã tối ưu: nhận Base64 trực tiếp)
  */
-async function uploadToDrive(saveStream, filename, context) {
+async function uploadToDrive(base64Data, filename, context) {
   try {
-    const reader = saveStream.getReader();
-    const chunks = [];
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
+    context.waitUntil(writeLog("TTS", `🚀 Uploading to Drive (${base64Data.length} chars)`));
     
-    const audioBuffer = new Uint8Array(await new Blob(chunks).arrayBuffer());
-    context.waitUntil(writeLog("TTS", `🚀 Uploading to Drive (${audioBuffer.byteLength} bytes)`));
-    
-    let binary = '';
-    const chunkSize = 8192;
-    for (let i = 0; i < audioBuffer.length; i += chunkSize) {
-      binary += String.fromCharCode.apply(null, audioBuffer.subarray(i, i + chunkSize));
-    }
-    const base64Data = btoa(binary);
-
     await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

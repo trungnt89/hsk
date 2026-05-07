@@ -25,7 +25,7 @@ export default async function handler(req, res) {
                 return res.status(200).json(listData);
 
             case 'upload':
-                const uploadResult = await util.handleUploadFile(body);
+                const uploadResult = await util.handleUploadRecorder(body);
                 return res.status(200).json(uploadResult);
 
             case 'delete':

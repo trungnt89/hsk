@@ -21,6 +21,10 @@ export default async function handler(req, res) {
             case 'upload':
                 const uploadResult = await util.handleUploadRecorder(body);
                 return res.status(200).json(uploadResult);
+			
+			case 'create_file':
+                const uploadResult = await util.handleUploadFile(body);
+                return res.status(200).json(uploadResult);
 
             case 'check':
                 const existResult = await util.handleCheckFileExist(query.name);

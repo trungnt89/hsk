@@ -65,16 +65,29 @@ export async function handleUploadFile(filename, base64) {
 export async function handleCheckFileExist(fileName) {
     console.log(`[LOG] Kiểm tra tồn tại file: ${fileName}`);
     const { drive } = await ensureAuthenticated();
+    
     const response = await drive.files.list({
-        q: `name contains '${fileName}' and trashed = false`,
+        q: `name = '${fileName}' and trashed = false`,
         fields: 'files(id, name)',
         pageSize: 1
     });
+
     const file = response.data.files[0];
+
     if (file) {
-        console.log(`[LOG] File tồn tại. ID: ${file.id}`);
-        return file.id;
+        console.log(`[LOG] File tồn tại. ID: ${file.id}. Đang lấy Base64...`);
+        
+        // Tải nội dung file dưới dạng binary
+        const media = await drive.files.get({
+            fileId: file.id,
+            alt: 'media'
+        }, { responseType: 'arraybuffer' });
+
+        // Chuyển đổi Buffer sang chuỗi Base64
+        const base64 = Buffer.from(media.data).toString('base64');
+        return base64;
     }
+
     console.log(`[LOG] File không tồn tại.`);
     return "";
 }

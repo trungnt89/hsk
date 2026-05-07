@@ -22,6 +22,10 @@ export default async function handler(req, res) {
                 const uploadResult = await util.handleUploadRecorder(body);
                 return res.status(200).json(uploadResult);
 
+            case 'check':
+                const existResult = await util.handleCheckFileExist(query.name);
+                return res.status(200).json(existResult);
+
             case 'delete':
                 const fileId = query.id || query.fileId;
                 const deleteResult = await util.handleDeleteFile(fileId);

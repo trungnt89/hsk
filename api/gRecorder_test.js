@@ -46,7 +46,7 @@ export default async function handler(req, res) {
  * Hàm xử lý trọn gói cho action 'list'
  */
 async function handleListAction(lessionId) {
-    const sheets = await util.ensureAuthenticated();
+    const { sheets } = await util.ensureAuthenticated();
     
     // Gọi song song Drive (qua util) và Sheets (trực tiếp)
     const [files, response] = await Promise.all([

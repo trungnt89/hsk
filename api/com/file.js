@@ -63,7 +63,7 @@ export async function handleUploadFile(filename, base64) {
     return response.data.id;
 }
 
-export async function handleCheckFileExists(fileName) {
+export async function handleCheckFileExist(fileName) {
     console.log(`[LOG] Kiểm tra tồn tại file: ${fileName}`);
     const { drive } = await ensureAuthenticated();
     const response = await drive.files.list({

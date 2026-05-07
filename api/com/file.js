@@ -63,6 +63,23 @@ export async function handleUploadFile(filename, base64) {
     return response.data.id;
 }
 
+export async function handleCheckFileExists(fileName) {
+    console.log(`[LOG] Kiểm tra tồn tại file: ${fileName}`);
+    const { drive } = await ensureAuthenticated();
+    const response = await drive.files.list({
+        q: `name = '${fileName}' and trashed = false`,
+        fields: 'files(id, name)',
+        pageSize: 1
+    });
+    const file = response.data.files[0];
+    if (file) {
+        console.log(`[LOG] File tồn tại. ID: ${file.id}`);
+        return file.id;
+    }
+    console.log(`[LOG] File không tồn tại.`);
+    return null;
+}
+
 // 2. Lấy danh sách file (Sử dụng cachedDriveClient từ ensureAuthenticated)
 export async function handleGetDriveFileByKw(keyword) {
     const { drive } = await ensureAuthenticated();

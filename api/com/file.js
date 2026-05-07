@@ -40,27 +40,26 @@ export async function handleUploadRecorder(body) {
     const gasRes = await fetch(CONFIG_URL.GAS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, action: 'upload' })
+        body: JSON.stringify({ ...body, action: 'upload_record' })
     });
     return await gasRes.json();
 }
 
 
 export async function handleUploadFile(filename, base64) {
-    console.log(`[LOG] Bắt đầu upload file: ${filename}`);
-    const { drive } = await ensureAuthenticated();
-    const buffer = Buffer.from(base64, 'base64');
-    const { Readable } = require('stream');
-    const stream = new Readable();
-    stream.push(buffer);
-    stream.push(null);
-
-    const response = await drive.files.create({
-        requestBody: { name: filename },
-        media: { body: stream }
+    console.log(`[LOG] Gửi yêu cầu create file đến GAS: ${filename}`);
+    const gasRes = await fetch(CONFIG_URL.GAS_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'create_file',
+            name: filename,
+            base64: base64
+        })
     });
-    console.log(`[LOG] Upload thành công, fileID: ${response.data.id}`);
-    return response.data.id;
+    const result = await gasRes.json();
+    console.log(`[LOG] Kết quả từ GAS: ${result.status}`);
+    return result.fileId;
 }
 
 export async function handleCheckFileExist(fileName) {
@@ -109,7 +108,7 @@ export async function handleDeleteFile(fileId) {
     const gasRes = await fetch(CONFIG_URL.GAS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', fileId: fileId })
+        body: JSON.stringify({ action: 'delete_record', fileId: fileId })
     });
     return await gasRes.json();
 }

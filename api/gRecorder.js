@@ -1,13 +1,13 @@
-import * as util from './com/file';
+const util = require('./com/file');
 
 const SPREADSHEET_ID = "1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A";
 
-export const config = { api: { bodyParser: { sizeLimit: '15mb' } } };
+const config = { api: { bodyParser: { sizeLimit: '15mb' } } };
 
-
-export default async function handler(req, res) {
+async function handler(req, res) {
     const { method, query, body, headers } = req;
     let action = query.action || body.action;
+    let result;
 
     try {
         switch (action) {
@@ -15,25 +15,25 @@ export default async function handler(req, res) {
                 return await util.handleReadFileMedia(query.id, headers, res);
 
             case 'list':
-                const listData = await handleListAction(query.lessionId);
-                return res.status(200).json(listData);
+                result = await handleListAction(query.lessionId);
+                return res.status(200).json(result);
 
             case 'upload':
-                const uploadResult = await util.handleUploadRecorder(body);
-                return res.status(200).json(uploadResult);
+                result = await util.handleUploadRecorder(body);
+                return res.status(200).json(result);
 			
-			case 'create_file':
-                const uploadResult = await util.handleUploadFile(body);
-                return res.status(200).json(uploadResult);
+            case 'create_file':
+                result = await util.handleUploadFile(body);
+                return res.status(200).json(result);
 
             case 'check':
-                const existResult = await util.handleCheckFileExist(query.name);
-                return res.status(200).json(existResult);
+                result = await util.handleCheckFileExist(query.name);
+                return res.status(200).json(result);
 
             case 'delete':
                 const fileId = query.id || query.fileId;
-                const deleteResult = await util.handleDeleteFile(fileId);
-                return res.status(200).json(deleteResult);
+                result = await util.handleDeleteFile(fileId);
+                return res.status(200).json(result);
 
             default:
                 return res.status(400).json({ error: "Invalid or missing action" });
@@ -43,6 +43,8 @@ export default async function handler(req, res) {
     }
 }
 
+module.exports = handler;
+module.exports.config = config;
 
 /**
  * Hàm xử lý trọn gói cho action 'list'

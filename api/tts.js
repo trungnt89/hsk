@@ -61,6 +61,7 @@ export default async function handler(req, context) {
  * Hàm kiểm tra file trên Drive và trả về Response Streaming
  */
 async function checkDriveCache(filename, context) {
+	context.waitUntil(writeLog("TTS checkDriveCache=",filename));
   const checkRes = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

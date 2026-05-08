@@ -133,12 +133,12 @@ async function uploadToDrive(base64Data, filename, context) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        action: "create_file", 
-        filename: filename, 
+        action: "uploadAudioTTS", 
+        name: filename, 
         base64: base64Data 
       })
     });
-console.log(fileId);
+	console.log(fileId);
     context.waitUntil(writeLog("TTS", "✅ SAVED DRIVE FILE "+ fileId ));
   } catch (e) {
     context.waitUntil(writeLog("TTS", `[SAVE ERROR]: ${e.message}`));

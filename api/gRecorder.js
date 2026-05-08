@@ -18,12 +18,12 @@ async function handler(req, res) {
                 result = await handleListAction(query.lessionId);
                 return res.status(200).json(result);
 
-            case 'upload':
+            case 'uploadRecorder':
                 result = await util.handleUploadRecorder(body);
                 return res.status(200).json(result);
 			
-            case 'create_file':
-                result = await util.handleUploadFile(body);
+            case 'uploadAudioTTS':
+                result = await util.handleUploadTTS(body);
                 return res.status(200).json(result);
 
             case 'check':

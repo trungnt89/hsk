@@ -2,6 +2,7 @@ const { google } = require('googleapis');
 const { GoogleAuth } = require('google-auth-library');
 
 const CONFIG_URL = {
+	// VoiceRecorder22
     GAS_API: "https://script.google.com/macros/s/AKfycbxHrD3vVhHGOfkmEteluf1EdkyKpeL3MvR6oerOYpLJIPC9KJSlxt9cJOOjwzbbF6_N/exec"
 };
 
@@ -46,16 +47,16 @@ export async function handleUploadRecorder(body) {
 }
 
 
-export async function handleUploadFile(filename, base64) {
-    console.log(`[LOG] Gửi yêu cầu create file đến GAS: ${filename}`);
+export async function handleUploadFile(body) {
+	//body.name
+	//body.base64
+	//body.lessionId
+    console.log(`[LOG] Gửi yêu cầu create file đến GAS`);
+	console.log(body);
     const gasRes = await fetch(CONFIG_URL.GAS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            action: 'create_file',
-            name: filename,
-            base64: base64
-        })
+        body: JSON.stringify(body)
     });
     const result = await gasRes.json();
     console.log(`[LOG] Kết quả từ GAS: ${result.status}`);
@@ -65,29 +66,16 @@ export async function handleUploadFile(filename, base64) {
 export async function handleCheckFileExist(fileName) {
     console.log(`[LOG] Kiểm tra tồn tại file: ${fileName}`);
     const { drive } = await ensureAuthenticated();
-    
     const response = await drive.files.list({
-        q: `name = '${fileName}' and trashed = false`,
+        q: `name contains '${fileName}' and trashed = false`,
         fields: 'files(id, name)',
         pageSize: 1
     });
-
     const file = response.data.files[0];
-
     if (file) {
-        console.log(`[LOG] File tồn tại. ID: ${file.id}. Đang lấy Base64...`);
-        
-        // Tải nội dung file dưới dạng binary
-        const media = await drive.files.get({
-            fileId: file.id,
-            alt: 'media'
-        }, { responseType: 'arraybuffer' });
-
-        // Chuyển đổi Buffer sang chuỗi Base64
-        const base64 = Buffer.from(media.data).toString('base64');
-        return base64;
+        console.log(`[LOG] File tồn tại. ID: ${file.id}`);
+        return file.id;
     }
-
     console.log(`[LOG] File không tồn tại.`);
     return "";
 }

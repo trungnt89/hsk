@@ -61,39 +61,35 @@ export default async function handler(req, context) {
  * Hàm kiểm tra file trên Drive và trả về Response Streaming
  */
 async function checkDriveCache(filename, context) {
-	context.waitUntil(writeLog("TTS checkDriveCache=",filename));
-  const checkRes = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      action: "check", 
-      name: filename
-    })
-  });
+  try {
+    context.waitUntil(writeLog("TTS", `Checking & Streaming from Drive: ${filename}`));
 
-  const contentType = checkRes.headers.get('content-type');
+    // Gọi API trung gian, yêu cầu nó trả về file luôn nếu có
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        action: "get_audio_if_exists", // Action mới để API xử lý
+        name: filename 
+      })
+    });
 
-  if (checkRes.ok && contentType?.includes('application/json')) {
-    const checkData = await checkRes.json();
-    const returnedName = checkData.filename ? checkData.filename.replace('.mp3', '').trim() : '';
-
-    if (checkData.exists && returnedName === filename && checkData.directLink) {
-      context.waitUntil(writeLog("TTS", "[CACHE HIT] Proxying from Drive..."));
+    // Nếu API tìm thấy file và trả về stream audio (200 OK)
+    if (response.ok && response.headers.get('content-type')?.includes('audio/')) {
+      context.waitUntil(writeLog("TTS", `⚡ DRIVE CACHE HIT (Direct Stream)`));
       
-      const driveFileRes = await fetch(checkData.directLink);
-      if (driveFileRes.ok) {
-        context.waitUntil(writeLog("TTS", `⚡ DRIVE SUCCESS`));
-        
-        return new Response(driveFileRes.body, {
-          headers: { 
-            'Content-Type': 'audio/mpeg',
-            'X-Audio-Source': 'Google-Drive-Cache-Streaming'
-          }
-        });
-      }
+      return new Response(response.body, {
+        headers: {
+          'Content-Type': 'audio/mpeg',
+          'X-Audio-Source': 'Google-Drive-Direct-Streaming',
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        }
+      });
     }
+  } catch (e) {
+    context.waitUntil(writeLog("ERROR", `Cache Stream Error: ${e.message}`));
   }
-  return null;
+  return null; // Trả về null để hàm chính biết là cần gọi Azure
 }
 
 /**

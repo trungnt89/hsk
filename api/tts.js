@@ -150,6 +150,7 @@ async function uploadToDrive(base64Data, filename, context) {
  * Hàm ghi log vào GSheet
  */
 async function writeLog(type, message) {
+  console.log(message);
   const time = new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", hour12: false }).replace(/\//g, "-").replace(/ /g, "-");
   const url = "https://hsk-gilt.vercel.app/api/gSheet";
   const rowData = [time, type, message];

@@ -47,7 +47,7 @@ export async function handleUploadRecorder(body) {
 }
 
 
-export async function handleUploadFile(body) {
+export async function handleUploadTTS(body) {
 	//body.name
 	//body.base64
 	//body.lessionId
@@ -56,7 +56,7 @@ export async function handleUploadFile(body) {
     const gasRes = await fetch(CONFIG_URL.GAS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify({ ...body, action: 'upload_record' })
     });
     const result = await gasRes.json();
     console.log(`[LOG] Kết quả từ GAS: ${result.status}`);

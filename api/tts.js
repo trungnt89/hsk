@@ -125,6 +125,7 @@ async function fetchAzureTTS(text, lang, voice, rate, format, context) {
 /**
  * Hàm upload file lên Drive bằng Base64
  */
+ // uploadAudioTTS(gRecorder) -> upload_record(GAS)
 async function uploadToDrive(base64Data, filename, context) {
   try {
     context.waitUntil(writeLog("TTS", `🚀 Uploading to Drive (${base64Data.length} chars)`));

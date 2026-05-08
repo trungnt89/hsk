@@ -56,11 +56,9 @@ export async function handleUploadTTS(body) {
     const gasRes = await fetch(CONFIG_URL.GAS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, action: 'upload_record' })
+        body: JSON.stringify({ ...body, action: 'upload_tts_audio' })
     });
-    const result = await gasRes.json();
-    console.log(`[LOG] Kết quả từ GAS: ${result.status}`);
-    return result.fileId;
+    return await gasRes.json();
 }
 
 export async function handleCheckFileExist(fileName) {

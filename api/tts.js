@@ -138,7 +138,7 @@ async function uploadToDrive(base64Data, filename, context) {
         base64: base64Data 
       })
     });
-
+console.log(fileId);
     context.waitUntil(writeLog("TTS", "✅ SAVED DRIVE FILE "+ fileId ));
   } catch (e) {
     context.waitUntil(writeLog("TTS", `[SAVE ERROR]: ${e.message}`));

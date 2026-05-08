@@ -7,7 +7,6 @@ const API_URL = 'https://hsk-gilt.vercel.app/api/gRecorder';
 export default async function handler(req, context) {
   try {
     const { searchParams } = new URL(req.url);
-    // Chặn request favicon tránh gọi code 2 lần
     if (req.url.includes('favicon.ico')) return new Response(null, { status: 204 });
 
     const text = (searchParams.get('text') || '你好').trim();
@@ -16,7 +15,6 @@ export default async function handler(req, context) {
     const rate = searchParams.get('rate') || '1.0';
     const format = searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
-    // Làm sạch filename
     const safeText = text
       .replace(/[\r\n]+/g, ' ')
       .replace(/[^\w\s\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff]/gi, '')
@@ -24,7 +22,6 @@ export default async function handler(req, context) {
       .substring(0, 100);
 
     const filename = `${voice}_${rate}_${safeText}`;
-    
     context.waitUntil(writeLog("TTS", `Request: ${filename}`));
 
     // 1️⃣ CHECK DRIVE CACHE
@@ -36,14 +33,18 @@ export default async function handler(req, context) {
     }
 
     // 2️⃣ AZURE TTS
-	context.waitUntil(writeLog("TTS", `Chưa có file,gọi Azure TTS: ${filename}`));
+    context.waitUntil(writeLog("TTS", `Chưa có file, gọi Azure TTS: ${filename}`));
     const azureRes = await fetchAzureTTS(text, lang, voice, rate, format, context);
     const arrayBuffer = await azureRes.arrayBuffer();
 
-    // 3️⃣ SAVE TO DRIVE (Chạy ngầm)
-	context.waitUntil(writeLog("TTS", `Lưu tới Driver: ${filename}`));
+    // 3️⃣ SAVE TO DRIVE (Chạy ngầm - Đã sửa lỗi Stack Size)
     context.waitUntil((async () => {
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const uint8 = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (let i = 0; i < uint8.length; i++) {
+        binary += String.fromCharCode(uint8[i]);
+      }
+      const base64 = btoa(binary);
       await uploadToDrive(base64, filename, context);
     })());
 
@@ -69,7 +70,7 @@ async function checkDriveCache(filename, context) {
 
   const contentType = res.headers.get('content-type');
   if (res.ok && contentType?.includes('audio/')) {
-    context.waitUntil(writeLog("TTS", `Tồn tại file trong Driver: ${filename}`));
+    context.waitUntil(writeLog("TTS", `HIT Driver: ${filename}`));
     return new Response(res.body, {
       headers: {
         'Content-Type': contentType,
@@ -108,7 +109,7 @@ async function uploadToDrive(base64, filename, context) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: "uploadAudioTTS", name: filename, base64 })
     });
-    context.waitUntil(writeLog("TTS", `Hoàn thành upload file lên Driver: ${filename}`));
+    context.waitUntil(writeLog("TTS", `SAVED Driver: ${filename}`));
   } catch (e) {
     console.error("Upload failed", e.message);
   }

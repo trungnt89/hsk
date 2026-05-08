@@ -30,14 +30,13 @@ export default async function handler(req, context) {
     // 1️⃣ CHECK DRIVE CACHE
     try {
       const cached = await checkDriveCache(filename, context);
-	  context.waitUntil(writeLog("TTS", `Đã tồn tại file: ${filename}`));
       if (cached) return cached;
     } catch (e) {
       console.warn("Cache Error", e.message);
     }
 
     // 2️⃣ AZURE TTS
-	context.waitUntil(writeLog("TTS", `Gọi Azure TTS: ${filename}`));
+	context.waitUntil(writeLog("TTS", `Chưa có file,gọi Azure TTS: ${filename}`));
     const azureRes = await fetchAzureTTS(text, lang, voice, rate, format, context);
     const arrayBuffer = await azureRes.arrayBuffer();
 
@@ -109,7 +108,7 @@ async function uploadToDrive(base64, filename, context) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: "uploadAudioTTS", name: filename, base64 })
     });
-    context.waitUntil(writeLog("TTS", `Upload file lên Driver: ${filename}`));
+    context.waitUntil(writeLog("TTS", `Hoàn thành upload file lên Driver: ${filename}`));
   } catch (e) {
     console.error("Upload failed", e.message);
   }

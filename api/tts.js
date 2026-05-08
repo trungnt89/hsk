@@ -83,7 +83,7 @@ async function checkDriveCache(filename, context) {
     const contentType = response.headers.get('content-type');
     
     if (response.ok && contentType && contentType.includes('audio/')) {
-      context.waitUntil(writeLog("TTS", `⚡ DRIVE CACHE HIT: Streaming started.`));
+      context.waitUntil(writeLog("TTS", `⚡ Đã tồn tại trong driver: Streaming started.`));
       
       return new Response(response.body, {
         headers: {

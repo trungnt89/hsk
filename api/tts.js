@@ -93,7 +93,7 @@ async function checkDriveCache(filename, context) {
   } catch (e) {
     context.waitUntil(writeLog("TTS", `Cache Stream Error: ${e.message}`));
   }
-  
+  context.waitUntil(writeLog("TTS", `Không tìm trong Driver nhưng không có cache file tts`));    
   return null; // Trả về null để hàm chính biết là cần gọi Azure
 }
 

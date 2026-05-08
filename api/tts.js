@@ -37,7 +37,7 @@ export default async function handler(req, context) {
     }
 
     // 2️⃣ AZURE TTS
-	context.waitUntil(writeLog("TTS", `Goi Azure TTS: ${filename}`));
+	context.waitUntil(writeLog("TTS", `Gọi Azure TTS: ${filename}`));
     const azureRes = await fetchAzureTTS(text, lang, voice, rate, format, context);
     const arrayBuffer = await azureRes.arrayBuffer();
 
@@ -70,7 +70,7 @@ async function checkDriveCache(filename, context) {
 
   const contentType = res.headers.get('content-type');
   if (res.ok && contentType?.includes('audio/')) {
-    context.waitUntil(writeLog("TTS", `HIT: ${filename}`));
+    context.waitUntil(writeLog("TTS", `Tồn tại file trong Driver: ${filename}`));
     return new Response(res.body, {
       headers: {
         'Content-Type': contentType,
@@ -109,7 +109,7 @@ async function uploadToDrive(base64, filename, context) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: "uploadAudioTTS", name: filename, base64 })
     });
-    context.waitUntil(writeLog("TTS", `Lưu mới file: ${filename}`));
+    context.waitUntil(writeLog("TTS", `Upload file lên Driver: ${filename}`));
   } catch (e) {
     console.error("Upload failed", e.message);
   }

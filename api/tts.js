@@ -140,7 +140,7 @@ async function uploadToDrive(base64Data, filename, context) {
     });
 
     const result = await apiRes.json();
-    context.waitUntil(writeLog("TTS", `✅ SAVED DRIVE FILE=${result.fileId}`));
+    context.waitUntil(writeLog("TTS", "✅ SAVED DRIVE FILE "+ JSON.stringify(result) ));
   } catch (e) {
     context.waitUntil(writeLog("TTS", `[SAVE ERROR]: ${e.message}`));
   }

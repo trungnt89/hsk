@@ -24,16 +24,19 @@ export default async function handler(req, context) {
       console.warn("[Drive Check Error]", e.message);
     }
 
+	context.waitUntil(writeLog("TTS", `Bắt đầu gọi TTS để lấy audio`));
     // 2️⃣ AZURE TTS
     const azureResponse = await fetchAzureTTS(text, lang, voice, rate, format, context);
     if (!azureResponse.body) {
       return new Response("Azure Body Empty", { status: 500 });
     }
 
+	context.waitUntil(writeLog("TTS", `Convert audio to Base64`));
     // Chuyển đổi để lưu Drive nhưng vẫn trả về stream cho Client
     const arrayBuffer = await azureResponse.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     
+	context.waitUntil(writeLog("TTS", `Bắt đầu lưu audio tới Driver`));
     let binary = '';
     uint8Array.forEach(b => binary += String.fromCharCode(b));
     const base64Data = btoa(binary);
@@ -52,7 +55,7 @@ export default async function handler(req, context) {
     });
 
   } catch (e) {
-    context.waitUntil(writeLog("FATAL", `[Fatal Error]: ${e.message}`));
+    context.waitUntil(writeLog("TTS", `[Fatal Error]: ${e.message}`));
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
 }
@@ -69,7 +72,7 @@ async function checkDriveCache(filename, context) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        action: "get_audio_if_exists", // Action mới để API xử lý
+        action: "check", // Action mới để API xử lý
         name: filename 
       })
     });
@@ -87,8 +90,9 @@ async function checkDriveCache(filename, context) {
       });
     }
   } catch (e) {
-    context.waitUntil(writeLog("ERROR", `Cache Stream Error: ${e.message}`));
+    context.waitUntil(writeLog("TTS", `Cache Stream Error: ${e.message}`));
   }
+  context.waitUntil(writeLog("TTS", `Đã tìm trong Driver nhưng không có cache file tts`));
   return null; // Trả về null để hàm chính biết là cần gọi Azure
 }
 
@@ -112,7 +116,7 @@ async function fetchAzureTTS(text, lang, voice, rate, format, context) {
   });
 
   if (!res.ok) {
-    context.waitUntil(writeLog("ERROR", `Azure Error Status: ${res.status}`));
+    context.waitUntil(writeLog("TTS", `Azure Error Status: ${res.status}`));
     throw new Error(`Azure TTS Failed: ${res.status}`);
   }
   return res;
@@ -125,7 +129,7 @@ async function uploadToDrive(base64Data, filename, context) {
   try {
     context.waitUntil(writeLog("TTS", `🚀 Uploading to Drive (${base64Data.length} chars)`));
     
-    await fetch(API_URL, {
+    const apiRes =await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -134,9 +138,11 @@ async function uploadToDrive(base64Data, filename, context) {
         base64: base64Data 
       })
     });
-    context.waitUntil(writeLog("TTS", `✅ SAVED DRIVE`));
+
+    const result = await apiRes.json();
+    context.waitUntil(writeLog("TTS", `✅ SAVED DRIVE FILE=${result.fileId}`));
   } catch (e) {
-    context.waitUntil(writeLog("ERROR", `[SAVE ERROR]: ${e.message}`));
+    context.waitUntil(writeLog("TTS", `[SAVE ERROR]: ${e.message}`));
   }
 }
 

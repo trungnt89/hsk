@@ -45,7 +45,7 @@ export default async function handler(req, context) {
     context.waitUntil(uploadToDrive(base64Data, filename, context));
 
     // 4️⃣ PHẢN HỒI STREAMING
-    context.waitUntil(writeLog("TTS", `⚡ AZURE COMPLETED`));
+    //context.waitUntil(writeLog("TTS", `⚡ AZURE COMPLETED`));
     
     return new Response(arrayBuffer, {
       headers: { 
@@ -129,7 +129,7 @@ async function uploadToDrive(base64Data, filename, context) {
   try {
     context.waitUntil(writeLog("TTS", `🚀 Uploading to Drive (${base64Data.length} chars)`));
     
-    const apiRes =await fetch(API_URL, {
+    const fileId =await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -139,8 +139,7 @@ async function uploadToDrive(base64Data, filename, context) {
       })
     });
 
-    const result = await apiRes.json();
-    context.waitUntil(writeLog("TTS", "✅ SAVED DRIVE FILE "+ JSON.stringify(result) ));
+    context.waitUntil(writeLog("TTS", "✅ SAVED DRIVE FILE "+ fileId ));
   } catch (e) {
     context.waitUntil(writeLog("TTS", `[SAVE ERROR]: ${e.message}`));
   }

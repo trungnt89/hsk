@@ -36,31 +36,10 @@ export async function ensureAuthenticated() {
     return { sheets: cachedSheetsClient, drive: cachedDriveClient };
 }
 
-// 1. Lưu file thông qua GAS
-export async function handleUploadRecorder(body) {
-    const gasRes = await fetch(CONFIG_URL.GAS_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, action: 'upload_record' })
-    });
-    return await gasRes.json();
-}
 
-
-export async function handleUploadTTS(body) {
-	//body.name
-	//body.base64
-	//body.lessionId
-    console.log(`[LOG] Gửi yêu cầu create file đến GAS`);
-	console.log(body);
-    const gasRes = await fetch(CONFIG_URL.GAS_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, action: 'upload_tts_audio' })
-    });
-    return await gasRes.json();
-}
-
+// -----------------------------------------------------
+// READ FILE THÔNG QUA SA
+// -----------------------------------------------------
 export async function handleCheckFileExist(fileName) {
     console.log(`[LOG] Checking cache on Drive for name: ${fileName}`);
     const { drive } = await ensureAuthenticated();
@@ -111,17 +90,6 @@ export async function handleGetDriveFileByKw(keyword) {
     return allFiles;
 }
 
-// 3. Xóa file thông qua fileID
-export async function handleDeleteFile(fileId) {
-    if (!fileId) throw new Error("Missing fileId");
-    const gasRes = await fetch(CONFIG_URL.GAS_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete_record', fileId: fileId })
-    });
-    return await gasRes.json();
-}
-
 // 4. Trả về audio stream cho client (Sử dụng cachedDriveClient từ ensureAuthenticated)
 export async function handleReadFileMedia(fileId, headers, res) {
     const { drive } = await ensureAuthenticated();
@@ -155,3 +123,43 @@ export async function handleReadFileMedia(fileId, headers, res) {
         return response.data.pipe(res);
     }
 }
+// -----------------------------------------------------
+// ADD, DELETE FILE THÔNG QUA GAS
+// -----------------------------------------------------
+// 1. Lưu file thông qua GAS
+export async function handleUploadRecorder(body) {
+    const gasRes = await fetch(CONFIG_URL.GAS_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body, action: 'upload_record' })
+    });
+    return await gasRes.json();
+}
+
+
+export async function handleUploadTTS(body) {
+	//body.name
+	//body.base64
+	//body.lessionId
+    console.log(`[LOG] Gửi yêu cầu create file đến GAS`);
+	console.log(body);
+    const gasRes = await fetch(CONFIG_URL.GAS_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body, action: 'upload_tts_audio' })
+    });
+    return await gasRes.json();
+}
+
+// 3. Xóa file thông qua fileID
+export async function handleDeleteFile(fileId) {
+    if (!fileId) throw new Error("Missing fileId");
+    const gasRes = await fetch(CONFIG_URL.GAS_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_record', fileId: fileId })
+    });
+    return await gasRes.json();
+}
+// -----------------------------------------------------
+// -----------------------------------------------------

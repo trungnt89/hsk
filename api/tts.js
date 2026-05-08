@@ -13,8 +13,17 @@ export default async function handler(req, context) {
     const rate = fullUrl.searchParams.get('rate') || '1.0';
     const format = fullUrl.searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
-    const filename = `${voice}_${rate}_${text}`;
-    context.waitUntil(writeLog("TTS", `Text2Speed: ${text}`));
+	
+	const safeText = text
+        .replace(/[\r\n]+/g, ' ') 
+        .replace(/[^\w\s\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff]/gi, '')
+        .trim()
+        .substring(0, 100);
+
+    const filename = `${voice}_${rate}_${safeText}`;
+	context.waitUntil(writeLog("TTS", `Text2Speed: ${text}`));
+	context.waitUntil(writeLog("TTS", `Filename: ${filename}`));
+    
 
     // 1️⃣ CHECK DRIVE CACHE
     try {
@@ -45,7 +54,7 @@ export default async function handler(req, context) {
     context.waitUntil(uploadToDrive(base64Data, filename, context));
 
     // 4️⃣ PHẢN HỒI STREAMING
-    //context.waitUntil(writeLog("TTS", `⚡ AZURE COMPLETED`));
+    context.waitUntil(writeLog("TTS", `⚡ AZURE COMPLETED`));
     
     return new Response(arrayBuffer, {
       headers: { 
@@ -166,7 +175,6 @@ async function uploadToDrive(base64Data, filename, context) {
  */
 async function writeLog(type, message) {
   console.log(message);
-  /*
   const time = new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", hour12: false }).replace(/\//g, "-").replace(/ /g, "-");
   const url = "https://hsk-gilt.vercel.app/api/gSheet";
   const rowData = [time, type, message];
@@ -186,5 +194,4 @@ async function writeLog(type, message) {
   } catch (e) {
     console.error("Log to GSheet failed", e);
   }
-  */
 }

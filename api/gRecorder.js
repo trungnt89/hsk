@@ -15,13 +15,13 @@ async function handler(req, res) {
     let name = query.name || body.name;
     let result;
 
-    // Ghi log để debug khi có lỗi
-    console.log(`[LOG] Action: ${action}, Name: ${name}, Method: ${method}`);
+    // Ghi log để giám sát hệ thống
+    console.log(`[${new Date().toISOString()}] Action: ${action} | Name: ${name}`);
 
     try {
         switch (action) {
             case 'audio':
-                console.log(`[LOG] Handling audio stream: ${query.id}`);
+                console.log(`[LOG] Streaming audio ID: ${query.id}`);
                 return await util.handleReadFileMedia(query.id, headers, res);
 
             case 'list':
@@ -29,18 +29,28 @@ async function handler(req, res) {
                 return res.status(200).json(result);
 
             case 'uploadRecorder':
-                console.log(`[LOG] Uploading recorder data`);
+                console.log(`[LOG] Processing Upload Recorder`);
                 result = await util.handleUploadRecorder(body);
                 return res.status(200).json(result);
 			
             case 'uploadAudioTTS':
-                console.log(`[LOG] Uploading TTS audio`);
+                console.log(`[LOG] Processing Upload TTS`);
                 result = await util.handleUploadTTS(body);
                 return res.status(200).json(result);
 
             case 'check':
-                result = await util.handleCheckFileExist(name);
-                return res.status(200).json(result);
+                console.log(`[LOG] Checking cache for file: ${name}`);
+                const fileInfo = await util.handleCheckFileExist(name);
+                
+                if (fileInfo && fileInfo.id) {
+                    console.log(`[LOG] Cache HIT. Streaming file ID: ${fileInfo.id}`);
+                    // Thực hiện streaming audio trực tiếp cho client
+                    return await util.handleReadFileMedia(fileInfo.id, headers, res);
+                } else {
+                    console.log(`[LOG] Cache MISS for file: ${name}`);
+                    // Trả về 404 để Client (Edge Function) biết cần gọi Azure TTS
+                    return res.status(404).json({ exists: false, message: "File not found" });
+                }
 
             case 'delete':
                 const fileId = query.id || query.fileId;
@@ -49,11 +59,11 @@ async function handler(req, res) {
                 return res.status(200).json(result);
 
             default:
-                console.error(`[ERROR] Invalid action: ${action}`);
+                console.warn(`[WARN] Unknown action: ${action}`);
                 return res.status(400).json({ error: "Invalid or missing action" });
         }
     } catch (err) {
-        console.error(`[FATAL ERROR] ${err.stack}`);
+        console.error(`[FATAL ERROR] at ${action}:`, err.stack);
         return res.status(500).json({ error: err.message });
     }
 }
@@ -65,7 +75,7 @@ module.exports.config = config;
  * Hàm xử lý trọn gói cho action 'list'
  */
 async function handleListAction(lessionId) {
-    console.log(`[LOG] handleListAction for: ${lessionId}`);
+    console.log(`[LOG] handleListAction: Fetching data for ${lessionId}`);
     const { sheets } = await util.ensureAuthenticated();
     
     const [files, response] = await Promise.all([

@@ -63,40 +63,52 @@ export default async function handler(req, context) {
 /**
  * Hàm kiểm tra file trên Drive và trả về Response Streaming
  */
+/**
+ * Hàm kiểm tra file trên Drive và trả về Response Streaming
+ */
 async function checkDriveCache(filename, context) {
   try {
-    context.waitUntil(writeLog("TTS", `Checking & Streaming from Drive: ${filename}`));
+    context.waitUntil(writeLog("TTS", `Checking Drive Cache: ${filename}`));
 
-    // Gọi API trung gian, yêu cầu nó trả về file luôn nếu có
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        action: "check", // Action mới để API xử lý
+        action: "check", 
         name: filename 
       })
     });
 
-    // Nếu API tìm thấy file và trả về stream audio (200 OK)
-    if (response.ok && response.headers.get('content-type')?.includes('audio/')) {
-      context.waitUntil(writeLog("TTS", `⚡ DRIVE CACHE HIT (Direct Stream)`));
-	  
-	  context.waitUntil(writeLog("TTS", `Đã tìm trong Driver nhưng không có cache file tts`));    
+    // Kiểm tra nếu API trả về stream audio thành công
+    const contentType = response.headers.get('content-type');
+    
+    if (response.ok && contentType && contentType.includes('audio/')) {
+      context.waitUntil(writeLog("TTS", `⚡ DRIVE CACHE HIT: Streaming started.`));
+      
       return new Response(response.body, {
         headers: {
-          'Content-Type': 'audio/mpeg',
+          'Content-Type': contentType,
           'X-Audio-Source': 'Google-Drive-Direct-Streaming',
-          'Cache-Control': 'public, max-age=31536000, immutable'
+          'Cache-Control': 'public, max-age=31536000, immutable',
+          // Giữ nguyên độ dài file nếu có
+          ...(response.headers.get('content-length') && { 
+            'Content-Length': response.headers.get('content-length') 
+          })
         }
       });
     }
+
+    // Nếu không phải audio, có thể là lỗi 404 hoặc JSON báo lỗi
+    const errorData = response.status !== 200 ? await response.text() : "Not an audio stream";
+    console.warn(`[Drive Cache] status: ${response.status}, info: ${errorData}`);
+
   } catch (e) {
     context.waitUntil(writeLog("TTS", `Cache Stream Error: ${e.message}`));
   }
-  context.waitUntil(writeLog("TTS", `Không tìm trong Driver nhưng không có cache file tts`));    
-  return null; // Trả về null để hàm chính biết là cần gọi Azure
-}
 
+  context.waitUntil(writeLog("TTS", `🐢 DRIVE CACHE MISS: Moving to Azure TTS`));    
+  return null; 
+}
 /**
  * Hàm gọi Azure TTS API
  */

@@ -80,7 +80,8 @@ async function checkDriveCache(filename, context) {
     // Nếu API tìm thấy file và trả về stream audio (200 OK)
     if (response.ok && response.headers.get('content-type')?.includes('audio/')) {
       context.waitUntil(writeLog("TTS", `⚡ DRIVE CACHE HIT (Direct Stream)`));
-      
+	  
+	  context.waitUntil(writeLog("TTS", `Đã tìm trong Driver nhưng không có cache file tts`));    
       return new Response(response.body, {
         headers: {
           'Content-Type': 'audio/mpeg',
@@ -92,7 +93,7 @@ async function checkDriveCache(filename, context) {
   } catch (e) {
     context.waitUntil(writeLog("TTS", `Cache Stream Error: ${e.message}`));
   }
-  context.waitUntil(writeLog("TTS", `Đã tìm trong Driver nhưng không có cache file tts`));
+  
   return null; // Trả về null để hàm chính biết là cần gọi Azure
 }
 

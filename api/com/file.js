@@ -64,18 +64,35 @@ export async function handleUploadTTS(body) {
 export async function handleCheckFileExist(fileName) {
     console.log(`[LOG] Kiểm tra tồn tại file: ${fileName}`);
     const { drive } = await ensureAuthenticated();
+    
     const response = await drive.files.list({
         q: `name contains '${fileName}' and trashed = false`,
         fields: 'files(id, name)',
         pageSize: 1
     });
+
     const file = response.data.files[0];
+    
     if (file) {
-        console.log(`[LOG] File tồn tại. ID: ${file.id}`);
-        return file.id;
+        console.log(`[LOG] File tồn tại. ID: ${file.id}. Đang khởi tạo stream...`);
+        
+        try {
+            // Lấy nội dung file dưới dạng stream
+            const res = await drive.files.get(
+                { fileId: file.id, alt: 'media' },
+                { responseType: 'stream' }
+            );
+            
+            console.log(`[LOG] Đã lấy stream thành công cho file: ${file.name}`);
+            return res.data; // Trả về audio stream
+        } catch (error) {
+            console.log(`[ERROR] Lỗi khi lấy stream: ${error.message}`);
+            return null;
+        }
     }
-    console.log(`[LOG] File không tồn tại.`);
-    return "";
+
+    console.log(`[LOG] File không tồn tại: ${fileName}`);
+    return null;
 }
 
 // 2. Lấy danh sách file (Sử dụng cachedDriveClient từ ensureAuthenticated)

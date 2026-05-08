@@ -100,8 +100,7 @@ async function checkDriveCache(filename, context) {
  * Hàm gọi Azure TTS API
  */
 async function fetchAzureTTS(text, lang, voice, rate, format, context) {
-	console.log("GOI MAY LAN O DAY");
-	return ;
+  console.log("GOI MAY LAN O DAY");
   const endpoint = process.env.AZURE_TTS_ENDPOINT;
   const key = process.env.AZURE_TTS_KEY;
   const ttsUrl = `${endpoint.replace(/\/$/, '')}/cognitiveservices/v1`;

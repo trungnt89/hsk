@@ -19,9 +19,9 @@ export default async function handler(req, context) {
       .replace(/[\r\n]+/g, ' ')
       .replace(/[^\w\s\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff]/gi, '')
       .trim()
-      .substring(0, 100);
+      .substring(0, 50);
 
-    const filename = `${voice}_${rate}_${safeText}`;
+    const filename = `${voice}_${rate}_${safeText}.mp3`;
     context.waitUntil(writeLog("TTS", `Request: ${filename}`));
 
     // 1️⃣ CHECK DRIVE CACHE

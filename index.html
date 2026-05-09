@@ -112,7 +112,7 @@
             div.innerHTML = `
                 <div class="content">${quoteText}</div>
             `;
-            
+            div.dataset.id = row[0]; // Luu ID
             container.appendChild(div);
 
             const cardObj = {
@@ -135,6 +135,7 @@
             cards[currentSelectedIndex].element.classList.remove('selected');
         }
         
+        cards.forEach(card => card.element.onclick = function() { if(this.classList.contains('selected')) window.location.href = `https://hsk-gilt.vercel.app/nikki/index.html?id=${this.dataset.id}`; });
         let nextIndex;
         do {
             nextIndex = Math.floor(Math.random() * cards.length);

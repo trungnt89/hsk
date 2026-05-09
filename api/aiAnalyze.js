@@ -68,6 +68,9 @@ async function analyzeAudioWithGemini(apiKey, script, audioBase64, mimeType) {
 async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
     try {
         let createtime = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().replace(/(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2}).*/, '$1/$3/$2-$4');
+		
+		
+		
         const response = await fetch('/api/gSheet', {
             method: 'POST',
             body: JSON.stringify({
@@ -76,7 +79,7 @@ async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
 				action:'updateByPosVal',
                 pos: 1,
                 val: fileId,
-                data: [lessionId, fileId, script, score, aiText, createtime]
+                data: JSON.stringify([lessionId, fileId, script, score, aiText, createtime])
             })
         });
         if (!response.ok) throw new Error("gSheet API trả về lỗi: " + response.statusText);

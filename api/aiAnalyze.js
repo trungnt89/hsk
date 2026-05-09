@@ -65,7 +65,45 @@ async function analyzeAudioWithGemini(apiKey, script, audioBase64, mimeType) {
     return { aiText, score };
 }
 
+
 async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
+    try {
+        let createtime = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().replace(/(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2}).*/, '$1/$3/$2-$4');
+		
+		
+		// Cập nhật Google Sheet
+		await util.ensureAuthenticated();
+		const spreadsheetId = "1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A";
+		const sheetName = "ScoreList";
+		const pos = 1;
+		const val = fileId;
+		
+		let result = await util.handleReadByPosVal(spreadsheetId, sheetName, pos, val);
+		
+		var rawData = result.values[0].data;
+		rawData[3] = score; // Cập nhật vào cột 4 (index 3)
+		rawData[4] = aiText; // Cập nhật vào cột 5 (index 4)
+		
+		await util.handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
+
+		// Trả về kết quả
+		return res.status(200).json({
+		  status: 'success',
+		  score: score,
+		  aiText: aiText
+		});
+	
+	
+       
+	   
+    } catch (error) {
+        writeLog("[LOG] LỖI LƯU TRỮ gSheet: " + error.message);
+        return false;
+    }
+}
+
+
+async function saveAnalysisResult11(fileId, lessionId, script, score, aiText) {
     try {
         let createtime = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().replace(/(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2}).*/, '$1/$3/$2-$4');
 		

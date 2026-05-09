@@ -47,6 +47,8 @@ export default async function handler(req, res) {
     let result = await util.handleReadByPosVal(spreadsheetId, sheetName, pos, val);
     
     var rawData = result.values[0].data;
+	
+	// Bắt đầu đếm từ 0
     rawData[3] = pPart; // Cập nhật vào cột 4 (index 3)
     rawData[4] = cPart; // Cập nhật vào cột 5 (index 4)
     

@@ -162,15 +162,15 @@
         }).join('');
     }
 
-    function playMedia(id, mimeType) {
-        console.log("[Log] Phát file:", id);
+    function playMedia(fileId, mimeType) {
+        console.log("[Log] Phát file:", fileId);
         document.querySelectorAll('.item').forEach(el => el.classList.remove('selected'));
-        const currentItem = document.getElementById(`item-${id}`);
+        const currentItem = document.getElementById(`item-${fileId}`);
         if (currentItem) currentItem.classList.add('selected');
         
         const view = document.getElementById('media-view');
         view.style.display = 'block';
-        const url = `${API_RECORDER_URL}?id=${id}&action=audio&t=${Date.now()}`;
+        const url = `${API_RECORDER_URL}?fileId=${fileId}&action=audio&t=${Date.now()}`;
         view.innerHTML = mimeType.includes('video') 
             ? `<video src="${url}" controls autoplay playsinline></video>` 
             : `<audio src="${url}" controls autoplay></audio>`;

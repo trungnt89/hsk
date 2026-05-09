@@ -97,6 +97,7 @@ async function handleListAction(lessionId) {
     filteredRows.forEach(row => {
         if (row[1]) {
             scoreMap.set(row[1], {
+				fileId : row[1],
                 score: row[3] || null,
                 analysis: row[4] || null
             });

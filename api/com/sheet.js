@@ -68,9 +68,6 @@ export async function handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, r
         let data = parseData(rawData);
         if (data && typeof data === 'object' && data.data && !Array.isArray(data)) data = data.data;
         const rowValues = Array.isArray(data) ? (Array.isArray(data[0]) ? data[0] : data) : [data];
-		console.log(rawData);
-		console.log(data);
-		console.log(rowValues);
         await cachedSheetsClient.spreadsheets.values.update({
             spreadsheetId,
             range: `${sheetName}!A${rowID}`,

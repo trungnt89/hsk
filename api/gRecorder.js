@@ -15,7 +15,7 @@ async function handler(req, res) {
     let name = query.name || body.name;
 	
 	let lessionId = query.lessionId || body.lessionId;
-	let fileId = query.id || query.fileId;
+	let fileId = query.fileId || body.fileId;
 	
 	
     let result;

@@ -358,13 +358,13 @@
         }
     }
 
-    async function deleteFile(id) {
+    async function deleteFile(fileId) {
         if (!confirm("Bạn có chắc chắn muốn xóa file này?")) return;
         try {
             await fetch(API_RECORDER_URL, { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'delete', id })
+                body: JSON.stringify({ action: 'delete', fileId : fileId })
             });
             await loadFiles();
             showToast("Đã xóa file.");

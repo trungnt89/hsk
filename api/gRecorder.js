@@ -13,6 +13,11 @@ async function handler(req, res) {
 
     let action = query.action || body.action;
     let name = query.name || body.name;
+	
+	let lessionId = query.lessionId || body.lessionId;
+	let fileId = query.id || query.fileId;
+	
+	
     let result;
 
     // Ghi log để giám sát hệ thống
@@ -21,11 +26,11 @@ async function handler(req, res) {
     try {
         switch (action) {
             case 'audio':
-                console.log(`[LOG] Streaming audio ID: ${query.id}`);
-                return await util.handleReadFileMedia(query.id, headers, res);
+                console.log(`[LOG] Streaming audio ID: ${fileId}`);
+                return await util.handleReadFileMedia(fileId, headers, res);
 
             case 'list':
-                result = await handleListAction(query.lessionId);
+                result = await handleListAction(lessionId);
                 return res.status(200).json(result);
 
             case 'uploadRecorder':
@@ -53,7 +58,6 @@ async function handler(req, res) {
                 }
 
             case 'delete':
-                const fileId = query.id || query.fileId;
                 console.log(`[LOG] Deleting file: ${fileId}`);
                 result = await util.handleDeleteFile(fileId);
                 return res.status(200).json(result);

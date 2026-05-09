@@ -43,6 +43,7 @@
             z-index: 10;
             opacity: 0.7;
             box-sizing: border-box;
+            top: 0; left: 0;
         }
 
         .floating-card.selected {
@@ -109,7 +110,7 @@
             const div = document.createElement('div');
             div.className = 'floating-card';
             div.innerHTML = `
-                <div class="category">MINDSET</div>
+                <div class="category"></div>
                 <div class="content">${quoteText}</div>
             `;
             
@@ -162,8 +163,7 @@
                 card.y = Math.max(0, Math.min(card.y, window.innerHeight - rect.height));
             }
 
-            card.element.style.left = card.x + 'px';
-            card.element.style.top = card.y + 'px';
+            card.element.style.transform = `translate3d(${card.x}px, ${card.y}px, 0)`;
         });
 
         requestAnimationFrame(animate);

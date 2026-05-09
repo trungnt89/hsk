@@ -147,7 +147,9 @@
 
         let currentDiaries = [];
         let editingId = null;
-        let selectedDiaryId = localStorage.getItem("diary_selected_id") || null;
+        let urlId = new URLSearchParams(window.location.search).get('id');
+        let selectedDiaryId = urlId || localStorage.getItem("diary_selected_id") || null;
+        if (urlId && urlId !== localStorage.getItem("diary_selected_id")) localStorage.setItem("diary_selected_id", urlId);
         let isRepeating = localStorage.getItem("diary_repeat") === "true";
         let currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0;
         let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";

@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { apiKey, script, audioBase64, mimeType, fileId, lessionId, webAppUrl } = req.body;
+        const { apiKey, script, audioBase64, mimeType, fileId, lessionId } = req.body;
 
         if (!apiKey || !audioBase64) {
             writeLog("[LOG] Thiếu tham số bắt buộc: API Key hoặc Audio Data");

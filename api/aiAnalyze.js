@@ -71,7 +71,7 @@ async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
 		
 		
 		
-        const response = await fetch('/api/gSheet', {
+        const response = await fetch('https://hsk-gilt.vercel.app/api/gSheet', {
             method: 'POST',
             body: JSON.stringify({
                 spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A',

@@ -39,6 +39,7 @@
             flex-shrink: 0;
         }
         h2 { text-align: left; color: var(--primary); margin: 0; font-size: 1rem; }
+        #fileNameDisplay { font-size: 0.7rem; color: #888; margin-top: 2px; }
         
         .tabs { 
             display: flex; 
@@ -116,7 +117,10 @@
 
 <div class="card">
     <div class="header-container">
-        <h2>Phân Tích Phát Âm</h2>
+        <div>
+            <h2>Phân Tích Phát Âm</h2>
+            <div id="fileNameDisplay"></div>
+        </div>
         <div id="scoreDisplay">000</div>
     </div>
 
@@ -167,6 +171,7 @@
     const resultDiv = document.getElementById('result');
     const scoreDisplay = document.getElementById('scoreDisplay');
     const audioPreview = document.getElementById('audioPreview');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
 
     function openTab(tabName) {
         const contents = document.querySelectorAll('.tab-content');
@@ -247,6 +252,7 @@
         } else {
             const data = await loadDataFromCache();
             if (data) {
+                if (data.name) fileNameDisplay.textContent = data.name;
                 scriptInput.value = data.paragraph || "";
                 scriptDisplay.textContent = data.paragraph || "Không có kịch bản.";
                 if (data.blob) {

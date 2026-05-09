@@ -5,34 +5,24 @@ export default async function handler(req, res) {
     writeLog("[LOG] --- Bắt đầu xử lý request phân tích âm thanh ---");
 
     if (req.method !== 'POST') {
-        writeLog("[LOG] Phát hiện phương thức không hợp lệ: " + req.method);
         return res.status(405).json({ error: 'Chỉ chấp nhận phương thức POST' });
     }
 
     try {
         const { apiKey, script, audioBase64, mimeType, fileId, lessionId } = req.body;
-
-        if (!apiKey || !audioBase64) {
-            writeLog("[LOG] Thiếu tham số bắt buộc: API Key hoặc Audio Data");
-            return res.status(400).json({ error: 'Thiếu dữ liệu đầu vào' });
-        }
+        if (!apiKey || !audioBase64) return res.status(400).json({ error: 'Thiếu dữ liệu đầu vào' });
 
         writeLog("[LOG] Đang gọi Gemini API...");
         const { aiText, score } = await analyzeAudioWithGemini(apiKey, script, audioBase64, mimeType);
-
         writeLog(`[LOG] AI Phân tích xong. Điểm số: ${score}`);
 
-        if (fileId) {
-            writeLog("[LOG] Đang gửi dữ liệu lưu trữ tới API gSheet...");
-            const saveStatus = await saveAnalysisResult(fileId, lessionId, script, score, aiText);
-            writeLog("[LOG] Trạng thái lưu trữ gSheet: " + (saveStatus ? "THÀNH CÔNG" : "THẤT BẠI"));
+        if (score) {
+            const status = await saveAnalysisResult(fileId, lessionId, script, score, aiText);
+            writeLog(`[LOG] Trạng thái lưu trữ gSheet: ${status ? "THÀNH CÔNG" : "THẤT BẠI"}`);
         }
 
         writeLog("[LOG] Hoàn tất xử lý, trả kết quả về Client.");
-        return res.status(200).json({
-            analysis: aiText,
-            score: score
-        });
+        return res.status(200).json({ analysis: aiText, score });
 
     } catch (error) {
         writeLog("[LOG] LỖI SERVER: " + error.message);

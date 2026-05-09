@@ -143,20 +143,20 @@
             return; 
         }
         container.innerHTML = files.map(f => {
-            window.tempFileData[f.id] = f; 
+            window.tempFileData[f.fileId] = f; 
             const score = f.score;
             const displayScore = (score !== undefined && score !== null) ? String(score).padStart(3, '0') : "000";
             const scoreClass = (score !== undefined && score !== null) ? "score-red" : "score-gray";
             
             return `
-            <div class="item" id="item-${f.id}">
-                <div class="item-row" onclick="playMedia('${f.id}', '${f.mimeType}')">
+            <div class="item" id="item-${f.fileId}">
+                <div class="item-row" onclick="playMedia('${f.fileId}', '${f.mimeType}')">
                     <span class="score-display ${scoreClass}">${displayScore}</span>
                     <div class="item-text">${f.name}</div>
                 </div>
                 <div class="item-btns">
-                    <button class="btn-icon" title="Chi tiết" onclick="goToDetails('${f.id}')">📄</button>
-                    <button class="btn-icon btn-delete-icon" onclick="deleteFile('${f.id}')" title="Xóa">🗑️</button>
+                    <button class="btn-icon" title="Chi tiết" onclick="goToDetails('${f.fileId}')">📄</button>
+                    <button class="btn-icon btn-delete-icon" onclick="deleteFile('${f.fileId}')" title="Xóa">🗑️</button>
                 </div>
             </div>`;
         }).join('');
@@ -310,8 +310,8 @@
         } catch (err) { console.error("[Log] Lỗi loadFiles:", err); }
     }
 
-    async function goToDetails(id) {
-        const f = window.tempFileData[id];
+    async function goToDetails(fileId) {
+        const f = window.tempFileData[fileId];
         if (!f) return;
         const { name, score, analysis } = f;
         showToast("Đang chuyển trang...");
@@ -320,7 +320,7 @@
             const res = await fetch(API_RECORDER_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'audio', fileId: id })
+                body: JSON.stringify({ action: 'audio', fileId: fileId })
             });
             if (!res.ok) throw new Error("Fetch failed");
             const blob = await res.blob();
@@ -344,7 +344,7 @@
                     paragraph: paragraph, 
                     score: score,
                     analysis: analysis,
-                    fileId: id, 
+                    fileId: fileId, 
                     ts: Date.now() 
                 });
                 tx.oncomplete = () => {

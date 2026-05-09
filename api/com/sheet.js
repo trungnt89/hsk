@@ -61,18 +61,13 @@ export async function handleReadByPosVal(spreadsheetId, sheetName, pos, val) {
 }
 
 export async function handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData) {
-	console.log("111");
     await ensureAuthenticated();
-	console.log("222");
     try {
         const search = await handleReadByPosVal(spreadsheetId, sheetName, pos, val);
-		console.log("333");
         const rowID = search.values[0].rowID;
         let data = parseData(rawData);
         if (data && typeof data === 'object' && data.data && !Array.isArray(data)) data = data.data;
-		console.log("444");
         const rowValues = Array.isArray(data) ? (Array.isArray(data[0]) ? data[0] : data) : [data];
-		console.log("555");
 		console.log(rawData);
 		console.log(data);
 		console.log(rowValues);

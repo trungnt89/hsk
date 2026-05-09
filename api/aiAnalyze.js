@@ -78,56 +78,10 @@ async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
 		const pos = 1;
 		const val = fileId;
 		
-		//let result = await util.handleReadByPosVal(spreadsheetId, sheetName, pos, val);
-		
-		//var rawData = result.values[0].data;
-		//rawData[0] = lessionId; 
-		//rawData[1] = fileId;
-		//rawData[2] = script;
-		//rawData[3] = score; // Cập nhật vào cột 4 (index 3)
-		//rawData[4] = aiText; // Cập nhật vào cột 5 (index 4)
-		
 		var rawData= [lessionId, fileId, script, score, aiText, createtime];
-		
-		await util.handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
-
-		// Trả về kết quả
-		return res.status(200).json({
-		  status: 'success',
-		  score: score,
-		  aiText: aiText
-		});
-	
-	
-       
+		let result = await util.handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
+		return true;
 	   
-    } catch (error) {
-        writeLog("[LOG] LỖI LƯU TRỮ gSheet: " + error.message);
-        return false;
-    }
-}
-
-
-async function saveAnalysisResult11(fileId, lessionId, script, score, aiText) {
-    try {
-        let createtime = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().replace(/(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2}).*/, '$1/$3/$2-$4');
-		
-		
-		
-        const response = await fetch('https://hsk-gilt.vercel.app/api/gSheet', {
-            method: 'POST',
-            body: JSON.stringify({
-                spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A',
-                sheet: 'ScoreList',
-				action:'updateByPosVal',
-                pos: 1,
-                val: fileId,
-                data: JSON.stringify([lessionId, fileId, script, score, aiText, createtime])
-            })
-        });
-        if (!response.ok) throw new Error("gSheet API trả về lỗi: " + response.statusText);
-        writeLog("[LOG] Gửi API gSheet thành công.");
-        return true;
     } catch (error) {
         writeLog("[LOG] LỖI LƯU TRỮ gSheet: " + error.message);
         return false;

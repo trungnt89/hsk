@@ -5,11 +5,12 @@ let cachedSheetsClient = null;
 
 export async function ensureAuthenticated() {
     if (cachedSheetsClient) return cachedSheetsClient;
-    console.log("[LOG] Initializing Google Auth...");
+    console.log("[LOG] Initializing Google Auth.2222..");
     const auth = new GoogleAuth({
         credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
         scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
+	console.log("[LOG] Initializing Google Auth.3333..");
     const client = await auth.getClient();
     cachedSheetsClient = google.sheets({ version: 'v4', auth: client });
     return cachedSheetsClient;

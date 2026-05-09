@@ -78,11 +78,16 @@ async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
 		const pos = 1;
 		const val = fileId;
 		
-		let result = await util.handleReadByPosVal(spreadsheetId, sheetName, pos, val);
+		//let result = await util.handleReadByPosVal(spreadsheetId, sheetName, pos, val);
 		
-		var rawData = result.values[0].data;
-		rawData[3] = score; // Cập nhật vào cột 4 (index 3)
-		rawData[4] = aiText; // Cập nhật vào cột 5 (index 4)
+		//var rawData = result.values[0].data;
+		//rawData[0] = lessionId; 
+		//rawData[1] = fileId;
+		//rawData[2] = script;
+		//rawData[3] = score; // Cập nhật vào cột 4 (index 3)
+		//rawData[4] = aiText; // Cập nhật vào cột 5 (index 4)
+		
+		var rawData= [lessionId, fileId, script, score, aiText, createtime];
 		
 		await util.handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
 

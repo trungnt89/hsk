@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { apiKey, script, audioBase64, mimeType, fileId, lessionId } = req.body;
+        const { apiKey, script, audioBase64, mimeType, fileId, lessionId , name } = req.body;
         if (!apiKey || !audioBase64) return res.status(400).json({ error: 'Thiếu dữ liệu đầu vào' });
 
         writeLog("[LOG] Đang gọi Gemini API...");
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         writeLog(`[LOG] AI Phân tích xong. Điểm số: ${score}`);
 
         if (score) {
-            const status = await saveAnalysisResult(fileId, lessionId, script, score, aiText);
+            const status = await saveAnalysisResult(fileId, lessionId, script, score, aiText ,name);
             writeLog(`[LOG] Trạng thái lưu trữ gSheet: ${status ? "THÀNH CÔNG" : "THẤT BẠI"}`);
         }
 
@@ -66,7 +66,7 @@ async function analyzeAudioWithGemini(apiKey, script, audioBase64, mimeType) {
 }
 
 
-async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
+async function saveAnalysisResult(fileId, lessionId, script, score, aiText ,name) {
     try {
         let createtime = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().replace(/(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2}).*/, '$1/$3/$2-$4');
 		
@@ -78,7 +78,7 @@ async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
 		const pos = 1;
 		const val = fileId;
 		
-		var rawData= [lessionId, fileId, script, score, aiText, createtime];
+		var rawData= [lessionId, fileId, script, score, aiText,createtime,name];
 		let result = await util.handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
 		return true;
 	   

@@ -273,6 +273,7 @@
 
     analyzeBtn.onclick = async () => {
         console.log("[LOG] Bắt đầu quá trình phân tích gửi lên Vercel...");
+		const data = await loadDataFromCache();
         const key = apiKeyInput.value.trim();
         const script = scriptInput.value.trim();
         const urlParamsSync = new URLSearchParams(window.location.search);
@@ -301,6 +302,7 @@
                     apiKey: key,
                     script: script,
                     audioBase64: base64Data,
+					name : data.name,
                     mimeType: currentBlob.type,
                     fileId: fileId,
                     lessionId: lessionId

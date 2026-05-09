@@ -101,7 +101,7 @@ async function fetchAzureTTS(text, lang, voice, rate, format, context) {
   if (!res.ok) throw new Error(`Azure status: ${res.status}`);
   return res;
 }
-
+// Không cần lưu file list vào sheet, nhưng record cần lưu để sau update điểm số
 async function uploadToDrive(base64, filename, context) {
   try {
     await fetch(API_URL, {

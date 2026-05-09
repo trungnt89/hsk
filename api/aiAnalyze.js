@@ -18,60 +18,14 @@ export default async function handler(req, res) {
         }
 
         writeLog("[LOG] Đang gọi Gemini API...");
-        const modelName = 'gemini-2.5-flash'; 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-        const promt = `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
-			KỊCH BẢN GỐC: "${script || 'Không cung cấp - Hãy tự nhận diện nội dung'}"
-			YÊU CẦU:
-				1. SO SÁNH: Đối chiếu giữa kịch bản gốc và những gì người nói thực tế đã nói. Chỉ ra các từ bị nói sai, nói thiếu hoặc biến âm.
-				2. NHẬT XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
-				3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó.
-				4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.`;
-        
-        writeLog("[LOG] Prompt prepared.");
-		writeLog(promt);
-                                  
-        const geminiResponse = await fetch(geminiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { text: promt },
-                        { inline_data: { mime_type: mimeType || "audio/mp4", data: audioBase64 } }
-                    ]
-                }]
-            })
-        });
-
-        const data = await geminiResponse.json();
-        writeLog(JSON.stringify(data));
-        
-        if (!data.candidates || !data.candidates[0]) {
-            writeLog("[LOG] Lỗi từ Gemini API: " + JSON.stringify(data));
-            throw new Error(JSON.stringify(data));
-        }
-
-        const aiText = data.candidates[0].content.parts[0].text;
-        const scoreMatch = aiText.match(/(\d+)\/1000/);
-        const score = scoreMatch ? scoreMatch[1] : "0";
+        const { aiText, score } = await analyzeAudioWithGemini(apiKey, script, audioBase64, mimeType);
 
         writeLog(`[LOG] AI Phân tích xong. Điểm số: ${score}`);
 
-        if (webAppUrl && fileId) {
-            writeLog("[LOG] Đang gửi dữ liệu lưu trữ tới Google Sheets...");
-            await fetch(webAppUrl, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'score',
-                    script: script,
-                    lessionID: lessionId,
-                    fileId: fileId,
-                    score: score,
-                    analysis: aiText
-                })
-            });
-            writeLog("[LOG] Gửi Google Sheets thành công.");
+        if (fileId) {
+            writeLog("[LOG] Đang gửi dữ liệu lưu trữ tới API gSheet...");
+            const saveStatus = await saveAnalysisResult(fileId, lessionId, script, score, aiText);
+            writeLog("[LOG] Trạng thái lưu trữ gSheet: " + (saveStatus ? "THÀNH CÔNG" : "THẤT BẠI"));
         }
 
         writeLog("[LOG] Hoàn tất xử lý, trả kết quả về Client.");
@@ -84,7 +38,64 @@ export default async function handler(req, res) {
         writeLog("[LOG] LỖI SERVER: " + error.message);
         return res.status(500).json({ error: error.message });
     }
-};
+}
+
+async function analyzeAudioWithGemini(apiKey, script, audioBase64, mimeType) {
+    const modelName = 'gemini-2.5-flash';
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    const promt = `Bạn là chuyên gia ngôn ngữ Nhật Bản. Dưới đây là kịch bản gốc và file ghi âm thực tế. Hãy thực hiện các yêu cầu sau bằng TIẾNG VIỆT:
+			KỊCH BẢN GỐC: "${script || 'Không cung cấp - Hãy tự nhận diện nội dung'}"
+			YÊU CẦU:
+				1. SO SÁNH: Đối chiếu giữa kịch bản gốc và những gì người nói thực tế đã nói. Chỉ ra các từ bị nói sai, nói thiếu hoặc biến âm.
+				2. NHẬT XÉT CHI TIẾT: Phân tích về phát âm (seion, dakuon, youon...), trường âm (chouon), âm ngắt (sokuon) và đặc biệt là Pitch Accent.
+				3. CHẤM ĐIỂM: Đưa ra điểm số trên thang điểm 1000 dựa trên độ chính xác, ngữ điệu và sự tự nhiên (Ví dụ: 850/1000) và lý do tại sao đưa ra con số điểm đó.
+				4. KHUYÊN CẢI THIỆN: Đưa ra 2-3 lời khuyên thực tế để nói tốt hơn.`;
+
+    const geminiResponse = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{
+                parts: [
+                    { text: promt },
+                    { inline_data: { mime_type: mimeType || "audio/mp4", data: audioBase64 } }
+                ]
+            }]
+        })
+    });
+
+    const data = await geminiResponse.json();
+    if (!data.candidates || !data.candidates[0]) {
+        throw new Error(JSON.stringify(data));
+    }
+
+    const aiText = data.candidates[0].content.parts[0].text;
+    const scoreMatch = aiText.match(/(\d+)\/1000/);
+    const score = scoreMatch ? scoreMatch[1] : "0";
+    return { aiText, score };
+}
+
+async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
+    try {
+        let createtime = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().replace(/(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2}:\d{2}).*/, '$1/$3/$2-$4');
+        const response = await fetch('/api/gSheet', {
+            method: 'POST',
+            body: JSON.stringify({
+                spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A',
+                sheet: 'ScoreList',
+                pos: 1,
+                val: fileId,
+                data: [lessionId, fileId, script, score, aiText, createtime]
+            })
+        });
+        if (!response.ok) throw new Error("gSheet API trả về lỗi: " + response.statusText);
+        writeLog("[LOG] Gửi API gSheet thành công.");
+        return true;
+    } catch (error) {
+        writeLog("[LOG] LỖI LƯU TRỮ gSheet: " + error.message);
+        return false;
+    }
+}
 
 /**
  * Hàm ghi Log được đưa ra ngoài scope export để tận dụng tối đa cơ chế Hoisting

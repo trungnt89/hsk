@@ -83,6 +83,7 @@ async function saveAnalysisResult(fileId, lessionId, script, score, aiText) {
             body: JSON.stringify({
                 spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A',
                 sheet: 'ScoreList',
+				action:'updateByPosVal',
                 pos: 1,
                 val: fileId,
                 data: [lessionId, fileId, script, score, aiText, createtime]

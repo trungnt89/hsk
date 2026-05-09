@@ -254,7 +254,7 @@
             if (data) {
                 if (data.name) fileNameDisplay.textContent = data.name;
                 scriptInput.value = data.paragraph || "";
-                scriptDisplay.innerText = data.paragraph || "Không có kịch bản.";
+                scriptDisplay.innerHTML = (data.paragraph || "Không có kịch bản.").replace(/\n/g, '<br>');
                 if (data.blob) {
                     currentBlob = data.blob;
                     audioPreview.src = URL.createObjectURL(data.blob);

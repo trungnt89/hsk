@@ -37,7 +37,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            cursor: pointer;
+            cursor: grab;
             user-select: none;
             transition: border-color 0.3s, opacity 0.3s, box-shadow 0.3s, transform 0.3s;
             z-index: 10;
@@ -69,11 +69,26 @@
             font-style: italic;
             white-space: pre-line;
         }
+
+        #menu-btn { position: fixed; bottom: 20px; right: 20px; z-index: 1000; background: var(--gold); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; opacity: 0.3; }
+        #menu-btn:hover { opacity: 1; }
+        #settings-panel { position: fixed; bottom: 70px; right: 20px; z-index: 1000; background: var(--glass); backdrop-filter: blur(10px); padding: 15px; border-radius: 10px; border: 1px solid var(--gold); color: white; display: none; flex-direction: column; gap: 10px; }
     </style>
 </head>
 <body>
 
 <div id="container"></div>
+
+<button id="menu-btn">⚙️</button>
+<div id="settings-panel">
+    <label><input type="checkbox" id="filter-check" checked> Chỉ hiện cột 5 = TRUE</label>
+    <label>
+        <select id="order-select">
+            <option value="random">Ngẫu nhiên</option>
+            <option value="sequential">Tuần tự</option>
+        </select>
+    </label>
+</div>
 
 <script>
     async function fetchData() {
@@ -92,6 +107,7 @@
             });
             const data = await response.json();
             if (data && data.values) {
+                window.allValues = data.values;
                 initCards(data.values);
             }
         } catch (error) {
@@ -102,17 +118,24 @@
     const container = document.getElementById('container');
     const cards = [];
     let currentSelectedIndex = -1;
+    let isDragging = false;
 
     function initCards(values) {
         console.log("[LOG] Initializing responsive cards...");
-        values.filter(row => row[5] === "TRUE").forEach((row, index) => {
-            const quoteText = row[2]; // Lấy giá trị thứ 3 (câu nói)
+        container.innerHTML = '';
+        cards.length = 0;
+        
+        const filterEnabled = document.getElementById('filter-check').checked;
+        const filteredRows = filterEnabled ? values.filter(row => row[5] === "TRUE") : values;
+
+        filteredRows.forEach((row, index) => {
+            const quoteText = row[2]; 
             const div = document.createElement('div');
             div.className = 'floating-card';
             div.innerHTML = `
                 <div class="content">${quoteText}</div>
             `;
-            div.dataset.id = row[0]; // Luu ID
+            div.dataset.id = row[0]; 
             container.appendChild(div);
 
             const cardObj = {
@@ -122,45 +145,94 @@
                 vx: Math.cos(Math.random() * 2 * Math.PI) * (0.5 + Math.random()),
                 vy: Math.sin(Math.random() * 2 * Math.PI) * (0.5 + Math.random())
             };
+            makeDraggable(cardObj);
             cards.push(cardObj);
         });
 
         highlightNextCard();
-        setInterval(highlightNextCard, 2*60*1000);
+        if (!window.highlightInterval) window.highlightInterval = setInterval(highlightNextCard, 2*60*1000);
     }
 
     function highlightNextCard() {
         if (cards.length === 0) return;
-        if (currentSelectedIndex >= 0) {
+        if (currentSelectedIndex >= 0 && cards[currentSelectedIndex]) {
             cards[currentSelectedIndex].element.classList.remove('selected');
         }
         
-        cards.forEach(card => card.element.onclick = function() { if(this.classList.contains('selected')) window.location.href = `https://hsk-gilt.vercel.app/nikki/index.html?id=${this.dataset.id}`; });
+        cards.forEach(card => card.element.onclick = function() { 
+            if(!isDragging && this.classList.contains('selected')) {
+                window.location.href = `https://hsk-gilt.vercel.app/nikki/index.html?id=${this.dataset.id}`;
+            }
+        });
+
         let nextIndex;
-        do {
-            nextIndex = Math.floor(Math.random() * cards.length);
-        } while (nextIndex === currentSelectedIndex && cards.length > 1);
+        const mode = document.getElementById('order-select').value;
+
+        if (mode === 'random') {
+            do {
+                nextIndex = Math.floor(Math.random() * cards.length);
+            } while (nextIndex === currentSelectedIndex && cards.length > 1);
+        } else {
+            nextIndex = (currentSelectedIndex + 1) % cards.length;
+        }
         
         currentSelectedIndex = nextIndex;
         cards[currentSelectedIndex].element.classList.add('selected');
-        console.log(`[LOG] Randomly selected card index: ${currentSelectedIndex}`);
+        console.log(`[LOG] Selected card index: ${currentSelectedIndex} (Mode: ${mode})`);
+    }
+
+    function makeDraggable(cardObj) {
+        let startX, startY;
+        const el = cardObj.element;
+
+        const onStart = (e) => {
+            isDragging = true;
+            el.style.cursor = 'grabbing';
+            const touch = e.type === 'touchstart' ? e.touches[0] : e;
+            startX = touch.clientX - cardObj.x;
+            startY = touch.clientY - cardObj.y;
+            console.log(`[LOG] Drag started on card ID: ${el.dataset.id}`);
+        };
+
+        const onMove = (e) => {
+            if (!isDragging) return;
+            const touch = e.type === 'touchmove' ? e.touches[0] : e;
+            cardObj.x = touch.clientX - startX;
+            cardObj.y = touch.clientY - startY;
+        };
+
+        const onEnd = () => {
+            if(isDragging) console.log(`[LOG] Drag ended`);
+            isDragging = false;
+            el.style.cursor = 'grab';
+        };
+
+        el.addEventListener('mousedown', onStart);
+        el.addEventListener('touchstart', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('touchmove', onMove);
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchend', onEnd);
     }
 
     function animate() {
         cards.forEach(card => {
             const rect = card.element.getBoundingClientRect();
             
-            card.x += card.vx;
-            card.y += card.vy;
+            // Chỉ di chuyển tự động nếu không đang kéo thẻ này
+            if (!isDragging || currentSelectedIndex !== cards.indexOf(card)) {
+                card.x += card.vx;
+                card.y += card.vy;
 
-            if (card.x <= 0 || card.x + rect.width >= window.innerWidth) {
-                card.vx *= -1;
-                card.x = Math.max(0, Math.min(card.x, window.innerWidth - rect.width));
-            }
+                if (card.x <= 0 || card.x + rect.width >= window.innerWidth) {
+                    card.vx *= -1;
+                    card.x = Math.max(0, Math.min(card.x, window.innerWidth - rect.width));
+                }
 
-            if (card.y <= 0 || card.y + rect.height >= window.innerHeight) {
-                card.vy *= -1;
-                card.y = Math.max(0, Math.min(card.y, window.innerHeight - rect.height));
+                if (card.y <= 0 || card.y + rect.height >= window.innerHeight) {
+                    card.vy *= -1;
+                    card.y = Math.max(0, Math.min(card.y, window.innerHeight - rect.height));
+                }
             }
 
             card.element.style.transform = `translate3d(${card.x}px, ${card.y}px, 0)`;
@@ -176,6 +248,15 @@
             card.y = Math.min(card.y, window.innerHeight - card.element.offsetHeight);
         });
     });
+
+    document.getElementById('menu-btn').onclick = () => {
+        const panel = document.getElementById('settings-panel');
+        panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+    };
+
+    document.getElementById('filter-check').onchange = () => {
+        if(window.allValues) initCards(window.allValues);
+    };
 
     fetchData();
     animate();

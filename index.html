@@ -88,7 +88,7 @@
             <option value="sequential">Tuần tự</option>
         </select>
     </label>
-    <label>Thời gian chuyển (phút): <input type="number" id="interval-input" value="2" min="0.1" step="0.1" style="width: 50px; background: none; border: 1px solid var(--gold); color: white;"></label>
+    <label>Thời gian chuyển (giây): <input type="number" id="interval-input" value="5" min="1" step="1" style="width: 50px; background: none; border: 1px solid var(--gold); color: white;"></label>
 </div>
 
 <script>
@@ -174,8 +174,8 @@
 
         highlightNextCard();
         if (window.highlightInterval) clearInterval(window.highlightInterval);
-        const intervalMin = parseFloat(document.getElementById('interval-input').value) || 2;
-        window.highlightInterval = setInterval(highlightNextCard, intervalMin * 60 * 1000);
+        const intervalSec = parseFloat(document.getElementById('interval-input').value) || 5;
+        window.highlightInterval = setInterval(highlightNextCard, intervalSec * 1000);
     }
 
     function highlightNextCard() {

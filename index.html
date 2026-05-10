@@ -211,11 +211,18 @@
         const el = cardObj.element;
 
         const onStart = (e) => {
+            isDragging = true;
+            el.style.cursor = 'grabbing';
+            const touch = e.type === 'touchstart' ? e.touches[0] : e;
+            startX = touch.clientX - cardObj.x;
+            startY = touch.clientY - cardObj.y;
             console.log(`[LOG] Drag started on card ID: ${el.dataset.id}`);
         };
 
         const onMove = (e) => {
             if (!isDragging) return;
+            cards.forEach(c => { c.vx *= 1.05; c.vy *= 1.05; });
+            console.log("[LOG] Accelerated floating speed on move");
             const touch = e.type === 'touchmove' ? e.touches[0] : e;
             cardObj.x = touch.clientX - startX;
             cardObj.y = touch.clientY - startY;
@@ -239,7 +246,7 @@
         cards.forEach(card => {
             const rect = card.element.getBoundingClientRect();
             
-            if (!isDragging || currentSelectedIndex !== cards.indexOf(card)) {
+            if (!isDragging || cards.indexOf(card) !== currentSelectedIndex) {
                 card.x += card.vx;
                 card.y += card.vy;
 

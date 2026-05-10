@@ -17,7 +17,7 @@
         }
         body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
-        header h1 { font-size: 1.2rem; font-weight: 600; flex: 1; }
+        header h1 { font-size: 1.2rem; font-weight: 600; }
         main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         
         .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
@@ -46,8 +46,7 @@
         .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 20px; scroll-behavior: smooth; }
         .tab-content.active { display: block; }
         
-        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: move; position: relative; transition: transform 0.2s, opacity 0.2s; }
-        .diary-item.dragging { opacity: 0.5; border: 2px dashed var(--primary-color); }
+        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; position: relative; }
         .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
         .diary-item.selected { border-left-color: #e67e22 !important; background-color: #fff3e0 !important; outline: 3px solid #ffcc80; outline-offset: -3px; }
         
@@ -75,34 +74,16 @@
         .audio-modal-header { padding: 8px 12px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
         .modal-btn { background: #fff; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .close-modal-btn { color: #ef4444; }
+        .btn-main-speak.playing { background: var(--danger-color); }
         .back-modal-btn { color: #2563eb; }
         iframe#audioFrame { width: 100%; height: calc(100% - 40px); border: none; }
-
-        /* Settings Overlay */
-        .settings-overlay { display: none; position: fixed; top: 50px; right: 10px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1001; min-width: 200px; border: 1px solid #ddd; }
-        .settings-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #f0f0f0; }
     </style>
 </head>
 <body>
     <script src="../com/assistive.js"></script>
     <script src="../com/TTSClient.js"></script>
 
-    <header style="display:flex; justify-content:space-between; align-items:center;">
-        <span style="width:40px; flex-shrink:0;"></span>
-        <h1>Diary & AI</h1>
-        <button onclick="toggleSettings()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer; padding-right:10px; flex-shrink:0;">⚙️</button>
-    </header>
-
-    <div id="settingsMenu" class="settings-overlay">
-        <div class="settings-item">
-            <span>Lọc theo cột 5 = True</span>
-            <input type="checkbox" id="filterCol5" onchange="updateSettings()">
-        </div>
-        <div class="settings-item">
-            <span>Thứ tự: Ngẫu nhiên (Bật) / Tuần tự (Tắt)</span>
-            <input type="checkbox" id="orderToggle" onchange="updateSettings()">
-        </div>
-    </div>
+    <header><h1>Diary & AI</h1></header>
 
     <main>
         <div class="write-card">
@@ -161,6 +142,7 @@
     </div>
 
     <script>
+        // CONFIG URLS
         const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
 
@@ -172,10 +154,9 @@
         let isRepeating = localStorage.getItem("diary_repeat") === "true";
         let currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0;
         let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
-        let isRandomOrder = localStorage.getItem("diary_random_order") === "true";
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("[System] App Initialized with Drag & Filter features");
+            console.log("[System] App Initialized");
             initApp();
             loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => {
@@ -186,21 +167,6 @@
 
         async function initApp() {
             loadDiaries();
-        }
-
-        function toggleSettings() {
-            const m = document.getElementById('settingsMenu');
-            m.style.display = m.style.display === 'block' ? 'none' : 'block';
-            console.log("[Settings] Toggle menu visibility");
-        }
-
-        function updateSettings() {
-            showPinnedOnly = document.getElementById('filterCol5').checked;
-            isRandomOrder = document.getElementById('orderToggle').checked;
-            localStorage.setItem("diary_show_pinned_only", showPinnedOnly);
-            localStorage.setItem("diary_random_order", isRandomOrder);
-            console.log("[Settings] State updated", {showPinnedOnly, isRandomOrder});
-            renderList(currentDiaries);
         }
 
         async function loadDiaries() {
@@ -239,25 +205,34 @@
             }
         }
 
+        async function callGAS(paramsObj) {
+            console.log("[GAS Action]:", paramsObj.action);
+            const params = new URLSearchParams();
+            for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
+            try {
+                const response = await fetch(`${GAS_URL}?${params.toString()}`);
+                return await response.json();
+            } catch (e) {
+                console.error("[Sync Error]:", e);
+                return { status: 'error', message: "Lỗi kết nối" };
+            }
+        }
+        
         function renderList(diaries) {
-            console.log("[Render] Re-rendering list with current filters");
             const container = document.getElementById('diaryContainer');
             container.innerHTML = '';
-            
-            document.getElementById('filterCol5').checked = showPinnedOnly;
-            document.getElementById('orderToggle').checked = isRandomOrder;
-
-            let displayData = [...diaries];
+            const toggleWrapper = document.getElementById('pinToggleWrapper');
+            const pinLabel = document.getElementById('pinLabelText');
+            if(toggleWrapper) {
+                toggleWrapper.classList.toggle('toggle-active', showPinnedOnly);
+                if(pinLabel) pinLabel.innerText = showPinnedOnly ? "Ghim" : "Tất cả";
+            }
+            let displayData = diaries;
             if (showPinnedOnly) {
-                displayData = displayData.filter(d => d.pinned);
+                displayData = diaries.filter(d => d.pinned);
             }
-            if (isRandomOrder) {
-                displayData.sort(() => Math.random() - 0.5);
-                console.log("[Render] Order set to random");
-            }
-
             displayData.forEach((item) => container.appendChild(createItemEl(item)));
-            if (window.getLessonTotalScore) getLessonTotalScore(); 
+            getLessonTotalScore(); 
         }
 
         function createItemEl(item) {
@@ -265,14 +240,6 @@
             const div = document.createElement('div');
             div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
             div.id = `item-${item.id}`;
-            div.setAttribute('draggable', true);
-            
-            // Drag events
-            div.addEventListener('dragstart', handleDragStart);
-            div.addEventListener('dragover', handleDragOver);
-            div.addEventListener('drop', handleDrop);
-            div.addEventListener('dragend', handleDragEnd);
-
             div.onclick = (e) => {
                 if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger')) {
                     selectRecord(item.id);
@@ -304,35 +271,6 @@
             return div;
         }
 
-        // Move Logic
-        let dragSrcEl = null;
-        function handleDragStart(e) {
-            this.classList.add('dragging');
-            dragSrcEl = this;
-            e.dataTransfer.effectAllowed = 'move';
-            console.log("[Move] Drag start on:", this.id);
-        }
-        function handleDragOver(e) {
-            if (e.preventDefault) e.preventDefault();
-            return false;
-        }
-        function handleDrop(e) {
-            e.stopPropagation();
-            if (dragSrcEl !== this) {
-                const container = document.getElementById('diaryContainer');
-                const allItems = [...container.querySelectorAll('.diary-item')];
-                const fromIdx = allItems.indexOf(dragSrcEl);
-                const toIdx = allItems.indexOf(this);
-                if (fromIdx < toIdx) this.after(dragSrcEl);
-                else this.before(dragSrcEl);
-                console.log("[Move] Element reordered manually in UI");
-            }
-            return false;
-        }
-        function handleDragEnd() {
-            this.classList.remove('dragging');
-        }
-
         function handleRecordBadgeClick(id) {
             selectRecord(id);
             const modal = document.getElementById('audioModal');
@@ -361,7 +299,6 @@
             const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
             const newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0 };
             currentDiaries.unshift(newItem);
-            console.log("[Action] Saving new diary entry:", id);
             renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';
             const rowData = [id, date, text, "", "", "false", 0];
@@ -383,7 +320,6 @@
             if (idx === -1) return;
             const item = currentDiaries[idx];
             item.text = text;
-            console.log("[Action] Updating entry:", editingId);
             renderList(currentDiaries);
             const tid = editingId;
             clearEditMode();
@@ -394,7 +330,6 @@
         async function deleteDiary(id) {
             if (confirm("Xóa nhật ký này?")) {
                 currentDiaries = currentDiaries.filter(i => i.id != id);
-                console.log("[Action] Deleting entry:", id);
                 renderList(currentDiaries);
                 await callAPI({ act: 'deleteByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' });
             }
@@ -403,7 +338,6 @@
         function togglePinFilter() {
             showPinnedOnly = !showPinnedOnly;
             localStorage.setItem("diary_show_pinned_only", showPinnedOnly);
-            console.log("[Action] Filter pinned only:", showPinnedOnly);
             renderList(currentDiaries);
         }
 
@@ -412,7 +346,6 @@
             if (idx === -1) return;
             const item = currentDiaries[idx];
             item.pinned = !item.pinned;
-            console.log("[Action] Toggle pin for:", id, "Now:", item.pinned);
             renderList(currentDiaries);
             const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
             await callAPI({ act: 'updateByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
@@ -422,7 +355,6 @@
             selectRecord(id); switchTab(1);
             const pContainer = document.getElementById('paragraphContainer'), cContainer = document.getElementById('conversationContainer');
             pContainer.innerHTML = cContainer.innerHTML = '<p class="loading-text">🤖 Đang biên soạn nội dung...</p>';
-            console.log("[Action] AI Generation started for:", id);
             const res = await (await fetch('https://hsk-gilt.vercel.app/api/aiGenerate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -521,11 +453,40 @@
         }
 
         function resetSpeakBtns() { const b = document.getElementById('btnMainSpeak'); b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
-        function clearEditMode() { 
-            editingId = null; 
-            document.getElementById('diaryInput').value = ''; 
-            document.getElementById('saveBtn').innerText = 'Lưu lại'; 
-            document.getElementById('cancelBtn').style.display = 'none'; 
+        function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
+    </script>
+    <script>
+        async function getLessonTotalScore() {
+            try {
+                const res = await fetch(VERCEL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        sheet: 'ScoreList', 
+                        act: 'read', 
+                        spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A' 
+                    })
+                });
+                const result = await res.json();
+                if (result.values && Array.isArray(result.values)) {
+                    document.querySelectorAll('.count-trigger').forEach(badge => {
+                        const match = badge.getAttribute('onclick').match(/'([^']+)'/);
+                        if (match && match[1]) {
+                            const lessonID = match[1];
+                            let count = 0, maxScore = 0;
+                            result.values.forEach(row => {
+                                if (row[0] === lessonID) {
+                                    count++;
+                                    const score = parseInt(row[3]) || 0;
+                                    if (score > maxScore) maxScore = score;
+                                }
+                            });
+                            badge.innerHTML = `🎙️ ${count} | 🏆 ${maxScore}`;
+                            if (count > 0) badge.style.backgroundColor = '#e67e22';
+                        }
+                    });
+                }
+            } catch (err) { console.error("[Summary Error]:", err); }
         }
     </script>
 </body>

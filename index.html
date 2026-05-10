@@ -23,6 +23,7 @@
 
         .floating-card {
             position: absolute;
+            /* Điều chỉnh cho mobile: to hơn */
             width: 85%; 
             max-width: 320px;
             min-height: 140px;
@@ -63,7 +64,7 @@
         }
 
         .content {
-            font-size: 1.1rem;
+            font-size: 1.1rem; /* Tăng cỡ chữ để dễ đọc trên mobile */
             line-height: 1.4;
             font-style: italic;
             white-space: pre-line;
@@ -87,7 +88,7 @@
             <option value="sequential">Tuần tự</option>
         </select>
     </label>
-    <label>Thời gian (s): <input type="number" id="card-interval" value="5" min="1" style="width: 50px; background: transparent; color: white; border: 1px solid var(--gold);"></label>
+    <label>Thời gian chuyển (phút): <input type="number" id="interval-input" value="2" min="0.1" step="0.1" style="width: 50px; background: none; border: 1px solid var(--gold); color: white;"></label>
 </div>
 
 <script>
@@ -108,6 +109,7 @@
             const data = await response.json();
             if (data && data.values) {
                 window.allValues = data.values;
+                loadSettings();
                 initCards(data.values);
             }
         } catch (error) {
@@ -119,7 +121,27 @@
     const cards = [];
     let currentSelectedIndex = -1;
     let isDragging = false;
-    let highlightInterval;
+
+    function saveSettings() {
+        const settings = {
+            filter: document.getElementById('filter-check').checked,
+            order: document.getElementById('order-select').value,
+            interval: document.getElementById('interval-input').value
+        };
+        localStorage.setItem('mindset_settings', JSON.stringify(settings));
+        console.log("[LOG] Settings saved:", settings);
+    }
+
+    function loadSettings() {
+        const saved = localStorage.getItem('mindset_settings');
+        if (saved) {
+            const settings = JSON.parse(saved);
+            document.getElementById('filter-check').checked = settings.filter;
+            document.getElementById('order-select').value = settings.order;
+            document.getElementById('interval-input').value = settings.interval;
+            console.log("[LOG] Settings loaded.");
+        }
+    }
 
     function initCards(values) {
         console.log("[LOG] Initializing responsive cards...");
@@ -142,17 +164,18 @@
             const cardObj = {
                 element: div,
                 x: Math.random() * (window.innerWidth - 200),
-                y: Math.random() * (window.innerHeight - 200)
+                y: Math.random() * (window.innerHeight - 200),
+                vx: Math.cos(Math.random() * 2 * Math.PI) * (0.5 + Math.random()),
+                vy: Math.sin(Math.random() * 2 * Math.PI) * (0.5 + Math.random())
             };
             makeDraggable(cardObj);
             cards.push(cardObj);
         });
 
         highlightNextCard();
-        if (highlightInterval) clearInterval(highlightInterval);
-        const intervalSec = parseInt(document.getElementById('card-interval').value) || 5;
-        highlightInterval = setInterval(highlightNextCard, intervalSec * 1000);
-        console.log(`[LOG] Interval set to ${intervalSec}s`);
+        if (window.highlightInterval) clearInterval(window.highlightInterval);
+        const intervalMin = parseFloat(document.getElementById('interval-input').value) || 2;
+        window.highlightInterval = setInterval(highlightNextCard, intervalMin * 60 * 1000);
     }
 
     function highlightNextCard() {
@@ -188,11 +211,6 @@
         const el = cardObj.element;
 
         const onStart = (e) => {
-            isDragging = true;
-            el.style.cursor = 'grabbing';
-            const touch = e.type === 'touchstart' ? e.touches[0] : e;
-            startX = touch.clientX - cardObj.x;
-            startY = touch.clientY - cardObj.y;
             console.log(`[LOG] Drag started on card ID: ${el.dataset.id}`);
         };
 
@@ -219,8 +237,26 @@
 
     function animate() {
         cards.forEach(card => {
+            const rect = card.element.getBoundingClientRect();
+            
+            if (!isDragging || currentSelectedIndex !== cards.indexOf(card)) {
+                card.x += card.vx;
+                card.y += card.vy;
+
+                if (card.x <= 0 || card.x + rect.width >= window.innerWidth) {
+                    card.vx *= -1;
+                    card.x = Math.max(0, Math.min(card.x, window.innerWidth - rect.width));
+                }
+
+                if (card.y <= 0 || card.y + rect.height >= window.innerHeight) {
+                    card.vy *= -1;
+                    card.y = Math.max(0, Math.min(card.y, window.innerHeight - rect.height));
+                }
+            }
+
             card.element.style.transform = `translate3d(${card.x}px, ${card.y}px, 0)`;
         });
+
         requestAnimationFrame(animate);
     }
 
@@ -237,33 +273,21 @@
         panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
     };
 
-    function saveSettings() {
-        const settings = {
-            filter: document.getElementById('filter-check').checked,
-            order: document.getElementById('order-select').value,
-            interval: document.getElementById('card-interval').value
-        };
-        localStorage.setItem('cardSettings', JSON.stringify(settings));
-        console.log("[LOG] Settings saved:", settings);
+    document.getElementById('filter-check').onchange = () => {
+        saveSettings();
         if(window.allValues) initCards(window.allValues);
-    }
+    };
 
-    function loadSettings() {
-        const saved = localStorage.getItem('cardSettings');
-        if (saved) {
-            const settings = JSON.parse(saved);
-            document.getElementById('filter-check').checked = settings.filter;
-            document.getElementById('order-select').value = settings.order;
-            document.getElementById('card-interval').value = settings.interval;
-            console.log("[LOG] Settings loaded.");
-        }
-    }
+    document.getElementById('order-select').onchange = () => {
+        saveSettings();
+        if(window.allValues) initCards(window.allValues);
+    };
 
-    document.getElementById('filter-check').onchange = saveSettings;
-    document.getElementById('order-select').onchange = saveSettings;
-    document.getElementById('card-interval').onchange = saveSettings;
+    document.getElementById('interval-input').onchange = () => {
+        saveSettings();
+        if(window.allValues) initCards(window.allValues);
+    };
 
-    loadSettings();
     fetchData();
     animate();
 </script>

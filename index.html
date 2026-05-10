@@ -212,6 +212,11 @@
 
         const onStart = (e) => {
             console.log(`[LOG] Drag started on card ID: ${el.dataset.id}`);
+            isDragging = true;
+            el.style.cursor = 'grabbing';
+            const touch = e.type === 'touchstart' ? e.touches[0] : e;
+            startX = touch.clientX - cardObj.x;
+            startY = touch.clientY - cardObj.y;
         };
 
         const onMove = (e) => {
@@ -240,8 +245,8 @@
             const rect = card.element.getBoundingClientRect();
             
             if (!isDragging || currentSelectedIndex !== cards.indexOf(card)) {
-                card.x += card.vx;
-                card.y += card.vy;
+                card.x += isDragging ? card.vx * 2 : card.vx;
+                card.y += isDragging ? card.vy * 2 : card.vy;
 
                 if (card.x <= 0 || card.x + rect.width >= window.innerWidth) {
                     card.vx *= -1;

@@ -79,7 +79,7 @@
         iframe#audioFrame { width: 100%; height: calc(100% - 40px); border: none; }
 
         /* Settings Overlay */
-        .settings-overlay { display: none; position: fixed; top: 50px; right: 10px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1001; min-width: 200px; border: 1px solid #ddd; }
+        .settings-overlay { display: none; position: fixed; top: 60px; right: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1001; min-width: 220px; border: 1px solid #ddd; }
         .settings-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #f0f0f0; }
     </style>
 </head>
@@ -95,11 +95,11 @@
 
     <div id="settingsMenu" class="settings-overlay">
         <div class="settings-item">
-            <span>Chỉ hiện đã Ghim (Col 5)</span>
+            <span>Hiển thị tất cả / Đã ghim</span>
             <input type="checkbox" id="filterCol5" onchange="updateSettings()">
         </div>
         <div class="settings-item">
-            <span>Thứ tự ngẫu nhiên</span>
+            <span>Thứ tự: Tuần tự / Ngẫu nhiên</span>
             <input type="checkbox" id="orderToggle" onchange="updateSettings()">
         </div>
     </div>
@@ -175,7 +175,7 @@
         let isRandomOrder = localStorage.getItem("diary_random_order") === "true";
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("[System] App Initialized with Drag & Filter features");
+            console.log("[System] App Initialized with Drag, Filter & Move features");
             initApp();
             loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => {
@@ -240,7 +240,7 @@
         }
 
         function renderList(diaries) {
-            console.log("[Render] Re-rendering list with current filters");
+            console.log("[Render] Re-rendering list with current filters and ordering");
             const container = document.getElementById('diaryContainer');
             container.innerHTML = '';
             
@@ -250,6 +250,7 @@
             let displayData = [...diaries];
             if (showPinnedOnly) {
                 displayData = displayData.filter(d => d.pinned);
+                console.log("[Render] Filtered by Col 5 = true");
             }
             if (isRandomOrder) {
                 displayData.sort(() => Math.random() - 0.5);
@@ -257,7 +258,7 @@
             }
 
             displayData.forEach((item) => container.appendChild(createItemEl(item)));
-            getLessonTotalScore(); 
+            if (window.getLessonTotalScore) window.getLessonTotalScore(); 
         }
 
         function createItemEl(item) {
@@ -267,7 +268,7 @@
             div.id = `item-${item.id}`;
             div.setAttribute('draggable', true);
             
-            // Drag events
+            // Drag & Move events
             div.addEventListener('dragstart', handleDragStart);
             div.addEventListener('dragover', handleDragOver);
             div.addEventListener('drop', handleDrop);
@@ -304,7 +305,7 @@
             return div;
         }
 
-        // Move Logic
+        // Drag & Move Logic
         let dragSrcEl = null;
         function handleDragStart(e) {
             this.classList.add('dragging');
@@ -522,39 +523,6 @@
 
         function resetSpeakBtns() { const b = document.getElementById('btnMainSpeak'); b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
         function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
-        
-        async function getLessonTotalScore() {
-            try {
-                const res = await fetch(VERCEL_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        sheet: 'ScoreList', 
-                        act: 'read', 
-                        spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A' 
-                    })
-                });
-                const result = await res.json();
-                if (result.values && Array.isArray(result.values)) {
-                    document.querySelectorAll('.count-trigger').forEach(badge => {
-                        const match = badge.getAttribute('onclick').match(/'([^']+)'/);
-                        if (match && match[1]) {
-                            const lessonID = match[1];
-                            let count = 0, maxScore = 0;
-                            result.values.forEach(row => {
-                                if (row[0] === lessonID) {
-                                    count++;
-                                    const score = parseInt(row[3]) || 0;
-                                    if (score > maxScore) maxScore = score;
-                                }
-                            });
-                            badge.innerHTML = `🎙️ ${count} | 🏆 ${maxScore}`;
-                            if (count > 0) badge.style.backgroundColor = '#e67e22';
-                        }
-                    });
-                }
-            } catch (err) { console.error("[Summary Error]:", err); }
-        }
     </script>
 </body>
 </html>

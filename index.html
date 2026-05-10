@@ -23,7 +23,6 @@
 
         .floating-card {
             position: absolute;
-            /* Điều chỉnh cho mobile: to hơn */
             width: 85%; 
             max-width: 320px;
             min-height: 140px;
@@ -64,7 +63,7 @@
         }
 
         .content {
-            font-size: 1.1rem; /* Tăng cỡ chữ để dễ đọc trên mobile */
+            font-size: 1.1rem;
             line-height: 1.4;
             font-style: italic;
             white-space: pre-line;
@@ -88,6 +87,7 @@
             <option value="sequential">Tuần tự</option>
         </select>
     </label>
+    <label>Thời gian (s): <input type="number" id="card-interval" value="5" min="1" style="width: 50px; background: transparent; color: white; border: 1px solid var(--gold);"></label>
 </div>
 
 <script>
@@ -119,6 +119,7 @@
     const cards = [];
     let currentSelectedIndex = -1;
     let isDragging = false;
+    let highlightInterval;
 
     function initCards(values) {
         console.log("[LOG] Initializing responsive cards...");
@@ -141,16 +142,17 @@
             const cardObj = {
                 element: div,
                 x: Math.random() * (window.innerWidth - 200),
-                y: Math.random() * (window.innerHeight - 200),
-                vx: Math.cos(Math.random() * 2 * Math.PI) * (0.5 + Math.random()),
-                vy: Math.sin(Math.random() * 2 * Math.PI) * (0.5 + Math.random())
+                y: Math.random() * (window.innerHeight - 200)
             };
             makeDraggable(cardObj);
             cards.push(cardObj);
         });
 
         highlightNextCard();
-        if (!window.highlightInterval) window.highlightInterval = setInterval(highlightNextCard, 2*60*1000);
+        if (highlightInterval) clearInterval(highlightInterval);
+        const intervalSec = parseInt(document.getElementById('card-interval').value) || 5;
+        highlightInterval = setInterval(highlightNextCard, intervalSec * 1000);
+        console.log(`[LOG] Interval set to ${intervalSec}s`);
     }
 
     function highlightNextCard() {
@@ -217,27 +219,8 @@
 
     function animate() {
         cards.forEach(card => {
-            const rect = card.element.getBoundingClientRect();
-            
-            // Chỉ di chuyển tự động nếu không đang kéo thẻ này
-            if (!isDragging || currentSelectedIndex !== cards.indexOf(card)) {
-                card.x += card.vx;
-                card.y += card.vy;
-
-                if (card.x <= 0 || card.x + rect.width >= window.innerWidth) {
-                    card.vx *= -1;
-                    card.x = Math.max(0, Math.min(card.x, window.innerWidth - rect.width));
-                }
-
-                if (card.y <= 0 || card.y + rect.height >= window.innerHeight) {
-                    card.vy *= -1;
-                    card.y = Math.max(0, Math.min(card.y, window.innerHeight - rect.height));
-                }
-            }
-
             card.element.style.transform = `translate3d(${card.x}px, ${card.y}px, 0)`;
         });
-
         requestAnimationFrame(animate);
     }
 
@@ -254,10 +237,33 @@
         panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
     };
 
-    document.getElementById('filter-check').onchange = () => {
+    function saveSettings() {
+        const settings = {
+            filter: document.getElementById('filter-check').checked,
+            order: document.getElementById('order-select').value,
+            interval: document.getElementById('card-interval').value
+        };
+        localStorage.setItem('cardSettings', JSON.stringify(settings));
+        console.log("[LOG] Settings saved:", settings);
         if(window.allValues) initCards(window.allValues);
-    };
+    }
 
+    function loadSettings() {
+        const saved = localStorage.getItem('cardSettings');
+        if (saved) {
+            const settings = JSON.parse(saved);
+            document.getElementById('filter-check').checked = settings.filter;
+            document.getElementById('order-select').value = settings.order;
+            document.getElementById('card-interval').value = settings.interval;
+            console.log("[LOG] Settings loaded.");
+        }
+    }
+
+    document.getElementById('filter-check').onchange = saveSettings;
+    document.getElementById('order-select').onchange = saveSettings;
+    document.getElementById('card-interval').onchange = saveSettings;
+
+    loadSettings();
     fetchData();
     animate();
 </script>

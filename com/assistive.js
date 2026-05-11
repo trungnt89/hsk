@@ -35,8 +35,8 @@
                 <a class="menu-item" href="../pmp/index.html" onclick="console.log('[Navigation] Click: PMP')"><div class="item-icon">📘</div><span class="item-label">PMP</span></a>
                 <a class="menu-item" href="../n1/index.html" onclick="console.log('[Navigation] Click: Japan')"><div class="item-icon">🇯🇵</div><span class="item-label">Japan</span></a>
                 <a class="menu-item" href="../hsk/index.html" onclick="console.log('[Navigation] Click: HSK')"><div class="item-icon">🇨🇳</div><span class="item-label">HSK</span></a>
-                <a class="menu-item" href="https://hsk-gilt.vercel.app/index2.html" onclick="console.log('[Navigation] Click: Links')"><div class="item-icon">🔗</div><span class="item-label">Links</span></a>
                 <a class="menu-item" href="../nikki/index.html" onclick="console.log('[Navigation] Click: NIKKI')"><div class="item-icon">📒</div><span class="item-label">NIKKI</span></a>
+                <a class="menu-item" href="https://hsk-gilt.vercel.app/index2.html" onclick="console.log('[Navigation] Click: Links')"><div class="item-icon">🔗</div><span class="item-label">Links</span></a>
                 <a class="menu-item" href="../mp3/index.html" onclick="console.log('[Navigation] Click: MP3')"><div class="item-icon">🧭</div><span class="item-label">MP3</span></a>
             </div>
             <div class="menu-section-title">Hệ thống</div>

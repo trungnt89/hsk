@@ -151,6 +151,9 @@
         container.innerHTML = '';
         cards.length = 0;
         
+        // Cố định việc reset index về -1 để khi highlightNextCard chạy lần đầu sẽ là 0
+        currentSelectedIndex = -1;
+
         const filterEnabled = document.getElementById('filter-check').checked;
         const filteredRows = filterEnabled ? values.filter(row => row[5] === "TRUE") : values;
 
@@ -175,7 +178,9 @@
             cards.push(cardObj);
         });
 
+        // Xử lý việc hiển thị selected đầu tiên ngay lập tức
         highlightNextCard();
+
         if (window.highlightInterval) clearInterval(window.highlightInterval);
         const intervalSec = parseFloat(document.getElementById('interval-input').value) || 5;
         window.highlightInterval = setInterval(highlightNextCard, intervalSec * 1000);
@@ -183,24 +188,34 @@
 
     function highlightNextCard() {
         if (cards.length === 0) return;
+        
+        // Gỡ bỏ class selected cũ
         if (currentSelectedIndex >= 0 && cards[currentSelectedIndex]) {
             cards[currentSelectedIndex].element.classList.remove('selected');
         }
         
-        cards.forEach(card => card.element.onclick = function() { 
-            if(!isDragging && this.classList.contains('selected')) {
-                window.location.href = `https://hsk-gilt.vercel.app/nikki/index.html?id=${this.dataset.id}`;
-            }
+        // Cập nhật lại sự kiện click cho tất cả card (đảm bảo chỉ card selected mới click được)
+        cards.forEach(card => {
+            card.element.onclick = function() { 
+                if(!isDragging && this.classList.contains('selected')) {
+                    window.location.href = `https://hsk-gilt.vercel.app/nikki/index.html?id=${this.dataset.id}`;
+                }
+            };
         });
 
         let nextIndex;
         const mode = document.getElementById('order-select').value;
 
         if (mode === 'random') {
-            do {
-                nextIndex = Math.floor(Math.random() * cards.length);
-            } while (nextIndex === currentSelectedIndex && cards.length > 1);
+            if (cards.length > 1) {
+                do {
+                    nextIndex = Math.floor(Math.random() * cards.length);
+                } while (nextIndex === currentSelectedIndex);
+            } else {
+                nextIndex = 0;
+            }
         } else {
+            // Tuần tự: bắt đầu từ -1 + 1 = 0, sau đó là 1, 2...
             nextIndex = (currentSelectedIndex + 1) % cards.length;
         }
         
@@ -215,6 +230,11 @@
 
         const onStart = (e) => {
             console.log(`[LOG] Drag started on card ID: ${el.dataset.id}`);
+            isDragging = true;
+            const touch = e.type === 'touchstart' ? e.touches[0] : e;
+            startX = touch.clientX - cardObj.x;
+            startY = touch.clientY - cardObj.y;
+            el.style.cursor = 'grabbing';
         };
 
         const onMove = (e) => {
@@ -230,12 +250,12 @@
             el.style.cursor = 'grab';
         };
 
-        el.addEventListener('mousedown', onStart);
-        el.addEventListener('touchstart', onStart);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('touchmove', onMove);
-        window.addEventListener('mouseup', onEnd);
-        window.addEventListener('touchend', onEnd);
+        //el.addEventListener('mousedown', onStart);
+        //el.addEventListener('touchstart', onStart);
+        //window.addEventListener('mousemove', onMove);
+        //window.addEventListener('touchmove', onMove);
+        //window.addEventListener('mouseup', onEnd);
+        //window.addEventListener('touchend', onEnd);
     }
 
     function animate() {

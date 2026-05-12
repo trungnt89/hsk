@@ -2,297 +2,161 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mindset Floating Cards - Responsive</title>
-	<script src="../com/assistive.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Learning Master Hub</title>
+    <script src="../com/assistive.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --gold: #d4af37;
-            --glass: rgba(30, 41, 59, 0.7);
+            --primary: #2563eb; --success: #10b981; --bg: #f8fafc; --card: #ffffff; --text: #1e293b;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            width: 100vw;
-            height: 100vh;
-            background: #0f172a;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg);
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            height: 100dvh; overflow: hidden;
+            color: var(--text);
         }
 
-        .floating-card {
-            position: absolute;
-            /* Hinh tron bong bong */
-            width: 250px; 
-            height: 250px;
-            padding: 30px;
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border-radius: 50%;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            color: #f1f5f9;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            cursor: grab;
-            user-select: none;
-            transition: border-color 0.3s, opacity 0.3s, box-shadow 0.3s, transform 0.3s;
-            z-index: 10;
-            opacity: 0.7;
-            box-sizing: border-box;
-            top: 0; left: 0;
+        header {
+            padding: 15px 15px 5px; text-align: center;
+            background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
         }
 
-        .floating-card.selected {
-            border-color: var(--gold);
-            z-index: 150;
-            box-shadow: 0 0 40px rgba(212, 175, 55, 0.6);
-            opacity: 1;
-            transform: scale(1.05);
+        header h1 { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--primary); }
+        header p { margin: 2px 0 0; font-size: 9px; color: #64748b; text-transform: uppercase; }
+
+        .dashboard {
+            flex: 1; padding: 15px;
+            display: flex; flex-direction: column;
+            gap: 12px; max-width: 500px; margin: 0 auto; width: 100%;
+            box-sizing: border-box; overflow-y: auto;
+            padding-bottom: 40px;
         }
 
-        .category {
-            font-size: 0.75rem;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 8px;
-            font-weight: bold;
+        .nav-card {
+            background: var(--card); border-radius: 20px;
+            padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0; flex-shrink: 0;
         }
 
-        .content {
-            font-size: 1.1rem;
-            line-height: 1.4;
-            font-style: italic;
-            white-space: pre-line;
-            overflow: hidden;
-            word-wrap: break-word;
+        .important-1 { background: #e0f2fe !important; border: 2px solid #7dd3fc !important; }
+        .important-2 { background: #dcfce7 !important; border: 2px solid #86efac !important; }
+
+        .group-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .icon-wrapper {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        #menu-btn { position: fixed; bottom: 20px; right: 20px; z-index: 1000; background: var(--gold); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; opacity: 0.3; }
-        #menu-btn:hover { opacity: 1; }
-        #settings-panel { position: fixed; bottom: 70px; right: 20px; z-index: 1000; background: var(--glass); backdrop-filter: blur(10px); padding: 15px; border-radius: 10px; border: 1px solid var(--gold); color: white; display: none; flex-direction: column; gap: 10px; }
+        .group-title { font-size: 14px; font-weight: 800; }
+        .group-desc { font-size: 10px; color: #64748b; }
+
+        .group-links {
+            margin: 0; padding: 0; list-style: none;
+            display: flex; flex-wrap: wrap; gap: 10px;
+        }
+
+        .group-links li { flex: 1 1 calc(50% - 10px); }
+        .group-system .group-links li { flex: 1 1 calc(30% - 10px); min-width: 80px; }
+
+        .full-width { flex: 1 1 100% !important; }
+
+        .group-links a {
+            text-decoration: none; font-size: 12px; font-weight: 700;
+            color: var(--text); display: flex; align-items: center; justify-content: center;
+            padding: 18px 5px; border-radius: 12px;
+            background: #ffffff; border: 1px solid #e2e8f0;
+            transition: all 0.2s; text-align: center; width: 100%; box-sizing: border-box;
+        }
+
+        .group-links a:active { background: #f1f5f9; transform: scale(0.96); }
+
+        footer {
+            padding: 10px; text-align: center; font-size: 8px;
+            color: #94a3b8; font-weight: 600; flex-shrink: 0;
+            background: white; border-top: 1px solid #f1f5f9;
+        }
     </style>
 </head>
 <body>
 
-<div id="container"></div>
+<header>
+    <h1>LEARNING HUB</h1>
+    <p>Hệ thống học tập cá nhân</p>
+</header>
 
-<button id="menu-btn">⚙️</button>
-<div id="settings-panel">
-    <label><input type="checkbox" id="filter-check" checked> Chỉ hiện cột 5 = TRUE</label>
-    <label>
-        <select id="order-select">
-            <option value="random">Ngẫu nhiên</option>
-            <option value="sequential">Tuần tự</option>
-        </select>
-    </label>
-    <label>Thời gian chuyển (giây): <input type="number" id="interval-input" value="5" min="1" step="1" style="width: 50px; background: none; border: 1px solid var(--gold); color: white;"></label>
+<div class="dashboard">
+    <div class="nav-card important-1">
+        <div class="group-header">
+            <div class="icon-wrapper">🏆</div>
+            <div>
+                <div class="group-title">Chứng chỉ</div>
+                <div class="group-desc">PMP Exam Preparation</div>
+            </div>
+        </div>
+        <ul class="group-links">
+            <li class="full-width"><a href="pmp/index.html">📘 PMP Exam Prep</a></li>
+        </ul>
+    </div>
+    
+    <div class="nav-card important-2">
+        <div class="group-header">
+            <div class="icon-wrapper">🎓</div>
+            <div>
+                <div class="group-title">Học ngôn ngữ</div>
+                <div class="group-desc">Japanese & Chinese</div>
+            </div>
+        </div>
+        <ul class="group-links">
+            <li class="full-width"><a href="nikki/index.html">🤖 日記 & AI</a></li>
+			<li><a href="n1/index.html">🇯🇵 Nhật ngữ</a></li>
+            <li><a href="hsk/index.html">🇨🇳 Hoa ngữ</a></li>
+        </ul>
+    </div>
+
+    <div class="nav-card">
+        <div class="group-header">
+            <div class="icon-wrapper">⏱️</div>
+            <div>
+                <div class="group-title">Năng suất</div>
+                <div class="group-desc">Thói quen & Quản lý</div>
+            </div>
+        </div>
+        <ul class="group-links">
+            <li><a href="task/index.html">📊 Monitoring</a></li>
+            <li><a href="pomodoro/index.html">🍅 Pomodoro</a></li>
+        </ul>
+    </div>
+
+    <div class="nav-card group-system">
+        <div class="group-header">
+            <div class="icon-wrapper">🛠️</div>
+            <div>
+                <div class="group-title">Hệ thống</div>
+                <div class="group-desc">Dữ liệu & Cấu hình</div>
+            </div>
+        </div>
+        <ul class="group-links">
+            <li><a href="sms/index.html">💬 SMS</a></li>
+            <li><a href="notify/index.html">⏱ Sched.</a></li>
+            <li><a href="db/index.html">🗄️ DB</a></li>
+        </ul>
+    </div>
 </div>
 
+<footer>
+    PHÁT TRIỂN BỞI AI ASSISTANT • 2026
+</footer>
+
 <script>
-    async function fetchData() {
-        console.log("[LOG] Fetching data from API...");
-        try {
-            const response = await fetch("https://hsk-gilt.vercel.app/api/gSheet", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json"
-                },
-                body: JSON.stringify({
-                    sheet: "DairyList",
-                    act: "read",
-                    spread: "1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k"
-                })
-            });
-            const data = await response.json();
-            if (data && data.values) {
-                window.allValues = data.values;
-                loadSettings();
-                initCards(data.values);
-            }
-        } catch (error) {
-            console.error("[ERROR] Failed to fetch data:", error);
-        }
-    }
-
-    const container = document.getElementById('container');
-    const cards = [];
-    let currentSelectedIndex = -1;
-    let isDragging = false;
-
-    function saveSettings() {
-        const settings = {
-            filter: document.getElementById('filter-check').checked,
-            order: document.getElementById('order-select').value,
-            interval: document.getElementById('interval-input').value
-        };
-        localStorage.setItem('mindset_settings', JSON.stringify(settings));
-        console.log("[LOG] Settings saved:", settings);
-    }
-
-    function loadSettings() {
-        const saved = localStorage.getItem('mindset_settings');
-        if (saved) {
-            const settings = JSON.parse(saved);
-            document.getElementById('filter-check').checked = settings.filter;
-            document.getElementById('order-select').value = settings.order;
-            document.getElementById('interval-input').value = settings.interval;
-            console.log("[LOG] Settings loaded.");
-        }
-    }
-
-    function initCards(values) {
-        console.log("[LOG] Initializing responsive cards...");
-        container.innerHTML = '';
-        cards.length = 0;
-        
-        const filterEnabled = document.getElementById('filter-check').checked;
-        const filteredRows = filterEnabled ? values.filter(row => row[5] === "TRUE") : values;
-
-        filteredRows.forEach((row, index) => {
-            const quoteText = row[2]; 
-            const div = document.createElement('div');
-            div.className = 'floating-card';
-            div.innerHTML = `
-                <div class="content">${quoteText}</div>
-            `;
-            div.dataset.id = row[0]; 
-            container.appendChild(div);
-
-            const cardObj = {
-                element: div,
-                x: Math.random() * (window.innerWidth - 200),
-                y: Math.random() * (window.innerHeight - 200),
-                vx: Math.cos(Math.random() * 2 * Math.PI) * (0.5 + Math.random()),
-                vy: Math.sin(Math.random() * 2 * Math.PI) * (0.5 + Math.random())
-            };
-            makeDraggable(cardObj);
-            cards.push(cardObj);
-        });
-
-        highlightNextCard();
-        if (window.highlightInterval) clearInterval(window.highlightInterval);
-        const intervalSec = parseFloat(document.getElementById('interval-input').value) || 5;
-        window.highlightInterval = setInterval(highlightNextCard, intervalSec * 1000);
-    }
-
-    function highlightNextCard() {
-        if (cards.length === 0) return;
-        if (currentSelectedIndex >= 0 && cards[currentSelectedIndex]) {
-            cards[currentSelectedIndex].element.classList.remove('selected');
-        }
-        
-        cards.forEach(card => card.element.onclick = function() { 
-            if(!isDragging && this.classList.contains('selected')) {
-                window.location.href = `https://hsk-gilt.vercel.app/nikki/index.html?id=${this.dataset.id}`;
-            }
-        });
-
-        let nextIndex;
-        const mode = document.getElementById('order-select').value;
-
-        if (mode === 'random') {
-            do {
-                nextIndex = Math.floor(Math.random() * cards.length);
-            } while (nextIndex === currentSelectedIndex && cards.length > 1);
-        } else {
-            nextIndex = (currentSelectedIndex + 1) % cards.length;
-        }
-        
-        currentSelectedIndex = nextIndex;
-        cards[currentSelectedIndex].element.classList.add('selected');
-        console.log(`[LOG] Selected card index: ${currentSelectedIndex} (Mode: ${mode})`);
-    }
-
-    function makeDraggable(cardObj) {
-        let startX, startY;
-        const el = cardObj.element;
-
-        const onStart = (e) => {
-            console.log(`[LOG] Drag started on card ID: ${el.dataset.id}`);
-        };
-
-        const onMove = (e) => {
-            if (!isDragging) return;
-            const touch = e.type === 'touchmove' ? e.touches[0] : e;
-            cardObj.x = touch.clientX - startX;
-            cardObj.y = touch.clientY - startY;
-        };
-
-        const onEnd = () => {
-            if(isDragging) console.log(`[LOG] Drag ended`);
-            isDragging = false;
-            el.style.cursor = 'grab';
-        };
-
-        el.addEventListener('mousedown', onStart);
-        el.addEventListener('touchstart', onStart);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('touchmove', onMove);
-        window.addEventListener('mouseup', onEnd);
-        window.addEventListener('touchend', onEnd);
-    }
-
-    function animate() {
-        cards.forEach(card => {
-            const rect = card.element.getBoundingClientRect();
-            
-            if (!isDragging || currentSelectedIndex !== cards.indexOf(card)) {
-                card.x += card.vx;
-                card.y += card.vy;
-
-                if (card.x <= 0 || card.x + rect.width >= window.innerWidth) {
-                    card.vx *= -1;
-                    card.x = Math.max(0, Math.min(card.x, window.innerWidth - rect.width));
-                }
-
-                if (card.y <= 0 || card.y + rect.height >= window.innerHeight) {
-                    card.vy *= -1;
-                    card.y = Math.max(0, Math.min(card.y, window.innerHeight - rect.height));
-                }
-            }
-
-            card.element.style.transform = `translate3d(${card.x}px, ${card.y}px, 0)`;
-        });
-
-        requestAnimationFrame(animate);
-    }
-
-    window.addEventListener('resize', () => {
-        console.log("[LOG] Window resized, recalculating boundaries.");
-        cards.forEach(card => {
-            card.x = Math.min(card.x, window.innerWidth - card.element.offsetWidth);
-            card.y = Math.min(card.y, window.innerHeight - card.element.offsetHeight);
-        });
-    });
-
-    document.getElementById('menu-btn').onclick = () => {
-        const panel = document.getElementById('settings-panel');
-        panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
-    };
-
-    document.getElementById('filter-check').onchange = () => {
-        saveSettings();
-        if(window.allValues) initCards(window.allValues);
-    };
-
-    document.getElementById('order-select').onchange = () => {
-        saveSettings();
-        if(window.allValues) initCards(window.allValues);
-    };
-
-    document.getElementById('interval-input').onchange = () => {
-        saveSettings();
-        if(window.allValues) initCards(window.allValues);
-    };
-
-    fetchData();
-    animate();
+    console.log("[Log] Final layout optimized: Solid colors for priority, Flex-grid for alignment.");
+    console.log("[Log] Đã di chuyển Nhật ký AI lên mục Học ngôn ngữ để tích hợp Kaiwa.");
+    console.log("[Log] Cấu trúc Logic và CSS được giữ nguyên theo cam kết.");
 </script>
 
 </body>

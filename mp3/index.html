@@ -65,17 +65,14 @@
     let db, alarmInterval, isAudioActivated = false;
 
     async function activateAudio() {
-        console.log("[LOG] Bắt đầu kích hoạt chu kỳ audio.");
+        console.log("[LOG] Người dùng click kích hoạt hệ thống.");
         isAudioActivated = true;
         document.getElementById('activation-overlay').style.display = 'none';
         
         try {
-            // Mồi âm thanh trắng lặp lại để giữ quyền phát khi tắt màn hình
             player.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-            player.loop = true;
-            player.volume = 0.01;
             await player.play();
-            console.log("[LOG] Đã mồi âm thanh chạy ngầm (Keep-Alive).");
+            console.log("[LOG] Audio Context đã được cấp quyền.");
         } catch (err) {
             console.error("[LOG ERROR] Kích hoạt thất bại:", err);
         }
@@ -125,9 +122,10 @@
         });
     }
 
-    async function playFile(id, name) {
+    async function playFile(id, name, forceRestart = false) {
         if (!isAudioActivated) { alert("Vui lòng kích hoạt hệ thống trước!"); return; }
-        titleElem.innerText = `Đang chuẩn bị: ${name}`;
+        console.log(`[LOG] Yêu cầu phát: ${name}`);
+        titleElem.innerText = `Đang kiểm tra: ${name}`;
         const tx = db.transaction([STORE_NAME], "readonly");
         const getRequest = tx.objectStore(STORE_NAME).get(id);
 
@@ -137,25 +135,29 @@
                 console.log(`[LOG] Phát từ Cache: ${name}`);
                 sourceUrl = URL.createObjectURL(getRequest.result);
             } else {
-                console.log(`[LOG] Tải từ Server: ${name}`);
-                titleElem.innerText = `Đang tải từ Server: ${name}...`;
-                sourceUrl = `${API_BASE}?action=audio&fileId=${id}`;
+                console.log(`[LOG] Đang tải ngầm từ Server: ${name}`);
+                titleElem.innerText = `Đang tải dữ liệu: ${name}...`;
+                const resp = await fetch(`${API_BASE}?action=audio&fileId=${id}`);
+                const blob = await resp.blob();
+                sourceUrl = URL.createObjectURL(blob);
                 
-                // Tải ngầm và lưu vào DB
-                fetch(`${API_BASE}?action=audio&fileId=${id}`)
-                    .then(r => r.blob())
-                    .then(blob => {
-                        const sTx = db.transaction([STORE_NAME], "readwrite");
-                        sTx.objectStore(STORE_NAME).put(blob, id);
-                        console.log(`[LOG] Đã lưu ngầm vào DB: ${name}`);
-                        document.getElementById(`status-${id}`).innerText = "OFFLINE";
-                        document.getElementById(`status-${id}`).classList.add("cached");
-                    });
+                // Lưu vào DB ngầm
+                const saveTx = db.transaction([STORE_NAME], "readwrite");
+                saveTx.objectStore(STORE_NAME).put(blob, id);
+                saveTx.oncomplete = () => {
+                    console.log(`[LOG] Đã lưu offline bài: ${name}`);
+                    const badge = document.getElementById(`status-${id}`);
+                    if (badge) {
+                        badge.innerText = "OFFLINE";
+                        badge.classList.add("cached");
+                    }
+                };
             }
             player.loop = false;
             player.volume = 1.0;
             player.src = sourceUrl;
-            player.load(); 
+            player.load();
+            if (forceRestart) player.currentTime = 0;
             player.play().then(() => titleElem.innerText = name)
                   .catch(e => console.error("[LOG ERROR] Chặn phát:", e));
         };
@@ -193,7 +195,7 @@
                         return;
                     }
                     const name = alarmSelect.options[alarmSelect.selectedIndex].dataset.name;
-                    playFile(fileId, name);
+                    playFile(fileId, name, true);
                 }
             }
             if (now.getSeconds() % 30 === 0) console.log(`[LOG] Heartbeat: ${curTime}, UI Status: ${isAudioActivated}`);

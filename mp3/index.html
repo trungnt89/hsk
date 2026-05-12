@@ -98,7 +98,7 @@
         db = e.target.result;
         console.log("[DB] Kết nối thành công");
         loadPlaylist();
-        startTimer();
+        initSettings();
     };
 
     // 2. Tải danh sách từ API
@@ -130,6 +130,8 @@
                 opt.textContent = file.name;
                 alarmSelect.appendChild(opt);
             }
+            // Khôi phục giá trị đã lưu
+            alarmSelect.value = localStorage.getItem('alarmFileId') || "";
             console.log(`[LOG] Đã tải ${files.length} file.`);
         } catch (error) {
             console.error("[ERROR]", error);
@@ -151,8 +153,7 @@
     async function playFile(id, name) {
         titleElem.innerText = `Đang tải: ${name}`;
         document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
-        const targetLi = document.getElementById(`item-${id}`);
-        if (targetLi) targetLi.classList.add('active');
+        document.getElementById(`item-${id}`).classList.add('active');
 
         const transaction = db.transaction([STORE_NAME], "readonly");
         const store = transaction.objectStore(STORE_NAME);
@@ -179,10 +180,8 @@
                     saveTx.oncomplete = () => {
                         console.log(`[DB] Đã lưu xong: ${name}`);
                         const badge = document.getElementById(`status-${id}`);
-                        if (badge) {
-                            badge.innerText = "OFFLINE";
-                            badge.classList.add('cached');
-                        }
+                        badge.innerText = "OFFLINE";
+                        badge.classList.add('cached');
                     };
 
                     const blobUrl = URL.createObjectURL(blob);
@@ -196,34 +195,44 @@
         };
     }
 
-    // 5. Logic Hẹn giờ
+    // 5. Logic Hẹn giờ & Cài đặt
+    function initSettings() {
+        alarmTimeInput.value = localStorage.getItem('alarmTime') || "";
+
+        alarmTimeInput.onchange = (e) => localStorage.setItem('alarmTime', e.target.value);
+        alarmSelect.onchange = (e) => localStorage.setItem('alarmFileId', e.target.value);
+
+        startTimer();
+    }
+
     function startTimer() {
+        if (alarmInterval) clearInterval(alarmInterval);
         alarmInterval = setInterval(() => {
             const now = new Date();
             const currentTimeStr = now.toTimeString().slice(0, 5);
             const alarmTime = alarmTimeInput.value;
             const selectedFileId = alarmSelect.value;
 
-            if (alarmTime) {
+            if (alarmTime && selectedFileId) {
                 const [ah, am] = alarmTime.split(':');
-                let targetDate = new Date();
-                targetDate.setHours(ah, am, 0, 0);
+                let target = new Date();
+                target.setHours(parseInt(ah), parseInt(am), 0, 0);
 
-                if (targetDate < now) targetDate.setDate(targetDate.getDate() + 1);
+                if (target < now) target.setDate(target.getDate() + 1);
 
-                const diff = targetDate - now;
-                const hours = Math.floor(diff / 3600000).toString().padStart(2, '0');
-                const mins = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-                const secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                timerDisplay.textContent = `${hours}:${mins}:${secs}`;
+                const diff = target - now;
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                timerDisplay.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 
-                if (currentTimeStr === alarmTime && selectedFileId) {
-                    const selectedOpt = alarmSelect.options[alarmSelect.selectedIndex];
-                    playFile(selectedFileId, selectedOpt.dataset.name);
-                    alarmTimeInput.value = ""; // Reset hẹn giờ sau khi kích hoạt
+                if (currentTimeStr === alarmTime && now.getSeconds() === 0) {
+                    console.log("[ALARM] Kích hoạt phát nhạc tự động");
+                    const name = alarmSelect.options[alarmSelect.selectedIndex].dataset.name;
+                    playFile(selectedFileId, name);
                 }
             } else {
-                timerDisplay.textContent = "00:00:00";
+                timerDisplay.innerText = "00:00:00";
             }
         }, 1000);
     }

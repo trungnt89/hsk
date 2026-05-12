@@ -34,7 +34,7 @@ async function handler(req, res) {
                 result = await handleListAction(lessionId);
                 return res.status(200).json(result);
 			case 'byfolder':
-                result = await handleGetDriveFilesByFolderId(folderId);
+                result = await util.handleGetDriveFilesByFolderId(folderId);
                 return res.status(200).json(result);
             case 'uploadRecorder':
                 console.log(`[LOG] Processing Upload Recorder`);

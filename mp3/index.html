@@ -62,20 +62,29 @@
     const alarmSelect = document.getElementById('alarm-file-select');
     const timerDisplay = document.getElementById('timer-display');
 
-    let db, alarmInterval, isAudioActivated = false;
+    let db, alarmInterval, isAudioActivated = false, warmupTimeout;
 
     async function activateAudio() {
-        console.log("[LOG] Bắt đầu kích hoạt chu kỳ audio.");
+        console.log("[LOG] Người dùng click kích hoạt. Bắt đầu warm-up 5s.");
         isAudioActivated = true;
         document.getElementById('activation-overlay').style.display = 'none';
         
         try {
-            // Mồi âm thanh trắng lặp lại để giữ quyền phát khi tắt màn hình
-            player.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-            player.loop = true;
-            player.volume = 0.01;
-            await player.play();
-            console.log("[LOG] Đã mồi âm thanh chạy ngầm (Keep-Alive).");
+            // Phát bản nhạc mặc định hoặc bản nhạc đang chọn để chiếm quyền Autoplay
+            const fileId = alarmSelect.value;
+            if (fileId) {
+                const name = alarmSelect.options[alarmSelect.selectedIndex].dataset.name;
+                await playFile(fileId, name);
+            } else {
+                player.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+                await player.play();
+            }
+            console.log("[LOG] Audio Context đã được cấp quyền.");
+            warmupTimeout = setTimeout(() => {
+                player.pause();
+                player.currentTime = 0;
+                console.log("[LOG] Đã tạm dừng sau 5s warm-up và reset về 0.");
+            }, 5000);
         } catch (err) {
             console.error("[LOG ERROR] Kích hoạt thất bại:", err);
         }
@@ -125,8 +134,9 @@
         });
     }
 
-    async function playFile(id, name) {
+    async function playFile(id, name, forceRestart = false) {
         if (!isAudioActivated) { alert("Vui lòng kích hoạt hệ thống trước!"); return; }
+        if (warmupTimeout) clearTimeout(warmupTimeout);
         titleElem.innerText = `Đang chuẩn bị: ${name}`;
         const tx = db.transaction([STORE_NAME], "readonly");
         const getRequest = tx.objectStore(STORE_NAME).get(id);
@@ -148,6 +158,7 @@
             player.volume = 1.0;
             player.src = sourceUrl;
             player.load(); // Quan trọng cho Safari
+            if (forceRestart) player.currentTime = 0;
             player.play().then(() => titleElem.innerText = name)
                   .catch(e => console.error("[LOG ERROR] Chặn phát:", e));
         };
@@ -185,7 +196,8 @@
                         return;
                     }
                     const name = alarmSelect.options[alarmSelect.selectedIndex].dataset.name;
-                    playFile(fileId, name);
+                    console.log("[LOG] Đến giờ báo thức. Phát lại từ đầu.");
+                    playFile(fileId, name, true);
                 }
             }
             if (now.getSeconds() % 30 === 0) console.log(`[LOG] Heartbeat: ${curTime}, UI Status: ${isAudioActivated}`);

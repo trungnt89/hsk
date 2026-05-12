@@ -33,7 +33,7 @@ async function handler(req, res) {
             case 'list':
                 result = await handleListAction(lessionId);
                 return res.status(200).json(result);
-			case 'folder':
+			case 'byfolder':
                 result = await handleGetDriveFilesByFolderId(folderId);
                 return res.status(200).json(result);
             case 'uploadRecorder':

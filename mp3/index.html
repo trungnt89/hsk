@@ -20,6 +20,8 @@
         .playlist { list-style: none; }
         .playlist li { padding: 15px 20px; border-bottom: 1px solid #222; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .playlist li.active { background: #333; border-left: 4px solid #1db954; }
+        .playlist li.pinned { background: #2a2a10; border-left: 4px solid #f1c40f; }
+        .pin-btn { margin-left: 15px; font-size: 1.1rem; filter: grayscale(1); transition: 0.2s; } .pinned .pin-btn { filter: grayscale(0); }
         .file-info { flex: 1; overflow: hidden; }
         .file-name { display: block; margin-bottom: 4px; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #444; color: #bbb; }
@@ -85,7 +87,9 @@
         titleElem.innerText = "Đang tải danh sách...";
         try {
             const response = await fetch(`${API_BASE}?action=byfolder&folderId=${FOLDER_ID}`);
-            const files = await response.json();
+            let files = await response.json();
+            const pinnedIds = JSON.parse(localStorage.getItem('pinnedIds') || "[]");
+            files.sort((a, b) => (pinnedIds.includes(b.id) ? 1 : 0) - (pinnedIds.includes(a.id) ? 1 : 0));
             playlistElem.innerHTML = "";
             const lastSelectedId = localStorage.getItem('lastSelectedId');
             for (const file of files) {
@@ -93,7 +97,9 @@
                 const li = document.createElement('li');
                 li.id = `item-${file.id}`;
                 if (lastSelectedId === file.id) li.classList.add('active');
-                li.innerHTML = `<div class="file-info"><span class="file-name">${file.name}</span><span class="status-badge ${isCached ? 'cached' : ''}" id="status-${file.id}">${isCached ? 'OFFLINE' : 'ONLINE'}</span></div>`;
+                if (pinnedIds.includes(file.id)) li.classList.add('pinned');
+                li.innerHTML = `<div class="file-info"><span class="file-name">${file.name}</span><span class="status-badge ${isCached ? 'cached' : ''}" id="status-${file.id}">${isCached ? 'OFFLINE' : 'ONLINE'}</span></div><span class="pin-btn">📌</span>`;
+                li.querySelector('.pin-btn').onclick = (e) => { e.stopPropagation(); togglePin(file.id); };
                 li.onclick = () => playFile(file.id, file.name);
                 playlistElem.appendChild(li);
                 const opt = document.createElement('option');
@@ -114,6 +120,19 @@
             const req = tx.objectStore(STORE_NAME).get(id);
             req.onsuccess = () => r(!!req.result);
         });
+    }
+
+    function togglePin(id) {
+        let pinnedIds = JSON.parse(localStorage.getItem('pinnedIds') || "[]");
+        if (pinnedIds.includes(id)) {
+            pinnedIds = pinnedIds.filter(p => p !== id);
+            console.log(`[LOG] Bỏ ghim: ${id}`);
+        } else {
+            pinnedIds.push(id);
+            console.log(`[LOG] Đã ghim: ${id}`);
+        }
+        localStorage.setItem('pinnedIds', JSON.stringify(pinnedIds));
+        loadPlaylist();
     }
 
     async function playFile(id, name, forceRestart = false) {

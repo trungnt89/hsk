@@ -70,11 +70,12 @@
         document.getElementById('activation-overlay').style.display = 'none';
         
         try {
-            // Mồi trình duyệt bằng âm thanh trắng cực ngắn (Fix lỗi click lần 2 mới phát)
+            // Mồi âm thanh trắng lặp lại để giữ quyền phát khi tắt màn hình
             player.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+            player.loop = true;
+            player.volume = 0.01;
             await player.play();
-            player.pause();
-            console.log("[LOG] Trình duyệt đã chấp nhận quyền phát audio.");
+            console.log("[LOG] Đã mồi âm thanh chạy ngầm (Keep-Alive).");
         } catch (err) {
             console.error("[LOG ERROR] Kích hoạt thất bại:", err);
         }
@@ -92,6 +93,7 @@
     };
 
     async function loadPlaylist() {
+        titleElem.innerText = "Đang tải danh sách...";
         try {
             const response = await fetch(`${API_BASE}?action=byfolder&folderId=${FOLDER_ID}`);
             const files = await response.json();
@@ -108,7 +110,11 @@
                 alarmSelect.appendChild(opt);
             }
             alarmSelect.value = localStorage.getItem('alarmFileId') || "";
-        } catch (error) { console.error("[ERROR]", error); }
+            titleElem.innerText = "Sẵn sàng";
+        } catch (error) {
+            console.error("[ERROR]", error);
+            titleElem.innerText = "Lỗi tải danh sách";
+        }
     }
 
     function checkCache(id) {
@@ -138,6 +144,8 @@
                 saveTx.objectStore(STORE_NAME).put(blob, id);
                 sourceUrl = URL.createObjectURL(blob);
             }
+            player.loop = false;
+            player.volume = 1.0;
             player.src = sourceUrl;
             player.load(); // Quan trọng cho Safari
             player.play().then(() => titleElem.innerText = name)

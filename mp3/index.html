@@ -7,7 +7,7 @@
 	<script src="../com/assistive.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; }
+        body, html { height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; overflow: hidden; }
         
         .app-container { display: flex; flex-direction: column; height: 100vh; max-width: 1000px; margin: auto; border-left: 1px solid #333; border-right: 1px solid #333; }
         
@@ -16,7 +16,7 @@
         header h2 { font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1db954; margin-bottom: 10px; }
 
         .settings-panel { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; background: #282828; padding: 10px; border-radius: 8px; font-size: 0.85rem; }
-        .settings-panel input, .settings-panel select { background: #333; color: white; border: 1px solid #444; padding: 5px; border-radius: 4px; }
+        .settings-panel input, .settings-panel select { background: #333; color: white; border: 1px solid #444; padding: 5px; border-radius: 4px; max-width: 140px; text-overflow: ellipsis; }
         #timer-display { color: #1db954; font-weight: bold; min-width: 80px; }
 
         /* Player Area */
@@ -32,8 +32,8 @@
         }
         .playlist li:hover { background: #282828; }
         .playlist li.active { background: #333; border-left: 4px solid #1db954; }
-        .file-info { flex: 1; }
-        .file-name { display: block; margin-bottom: 4px; font-size: 0.95rem; }
+        .file-info { flex: 1; overflow: hidden; }
+        .file-name { display: block; margin-bottom: 4px; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #444; color: #bbb; }
         .status-badge.cached { background: #1db954; color: white; }
 
@@ -41,9 +41,20 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #121212; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+        /* Safari Activation Overlay */
+        #activation-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; }
+        #activation-overlay h1 { color: #1db954; margin-bottom: 20px; }
+        #activation-overlay p { font-size: 1.1rem; }
     </style>
 </head>
 <body>
+
+<div id="activation-overlay" onclick="activateAudio()">
+    <h1>HỆ THỐNG ĐÃ SẴN SÀNG</h1>
+    <p>Chạm vào màn hình để kích hoạt báo thức và âm thanh</p>
+    <small style="margin-top:20px; color:#888;">(Bắt buộc đối với Safari iOS)</small>
+</div>
 
 <div class="app-container">
     <header>
@@ -84,6 +95,21 @@
 
     let db;
     let alarmInterval;
+    let isAudioActivated = false;
+
+    // 0. Kích hoạt Audio Safari
+    function activateAudio() {
+        console.log("[LOG] Người dùng đã click kích hoạt audio.");
+        isAudioActivated = true;
+        player.play().then(() => {
+            player.pause();
+            player.currentTime = 0;
+            document.getElementById('activation-overlay').style.display = 'none';
+            console.log("[LOG] Audio đã được mở khóa và Overlay đã ẩn.");
+        }).catch(err => {
+            console.error("[LOG ERROR] Lỗi kích hoạt mồi audio:", err);
+        });
+    }
 
     // 1. Khởi tạo IndexedDB
     const request = indexedDB.open(DB_NAME, 1);
@@ -164,7 +190,7 @@
                 console.log(`[LOG] Phát từ CACHE: ${name}`);
                 const blobUrl = URL.createObjectURL(getRequest.result);
                 player.src = blobUrl;
-                player.play();
+                player.play().catch(e => console.error("[LOG ERROR] Safari chặn phát tự động:", e));
                 titleElem.innerText = name;
             } else {
                 console.log(`[LOG] Tải từ SERVER & Lưu cache: ${name}`);
@@ -186,7 +212,7 @@
 
                     const blobUrl = URL.createObjectURL(blob);
                     player.src = blobUrl;
-                    player.play();
+                    player.play().catch(e => console.error("[LOG ERROR] Safari chặn phát:", e));
                     titleElem.innerText = name;
                 } catch (err) {
                     console.error("[ERROR] Tải file thất bại", err);
@@ -234,6 +260,7 @@
             } else {
                 timerDisplay.innerText = "00:00:00";
             }
+            if (now.getSeconds() % 10 === 0) console.log(`[LOG] Timer active: ${currentTimeStr}. Audio Status: ${isAudioActivated}`);
         }, 1000);
     }
 </script>

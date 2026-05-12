@@ -87,10 +87,12 @@
             const response = await fetch(`${API_BASE}?action=byfolder&folderId=${FOLDER_ID}`);
             const files = await response.json();
             playlistElem.innerHTML = "";
+            const lastSelectedId = localStorage.getItem('lastSelectedId');
             for (const file of files) {
                 const isCached = await checkCache(file.id);
                 const li = document.createElement('li');
                 li.id = `item-${file.id}`;
+                if (lastSelectedId === file.id) li.classList.add('active');
                 li.innerHTML = `<div class="file-info"><span class="file-name">${file.name}</span><span class="status-badge ${isCached ? 'cached' : ''}" id="status-${file.id}">${isCached ? 'OFFLINE' : 'ONLINE'}</span></div>`;
                 li.onclick = () => playFile(file.id, file.name);
                 playlistElem.appendChild(li);
@@ -117,6 +119,11 @@
     async function playFile(id, name, forceRestart = false) {
         // Đảm bảo kích hoạt lại nếu trước đó bị browser chặn
         if (!isAudioActivated) isAudioActivated = true; 
+        
+        localStorage.setItem('lastSelectedId', id);
+        document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
+        const activeItem = document.getElementById(`item-${id}`);
+        if (activeItem) activeItem.classList.add('active');
         
         console.log(`[LOG] Yêu cầu phát: ${name}`);
         titleElem.innerText = `Đang kiểm tra: ${name}`;

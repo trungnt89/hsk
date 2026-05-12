@@ -13,7 +13,11 @@
         
         /* Header */
         header { padding: 20px; background: #1f1f1f; text-align: center; border-bottom: 1px solid #333; }
-        header h2 { font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1db954; }
+        header h2 { font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1db954; margin-bottom: 10px; }
+
+        .settings-panel { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; background: #282828; padding: 10px; border-radius: 8px; font-size: 0.85rem; }
+        .settings-panel input, .settings-panel select { background: #333; color: white; border: 1px solid #444; padding: 5px; border-radius: 4px; }
+        #timer-display { color: #1db954; font-weight: bold; min-width: 80px; }
 
         /* Player Area */
         .player-controls { padding: 20px; background: #1f1f1f; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
@@ -44,6 +48,14 @@
 <div class="app-container">
     <header>
         <h2 id="current-title">Sẵn sàng</h2>
+        <div class="settings-panel">
+            <span>Hẹn giờ:</span>
+            <input type="time" id="alarm-time">
+            <select id="alarm-file-select">
+                <option value="">-- Chọn bài --</option>
+            </select>
+            <span id="timer-display">00:00:00</span>
+        </div>
     </header>
 
     <div class="playlist-container">
@@ -66,8 +78,12 @@
     const player = document.getElementById('audio-player');
     const playlistElem = document.getElementById('playlist');
     const titleElem = document.getElementById('current-title');
+    const alarmTimeInput = document.getElementById('alarm-time');
+    const alarmSelect = document.getElementById('alarm-file-select');
+    const timerDisplay = document.getElementById('timer-display');
 
     let db;
+    let alarmInterval;
 
     // 1. Khởi tạo IndexedDB
     const request = indexedDB.open(DB_NAME, 1);
@@ -82,6 +98,7 @@
         db = e.target.result;
         console.log("[DB] Kết nối thành công");
         loadPlaylist();
+        startTimer();
     };
 
     // 2. Tải danh sách từ API
@@ -90,6 +107,7 @@
             const response = await fetch(`${API_BASE}?action=byfolder&folderId=${FOLDER_ID}`);
             const files = await response.json();
             playlistElem.innerHTML = "";
+            alarmSelect.innerHTML = '<option value="">-- Chọn bài --</option>';
 
             for (const file of files) {
                 const isCached = await checkCache(file.id);
@@ -105,6 +123,12 @@
                 `;
                 li.onclick = () => playFile(file.id, file.name);
                 playlistElem.appendChild(li);
+
+                const opt = document.createElement('option');
+                opt.value = file.id;
+                opt.dataset.name = file.name;
+                opt.textContent = file.name;
+                alarmSelect.appendChild(opt);
             }
             console.log(`[LOG] Đã tải ${files.length} file.`);
         } catch (error) {
@@ -127,7 +151,8 @@
     async function playFile(id, name) {
         titleElem.innerText = `Đang tải: ${name}`;
         document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
-        document.getElementById(`item-${id}`).classList.add('active');
+        const targetLi = document.getElementById(`item-${id}`);
+        if (targetLi) targetLi.classList.add('active');
 
         const transaction = db.transaction([STORE_NAME], "readonly");
         const store = transaction.objectStore(STORE_NAME);
@@ -154,8 +179,10 @@
                     saveTx.oncomplete = () => {
                         console.log(`[DB] Đã lưu xong: ${name}`);
                         const badge = document.getElementById(`status-${id}`);
-                        badge.innerText = "OFFLINE";
-                        badge.classList.add('cached');
+                        if (badge) {
+                            badge.innerText = "OFFLINE";
+                            badge.classList.add('cached');
+                        }
                     };
 
                     const blobUrl = URL.createObjectURL(blob);
@@ -167,6 +194,38 @@
                 }
             }
         };
+    }
+
+    // 5. Logic Hẹn giờ
+    function startTimer() {
+        alarmInterval = setInterval(() => {
+            const now = new Date();
+            const currentTimeStr = now.toTimeString().slice(0, 5);
+            const alarmTime = alarmTimeInput.value;
+            const selectedFileId = alarmSelect.value;
+
+            if (alarmTime) {
+                const [ah, am] = alarmTime.split(':');
+                let targetDate = new Date();
+                targetDate.setHours(ah, am, 0, 0);
+
+                if (targetDate < now) targetDate.setDate(targetDate.getDate() + 1);
+
+                const diff = targetDate - now;
+                const hours = Math.floor(diff / 3600000).toString().padStart(2, '0');
+                const mins = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+                const secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                timerDisplay.textContent = `${hours}:${mins}:${secs}`;
+
+                if (currentTimeStr === alarmTime && selectedFileId) {
+                    const selectedOpt = alarmSelect.options[alarmSelect.selectedIndex];
+                    playFile(selectedFileId, selectedOpt.dataset.name);
+                    alarmTimeInput.value = ""; // Reset hẹn giờ sau khi kích hoạt
+                }
+            } else {
+                timerDisplay.textContent = "00:00:00";
+            }
+        }, 1000);
     }
 </script>
 

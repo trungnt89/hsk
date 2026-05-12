@@ -90,6 +90,23 @@ export async function handleGetDriveFileByKw(keyword) {
     return allFiles;
 }
 
+export async function handleGetDriveFilesByFolderId(folderId) {
+    console.log(`[LOG] Get files from: ${folderId}`);
+    const { drive } = await ensureAuthenticated();
+    let allFiles = [], nextPageToken = null;
+    do {
+        const res = await drive.files.list({
+            q: `'${folderId}' in parents and trashed=false`,
+            fields: 'nextPageToken, files(id, name, mimeType)',
+            pageToken: nextPageToken
+        });
+        allFiles.push(...res.data.files);
+        nextPageToken = res.data.nextPageToken;
+        console.log(`[LOG] Found ${allFiles.length} files`);
+    } while (nextPageToken);
+    return allFiles;
+}
+
 // 4. Trả về audio stream cho client (Sử dụng cachedDriveClient từ ensureAuthenticated)
 export async function handleReadFileMedia(fileId, headers, res) {
     const { drive } = await ensureAuthenticated();

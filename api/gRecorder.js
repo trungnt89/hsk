@@ -14,9 +14,10 @@ async function handler(req, res) {
     let action = query.action || body.action;
     let name = query.name || body.name;
 	
+
 	let lessionId = query.lessionId || body.lessionId;
 	let fileId = query.fileId || body.fileId;
-	
+	let folderId = query.folderId || body.folderId;	
 	
     let result;
 
@@ -32,7 +33,9 @@ async function handler(req, res) {
             case 'list':
                 result = await handleListAction(lessionId);
                 return res.status(200).json(result);
-
+			case 'folder':
+                result = await handleGetDriveFilesByFolderId(folderId);
+                return res.status(200).json(result);
             case 'uploadRecorder':
                 console.log(`[LOG] Processing Upload Recorder`);
                 result = await util.handleUploadRecorder(body);

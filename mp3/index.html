@@ -3,52 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Player Pro - Offline Support</title>
+    <title>Audio Player Pro - Fix Safari</title>
 	<script src="../com/assistive.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; overflow: hidden; }
-        
         .app-container { display: flex; flex-direction: column; height: 100vh; max-width: 1000px; margin: auto; border-left: 1px solid #333; border-right: 1px solid #333; }
-        
         header { padding: 20px; background: #1f1f1f; text-align: center; border-bottom: 1px solid #333; }
         header h2 { font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1db954; margin-bottom: 10px; }
-
         .settings-panel { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; background: #282828; padding: 10px; border-radius: 8px; font-size: 0.85rem; }
-        .settings-panel input, .settings-panel select { background: #333; color: white; border: 1px solid #444; padding: 5px; border-radius: 4px; max-width: 140px; text-overflow: ellipsis; }
+        .settings-panel input, .settings-panel select { background: #333; color: white; border: 1px solid #444; padding: 5px; border-radius: 4px; max-width: 140px; }
         #timer-display { color: #1db954; font-weight: bold; min-width: 80px; }
-
         .player-controls { padding: 20px; background: #1f1f1f; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
         audio { width: 100%; filter: invert(100%); }
-
         .playlist-container { flex: 1; overflow-y: auto; background: #121212; }
         .playlist { list-style: none; }
-        .playlist li { 
-            padding: 15px 20px; border-bottom: 1px solid #222; cursor: pointer; 
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .playlist li:hover { background: #282828; }
+        .playlist li { padding: 15px 20px; border-bottom: 1px solid #222; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .playlist li.active { background: #333; border-left: 4px solid #1db954; }
         .file-info { flex: 1; overflow: hidden; }
         .file-name { display: block; margin-bottom: 4px; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #444; color: #bbb; }
         .status-badge.cached { background: #1db954; color: white; }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #121212; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-
-        #activation-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; }
+        #activation-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; }
         #activation-overlay h1 { color: #1db954; margin-bottom: 20px; }
-        #activation-overlay p { font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
 <div id="activation-overlay" onclick="activateAudio()">
     <h1>HỆ THỐNG ĐÃ SẴN SÀNG</h1>
-    <p>Chạm vào màn hình để kích hoạt báo thức và âm thanh</p>
-    <small style="margin-top:20px; color:#888;">(Bắt buộc đối với Safari iOS)</small>
+    <p>Chạm vào màn hình ĐỂ KÍCH HOẠT âm thanh</p>
+    <small style="margin-top:20px; color:#888;">(Bắt buộc sau khi tải trang hoặc reload)</small>
 </div>
 
 <div class="app-container">
@@ -57,22 +42,12 @@
         <div class="settings-panel">
             <span>Hẹn giờ:</span>
             <input type="time" id="alarm-time">
-            <select id="alarm-file-select">
-                <option value="">-- Chọn bài --</option>
-            </select>
+            <select id="alarm-file-select"><option value="">-- Chọn bài --</option></select>
             <span id="timer-display">00:00:00</span>
         </div>
     </header>
-
-    <div class="playlist-container">
-        <ul class="playlist" id="playlist">
-            <li style="justify-content: center;">Đang khởi tạo hệ thống...</li>
-        </ul>
-    </div>
-
-    <div class="player-controls">
-        <audio id="audio-player" controls></audio>
-    </div>
+    <div class="playlist-container"><ul class="playlist" id="playlist"></ul></div>
+    <div class="player-controls"><audio id="audio-player" controls></audio></div>
 </div>
 
 <script>
@@ -80,7 +55,6 @@
     const FOLDER_ID = "1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm";
     const DB_NAME = "AudioOfflineDB";
     const STORE_NAME = "audioFiles";
-    
     const player = document.getElementById('audio-player');
     const playlistElem = document.getElementById('playlist');
     const titleElem = document.getElementById('current-title');
@@ -88,131 +62,86 @@
     const alarmSelect = document.getElementById('alarm-file-select');
     const timerDisplay = document.getElementById('timer-display');
 
-    let db;
-    let alarmInterval;
-    let isAudioActivated = false;
+    let db, alarmInterval, isAudioActivated = false;
 
-    // 0. Kích hoạt Audio Safari - Đã sửa lỗi không tắt màn hình chờ
-    function activateAudio() {
-        console.log("[LOG] Người dùng đã click kích hoạt audio.");
+    async function activateAudio() {
+        console.log("[LOG] Bắt đầu kích hoạt chu kỳ audio.");
         isAudioActivated = true;
-        
-        // Ẩn Overlay ngay lập tức để không gây treo giao diện
         document.getElementById('activation-overlay').style.display = 'none';
-
-        player.play().then(() => {
+        
+        try {
+            // Mồi trình duyệt bằng âm thanh trắng cực ngắn (Fix lỗi click lần 2 mới phát)
+            player.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+            await player.play();
             player.pause();
-            player.currentTime = 0;
-            console.log("[LOG] Audio đã được mở khóa thành công.");
-        }).catch(err => {
-            console.error("[LOG ERROR] Lỗi kích hoạt mồi audio (Safari):", err);
-        }).finally(() => {
-            console.log("[LOG] Đã đóng màn hình chờ.");
-        });
+            console.log("[LOG] Trình duyệt đã chấp nhận quyền phát audio.");
+        } catch (err) {
+            console.error("[LOG ERROR] Kích hoạt thất bại:", err);
+        }
     }
 
-    // 1. Khởi tạo IndexedDB
     const request = indexedDB.open(DB_NAME, 1);
     request.onupgradeneeded = (e) => {
         db = e.target.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME);
-            console.log(`[DB] Đã tạo store: ${STORE_NAME}`);
-        }
+        if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
     };
     request.onsuccess = (e) => {
         db = e.target.result;
-        console.log("[DB] Kết nối thành công");
         loadPlaylist();
         initSettings();
     };
 
-    // 2. Tải danh sách từ API
     async function loadPlaylist() {
         try {
             const response = await fetch(`${API_BASE}?action=byfolder&folderId=${FOLDER_ID}`);
             const files = await response.json();
             playlistElem.innerHTML = "";
-            alarmSelect.innerHTML = '<option value="">-- Chọn bài --</option>';
-
             for (const file of files) {
                 const isCached = await checkCache(file.id);
                 const li = document.createElement('li');
                 li.id = `item-${file.id}`;
-                li.innerHTML = `
-                    <div class="file-info">
-                        <span class="file-name">${file.name}</span>
-                        <span class="status-badge ${isCached ? 'cached' : ''}" id="status-${file.id}">
-                            ${isCached ? 'OFFLINE' : 'ONLINE'}
-                        </span>
-                    </div>
-                `;
+                li.innerHTML = `<div class="file-info"><span class="file-name">${file.name}</span><span class="status-badge ${isCached ? 'cached' : ''}" id="status-${file.id}">${isCached ? 'OFFLINE' : 'ONLINE'}</span></div>`;
                 li.onclick = () => playFile(file.id, file.name);
                 playlistElem.appendChild(li);
-
                 const opt = document.createElement('option');
-                opt.value = file.id;
-                opt.dataset.name = file.name;
-                opt.textContent = file.name;
+                opt.value = file.id; opt.dataset.name = file.name; opt.textContent = file.name;
                 alarmSelect.appendChild(opt);
             }
             alarmSelect.value = localStorage.getItem('alarmFileId') || "";
-            console.log(`[LOG] Đã tải ${files.length} file.`);
-        } catch (error) {
-            console.error("[ERROR]", error);
-            playlistElem.innerHTML = "<li>Lỗi kết nối API</li>";
-        }
+        } catch (error) { console.error("[ERROR]", error); }
     }
 
     function checkCache(id) {
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORE_NAME], "readonly");
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.get(id);
-            request.onsuccess = () => resolve(!!request.result);
+        return new Promise((r) => {
+            const tx = db.transaction([STORE_NAME], "readonly");
+            const req = tx.objectStore(STORE_NAME).get(id);
+            req.onsuccess = () => r(!!req.result);
         });
     }
 
     async function playFile(id, name) {
-        titleElem.innerText = `Đang tải: ${name}`;
-        document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
-        const activeItem = document.getElementById(`item-${id}`);
-        if (activeItem) activeItem.classList.add('active');
-
-        const transaction = db.transaction([STORE_NAME], "readonly");
-        const store = transaction.objectStore(STORE_NAME);
-        const getRequest = store.get(id);
+        if (!isAudioActivated) { alert("Vui lòng kích hoạt hệ thống trước!"); return; }
+        titleElem.innerText = `Đang chuẩn bị: ${name}`;
+        const tx = db.transaction([STORE_NAME], "readonly");
+        const getRequest = tx.objectStore(STORE_NAME).get(id);
 
         getRequest.onsuccess = async () => {
+            let sourceUrl;
             if (getRequest.result) {
-                console.log(`[LOG] Phát từ CACHE: ${name}`);
-                const blobUrl = URL.createObjectURL(getRequest.result);
-                player.src = blobUrl;
-                player.play().catch(e => console.error("[LOG ERROR] Phát thất bại:", e));
-                titleElem.innerText = name;
+                console.log(`[LOG] Phát từ Cache: ${name}`);
+                sourceUrl = URL.createObjectURL(getRequest.result);
             } else {
-                console.log(`[LOG] Tải mới: ${name}`);
-                try {
-                    const streamUrl = `${API_BASE}?action=audio&fileId=${id}`;
-                    const response = await fetch(streamUrl);
-                    const blob = await response.blob();
-                    const saveTx = db.transaction([STORE_NAME], "readwrite");
-                    saveTx.objectStore(STORE_NAME).put(blob, id);
-                    saveTx.oncomplete = () => {
-                        const badge = document.getElementById(`status-${id}`);
-                        if (badge) {
-                            badge.innerText = "OFFLINE";
-                            badge.classList.add('cached');
-                        }
-                    };
-                    const blobUrl = URL.createObjectURL(blob);
-                    player.src = blobUrl;
-                    player.play();
-                    titleElem.innerText = name;
-                } catch (err) {
-                    console.error("[ERROR] Tải file lỗi", err);
-                }
+                console.log(`[LOG] Tải từ Server: ${name}`);
+                const resp = await fetch(`${API_BASE}?action=audio&fileId=${id}`);
+                const blob = await resp.blob();
+                const saveTx = db.transaction([STORE_NAME], "readwrite");
+                saveTx.objectStore(STORE_NAME).put(blob, id);
+                sourceUrl = URL.createObjectURL(blob);
             }
+            player.src = sourceUrl;
+            player.load(); // Quan trọng cho Safari
+            player.play().then(() => titleElem.innerText = name)
+                  .catch(e => console.error("[LOG ERROR] Chặn phát:", e));
         };
     }
 
@@ -227,14 +156,13 @@
         if (alarmInterval) clearInterval(alarmInterval);
         alarmInterval = setInterval(() => {
             const now = new Date();
-            const currentTimeStr = now.toTimeString().slice(0, 5);
-            const alarmTime = alarmTimeInput.value;
-            const selectedFileId = alarmSelect.value;
+            const curTime = now.toTimeString().slice(0, 5);
+            const setTime = alarmTimeInput.value;
+            const fileId = alarmSelect.value;
 
-            if (alarmTime && selectedFileId) {
-                const [ah, am] = alarmTime.split(':');
-                let target = new Date();
-                target.setHours(parseInt(ah), parseInt(am), 0, 0);
+            if (setTime && fileId) {
+                const [ah, am] = setTime.split(':');
+                let target = new Date(); target.setHours(ah, am, 0, 0);
                 if (target < now) target.setDate(target.getDate() + 1);
                 const diff = target - now;
                 const h = Math.floor(diff / 3600000);
@@ -242,17 +170,19 @@
                 const s = Math.floor((diff % 60000) / 1000);
                 timerDisplay.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 
-                if (currentTimeStr === alarmTime && now.getSeconds() === 0) {
+                if (curTime === setTime && now.getSeconds() === 0) {
+                    if (!isAudioActivated) {
+                        console.error("[ALARM ERROR] Chưa kích hoạt Audio khi đến giờ!");
+                        alert("ĐÃ ĐẾN GIỜ BÁO THỨC! Chạm vào đây để nghe nhạc.");
+                        return;
+                    }
                     const name = alarmSelect.options[alarmSelect.selectedIndex].dataset.name;
-                    playFile(selectedFileId, name);
+                    playFile(fileId, name);
                 }
-            } else {
-                timerDisplay.innerText = "00:00:00";
             }
-            if (now.getSeconds() % 30 === 0) console.log(`[LOG] Heartbeat: ${currentTimeStr}`);
+            if (now.getSeconds() % 30 === 0) console.log(`[LOG] Heartbeat: ${curTime}, UI Status: ${isAudioActivated}`);
         }, 1000);
     }
 </script>
-
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Player Pro - Fix Safari</title>
+    <title>Audio Player Pro</title>
 	<script src="../com/assistive.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,7 +26,9 @@
         .file-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; font-size: 0.95rem; }
         .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #444; color: #bbb; }
         .status-badge.cached { background: #1db954; color: white; }
-        #player-title { color: #1db954; font-size: 0.85rem; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #player-title-container { width: 100%; overflow: hidden; margin-bottom: 8px; }
+        #player-title { color: #1db954; font-size: 0.85rem; white-space: nowrap; display: inline-block; animation: marquee 10s linear infinite; padding-left: 100%; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
 <body>
@@ -43,7 +45,7 @@
     </header>
     <div class="playlist-container"><ul class="playlist" id="playlist"></ul></div>
     <div class="player-controls">
-        <div id="player-title"></div>
+        <div id="player-title-container"><div id="player-title"></div></div>
         <audio id="audio-player" controls></audio>
     </div>
 </div>
@@ -138,7 +140,6 @@
     }
 
     async function playFile(id, name, forceRestart = false) {
-        // Đảm bảo kích hoạt lại nếu trước đó bị browser chặn
         if (!isAudioActivated) isAudioActivated = true; 
         
         localStorage.setItem('lastSelectedId', id);
@@ -177,8 +178,17 @@
             player.src = sourceUrl;
             player.load();
             if (forceRestart) player.currentTime = 0;
-            player.play().then(() => playerTitleElem.innerText = name)
-                  .catch(e => console.error("[LOG ERROR] Chặn phát:", e));
+            player.play().then(() => {
+                playerTitleElem.innerText = name;
+                const savedPos = localStorage.getItem('pos_' + id);
+                if(savedPos && !forceRestart) {
+                    player.currentTime = parseFloat(savedPos);
+                    console.log("[LOG] Tiếp tục phát từ: " + savedPos + "s");
+                }
+                player.ontimeupdate = () => {
+                    localStorage.setItem('pos_' + id, player.currentTime);
+                };
+            }).catch(e => console.error("[LOG ERROR] Chặn phát:", e));
         };
     }
 

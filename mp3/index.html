@@ -17,15 +17,16 @@
         .player-controls { padding: 20px; background: #1f1f1f; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
         audio { width: 100%; filter: invert(100%); }
         .playlist-container { flex: 1; overflow-y: auto; background: #121212; }
-        .playlist { list-style: none; }
-        .playlist li { padding: 15px 20px; border-bottom: 1px solid #222; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .playlist { list-style: none; display: flex; flex-direction: column; }
+        .playlist li { padding: 15px 20px; border-bottom: 1px solid #222; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #121212; }
         .playlist li.active { background: #333; border-left: 4px solid #1db954; }
-        .playlist li.pinned { background: #2a2a10; border-left: 4px solid #f1c40f; }
+        .playlist li.pinned { background: #2a2a10; border-left: 4px solid #f1c40f; position: sticky; top: 0; z-index: 10; }
         .pin-btn { margin-left: 15px; font-size: 1.1rem; filter: grayscale(1); transition: 0.2s; } .pinned .pin-btn { filter: grayscale(0); }
         .file-info { flex: 1; overflow: hidden; }
-        .file-name { display: block; margin-bottom: 4px; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; font-size: 0.95rem; }
         .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #444; color: #bbb; }
         .status-badge.cached { background: #1db954; color: white; }
+        #player-title { color: #1db954; font-size: 0.85rem; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style>
 </head>
 <body>
@@ -41,7 +42,10 @@
         </div>
     </header>
     <div class="playlist-container"><ul class="playlist" id="playlist"></ul></div>
-    <div class="player-controls"><audio id="audio-player" controls></audio></div>
+    <div class="player-controls">
+        <div id="player-title"></div>
+        <audio id="audio-player" controls></audio>
+    </div>
 </div>
 
 <script>
@@ -52,6 +56,7 @@
     const player = document.getElementById('audio-player');
     const playlistElem = document.getElementById('playlist');
     const titleElem = document.getElementById('current-title');
+    const playerTitleElem = document.getElementById('player-title');
     const alarmTimeInput = document.getElementById('alarm-time');
     const alarmSelect = document.getElementById('alarm-file-select');
     const timerDisplay = document.getElementById('timer-display');
@@ -84,7 +89,6 @@
     };
 
     async function loadPlaylist() {
-        titleElem.innerText = "Đang tải danh sách...";
         try {
             const response = await fetch(`${API_BASE}?action=byfolder&folderId=${FOLDER_ID}`);
             let files = await response.json();
@@ -107,10 +111,8 @@
                 alarmSelect.appendChild(opt);
             }
             alarmSelect.value = localStorage.getItem('alarmFileId') || "";
-            titleElem.innerText = "Sẵn sàng";
         } catch (error) {
             console.error("[ERROR]", error);
-            titleElem.innerText = "Lỗi tải danh sách";
         }
     }
 
@@ -145,7 +147,6 @@
         if (activeItem) activeItem.classList.add('active');
         
         console.log(`[LOG] Yêu cầu phát: ${name}`);
-        titleElem.innerText = `Đang kiểm tra: ${name}`;
         const tx = db.transaction([STORE_NAME], "readonly");
         const getRequest = tx.objectStore(STORE_NAME).get(id);
 
@@ -156,7 +157,6 @@
                 sourceUrl = URL.createObjectURL(getRequest.result);
             } else {
                 console.log(`[LOG] Đang tải ngầm từ Server: ${name}`);
-                titleElem.innerText = `Đang tải dữ liệu: ${name}...`;
                 const resp = await fetch(`${API_BASE}?action=audio&fileId=${id}`);
                 const blob = await resp.blob();
                 sourceUrl = URL.createObjectURL(blob);
@@ -177,7 +177,7 @@
             player.src = sourceUrl;
             player.load();
             if (forceRestart) player.currentTime = 0;
-            player.play().then(() => titleElem.innerText = name)
+            player.play().then(() => playerTitleElem.innerText = name)
                   .catch(e => console.error("[LOG ERROR] Chặn phát:", e));
         };
     }

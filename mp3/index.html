@@ -27,7 +27,7 @@
         .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #444; color: #bbb; }
         .status-badge.cached { background: #1db954; color: white; }
         #player-title-container { width: 100%; overflow: hidden; margin-bottom: 8px; }
-        #player-title { color: #1db954; font-size: 0.85rem; white-space: nowrap; display: inline-block; animation: marquee 30s linear infinite; padding-left: 100%; }
+        #player-title { color: #1db954; font-size: 0.85rem; white-space: nowrap; display: inline-block; animation: marquee 20s linear infinite; padding-left: 100%; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
@@ -140,6 +140,7 @@
     }
 
     async function playFile(id, name, forceRestart = false) {
+        // Đảm bảo kích hoạt lại nếu trước đó bị browser chặn
         if (!isAudioActivated) isAudioActivated = true; 
         
         localStorage.setItem('lastSelectedId', id);
@@ -186,7 +187,7 @@
                     console.log("[LOG] Tiếp tục phát từ: " + savedPos + "s");
                 }
                 player.ontimeupdate = () => {
-                    localStorage.setItem('pos_' + id, player.currentTime);
+                    if (player.currentTime > 0) localStorage.setItem('pos_' + id, player.currentTime);
                 };
             }).catch(e => console.error("[LOG ERROR] Chặn phát:", e));
         };

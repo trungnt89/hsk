@@ -5,88 +5,145 @@
     <title>Media Scheduler Pro</title>
 </head>
 <body>
-    <h1>🎶 Media Scheduler</h1>
-    <button id="auth_button" onclick="handleAuthClick()">🔗 Kết nối Google Photos</button>
-    <div id="file-list"></div>
-    <div id="media-display"></div>
 
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+<h1>🎶 Media Scheduler</h1>
 
-    <script>
-        // Cấu hình Client ID của dự án bạn
-        const CLIENT_ID = '468623053565-0km0r3d4du83a3vjsk94ilnkv35qplge.apps.googleusercontent.com';
-        let tokenClient;
+<button id="auth_button">
+    🔗 Kết nối Google Photos
+</button>
 
-        // Khởi tạo client khi trang load xong
-        window.onload = () => {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: 'https://www.googleapis.com/auth/photoslibrary.readonly',
-                callback: (resp) => {
-                    if (resp.error) {
-                        console.error("[LOG] Auth Error:", resp.error);
-                        return;
-                    }
-                    console.log("[LOG] Auth Success. Token received.");
-                    localStorage.setItem('google_access_token', resp.access_token);
-                    listPhotos(); // Gọi API ngay sau khi có token
-                }
-            });
-        };
+<div id="media-display"></div>
 
-        function handleAuthClick() {
-            tokenClient.requestAccessToken({prompt: 'consent'});
-        }
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
-        async function listPhotos() {
-            const token = localStorage.getItem('google_access_token');
-            if (!token) {
-                console.warn("[LOG] No token found. Please sign in.");
+<script>
+const CLIENT_ID =
+'468623053565-0km0r3d4du83a3vjsk94ilnkv35qplge.apps.googleusercontent.com';
+
+const SCOPES =
+'https://www.googleapis.com/auth/photoslibrary.readonly';
+
+let tokenClient = null;
+let accessToken = null;
+
+function initializeGoogleAuth() {
+
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+
+        callback: async (response) => {
+
+            if (response.error) {
+                console.error("OAuth Error:", response);
+                alert("Đăng nhập thất bại");
                 return;
             }
 
-            console.log("[LOG] Requesting Media Items...");
-            
-            try {
-                const resp = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=20', {
-                    headers: { 
-                        'Authorization': 'Bearer ' + token,
-                        'Content-Type': 'application/json'
-                    }
-                });
+            accessToken = response.access_token;
 
-                if (resp.status === 401) {
-                    console.error("[LOG] Token expired (401). Clearing storage.");
-                    localStorage.removeItem('google_access_token');
-                    alert("Phiên làm việc hết hạn, vui lòng kết nối lại.");
-                    return;
-                }
+            console.log("Access Token:", accessToken);
 
-                if (resp.status === 403) {
-                    console.error("[LOG] Permission Denied (403). Check Scopes/Project!");
-                    alert("Lỗi 403: Không đủ quyền. Hãy chắc chắn bạn đã 'Remove Access' và đăng nhập lại.");
-                    return;
-                }
-
-                const data = await resp.json();
-                console.log("[LOG] Dữ liệu nhận được:", data);
-
-                const list = document.getElementById('file-list');
-                list.innerHTML = '<h3>Danh sách ảnh:</h3>';
-                
-                if (data.mediaItems && data.mediaItems.length > 0) {
-                    data.mediaItems.forEach(item => {
-                        const div = document.createElement('div');
-                        div.innerText = item.filename;
-                        list.appendChild(div);
-                    });
-                } else {
-                    list.innerHTML += '<p>Không tìm thấy ảnh nào.</p>';
-                }
-            } catch (err) {
-                console.error("[LOG] Fetch Error:", err);
-            }
+            await listPhotos();
         }
-    </script>
+    });
+
+    console.log("Google Auth Initialized");
+}
+
+window.onload = () => {
+
+    const waitGoogle = setInterval(() => {
+
+        if (window.google &&
+            google.accounts &&
+            google.accounts.oauth2) {
+
+            clearInterval(waitGoogle);
+
+            initializeGoogleAuth();
+        }
+
+    }, 300);
+};
+
+document
+.getElementById('auth_button')
+.onclick = () => {
+
+    if (!tokenClient) {
+        alert("Google Client chưa sẵn sàng");
+        return;
+    }
+
+    tokenClient.requestAccessToken({
+        prompt: 'consent'
+    });
+};
+
+async function listPhotos() {
+
+    if (!accessToken) {
+        alert("Chưa có token");
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            'https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=20',
+            {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        console.log("API Response:", data);
+
+        if (!response.ok) {
+
+            console.error(data);
+
+            alert(
+                "Google Photos API lỗi:\n" +
+                JSON.stringify(data, null, 2)
+            );
+
+            return;
+        }
+
+        renderPhotos(data.mediaItems || []);
+
+    } catch (err) {
+
+        console.error("Fetch Error:", err);
+
+    }
+}
+
+function renderPhotos(items) {
+
+    const div = document.getElementById('media-display');
+
+    div.innerHTML = '';
+
+    items.forEach(item => {
+
+        const img = document.createElement('img');
+
+        img.src = item.baseUrl + '=w300-h300';
+
+        img.style.width = '200px';
+        img.style.margin = '10px';
+
+        div.appendChild(img);
+    });
+}
+</script>
+
 </body>
 </html>

@@ -2,80 +2,94 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Media Scheduler Pro</title>
     <style>
-        /* CSS giữ nguyên từ yêu cầu cũ */
-        :root { --primary-color: #4285f4; --bg-color: #f8f9fa; }
-        body { font-family: sans-serif; background: var(--bg-color); padding: 8px; }
-        .app-container { max-width: 500px; margin: auto; background: white; padding: 12px; border-radius: 12px; }
-        .file-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; }
-        #media-viewer { width: 100%; margin-top: 10px; border-radius: 8px; }
+        :root { --primary-color: #4285f4; }
+        body { font-family: sans-serif; padding: 20px; }
+        .file-item { padding: 10px; border-bottom: 1px solid #ccc; cursor: pointer; }
+        #media-viewer { max-width: 100%; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
     <h1>🎶 Media Scheduler</h1>
     <button id="auth_button" onclick="handleAuthClick()">🔗 Kết nối Google Photos</button>
-    <div id="file-list" class="file-list-container"></div>
-    
-    <div id="media-container" style="display:none; margin-top: 15px;">
-        <div id="now-playing"></div>
-        <div id="media-display"></div>
-    </div>
-</div>
+    <div id="file-list"></div>
+    <div id="media-display"></div>
 
-<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+    <script src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
-<script>
-    const CLIENT_ID = '468623053565-0km0r3d4du83a3vjsk94ilnkv35qplge.apps.googleusercontent.com';
-    let tokenClient;
+    <script>
+        const CLIENT_ID = '468623053565-0km0r3d4du83a3vjsk94ilnkv35qplge.apps.googleusercontent.com';
+        let tokenClient;
 
-    function gapiLoaded() { gapi.load('client', () => { console.log("GAPI Loaded"); }); }
-    function gisLoaded() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID, 
-            scope: 'https://www.googleapis.com/auth/photoslibrary.readonly',
-            callback: (resp) => { localStorage.setItem('google_access_token', resp.access_token); listPhotos(); }
-        });
-    }
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: 'https://www.googleapis.com/auth/photoslibrary.readonly',
+                callback: (resp) => {
+                    if (resp.error) {
+                        console.error("[LOG] Auth Error:", resp.error);
+                        return;
+                    }
+                    console.log("[LOG] Auth Success, storing token.");
+                    localStorage.setItem('google_access_token', resp.access_token);
+                    listPhotos();
+                }
+            });
+        }
 
-    function handleAuthClick() { tokenClient.requestAccessToken({prompt: 'consent'}); }
+        function handleAuthClick() {
+            tokenClient.requestAccessToken({prompt: 'consent'});
+        }
 
-    async function listPhotos() {
-        const token = localStorage.getItem('google_access_token');
-        const resp = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=20', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const data = await resp.json();
-        const list = document.getElementById('file-list');
-        list.innerHTML = '';
-        data.mediaItems.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'file-item';
-            div.innerText = item.filename;
-            div.onclick = () => showMedia(item);
-            list.appendChild(div);
-        });
-    }
+        async function listPhotos() {
+            const token = localStorage.getItem('google_access_token');
+            if (!token) {
+                console.warn("[LOG] No token found, user must sign in.");
+                return;
+            }
 
-    function showMedia(item) {
-        const container = document.getElementById('media-display');
-        document.getElementById('media-container').style.display = 'block';
-        document.getElementById('now-playing').innerText = "Đang hiển thị: " + item.filename;
-        
-        // Google Photos trả về baseUrl. Cần thêm tham số kích thước để ảnh load nhanh hơn
-        const url = item.baseUrl + "=w500-h500";
-        
-        if (item.mimeType.startsWith('video')) {
-            container.innerHTML = `<video src="${item.baseUrl}=dv" controls id="media-viewer"></video>`;
-        } else {
+            console.log("[LOG] Fetching media items...");
+
+            try {
+                const resp = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=20', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (resp.status === 401) {
+                    console.error("[LOG] 401 Unauthorized: Clearing token.");
+                    localStorage.removeItem('google_access_token');
+                    alert("Phiên hết hạn, vui lòng kết nối lại.");
+                    return;
+                }
+
+                const data = await resp.json();
+                console.log("[LOG] Data received:", data);
+
+                const list = document.getElementById('file-list');
+                list.innerHTML = '';
+                
+                if (data.mediaItems) {
+                    data.mediaItems.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'file-item';
+                        div.innerText = item.filename;
+                        div.onclick = () => showMedia(item);
+                        list.appendChild(div);
+                    });
+                }
+            } catch (err) {
+                console.error("[LOG] Fetch Error:", err);
+            }
+        }
+
+        function showMedia(item) {
+            console.log("[LOG] Displaying media:", item.filename);
+            const container = document.getElementById('media-display');
+            const url = item.baseUrl + "=w500-h500";
             container.innerHTML = `<img src="${url}" id="media-viewer">`;
         }
-        console.log(`[LOG] Displaying media: ${item.id} - Type: ${item.mimeType}`);
-    }
-</script>
+    </script>
 </body>
 </html>

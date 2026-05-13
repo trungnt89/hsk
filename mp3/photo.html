@@ -5,7 +5,6 @@
     <title>Media Scheduler Pro</title>
 </head>
 <body>
-
     <h1>🎶 Media Scheduler</h1>
     <button id="auth_button" onclick="handleAuthClick()">🔗 Kết nối Google Photos</button>
     <div id="file-list"></div>
@@ -14,12 +13,12 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <script>
+        // Cấu hình Client ID của dự án bạn
         const CLIENT_ID = '468623053565-0km0r3d4du83a3vjsk94ilnkv35qplge.apps.googleusercontent.com';
         let tokenClient;
 
-        // 2. Hàm khởi tạo chạy ngay khi trình duyệt sẵn sàng
-        window.onload = function() {
-            // Đợi Google client sẵn sàng
+        // Khởi tạo client khi trang load xong
+        window.onload = () => {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
                 scope: 'https://www.googleapis.com/auth/photoslibrary.readonly',
@@ -28,39 +27,62 @@
                         console.error("[LOG] Auth Error:", resp.error);
                         return;
                     }
+                    console.log("[LOG] Auth Success. Token received.");
                     localStorage.setItem('google_access_token', resp.access_token);
-                    listPhotos();
+                    listPhotos(); // Gọi API ngay sau khi có token
                 }
             });
-            console.log("[LOG] Google Auth Client Initialized");
         };
 
         function handleAuthClick() {
-            if (!tokenClient) {
-                alert("Google Client chưa tải xong, vui lòng đợi 1 giây rồi nhấn lại.");
-                return;
-            }
             tokenClient.requestAccessToken({prompt: 'consent'});
         }
 
         async function listPhotos() {
             const token = localStorage.getItem('google_access_token');
-            if (!token) return;
+            if (!token) {
+                console.warn("[LOG] No token found. Please sign in.");
+                return;
+            }
 
+            console.log("[LOG] Requesting Media Items...");
+            
             try {
                 const resp = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=20', {
-                    headers: { 'Authorization': 'Bearer ' + token }
+                    headers: { 
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
                 });
 
                 if (resp.status === 401) {
+                    console.error("[LOG] Token expired (401). Clearing storage.");
                     localStorage.removeItem('google_access_token');
-                    alert("Phiên hết hạn, vui lòng kết nối lại.");
+                    alert("Phiên làm việc hết hạn, vui lòng kết nối lại.");
+                    return;
+                }
+
+                if (resp.status === 403) {
+                    console.error("[LOG] Permission Denied (403). Check Scopes/Project!");
+                    alert("Lỗi 403: Không đủ quyền. Hãy chắc chắn bạn đã 'Remove Access' và đăng nhập lại.");
                     return;
                 }
 
                 const data = await resp.json();
-                console.log("[LOG] Data received:", data);
-                // ... Xử lý hiển thị như cũ
+                console.log("[LOG] Dữ liệu nhận được:", data);
+
+                const list = document.getElementById('file-list');
+                list.innerHTML = '<h3>Danh sách ảnh:</h3>';
+                
+                if (data.mediaItems && data.mediaItems.length > 0) {
+                    data.mediaItems.forEach(item => {
+                        const div = document.createElement('div');
+                        div.innerText = item.filename;
+                        list.appendChild(div);
+                    });
+                } else {
+                    list.innerHTML += '<p>Không tìm thấy ảnh nào.</p>';
+                }
             } catch (err) {
                 console.error("[LOG] Fetch Error:", err);
             }

@@ -69,6 +69,7 @@ export default async function handler(req, res) {
                 });
 
                 const dataUp = await upRes.json();
+				writeLog(JSON.stringify(dataUp));
                 if (dataUp.success) {
                     writeLog(`[SUCCESS] Task ${id} update thành công hàng ${dataUp.updatedRow}. Giờ JST: ${newTimeJST}`);
                 } else {

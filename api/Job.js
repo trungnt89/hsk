@@ -9,14 +9,11 @@ export default async function handler(req, res) {
     writeLog("[LOG] --- Tiến trình update JST & Kiểm tra LAST_TIME ---");
 
     try {
-        // Tách logic lấy dữ liệu
         const rows = await fetchTasks();
         writeLog("DATA : " + JSON.stringify(rows));
 
-        // Cố định múi giờ Nhật Bản (JST)
         const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
 
-        // Tách logic xử lý kiểm tra các Task
         await checkAndProcessTasks(rows, now);
 
         res.status(200).json({ status: "Success", timezone: "JST" });
@@ -42,12 +39,12 @@ async function checkAndProcessTasks(rows, now) {
 
         const id = rowData[0];
         const status = rowData[3];
-        const startTime = new Date(rowData[4]);
+        // SỬA TẠI ĐÂY: Xử lý chuỗi "HH:mm" thành Date đối tượng
+        const startTime = parseTodayTime(rowData[4], now);
         const freg = parseInt(rowData[5]) || 0;
         const lastTimeRaw = rowData[6] || "";
         let isExpired = false;
 
-        // Kiểm tra điều kiện status = 1 và thời gian hiện tại > START
         if (status === "1" && now > startTime) {
             if (!lastTimeRaw || lastTimeRaw.trim() === "") {
                 writeLog(`[TRIGGER] Task ${id}: LAST_TIME trống.`);
@@ -68,6 +65,15 @@ async function checkAndProcessTasks(rows, now) {
             await SendNotification(id, rowData, newTimeJST);
         }
     }
+}
+
+// Hàm bổ trợ để chuyển "05:30" thành Date của ngày hôm nay
+function parseTodayTime(timeStr, now) {
+    if (!timeStr || !timeStr.includes(':')) return new Date(0); 
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const date = new Date(now);
+    date.setHours(hours, minutes, 0, 0);
+    return date;
 }
 
 function getJSTTime(date) {

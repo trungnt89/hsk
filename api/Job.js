@@ -1,5 +1,7 @@
+import * as util from './com/sheet';
+
 export default async function handler(req, res) {
-    console.log("[LOG] --- Tiến trình update JST & Kiểm tra LAST_TIME ---");
+    writeLog("[LOG] --- Tiến trình update JST & Kiểm tra LAST_TIME ---");
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
     const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
 
@@ -27,14 +29,14 @@ export default async function handler(req, res) {
 
             // Kiểm tra nếu LAST_TIME không có giá trị
             if (!lastTimeRaw || lastTimeRaw.trim() === "") {
-                console.log(`[TRIGGER] Task ${id}: LAST_TIME trống. Gửi thông báo ngay.`);
+                writeLog(`[TRIGGER] Task ${id}: LAST_TIME trống. Gửi thông báo ngay.`);
                 isExpired = true;
             } else {
                 const lastTime = new Date(lastTimeRaw.replace('-', ''));
                 const diffMinutes = (now - lastTime) / (1000 * 60);
                 if (diffMinutes > freg) {
                     isExpired = true;
-                    console.log(`[TRIGGER] Task ${id}: Quá hạn ${Math.floor(diffMinutes)} phút.`);
+                    writeLog(`[TRIGGER] Task ${id}: Quá hạn ${Math.floor(diffMinutes)} phút.`);
                 }
             }
 
@@ -53,8 +55,7 @@ export default async function handler(req, res) {
                 await fetch(API_URL, {
                     method: 'POST',
                     headers: { 
-                        'Content-Type': 'application/json',
-                        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         "act": "updateByPosVal",
@@ -65,13 +66,18 @@ export default async function handler(req, res) {
                         "data": JSON.stringify(rowData)
                     })
                 });
-                console.log(`[SUCCESS] Task ${id} đã được cập nhật giờ JST: ${newTimeJST}`);
+                writeLog(`[SUCCESS] Task ${id} đã được cập nhật giờ JST: ${newTimeJST}`);
             }
         }
 
         res.status(200).json({ status: "Success", timezone: "JST" });
     } catch (error) {
-        console.error("[ERROR]", error);
+        writeLog("[ERROR]", error);
         res.status(500).json({ error: error.message });
     }
+}
+
+
+function writeLog(message) {
+    util.writeLog(message, "SHEET");
 }

@@ -1,22 +1,23 @@
 import * as util from './com/sheet';
 
+const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
+const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
+const SHEET = 'TASK';
+
 export default async function handler(req, res) {
     await util.ensureAuthenticated();
     writeLog("[LOG] --- Tiến trình update JST & Kiểm tra LAST_TIME ---");
-    const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
-    const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
-    const SHEET = 'TASK';
 
     try {
         // Tách logic lấy dữ liệu
-        const rows = await fetchTasks(API_URL, SPREAD_ID, SHEET);
+        const rows = await fetchTasks();
         writeLog("DATA : " + JSON.stringify(rows));
 
         // Cố định múi giờ Nhật Bản (JST)
         const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
 
         // Tách logic xử lý kiểm tra các Task
-        await checkAndProcessTasks(rows, now, API_URL, SPREAD_ID, SHEET);
+        await checkAndProcessTasks(rows, now);
 
         res.status(200).json({ status: "Success", timezone: "JST" });
     } catch (error) {
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
     }
 }
 
-async function fetchTasks(API_URL, SPREAD_ID, SHEET) {
+async function fetchTasks() {
     const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,7 +36,7 @@ async function fetchTasks(API_URL, SPREAD_ID, SHEET) {
     return data.values;
 }
 
-async function checkAndProcessTasks(rows, now, API_URL, SPREAD_ID, SHEET) {
+async function checkAndProcessTasks(rows, now) {
     for (let i = 1; i < rows.length; i++) {
         const rowData = [...rows[i]];
 
@@ -64,7 +65,7 @@ async function checkAndProcessTasks(rows, now, API_URL, SPREAD_ID, SHEET) {
         if (isExpired) {
             const newTimeJST = getJSTTime(now);
             rowData[6] = newTimeJST;
-            await SendNotification(API_URL, SPREAD_ID, SHEET, id, rowData, newTimeJST);
+            await SendNotification(id, rowData, newTimeJST);
         }
     }
 }
@@ -79,7 +80,7 @@ function getJSTTime(date) {
     return `${y}/${mo}/${d}- ${h}:${mi}:${s}`;
 }
 
-async function SendNotification(API_URL, SPREAD_ID, SHEET, id, rowData, newTimeJST) {
+async function SendNotification(id, rowData, newTimeJST) {
     const upRes = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

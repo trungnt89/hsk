@@ -41,12 +41,12 @@ async function checkAndProcessTasks(rows, now) {
 
         const id = rowData[0];
         const status = rowData[3];
-        const targetTimeStr = rowData[1] || "00:00";
+        const start = rowData[1] || "00:00";
         const freg = parseInt(rowData[5]) || 0;
         const lastTimeRaw = rowData[6] || "";
         let isExpired = false;
 
-        if (status == "1" && currentTimeStr >= targetTimeStr) {
+        if (status == "1" && currentTimeStr >= start) {
             if (!lastTimeRaw || lastTimeRaw.trim() === "") {
                 writeLog(`[TRIGGER] Task ${id}: LAST_TIME trống.`);
                 isExpired = true;
@@ -59,7 +59,7 @@ async function checkAndProcessTasks(rows, now) {
                 }
             }
         } else {
-            writeLog(`status=${status}, now=${currentTimeStr}, target=${targetTimeStr}`);
+            writeLog(`status=${status}, now=${currentTimeStr}, start=${start}`);
         }
     
         if (isExpired) {

@@ -16,6 +16,7 @@
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #4CAF50; }
         input:checked + .slider:before { transform: translateX(18px); }
+        .countdown-cell { font-family: monospace; font-weight: bold; color: #d35400; }
     </style>
 </head>
 <body>
@@ -30,6 +31,7 @@
 <script>
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
     const PAYLOAD = { "sheet": "TASK", "act": "read", "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8" };
+    let globalTasks = [];
 
     async function fetchData() {
         try {
@@ -50,11 +52,13 @@
         const headerRow = document.getElementById('headerRow');
         const taskBody = document.getElementById('taskBody');
         const headers = values[0];
-        headerRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+        headerRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('') + "<th>COUNTDOWN</th>";
         taskBody.innerHTML = "";
+        globalTasks = [];
         for (let i = 1; i < values.length; i++) {
             const rowData = values[i];
             if (rowData.length < 2) continue;
+            globalTasks.push({ id: rowData[0], freg: rowData[5], lastTime: rowData[6] });
             const tr = document.createElement('tr');
             let rowHtml = "";
             for (let j = 0; j < headers.length; j++) {
@@ -66,11 +70,31 @@
                     rowHtml += `<td>${cellData.replace(/\n/g, '<br>')}</td>`;
                 }
             }
+            rowHtml += `<td id="timer-${rowData[0]}" class="countdown-cell">--:--:--</td>`;
             tr.innerHTML = rowHtml;
             taskBody.appendChild(tr);
         }
         document.getElementById('loading').style.display = 'none';
         document.getElementById('taskTable').style.display = 'table';
+        startTimer();
+    }
+
+    function startTimer() {
+        setInterval(() => {
+            globalTasks.forEach(task => {
+                const timerEl = document.getElementById(`timer-${task.id}`);
+                if (!timerEl || !task.lastTime || !task.freg) return;
+                const lastTime = new Date(task.lastTime.replace('-', ''));
+                const targetTime = new Date(lastTime.getTime() + parseInt(task.freg) * 60000);
+                const now = new Date();
+                const diff = targetTime - now;
+                if (diff <= 0) { timerEl.innerText = "00:00:00"; return; }
+                const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+                const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                timerEl.innerText = `${h}:${m}:${s}`;
+            });
+        }, 1000);
     }
 
     function toggleStatus(id, el) {

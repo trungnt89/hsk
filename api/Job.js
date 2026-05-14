@@ -34,18 +34,19 @@ async function fetchTasks() {
 }
 
 async function checkAndProcessTasks(rows, now) {
+    const currentTimeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+    
     for (let i = 1; i < rows.length; i++) {
         const rowData = [...rows[i]];
 
         const id = rowData[0];
         const status = rowData[3];
-        // SỬA TẠI ĐÂY: Xử lý chuỗi "HH:mm" thành Date đối tượng
-        const startTime = parseTodayTime(rowData[4], now);
+        const targetTimeStr = rowData[4] || "00:00";
         const freg = parseInt(rowData[5]) || 0;
         const lastTimeRaw = rowData[6] || "";
         let isExpired = false;
 
-        if (status == "1" && now > startTime) {
+        if (status == "1" && currentTimeStr >= targetTimeStr) {
             if (!lastTimeRaw || lastTimeRaw.trim() === "") {
                 writeLog(`[TRIGGER] Task ${id}: LAST_TIME trống.`);
                 isExpired = true;
@@ -57,27 +58,16 @@ async function checkAndProcessTasks(rows, now) {
                     writeLog(`[TRIGGER] Task ${id}: Quá hạn ${Math.floor(diffMinutes)} phút.`);
                 }
             }
-        }else{
-			writeLog("status="+status);
-			writeLog("now="+now);
-			writeLog("startTime="+startTime);
-		}
-	
+        } else {
+            writeLog(`status=${status}, now=${currentTimeStr}, target=${targetTimeStr}`);
+        }
+    
         if (isExpired) {
             const newTimeJST = getJSTTime(now);
             rowData[6] = newTimeJST;
             await SendNotification(id, rowData, newTimeJST);
         }
     }
-}
-
-// Hàm bổ trợ để chuyển "05:30" thành Date của ngày hôm nay
-function parseTodayTime(timeStr, now) {
-    if (!timeStr || !timeStr.includes(':')) return new Date(0); 
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const date = new Date(now);
-    date.setHours(hours, minutes, 0, 0);
-    return date;
 }
 
 function getJSTTime(date) {

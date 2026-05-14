@@ -4,7 +4,7 @@ export default async function handler(req, res) {
     writeLog("[LOG] --- Tiến trình update JST & Kiểm tra LAST_TIME ---");
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
     const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
-	const SHEET = 'TASK';
+    const SHEET = 'TASK';
 
     try {
         const response = await fetch(API_URL, {
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
 
                 rowData[6] = newTimeJST;
 
-                await fetch(API_URL, {
+                const upRes = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json'
@@ -67,7 +67,13 @@ export default async function handler(req, res) {
                         "data": JSON.stringify(rowData)
                     })
                 });
-                writeLog(`[SUCCESS] Task ${id} đã được cập nhật giờ JST: ${newTimeJST}`);
+
+                const dataUp = await upRes.json();
+                if (dataUp.success) {
+                    writeLog(`[SUCCESS] Task ${id} update thành công hàng ${dataUp.updatedRow}. Giờ JST: ${newTimeJST}`);
+                } else {
+                    writeLog(`[FAIL] Task ${id} update thất bại.`);
+                }
             }
         }
 

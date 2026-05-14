@@ -14,9 +14,9 @@ export default async function handler(req, res) {
 
         const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
 
-        await checkAndProcessTasks(rows, now);
+        const sentIds = await checkAndProcessTasks(rows, now);
 
-        res.status(200).json({ status: "Success", timezone: "JST" });
+        res.status(200).json({ status: "Success", timezone: "JST", sentIds });
     } catch (error) {
         writeLog("[ERROR]", error);
         res.status(500).json({ error: error.message });
@@ -36,6 +36,7 @@ async function fetchTasks() {
 async function checkAndProcessTasks(rows, now) {
     const currentTimeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
     
+    const sentIds = [];
     for (let i = 1; i < rows.length; i++) {
         const rowData = [...rows[i]];
 
@@ -66,8 +67,10 @@ async function checkAndProcessTasks(rows, now) {
             rowData[6] = newTimeJST;
             await UpdateTask(id, rowData);
 			SendNotification(id, rowData);
+            sentIds.push(id);
         }
     }
+    return sentIds;
 }
 
 function getJSTTime(date) {

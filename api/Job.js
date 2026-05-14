@@ -25,11 +25,11 @@ export default async function handler(req, res) {
 
         for (let i = 1; i < rows.length; i++) {
             const rowData = [...rows[i]];
-            if (rowData.length < 7) continue;
+            
 
             const id = rowData[0];
             const freg = parseInt(rowData[5]) || 0;
-            const lastTimeRaw = rowData[6];
+            const lastTimeRaw = rowData[6]  || "";
             let isExpired = false;
 
             // Kiểm tra nếu LAST_TIME không có giá trị

@@ -41,7 +41,7 @@ async function checkAndProcessTasks(rows, now) {
 
         const id = rowData[0];
         const status = rowData[3];
-        const targetTimeStr = rowData[4] || "00:00";
+        const targetTimeStr = rowData[1] || "00:00";
         const freg = parseInt(rowData[5]) || 0;
         const lastTimeRaw = rowData[6] || "";
         let isExpired = false;

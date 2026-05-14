@@ -1,13 +1,14 @@
 import * as util from './com/sheet';
 
 export default async function handler(req, res) {
+	await util.ensureAuthenticated();
     writeLog("[LOG] --- Tiến trình update JST & Kiểm tra LAST_TIME ---");
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
     const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
     const SHEET = 'TASK';
 
     try {
-		await util.ensureAuthenticated();
+		
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

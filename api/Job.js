@@ -5,6 +5,7 @@ const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
 const SHEET = 'TASK';
 
 export default async function handler(req, res) {
+	return;
     await util.ensureAuthenticated();
     writeLog("[LOG] --- Tiến trình update JST & Kiểm tra LAST_TIME ---");
 

@@ -57,7 +57,11 @@ async function checkAndProcessTasks(rows, now) {
                     writeLog(`[TRIGGER] Task ${id}: Quá hạn ${Math.floor(diffMinutes)} phút.`);
                 }
             }
-        }
+        }else{
+			writeLog("status="+status);
+			writeLog("now="+now);
+			writeLog("startTime="+startTime);
+		}
 	
         if (isExpired) {
             const newTimeJST = getJSTTime(now);

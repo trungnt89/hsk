@@ -15,7 +15,9 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         const rows = data.values;
-
+		
+		writeLog("DATA : "+JSON.stringify(data));
+		
         // Cố định múi giờ Nhật Bản (JST)
         const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
 
@@ -87,5 +89,5 @@ export default async function handler(req, res) {
 
 
 function writeLog(message) {
-    util.writeLog(message, "SHEET");
+    util.writeLog(message, "JOB");
 }

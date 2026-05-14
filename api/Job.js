@@ -60,7 +60,7 @@ async function checkAndProcessTasks(rows, now, API_URL, SPREAD_ID, SHEET) {
                 }
             }
         }
-
+	
         if (isExpired) {
             const newTimeJST = getJSTTime(now);
             rowData[6] = newTimeJST;

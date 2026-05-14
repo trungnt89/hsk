@@ -46,6 +46,7 @@ async function checkAndProcessTasks(rows, now) {
         const lastTimeRaw = rowData[6] || "";
         let isExpired = false;
 
+		writeLog(`id=${id},status=${status}, now=${currentTimeStr}, start=${start}`);
         if (status == "1" && currentTimeStr >= start) {
             if (!lastTimeRaw || lastTimeRaw.trim() === "") {
                 writeLog(`[TRIGGER] Task ${id}: LAST_TIME trống.`);
@@ -58,8 +59,6 @@ async function checkAndProcessTasks(rows, now) {
                     writeLog(`[TRIGGER] Task ${id}: Quá hạn ${Math.floor(diffMinutes)} phút.`);
                 }
             }
-        } else {
-            writeLog(`status=${status}, now=${currentTimeStr}, start=${start}`);
         }
     
         if (isExpired) {

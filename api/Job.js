@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
     try {
         const rows = await fetchTasks();
-        writeLog("DATA : " + JSON.stringify(rows));
+        //writeLog("DATA : " + JSON.stringify(rows));
 
         const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
 

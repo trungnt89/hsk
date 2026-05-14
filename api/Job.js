@@ -4,12 +4,13 @@ export default async function handler(req, res) {
     writeLog("[LOG] --- Tiến trình update JST & Kiểm tra LAST_TIME ---");
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
     const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
+	const SHEET = 'TASK';
 
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ "sheet": "TASK", "act": "read", "spread": SPREAD_ID })
+            body: JSON.stringify({ "sheet": SHEET, "act": "read", "spread": SPREAD_ID })
         });
 
         const data = await response.json();
@@ -61,7 +62,7 @@ export default async function handler(req, res) {
                         "act": "updateByPosVal",
                         "pos": 0,
                         "val": id,
-                        "sheet": "TASK",
+                        "sheet": SHEET,
                         "spread": SPREAD_ID,
                         "data": JSON.stringify(rowData)
                     })

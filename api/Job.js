@@ -65,7 +65,7 @@ async function checkAndProcessTasks(rows, now) {
         if (isExpired) {
             const newTimeJST = getJSTTime(now);
             rowData[6] = newTimeJST;
-            await SendNotification(id, rowData, newTimeJST);
+            await SendNotification(id, rowData);
         }
     }
 }
@@ -80,7 +80,7 @@ function getJSTTime(date) {
     return `${y}/${mo}/${d}- ${h}:${mi}:${s}`;
 }
 
-async function SendNotification(id, rowData, newTimeJST) {
+async function SendNotification(id, rowData) {
     const upRes = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,7 +97,7 @@ async function SendNotification(id, rowData, newTimeJST) {
     const dataUp = await upRes.json();
     writeLog(JSON.stringify(dataUp));
     if (dataUp.success) {
-        writeLog(`[SUCCESS] Task ${id} update thành công hàng ${dataUp.updatedRow}. Giờ JST: ${newTimeJST}`);
+        writeLog(`[SUCCESS] Task ${id} update thành công hàng ${dataUp.updatedRow}. Giờ JST: ${rowData[6]}`);
     } else {
         writeLog(`[FAIL] Task ${id} update thất bại.`);
     }

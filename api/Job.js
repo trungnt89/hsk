@@ -1,85 +1,77 @@
-import * as util from './com/sheet';
-
 export default async function handler(req, res) {
-    writeLog("[LOG] --- Khởi chạy tiến trình update qua updateByPosVal ---");
-    const API_URL	= 'https://hsk-gilt.vercel.app/api/gSheet';
+    console.log("[LOG] --- Tiến trình update JST & Kiểm tra LAST_TIME ---");
+    const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
     const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
-	const SHEET 	= 'TASK';
 
     try {
-        // 1. Lấy dữ liệu hiện tại
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                "sheet": SHEET, 
-                "act": "read", 
-                "spread": SPREAD_ID 
-            })
+            body: JSON.stringify({ "sheet": "TASK", "act": "read", "spread": SPREAD_ID })
         });
 
         const data = await response.json();
         const rows = data.values;
-        const now = new Date();
 
-        // 2. Duyệt dữ liệu
+        // Cố định múi giờ Nhật Bản (JST)
+        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+
         for (let i = 1; i < rows.length; i++) {
-            const rowData = [...rows[i]]; // Tạo bản sao hàng dữ liệu
+            const rowData = [...rows[i]];
             if (rowData.length < 7) continue;
 
             const id = rowData[0];
-            const freg = parseInt(rowData[5]);
-            const lastTimeStr = rowData[6].replace('-', '');
-            const lastTime = new Date(lastTimeStr);
+            const freg = parseInt(rowData[5]) || 0;
+            const lastTimeRaw = rowData[6];
+            let isExpired = false;
 
-            const diffMinutes = (now - lastTime) / (1000 * 60);
+            // Kiểm tra nếu LAST_TIME không có giá trị
+            if (!lastTimeRaw || lastTimeRaw.trim() === "") {
+                console.log(`[TRIGGER] Task ${id}: LAST_TIME trống. Gửi thông báo ngay.`);
+                isExpired = true;
+            } else {
+                const lastTime = new Date(lastTimeRaw.replace('-', ''));
+                const diffMinutes = (now - lastTime) / (1000 * 60);
+                if (diffMinutes > freg) {
+                    isExpired = true;
+                    console.log(`[TRIGGER] Task ${id}: Quá hạn ${Math.floor(diffMinutes)} phút.`);
+                }
+            }
 
-            // 3. Kiểm tra điều kiện quá hạn
-            if (diffMinutes > freg) {
-                writeLog(`[PROCESS] Task ${id} quá hạn (${Math.floor(diffMinutes)}m > ${freg}m)`);
-
-                // Tạo chuỗi thời gian mới
+            if (isExpired) {
+                // Format giờ Nhật mới: YYYY/M/D- HH:mm:ss
                 const y = now.getFullYear();
                 const mo = now.getMonth() + 1;
                 const d = now.getDate();
                 const h = now.getHours().toString().padStart(2, '0');
                 const mi = now.getMinutes().toString().padStart(2, '0');
                 const s = now.getSeconds().toString().padStart(2, '0');
-                const newTimeFormatted = `${y}/${mo}/${d}- ${h}:${mi}:${s}`;
+                const newTimeJST = `${y}/${mo}/${d}- ${h}:${mi}:${s}`;
 
-                // Cập nhật giá trị LAST_TIME trong mảng hàng
-                rowData[6] = newTimeFormatted;
+                rowData[6] = newTimeJST;
 
-                // 4. Thực hiện Update thông qua updateByPosVal
-                const updateResponse = await fetch(API_URL, {
+                await fetch(API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36'
+                    },
                     body: JSON.stringify({
                         "act": "updateByPosVal",
                         "pos": 0,
                         "val": id,
                         "sheet": "TASK",
                         "spread": SPREAD_ID,
-                        "data": JSON.stringify(rowData) // Gửi toàn bộ row dưới dạng JSON String
+                        "data": JSON.stringify(rowData)
                     })
                 });
-
-                if (updateResponse.ok) {
-                    writeLog(`[SUCCESS] Đã đồng bộ Task ${id}. LAST_TIME mới: ${newTimeFormatted}`);
-                } else {
-                    console.error(`[FAIL] Lỗi khi gọi updateByPosVal cho ID: ${id}`);
-                }
+                console.log(`[SUCCESS] Task ${id} đã được cập nhật giờ JST: ${newTimeJST}`);
             }
         }
 
-        res.status(200).json({ message: "Tiến trình hoàn tất" });
-
+        res.status(200).json({ status: "Success", timezone: "JST" });
     } catch (error) {
-        console.error("[CRITICAL ERROR]", error);
+        console.error("[ERROR]", error);
         res.status(500).json({ error: error.message });
     }
-}
-
-function writeLog(message) {
-    util.writeLog(message, "CronJob");
 }

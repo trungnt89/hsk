@@ -10,121 +10,74 @@
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #4CAF50; color: white; }
         tr:nth-child(even) { background-color: #f2f2f2; }
-        .status-1 { color: green; font-weight: bold; }
-        .status-0 { color: red; font-weight: bold; }
-        button { cursor: pointer; padding: 5px 10px; }
-        .log-container { background: #333; color: #0f0; padding: 10px; height: 150px; overflow-y: scroll; font-family: monospace; font-size: 12px; margin-top: 20px; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #4CAF50; }
+        input:checked + .slider:before { transform: translateX(18px); }
     </style>
 </head>
 <body>
-
     <h2>Danh sách Task từ Server</h2>
     <div id="loading">Đang tải dữ liệu...</div>
-    
     <table id="taskTable" style="display:none;">
         <thead>
             <tr id="headerRow"></tr>
         </thead>
         <tbody id="taskBody"></tbody>
     </table>
+<script>
+    const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
+    const PAYLOAD = { "sheet": "TASK", "act": "read", "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8" };
 
-    <h3>Hệ thống Log:</h3>
-    <div class="log-container" id="logBox"></div>
-
-    <script>
-        const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
-        const PAYLOAD = {
-            "sheet": "TASK",
-            "act": "read",
-            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8"
-        };
-
-        function addLog(message) {
-            const logBox = document.getElementById('logBox');
-            const now = new Date().toLocaleTimeString();
-            logBox.innerHTML += `[${now}] ${message}<br>`;
-            logBox.scrollTop = logBox.scrollHeight;
-            console.log(`[LOG]: ${message}`);
+    async function fetchData() {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(PAYLOAD)
+            });
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            renderTable(data.values);
+        } catch (error) {
+            document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
         }
+    }
 
-        async function fetchData() {
-            addLog("Bắt đầu fetch data từ server...");
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(PAYLOAD)
-                });
-
-                if (!response.ok) throw new Error('Network response was not ok');
-
-                const data = await response.json();
-                addLog("Lấy data thành công. Số lượng dòng: " + data.values.length);
-                renderTable(data.values);
-            } catch (error) {
-                addLog("LỖI: " + error.message);
-                document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
-            }
-        }
-
-        function renderTable(values) {
-            const headerRow = document.getElementById('headerRow');
-            const taskBody = document.getElementById('taskBody');
-            const headers = values[0];
-
-            // Render Header
-            headerRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('') + "<th>ACTION</th>";
-
-            // Render Rows (Bỏ qua dòng đầu là header)
-            taskBody.innerHTML = "";
-            for (let i = 1; i < values.length; i++) {
-                const rowData = values[i];
-                if (rowData.length < 2) continue; // Bỏ qua dòng trống hoặc thiếu ID
-
-                const tr = document.createElement('tr');
-                tr.setAttribute('id', `row-${rowData[0]}`);
-
-                // Mapping dữ liệu vào các cột (ID, START, TASK, STATUS, NOTE, FREG, LAST_TIME)
-                let rowHtml = "";
-                for (let j = 0; j < headers.length; j++) {
-                    let cellData = rowData[j] || "";
-                    if (headers[j] === "STATUS") {
-                        rowHtml += `<td class="status-cell status-${cellData}">${cellData}</td>`;
-                    } else {
-                        rowHtml += `<td>${cellData.replace(/\n/g, '<br>')}</td>`;
-                    }
+    function renderTable(values) {
+        const headerRow = document.getElementById('headerRow');
+        const taskBody = document.getElementById('taskBody');
+        const headers = values[0];
+        headerRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+        taskBody.innerHTML = "";
+        for (let i = 1; i < values.length; i++) {
+            const rowData = values[i];
+            if (rowData.length < 2) continue;
+            const tr = document.createElement('tr');
+            let rowHtml = "";
+            for (let j = 0; j < headers.length; j++) {
+                let cellData = rowData[j] || "";
+                if (headers[j] === "STATUS") {
+                    const isChecked = cellData === "1" ? "checked" : "";
+                    rowHtml += `<td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleStatus('${rowData[0]}', this)"><span class="slider"></span></label></td>`;
+                } else {
+                    rowHtml += `<td>${cellData.replace(/\n/g, '<br>')}</td>`;
                 }
-
-                // Cột Action để update status
-                rowHtml += `<td><button onclick="toggleStatus('${rowData[0]}')">Đổi Trạng Thái</button></td>`;
-                
-                tr.innerHTML = rowHtml;
-                taskBody.appendChild(tr);
             }
-
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('taskTable').style.display = 'table';
-            addLog("Render giao diện hoàn tất.");
+            tr.innerHTML = rowHtml;
+            taskBody.appendChild(tr);
         }
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('taskTable').style.display = 'table';
+    }
 
-        function toggleStatus(id) {
-            const row = document.getElementById(`row-${id}`);
-            const statusCell = row.querySelector('.status-cell');
-            const currentStatus = statusCell.innerText.trim();
-            const newStatus = currentStatus === "1" ? "0" : "1";
-
-            // Cập nhật giao diện (Logic frontend theo yêu cầu)
-            statusCell.innerText = newStatus;
-            statusCell.className = `status-cell status-${newStatus}`;
-
-            addLog(`UPDATE: Task ${id} thay đổi status từ ${currentStatus} -> ${newStatus}`);
-            
-            // Lưu ý: Request cập nhật status lên server sẽ cần API "update" (act: write).
-            // Hiện tại tôi thực hiện cập nhật UI và logging theo đúng yêu cầu hiển thị.
-        }
-
-        // Khởi chạy
-        fetchData();
-    </script>
+    function toggleStatus(id, el) {
+        const newStatus = el.checked ? "1" : "0";
+        console.log(`Task ${id} updated to ${newStatus}`);
+    }
+    fetchData();
+</script>
 </body>
 </html>

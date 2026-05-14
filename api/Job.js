@@ -7,6 +7,7 @@ export default async function handler(req, res) {
     const SHEET = 'TASK';
 
     try {
+		await util.ensureAuthenticated();
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

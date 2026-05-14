@@ -45,7 +45,7 @@ async function checkAndProcessTasks(rows, now) {
         const lastTimeRaw = rowData[6] || "";
         let isExpired = false;
 
-        if (status === "1" && now > startTime) {
+        if (status == "1" && now > startTime) {
             if (!lastTimeRaw || lastTimeRaw.trim() === "") {
                 writeLog(`[TRIGGER] Task ${id}: LAST_TIME trống.`);
                 isExpired = true;

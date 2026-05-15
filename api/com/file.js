@@ -185,7 +185,8 @@ export async function handleUploadTTS(body) {
 }
 
 // 3. Xóa file thông qua fileID
-export async function handleDeleteFile(fileId) {
+export async function handleDeleteFile(body) {
+	fileId = body.fileId;
     if (!fileId) throw new Error("Missing fileId");
     const gasRes = await fetch(CONFIG_URL.GAS_API, {
         method: 'POST',

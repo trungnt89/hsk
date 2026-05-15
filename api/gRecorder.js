@@ -16,7 +16,7 @@ async function handler(req, res) {
 	
 
 	let lessionId = query.lessionId || body.lessionId;
-	let fileId = query.fileId || body.fileId;
+	let body.fileId = (body.fileId)? body.fileId : query.fileId;
 	let folderId = query.folderId || body.folderId;	
 	
     let result;
@@ -64,8 +64,8 @@ async function handler(req, res) {
                 }
 
             case 'delete':
-                console.log(`[LOG] Deleting file: ${fileId}`);
-                result = await util.handleDeleteFile(fileId);
+                console.log(`[LOG] Deleting file`);
+                result = await util.handleDeleteFile(body);
                 return res.status(200).json(result);
 
             default:

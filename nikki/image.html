@@ -27,7 +27,7 @@
     <div id="cameraSection">
         <video id="video" autoplay playsinline></video>
         <button id="captureBtn" class="btn btn-capture">Chụp & Tải lên</button>
-        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+        <canvas id="canvas" style="display:none; width:100%; border-radius:8px;"></canvas>
     </div>
 </div>
 
@@ -57,15 +57,13 @@
             const data = await response.json();
             
             gallery.innerHTML = ''; 
-            const items = data.data || data; // Hỗ trợ cả trường hợp data là array hoặc object {data: []}
+            const items = data.data || data; 
             
             if (Array.isArray(items)) {
                 items.forEach(item => {
-                    // Kiểm tra mimeType chính xác từ JSON của bạn
                     if (item.mimeType && item.mimeType.includes("image")) {
                         const div = document.createElement('div');
                         div.className = 'gallery-item';
-                        // Sử dụng đúng link stream với fileId từ JSON
                         div.innerHTML = `<img src="${API_URL}?action=audio&fileId=${item.fileId}" alt="${item.name}" onerror="this.src='https://placehold.co/150?text=Error+Load'">`;
                         gallery.appendChild(div);
                     }
@@ -80,9 +78,20 @@
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
             video.srcObject = stream;
+            
+            const track = stream.getVideoTracks()[0];
+            const settings = track.getSettings();
+            // Khớp kích thước canvas với tỉ lệ thực tế của Camera
+            canvas.width = settings.width; 
+            canvas.height = settings.height;
+
             cameraSection.style.display = 'block';
             switchBtn.style.display = 'inline-block';
             openCameraBtn.style.display = 'none';
+            // Reset hiển thị video/canvas
+            canvas.style.display = 'none';
+            video.style.display = 'block';
+            captureBtn.style.display = 'inline-block';
         } catch (err) {
             alert("Không thể mở camera.");
         }
@@ -106,8 +115,13 @@
             return;
         }
 
-        stopCamera();
-        alert("Đang tải lên...");
+        // Đóng video, hiện canvas để người dùng xem lại ảnh ngay lập tức
+        video.style.display = 'none';
+        canvas.style.display = 'block';
+        captureBtn.style.display = 'none';
+        switchBtn.style.display = 'none';
+
+        alert("Đang xem lại ảnh. Bắt đầu tải lên...");
         
         try {
             const response = await fetch(API_URL, {
@@ -122,10 +136,15 @@
             });
             if (response.ok) {
                 alert("Thành công!");
+                stopCamera();
                 loadGallery();
+            } else {
+                alert("Tải lên thất bại.");
+                stopCamera();
             }
         } catch (err) {
             console.error(err);
+            stopCamera();
         }
     });
 

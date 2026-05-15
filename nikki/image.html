@@ -3,31 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Upload Hub</title>
+    <title>Camera Fix Scale</title>
     <style>
         body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f0f2f5; }
         .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 500px; margin-bottom: 20px; }
         #cameraSection { display: none; margin-top: 15px; }
-        video { width: 100%; border-radius: 8px; background: #000; }
+        video, canvas { width: 100%; border-radius: 8px; background: #000; display: block; }
         #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; width: 100%; max-width: 800px; }
         .gallery-item { border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
         .gallery-item img { width: 100%; height: 150px; object-fit: cover; display: block; }
-        .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; margin: 5px; }
         .btn-open { background: #28a745; color: white; }
-        .btn-capture { background: #007bff; color: white; margin-top: 10px; }
-        .btn:active { transform: scale(0.98); }
+        .btn-capture { background: #007bff; color: white; }
+        .btn-close { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Quản lý hình ảnh</h2>
-    <button id="openCameraBtn" class="btn btn-open">Mở Camera Chụp Ảnh</button>
+    <h2>Chụp ảnh không méo hình</h2>
+    <button id="openCameraBtn" class="btn btn-open">Mở Camera</button>
     <button id="switchCameraBtn" class="btn" style="display:none; background:#6c757d; color:white;">Đổi Camera</button>
+    
     <div id="cameraSection">
         <video id="video" autoplay playsinline></video>
-        <button id="captureBtn" class="btn btn-capture">Chụp & Tải lên</button>
-        <canvas id="canvas" style="display:none; width:100%; border-radius:8px;"></canvas>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div style="margin-top:10px;">
+            <button id="captureBtn" class="btn btn-capture">Chụp & Tải lên</button>
+            <button id="closeBtn" class="btn btn-close" style="display:none;">Đóng / Chụp lại</button>
+        </div>
     </div>
 </div>
 
@@ -36,93 +40,64 @@
 <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const openCameraBtn = document.getElementById('openCameraBtn');
     const cameraSection = document.getElementById('cameraSection');
+    const openCameraBtn = document.getElementById('openCameraBtn');
     const captureBtn = document.getElementById('captureBtn');
-    const gallery = document.getElementById('gallery');
     const switchBtn = document.getElementById('switchCameraBtn');
-    
+    const closeBtn = document.getElementById('closeBtn');
+    const gallery = document.getElementById('gallery');
+
     let currentFacingMode = "user";
     const API_URL = 'https://hsk-gilt.vercel.app/api/gRecorder';
-    const LESSION_ID = "IMG_";
+    const LESSION_ID = "IMG_FIX";
 
-    async function loadGallery() {
-        console.log("[LOG] Đang truy vấn danh sách ảnh...");
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: "list", lessionId: LESSION_ID })
-            });
-            const data = await response.json();
-            
-            gallery.innerHTML = ''; 
-            const items = data.data || data; 
-            
-            if (Array.isArray(items)) {
-                items.forEach(item => {
-                    if (item.mimeType && item.mimeType.includes("image")) {
-                        const div = document.createElement('div');
-                        div.className = 'gallery-item';
-                        div.innerHTML = `<img src="${API_URL}?action=audio&fileId=${item.fileId}" alt="${item.name}" onerror="this.src='https://placehold.co/150?text=Error+Load'">`;
-                        gallery.appendChild(div);
-                    }
-                });
-            }
-        } catch (err) {
-            console.error("[LOG] Lỗi hiển thị gallery:", err);
-        }
-    }
-
+    // 1. Khởi tạo Camera và fix kích thước Canvas
     async function initCamera(facingMode) {
+        console.log("[LOG] Khởi động camera mode:", facingMode);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } } 
+            });
             video.srcObject = stream;
-            
-            const track = stream.getVideoTracks()[0];
-            const settings = track.getSettings();
-            // Khớp kích thước canvas với tỉ lệ thực tế của Camera
-            canvas.width = settings.width; 
-            canvas.height = settings.height;
+
+            // Đợi video load metadata để lấy kích thước thực
+            video.onloadedmetadata = () => {
+                const track = stream.getVideoTracks()[0];
+                const settings = track.getSettings();
+                
+                // Gán kích thước thật của camera vào Canvas để không bị méo
+                canvas.width = settings.width;
+                canvas.height = settings.height;
+                console.log(`[LOG] Camera Res: ${settings.width}x${settings.height}`);
+            };
 
             cameraSection.style.display = 'block';
             switchBtn.style.display = 'inline-block';
             openCameraBtn.style.display = 'none';
-            // Reset hiển thị video/canvas
-            canvas.style.display = 'none';
+            closeBtn.style.display = 'none';
             video.style.display = 'block';
+            canvas.style.display = 'none';
             captureBtn.style.display = 'inline-block';
         } catch (err) {
-            alert("Không thể mở camera.");
+            alert("Lỗi camera: " + err.message);
         }
     }
 
-    openCameraBtn.addEventListener('click', () => initCamera(currentFacingMode));
-    
-    switchBtn.addEventListener('click', () => {
-        currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-        if (video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
-        initCamera(currentFacingMode);
-    });
-
+    // 2. Chụp ảnh và xử lý hiển thị
     captureBtn.addEventListener('click', async () => {
         const context = canvas.getContext('2d');
+        // Vẽ đúng tỉ lệ từ video sang canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
         const imageData = canvas.toDataURL('image/png');
         
-        if (imageData.length < 1000) {
-            alert("Ảnh chụp không hợp lệ.");
-            return;
-        }
-
-        // Đóng video, hiện canvas để người dùng xem lại ảnh ngay lập tức
+        // Hiệu ứng xem lại ảnh
         video.style.display = 'none';
         canvas.style.display = 'block';
         captureBtn.style.display = 'none';
-        switchBtn.style.display = 'none';
+        closeBtn.style.display = 'inline-block';
 
-        alert("Đang xem lại ảnh. Bắt đầu tải lên...");
-        
+        console.log("[LOG] Bắt đầu upload ảnh...");
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -135,27 +110,52 @@
                 })
             });
             if (response.ok) {
-                alert("Thành công!");
-                stopCamera();
+                console.log("[LOG] Upload thành công");
                 loadGallery();
-            } else {
-                alert("Tải lên thất bại.");
-                stopCamera();
             }
         } catch (err) {
-            console.error(err);
-            stopCamera();
+            console.error("[LOG] Lỗi upload:", err);
         }
     });
 
+    // 3. Các hàm bổ trợ
     function stopCamera() {
         if (video.srcObject) {
             video.srcObject.getTracks().forEach(track => track.stop());
-            cameraSection.style.display = 'none';
-            switchBtn.style.display = 'none';
-            openCameraBtn.style.display = 'block';
         }
+        cameraSection.style.display = 'none';
+        switchBtn.style.display = 'none';
+        openCameraBtn.style.display = 'block';
     }
+
+    async function loadGallery() {
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: "list", lessionId: LESSION_ID })
+            });
+            const data = await res.json();
+            gallery.innerHTML = '';
+            const items = data.data || [];
+            items.forEach(item => {
+                if (item.mimeType?.includes("image")) {
+                    const div = document.createElement('div');
+                    div.className = 'gallery-item';
+                    div.innerHTML = `<img src="${API_URL}?action=audio&fileId=${item.fileId}">`;
+                    gallery.appendChild(div);
+                }
+            });
+        } catch (e) { console.log("Lỗi load gallery"); }
+    }
+
+    openCameraBtn.addEventListener('click', () => initCamera(currentFacingMode));
+    closeBtn.addEventListener('click', stopCamera);
+    switchBtn.addEventListener('click', () => {
+        currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+        if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+        initCamera(currentFacingMode);
+    });
 
     window.onload = loadGallery;
 </script>

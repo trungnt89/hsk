@@ -11,7 +11,7 @@
         video, canvas { width: 100%; border-radius: 8px; background: #000; display: block; }
         #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; width: 100%; max-width: 800px; }
         .gallery-item { border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
-        .gallery-item img { width: 100%; object-fit: cover; display: block; }
+        .gallery-item img { width: 100%; height: auto; object-fit: cover; display: block; }
         .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; margin: 5px; }
         .btn-open { background: #28a745; color: white; }
         .btn-capture { background: #007bff; color: white; }
@@ -139,9 +139,9 @@
             });
             const data = await res.json();
             gallery.innerHTML = '';
-            const items = data.data || [];
+            const items = Array.isArray(data) ? data : (data.data || []);
             items.forEach(item => {
-                if (item.mimeType?.includes("image")) {
+                if (item.mimeType && item.mimeType.startsWith("image/")) {
                     const div = document.createElement('div');
                     div.className = 'gallery-item';
                     div.innerHTML = `<img src="${API_URL}?action=audio&fileId=${item.fileId}">`;

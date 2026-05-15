@@ -7,15 +7,11 @@
     <style>
         body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f0f2f5; }
         .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 500px; margin-bottom: 20px; }
-        
-        /* Mặc định ẩn vùng camera */
         #cameraSection { display: none; margin-top: 15px; }
-        
         video { width: 100%; border-radius: 8px; background: #000; }
         #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; width: 100%; max-width: 800px; }
         .gallery-item { border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
         .gallery-item img { width: 100%; height: 150px; object-fit: cover; display: block; }
-        
         .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
         .btn-open { background: #28a745; color: white; }
         .btn-capture { background: #007bff; color: white; margin-top: 10px; }
@@ -26,12 +22,8 @@
 
 <div class="container">
     <h2>Quản lý hình ảnh</h2>
-    
-    <!-- Nút kích hoạt camera -->
     <button id="openCameraBtn" class="btn btn-open">Mở Camera Chụp Ảnh</button>
     <button id="switchCameraBtn" class="btn" style="display:none; background:#6c757d; color:white;">Đổi Camera</button>
-
-    <!-- Vùng chụp ảnh (ẩn khi mới load) -->
     <div id="cameraSection">
         <video id="video" autoplay playsinline></video>
         <button id="captureBtn" class="btn btn-capture">Chụp & Tải lên</button>
@@ -39,9 +31,7 @@
     </div>
 </div>
 
-<div id="gallery">
-    <!-- Danh sách ảnh từ server -->
-</div>
+<div id="gallery"></div>
 
 <script>
     const video = document.getElementById('video');
@@ -51,13 +41,10 @@
     const captureBtn = document.getElementById('captureBtn');
     const gallery = document.getElementById('gallery');
     const switchBtn = document.getElementById('switchCameraBtn');
-    
     let currentFacingMode = "user";
-
     const API_URL = 'https://hsk-gilt.vercel.app/api/gRecorder';
     const LESSION_ID = "IMG_";
 
-    // 1. Lấy danh sách ảnh khi load trang
     async function loadGallery() {
         console.log("[LOG] Đang truy vấn danh sách ảnh từ server...");
         try {
@@ -67,15 +54,12 @@
                 body: JSON.stringify({ action: "list", lessionId: LESSION_ID })
             });
             const data = await response.json();
-            
             gallery.innerHTML = ''; 
             if (data && data.data) {
-                console.log(`[LOG] Tìm thấy ${data.data.length} ảnh.`);
                 data.data.forEach(item => {
                     if (item.mimeType && item.mimeType.includes("image")) {
                         const div = document.createElement('div');
                         div.className = 'gallery-item';
-                        // Sử dụng Link Stream theo yêu cầu
                         div.innerHTML = `<img src="${API_URL}?action=audio&fileId=${item.fileId}" alt="Server Image">`;
                         gallery.appendChild(div);
                     }
@@ -86,7 +70,6 @@
         }
     }
 
-    // 2. Hàm khởi tạo Camera
     async function initCamera(facingMode) {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
@@ -94,36 +77,32 @@
             cameraSection.style.display = 'block';
             switchBtn.style.display = 'inline-block';
             openCameraBtn.style.display = 'none';
-            console.log("[LOG] Camera đã sẵn sàng: " + facingMode);
         } catch (err) {
-            console.error("[LOG] Lỗi camera:", err);
             alert("Không thể truy cập camera.");
         }
     }
 
-    openCameraBtn.addEventListener('click', () => {
-        initCamera(currentFacingMode);
-    });
-
+    openCameraBtn.addEventListener('click', () => initCamera(currentFacingMode));
     switchBtn.addEventListener('click', () => {
         currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-        if (video.srcObject) {
-            video.srcObject.getTracks().forEach(track => track.stop());
-        }
+        if (video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
         initCamera(currentFacingMode);
     });
 
-    // 3. Chụp và Tải lên
     captureBtn.addEventListener('click', async () => {
+        const context = canvas.getContext('2d');
+        // Vẽ TRƯỚC KHI dừng camera để tránh ảnh trắng
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/png');
+        
+        if (imageData.length < 1000) {
+            alert("Lỗi: Ảnh chụp không có dữ liệu!");
+            return;
+        }
+
         stopCamera();
         alert("Bắt đầu upload lên driver...");
-        const context = canvas.getContext('2d');
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const imageData = canvas.toDataURL('image/png');
         const fileName = `IMG_${Date.now()}.png`;
-
-        console.log(`[LOG] Đang tải lên: ${fileName}`);
 
         try {
             const response = await fetch(API_URL, {
@@ -136,10 +115,8 @@
                     lessionId: LESSION_ID
                 })
             });
-
             if (response.ok) {
                 alert("Upload xong");
-                console.log("[LOG] Tải lên thành công.");
                 loadGallery();
             }
         } catch (err) {
@@ -150,18 +127,13 @@
     function stopCamera() {
         const stream = video.srcObject;
         if (stream) {
-            const tracks = stream.getTracks();
-            tracks.forEach(track => track.stop());
+            stream.getTracks().forEach(track => track.stop());
             cameraSection.style.display = 'none';
             switchBtn.style.display = 'none';
             openCameraBtn.style.display = 'block';
-            console.log("[LOG] Đã đóng camera.");
         }
     }
-
-    // Khởi tạo danh sách khi vừa vào trang
     window.onload = loadGallery;
 </script>
-
 </body>
 </html>

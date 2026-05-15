@@ -91,12 +91,13 @@
         
         const imageData = canvas.toDataURL('image/png');
         
-        // Hiệu ứng xem lại ảnh
+        // Hiệu ứng xem lại ảnh: Dừng video và hiện ảnh trên canvas
         video.style.display = 'none';
         canvas.style.display = 'block';
         captureBtn.style.display = 'none';
         closeBtn.style.display = 'inline-block';
 
+        alert("Bắt đầu upload ảnh...");
         console.log("[LOG] Bắt đầu upload ảnh...");
         try {
             const response = await fetch(API_URL, {
@@ -110,6 +111,7 @@
                 })
             });
             if (response.ok) {
+                alert("Upload hoàn thành!");
                 console.log("[LOG] Upload thành công");
                 loadGallery();
             }

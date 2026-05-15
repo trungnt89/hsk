@@ -38,14 +38,17 @@ async function handler(req, res) {
                 return res.status(200).json(result);
             case 'uploadRecorder':
                 console.log(`[LOG] Processing Upload Recorder`);
-                result = await util.handleUploadRecorder(body);
+                result = await util.handleUploadFile(body);
                 return res.status(200).json(result);
 			
             case 'uploadAudioTTS':
                 console.log(`[LOG] Processing Upload TTS`);
-                result = await util.handleUploadTTS(body);
+                result = await util.handleUploadFile(body);
                 return res.status(200).json(result);
-
+			case 'uploadImage':
+                console.log(`[LOG] Processing Upload TTS`);
+                result = await util.handleUploadFile(body);
+                return res.status(200).json(result);
             case 'check':
                 console.log(`[LOG] Checking cache for file: ${name}`);
                 const fileInfo = await util.handleCheckFileExist(name);

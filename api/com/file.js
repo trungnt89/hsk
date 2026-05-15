@@ -143,6 +143,22 @@ export async function handleReadFileMedia(fileId, headers, res) {
 // -----------------------------------------------------
 // ADD, DELETE FILE THÔNG QUA GAS
 // -----------------------------------------------------
+
+
+export async function handleUploadFile(body) {
+	//body.name
+	//body.base64
+	//body.lessionId
+    console.log(`[LOG] Gửi yêu cầu create file đến GAS`);
+	console.log(body);
+    const gasRes = await fetch(CONFIG_URL.GAS_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body})
+    });
+    return await gasRes.json();
+}
+
 // 1. Lưu file thông qua GAS
 export async function handleUploadRecorder(body) {
     const gasRes = await fetch(CONFIG_URL.GAS_API, {

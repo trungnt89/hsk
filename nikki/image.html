@@ -29,6 +29,7 @@
     
     <!-- Nút kích hoạt camera -->
     <button id="openCameraBtn" class="btn btn-open">Mở Camera Chụp Ảnh</button>
+    <button id="switchCameraBtn" class="btn" style="display:none; background:#6c757d; color:white;">Đổi Camera</button>
 
     <!-- Vùng chụp ảnh (ẩn khi mới load) -->
     <div id="cameraSection">
@@ -49,7 +50,10 @@
     const cameraSection = document.getElementById('cameraSection');
     const captureBtn = document.getElementById('captureBtn');
     const gallery = document.getElementById('gallery');
+    const switchBtn = document.getElementById('switchCameraBtn');
     
+    let currentFacingMode = "user";
+
     const API_URL = 'https://hsk-gilt.vercel.app/api/gRecorder';
     const LESSION_ID = "IMG_";
 
@@ -68,10 +72,10 @@
             if (data && data.data) {
                 console.log(`[LOG] Tìm thấy ${data.data.length} ảnh.`);
                 data.data.forEach(item => {
-                    if (item.base64Audio) {
+                    if (item.mimeType && item.mimeType.includes("image")) {
                         const div = document.createElement('div');
                         div.className = 'gallery-item';
-                        div.innerHTML = `<img src="${item.base64Audio}" alt="Server Image">`;
+                        div.innerHTML = `<img src="https://lh3.googleusercontent.com/d/${item.fileId}" alt="Server Image">`;
                         gallery.appendChild(div);
                     }
                 });
@@ -81,27 +85,38 @@
         }
     }
 
-    // 2. Xử lý mở Camera
-    openCameraBtn.addEventListener('click', async () => {
-        console.log("[LOG] Người dùng yêu cầu mở camera.");
+    // 2. Hàm khởi tạo Camera
+    async function initCamera(facingMode) {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
             video.srcObject = stream;
-            
-            // Hiển thị vùng camera và ẩn nút mở ban đầu
             cameraSection.style.display = 'block';
+            switchBtn.style.display = 'inline-block';
             openCameraBtn.style.display = 'none';
-            console.log("[LOG] Đã hiển thị màn hình chụp.");
+            console.log("[LOG] Camera đã sẵn sàng: " + facingMode);
         } catch (err) {
-            console.error("[LOG] Không thể truy cập camera:", err);
-            alert("Vui lòng cấp quyền camera.");
+            console.error("[LOG] Lỗi camera:", err);
+            alert("Không thể truy cập camera.");
         }
+    }
+
+    openCameraBtn.addEventListener('click', () => {
+        initCamera(currentFacingMode);
+    });
+
+    switchBtn.addEventListener('click', () => {
+        currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        initCamera(currentFacingMode);
     });
 
     // 3. Chụp và Tải lên
     captureBtn.addEventListener('click', async () => {
+        stopCamera();
+        alert("Bắt đầu upload lên driver...");
         const context = canvas.getContext('2d');
-        // Vẽ frame hiện tại của video lên canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
         const imageData = canvas.toDataURL('image/png');
@@ -122,10 +137,9 @@
             });
 
             if (response.ok) {
+                alert("Upload xong");
                 console.log("[LOG] Tải lên thành công.");
-                // Tắt camera sau khi chụp xong (tùy chọn)
-                // stopCamera(); 
-                loadGallery(); // Cập nhật lại danh sách bên dưới
+                loadGallery();
             }
         } catch (err) {
             console.error("[LOG] Lỗi upload:", err);
@@ -138,6 +152,7 @@
             const tracks = stream.getTracks();
             tracks.forEach(track => track.stop());
             cameraSection.style.display = 'none';
+            switchBtn.style.display = 'none';
             openCameraBtn.style.display = 'block';
             console.log("[LOG] Đã đóng camera.");
         }

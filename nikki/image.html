@@ -3,125 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Upload & Gallery</title>
+    <title>Camera Upload Hub</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f4f4f4; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
-        video, canvas { max-width: 100%; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ddd; }
-        #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 20px; width: 100%; max-width: 800px; }
-        .gallery-item { border: 1px solid #ccc; padding: 5px; background: #fff; }
-        .gallery-item img { width: 100%; height: auto; display: block; }
-        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; margin: 5px; }
-        button:hover { background: #0056b3; }
+        body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f0f2f5; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 500px; margin-bottom: 20px; }
+        
+        /* Mặc định ẩn vùng camera */
+        #cameraSection { display: none; margin-top: 15px; }
+        
+        video { width: 100%; border-radius: 8px; background: #000; }
+        #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; width: 100%; max-width: 800px; }
+        .gallery-item { border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
+        .gallery-item img { width: 100%; height: 150px; object-fit: cover; display: block; }
+        
+        .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        .btn-open { background: #28a745; color: white; }
+        .btn-capture { background: #007bff; color: white; margin-top: 10px; }
+        .btn:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Chụp ảnh & Upload</h2>
-    <video id="video" autoplay playsinline width="400" height="300"></video>
-    <br>
-    <button id="captureBtn">Chụp & Tải lên</button>
-    <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
+    <h2>Quản lý hình ảnh</h2>
+    
+    <!-- Nút kích hoạt camera -->
+    <button id="openCameraBtn" class="btn btn-open">Mở Camera Chụp Ảnh</button>
+
+    <!-- Vùng chụp ảnh (ẩn khi mới load) -->
+    <div id="cameraSection">
+        <video id="video" autoplay playsinline></video>
+        <button id="captureBtn" class="btn btn-capture">Chụp & Tải lên</button>
+        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    </div>
 </div>
 
 <div id="gallery">
-    <!-- Ảnh từ server sẽ hiển thị ở đây -->
+    <!-- Danh sách ảnh từ server -->
 </div>
 
 <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
+    const openCameraBtn = document.getElementById('openCameraBtn');
+    const cameraSection = document.getElementById('cameraSection');
     const captureBtn = document.getElementById('captureBtn');
     const gallery = document.getElementById('gallery');
+    
     const API_URL = 'https://hsk-gilt.vercel.app/api/gRecorder';
     const LESSION_ID = "1778718667632";
 
-    // 1. Khởi tạo Camera
-    async function initCamera() {
-        try {
-            console.log("[LOG] Đang yêu cầu quyền truy cập camera...");
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
-            console.log("[LOG] Camera đã sẵn sàng.");
-        } catch (err) {
-            console.error("[LOG] Lỗi truy cập camera:", err);
-            alert("Không thể mở camera.");
-        }
-    }
-
-    // 2. Tải danh sách ảnh từ Server
+    // 1. Lấy danh sách ảnh khi load trang
     async function loadGallery() {
-        console.log("[LOG] Đang tải danh sách ảnh từ server...");
+        console.log("[LOG] Đang truy vấn danh sách ảnh từ server...");
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: "list",
-                    lessionId: LESSION_ID
-                })
+                body: JSON.stringify({ action: "list", lessionId: LESSION_ID })
             });
             const data = await response.json();
-            console.log("[LOG] Dữ liệu nhận được:", data);
-
-            gallery.innerHTML = ''; // Clear cũ
+            
+            gallery.innerHTML = ''; 
             if (data && data.data) {
+                console.log(`[LOG] Tìm thấy ${data.data.length} ảnh.`);
                 data.data.forEach(item => {
-                    if (item.base64Audio) { // Giả định server trả về base64 trong field này
+                    if (item.base64Audio) {
                         const div = document.createElement('div');
                         div.className = 'gallery-item';
-                        div.innerHTML = `<img src="${item.base64Audio}" alt="Upload">`;
+                        div.innerHTML = `<img src="${item.base64Audio}" alt="Server Image">`;
                         gallery.appendChild(div);
                     }
                 });
             }
         } catch (err) {
-            console.error("[LOG] Lỗi khi load gallery:", err);
+            console.error("[LOG] Lỗi khi lấy danh sách:", err);
         }
     }
 
-    // 3. Chụp và Upload
+    // 2. Xử lý mở Camera
+    openCameraBtn.addEventListener('click', async () => {
+        console.log("[LOG] Người dùng yêu cầu mở camera.");
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            video.srcObject = stream;
+            
+            // Hiển thị vùng camera và ẩn nút mở ban đầu
+            cameraSection.style.display = 'block';
+            openCameraBtn.style.display = 'none';
+            console.log("[LOG] Đã hiển thị màn hình chụp.");
+        } catch (err) {
+            console.error("[LOG] Không thể truy cập camera:", err);
+            alert("Vui lòng cấp quyền camera.");
+        }
+    });
+
+    // 3. Chụp và Tải lên
     captureBtn.addEventListener('click', async () => {
         const context = canvas.getContext('2d');
+        // Vẽ frame hiện tại của video lên canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Chuyển ảnh sang Base64 (PNG)
         const imageData = canvas.toDataURL('image/png');
-        const fileName = `IMG_${new Date().getTime()}.png`;
+        const fileName = `IMG_${Date.now()}.png`;
 
-        console.log(`[LOG] Đang upload file: ${fileName}`);
-
-        const payload = {
-            action: "uploadRecorder",
-            name: fileName,
-            base64Audio: imageData, // Đưa dữ liệu ảnh vào đây theo yêu cầu curl của bạn
-            lessionId: LESSION_ID
-        };
+        console.log(`[LOG] Đang tải lên: ${fileName}`);
 
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    action: "uploadRecorder",
+                    name: fileName,
+                    base64Audio: imageData,
+                    lessionId: LESSION_ID
+                })
             });
 
             if (response.ok) {
-                console.log("[LOG] Upload thành công!");
-                loadGallery(); // Tải lại danh sách để hiển thị ảnh mới
-            } else {
-                console.error("[LOG] Upload thất bại. Status:", response.status);
+                console.log("[LOG] Tải lên thành công.");
+                // Tắt camera sau khi chụp xong (tùy chọn)
+                // stopCamera(); 
+                loadGallery(); // Cập nhật lại danh sách bên dưới
             }
         } catch (err) {
-            console.error("[LOG] Lỗi kết nối server khi upload:", err);
+            console.error("[LOG] Lỗi upload:", err);
         }
     });
 
-    // Khởi chạy khi load trang
-    window.onload = () => {
-        initCamera();
-        loadGallery();
-    };
+    function stopCamera() {
+        const stream = video.srcObject;
+        if (stream) {
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+            cameraSection.style.display = 'none';
+            openCameraBtn.style.display = 'block';
+            console.log("[LOG] Đã đóng camera.");
+        }
+    }
+
+    // Khởi tạo danh sách khi vừa vào trang
+    window.onload = loadGallery;
 </script>
 
 </body>

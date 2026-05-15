@@ -18,7 +18,7 @@ async function handler(req, res) {
 	let lessionId = query.lessionId || body.lessionId;
 	let folderId = query.folderId || body.folderId;	
 	body.fileId = body.fileId || query.fileId;
-	
+	let fileId = body.fileId;
     let result;
 
     // Ghi log để giám sát hệ thống

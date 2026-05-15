@@ -26,30 +26,7 @@ async function handler(req, res) {
 
     try {
         switch (action) {
-            case 'audio':
-                console.log(`[LOG] Streaming audio ID: ${fileId}`);
-                return await util.handleReadFileMedia(fileId, headers, res);
-
-            case 'list':
-                result = await handleListAction(lessionId);
-                return res.status(200).json(result);
-			case 'byfolder':
-                result = await util.handleGetDriveFilesByFolderId(folderId);
-                return res.status(200).json(result);
-            case 'uploadRecorder':
-                console.log(`[LOG] Processing Upload Recorder`);
-                result = await util.handleUploadFile(body);
-                return res.status(200).json(result);
-			
-            case 'uploadAudioTTS':
-                console.log(`[LOG] Processing Upload TTS`);
-                result = await util.handleUploadFile(body);
-                return res.status(200).json(result);
-			case 'uploadImage':
-                console.log(`[LOG] Processing Upload TTS`);
-                result = await util.handleUploadFile(body);
-                return res.status(200).json(result);
-            case 'check':
+			case 'check':
                 console.log(`[LOG] Checking cache for file: ${name}`);
                 const fileInfo = await util.handleCheckFileExist(name);
                 
@@ -63,9 +40,32 @@ async function handler(req, res) {
                     return res.status(404).json({ exists: false, message: "File not found" });
                 }
 
+            case 'audio':
+                console.log(`[LOG] Streaming audio ID: ${fileId}`);
+                return await util.handleReadFileMedia(fileId, headers, res);
+            case 'list':
+                result = await handleListAction(lessionId);
+                return res.status(200).json(result);
+			case 'byfolder':
+                result = await util.handleGetDriveFilesByFolderId(folderId);
+                return res.status(200).json(result);
+			// Send To GAS
+            case 'uploadRecorder':
+                console.log(`[LOG] Processing Upload Recorder`);
+                result = await util.handleSendToGAS(body);
+                return res.status(200).json(result);
+			
+            case 'uploadAudioTTS':
+                console.log(`[LOG] Processing Upload TTS`);
+                result = await util.handleSendToGAS(body);
+                return res.status(200).json(result);
+			case 'uploadImage':
+                console.log(`[LOG] Processing Upload TTS`);
+                result = await util.handleSendToGAS(body);
+                return res.status(200).json(result);
             case 'delete':
                 console.log(`[LOG] Deleting file`);
-                result = await util.handleDeleteFile(body);
+                result = await util.handleSendToGAS(body);
                 return res.status(200).json(result);
 
             default:

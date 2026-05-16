@@ -108,10 +108,16 @@ export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
  * Sử dụng append thay vì read-then-write để giảm độ trễ API.
  */
 export async function writeLog(content, type) {
-    const sid = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc', sn = 'Logs';
+	const SHEET_TASK = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
+    const SHEET_LOG = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc';
+	const SHEET_NAME = 'Logs';
     
     // Kiểm tra nếu nội dung chứa chính ID của Spreadsheet thì bỏ qua
-    if (typeof content === 'string' && content.includes(sid)) {
+	if (typeof content === 'string' && content.includes(SHEET_TASK)) {
+        return;
+    }
+	
+    if (typeof content === 'string' && content.includes(SHEET_LOG)) {
         return;
     }
 
@@ -133,8 +139,8 @@ export async function writeLog(content, type) {
 
         // Ghi trực tiếp vào cuối sheet - Chỉ tốn 1 round-trip
         await cachedSheetsClient.spreadsheets.values.append({
-            spreadsheetId: sid,
-            range: `${sn}!A1`,
+            spreadsheetId: SHEET_LOG,
+            range: `${SHEET_NAME}!A1`,
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             requestBody: { values: [[time, type, content]] }

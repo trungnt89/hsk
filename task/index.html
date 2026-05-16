@@ -12,11 +12,21 @@
         th { background-color: #4CAF50; color: white; position: sticky; top: 115px; z-index: 10; }
         tr:nth-child(even) { background-color: #f2f2f2; }
         
-        .add-form { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .add-form input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        .btn-add { background-color: #4CAF50; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-open-add { background-color: #007AFF; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+        .btn-edit { background-color: #FF9500; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
         .btn-delete { background-color: #ff3b30; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
         .editable-cell { background-color: #fffde7; cursor: pointer; border: 1px dashed #caaf15 !important; }
+        .action-buttons { display: flex; gap: 5px; }
+        
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background-color: white; padding: 20px; border-radius: 8px; width: 400px; max-width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 14px; color: #333; font-weight: 500; }
+        .form-group input, .form-group textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px; }
+        .btn-submit { background-color: #34C759; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background-color: #8E8E93; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
         
         /* THEME NÚT GẠT PHONG CÁCH IPHONE - IOS SWITCH TOGGLE */
         .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
@@ -33,12 +43,7 @@
 <body>
     <div class="sticky-header">
         <h2>Danh sách Task từ Server</h2>
-        <div class="add-form">
-            <input type="text" id="newTaskName" placeholder="Tên Task...">
-            <input type="text" id="newTaskContent" placeholder="Nội dung...">
-            <input type="text" id="newTaskStart" placeholder="Thời gian START (HH:mm)...">
-            <button class="btn-add" onclick="addTask()">Thêm Mới</button>
-        </div>
+        <button class="btn-open-add" onclick="openModal('add')">Thêm Mới Task</button>
         <div class="filter-container">
             <span class="filter-label">Chỉ hiển thị Status = 1:</span>
             <label class="switch">
@@ -54,11 +59,25 @@
         </thead>
         <tbody id="taskBody"></tbody>
     </table>
+    
+    <!-- MODAL POPUP FORM -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div id="modalTitle" class="modal-header">Thêm Mới Task</div>
+            <div id="dynamicFormContainer"></div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal()">Hủy</button>
+                <button class="btn-submit" onclick="submitModalForm()">Lưu</button>
+            </div>
+        </div>
+    </div>
 <script>
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
     const PAYLOAD = { "sheet": "TASK", "act": "read", "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8" };
     const FILENAME = "task_management_index";
     let allRowsData = [];
+    let currentModalMode = 'add';
+    let currentEditRowIndex = -1;
 
     async function fetchData() {
         console.log("Bắt đầu tải dữ liệu từ server...");
@@ -76,6 +95,21 @@
             console.error("Lỗi xảy ra trong quá trình fetchData:", error);
             document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
         }
+    }
+
+    function formatLastTime(timeStr) {
+        if (!timeStr) return "";
+        if (timeStr.includes(" ") && timeStr.includes(":")) {
+            let parts = timeStr.split(" ");
+            let timePart = parts[1];
+            let tSegments = timePart.split(":");
+            if (tSegments.length >= 2) return tSegments[0] + ":" + tSegments[1];
+        }
+        if (timeStr.includes(":")) {
+            let tSegments = timeStr.split(":");
+            if (tSegments.length >= 2) return tSegments[0] + ":" + tSegments[1];
+        }
+        return timeStr;
     }
 
     function renderTable(values) {
@@ -117,6 +151,9 @@
                 if (headers[j] === "ID") continue;
                 if (headers[j] === "NOTE") continue;
                 let cellData = rowData[j] || "";
+                if (headers[j] === "LastTime") {
+                    cellData = formatLastTime(cellData);
+                }
                 if (headers[j] === "STATUS") {
                     if (cellData === "1") isStatusActive = true;
                     const isChecked = cellData === "1" ? "checked" : "";
@@ -125,7 +162,7 @@
                     rowHtml += `<td class="editable-cell" contenteditable="true" onblur="updateCellData(this, ${originalRowIndex}, ${j})">${cellData.replace(/\n/g, '<br>')}</td>`;
                 }
             }
-            rowHtml += `<td><button class="btn-delete" onclick="deleteTask('${rowData[0]}', ${originalRowIndex})">Xóa</button></td>`;
+            rowHtml += `<td><div class="action-buttons"><button class="btn-edit" onclick="openModal('edit', ${originalRowIndex})">Sửa</button><button class="btn-delete" onclick="deleteTask('${rowData[0]}', ${originalRowIndex})">Xóa</button></div></td>`;
             tr.setAttribute('data-status-active', isStatusActive ? "1" : "0");
             tr.innerHTML = rowHtml;
             taskBody.appendChild(tr);
@@ -153,25 +190,56 @@
         });
     }
 
-    async function addTask() {
-        const name = document.getElementById('newTaskName').value.trim();
-        const content = document.getElementById('newTaskContent').value.trim();
-        const startTime = document.getElementById('newTaskStart').value.trim();
-        if (!name) { alert("Vui lòng nhập tên Task!"); return; }
-        const newId = "ID_" + Date.now();
-        console.log(`Bắt đầu xử lý thêm mới Task. Tên: ${name}, Nội dung: ${content}, Bắt đầu: ${startTime}`);
-        
+    function openModal(mode, rowIndex) {
+        currentModalMode = mode;
         const headers = allRowsData[0];
-        const newRow = new Array(headers.length).fill("");
-        const startColIdx = headers.indexOf("START");
-        for(let j=0; j<headers.length; j++) {
-            if (headers[j] === "ID") newRow[j] = newId;
-            else if (headers[j] === "STATUS") newRow[j] = "1";
-            else if (j === 1) newRow[j] = name;
-            else if (j === 2) newRow[j] = content;
+        const container = document.getElementById('dynamicFormContainer');
+        container.innerHTML = "";
+        if (mode === 'add') {
+            document.getElementById('modalTitle').innerText = "Thêm Mới Task";
+            for (let j = 0; j < headers.length; j++) {
+                if (headers[j] === "ID") continue;
+                let defaultVal = headers[j] === "STATUS" ? "1" : "";
+                container.innerHTML += `<div class="form-group"><label>${headers[j]}</label><input type="text" id="modal_field_${j}" value="${defaultVal}"></div>`;
+            }
+        } else if (mode === 'edit') {
+            currentEditRowIndex = rowIndex;
+            document.getElementById('modalTitle').innerText = "Chỉnh Sửa Task";
+            const rowData = allRowsData[rowIndex];
+            for (let j = 0; j < headers.length; j++) {
+                if (headers[j] === "ID") continue;
+                let val = rowData[j] || "";
+                container.innerHTML += `<div class="form-group"><label>${headers[j]}</label><input type="text" id="modal_field_${j}" value="${val}"></div>`;
+            }
         }
-        if (startColIdx !== -1) newRow[startColIdx] = startTime;
+        document.getElementById('taskModal').style.display = 'flex';
+    }
 
+    function closeModal() {
+        document.getElementById('taskModal').style.display = 'none';
+    }
+
+    function submitModalForm() {
+        if (currentModalMode === 'add') {
+            addTask();
+        } else if (currentModalMode === 'edit') {
+            updateRowFromModal(currentEditRowIndex);
+        }
+    }
+
+    async function addTask() {
+        const headers = allRowsData[0];
+        const newId = "ID_" + Date.now();
+        const newRow = new Array(headers.length).fill("");
+        for(let j=0; j<headers.length; j++) {
+            if (headers[j] === "ID") {
+                newRow[j] = newId;
+            } else {
+                const fieldEl = document.getElementById(`modal_field_${j}`);
+                newRow[j] = fieldEl ? fieldEl.value.trim() : "";
+            }
+        }
+        console.log(`Bắt đầu xử lý thêm mới Task qua Popup Modal`, newRow);
         const appendPayload = {
             "act": "updateByPosVal",
             "sheet": "TASK",
@@ -189,12 +257,44 @@
             if (!response.ok) throw new Error('Mạng không ổn định khi append dữ liệu');
             console.log("Thêm mới Task lên server thành công.");
             allRowsData.push(newRow);
-            document.getElementById('newTaskName').value = "";
-            document.getElementById('newTaskContent').value = "";
-            document.getElementById('newTaskStart').value = "";
+            closeModal();
             renderTable(allRowsData);
         } catch (error) {
             console.error("Lỗi khi thêm Task:", error);
+        }
+    }
+
+    async function updateRowFromModal(rowIndex) {
+        const headers = allRowsData[0];
+        const id = allRowsData[rowIndex][0];
+        console.log(`Bắt đầu cập nhật toàn bộ dòng từ popup modal cho ID: ${id}`);
+        for(let j=0; j<headers.length; j++) {
+            if (headers[j] === "ID") continue;
+            const fieldEl = document.getElementById(`modal_field_${j}`);
+            if (fieldEl) allRowsData[rowIndex][j] = fieldEl.value.trim();
+        }
+        const updatedRowData = [...allRowsData[rowIndex]];
+        const updatePayload = {
+            "act": "updateByPosVal",
+            "pos": 0,
+            "val": id,
+            "sheet": "TASK",
+            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8",
+            "data": JSON.stringify(updatedRowData)
+        };
+        console.log("Gửi gói tin cập nhật hàng từ modal lên máy chủ...", updatePayload);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(updatePayload)
+            });
+            if (!response.ok) throw new Error('Lỗi hệ thống khi update dữ liệu từ modal');
+            console.log(`Cập nhật dữ liệu từ popup cho Task ${id} thành công.`);
+            closeModal();
+            renderTable(allRowsData);
+        } catch (error) {
+            console.error("Lỗi khi update dữ liệu từ modal:", error);
         }
     }
 

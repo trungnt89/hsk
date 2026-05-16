@@ -11,13 +11,11 @@
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #4CAF50; color: white; position: sticky; top: 115px; z-index: 10; }
         tr:nth-child(even) { background-color: #f2f2f2; }
-        
         .btn-open-add { background-color: #007AFF; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
         .btn-edit { background-color: #FF9500; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
         .btn-delete { background-color: #ff3b30; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
         .editable-cell { background-color: #fffde7; cursor: pointer; border: 1px dashed #caaf15 !important; }
         .action-buttons { display: flex; gap: 5px; }
-        
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
         .modal-content { background-color: white; padding: 20px; border-radius: 8px; width: 400px; max-width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
@@ -27,15 +25,12 @@
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px; }
         .btn-submit { background-color: #34C759; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-cancel { background-color: #8E8E93; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
-        
-        /* THEME NÚT GẠT PHONG CÁCH IPHONE - IOS SWITCH TOGGLE */
         .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E9E9EA; transition: .3s; border-radius: 30px; }
         .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
         input:checked + .slider { background-color: #34C759; }
         input:checked + .slider:before { transform: translateX(20px); }
-        
         .filter-container { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: bold; }
         .filter-label { color: #333; }
     </style>
@@ -59,8 +54,6 @@
         </thead>
         <tbody id="taskBody"></tbody>
     </table>
-    
-    <!-- MODAL POPUP FORM -->
     <div id="taskModal" class="modal">
         <div class="modal-content">
             <div id="modalTitle" class="modal-header">Thêm Mới Task</div>
@@ -72,21 +65,12 @@
         </div>
     </div>
 <script>
-    const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
-    const PAYLOAD = { "sheet": "TASK", "act": "read", "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8" };
-    const FILENAME = "task_management_index";
-    let allRowsData = [];
-    let currentModalMode = 'add';
-    let currentEditRowIndex = -1;
-
+    const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet', G_SHEET = "TASK", G_SPREAD = "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8";
+    let allRowsData = [], currentModalMode = 'add', currentEditRowIndex = -1;
     async function fetchData() {
         console.log("Bắt đầu tải dữ liệu từ server...");
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(PAYLOAD)
-            });
+            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "sheet": G_SHEET, "act": "read", "spread": G_SPREAD }) });
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             console.log("Tải dữ liệu từ server thành công.", data);
@@ -96,311 +80,130 @@
             document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
         }
     }
-
     function formatLastTime(timeStr) {
         if (!timeStr) return "";
-        if (timeStr.includes(" ") && timeStr.includes(":")) {
-            let parts = timeStr.split(" ");
-            let timePart = parts[1];
-            let tSegments = timePart.split(":");
-            if (tSegments.length >= 2) return tSegments[0] + ":" + tSegments[1];
-        }
-        if (timeStr.includes(":")) {
-            let tSegments = timeStr.split(":");
-            if (tSegments.length >= 2) return tSegments[0] + ":" + tSegments[1];
+        if (timeStr.includes(":") && timeStr.split(":").length >= 2) {
+            let t = timeStr.includes(" ") ? timeStr.split(" ")[1] : timeStr;
+            return t.split(":")[0] + ":" + t.split(":")[1];
         }
         return timeStr;
     }
-
     function renderTable(values) {
         console.log("Bắt đầu dựng cấu trúc bảng hiển thị...");
-        const headerRow = document.getElementById('headerRow');
-        const taskBody = document.getElementById('taskBody');
-        const headers = values[0];
-        
-        // Loại bỏ cột NOTE khỏi giao diện danh sách thẻ th
-        headerRow.innerHTML = headers.filter(h => h !== "ID" && h !== "NOTE").map(h => `<th>${h}</th>`).join('') + '<th>HÀNH ĐỘNG</th>';
-        taskBody.innerHTML = "";
-        
+        const headers = values[0], startColIdx = headers.indexOf("START");
+        document.getElementById('headerRow').innerHTML = headers.filter(h => h !== "ID" && h !== "NOTE").map(h => `<th>${h}</th>`).join('') + '<th>HÀNH ĐỘNG</th>';
+        document.getElementById('taskBody').innerHTML = "";
         allRowsData = JSON.parse(JSON.stringify(values));
-        
-        // Xác định vị trí cột START để thực hiện sắp xếp
-        const startColIdx = headers.indexOf("START");
-        
-        // Tách dòng tiêu đề ra khỏi danh sách để thực hiện sort nội dung
         let dataRows = values.slice(1);
-        if (startColIdx !== -1) {
-            dataRows.sort((a, b) => {
-                let valA = a[startColIdx] || "";
-                let valB = b[startColIdx] || "";
-                return valA.localeCompare(valB);
-            });
-        }
-        
+        if (startColIdx !== -1) dataRows.sort((a, b) => (a[startColIdx] || "").localeCompare(b[startColIdx] || ""));
         for (let i = 0; i < dataRows.length; i++) {
-            const rowData = dataRows[i];
-            if (rowData.length < 2) continue;
-            
-            // Tìm lại chỉ mục hàng gốc chuẩn xác trong hệ thống allRowsData
-            const originalRowIndex = allRowsData.findIndex(r => r[0] === rowData[0]);
-            const tr = document.createElement('tr');
-            tr.setAttribute('data-id', rowData[0]);
-            let rowHtml = "";
-            let isStatusActive = false;
+            if (dataRows[i].length < 2) continue;
+            const origIdx = allRowsData.findIndex(r => r[0] === dataRows[i][0]), tr = document.createElement('tr');
+            tr.setAttribute('data-id', dataRows[i][0]);
+            let rowHtml = "", isActive = dataRows[i][headers.indexOf("STATUS")] === "1";
             for (let j = 0; j < headers.length; j++) {
-                if (headers[j] === "ID") continue;
-                if (headers[j] === "NOTE") continue;
-                let cellData = rowData[j] || "";
-                if (headers[j] === "LastTime") {
-                    cellData = formatLastTime(cellData);
-                }
-                if (headers[j] === "STATUS") {
-                    if (cellData === "1") isStatusActive = true;
-                    const isChecked = cellData === "1" ? "checked" : "";
-                    rowHtml += `<td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleStatus('${rowData[0]}', this, ${originalRowIndex})"><span class="slider"></span></label></td>`;
-                } else {
-                    rowHtml += `<td class="editable-cell" contenteditable="true" onblur="updateCellData(this, ${originalRowIndex}, ${j})">${cellData.replace(/\n/g, '<br>')}</td>`;
-                }
+                if (headers[j] === "ID" || headers[j] === "NOTE") continue;
+                let val = dataRows[i][j] || "";
+                if (headers[j] === "LastTime") val = formatLastTime(val);
+                rowHtml += headers[j] === "STATUS" ? `<td><label class="switch"><input type="checkbox" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})"><span class="slider"></span></label></td>` : `<td class="editable-cell" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</td>`;
             }
-            rowHtml += `<td><div class="action-buttons"><button class="btn-edit" onclick="openModal('edit', ${originalRowIndex})">Sửa</button><button class="btn-delete" onclick="deleteTask('${rowData[0]}', ${originalRowIndex})">Xóa</button></div></td>`;
-            tr.setAttribute('data-status-active', isStatusActive ? "1" : "0");
-            tr.innerHTML = rowHtml;
-            taskBody.appendChild(tr);
+            tr.setAttribute('data-status-active', isActive ? "1" : "0");
+            tr.innerHTML = rowHtml + `<td><div class="action-buttons"><button class="btn-edit" onclick="openModal('edit', ${origIdx})">Sửa</button><button class="btn-delete" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button></div></td>`;
+            document.getElementById('taskBody').appendChild(tr);
         }
         document.getElementById('loading').style.display = 'none';
         document.getElementById('taskTable').style.display = 'table';
         console.log("Dựng bảng hoàn tất. Tiến hành chạy bộ lọc khởi tạo.");
         filterTasks();
     }
-
     function filterTasks() {
         const isEnforceActive = document.getElementById('filterToggle').checked;
         console.log(`Áp dụng bộ lọc hiển thị iPhone Toggle. Chỉ hiện status=1: ${isEnforceActive}`);
-        const rows = document.querySelectorAll('#taskBody tr');
-        rows.forEach(row => {
-            if (isEnforceActive) {
-                if (row.getAttribute('data-status-active') === "1") {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            } else {
-                row.style.display = '';
-            }
-        });
+        document.querySelectorAll('#taskBody tr').forEach(row => row.style.display = (!isEnforceActive || row.getAttribute('data-status-active') === "1") ? '' : 'none');
     }
-
     function openModal(mode, rowIndex) {
         currentModalMode = mode;
-        const headers = allRowsData[0];
-        const container = document.getElementById('dynamicFormContainer');
+        const headers = allRowsData[0], container = document.getElementById('dynamicFormContainer');
         container.innerHTML = "";
-        if (mode === 'add') {
-            document.getElementById('modalTitle').innerText = "Thêm Mới Task";
-            for (let j = 0; j < headers.length; j++) {
-                if (headers[j] === "ID") continue;
-                let defaultVal = headers[j] === "STATUS" ? "1" : "";
-                container.innerHTML += `<div class="form-group"><label>${headers[j]}</label><input type="text" id="modal_field_${j}" value="${defaultVal}"></div>`;
-            }
-        } else if (mode === 'edit') {
-            currentEditRowIndex = rowIndex;
-            document.getElementById('modalTitle').innerText = "Chỉnh Sửa Task";
-            const rowData = allRowsData[rowIndex];
-            for (let j = 0; j < headers.length; j++) {
-                if (headers[j] === "ID") continue;
-                let val = rowData[j] || "";
-                container.innerHTML += `<div class="form-group"><label>${headers[j]}</label><input type="text" id="modal_field_${j}" value="${val}"></div>`;
-            }
+        document.getElementById('modalTitle').innerText = mode === 'add' ? "Thêm Mới Task" : "Chỉnh Sửa Task";
+        currentEditRowIndex = mode === 'edit' ? rowIndex : -1;
+        for (let j = 0; j < headers.length; j++) {
+            if (headers[j] === "ID") continue;
+            let val = mode === 'add' ? (headers[j] === "STATUS" ? "1" : "") : (allRowsData[rowIndex][j] || "");
+            container.innerHTML += `<div class="form-group"><label>${headers[j]}</label><input type="text" id="modal_field_${j}" value="${val}"></div>`;
         }
         document.getElementById('taskModal').style.display = 'flex';
     }
-
-    function closeModal() {
-        document.getElementById('taskModal').style.display = 'none';
-    }
-
-    function submitModalForm() {
-        if (currentModalMode === 'add') {
-            addTask();
-        } else if (currentModalMode === 'edit') {
-            updateRowFromModal(currentEditRowIndex);
-        }
-    }
-
+    function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
+    function submitModalForm() { currentModalMode === 'add' ? addTask() : updateRowFromModal(currentEditRowIndex); }
     async function addTask() {
-        const headers = allRowsData[0];
-        const newId = "ID_" + Date.now();
-        const newRow = new Array(headers.length).fill("");
-        for(let j=0; j<headers.length; j++) {
-            if (headers[j] === "ID") {
-                newRow[j] = newId;
-            } else {
-                const fieldEl = document.getElementById(`modal_field_${j}`);
-                newRow[j] = fieldEl ? fieldEl.value.trim() : "";
-            }
+        const headers = allRowsData[0], newRow = new Array(headers.length).fill("");
+        newRow[0] = "ID_" + Date.now();
+        for (let j = 1; j < headers.length; j++) {
+            const el = document.getElementById(`modal_field_${j}`);
+            newRow[j] = el ? el.value.trim() : "";
         }
         console.log(`Bắt đầu xử lý thêm mới Task qua Popup Modal`, newRow);
-        const appendPayload = {
-            "act": "updateByPosVal",
-            "sheet": "TASK",
-            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8",
-            "data": JSON.stringify(newRow)
-        };
-
-        console.log("Gửi yêu cầu append dòng mới lên server...", appendPayload);
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(appendPayload)
-            });
+            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(newRow) }) });
             if (!response.ok) throw new Error('Mạng không ổn định khi append dữ liệu');
             console.log("Thêm mới Task lên server thành công.");
             allRowsData.push(newRow);
             closeModal();
             renderTable(allRowsData);
-        } catch (error) {
-            console.error("Lỗi khi thêm Task:", error);
-        }
+        } catch (error) { console.error("Lỗi khi thêm Task:", error); }
     }
-
     async function updateRowFromModal(rowIndex) {
-        const headers = allRowsData[0];
-        const id = allRowsData[rowIndex][0];
+        const headers = allRowsData[0], id = allRowsData[rowIndex][0];
         console.log(`Bắt đầu cập nhật toàn bộ dòng từ popup modal cho ID: ${id}`);
-        for(let j=0; j<headers.length; j++) {
-            if (headers[j] === "ID") continue;
-            const fieldEl = document.getElementById(`modal_field_${j}`);
-            if (fieldEl) allRowsData[rowIndex][j] = fieldEl.value.trim();
+        for (let j = 0; j < headers.length; j++) {
+            const el = document.getElementById(`modal_field_${j}`);
+            if (el) allRowsData[rowIndex][j] = el.value.trim();
         }
-        const updatedRowData = [...allRowsData[rowIndex]];
-        const updatePayload = {
-            "act": "updateByPosVal",
-            "pos": 0,
-            "val": id,
-            "sheet": "TASK",
-            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8",
-            "data": JSON.stringify(updatedRowData)
-        };
-        console.log("Gửi gói tin cập nhật hàng từ modal lên máy chủ...", updatePayload);
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(updatePayload)
-            });
+            const response = await fetch(API_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(allRowsData[rowIndex]) }) });
             if (!response.ok) throw new Error('Lỗi hệ thống khi update dữ liệu từ modal');
             console.log(`Cập nhật dữ liệu từ popup cho Task ${id} thành công.`);
             closeModal();
             renderTable(allRowsData);
-        } catch (error) {
-            console.error("Lỗi khi update dữ liệu từ modal:", error);
-        }
+        } catch (error) { console.error("Lỗi khi update dữ liệu từ modal:", error); }
     }
-
     async function updateCellData(cellEl, rowIndex, colIndex) {
-        const updatedText = cellEl.innerText.trim();
-        const id = allRowsData[rowIndex][0];
-        console.log(`Bắt đầu sự kiện cập nhật ô dữ liệu dòng ${rowIndex}, cột ${colIndex} -> Nội dung mới: ${updatedText}`);
-
-        if(allRowsData[rowIndex][colIndex] === updatedText) return;
-
-        allRowsData[rowIndex][colIndex] = updatedText;
-        const updatedRowData = [...allRowsData[rowIndex]];
-
-        const updatePayload = {
-            "act": "updateByPosVal",
-            "pos": 0,
-            "val": id,
-            "sheet": "TASK",
-            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8",
-            "data": JSON.stringify(updatedRowData)
-        };
-
-        console.log(`Gửi gói tin cập nhật dữ liệu sửa ô của ID ${id} lên server...`, updatePayload);
+        const txt = cellEl.innerText.trim(), id = allRowsData[rowIndex][0];
+        console.log(`Bắt đầu sự kiện cập nhật ô dữ liệu dòng ${rowIndex}, cột ${colIndex} -> Nội dung mới: ${txt}`);
+        if (allRowsData[rowIndex][colIndex] === txt) return;
+        allRowsData[rowIndex][colIndex] = txt;
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(updatePayload)
-            });
+            const response = await fetch(API_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(allRowsData[rowIndex]) }) });
             if (!response.ok) throw new Error('Lỗi mạng khi update nội dung ô');
             console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
             renderTable(allRowsData);
-        } catch (error) {
-            console.error("Lỗi khi update ô dữ liệu:", error);
-        }
+        } catch (error) { console.error("Lỗi khi update ô dữ liệu:", error); }
     }
-
     async function deleteTask(id, rowIndex) {
         if (!confirm("Bạn có chắc chắn muốn xóa Task này không?")) return;
         console.log(`Kích hoạt tiến trình xóa Task ID: ${id} tại hàng chỉ mục: ${rowIndex}`);
-
-        const deletePayload = {
-            "act": "deleteByPosVal",
-            "pos": 0,
-            "val": id,
-            "sheet": "TASK",
-            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8"
-        };
-
-        console.log("Truyền payload xóa dòng lên API server...", deletePayload);
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(deletePayload)
-            });
+            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "act": "deleteByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD }) });
             if (!response.ok) throw new Error('Lỗi phản hồi hệ thống khi thực hiện lệnh xóa');
             console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
             allRowsData.splice(rowIndex, 1);
             renderTable(allRowsData);
-        } catch (error) {
-            console.error(`Gặp lỗi nghiêm trọng khi thực hiện xóa Task ${id}:`, error);
-        }
+        } catch (error) { console.error(`Gặp lỗi nghiêm trọng khi thực hiện xóa Task ${id}:`, error); }
     }
-
     async function toggleStatus(id, el, rowIndex) {
         const newStatus = el.checked ? "1" : "0";
         console.log(`Kích hoạt sự kiện thay đổi trạng thái Task ID: ${id} -> Trạng thái mới: ${newStatus}`);
-        localStorage.setItem(FILENAME + "_" + id, newStatus);
-        console.log(`Đã đồng bộ trạng thái cục bộ vào LocalStorage bằng key: ${FILENAME}_${id}`);
-
-        const headers = allRowsData[0];
-        const statusColIndex = headers.indexOf("STATUS") !== -1 ? headers.indexOf("STATUS") : 2;
-        
-        const updatedRowData = [...allRowsData[rowIndex]];
-        updatedRowData[statusColIndex] = newStatus; 
-        allRowsData[rowIndex] = updatedRowData;
-
+        const statusColIdx = allRowsData[0].indexOf("STATUS") !== -1 ? allRowsData[0].indexOf("STATUS") : 2;
+        allRowsData[rowIndex][statusColIdx] = newStatus;
         const targetRow = el.closest('tr');
-        if (targetRow) {
-            targetRow.setAttribute('data-status-active', newStatus);
-        }
-
-        const updatePayload = {
-            "act": "updateByPosVal",
-            "pos": 0,
-            "val": id,
-            "sheet": "TASK",
-            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8",
-            "data": JSON.stringify(updatedRowData)
-        };
-
-        console.log("Đang truyền gói tin cập nhật dữ liệu lên máy chủ API...", updatePayload);
+        if (targetRow) targetRow.setAttribute('data-status-active', newStatus);
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(updatePayload)
-            });
+            const response = await fetch(API_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(allRowsData[rowIndex]) }) });
             if (!response.ok) throw new Error('Lỗi phản hồi hệ thống mạng khi gửi API update');
-            const resData = await response.json();
-            console.log(`Đồng bộ trạng thái của Task ${id} lên hệ thống server thành công.`, resData);
+            console.log(`Đồng bộ trạng thái của Task ${id} lên hệ thống server thành công.`, await response.json());
             filterTasks();
-        } catch (error) {
-            console.error(`Xảy ra lỗi nghiêm trọng khi gọi API cập nhật trạng thái Task ${id}:`, error);
-        }
+        } catch (error) { console.error(`Xảy ra lỗi nghiêm trọng khi gọi API cập nhật trạng thái Task ${id}:`, error); }
     }
     fetchData();
 </script>

@@ -106,8 +106,44 @@ async function UpdateTask(id, rowData) {
 }
 
 async function SendNotification(id, rowData) {
-	writeLog(`SendNotification Task ${id}`);
+	const chatId = "8536107228";
+    const text = rowData[2] || "Trống nội dung task";
+    writeLog(`[TG_SEND_START] Bắt đầu tiến trình gửi Telegram tới ChatID: ${chatId}`);
+    
+    try {
+        // Sử dụng biến môi trường của Node.js (Vercel) thay cho CONFIG của GAS
+        const token = process.env.TELEGRAM_TOKEN;
+        if (!token) {
+            writeLog(`[TG_SEND_ERR] Không tìm thấy biến môi trường TELEGRAM_TOKEN trên hệ thống.`);
+            return;
+        }
+
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
+        const cleanText = text.replace(/[*_`\[\]]/g, '');
+
+        // Chuyển đổi UrlFetchApp.fetch (GAS) sang fetch chuẩn Node.js
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                chat_id: String(chatId).trim(), 
+                text: cleanText 
+            })
+        });
+
+        const resContent = await response.text();
+        if (response.status === 200) {
+            writeLog(`[TG_SEND_SUCCESS] Gửi Telegram thành công tới ChatID: ${chatId}`);
+        } else {
+            writeLog(`[TG_SEND_FAIL] Lỗi kết nối Telegram tới ${chatId} - HTTP Code: ${response.status} - Response: ${resContent}`);
+        }
+    } catch (error) {
+        writeLog(`[TG_SEND_ERR] Ngoại lệ khi call API Telegram gửi tới ${chatId}: ${error.message}`);
+    }
 }
+
+
+
 
 function writeLog(message) {
     util.writeLog(message, "JOB");

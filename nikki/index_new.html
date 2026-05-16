@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Diary - AI Integrated</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script type="module">
+        import JapaneseLookup from '../com/japanese-lookup.js?v=1';
+    </script>
+</head>
+<body class="bg-light text-dark d-flex flex-column vh-100 overflow-hidden fs-6">
+    <script src="../com/assistive.js"></script>
+    <script src="../com/TTSClient.js"></script>
+
+    <header class="bg-primary text-white p-2 text-center shadow-sm flex-shrink-0">
+        <h1 class="fs-5 fw-semibold m-0">Diary & AI</h1>
+    </header>
+
+    <main class="flex-grow-1 overflow-hidden p-2 d-flex flex-column gap-2">
+        <div class="bg-white p-2 rounded-3 shadow-sm flex-shrink-0">
+            <textarea id="diaryInput" class="form-control mb-1" style="height: 120px; resize: none;" placeholder="Hôm nay của bạn thế nào?..."></textarea>
+            <div class="d-flex justify-content-between align-items-center gap-1 w-100">
+                <button id="cancelBtn" class="btn btn-secondary btn-sm" style="display:none;">Hủy</button>
+                <button id="saveBtn" class="btn btn-primary btn-sm fw-semibold">Lưu lại</button>
+                <div class="d-flex align-items-center gap-1 ms-auto flex-grow-1 justify-content-end overflow-hidden">
+                    <button id="btnMainSpeak" class="btn btn-success btn-sm rounded-pill fw-bold px-2 py-1" style="font-size: 0.75rem; min-width: 65px;" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
+                    <button id="btnRepeat" class="btn btn-light btn-sm border" onclick="toggleRepeat()">🔂</button>
+                    <select id="voiceSelect" class="form-select form-select-sm p-1" style="font-size: 11px; width: auto;" onchange="saveTTSSettings()">
+                        <option value="ja-JP-KeitaNeural" selected>Nam (JP)</option>
+                        <option value="ja-JP-NanamiNeural" >Nữ (JP)</option>
+                    </select>
+                    <select id="rateSelect" class="form-select form-select-sm p-1" style="font-size: 11px; width: auto;" onchange="saveTTSSettings()">
+                        <option value="0.65">0.65</option>
+                        <option value="0.68">0.68</option>
+                        <option value="0.70" selected>0.70</option>
+                        <option value="0.72">0.72</option>
+                        <option value="0.75">0.75</option>
+                        <option value="0.80">0.80</option>
+                        <option value="1.0">1.0</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex bg-secondary bg-opacity-10 rounded-2 p-1 flex-shrink-0">
+            <button class="btn btn-white flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex align-items-center justify-content-center gap-1 text-primary shadow-sm bg-white" id="tab-btn-0" onclick="switchTab(0)">
+                <span>📝 Nhật ký</span>
+                <div class="d-inline-flex align-items-center position-relative ms-1" style="cursor: pointer;" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
+                    <span class="d-none" id="pinLabelText">Tất cả</span>
+                    <div class="position-relative bg-success rounded-pill" style="width: 30px; height: 16px; transition: 0.3s;" id="toggleSwitchEl">
+                        <div class="position-absolute bg-white rounded-circle" style="width: 12px; height: 12px; top: 2px; left: 16px; transition: 0.3s;" id="toggleCircleEl"></div>
+                    </div>
+                </div>
+            </button>
+            <button class="btn btn-link text-decoration-none text-muted flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex align-items-center justify-content-center gap-1" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
+            <button class="btn btn-link text-decoration-none text-muted flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex align-items-center justify-content-center gap-1" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
+        </div>
+
+        <div id="tab-diary" class="d-block flex-grow-1 overflow-auto pb-4" style="scroll-behavior: smooth;">
+            <div id="diaryContainer"><p class="text-center text-muted p-5 fs-6">Đang tải dữ liệu...</p></div>
+        </div>
+        <div id="tab-paragraph" class="d-none flex-grow-1 overflow-auto pb-4" style="scroll-behavior: smooth;"><div id="paragraphContainer"></div></div>
+        <div id="tab-conversation" class="d-none flex-grow-1 overflow-auto pb-4" style="scroll-behavior: smooth;"><div id="conversationContainer"></div></div>
+    </main>
+
+    <div id="audioModal" class="position-fixed w-100 h-100 top-0 left-0 bg-dark bg-opacity-50" style="display: none; z-index: 1000;">
+        <div class="position-absolute top-50 start-50 translate-middle w-90 h-80 bg-white rounded-3 overflow-hidden" style="width: 90%; height: 80%;">
+            <div class="p-2 bg-light d-flex justify-content-between align-items-center border-bottom">
+                <button class="btn btn-outline-danger btn-sm fw-bold" onclick="closeAudioModal()">✕ ĐÓNG</button>
+                <button class="btn btn-outline-success btn-sm fw-bold" onclick="reloadAudioModal()">F5 RELOAD</button>
+                <button class="btn btn-outline-primary btn-sm fw-bold" onclick="backAudioModal()">BACK ↩</button>
+            </div>
+            <iframe id="audioFrame" class="w-100 border-0" style="height: calc(100% - 40px);" src=""></iframe>
+        </div>
+    </div>
+
+    <script>
+        // CONFIG URLS
+        const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
+
+        let currentDiaries = [];
+        let editingId = null;
+        let urlId = new URLSearchParams(window.location.search).get('id');
+        let selectedDiaryId = urlId || localStorage.getItem("diary_selected_id") || null;
+        if (urlId && urlId !== localStorage.getItem("diary_selected_id")) localStorage.setItem("diary_selected_id", urlId);
+        let isRepeating = localStorage.getItem("diary_repeat") === "true";
+        let currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0;
+        let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("[System] App Initialized");
+            initApp();
+            loadTTSSettings();
+            document.getElementById('saveBtn').addEventListener('click', () => {
+                editingId ? updateDiary() : saveDiary();
+            });
+            document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
+        });
+
+        async function initApp() {
+            loadDiaries();
+        }
+
+        async function loadDiaries() {
+            try {
+                const response = await fetch(VERCEL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        sheet: 'DairyList', 
+                        act: 'read', 
+                        spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' 
+                    })
+                });
+                const data = await response.json();
+                if (data.values) {
+                    currentDiaries = data.values.map(r => ({
+                        id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0)
+                    })).reverse();
+                    renderList(currentDiaries);
+                    if (selectedDiaryId) selectRecord(selectedDiaryId, true);
+                }
+            } catch (err) { console.warn("[Sync] Offline mode"); }
+        }
+
+        async function callAPI(paramsObj) {
+            try {
+                const response = await fetch(VERCEL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(paramsObj)
+                });
+                return await response.json();
+            } catch (e) {
+                console.error("[Sync Error]:", e);
+                return { status: 'error', message: "Lỗi kết nối server" };
+            }
+        }
+
+        async function callGAS(paramsObj) {
+            console.log("[GAS Action]:", paramsObj.action);
+            const params = new URLSearchParams();
+            for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
+            try {
+                const response = await fetch(`${GAS_URL}?${params.toString()}`);
+                return await response.json();
+            } catch (e) {
+                console.error("[Sync Error]:", e);
+                return { status: 'error', message: "Lỗi kết nối" };
+            }
+        }
+        
+        function renderList(diaries) {
+            const container = document.getElementById('diaryContainer');
+            container.innerHTML = '';
+            const toggleWrapper = document.getElementById('pinToggleWrapper');
+            const pinLabel = document.getElementById('pinLabelText');
+            const tsSwitch = document.getElementById('toggleSwitchEl');
+            const tsCircle = document.getElementById('toggleCircleEl');
+
+            if(toggleWrapper) {
+                if(tsSwitch && tsCircle) {
+                    if (showPinnedOnly) {
+                        tsSwitch.classList.remove('bg-secondary');
+                        tsSwitch.classList.add('bg-success');
+                        tsCircle.style.left = '16px';
+                    } else {
+                        tsSwitch.classList.remove('bg-success');
+                        tsSwitch.classList.add('bg-secondary');
+                        tsCircle.style.left = '2px';
+                    }
+                }
+                if(pinLabel) pinLabel.innerText = showPinnedOnly ? "Ghim" : "Tất cả";
+            }
+            let displayData = diaries;
+            if (showPinnedOnly) {
+                displayData = diaries.filter(d => d.pinned);
+            }
+            displayData.forEach((item) => container.appendChild(createItemEl(item)));
+            getLessonTotalScore(); 
+        }
+
+        function createItemEl(item) {
+            const isGen = !!(item.paragraph || item.conversation);
+            const div = document.createElement('div');
+            
+            let itemClasses = "bg-white p-3 rounded-2 mb-2 border-start border-4 position-relative ";
+            let borderStyle = "border-color: #dfe6e9 !important;";
+            let backgroundStyle = "";
+            let outlineStyle = "";
+
+            if (item.id == selectedDiaryId) {
+                borderStyle = "border-color: #e67e22 !important;";
+                backgroundStyle = "background-color: #fff3e0 !important;";
+                outlineStyle = "outline: 3px solid #ffcc80; outline-offset: -3px;";
+            } else if (item.pinned) {
+                borderStyle = "border-color: #f1c40f !important;";
+                backgroundStyle = "background-color: #fffdf0 !important;";
+            }
+
+            div.className = itemClasses;
+            div.style.cssText = `${borderStyle} ${backgroundStyle} ${outlineStyle} cursor: pointer;`;
+            div.id = `item-${item.id}`;
+            div.onclick = (e) => {
+                if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger')) {
+                    selectRecord(item.id);
+                }
+            };
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="text-muted fw-semibold m-0" style="font-size: 0.75rem;">
+                        ${item.date} - ${item.id}
+                        <span class="count-trigger ms-2 text-white px-2 py-0 rounded-pill d-inline-block fw-bold" 
+                              onclick="event.stopPropagation(); handleRecordBadgeClick('${item.id}')" 
+                              style="background:${item.voiceCount > 0 ? '#e67e22' : '#ccc'}; font-size:0.7rem; cursor:pointer;">
+                            🎙️ ${item.voiceCount || 0}
+                        </span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="item-action-btn text-primary fw-semibold" style="font-size: 0.75rem; cursor: pointer;" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
+                        <div class="item-action-btn text-danger fw-semibold" style="font-size: 0.75rem; cursor: pointer;" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
+                    </div>
+                </div>
+                <div class="mb-2 fs-5 lh-base" style="white-space: pre-wrap;">${item.text}</div>
+                <div class="d-flex justify-content-between align-items-center border-top pt-2 w-100">
+                    <div class="item-action-btn text-warning fw-semibold text-center flex-grow-1 py-1 border-end" style="font-size: 0.75rem; cursor: pointer;" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
+                    <div class="item-action-btn text-primary fw-semibold text-center flex-grow-1 py-1 border-end ${item.paragraph ? '' : 'disabled opacity-50'}" style="font-size:0.75rem; cursor: ${item.paragraph ? 'pointer' : 'not-allowed'};" onclick="event.stopPropagation(); if(${!!item.paragraph}) { selectRecord('${item.id}'); switchTab(1); }">📖 Đoạn</div>
+                    <div class="item-action-btn text-orange fw-semibold text-center flex-grow-1 py-1 border-end ${item.conversation ? '' : 'disabled opacity-50'}" style="font-size:0.75rem; color: #e67e22 !important; cursor: ${item.conversation ? 'pointer' : 'not-allowed'};" onclick="event.stopPropagation(); if(${!!item.conversation}) { selectRecord('${item.id}'); switchTab(2); }">💬 Hội thoại</div>
+                    <div class="item-action-btn fw-semibold text-center flex-grow-1 py-1 ${isGen ? 'text-success' : 'text-info'}" style="font-size:0.75rem; cursor: pointer;" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
+                </div>
+            `;
+            return div;
+        }
+
+        function handleRecordBadgeClick(id) {
+            selectRecord(id);
+            const modal = document.getElementById('audioModal');
+            document.getElementById('audioFrame').src = `./recorder.html?lessionId=${id}&tab=1`;
+            modal.style.display = 'block';
+        }
+
+        function closeAudioModal() {
+            document.getElementById('audioFrame').src = "";
+            document.getElementById('audioModal').style.display = 'none';
+        }
+
+        function backAudioModal() {
+            const iframe = document.getElementById('audioFrame');
+            if (iframe.contentWindow) iframe.contentWindow.history.back();
+        }
+
+        function reloadAudioModal() {
+            const iframe = document.getElementById('audioFrame');
+            if (iframe.src) iframe.src = iframe.src;
+        }
+
+        async function saveDiary() {
+            const text = document.getElementById('diaryInput').value.trim();
+            if (!text) return;
+            const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
+            const newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0 };
+            currentDiaries.unshift(newItem);
+            renderList(currentDiaries);
+            document.getElementById('diaryInput').value = '';
+            const rowData = [id, date, text, "", "", "false", 0];
+            await callAPI({ act: 'add', sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
+            selectRecord(id, true);
+        }
+
+        function startEdit(id, text) {
+            editingId = id;
+            document.getElementById('diaryInput').value = text;
+            document.getElementById('saveBtn').innerText = 'Cập nhật';
+            document.getElementById('cancelBtn').style.display = 'inline-block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function updateDiary() {
+            const text = document.getElementById('diaryInput').value.trim();
+            const idx = currentDiaries.findIndex(i => i.id == editingId);
+            if (idx === -1) return;
+            const item = currentDiaries[idx];
+            item.text = text;
+            renderList(currentDiaries);
+            const tid = editingId;
+            clearEditMode();
+            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
+            await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
+        }
+
+        async function deleteDiary(id) {
+            if (confirm("Xóa nhật ký này?")) {
+                currentDiaries = currentDiaries.filter(i => i.id != id);
+                renderList(currentDiaries);
+                await callAPI({ act: 'deleteByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' });
+            }
+        }
+
+        function togglePinFilter() {
+            showPinnedOnly = !showPinnedOnly;
+            localStorage.setItem("diary_show_pinned_only", showPinnedOnly);
+            renderList(currentDiaries);
+        }
+
+        async function togglePin(id) {
+            const idx = currentDiaries.findIndex(d => d.id == id);
+            if (idx === -1) return;
+            const item = currentDiaries[idx];
+            item.pinned = !item.pinned;
+            renderList(currentDiaries);
+            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
+            await callAPI({ act: 'updateByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
+        }
+
+        async function askAI(id, content) {
+            selectRecord(id); switchTab(1);
+            const pContainer = document.getElementById('paragraphContainer'), cContainer = document.getElementById('conversationContainer');
+            pContainer.innerHTML = cContainer.innerHTML = '<p class="text-center text-muted p-5 fs-6">🤖 Đang biên soạn nội dung...</p>';
+            const res = await (await fetch('https://hsk-gilt.vercel.app/api/aiGenerate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, lessionId: id })
+            })).json();
+            if (res.status === 'success') {
+                const idx = currentDiaries.findIndex(d => d.id == id);
+                if (idx !== -1) {
+                    currentDiaries[idx].paragraph = res.paragraph;
+                    currentDiaries[idx].conversation = res.conversation;
+                    renderList(currentDiaries); updateAIView();
+                }
+            }else{
+                alert(res.message);
+                switchTab(0);
+            }
+        }
+
+        function switchTab(index) {
+            currentTabIndex = index;
+            localStorage.setItem("diary_current_tab", index);
+            
+            const btn0 = document.getElementById('tab-btn-0');
+            const btn1 = document.getElementById('tab-btn-1');
+            const btn2 = document.getElementById('tab-btn-2');
+            
+            [btn0, btn1, btn2].forEach((btn, i) => {
+                if (i === index) {
+                    btn.className = "btn btn-white flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex align-items-center justify-content-center gap-1 text-primary shadow-sm bg-white";
+                } else {
+                    btn.className = "btn btn-link text-decoration-none text-muted flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex align-items-center justify-content-center gap-1";
+                }
+            });
+
+            document.getElementById('tab-diary').className = (index === 0) ? "d-block flex-grow-1 overflow-auto pb-4" : "d-none flex-grow-1 overflow-auto pb-4";
+            document.getElementById('tab-paragraph').className = (index === 1) ? "d-block flex-grow-1 overflow-auto pb-4" : "d-none flex-grow-1 overflow-auto pb-4";
+            document.getElementById('tab-conversation').className = (index === 2) ? "d-block flex-grow-1 overflow-auto pb-4" : "d-none flex-grow-1 overflow-auto pb-4";
+            
+            updateAIView();
+        }
+
+        function selectRecord(id, scroll = true) {
+            selectedDiaryId = id; localStorage.setItem("diary_selected_id", id);
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('id', id);
+            window.history.replaceState({}, '', newUrl); 
+            
+            renderList(currentDiaries);
+            const el = document.getElementById(`item-${id}`);
+            if (el && scroll) { setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }
+            updateAIView();
+        }
+
+        function updateAIView() {
+            const item = currentDiaries.find(d => d.id == selectedDiaryId);
+            if (!item) return;
+            const pContent = item.paragraph;
+            const cContent = item.conversation;
+            
+            const boxClass = "bg-white p-3 rounded-2 lh-lg fs-5 mb-2 border-start border-4 border-success text-dark";
+            
+            document.getElementById('paragraphContainer').innerHTML = pContent ? `<div id="p-content" class="${boxClass}" style="white-space: pre-wrap;">${pContent}</div>` : `<p class="text-center text-muted p-5 fs-6">Chưa có nội dung AI.</p>`;
+            document.getElementById('conversationContainer').innerHTML = cContent ? `<div id="c-content" class="${boxClass}" style="white-space: pre-wrap;">${cContent}</div>` : `<p class="text-center text-muted p-5 fs-6">Chưa có nội dung AI.</p>`;
+            
+            const btnSpeak = document.getElementById('btnMainSpeak');
+            btnSpeak.disabled = (currentTabIndex === 1) ? !pContent : (currentTabIndex === 2 ? !cContent : true);
+        }
+
+        function loadTTSSettings() {
+            const v = localStorage.getItem("diary_voice"), r = localStorage.getItem("diary_rate");
+            if(v) document.getElementById("voiceSelect").value = v;
+            if(r) document.getElementById("rateSelect").value = r;
+            
+            const btnRepeat = document.getElementById("btnRepeat");
+            if (isRepeating) {
+                btnRepeat.className = "btn btn-primary btn-sm text-white";
+            } else {
+                btnRepeat.className = "btn btn-light btn-sm border";
+            }
+        }
+
+        function saveTTSSettings() {
+            localStorage.setItem("diary_voice", document.getElementById("voiceSelect").value);
+            localStorage.setItem("diary_rate", document.getElementById("rateSelect").value);
+            localStorage.setItem("diary_repeat", isRepeating);
+        }
+
+        function toggleRepeat() { 
+            isRepeating = !isRepeating; 
+            const btnRepeat = document.getElementById("btnRepeat");
+            if (isRepeating) {
+                btnRepeat.className = "btn btn-primary btn-sm text-white";
+            } else {
+                btnRepeat.className = "btn btn-light btn-sm border";
+            }
+            saveTTSSettings(); 
+            if (document.getElementById('btnMainSpeak').classList.contains("btn-danger")) {
+                handleGlobalSpeak(); handleGlobalSpeak(); 
+            }
+        }
+
+        async function speakText(elId, btnId) {
+            const el = document.getElementById(elId), btn = document.getElementById(btnId);
+            if(!el || !window.speakCommon) return;
+            btn.className = "btn btn-danger btn-sm rounded-pill fw-bold px-2 py-1";
+            btn.innerHTML = '⏹ Dừng';
+            await window.speakCommon({ 
+                text: el.innerText, 
+                voice: document.getElementById("voiceSelect").value, 
+                rate: document.getElementById("rateSelect").value, 
+                filename: `Diary_AI_${selectedDiaryId}`,
+                loop: isRepeating 
+            });
+            if (!isRepeating) resetSpeakBtns();
+        }
+
+        function handleGlobalSpeak() {
+            const btn = document.getElementById('btnMainSpeak');
+            if (btn.classList.contains("btn-danger")) { 
+                if (window.stopSpeak) window.stopSpeak(); 
+                resetSpeakBtns(); 
+                return; 
+            }
+            const tid = currentTabIndex === 1 ? 'p-content' : (currentTabIndex === 2 ? 'c-content' : null);
+            if (tid) speakText(tid, 'btnMainSpeak');
+        }
+
+        function resetSpeakBtns() { 
+            const b = document.getElementById('btnMainSpeak'); 
+            b.className = "btn btn-success btn-sm rounded-pill fw-bold px-2 py-1"; 
+            b.innerHTML = '🔊 Đọc'; 
+        }
+        
+        function clearEditMode() { 
+            editingId = null; 
+            document.getElementById('diaryInput').value = ''; 
+            document.getElementById('saveBtn').innerText = 'Lưu lại'; 
+            document.getElementById('cancelBtn').style.display = 'none'; 
+        }
+    </script>
+    <script>
+        async function getLessonTotalScore() {
+            try {
+                const res = await fetch(VERCEL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        sheet: 'ScoreList', 
+                        act: 'read', 
+                        spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A' 
+                    })
+                });
+                const result = await res.json();
+                if (result.values && Array.isArray(result.values)) {
+                    document.querySelectorAll('.count-trigger').forEach(badge => {
+                        const match = badge.getAttribute('onclick').match(/'([^']+)'/);
+                        if (match && match[1]) {
+                            const lessonID = match[1];
+                            let count = 0, maxScore = 0;
+                            result.values.forEach(row => {
+                                if (row[0] === lessonID) {
+                                    count++;
+                                    const score = parseInt(row[3]) || 0;
+                                    if (score > maxScore) maxScore = score;
+                                }
+                            });
+                            badge.innerHTML = `🎙️ ${count} | 🏆 ${maxScore}`;
+                            if (count > 0) badge.style.backgroundColor = '#e67e22';
+                        }
+                    });
+                }
+            } catch (err) { console.error("[Summary Error]:", err); }
+        }
+    </script>
+</body>
+</html>

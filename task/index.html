@@ -12,6 +12,12 @@
         th { background-color: #4CAF50; color: white; position: sticky; top: 115px; z-index: 10; }
         tr:nth-child(even) { background-color: #f2f2f2; }
         
+        .add-form { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; display: flex; gap: 10px; align-items: center; wrap: wrap; }
+        .add-form input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .btn-add { background-color: #4CAF50; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-delete { background-color: #ff3b30; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .editable-cell { background-color: #fffde7; cursor: pointer; border: 1px dashed #caaf15 !important; }
+        
         /* THEME NÚT GẠT PHONG CÁCH IPHONE - IOS SWITCH TOGGLE */
         .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -27,6 +33,11 @@
 <body>
     <div class="sticky-header">
         <h2>Danh sách Task từ Server</h2>
+        <div class="add-form">
+            <input type="text" id="newTaskName" placeholder="Tên Task...">
+            <input type="text" id="newTaskContent" placeholder="Nội dung...">
+            <button class="btn-add" onclick="addTask()">Thêm Mới</button>
+        </div>
         <div class="filter-container">
             <span class="filter-label">Chỉ hiển thị Status = 1:</span>
             <label class="switch">
@@ -39,7 +50,7 @@
     <table id="taskTable" style="display:none;">
         <thead>
             <tr id="headerRow"></tr>
-        </heading>
+        </thead>
         <tbody id="taskBody"></tbody>
     </table>
 <script>
@@ -71,10 +82,11 @@
         const headerRow = document.getElementById('headerRow');
         const taskBody = document.getElementById('taskBody');
         const headers = values[0];
-        headerRow.innerHTML = headers.filter(h => h !== "ID").map(h => `<th>${h}</th>`).join('');
+        
+        // Loại bỏ hiển thị cột NOTE khỏi thẻ tiêu đề
+        headerRow.innerHTML = headers.filter(h => h !== "ID" && h !== "NOTE").map(h => `<th>${h}</th>`).join('') + '<th>HÀNH ĐỘNG</th>';
         taskBody.innerHTML = "";
         
-        // SỬA BUG: Thực hiện deep copy để giữ toàn vẹn dữ liệu gốc, không làm mất nội dung cột thứ 2
         allRowsData = JSON.parse(JSON.stringify(values));
         
         for (let i = 1; i < values.length; i++) {
@@ -86,15 +98,20 @@
             let isStatusActive = false;
             for (let j = 0; j < headers.length; j++) {
                 if (headers[j] === "ID") continue;
+                // Loại bỏ kết xuất giao diện của cột NOTE
+                if (headers[j] === "NOTE") continue;
                 let cellData = rowData[j] || "";
                 if (headers[j] === "STATUS") {
                     if (cellData === "1") isStatusActive = true;
                     const isChecked = cellData === "1" ? "checked" : "";
                     rowHtml += `<td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleStatus('${rowData[0]}', this, ${i})"><span class="slider"></span></label></td>`;
                 } else {
-                    rowHtml += `<td>${cellData.replace(/\n/g, '<br>')}</td>`;
+                    // Thêm thuộc tính contenteditable để hỗ trợ tính năng sửa dữ liệu trực tiếp tại ô
+                    rowHtml += `<td class="editable-cell" contenteditable="true" onblur="updateCellData(this, ${i}, ${j})">${cellData.replace(/\n/g, '<br>')}</td>`;
                 }
             }
+            // Thêm nút hành động xóa dòng
+            rowHtml += `<td><button class="btn-delete" onclick="deleteTask('${rowData[0]}', ${i})">Xóa</button></td>`;
             tr.setAttribute('data-status-active', isStatusActive ? "1" : "0");
             tr.innerHTML = rowHtml;
             taskBody.appendChild(tr);
@@ -122,6 +139,109 @@
         });
     }
 
+    async function addTask() {
+        const name = document.getElementById('newTaskName').value.trim();
+        const content = document.getElementById('newTaskContent').value.trim();
+        if (!name) { alert("Vui lòng nhập tên Task!"); return; }
+        const newId = "ID_" + Date.now();
+        console.log(`Bắt đầu xử lý thêm mới Task. Tên: ${name}, Nội dung: ${content}`);
+
+        const headers = allRowsData[0];
+        const newRow = new Array(headers.length).fill("");
+        for(let j=0; j<headers.length; j++) {
+            if (headers[j] === "ID") newRow[j] = newId;
+            else if (headers[j] === "STATUS") newRow[j] = "1";
+            else if (j === 1) newRow[j] = name;
+            else if (j === 2) newRow[j] = content;
+        }
+
+        const appendPayload = {
+            "act": "append",
+            "sheet": "TASK",
+            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8",
+            "data": JSON.stringify(newRow)
+        };
+
+        console.log("Gửi yêu cầu append dòng mới lên server...", appendPayload);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(appendPayload)
+            });
+            if (!response.ok) throw new Error('Mạng không ổn định khi append dữ liệu');
+            console.log("Thêm mới Task lên server thành công.");
+            allRowsData.push(newRow);
+            document.getElementById('newTaskName').value = "";
+            document.getElementById('newTaskContent').value = "";
+            renderTable(allRowsData);
+        } catch (error) {
+            console.error("Lỗi khi thêm Task:", error);
+        }
+    }
+
+    async function updateCellData(cellEl, rowIndex, colIndex) {
+        const updatedText = cellEl.innerText.trim();
+        const id = allRowsData[rowIndex][0];
+        console.log(`Bắt đầu sự kiện cập nhật ô dữ liệu dòng ${rowIndex}, cột ${colIndex} -> Nội dung mới: ${updatedText}`);
+
+        if(allRowsData[rowIndex][colIndex] === updatedText) return;
+
+        allRowsData[rowIndex][colIndex] = updatedText;
+        const updatedRowData = [...allRowsData[rowIndex]];
+
+        const updatePayload = {
+            "act": "updateByPosVal",
+            "pos": 0,
+            "val": id,
+            "sheet": "TASK",
+            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8",
+            "data": JSON.stringify(updatedRowData)
+        };
+
+        console.log(`Gửi gói tin cập nhật dữ liệu sửa ô của ID ${id} lên server...`, updatePayload);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(updatePayload)
+            });
+            if (!response.ok) throw new Error('Lỗi mạng khi update nội dung ô');
+            console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
+        } catch (error) {
+            console.error("Lỗi khi update ô dữ liệu:", error);
+        }
+    }
+
+    async function deleteTask(id, rowIndex) {
+        if (!confirm("Bạn có chắc chắn muốn xóa Task này không?")) return;
+        console.log(`Kích hoạt tiến trình xóa Task ID: ${id} tại hàng chỉ mục: ${rowIndex}`);
+
+        const deletePayload = {
+            "act": "deleteByPosVal",
+            "pos": 0,
+            "val": id,
+            "sheet": "TASK",
+            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8"
+        };
+
+        console.log("Truyền payload xóa dòng lên API server...", deletePayload);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(deletePayload)
+            });
+            if (!response.ok) throw new Error('Lỗi phản hồi hệ thống khi thực hiện lệnh xóa');
+            console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
+            
+            allRowsData.splice(rowIndex, 1);
+            renderTable(allRowsData);
+        } catch (error) {
+            console.error(`Gặp lỗi nghiêm trọng khi thực hiện xóa Task ${id}:`, error);
+        }
+    }
+
     async function toggleStatus(id, el, rowIndex) {
         const newStatus = el.checked ? "1" : "0";
         console.log(`Kích hoạt sự kiện thay đổi trạng thái Task ID: ${id} -> Trạng thái mới: ${newStatus}`);
@@ -129,7 +249,6 @@
         console.log(`Đã đồng bộ trạng thái cục bộ vào LocalStorage bằng key: ${FILENAME}_${id}`);
 
         const headers = allRowsData[0];
-        // Tìm vị trí động của cột STATUS để tránh ghi đè nhầm cột thứ 2
         const statusColIndex = headers.indexOf("STATUS") !== -1 ? headers.indexOf("STATUS") : 2;
         
         const updatedRowData = [...allRowsData[rowIndex]];

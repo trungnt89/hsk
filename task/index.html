@@ -33,18 +33,23 @@
         input:checked + .slider:before { transform: translateX(20px); }
         .filter-container { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: bold; }
         .filter-label { color: #333; }
+        .header-controls { display: flex; justify-content: space-between; align-items: center; }
+        .right-controls { display: flex; align-items: center; gap: 15px; }
     </style>
 </head>
 <body>
     <div class="sticky-header">
-        <h2>Danh sách Task từ Server</h2>
-        <button class="btn-open-add" onclick="openModal('add')">Thêm Mới Task</button>
-        <div class="filter-container">
-            <span class="filter-label">Chỉ hiển thị Status = 1:</span>
-            <label class="switch">
-                <input type="checkbox" id="filterToggle" checked onchange="filterTasks()">
-                <span class="slider"></span>
-            </label>
+        <div class="header-controls">
+            <h2>Danh sách Task từ Server</h2>
+            <div class="right-controls">
+                <div class="filter-container" style="margin-bottom: 0;">
+                    <label class="switch">
+                        <input type="checkbox" id="filterToggle" checked onchange="filterTasks()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <button class="btn-open-add" onclick="openModal('add')" style="margin-bottom: 0;">Thêm Mới Task</button>
+            </div>
         </div>
     </div>
     <div id="loading">Đang tải dữ liệu...</div>

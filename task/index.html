@@ -12,7 +12,7 @@
         th { background-color: #4CAF50; color: white; position: sticky; top: 115px; z-index: 10; }
         tr:nth-child(even) { background-color: #f2f2f2; }
         
-        .add-form { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; display: flex; gap: 10px; align-items: center; wrap: wrap; }
+        .add-form { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .add-form input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .btn-add { background-color: #4CAF50; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-delete { background-color: #ff3b30; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
@@ -36,6 +36,7 @@
         <div class="add-form">
             <input type="text" id="newTaskName" placeholder="Tên Task...">
             <input type="text" id="newTaskContent" placeholder="Nội dung...">
+            <input type="text" id="newTaskStart" placeholder="Thời gian START (HH:mm)...">
             <button class="btn-add" onclick="addTask()">Thêm Mới</button>
         </div>
         <div class="filter-container">
@@ -83,35 +84,48 @@
         const taskBody = document.getElementById('taskBody');
         const headers = values[0];
         
-        // Loại bỏ hiển thị cột NOTE khỏi thẻ tiêu đề
+        // Loại bỏ cột NOTE khỏi giao diện danh sách thẻ th
         headerRow.innerHTML = headers.filter(h => h !== "ID" && h !== "NOTE").map(h => `<th>${h}</th>`).join('') + '<th>HÀNH ĐỘNG</th>';
         taskBody.innerHTML = "";
         
         allRowsData = JSON.parse(JSON.stringify(values));
         
-        for (let i = 1; i < values.length; i++) {
-            const rowData = values[i];
+        // Xác định vị trí cột START để thực hiện sắp xếp
+        const startColIdx = headers.indexOf("START");
+        
+        // Tách dòng tiêu đề ra khỏi danh sách để thực hiện sort nội dung
+        let dataRows = values.slice(1);
+        if (startColIdx !== -1) {
+            dataRows.sort((a, b) => {
+                let valA = a[startColIdx] || "";
+                let valB = b[startColIdx] || "";
+                return valA.localeCompare(valB);
+            });
+        }
+        
+        for (let i = 0; i < dataRows.length; i++) {
+            const rowData = dataRows[i];
             if (rowData.length < 2) continue;
+            
+            // Tìm lại chỉ mục hàng gốc chuẩn xác trong hệ thống allRowsData
+            const originalRowIndex = allRowsData.findIndex(r => r[0] === rowData[0]);
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', rowData[0]);
             let rowHtml = "";
             let isStatusActive = false;
             for (let j = 0; j < headers.length; j++) {
                 if (headers[j] === "ID") continue;
-                // Loại bỏ kết xuất giao diện của cột NOTE
                 if (headers[j] === "NOTE") continue;
                 let cellData = rowData[j] || "";
                 if (headers[j] === "STATUS") {
                     if (cellData === "1") isStatusActive = true;
                     const isChecked = cellData === "1" ? "checked" : "";
-                    rowHtml += `<td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleStatus('${rowData[0]}', this, ${i})"><span class="slider"></span></label></td>`;
+                    rowHtml += `<td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleStatus('${rowData[0]}', this, ${originalRowIndex})"><span class="slider"></span></label></td>`;
                 } else {
-                    // Thêm thuộc tính contenteditable để hỗ trợ tính năng sửa dữ liệu trực tiếp tại ô
-                    rowHtml += `<td class="editable-cell" contenteditable="true" onblur="updateCellData(this, ${i}, ${j})">${cellData.replace(/\n/g, '<br>')}</td>`;
+                    rowHtml += `<td class="editable-cell" contenteditable="true" onblur="updateCellData(this, ${originalRowIndex}, ${j})">${cellData.replace(/\n/g, '<br>')}</td>`;
                 }
             }
-            // Thêm nút hành động xóa dòng
-            rowHtml += `<td><button class="btn-delete" onclick="deleteTask('${rowData[0]}', ${i})">Xóa</button></td>`;
+            rowHtml += `<td><button class="btn-delete" onclick="deleteTask('${rowData[0]}', ${originalRowIndex})">Xóa</button></td>`;
             tr.setAttribute('data-status-active', isStatusActive ? "1" : "0");
             tr.innerHTML = rowHtml;
             taskBody.appendChild(tr);
@@ -142,18 +156,21 @@
     async function addTask() {
         const name = document.getElementById('newTaskName').value.trim();
         const content = document.getElementById('newTaskContent').value.trim();
+        const startTime = document.getElementById('newTaskStart').value.trim();
         if (!name) { alert("Vui lòng nhập tên Task!"); return; }
         const newId = "ID_" + Date.now();
-        console.log(`Bắt đầu xử lý thêm mới Task. Tên: ${name}, Nội dung: ${content}`);
-
+        console.log(`Bắt đầu xử lý thêm mới Task. Tên: ${name}, Nội dung: ${content}, Bắt đầu: ${startTime}`);
+        
         const headers = allRowsData[0];
         const newRow = new Array(headers.length).fill("");
+        const startColIdx = headers.indexOf("START");
         for(let j=0; j<headers.length; j++) {
             if (headers[j] === "ID") newRow[j] = newId;
             else if (headers[j] === "STATUS") newRow[j] = "1";
             else if (j === 1) newRow[j] = name;
             else if (j === 2) newRow[j] = content;
         }
+        if (startColIdx !== -1) newRow[startColIdx] = startTime;
 
         const appendPayload = {
             "act": "append",
@@ -174,6 +191,7 @@
             allRowsData.push(newRow);
             document.getElementById('newTaskName').value = "";
             document.getElementById('newTaskContent').value = "";
+            document.getElementById('newTaskStart').value = "";
             renderTable(allRowsData);
         } catch (error) {
             console.error("Lỗi khi thêm Task:", error);
@@ -208,6 +226,7 @@
             });
             if (!response.ok) throw new Error('Lỗi mạng khi update nội dung ô');
             console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
+            renderTable(allRowsData);
         } catch (error) {
             console.error("Lỗi khi update ô dữ liệu:", error);
         }
@@ -234,7 +253,6 @@
             });
             if (!response.ok) throw new Error('Lỗi phản hồi hệ thống khi thực hiện lệnh xóa');
             console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
-            
             allRowsData.splice(rowIndex, 1);
             renderTable(allRowsData);
         } catch (error) {

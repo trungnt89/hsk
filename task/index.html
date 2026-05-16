@@ -6,9 +6,10 @@
     <title>Task Management</title>
     <style>
         body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; }
+        .sticky-header { position: sticky; top: 0; background-color: #f4f4f9; padding-top: 20px; padding-bottom: 10px; z-index: 20; }
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
+        th { background-color: #4CAF50; color: white; position: sticky; top: 115px; z-index: 10; }
         tr:nth-child(even) { background-color: #f2f2f2; }
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -16,10 +17,21 @@
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #4CAF50; }
         input:checked + .slider:before { transform: translateX(18px); }
+        .filter-container { margin-bottom: 10px; }
+        .filter-container select { padding: 8px 12px; font-size: 14px; border-radius: 4px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
-    <h2>Danh sách Task từ Server</h2>
+    <div class="sticky-header">
+        <h2>Danh sách Task từ Server</h2>
+        <div class="filter-container">
+            <label for="filterStatus">Chế độ xem: </label>
+            <select id="filterStatus" onchange="filterTasks()">
+                <option value="all">Tất cả</option>
+                <option value="active">Chỉ những status = 1</option>
+            </select>
+        </div>
+    </div>
     <div id="loading">Đang tải dữ liệu...</div>
     <table id="taskTable" style="display:none;">
         <thead>
@@ -30,8 +42,10 @@
 <script>
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
     const PAYLOAD = { "sheet": "TASK", "act": "read", "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8" };
+    const FILENAME = "task_management_index";
 
     async function fetchData() {
+        console.log("Bắt đầu tải dữ liệu từ server...");
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -40,13 +54,16 @@
             });
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
+            console.log("Tải dữ liệu từ server thành công.", data);
             renderTable(data.values);
         } catch (error) {
+            console.error("Lỗi xảy ra trong quá trình fetchData:", error);
             document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
         }
     }
 
     function renderTable(values) {
+        console.log("Bắt đầu dựng cấu trúc bảng hiển thị...");
         const headerRow = document.getElementById('headerRow');
         const taskBody = document.getElementById('taskBody');
         const headers = values[0];
@@ -56,27 +73,84 @@
             const rowData = values[i];
             if (rowData.length < 2) continue;
             const tr = document.createElement('tr');
+            tr.setAttribute('data-id', rowData[0]);
             let rowHtml = "";
+            let isStatusActive = false;
             for (let j = 0; j < headers.length; j++) {
                 if (headers[j] === "ID") continue;
                 let cellData = rowData[j] || "";
                 if (headers[j] === "STATUS") {
+                    if (cellData === "1") isStatusActive = true;
                     const isChecked = cellData === "1" ? "checked" : "";
-                    rowHtml += `<td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleStatus('${rowData[0]}', this)"><span class="slider"></span></label></td>`;
+                    rowHtml += `<td><label class="switch"><input type="checkbox" ${isChecked} onchange="toggleStatus('${rowData[0]}', this, ${JSON.stringify(rowData)})"><span class="slider"></span></label></td>`;
                 } else {
                     rowHtml += `<td>${cellData.replace(/\n/g, '<br>')}</td>`;
                 }
             }
+            tr.setAttribute('data-status-active', isStatusActive ? "1" : "0");
             tr.innerHTML = rowHtml;
             taskBody.appendChild(tr);
         }
         document.getElementById('loading').style.display = 'none';
         document.getElementById('taskTable').style.display = 'table';
+        console.log("Dựng bảng hoàn tất. Tiến hành chạy bộ lọc khởi tạo.");
+        filterTasks();
     }
 
-    function toggleStatus(id, el) {
+    function filterTasks() {
+        const filterValue = document.getElementById('filterStatus').value;
+        console.log(`Áp dụng bộ lọc hiển thị chế độ: ${filterValue}`);
+        const rows = document.querySelectorAll('#taskBody tr');
+        rows.forEach(row => {
+            if (filterValue === 'active') {
+                if (row.getAttribute('data-status-active') === "1") {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            } else {
+                row.style.display = '';
+            }
+        });
+    }
+
+    async function toggleStatus(id, el, fullRowData) {
         const newStatus = el.checked ? "1" : "0";
-        console.log(`Task ${id} updated to ${newStatus}`);
+        console.log(`Kích hoạt sự kiện thay đổi trạng thái Task ID: ${id} -> Trạng thái mới: ${newStatus}`);
+        localStorage.setItem(FILENAME + "_" + id, newStatus);
+        console.log(`Đã đồng bộ trạng thái cục bộ vào LocalStorage bằng key: ${FILENAME}_${id}`);
+
+        const updatedRowData = [...fullRowData];
+        updatedRowData[2] = newStatus; 
+
+        const targetRow = el.closest('tr');
+        if (targetRow) {
+            targetRow.setAttribute('data-status-active', newStatus);
+        }
+
+        const updatePayload = {
+            "act": "updateByPosVal",
+            "pos": 0,
+            "val": id,
+            "sheet": "TASK",
+            "spread": "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8",
+            "data": JSON.stringify(updatedRowData)
+        };
+
+        console.log("Đang truyền gói tin cập nhật dữ liệu lên máy chủ API...", updatePayload);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(updatePayload)
+            });
+            if (!response.ok) throw new Error('Lỗi phản hồi hệ thống mạng khi gửi API update');
+            const resData = await response.json();
+            console.log(`Đồng bộ trạng thái của Task ${id} lên hệ thống server thành công.`, resData);
+            filterTasks();
+        } catch (error) {
+            console.error(`Xảy ra lỗi nghiêm trọng khi gọi API cập nhật trạng thái Task ${id}:`, error);
+        }
     }
     fetchData();
 </script>

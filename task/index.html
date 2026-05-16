@@ -4,42 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Management</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-light p-4">
-    <div class="sticky-top bg-light py-2 z-3">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2>Danh sách Task từ Server</h2>
-            <div class="d-flex align-items-center gap-3">
-                <div class="form-check form-switch mb-0 fs-5">
-                    <input class="form-check-input" type="checkbox" id="filterToggle" checked onchange="filterTasks()">
-                </div>
-                <button class="btn btn-primary font-weight-bold" onclick="openModal('add')">Thêm Mới Task</button>
+<body class="bg-gray-100 p-6">
+    <div class="sticky top-0 bg-gray-100 py-3 z-30">
+        <div class="flex justify-content-between items-center justify-between">
+            <h2 class="text-2xl font-bold text-gray-800">Danh sách Task từ Server</h2>
+            <div class="flex items-center gap-4">
+                <!-- Toggle Switch theo phong cách iOS / Utility-First -->
+                <label class="relative inline-flex items-center cursor-pointer text-xl">
+                    <input type="checkbox" id="filterToggle" checked onchange="filterTasks()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow" onclick="openModal('add')">Thêm Mới Task</button>
             </div>
         </div>
     </div>
-    <div id="loading" class="my-3">Đang tải dữ liệu...</div>
-    <table id="taskTable" class="table table-striped table-bordered bg-white mt-3" style="display:none;">
-        <thead>
+    <div id="loading" class="my-4 text-gray-600 font-medium">Đang tải dữ liệu...</div>
+    <table id="taskTable" class="min-w-full divide-y divide-gray-200 border border-gray-300 bg-white mt-4 shadow-sm rounded" style="display:none;">
+        <thead class="bg-green-100">
             <tr id="headerRow"></tr>
         </thead>
-        <tbody id="taskBody"></tbody>
+        <tbody id="taskBody" class="divide-y divide-gray-200"></tbody>
     </table>
-    <!-- Bootstrap Modal -->
-    <div id="taskModal" class="modal fade" tabindex="-1" style="display: none; background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header d-block">
-                    <h5 id="modalTitle" class="modal-title fw-bold">Thêm Mới Task</h5>
-                </div>
-                <div class="modal-body">
-                    <div id="dynamicFormContainer"></div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal()">Hủy</button>
-                    <button class="btn btn-success" onclick="submitModalForm()">Lưu</button>
-                </div>
+    <!-- Tailwind Custom Popup Modal -->
+    <div id="taskModal" class="fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-50" style="display: none;">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full m-4 overflow-hidden animate-fade-in">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h5 id="modalTitle" class="text-xl font-bold text-gray-800">Thêm Mới Task</h5>
+            </div>
+            <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
+                <div id="dynamicFormContainer"></div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2 border-t border-gray-200">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded" onclick="closeModal()">Hủy</button>
+                <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded" onclick="submitModalForm()">Lưu</button>
             </div>
         </div>
     </div>
@@ -61,7 +61,7 @@
             document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
         }
     }
-	function formatLastTime(timeStr) {
+    function formatLastTime(timeStr) {
         if (!timeStr) return "";
         if (timeStr.includes(":") && timeStr.split(":").length >= 2) {
             let t = timeStr.includes(" ") ? timeStr.split(" ")[1] : timeStr;
@@ -73,7 +73,7 @@
     function renderTable(values) {
         console.log("Bắt đầu dựng cấu trúc bảng hiển thị...");
         const headers = values[0], startColIdx = headers.indexOf("START");
-        document.getElementById('headerRow').innerHTML = headers.filter(h => h !== "ID" && h !== "NOTE").map(h => `<th class="table-success">${h}</th>`).join('') + '<th class="table-success">HÀNH ĐỘNG</th>';
+        document.getElementById('headerRow').innerHTML = headers.filter(h => h !== "ID" && h !== "NOTE").map(h => `<th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider border-b border-gray-300">${h}</th>`).join('') + '<th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider border-b border-gray-300">HÀNH ĐỘNG</th>';
         document.getElementById('taskBody').innerHTML = "";
         allRowsData = JSON.parse(JSON.stringify(values));
         let dataRows = values.slice(1);
@@ -82,15 +82,20 @@
             if (dataRows[i].length < 2) continue;
             const origIdx = allRowsData.findIndex(r => r[0] === dataRows[i][0]), tr = document.createElement('tr');
             tr.setAttribute('data-id', dataRows[i][0]);
+            tr.className = "hover:bg-gray-50 transition-colors";
             let rowHtml = "", isActive = dataRows[i][headers.indexOf("STATUS")] === "1";
             for (let j = 0; j < headers.length; j++) {
                 if (headers[j] === "ID" || headers[j] === "NOTE") continue;
                 let val = dataRows[i][j] || "";
                 if (headers[j] === "LAST_TIME") val = formatLastTime(val);
-                rowHtml += headers[j] === "STATUS" ? `<td><div class="form-check form-switch fs-5"><input class="form-check-input" type="checkbox" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})"></div></td>` : `<td class="border" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</td>`;
+                if (headers[j] === "STATUS") {
+                    rowHtml += `<td class="px-4 py-3 whitespace-nowrap border border-gray-200"><label class="relative inline-flex items-center cursor-pointer text-xl"><input type="checkbox" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})" class="sr-only peer"><div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></td>`;
+                } else {
+                    rowHtml += `<td class="px-4 py-3 border border-gray-200 text-sm text-gray-700" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</td>`;
+                }
             }
             tr.setAttribute('data-status-active', isActive ? "1" : "0");
-            tr.innerHTML = rowHtml + `<td><div class="d-flex gap-1"><button class="btn btn-warning btn-sm text-white" onclick="openModal('edit', ${origIdx})">Sửa</button><button class="btn btn-danger btn-sm" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button></div></td>`;
+            tr.innerHTML = rowHtml + `<td class="px-4 py-3 whitespace-nowrap border border-gray-200 text-sm"><div class="flex gap-2"><button class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-3 rounded text-xs transition-colors" onclick="openModal('edit', ${origIdx})">Sửa</button><button class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded text-xs transition-colors" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button></div></td>`;
             document.getElementById('taskBody').appendChild(tr);
         }
         document.getElementById('loading').style.display = 'none';
@@ -112,15 +117,13 @@
         for (let j = 0; j < headers.length; j++) {
             if (headers[j] === "ID") continue;
             let val = mode === 'add' ? (headers[j] === "STATUS" ? "1" : "") : (allRowsData[rowIndex][j] || "");
-            container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="form-label small fw-medium text-dark mb-0">${headers[j]}</label><input type="text" class="form-control" id="modal_field_${j}" value="${val}"></div>`;
+            container.innerHTML += `<div class="mb-4 flex flex-col gap-1"><label class="text-xs font-semibold text-gray-600 uppercase mb-1">${headers[j]}</label><input type="text" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" id="modal_field_${j}" value="${val}"></div>`;
         }
         const modalEl = document.getElementById('taskModal');
-        modalEl.classList.add('show');
         modalEl.style.display = 'flex';
     }
     function closeModal() {
         const modalEl = document.getElementById('taskModal');
-        modalEl.classList.remove('show');
         modalEl.style.display = 'none';
     }
     function submitModalForm() { currentModalMode === 'add' ? addTask() : updateRowFromModal(currentEditRowIndex); }
@@ -181,19 +184,17 @@
     }
     async function toggleStatus(id, el, rowIndex) {
         const newStatus = el.checked ? "1" : "0";
-        console.log(`Kích hoạt sự kiện thay đổi trạng thái Task ID: ${id} -> Trạng thái mới: ${newStatus}`);
-        const statusColIdx = allRowsData[0].indexOf("STATUS") !== -1 ? allRowsData[0].indexOf("STATUS") : 2;
-        allRowsData[rowIndex][statusColIdx] = newStatus;
-        const targetRow = el.closest('tr');
-        if (targetRow) targetRow.setAttribute('data-status-active', newStatus);
+        console.log(`Bắt đầu cập nhật trạng thái Switch Toggle cho Task ID ${id}: ${newStatus}`);
+        const statusColIdx = allRowsData[0].indexOf("STATUS");
+        if (statusColIdx !== -1) allRowsData[rowIndex][statusColIdx] = newStatus;
         try {
-            const response = await fetch(API_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(allRowsData[rowIndex]) }) });
-            if (!response.ok) throw new Error('Lỗi phản hồi hệ thống mạng khi gửi API update');
-            console.log(`Đồng bộ trạng thái của Task ${id} lên hệ thống server thành công.`, await response.json());
-            filterTasks();
-        } catch (error) { console.error(`Xảy ra lỗi nghiêm trọng khi gọi API cập nhật trạng thái Task ${id}:`, error); }
+            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(allRowsData[rowIndex]) }) });
+            if (!response.ok) throw new Error('Không thể đồng bộ hóa trạng thái Switch');
+            console.log(`Đồng bộ trạng thái Switch cho Task ID ${id} thành công.`);
+            renderTable(allRowsData);
+        } catch (error) { console.error("Lỗi khi thay đổi trạng thái Switch:", error); }
     }
-    fetchData();
+    window.onload = fetchData;
 </script>
 </body>
 </html>

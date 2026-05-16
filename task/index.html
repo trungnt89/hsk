@@ -145,7 +145,7 @@
         }
         console.log(`Bắt đầu xử lý thêm mới Task qua Popup Modal`, newRow);
         try {
-            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(newRow) }) });
+            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "act": "add", "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(newRow) }) });
             if (!response.ok) throw new Error('Mạng không ổn định khi append dữ liệu');
             console.log("Thêm mới Task lên server thành công.");
             allRowsData.push(newRow);

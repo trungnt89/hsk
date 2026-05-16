@@ -65,7 +65,11 @@
         if (!timeStr) return "";
         if (timeStr.includes(":") && timeStr.split(":").length >= 2) {
             let t = timeStr.includes(" ") ? timeStr.split(" ")[1] : timeStr;
-            return t.split(":")[0] + ":" + t.split(":")[1];
+            let parts = t.split(":");
+            if (parts.length >= 3) {
+                return parts[1] + ":" + parts[2];
+            }
+            return parts[0] + ":" + parts[1];
         }
         return timeStr;
     }
@@ -85,7 +89,7 @@
             for (let j = 0; j < headers.length; j++) {
                 if (headers[j] === "ID" || headers[j] === "NOTE") continue;
                 let val = dataRows[i][j] || "";
-                if (headers[j] === "LastTime") val = formatLastTime(val);
+                if (headers[j] === "LAST_TIME") val = formatLastTime(val);
                 rowHtml += headers[j] === "STATUS" ? `<td><div class="form-check form-switch fs-5"><input class="form-check-input" type="checkbox" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})"></div></td>` : `<td class="border" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</td>`;
             }
             tr.setAttribute('data-status-active', isActive ? "1" : "0");

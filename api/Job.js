@@ -23,13 +23,18 @@ export default async function handler(req, res) {
 }
 
 async function fetchTasks() {
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ "sheet": SHEET, "act": "read", "spread": SPREAD_ID })
+    const url = 'https://docs.google.com/spreadsheets/d/1bSEEle1sTKAEwIM5YYkKZ6nXijtdAcB3D65urXCzZiw/gviz/tq?tqx=out:csv&sheet=LIST';
+    const response = await fetch(url);
+    const csvText = await response.text();
+    
+    // Phân tách chuỗi CSV thành mảng dữ liệu 2 chiều dạng hàng/cột tương đương data.values
+    const lines = csvText.split(/\r?\n/);
+    const values = lines.map(line => {
+        // Tách theo dấu phẩy nhưng bỏ qua dấu phẩy nằm trong cặp dấu ngoặc kép của dữ liệu ô tính
+        const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
+        return matches.map(val => val.replace(/^"|"$/g, '').trim());
     });
-    const data = await response.json();
-    return data.values;
+    return values;
 }
 
 async function checkAndProcessTasks(rows, now) {

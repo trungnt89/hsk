@@ -20,26 +20,26 @@
         input:checked + .slider { background-color: #34C759; }
         input:checked + .slider:before { transform: translateX(20px); }
         
-        .filter-container { margin-bottom: 10px; }
-        .filter-container select { padding: 8px 12px; font-size: 14px; border-radius: 8px; border: 1px solid #ccc; background-color: white; }
+        .filter-container { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: bold; }
+        .filter-label { color: #333; }
     </style>
 </head>
 <body>
     <div class="sticky-header">
         <h2>Danh sách Task từ Server</h2>
         <div class="filter-container">
-            <label for="filterStatus">Chế độ xem: </label>
-            <select id="filterStatus" onchange="filterTasks()">
-                <option value="active" selected>Chỉ những status = 1</option>
-                <option value="all">Tất cả</option>
-            </select>
+            <span class="filter-label">Chỉ hiển thị Status = 1:</span>
+            <label class="switch">
+                <input type="checkbox" id="filterToggle" checked onchange="filterTasks()">
+                <span class="slider"></span>
+            </label>
         </div>
     </div>
     <div id="loading">Đang tải dữ liệu...</div>
     <table id="taskTable" style="display:none;">
         <thead>
             <tr id="headerRow"></tr>
-        </thead>
+        </heading>
         <tbody id="taskBody"></tbody>
     </table>
 <script>
@@ -73,7 +73,9 @@
         const headers = values[0];
         headerRow.innerHTML = headers.filter(h => h !== "ID").map(h => `<th>${h}</th>`).join('');
         taskBody.innerHTML = "";
-        allRowsData = [...values];
+        
+        // SỬA BUG: Thực hiện deep copy để giữ toàn vẹn dữ liệu gốc, không làm mất nội dung cột thứ 2
+        allRowsData = JSON.parse(JSON.stringify(values));
         
         for (let i = 1; i < values.length; i++) {
             const rowData = values[i];
@@ -104,11 +106,11 @@
     }
 
     function filterTasks() {
-        const filterValue = document.getElementById('filterStatus').value;
-        console.log(`Áp dụng bộ lọc hiển thị chế độ: ${filterValue}`);
+        const isEnforceActive = document.getElementById('filterToggle').checked;
+        console.log(`Áp dụng bộ lọc hiển thị iPhone Toggle. Chỉ hiện status=1: ${isEnforceActive}`);
         const rows = document.querySelectorAll('#taskBody tr');
         rows.forEach(row => {
-            if (filterValue === 'active') {
+            if (isEnforceActive) {
                 if (row.getAttribute('data-status-active') === "1") {
                     row.style.display = '';
                 } else {
@@ -126,8 +128,12 @@
         localStorage.setItem(FILENAME + "_" + id, newStatus);
         console.log(`Đã đồng bộ trạng thái cục bộ vào LocalStorage bằng key: ${FILENAME}_${id}`);
 
+        const headers = allRowsData[0];
+        // Tìm vị trí động của cột STATUS để tránh ghi đè nhầm cột thứ 2
+        const statusColIndex = headers.indexOf("STATUS") !== -1 ? headers.indexOf("STATUS") : 2;
+        
         const updatedRowData = [...allRowsData[rowIndex]];
-        updatedRowData[2] = newStatus; 
+        updatedRowData[statusColIndex] = newStatus; 
         allRowsData[rowIndex] = updatedRowData;
 
         const targetRow = el.closest('tr');

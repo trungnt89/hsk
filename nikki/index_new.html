@@ -1,79 +1,42 @@
---------------------------------------------
-BỘ NGUYÊN TẮC THI HÀNH SỬA ĐỔI MÃ NGUỒN (STRICT PROTOCOL):
---------------------------------------------
-	0. Yêu cầu ở dưới 4 sẽ được trả lời đầu tiên
-	1. Liệt kê thay đổi: Nêu rõ các dòng được sửa và lý do kỹ thuật.
-	2. Kiểm tra Sai khác (Git Diff - Toàn bộ): *  so sánh chi tiết cho tất cả các dòng từ dòng 1 đến hết (không được lược bỏ bằng dấu ...).
-		Cấu trúc bảng: | Dòng STT | Nội dung Code Base (Cũ) | Nội dung Code Mới |.
-		Báo cáo các thông số chính xác:
-		Tổng số dòng trong Code Base: [Con số]
-		Tổng số dòng đã thực hiện kiểm tra: [Con số]
-		Kết luận: Số dòng kiểm tra là (Ít hơn / Nhiều hơn / Bằng) so với Code Base.
-		Báo cáo đã rà soát toàn bộ 
-	3. Tự rà soát (Self-Correction): Nếu phát hiện bất kỳ sự sai khác nào ngoài nội dung đã liệt kê ở bước 2 (kể cả khoảng trắng hay comment), phải thực hiện sửa lại cho đến khi chỉ còn đúng những thay đổi được yêu cầu. Báo cáo: "Hoàn thành bước 3".
-	4. Xuất mã nguồn (Full Output): Cung cấp toàn bộ mã nguồn sau khi sửa. Tuyệt đối không viết tắt, không lược bỏ bất kỳ đoạn nào.
-	5. So sánh đối chiếu cuối cùng: So sánh trực tiếp mã nguồn ở bước 4 với Code Base một lần nữa. Liệt kê danh sách các điểm khác biệt duy nhất.
-	6. Xác nhận vi phạm: Trả lời trực tiếp câu hỏi: "Có phát hiện hành vi tự ý sửa code ngoài yêu cầu hay không?".
-	7. XUất mã full mã nguồn lên đầu tiên trong câu trả lời cho tôi
-	8. XÓa bỏ hết css ,xóa bỏ code trong thẻ <style>,  gọi thư viện ngoài như bootrap và dùng class của boottrap,không viết css,báo cáo kết quả xóa bỏ hết css ko ảnh hưởng đến UI
---------------------------------------------
-YÊU CẦU THAY ĐỔI:
--------------------------------------------
-1.Sửa lại sử dụng bootrap và có thể repositive cho mobile 
---------------------------------------------
-MÃ NGUỒN GỐC (SRC BASE):
---------------------------------------------
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Diary - AI Integrated (Tailwind)</title>
+    <title>Diary - AI Integrated (Bootstrap)</title>
     <!-- Nhúng Google Fonts (Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Nhúng Thư viện Utility-First Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Nhúng Thư viện Bootstrap CSS v5.3.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script type="module">
         import JapaneseLookup from '../com/japanese-lookup.js?v=1';
     </script>
-    <script>
-        // Cấu hình font hệ thống đồng bộ cho Tailwind
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
 </head>
-<body class="bg-slate-50 text-slate-800 flex flex-col h-screen overflow-hidden text-base font-sans">
+<body class="bg-light text-dark d-flex flex-column vh-100 overflow-hidden fs-6" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
     <script src="../com/assistive.js"></script>
     <script src="../com/TTSClient.js"></script>
 
-    <header class="bg-blue-600 text-white p-3 text-center shadow-md flex-shrink-0">
-        <h1 class="text-xl font-semibold m-0 tracking-wide">Diary & AI</h1>
+    <header class="bg-primary text-white p-3 text-center shadow-sm flex-shrink-0">
+        <h1 class="h5 fw-semibold m-0 tracking-wide">Diary & AI</h1>
     </header>
 
-    <main class="flex-grow flex flex-col gap-2 p-2 overflow-hidden">
+    <main class="flex-grow-1 d-flex flex-column gap-2 p-2 overflow-hidden">
         <!-- Input Area -->
-        <div class="bg-white p-3 rounded-xl shadow-sm flex-shrink-0 border border-slate-100">
-            <textarea id="diaryInput" class="block w-full p-3 text-base text-slate-900 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-150 mb-2" style="height: 120px; resize: none;" placeholder="Hôm nay của bạn thế nào?..."></textarea>
-            <div class="flex justify-between align-items-center gap-2 w-full">
-                <button id="cancelBtn" class="inline-block font-medium text-center align-middle cursor-pointer bg-slate-500 text-white px-3 py-1.5 text-sm rounded-md hover:bg-slate-600 transition-colors" style="display:none;">Hủy</button>
-                <button id="saveBtn" class="inline-block font-semibold text-center align-middle cursor-pointer bg-blue-600 text-white px-4 py-1.5 text-sm rounded-md hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/20">Lưu lại</button>
-                <div class="flex items-center gap-2 ml-auto flex-grow justify-end overflow-hidden">
-                    <button id="btnMainSpeak" class="inline-block font-bold text-center align-middle cursor-pointer bg-emerald-600 text-white px-3 py-1 rounded-full text-xs min-w-[70px] hover:bg-emerald-700 transition-colors" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
-                    <button id="btnRepeat" class="inline-block text-center align-middle cursor-pointer bg-white text-slate-700 border border-slate-200 p-1.5 text-sm rounded-md hover:bg-slate-50 transition-colors" onclick="toggleRepeat()">🔂</button>
-                    <select id="voiceSelect" class="block p-1 text-xs text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none w-auto" onchange="saveTTSSettings()">
+        <div class="bg-white p-3 rounded-3 shadow-sm flex-shrink-0 border border-light-subtle">
+            <textarea id="diaryInput" class="form-control p-3 fs-6 text-dark bg-white border border-secondary-subtle rounded-3 mb-2" style="height: 120px; resize: none;" placeholder="Hôm nay của bạn thế nào?..."></textarea>
+            <div class="d-flex justify-content-between align-items-center gap-2 w-full">
+                <button id="cancelBtn" class="btn btn-secondary fw-medium px-3 py-1.5 fs-7 text-white" style="display:none;">Hủy</button>
+                <button id="saveBtn" class="btn btn-primary fw-semibold px-4 py-1.5 fs-7 text-white shadow-sm">Lưu lại</button>
+                <div class="d-flex align-items-center gap-2 ms-auto flex-grow-1 justify-content-end overflow-hidden">
+                    <button id="btnMainSpeak" class="btn btn-success fw-bold px-3 py-1 rounded-pill text-xs text-white" style="min-w: 70px;" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
+                    <button id="btnRepeat" class="btn btn-outline-secondary bg-white text-dark p-1.5 fs-7" onclick="toggleRepeat()">🔂</button>
+                    <select id="voiceSelect" class="form-select p-1 fs-7 text-dark bg-white border border-secondary-subtle rounded-2 w-auto" onchange="saveTTSSettings()">
                         <option value="ja-JP-KeitaNeural" selected>Nam (JP)</option>
                         <option value="ja-JP-NanamiNeural" >Nữ (JP)</option>
                     </select>
-                    <select id="rateSelect" class="block p-1 text-xs text-slate-800 bg-white border border-slate-200 rounded-md focus:outline-none w-auto" onchange="saveTTSSettings()">
+                    <select id="rateSelect" class="form-select p-1 fs-7 text-dark bg-white border border-secondary-subtle rounded-2 w-auto" onchange="saveTTSSettings()">
                         <option value="0.65">0.65</option>
                         <option value="0.68">0.68</option>
                         <option value="0.70" selected>0.70</option>
@@ -87,37 +50,37 @@ MÃ NGUỒN GỐC (SRC BASE):
         </div>
 
         <!-- Navigation Tabs -->
-        <div class="flex bg-slate-200/60 p-1 rounded-lg flex-shrink-0 gap-1">
-            <button class="flex-grow py-2 px-1 text-base font-semibold border-0 flex items-center justify-center gap-1 text-blue-600 shadow-sm bg-white rounded-md transition-all duration-150" id="tab-btn-0" onclick="switchTab(0)">
+        <div class="d-flex bg-secondary bg-opacity-10 p-1 rounded-3 flex-shrink-0 gap-1">
+            <button class="flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-content-center gap-1 text-primary shadow-sm bg-white rounded-2" id="tab-btn-0" onclick="switchTab(0)">
                 <span>📝 Nhật ký</span>
-                <div class="inline-flex items-center relative ml-1" style="cursor: pointer;" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
-                    <span class="hidden" id="pinLabelText">Tất cả</span>
-                    <div class="relative bg-emerald-600 rounded-full w-[30px] h-[16px] transition-all duration-300" id="toggleSwitchEl">
-                        <div class="absolute bg-white rounded-full w-[12px] h-[12px] top-[2px] left-[16px] transition-all duration-300" id="toggleCircleEl"></div>
+                <div class="d-inline-flex align-items-center position-relative ms-1" style="cursor: pointer;" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
+                    <span class="d-none" id="pinLabelText">Tất cả</span>
+                    <div class="position-relative bg-success rounded-pill" style="width: 30px; height: 16px; transition: all 0.3s;" id="toggleSwitchEl">
+                        <div class="position-absolute bg-white rounded-circle" style="width: 12px; height: 12px; top: 2px; left: 16px; transition: all 0.3s;" id="toggleCircleEl"></div>
                     </div>
                 </div>
             </button>
-            <button class="no-underline text-slate-500 hover:text-slate-700 flex-grow py-2 px-1 text-base font-semibold border-0 flex items-center justify-center gap-1 bg-transparent transition-all duration-150" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
-            <button class="no-underline text-slate-500 hover:text-slate-700 flex-grow py-2 px-1 text-base font-semibold border-0 flex items-center justify-center gap-1 bg-transparent transition-all duration-150" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
+            <button class="text-decoration-none text-secondary flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-content-center gap-1 bg-transparent" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
+            <button class="text-decoration-none text-secondary flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-content-center gap-1 bg-transparent" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
         </div>
 
         <!-- Tab Containers -->
-        <div id="tab-diary" class="block flex-grow overflow-y-auto pb-6 scroll-smooth">
-            <div id="diaryContainer"><p class="text-center text-slate-400 p-12 text-base">Đang tải dữ liệu...</p></div>
+        <div id="tab-diary" class="d-block flex-grow-1 overflow-y-auto pb-5 scroll-smooth">
+            <div id="diaryContainer"><p class="text-center text-secondary p-5 fs-6">Đang tải dữ liệu...</p></div>
         </div>
-        <div id="tab-paragraph" class="hidden flex-grow overflow-y-auto pb-6 scroll-smooth"><div id="paragraphContainer"></div></div>
-        <div id="tab-conversation" class="hidden flex-grow overflow-y-auto pb-6 scroll-smooth"><div id="conversationContainer"></div></div>
+        <div id="tab-paragraph" class="d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth"><div id="paragraphContainer"></div></div>
+        <div id="tab-conversation" class="d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth"><div id="conversationContainer"></div></div>
     </main>
 
     <!-- Modal Frame -->
-    <div id="audioModal" class="fixed w-full h-full top-0 left-0 bg-black/50" style="display: none; z-index: 1000;">
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl overflow-hidden shadow-2xl" style="width: 90%; height: 80%;">
-            <div class="p-2 bg-slate-50 flex justify-between items-center border-b border-slate-200">
-                <button class="bg-transparent border border-red-500 text-red-500 hover:bg-red-50 text-xs font-bold px-3 py-1 rounded transition-colors" onclick="closeAudioModal()">✕ ĐÓNG</button>
-                <button class="bg-transparent border border-emerald-500 text-emerald-500 hover:bg-emerald-50 text-xs font-bold px-3 py-1 rounded transition-colors" onclick="reloadAudioModal()">F5 RELOAD</button>
-                <button class="bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-50 text-xs font-bold px-3 py-1 rounded transition-colors" onclick="backAudioModal()">BACK ↩</button>
+    <div id="audioModal" class="fixed-top w-100 h-100 bg-black bg-opacity-50" style="display: none; z-index: 1000;">
+        <div class="position-absolute top-50 left-50 translate-middle bg-white rounded-3 overflow-hidden shadow-lg" style="width: 90%; height: 80%;">
+            <div class="p-2 bg-light d-flex justify-content-between align-items-center border-b border-light-subtle">
+                <button class="btn btn-outline-danger btn-sm fw-bold px-3 py-1" onclick="closeAudioModal()">✕ ĐÓNG</button>
+                <button class="btn btn-outline-success btn-sm fw-bold px-3 py-1" onclick="reloadAudioModal()">F5 RELOAD</button>
+                <button class="btn btn-outline-primary btn-sm fw-bold px-3 py-1" onclick="backAudioModal()">BACK ↩</button>
             </div>
-            <iframe id="audioFrame" class="w-full border-0" style="height: calc(100% - 40px);" src=""></iframe>
+            <iframe id="audioFrame" class="w-100 border-0" style="height: calc(100% - 40px);" src=""></iframe>
         </div>
     </div>
 
@@ -136,7 +99,7 @@ MÃ NGUỒN GỐC (SRC BASE):
         let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("[System] App Initialized With Tailwind CSS Utility-First Framework");
+            console.log("[System] App Initialized With Bootstrap CSS Framework");
             initApp();
             loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => {
@@ -209,10 +172,16 @@ MÃ NGUỒN GỐC (SRC BASE):
             if(toggleWrapper) {
                 if(tsSwitch && tsCircle) {
                     if (showPinnedOnly) {
-                        tsSwitch.className = "relative bg-emerald-600 rounded-full w-[30px] h-[16px] transition-all duration-300";
+                        tsSwitch.className = "position-relative bg-success rounded-pill";
+                        tsSwitch.style.width = "30px";
+                        tsSwitch.style.height = "16px";
+                        tsSwitch.style.transition = "all 0.3s";
                         tsCircle.style.left = '16px';
                     } else {
-                        tsSwitch.className = "relative bg-slate-400 rounded-full w-[30px] h-[16px] transition-all duration-300";
+                        tsSwitch.className = "position-relative bg-secondary rounded-pill";
+                        tsSwitch.style.width = "30px";
+                        tsSwitch.style.height = "16px";
+                        tsSwitch.style.transition = "all 0.3s";
                         tsCircle.style.left = '2px';
                     }
                 }
@@ -230,18 +199,18 @@ MÃ NGUỒN GỐC (SRC BASE):
             const isGen = !!(item.paragraph || item.conversation);
             const div = document.createElement('div');
             
-            let itemClasses = "bg-white p-4 rounded-xl mb-3 border-l-4 shadow-sm relative transition-all duration-200 ";
-            let borderStyle = "border-left-color: #cbd5e1 \!important;";
+            let itemClasses = "bg-white p-4 rounded-3 mb-3 shadow-sm position-relative ";
+            let borderStyle = "border-left: 4px solid #cbd5e1 !important;";
             let backgroundStyle = "";
             let outlineStyle = "";
 
             if (item.id == selectedDiaryId) {
-                borderStyle = "border-left-color: #f97316 \!important;";
-                backgroundStyle = "background-color: #fff7ed \!important;";
+                borderStyle = "border-left: 4px solid #f97316 !important;";
+                backgroundStyle = "background-color: #fff7ed !important;";
                 outlineStyle = "outline: 3px solid #ffedd5; outline-offset: -3px;";
             } else if (item.pinned) {
-                borderStyle = "border-left-color: #eab308 \!important;";
-                backgroundStyle = "background-color: #fefce8 \!important;";
+                borderStyle = "border-left: 4px solid #eab308 !important;";
+                backgroundStyle = "background-color: #fefce8 !important;";
             }
 
             div.className = itemClasses;
@@ -253,26 +222,26 @@ MÃ NGUỒN GỐC (SRC BASE):
                 }
             };
             div.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <div class="text-slate-400 font-semibold m-0 text-xs">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="text-secondary fw-semibold m-0 fs-7">
                         ${item.date} - ${item.id}
-                        <span class="count-trigger ml-2 text-white px-2 py-0.5 rounded-full inline-block font-bold text-[11px]" 
+                        <span class="count-trigger ms-2 text-white px-2 py-0.5 rounded-pill d-inline-block fw-bold" 
                               onclick="event.stopPropagation(); handleRecordBadgeClick('${item.id}')" 
-                              style="background:${item.voiceCount > 0 ? '#f97316' : '#94a3b8'}; cursor:pointer;">
+                              style="background:${item.voiceCount > 0 ? '#f97316' : '#94a3b8'}; cursor:pointer; font-size: 11px;">
                             🎙️ ${item.voiceCount || 0}
                         </span>
                     </div>
-                    <div class="flex gap-3">
-                        <div class="item-action-btn text-blue-600 hover:text-blue-700 font-semibold text-xs cursor-pointer" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
-                        <div class="item-action-btn text-red-500 hover:text-red-600 font-semibold text-xs cursor-pointer" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
+                    <div class="d-flex gap-3">
+                        <div class="item-action-btn text-primary fw-semibold fs-7 cursor-pointer" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
+                        <div class="item-action-btn text-danger fw-semibold fs-7 cursor-pointer" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
                     </div>
                 </div>
-                <div class="mb-3 text-[17px] leading-relaxed text-slate-800" style="white-space: pre-wrap;">${item.text}</div>
-                <div class="flex justify-between items-center border-t border-slate-100 pt-2.5 w-full">
-                    <div class="item-action-btn text-amber-500 hover:text-amber-600 font-semibold text-center flex-grow py-1 border-r border-slate-100 text-xs cursor-pointer" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
-                    <div class="item-action-btn text-blue-600 hover:text-blue-700 font-semibold text-center flex-grow py-1 border-r border-slate-100 ${item.paragraph ? '' : 'disabled opacity-40'}" style="font-size:12px; cursor: ${item.paragraph ? 'pointer' : 'not-allowed'};" onclick="event.stopPropagation(); if(${!!item.paragraph}) { selectRecord('${item.id}'); switchTab(1); }">📖 Đoạn</div>
-                    <div class="item-action-btn text-orange-500 hover:text-orange-600 font-semibold text-center flex-grow py-1 border-r border-slate-100 ${item.conversation ? '' : 'disabled opacity-40'}" style="font-size:12px; cursor: ${item.conversation ? 'pointer' : 'not-allowed'};" onclick="event.stopPropagation(); if(${!!item.conversation}) { selectRecord('${item.id}'); switchTab(2); }">💬 Hội thoại</div>
-                    <div class="item-action-btn font-semibold text-center flex-grow py-1 ${isGen ? 'text-emerald-600 hover:text-emerald-700' : 'text-cyan-500 hover:text-cyan-600'} text-xs cursor-pointer" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
+                <div class="mb-3 fs-5 leading-relaxed text-dark" style="white-space: pre-wrap;">${item.text}</div>
+                <div class="d-flex justify-content-between align-items-center border-top border-light-subtle pt-2 w-100">
+                    <div class="item-action-btn text-warning fw-semibold text-center flex-grow-1 py-1 border-end border-light-subtle fs-7 cursor-pointer" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
+                    <div class="item-action-btn text-primary fw-semibold text-center flex-grow-1 py-1 border-end border-light-subtle ${item.paragraph ? '' : 'disabled opacity-40'}" style="font-size:12px; cursor: ${item.paragraph ? 'pointer' : 'not-allowed'};" onclick="event.stopPropagation(); if(${!!item.paragraph}) { selectRecord('${item.id}'); switchTab(1); }">📖 Đoạn</div>
+                    <div class="item-action-btn text-warning fw-semibold text-center flex-grow-1 py-1 border-end border-light-subtle ${item.conversation ? '' : 'disabled opacity-40'}" style="font-size:12px; cursor: ${item.conversation ? 'pointer' : 'not-allowed'};" onclick="event.stopPropagation(); if(${!!item.conversation}) { selectRecord('${item.id}'); switchTab(2); }">💬 Hội thoại</div>
+                    <div class="item-action-btn fw-semibold text-center flex-grow-1 py-1 ${isGen ? 'text-success' : 'text-info'} fs-7 cursor-pointer" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
                 </div>
             `;
             return div;
@@ -361,7 +330,7 @@ MÃ NGUỒN GỐC (SRC BASE):
         async function askAI(id, content) {
             selectRecord(id); switchTab(1);
             const pContainer = document.getElementById('paragraphContainer'), cContainer = document.getElementById('conversationContainer');
-            pContainer.innerHTML = cContainer.innerHTML = '<p class="text-center text-slate-400 p-12 text-base">🤖 Đang biên soạn nội dung...</p>';
+            pContainer.innerHTML = cContainer.innerHTML = '<p class="text-center text-secondary p-5 fs-6">🤖 Đang biên soạn nội dung...</p>';
             const res = await (await fetch('https://hsk-gilt.vercel.app/api/aiGenerate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -390,15 +359,15 @@ MÃ NGUỒN GỐC (SRC BASE):
             
             [btn0, btn1, btn2].forEach((btn, i) => {
                 if (i === index) {
-                    btn.className = "flex-grow py-2 px-1 text-base font-semibold border-0 flex items-center justify-center gap-1 text-blue-600 shadow-sm bg-white rounded-md transition-all duration-150";
+                    btn.className = "flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-center gap-1 text-primary shadow-sm bg-white rounded-2";
                 } else {
-                    btn.className = "no-underline text-slate-500 hover:text-slate-700 flex-grow py-2 px-1 text-base font-semibold border-0 flex items-center justify-center gap-1 bg-transparent transition-all duration-150";
+                    btn.className = "text-decoration-none text-secondary flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-center gap-1 bg-transparent";
                 }
             });
 
-            document.getElementById('tab-diary').className = (index === 0) ? "block flex-grow overflow-y-auto pb-6 scroll-smooth" : "hidden flex-grow overflow-y-auto pb-6 scroll-smooth";
-            document.getElementById('tab-paragraph').className = (index === 1) ? "block flex-grow overflow-y-auto pb-6 scroll-smooth" : "hidden flex-grow overflow-y-auto pb-6 scroll-smooth";
-            document.getElementById('tab-conversation').className = (index === 2) ? "block flex-grow overflow-y-auto pb-6 scroll-smooth" : "hidden flex-grow overflow-y-auto pb-6 scroll-smooth";
+            document.getElementById('tab-diary').className = (index === 0) ? "d-block flex-grow-1 overflow-y-auto pb-5 scroll-smooth" : "d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth";
+            document.getElementById('tab-paragraph').className = (index === 1) ? "d-block flex-grow-1 overflow-y-auto pb-5 scroll-smooth" : "d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth";
+            document.getElementById('tab-conversation').className = (index === 2) ? "d-block flex-grow-1 overflow-y-auto pb-5 scroll-smooth" : "d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth";
             
             updateAIView();
         }
@@ -421,20 +390,20 @@ MÃ NGUỒN GỐC (SRC BASE):
             const pContent = item.paragraph;
             const cContent = item.conversation;
             
-            const boxClass = "bg-white p-4 rounded-xl leading-relaxed text-[17px] mb-3 border-l-4 text-slate-800 shadow-sm";
+            const boxClass = "bg-white p-4 rounded-3 fs-5 mb-3 text-dark shadow-sm";
             
             const pBox = document.getElementById('paragraphContainer');
             if(pContent) {
-                pBox.innerHTML = `<div id="p-content" class="${boxClass}" style="white-space: pre-wrap; border-left-color: #10b981 \!important;">${pContent}</div>`;
+                pBox.innerHTML = `<div id="p-content" class="${boxClass}" style="white-space: pre-wrap; border-left: 4px solid #10b981 !important;">${pContent}</div>`;
             } else {
-                pBox.innerHTML = `<p class="text-center text-slate-400 p-12 text-base">Chưa có nội dung AI.</p>`;
+                pBox.innerHTML = `<p class="text-center text-secondary p-5 fs-6">Chưa có nội dung AI.</p>`;
             }
 
             const cBox = document.getElementById('conversationContainer');
             if(cContent) {
-                cBox.innerHTML = `<div id="c-content" class="${boxClass}" style="white-space: pre-wrap; border-left-color: #10b981 \!important;">${cContent}</div>`;
+                cBox.innerHTML = `<div id="c-content" class="${boxClass}" style="white-space: pre-wrap; border-left: 4px solid #10b981 !important;">${cContent}</div>`;
             } else {
-                cBox.innerHTML = `<p class="text-center text-slate-400 p-12 text-base">Chưa có nội dung AI.</p>`;
+                cBox.innerHTML = `<p class="text-center text-secondary p-5 fs-6">Chưa có nội dung AI.</p>`;
             }
             
             const btnSpeak = document.getElementById('btnMainSpeak');
@@ -448,9 +417,9 @@ MÃ NGUỒN GỐC (SRC BASE):
             
             const btnRepeat = document.getElementById("btnRepeat");
             if (isRepeating) {
-                btnRepeat.className = "inline-block text-center align-middle cursor-pointer bg-blue-600 text-white p-1.5 text-sm rounded-md hover:bg-blue-700 transition-colors";
+                btnRepeat.className = "btn btn-primary text-white p-1.5 fs-7";
             } else {
-                btnRepeat.className = "inline-block text-center align-middle cursor-pointer bg-white text-slate-700 border border-slate-200 p-1.5 text-sm rounded-md hover:bg-slate-50 transition-colors";
+                btnRepeat.className = "btn btn-outline-secondary bg-white text-dark p-1.5 fs-7";
             }
         }
 
@@ -464,12 +433,12 @@ MÃ NGUỒN GỐC (SRC BASE):
             isRepeating = !isRepeating; 
             const btnRepeat = document.getElementById("btnRepeat");
             if (isRepeating) {
-                btnRepeat.className = "inline-block text-center align-middle cursor-pointer bg-blue-600 text-white p-1.5 text-sm rounded-md hover:bg-blue-700 transition-colors";
+                btnRepeat.className = "btn btn-primary text-white p-1.5 fs-7";
             } else {
-                btnRepeat.className = "inline-block text-center align-middle cursor-pointer bg-white text-slate-700 border border-slate-200 p-1.5 text-sm rounded-md hover:bg-slate-50 transition-colors";
+                btnRepeat.className = "btn btn-outline-secondary bg-white text-dark p-1.5 fs-7";
             }
             saveTTSSettings(); 
-            if (document.getElementById('btnMainSpeak').className.includes("bg-red-500")) {
+            if (document.getElementById('btnMainSpeak').className.includes("btn-danger")) {
                 handleGlobalSpeak(); handleGlobalSpeak(); 
             }
         }
@@ -477,7 +446,8 @@ MÃ NGUỒN GỐC (SRC BASE):
         async function speakText(elId, btnId) {
             const el = document.getElementById(elId), btn = document.getElementById(btnId);
             if(!el || !window.speakCommon) return;
-            btn.className = "inline-block font-bold text-center align-middle cursor-pointer bg-red-500 text-white px-3 py-1 rounded-full text-xs min-w-[70px] hover:bg-red-600 transition-colors";
+            btn.className = "btn btn-danger fw-bold px-3 py-1 rounded-pill text-xs text-white";
+            btn.style.minWidth = "70px";
             btn.innerHTML = '⏹ Dừng';
             await window.speakCommon({ 
                 text: el.innerText, 
@@ -491,7 +461,7 @@ MÃ NGUỒN GỐC (SRC BASE):
 
         function handleGlobalSpeak() {
             const btn = document.getElementById('btnMainSpeak');
-            if (btn.className.includes("bg-red-500")) { 
+            if (btn.className.includes("btn-danger")) { 
                 if (window.stopSpeak) window.stopSpeak(); 
                 resetSpeakBtns(); 
                 return; 
@@ -502,7 +472,8 @@ MÃ NGUỒN GỐC (SRC BASE):
 
         function resetSpeakBtns() { 
             const b = document.getElementById('btnMainSpeak'); 
-            b.className = "inline-block font-bold text-center align-middle cursor-pointer bg-emerald-600 text-white px-3 py-1 rounded-full text-xs min-w-[70px] hover:bg-emerald-700 transition-colors"; 
+            b.className = "btn btn-success fw-bold px-3 py-1 rounded-pill text-xs text-white"; 
+            b.style.minWidth = "70px";
             b.innerHTML = '🔊 Đọc'; 
         }
         
@@ -539,12 +510,16 @@ MÃ NGUỒN GỐC (SRC BASE):
                                     if (score > maxScore) maxScore = score;
                                 }
                             });
-                            badge.innerHTML = `🎙️ ${count} | 🏆 ${maxScore}`;
-                            if (count > 0) badge.style.backgroundColor = '#f97316';
+                            if (count > 0) {
+                                badge.innerHTML = `🎙️ ${count} (⭐ ${maxScore})`;
+                                badge.style.backgroundColor = '#10b981';
+                            }
                         }
                     });
                 }
-            } catch (err) { console.error("[Summary Error]:", err); }
+            } catch (error) {
+                console.error("Error fetching score:", error);
+            }
         }
     </script>
 </body>

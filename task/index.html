@@ -81,16 +81,17 @@
             let startVal = dataRows[i][headers.indexOf("START")] || "";
             let fregVal = dataRows[i][headers.indexOf("FREG")] || "";
             let updateVal = dataRows[i][headers.indexOf("UPDATE")] || "";
+            let lastTimeVal = dataRows[i][headers.indexOf("LAST_TIME")] || "";
             
             startVal = formatLastTime(startVal);
             fregVal = formatLastTime(fregVal);
             updateVal = formatLastTime(updateVal);
+            lastTimeVal = formatLastTime(lastTimeVal);
             
             let cardBodyContent = "";
             for (let j = 0; j < headers.length; j++) {
-                if (headers[j] === "ID" || headers[j] === "NOTE" || headers[j] === "STATUS" || headers[j] === "START" || headers[j] === "FREG" || headers[j] === "UPDATE") continue;
+                if (headers[j] === "ID" || headers[j] === "NOTE" || headers[j] === "STATUS" || headers[j] === "START" || headers[j] === "FREG" || headers[j] === "UPDATE" || headers[j] === "LAST_TIME") continue;
                 let val = dataRows[i][j] || "";
-                if (headers[j] === "LAST_TIME") val = formatLastTime(val);
                 
                 if (headers[j] === "TASK") {
                     cardBodyContent += `<div class="mb-2"><span class="text-uppercase text-secondary font-weight-bold small d-block">${headers[j]}</span><div class="p-2 bg-light rounded text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</div></div>`;
@@ -103,7 +104,7 @@
                 <div class="col-12 col-md-6 col-lg-4 task-card-item" data-id="${dataRows[i][0]}" data-status-active="${isActive ? "1" : "0"}">
                     <div class="card h-100 shadow-sm bg-white border">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
-                            <span class="font-weight-bold text-dark small">${idVal} | ${startVal} | ${fregVal} | ${updateVal}</span>
+                            <span class="font-weight-bold text-dark small" style="letter-spacing: 0.5px; word-spacing: 1px;">${idVal} | ${startVal} | ${fregVal} | ${updateVal} | <span class="badge text-bg-secondary font-weight-normal">${lastTimeVal}</span></span>
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" role="switch" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})">
                             </div>

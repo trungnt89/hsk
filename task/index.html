@@ -20,14 +20,7 @@
         </div>
     </div>
     <div id="loading" class="my-4 text-secondary font-weight-medium">Đang tải dữ liệu...</div>
-    <div class="table-responsive mt-3">
-        <table id="taskTable" class="table table-bordered table-hover align-middle bg-white shadow-sm" style="display:none;">
-            <thead class="table-success">
-                <tr id="headerRow"></tr>
-            </thead>
-            <tbody id="taskBody"></tbody>
-        </table>
-    </div>
+    <div id="taskContainer" class="mt-3 row g-3" style="display:none;"></div>
     <div id="taskModal" class="modal fade show" style="display: none; background: rgba(0,0,0,0.5); z-index: 1050;" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-lg">
@@ -75,40 +68,59 @@
     function renderTable(values) {
         console.log("Bắt đầu dựng cấu trúc bảng hiển thị...");
         const headers = values[0], startColIdx = headers.indexOf("START");
-        document.getElementById('headerRow').innerHTML = headers.filter(h => h !== "ID" && h !== "NOTE").map(h => `<th class="text-uppercase text-secondary font-weight-bold p-3 small border-bottom">${h}</th>`).join('') + '<th class="text-uppercase text-secondary font-weight-bold p-3 small border-bottom">HÀNH ĐỘNG</th>';
-        document.getElementById('taskBody').innerHTML = "";
+        const container = document.getElementById('taskContainer');
+        container.innerHTML = "";
         allRowsData = JSON.parse(JSON.stringify(values));
         let dataRows = values.slice(1);
         if (startColIdx !== -1) dataRows.sort((a, b) => (a[startColIdx] || "").localeCompare(b[startColIdx] || ""));
         for (let i = 0; i < dataRows.length; i++) {
             if (dataRows[i].length < 2) continue;
-            const origIdx = allRowsData.findIndex(r => r[0] === dataRows[i][0]), tr = document.createElement('tr');
-            tr.setAttribute('data-id', dataRows[i][0]);
-            tr.className = "";
-            let rowHtml = "", isActive = dataRows[i][headers.indexOf("STATUS")] === "1";
+            const origIdx = allRowsData.findIndex(r => r[0] === dataRows[i][0]);
+            let isActive = dataRows[i][headers.indexOf("STATUS")] === "1";
+            
+            let cardBodyContent = "";
             for (let j = 0; j < headers.length; j++) {
-                if (headers[j] === "ID" || headers[j] === "NOTE") continue;
+                if (headers[j] === "ID" || headers[j] === "NOTE" || headers[j] === "STATUS") continue;
                 let val = dataRows[i][j] || "";
                 if (headers[j] === "LAST_TIME") val = formatLastTime(val);
-                if (headers[j] === "STATUS") {
-                    rowHtml += `<td class="p-3 text-nowrap"><div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" role="switch" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})" style="transform: scale(1.2); cursor: pointer;"></div></td>`;
+                
+                if (headers[j] === "TASK") {
+                    cardBodyContent += `<div class="mb-2"><span class="text-uppercase text-secondary font-weight-bold small d-block">${headers[j]}</span><div class="p-2 bg-light rounded text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</div></div>`;
                 } else {
-                    rowHtml += `<td class="p-3 text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</td>`;
+                    cardBodyContent += `<div class="mb-2 d-flex justify-content-between align-items-center border-bottom pb-1"><span class="text-uppercase text-secondary font-weight-bold small">${headers[j]}:</span><span class="text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val}</span></div>`;
                 }
             }
-            tr.setAttribute('data-status-active', isActive ? "1" : "0");
-            tr.innerHTML = rowHtml + `<td class="p-3 text-nowrap"><div class="d-flex gap-2"><button class="btn btn-warning btn-sm font-weight-medium text-white px-3" onclick="openModal('edit', ${origIdx})">Sửa</button><button class="btn btn-danger btn-sm font-weight-medium px-3" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button></div></td>`;
-            document.getElementById('taskBody').appendChild(tr);
+            
+            const cardHtml = `
+                <div class="col-12 col-md-6 col-lg-4 task-card-item" data-id="${dataRows[i][0]}" data-status-active="${isActive ? "1" : "0"}">
+                    <div class="card h-100 shadow-sm bg-white border">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                            <span class="font-weight-bold text-dark small">ID: ${dataRows[i][0]}</span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})" style="transform: scale(1.2); cursor: pointer;">
+                            </div>
+                        </div>
+                        <div class="card-body py-3">
+                            ${cardBodyContent}
+                        </div>
+                        <div class="card-footer bg-white border-top-0 d-flex justify-content-end gap-2 pb-3 pt-0">
+                            <button class="btn btn-warning btn-sm font-weight-medium text-white px-3" onclick="openModal('edit', ${origIdx})">Sửa</button>
+                            <button class="btn btn-danger btn-sm font-weight-medium px-3" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += cardHtml;
         }
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('taskTable').style.display = 'table';
+        container.style.display = 'flex';
         console.log("Dựng bảng hoàn tất. Tiến hành chạy bộ lọc khởi tạo.");
         filterTasks();
     }
     function filterTasks() {
         const isEnforceActive = document.getElementById('filterToggle').checked;
         console.log(`Áp dụng bộ lọc hiển thị iPhone Toggle. Chỉ hiện status=1: ${isEnforceActive}`);
-        document.querySelectorAll('#taskBody tr').forEach(row => row.style.display = (!isEnforceActive || row.getAttribute('data-status-active') === "1") ? '' : 'none');
+        document.querySelectorAll('.task-card-item').forEach(row => row.style.display = (!isEnforceActive || row.getAttribute('data-status-active') === "1") ? '' : 'none');
     }
     function openModal(mode, rowIndex) {
         currentModalMode = mode;

@@ -4,79 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Diary - AI Integrated</title>
-    <script type="module">import JapaneseLookup from '../com/japanese-lookup.js?v=1';</script>
-    <!-- Tích hợp Alpine.js để tối ưu hóa quản lý giao diện và giảm dòng code xử lý DOM -->
+    <script type="module">
+        import JapaneseLookup from '../com/japanese-lookup.js?v=1';
+    </script>
+    <!-- Gọi thư viện Bootstrap ngoài theo yêu cầu quy định -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tích hợp Alpine.js để tối ưu hóa quản lý giao diện, loại bỏ hàm DOM thuần và rút ngắn mã nguồn -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 14px; }
-        :root { --bg-color: #f5f7fb; --primary-color: #6c5ce7; --secondary-color: #a29bfe; --text-color: #2d3436; --text-light: #636e72; --card-bg: #ffffff; --danger-color: #ff7675; --edit-color: #0984e3; --success-color: #2ecc71; --ai-color: #00b894; }
-        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
-        header h1 { font-size: 1.2rem; font-weight: 600; }
-        main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 10px; font-size: 15px; resize: none; height: 120px; outline: none; display: block; }
-        .action-area { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; gap: 5px; width: 100%; }
-        .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap; font-size: 13px; }
-        .btn-save:disabled { background-color: #ccc; cursor: not-allowed; }
-        .btn-cancel { background-color: #eee; color: #333; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; font-size: 13px; }
-        .tts-controls { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: 1; justify-content: flex-end; overflow: hidden; }
-        .btn-main-speak { background: var(--ai-color); color: white; border: none; padding: 6px 8px; border-radius: 20px; cursor: pointer; font-size: 0.75rem; font-weight: bold; min-width: 65px; transition: 0.3s; }
-        .btn-main-speak:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
-        .btn-main-speak.playing { background: var(--danger-color); }
-        .tabs { display: flex; background: #eee; border-radius: 8px; padding: 4px; margin-top: 5px; flex-shrink: 0; }
-        .tab-btn { flex: 1; border: none; padding: 10px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 4px; }
-        .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .toggle-container { display: inline-flex; align-items: center; cursor: pointer; position: relative; margin-left: 4px; }
-        .toggle-switch { position: relative; width: 30px; height: 16px; background-color: #ccc; border-radius: 10px; transition: 0.3s; }
-        .toggle-switch::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: 0.3s; }
-        .toggle-active .toggle-switch { background-color: var(--success-color); }
-        .toggle-active .toggle-switch::after { left: 16px; }
-        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 20px; scroll-behavior: smooth; }
-        .tab-content.active { display: block; }
-        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; position: relative; }
-        .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
-        .diary-item.selected { border-left-color: #e67e22 !important; background-color: #fff3e0 !important; outline: 3px solid #ffcc80; outline-offset: -3px; }
-        .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.7; font-size: 1rem; white-space: pre-wrap; margin-bottom: 10px; border-left: 4px solid var(--ai-color); color: #2c3e50; }
-        .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-        .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
-        select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
-        .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
-        .diary-content { font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
-        .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 8px; width: 100%; }
-        .item-action-btn { background: none; border: none; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 1; text-align: center; padding: 5px 0; white-space: nowrap; border-right: 1px solid #eee; }
-        .item-action-btn:last-child { border-right: none; }
-        .item-action-btn.disabled { color: #ccc !important; cursor: not-allowed; pointer-events: none; opacity: 0.6; }
-        .pin-btn { color: #f39c12; } .edit-btn { color: var(--edit-color); } .delete-btn { color: var(--danger-color); } .ai-btn { color: var(--ai-color); } .ai-btn.generated { color: #27ae60; }
-        .loading-text { text-align: center; padding: 40px; font-size: 0.9rem; color: var(--text-light); }
-        .audio-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .audio-modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 80%; background: white; border-radius: 12px; overflow: hidden; }
-        .audio-modal-header { padding: 8px 12px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
-        .modal-btn { background: #fff; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
-        .close-modal-btn { color: #ef4444; } .back-modal-btn { color: #2563eb; }
-        iframe#audioFrame { width: 100%; height: calc(100% - 40px); border: none; }
-    </style>
 </head>
-<body x-data="diaryApp()" x-init="init()">
+<body class="bg-light text-dark d-flex flex-column vh-100 overflow-hidden" x-data="diaryApp()" x-init="init()">
     <script src="../com/assistive.js"></script>
     <script src="../com/TTSClient.js"></script>
 
-    <header><h1>Diary & AI</h1></header>
+    <header class="bg-gradient text-white text-center py-2 shadow-sm flex-shrink-0" style="background-image: linear-gradient(135deg, #6c5ce7, #a29bfe);">
+        <h1 class="fs-5 fw-bold mb-0">Diary & AI</h1>
+    </header>
 
-    <main>
-        <div class="write-card">
-            <textarea x-model="inputText" placeholder="Hôm nay của bạn thế nào?..."></textarea>
-            <div class="action-area">
-                <button class="btn-cancel" x-show="editingId" x-on:click="clearEditMode()">Hủy</button>
-                <button class="btn-save" x-on:click="saveOrUpdate()" x-text="editingId ? 'Cập nhật' : 'Lưu lại'"></button>
-                <div class="tts-controls">
-                    <button id="btnMainSpeak" class="btn-main-speak" x-bind:class="isPlaying ? 'playing' : ''" x-bind:disabled="isSpeakDisabled()" x-on:click="handleGlobalSpeak()" x-text="isPlaying ? '⏹ Dừng' : '🔊 Đọc'"></button>
-                    <button class="btn-repeat" x-bind:class="isRepeating ? 'active' : ''" x-on:click="toggleRepeat()">🔂</button>
-                    <select x-model="ttsVoice" class="tts-select" x-on:change="saveTTSSettings()">
+    <main class="flex-grow-1 overflow-hidden p-2 d-flex flex-column gap-2">
+        <div class="bg-white p-2 rounded-3 shadow-sm flex-shrink-0">
+            <textarea class="form-control fs-6" x-model="inputText" placeholder="Hôm nay của bạn thế nào?..." style="height: 120px; resize: none;"></textarea>
+            <div class="d-flex justify-content-between align-items-center mt-2 gap-1 w-100">
+                <button class="btn btn-secondary btn-sm" x-show="editingId" x-on:click="clearEditMode()">Hủy</button>
+                <button class="btn btn-primary btn-sm fw-bold text-nowrap" x-on:click="saveOrUpdate()" x-text="editingId ? 'Cập nhật' : 'Lưu lại'"></button>
+                <div class="d-flex align-items-center gap-1 ms-auto flex-shrink-1 overflow-hidden">
+                    <button id="btnMainSpeak" class="btn btn-sm rounded-pill fw-bold" x-bind:class="isPlaying ? 'btn-danger' : 'btn-success'" x-bind:disabled="isSpeakDisabled()" x-on:click="handleGlobalSpeak()" x-text="isPlaying ? '⏹ Dừng' : '🔊 Đọc'"></button>
+                    <button class="btn btn-sm btn-outline-secondary" x-bind:class="isRepeating ? 'active btn-primary text-white' : ''" x-on:click="toggleRepeat()">🔂</button>
+                    <select x-model="ttsVoice" class="form-select form-select-sm p-1" style="font-size: 11px; width: auto;" x-on:change="saveTTSSettings()">
                         <option value="ja-JP-KeitaNeural">Nam (JP)</option>
                         <option value="ja-JP-NanamiNeural">Nữ (JP)</option>
                     </select>
-                    <select x-model="ttsRate" class="tts-select" x-on:change="saveTTSSettings()">
+                    <select x-model="ttsRate" class="form-select form-select-sm p-1" style="font-size: 11px; width: auto;" x-on:change="saveTTSSettings()">
                         <option value="0.65">0.65</option><option value="0.68">0.68</option><option value="0.70">0.70</option>
                         <option value="0.72">0.72</option><option value="0.75">0.75</option><option value="0.80">0.80</option><option value="1.0">1.0</option>
                     </select>
@@ -84,65 +41,77 @@
             </div>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn" x-bind:class="currentTab === 0 ? 'active' : ''" x-on:click="switchTab(0)">
+        <div class="nav nav-pills bg-light border p-1 rounded-3 flex-shrink-0 d-flex text-center">
+            <button class="nav-link flex-grow-1 text-secondary p-2 small fw-bold d-flex align-items-center justify-content-center gap-1" x-bind:class="currentTab === 0 ? 'active bg-white text-primary shadow-sm' : ''" x-on:click="switchTab(0)">
                 <span>📝 Nhật ký</span>
-                <div class="toggle-container" x-bind:class="showPinnedOnly ? 'toggle-active' : ''" x-on:click.stop="togglePinFilter()">
-                    <div class="toggle-switch"></div>
+                <div class="form-check form-switch m-0 p-0 ps-4" x-on:click.stop="togglePinFilter()">
+                    <input class="form-check-input ms-0 float-none" type="checkbox" role="switch" x-bind:checked="showPinnedOnly" style="cursor: pointer;">
                 </div>
             </button>
-            <button class="tab-btn" x-bind:class="currentTab === 1 ? 'active' : ''" x-on:click="switchTab(1)">📖 Đoạn văn</button>
-            <button class="tab-btn" x-bind:class="currentTab === 2 ? 'active' : ''" x-on:click="switchTab(2)">💬 Hội thoại</button>
+            <button class="nav-link flex-grow-1 text-secondary p-2 small fw-bold" x-bind:class="currentTab === 1 ? 'active bg-white text-primary shadow-sm' : ''" x-on:click="switchTab(1)">📖 Đoạn văn</button>
+            <button class="nav-link flex-grow-1 text-secondary p-2 small fw-bold" x-bind:class="currentTab === 2 ? 'active bg-white text-primary shadow-sm' : ''" x-on:click="switchTab(2)">💬 Hội thoại</button>
         </div>
 
-        <div class="tab-content" x-bind:class="currentTab === 0 ? 'active' : ''">
+        <div class="tab-content flex-grow-1 overflow-auto pb-4" x-show="currentTab === 0">
             <div id="diaryContainer">
-                <template x-if="loading"><p class="loading-text">Đang tải dữ liệu...</p></template>
+                <template x-if="loading"><p class="text-center text-muted p-4 small">Đang tải dữ liệu...</p></template>
                 <template x-for="item in filteredDiaries()" :key="item.id">
-                    <div :id="'item-'+item.id" class="diary-item" x-bind:class="[(item.id == selectedId ? 'selected' : ''), (item.pinned ? 'pinned' : '')]" x-on:click="selectRecord(item.id)">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <div class="diary-date">
+                    <div :id="'item-'+item.id" class="card p-3 mb-2 border-start border-4 border-secondary position-relative style-diary-card" x-bind:style="item.id == selectedId ? 'border-color: #e67e22 !important; background-color: #fff3e0 !important; outline: 3px solid #ffcc80;' : (item.pinned ? 'border-color: #f1c40f !important; background-color: #fffdf0 !important;' : 'border-color: #dfe6e9 !important; background-color: #ffffff;')" x-on:click="selectRecord(item.id)">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="text-muted fw-bold" style="font-size: 0.75rem;">
                                 <span x-text="item.date + ' - ' + item.id"></span>
-                                <span class="count-trigger" x-on:click.stop="handleRecordBadgeClick(item.id)" x-bind:style="item.badgeCount > 0 ? 'margin-left:8px; color:white; background:#e67e22; padding:2px 8px; border-radius:10px; font-size:0.7rem; cursor:pointer; font-weight:bold; display:inline-block;' : 'margin-left:8px; color:white; background:#ccc; padding:2px 8px; border-radius:10px; font-size:0.7rem; cursor:pointer; font-weight:bold; display:inline-block;'" x-text="'🎙️ ' + (item.badgeCount || 0) + (item.maxScore ? ' | 🏆 ' + item.maxScore : '')"></span>
+                                <span class="count-trigger badge rounded-pill ms-1" x-on:click.stop="handleRecordBadgeClick(item.id)" x-bind:class="item.badgeCount > 0 ? 'bg-warning' : 'bg-secondary'" x-text="'🎙️ ' + (item.badgeCount || 0) + (item.maxScore ? ' | 🏆 ' + item.maxScore : '')" style="cursor: pointer;"></span>
                             </div>
-                            <div style="display:flex; gap:10px;">
-                                <div class="item-action-btn edit-btn" x-on:click.stop="startEdit(item)">✏️ Sửa</div>
-                                <div class="item-action-btn delete-btn" x-on:click.stop="deleteDiary(item.id)">🗑️ Xóa</div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-link btn-sm p-0 text-primary text-decoration-none fw-bold" style="font-size: 0.75rem;" x-on:click.stop="startEdit(item)">✏️ Sửa</button>
+                                <button class="btn btn-link btn-sm p-0 text-danger text-decoration-none fw-bold" style="font-size: 0.75rem;" x-on:click.stop="deleteDiary(item.id)">🗑️ Xóa</button>
                             </div>
                         </div>
-                        <div class="diary-content" x-text="item.text"></div>
-                        <div class="item-actions">
-                            <div class="item-action-btn pin-btn" x-on:click.stop="togglePin(item)" x-text="item.pinned ? '📍 Bỏ' : '📌 Ghim'"></div>
-                            <div class="item-action-btn" x-bind:class="item.paragraph ? '' : 'disabled'" style="color:var(--primary-color);" x-on:click.stop="selectRecord(item.id); switchTab(1)">📖 Đoạn</div>
-                            <div class="item-action-btn" x-bind:class="item.conversation ? '' : 'disabled'" style="color:#e67e22;" x-on:click.stop="selectRecord(item.id); switchTab(2)">💬 Hội thoại</div>
-                            <div class="item-action-btn ai-btn" x-bind:class="(item.paragraph || item.conversation) ? 'generated' : ''" x-on:click.stop="askAI(item)" x-text="(item.paragraph || item.conversation) ? '✅ AI' : '✨ AI'"></div>
+                        <div class="fs-5 lh-base text-break mb-2 text-dark style-diary-content" x-text="item.text" style="white-space: pre-wrap;"></div>
+                        <div class="d-flex justify-content-between align-items-center border-top pt-2 w-100">
+                            <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold text-warning border-end border-light rounded-0" style="font-size: 0.75rem;" x-on:click.stop="togglePin(item)" x-text="item.pinned ? '📍 Bỏ' : '📌 Ghim'"></button>
+                            <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold border-end border-light rounded-0" style="font-size: 0.75rem;" x-bind:class="item.paragraph ? 'text-primary' : 'text-muted disabled opacity-50'" x-on:click.stop="selectRecord(item.id); switchTab(1)">📖 Đoạn</button>
+                            <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold border-end border-light rounded-0" style="font-size: 0.75rem;" x-bind:class="item.conversation ? 'text-orange' : 'text-muted disabled opacity-50'" x-bind:style="item.conversation ? 'color: #e67e22;' : ''" x-on:click.stop="selectRecord(item.id); switchTab(2)">💬 Hội thoại</button>
+                            <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold rounded-0" style="font-size: 0.75rem;" x-bind:class="(item.paragraph || item.conversation) ? 'text-success' : 'text-info'" x-on:click.stop="askAI(item)" x-text="(item.paragraph || item.conversation) ? '✅ AI' : '✨ AI'"></button>
                         </div>
                     </div>
                 </template>
             </div>
         </div>
-        <div class="tab-content" x-bind:class="currentTab === 1 ? 'active' : ''">
+        
+        <div class="tab-content flex-grow-1 overflow-auto pb-4" x-show="currentTab === 1">
             <div id="paragraphContainer">
-                <template x-if="selectedItem() && selectedItem().paragraph"><div id="p-content" class="ai-content-box" x-text="selectedItem().paragraph"></div></template>
-                <template x-if="!selectedItem() || !selectedItem().paragraph"><p class="loading-text" x-text="aiLoading ? '🤖 Đang biên soạn nội dung...' : 'Chưa có nội dung AI.'"></p></template>
+                <template x-if="selectedItem() && selectedItem().paragraph">
+                    <div id="p-content" class="bg-white p-3 rounded-3 lh-lg fs-6 mb-2 border-start border-4 border-success text-dark" style="white-space: pre-wrap;" x-text="selectedItem().paragraph"></div>
+                </template>
+                <template x-if="!selectedItem() || !selectedItem().paragraph">
+                    <p class="text-center text-muted p-4 small" x-text="aiLoading ? '🤖 Đang biên soạn nội dung...' : 'Chưa có nội dung AI.'"></p>
+                </template>
             </div>
         </div>
-        <div class="tab-content" x-bind:class="currentTab === 2 ? 'active' : ''">
+        
+        <div class="tab-content flex-grow-1 overflow-auto pb-4" x-show="currentTab === 2">
             <div id="conversationContainer">
-                <template x-if="selectedItem() && selectedItem().conversation"><div id="c-content" class="ai-content-box" x-text="selectedItem().conversation"></div></template>
-                <template x-if="!selectedItem() || !selectedItem().conversation"><p class="loading-text" x-text="aiLoading ? '🤖 Đang biên soạn nội dung...' : 'Chưa có nội dung AI.'"></p></template>
+                <template x-if="selectedItem() && selectedItem().conversation">
+                    <div id="c-content" class="bg-white p-3 rounded-3 lh-lg fs-6 mb-2 border-start border-4 border-success text-dark" style="white-space: pre-wrap;" x-text="selectedItem().conversation"></div>
+                </template>
+                <template x-if="!selectedItem() || !selectedItem().conversation">
+                    <p class="text-center text-muted p-4 small" x-text="aiLoading ? '🤖 Đang biên soạn nội dung...' : 'Chưa có nội dung AI.'"></p>
+                </template>
             </div>
         </div>
     </main>
 
-    <div id="audioModal" class="audio-modal">
-        <div class="audio-modal-content">
-            <div class="audio-modal-header">
-                <button class="modal-btn close-modal-btn" x-on:click="closeAudioModal()">✕ ĐÓNG</button>
-                <button class="modal-btn" style="color:#059669;" x-on:click="document.getElementById('audioFrame').src = document.getElementById('audioFrame').src">F5 RELOAD</button>
-                <button class="modal-btn back-modal-btn" x-on:click="const f = document.getElementById('audioFrame'); if (f.contentWindow) f.contentWindow.history.back()">BACK ↩</button>
+    <div id="audioModal" class="modal" tabindex="-1" style="display: none; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-fullscreen m-0 p-3" style="max-width: 100%; height: 100%;">
+            <div class="modal-content h-100 rounded-3 overflow-hidden">
+                <div class="modal-header p-2 bg-light d-flex justify-content-between align-items-center">
+                    <button class="btn btn-outline-danger btn-sm fw-bold" x-on:click="closeAudioModal()">✕ ĐÓNG</button>
+                    <button class="btn btn-outline-success btn-sm fw-bold" x-on:click="document.getElementById('audioFrame').src = document.getElementById('audioFrame').src">F5 RELOAD</button>
+                    <button class="btn btn-outline-primary btn-sm fw-bold" x-on:click="const f = document.getElementById('audioFrame'); if (f.contentWindow) f.contentWindow.history.back()">BACK ↩</button>
+                </div>
+                <iframe id="audioFrame" src="" class="w-100 border-0" style="height: calc(100% - 45px);"></iframe>
             </div>
-            <iframe id="audioFrame" src=""></iframe>
         </div>
     </div>
 
@@ -158,7 +127,7 @@
                 ttsVoice: localStorage.getItem("diary_voice") || "ja-JP-KeitaNeural",
                 ttsRate: localStorage.getItem("diary_rate") || "0.70",
                 init() {
-                    console.log("[System] Alpine Application Initialized");
+                    console.log("[System] App Initialized");
                     if (this.selectedId) localStorage.setItem("diary_selected_id", this.selectedId);
                     this.loadDiaries();
                 },
@@ -173,10 +142,10 @@
                             this.diaries = data.values.map(r => ({
                                 id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0), badgeCount: parseInt(r[6] || 0), maxScore: 0
                             })).reverse();
-                            if (this.selectedId) this.selectRecord(this.selectedId, true);
+                            if (this.selectedId) this.selectRecord(this.selectedId);
                             await this.getLessonTotalScore();
                         }
-                    } catch (err) { console.warn("[Sync] Offline mode", err); } finally { this.loading = false; }
+                    } catch (err) { console.warn("[Sync] Offline mode"); } finally { this.loading = false; }
                 },
                 async callAPI(paramsObj) {
                     try {
@@ -191,17 +160,15 @@
                     return this.diaries.find(d => d.id == this.selectedId);
                 },
                 isSpeakDisabled() {
-                    const item = this.selectedItem();
-                    if (!item) return true;
+                    const item = this.selectedItem(); if (!item) return true;
                     return this.currentTab === 1 ? !item.paragraph : (this.currentTab === 2 ? !item.conversation : true);
                 },
                 switchTab(idx) {
                     this.currentTab = idx; localStorage.setItem("diary_current_tab", idx);
                 },
-                selectRecord(id, scroll = false) {
+                selectRecord(id) {
                     this.selectedId = id; localStorage.setItem("diary_selected_id", id);
                     const url = new URL(window.location); url.searchParams.set('id', id); window.history.replaceState({}, '', url);
-                    if (scroll) setTimeout(() => { const el = document.getElementById(`item-${id}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 200);
                 },
                 togglePinFilter() {
                     this.showPinnedOnly = !this.showPinnedOnly; localStorage.setItem("diary_show_pinned_only", this.showPinnedOnly);
@@ -230,7 +197,7 @@
                         const newItem = { id, date, text: txt, paragraph: "", conversation: "", pinned: false, voiceCount: 0, badgeCount: 0, maxScore: 0 };
                         this.diaries.unshift(newItem); this.inputText = '';
                         await this.callAPI({ act: 'add', sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify([id, date, txt, "", "", "false", 0]) });
-                        this.selectRecord(id, true);
+                        this.selectRecord(id);
                     }
                 },
                 async deleteDiary(id) {
@@ -247,9 +214,7 @@
                     this.selectRecord(item.id); this.switchTab(1); this.aiLoading = true;
                     try {
                         const res = await (await fetch('https://hsk-gilt.vercel.app/api/aiGenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: item.text, lessionId: item.id }) })).json();
-                        if (res.status === 'success') {
-                            item.paragraph = res.paragraph; item.conversation = res.conversation;
-                        } else { alert(res.message); this.switchTab(0); }
+                        if (res.status === 'success') { item.paragraph = res.paragraph; item.conversation = res.conversation; } else { alert(res.message); this.switchTab(0); }
                     } catch (e) { console.error(e); } finally { this.aiLoading = false; }
                 },
                 handleRecordBadgeClick(id) {
@@ -274,9 +239,7 @@
                         if (res.values && Array.isArray(res.values)) {
                             this.diaries.forEach(item => {
                                 let count = 0, max = 0;
-                                res.values.forEach(row => {
-                                    if (row[0] === item.id) { count++; const s = parseInt(row[3]) || 0; if (s > max) max = s; }
-                                });
+                                res.values.forEach(row => { if (row[0] === item.id) { count++; const s = parseInt(row[3]) || 0; if (s > max) max = s; } });
                                 item.badgeCount = count; item.maxScore = max;
                             });
                         }

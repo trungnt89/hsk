@@ -23,16 +23,49 @@ export default async function handler(req, res) {
 }
 
 async function fetchTasks() {
+    writeLog(`[FETCH] Đang tải dữ liệu từ URL: ${URL}`);
     const response = await fetch(URL);
     const csvText = await response.text();
     
-    // Phân tách chuỗi CSV thành mảng dữ liệu 2 chiều dạng hàng/cột tương đương data.values
-    const lines = csvText.split(/\r?\n/);
-    const values = lines.map(line => {
-        // Tách theo dấu phẩy nhưng bỏ qua dấu phẩy nằm trong cặp dấu ngoặc kép của dữ liệu ô tính
-        const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
-        return matches.map(val => val.replace(/^"|"$/g, '').trim());
-    });
+    // Sử dụng thuật toán State Machine để phân tách CSV có chứa dấu xuống dòng trong ô
+    const values = [];
+    let currentRow = [];
+    let currentCell = '';
+    let insideQuotes = false;
+    
+    for (let i = 0; i < csvText.length; i++) {
+        const char = csvText[i];
+        const nextChar = csvText[i + 1];
+
+        if (char === '"') {
+            if (insideQuotes && nextChar === '"') {
+                currentCell += '"';
+                i++; // Bỏ qua dấu ngoặc kép bọc kép tiếp theo
+            } else {
+                insideQuotes = !insideQuotes;
+            }
+        } else if (char === ',' && !insideQuotes) {
+            currentRow.push(currentCell.trim());
+            currentCell = '';
+        } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+            if (char === '\r' && nextChar === '\n') i++;
+            currentRow.push(currentCell.trim());
+            if (currentRow.length > 0 && (currentRow.length > 1 || currentRow[0] !== '')) {
+                values.push(currentRow);
+            }
+            currentRow = [];
+            currentCell = '';
+        } else {
+            currentCell += char;
+        }
+    }
+    
+    if (currentCell || currentRow.length > 0) {
+        currentRow.push(currentCell.trim());
+        values.push(currentRow);
+    }
+
+    writeLog(`[FETCH_SUCCESS] Tải dữ liệu thành công. Tổng số hàng: ${values.length}`);
     return values;
 }
 

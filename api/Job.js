@@ -158,13 +158,17 @@ async function SendNotification(id, rowData) {
         });
 
         const resContent = await response.text();
+		writeLog("[SendNotification] " + JSON.stringify(resContent));
         if (response.status === 200) {
             writeLog(`[TG_SEND_SUCCESS] Gửi Telegram thành công tới ChatID: ${chatId}`);
+			return true;
         } else {
             writeLog(`[TG_SEND_FAIL] Lỗi kết nối Telegram tới ${chatId} - HTTP Code: ${response.status} - Response: ${resContent}`);
+			return false;
         }
     } catch (error) {
         writeLog(`[TG_SEND_ERR] Ngoại lệ khi call API Telegram gửi tới ${chatId}: ${error.message}`);
+		return false;
     }
 }
 

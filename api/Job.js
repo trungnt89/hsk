@@ -101,9 +101,12 @@ async function checkAndProcessTasks(rows, now) {
         if (isExpired) {
             const newTimeJST = getJSTTime(now);
             rowData[6] = newTimeJST;
-            await UpdateTask(id, rowData);
-			SendNotification(id, rowData);
-            sentIds.push(id);
+            
+			let res = await SendNotification(id, rowData);
+			if(res) {
+				await UpdateTask(id, rowData);
+				sentIds.push(id);
+			}
         }
     }
     return sentIds;

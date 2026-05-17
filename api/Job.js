@@ -69,7 +69,7 @@ async function checkAndProcessTasks(rows, now) {
             const newTimeJST = getJSTTime(now);
             rowData[6] = newTimeJST;
             await UpdateTask(id, rowData);
-			//SendNotification(id, rowData);
+			SendNotification(id, rowData);
             sentIds.push(id);
         }
     }

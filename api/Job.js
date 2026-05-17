@@ -87,19 +87,8 @@ function getJSTTime(date) {
 }
 
 async function UpdateTask(id, rowData) {
-    const upRes = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            "act": "updateByPosVal",
-            "pos": 0,
-            "val": id,
-            "sheet": SHEET,
-            "spread": SPREAD_ID,
-            "data": JSON.stringify(rowData)
-        })
-    });
-
+	await util.ensureAuthenticated();
+	const upRes = = await util.handleUpdateByPosVal(SPREAD_ID, SHEET, 0, id, JSON.stringify(rowData));
     const dataUp = await upRes.json();
     writeLog(JSON.stringify(dataUp));
     if (dataUp.success) {

@@ -1,252 +1,391 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Diary - AI Integrated</title>
-    <script type="module">
-        import JapaneseLookup from '../com/japanese-lookup.js?v=1';
-    </script>
-    <!-- Gọi thư viện Bootstrap ngoài theo yêu cầu quy định -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Tích hợp Alpine.js để tối ưu hóa quản lý giao diện, loại bỏ hàm DOM thuần và rút ngắn mã nguồn -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-</head>
-<body class="bg-light text-dark d-flex flex-column vh-100 overflow-hidden" x-data="diaryApp()" x-init="init()">
-    <script src="../com/assistive.js"></script>
-    <script src="../com/TTSClient.js"></script>
-
-    <header class="bg-gradient text-white text-center py-2 shadow-sm flex-shrink-0" style="background-image: linear-gradient(135deg, #6c5ce7, #a29bfe);">
-        <h1 class="fs-5 fw-bold mb-0">Diary & AI</h1>
-    </header>
-
-    <main class="flex-grow-1 overflow-hidden p-2 d-flex flex-column gap-2">
-        <div class="bg-white p-2 rounded-3 shadow-sm flex-shrink-0">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <title>Diary - AI Integrated</title>
+      <script type="module">
+         import JapaneseLookup from '../com/japanese-lookup.js?v=1';
+      </script>
+      <!-- Gọi thư viện Bootstrap ngoài theo yêu cầu quy định -->
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+      <!-- Tích hợp Alpine.js để tối ưu hóa quản lý giao diện, loại bỏ hàm DOM thuần và rút ngắn mã nguồn -->
+      <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+   </head>
+   <body class="bg-light text-dark d-flex flex-column vh-100 overflow-hidden" x-data="diaryApp()" x-init="init()">
+      <script src="../com/assistive.js"></script>
+      <script src="../com/TTSClient.js"></script>
+      <header class="bg-gradient text-white text-center py-2 shadow-sm flex-shrink-0" style="background-image: linear-gradient(135deg, #6c5ce7, #a29bfe);">
+         <h1 class="fs-5 fw-bold mb-0">Diary & AI</h1>
+      </header>
+      <main class="flex-grow-1 overflow-hidden p-2 d-flex flex-column gap-2">
+         <div class="bg-white p-2 rounded-3 shadow-sm flex-shrink-0">
             <textarea class="form-control fs-6" x-model="inputText" placeholder="Hôm nay của bạn thế nào?..." style="height: 120px; resize: none;"></textarea>
             <div class="d-flex justify-content-between align-items-center mt-2 gap-1 w-100">
-                <button class="btn btn-secondary btn-sm" x-show="editingId" x-on:click="clearEditMode()">Hủy</button>
-                <button class="btn btn-primary btn-sm fw-bold text-nowrap" x-on:click="saveOrUpdate()" x-text="editingId ? 'Cập nhật' : 'Lưu lại'"></button>
-                <div class="d-flex align-items-center gap-1 ms-auto flex-shrink-1 overflow-hidden">
-                    <button id="btnMainSpeak" class="btn btn-sm rounded-pill fw-bold" x-bind:class="isPlaying ? 'btn-danger' : 'btn-success'" x-bind:disabled="isSpeakDisabled()" x-on:click="handleGlobalSpeak()" x-text="isPlaying ? '⏹ Dừng' : '🔊 Đọc'"></button>
-                    <button class="btn btn-sm btn-outline-secondary" x-bind:class="isRepeating ? 'active btn-primary text-white' : ''" x-on:click="toggleRepeat()">🔂</button>
-                    <select x-model="ttsVoice" class="form-select form-select-sm p-1" style="font-size: 11px; width: auto;" x-on:change="saveTTSSettings()">
-                        <option value="ja-JP-KeitaNeural">Nam (JP)</option>
-                        <option value="ja-JP-NanamiNeural">Nữ (JP)</option>
-                    </select>
-                    <select x-model="ttsRate" class="form-select form-select-sm p-1" style="font-size: 11px; width: auto;" x-on:change="saveTTSSettings()">
-                        <option value="0.65">0.65</option><option value="0.68">0.68</option><option value="0.70">0.70</option>
-                        <option value="0.72">0.72</option><option value="0.75">0.75</option><option value="0.80">0.80</option><option value="1.0">1.0</option>
-                    </select>
-                </div>
+               <button class="btn btn-secondary btn-sm" x-show="editingId" x-on:click="clearEditMode()">Hủy</button>
+               <button class="btn btn-primary btn-sm fw-bold text-nowrap" x-on:click="saveOrUpdate()" x-text="editingId ? 'Cập nhật' : 'Lưu lại'"></button>
+               <div class="d-flex align-items-center gap-1 ms-auto flex-shrink-1 overflow-hidden">
+                  <button id="btnMainSpeak" class="btn btn-sm rounded-pill fw-bold" x-bind:class="isPlaying ? 'btn-danger' : 'btn-success'" x-bind:disabled="isSpeakDisabled()" x-on:click="handleGlobalSpeak()" x-text="isPlaying ? '⏹ Dừng' : '🔊 Đọc'"></button>
+                  <button class="btn btn-sm btn-outline-secondary" x-bind:class="isRepeating ? 'active btn-primary text-white' : ''" x-on:click="toggleRepeat()">🔂</button>
+                  <select x-model="ttsVoice" class="form-select form-select-sm p-1" style="font-size: 11px; width: auto;" x-on:change="saveTTSSettings()">
+                     <option value="ja-JP-KeitaNeural">Nam (JP)</option>
+                     <option value="ja-JP-NanamiNeural">Nữ (JP)</option>
+                  </select>
+                  <select x-model="ttsRate" class="form-select form-select-sm p-1" style="font-size: 11px; width: auto;" x-on:change="saveTTSSettings()">
+                     <option value="0.65">0.65</option>
+                     <option value="0.68">0.68</option>
+                     <option value="0.70">0.70</option>
+                     <option value="0.72">0.72</option>
+                     <option value="0.75">0.75</option>
+                     <option value="0.80">0.80</option>
+                     <option value="1.0">1.0</option>
+                  </select>
+               </div>
             </div>
-        </div>
-
-        <div class="nav nav-pills bg-light border p-1 rounded-3 flex-shrink-0 d-flex text-center">
+         </div>
+         <div class="nav nav-pills bg-light border p-1 rounded-3 flex-shrink-0 d-flex text-center">
             <button class="nav-link flex-grow-1 text-secondary p-2 small fw-bold d-flex align-items-center justify-content-center gap-1" x-bind:class="currentTab === 0 ? 'active bg-white text-primary shadow-sm' : ''" x-on:click="switchTab(0)">
-                <span>📝 Nhật ký</span>
-                <div class="form-check form-switch m-0 p-0 ps-4" x-on:click.stop="togglePinFilter()">
-                    <input class="form-check-input ms-0 float-none" type="checkbox" role="switch" x-bind:checked="showPinnedOnly" style="cursor: pointer;">
-                </div>
+               <span>📝 Nhật ký</span>
+               <div class="form-check form-switch m-0 p-0 ps-4" x-on:click.stop="togglePinFilter()">
+                  <input class="form-check-input ms-0 float-none" type="checkbox" role="switch" x-bind:checked="showPinnedOnly" style="cursor: pointer;">
+               </div>
             </button>
             <button class="nav-link flex-grow-1 text-secondary p-2 small fw-bold" x-bind:class="currentTab === 1 ? 'active bg-white text-primary shadow-sm' : ''" x-on:click="switchTab(1)">📖 Đoạn văn</button>
             <button class="nav-link flex-grow-1 text-secondary p-2 small fw-bold" x-bind:class="currentTab === 2 ? 'active bg-white text-primary shadow-sm' : ''" x-on:click="switchTab(2)">💬 Hội thoại</button>
-        </div>
-
-        <div class="tab-content flex-grow-1 overflow-auto pb-4" x-show="currentTab === 0">
+         </div>
+         <div class="tab-content flex-grow-1 overflow-auto pb-4" x-show="currentTab === 0">
             <div id="diaryContainer">
-                <template x-if="loading"><p class="text-center text-muted p-4 small">Đang tải dữ liệu...</p></template>
-                <template x-for="item in filteredDiaries()" :key="item.id">
-                    <div :id="'item-'+item.id" class="card p-3 mb-2 border-start border-4 border-secondary position-relative style-diary-card" x-bind:style="item.id == selectedId ? 'border-color: #e67e22 !important; background-color: #fff3e0 !important; outline: 3px solid #ffcc80;' : (item.pinned ? 'border-color: #f1c40f !important; background-color: #fffdf0 !important;' : 'border-color: #dfe6e9 !important; background-color: #ffffff;')" x-on:click="selectRecord(item.id)">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="text-muted fw-bold" style="font-size: 0.75rem;">
-                                <span x-text="item.date + ' - ' + item.id"></span>
-                                <span class="count-trigger badge rounded-pill ms-1" x-on:click.stop="handleRecordBadgeClick(item.id)" x-bind:class="item.badgeCount > 0 ? 'bg-warning' : 'bg-secondary'" x-text="'🎙️ ' + (item.badgeCount || 0) + (item.maxScore ? ' | 🏆 ' + item.maxScore : '')" style="cursor: pointer;"></span>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-link btn-sm p-0 text-primary text-decoration-none fw-bold" style="font-size: 0.75rem;" x-on:click.stop="startEdit(item)">✏️ Sửa</button>
-                                <button class="btn btn-link btn-sm p-0 text-danger text-decoration-none fw-bold" style="font-size: 0.75rem;" x-on:click.stop="deleteDiary(item.id)">🗑️ Xóa</button>
-                            </div>
+               <template x-if="loading">
+                  <p class="text-center text-muted p-4 small">Đang tải dữ liệu...</p>
+               </template>
+               <template x-for="item in filteredDiaries()" :key="item.id">
+                  <div :id="'item-'+item.id" class="card p-3 mb-2 border-start border-4 border-secondary position-relative style-diary-card" x-bind:style="item.id == selectedId ? 'border-color: #e67e22 !important; background-color: #fff3e0 !important; outline: 3px solid #ffcc80;' : (item.pinned ? 'border-color: #f1c40f !important; background-color: #fffdf0 !important;' : 'border-color: #dfe6e9 !important; background-color: #ffffff;')" x-on:click="selectRecord(item.id)">
+                     <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="text-muted fw-bold" style="font-size: 0.75rem;">
+                           <span x-text="item.date + ' - ' + item.id"></span>
+                           <span class="count-trigger badge rounded-pill ms-1" x-on:click.stop="handleRecordBadgeClick(item.id)" x-bind:class="item.badgeCount > 0 ? 'bg-warning' : 'bg-secondary'" x-text="'🎙️ ' + (item.badgeCount || 0) + (item.maxScore ? ' | 🏆 ' + item.maxScore : '')" style="cursor: pointer;"></span>
                         </div>
-                        <div class="fs-5 lh-base text-break mb-2 text-dark style-diary-content" x-text="item.text" style="white-space: pre-wrap;"></div>
-                        <div class="d-flex justify-content-between align-items-center border-top pt-2 w-100">
-                            <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold text-warning border-end border-light rounded-0" style="font-size: 0.75rem;" x-on:click.stop="togglePin(item)" x-text="item.pinned ? '📍 Bỏ' : '📌 Ghim'"></button>
-                            <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold border-end border-light rounded-0" style="font-size: 0.75rem;" x-bind:class="item.paragraph ? 'text-primary' : 'text-muted disabled opacity-50'" x-on:click.stop="selectRecord(item.id); switchTab(1)">📖 Đoạn</button>
-                            <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold border-end border-light rounded-0" style="font-size: 0.75rem;" x-bind:class="item.conversation ? 'text-orange' : 'text-muted disabled opacity-50'" x-bind:style="item.conversation ? 'color: #e67e22;' : ''" x-on:click.stop="selectRecord(item.id); switchTab(2)">💬 Hội thoại</button>
-                            <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold rounded-0" style="font-size: 0.75rem;" x-bind:class="(item.paragraph || item.conversation) ? 'text-success' : 'text-info'" x-on:click.stop="askAI(item)" x-text="(item.paragraph || item.conversation) ? '✅ AI' : '✨ AI'"></button>
+                        <div class="d-flex gap-2">
+                           <button class="btn btn-link btn-sm p-0 text-primary text-decoration-none fw-bold" style="font-size: 0.75rem;" x-on:click.stop="startEdit(item)">✏️ Sửa</button>
+                           <button class="btn btn-link btn-sm p-0 text-danger text-decoration-none fw-bold" style="font-size: 0.75rem;" x-on:click.stop="deleteDiary(item.id)">🗑️ Xóa</button>
                         </div>
-                    </div>
-                </template>
+                     </div>
+                     <div class="fs-5 lh-base text-break mb-2 text-dark style-diary-content" x-text="item.text" style="white-space: pre-wrap;"></div>
+                     <div class="d-flex justify-content-between align-items-center border-top pt-2 w-100">
+                        <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold text-warning border-end border-light rounded-0" style="font-size: 0.75rem;" x-on:click.stop="togglePin(item)" x-text="item.pinned ? '📍 Bỏ' : '📌 Ghim'"></button>
+                        <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold border-end border-light rounded-0" style="font-size: 0.75rem;" x-bind:class="item.paragraph ? 'text-primary' : 'text-muted disabled opacity-50'" x-on:click.stop="selectRecord(item.id); switchTab(1)">📖 Đoạn</button>
+                        <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold border-end border-light rounded-0" style="font-size: 0.75rem;" x-bind:class="item.conversation ? 'text-orange' : 'text-muted disabled opacity-50'" x-bind:style="item.conversation ? 'color: #e67e22;' : ''" x-on:click.stop="selectRecord(item.id); switchTab(2)">💬 Hội thoại</button>
+                        <button class="btn btn-link btn-sm p-1 flex-grow-1 text-center text-decoration-none fw-bold rounded-0" style="font-size: 0.75rem;" x-bind:class="(item.paragraph || item.conversation) ? 'text-success' : 'text-info'" x-on:click.stop="askAI(item)" x-text="(item.paragraph || item.conversation) ? '✅ AI' : '✨ AI'"></button>
+                     </div>
+                  </div>
+               </template>
             </div>
-        </div>
-        
-        <div class="tab-content flex-grow-1 overflow-auto pb-4" x-show="currentTab === 1">
+         </div>
+         <div class="tab-content flex-grow-1 overflow-auto pb-4" x-show="currentTab === 1">
             <div id="paragraphContainer">
-                <template x-if="selectedItem() && selectedItem().paragraph">
-                    <div id="p-content" class="bg-white p-3 rounded-3 lh-lg fs-6 mb-2 border-start border-4 border-success text-dark" style="white-space: pre-wrap;" x-text="selectedItem().paragraph"></div>
-                </template>
-                <template x-if="!selectedItem() || !selectedItem().paragraph">
-                    <p class="text-center text-muted p-4 small" x-text="aiLoading ? '🤖 Đang biên soạn nội dung...' : 'Chưa có nội dung AI.'"></p>
-                </template>
+               <template x-if="selectedItem() && selectedItem().paragraph">
+                  <div id="p-content" class="bg-white p-3 rounded-3 lh-lg fs-6 mb-2 border-start border-4 border-success text-dark" style="white-space: pre-wrap;" x-text="selectedItem().paragraph"></div>
+               </template>
+               <template x-if="!selectedItem() || !selectedItem().paragraph">
+                  <p class="text-center text-muted p-4 small" x-text="aiLoading ? '🤖 Đang biên soạn nội dung...' : 'Chưa có nội dung AI.'"></p>
+               </template>
             </div>
-        </div>
-        
-        <div class="tab-content flex-grow-1 overflow-auto pb-4" x-show="currentTab === 2">
+         </div>
+         <div class="tab-content flex-grow-1 overflow-auto pb-4" x-show="currentTab === 2">
             <div id="conversationContainer">
-                <template x-if="selectedItem() && selectedItem().conversation">
-                    <div id="c-content" class="bg-white p-3 rounded-3 lh-lg fs-6 mb-2 border-start border-4 border-success text-dark" style="white-space: pre-wrap;" x-text="selectedItem().conversation"></div>
-                </template>
-                <template x-if="!selectedItem() || !selectedItem().conversation">
-                    <p class="text-center text-muted p-4 small" x-text="aiLoading ? '🤖 Đang biên soạn nội dung...' : 'Chưa có nội dung AI.'"></p>
-                </template>
+               <template x-if="selectedItem() && selectedItem().conversation">
+                  <div id="c-content" class="bg-white p-3 rounded-3 lh-lg fs-6 mb-2 border-start border-4 border-success text-dark" style="white-space: pre-wrap;" x-text="selectedItem().conversation"></div>
+               </template>
+               <template x-if="!selectedItem() || !selectedItem().conversation">
+                  <p class="text-center text-muted p-4 small" x-text="aiLoading ? '🤖 Đang biên soạn nội dung...' : 'Chưa có nội dung AI.'"></p>
+               </template>
             </div>
-        </div>
-    </main>
-
-    <div id="audioModal" class="modal" tabindex="-1" style="display: none; background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-fullscreen m-0 p-3" style="max-width: 100%; height: 100%;">
+         </div>
+      </main>
+      <div id="audioModal" class="modal" tabindex="-1" style="display: none; background-color: rgba(0,0,0,0.5);">
+         <div class="modal-dialog modal-fullscreen m-0 p-3" style="max-width: 100%; height: 100%;">
             <div class="modal-content h-100 rounded-3 overflow-hidden">
-                <div class="modal-header p-2 bg-light d-flex justify-content-between align-items-center">
-                    <button class="btn btn-outline-danger btn-sm fw-bold" x-on:click="closeAudioModal()">✕ ĐÓNG</button>
-                    <button class="btn btn-outline-success btn-sm fw-bold" x-on:click="document.getElementById('audioFrame').src = document.getElementById('audioFrame').src">F5 RELOAD</button>
-                    <button class="btn btn-outline-primary btn-sm fw-bold" x-on:click="const f = document.getElementById('audioFrame'); if (f.contentWindow) f.contentWindow.history.back()">BACK ↩</button>
-                </div>
-                <iframe id="audioFrame" src="" class="w-100 border-0" style="height: calc(100% - 45px);"></iframe>
+               <div class="modal-header p-2 bg-light d-flex justify-content-between align-items-center">
+                  <button class="btn btn-outline-danger btn-sm fw-bold" x-on:click="closeAudioModal()">✕ ĐÓNG</button>
+                  <button class="btn btn-outline-success btn-sm fw-bold" x-on:click="document.getElementById('audioFrame').src = document.getElementById('audioFrame').src">F5 RELOAD</button>
+                  <button class="btn btn-outline-primary btn-sm fw-bold" x-on:click="const f = document.getElementById('audioFrame'); if (f.contentWindow) f.contentWindow.history.back()">BACK ↩</button>
+               </div>
+               <iframe id="audioFrame" src="" class="w-100 border-0" style="height: calc(100% - 45px);"></iframe>
             </div>
-        </div>
-    </div>
-
-    <script>
-        function diaryApp() {
-            return {
-                VERCEL_URL: 'https://hsk-gilt.vercel.app/api/gSheet',
-                diaries: [], loading: true, aiLoading: false, inputText: '', editingId: null, isPlaying: false,
-                selectedId: new URLSearchParams(window.location.search).get('id') || localStorage.getItem("diary_selected_id") || null,
-                isRepeating: localStorage.getItem("diary_repeat") === "true",
-                currentTab: parseInt(localStorage.getItem("diary_current_tab")) || 0,
-                showPinnedOnly: localStorage.getItem("diary_show_pinned_only") === "true",
-                ttsVoice: localStorage.getItem("diary_voice") || "ja-JP-KeitaNeural",
-                ttsRate: localStorage.getItem("diary_rate") || "0.70",
-                init() {
-                    console.log("[System] App Initialized");
-                    if (this.selectedId) localStorage.setItem("diary_selected_id", this.selectedId);
-                    this.loadDiaries();
-                },
-                async loadDiaries() {
-                    try {
-                        const res = await fetch(this.VERCEL_URL, {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ sheet: 'DairyList', act: 'read', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' })
-                        });
-                        const data = await res.json();
-                        if (data.values) {
-                            this.diaries = data.values.map(r => ({
-                                id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0), badgeCount: parseInt(r[6] || 0), maxScore: 0
-                            })).reverse();
-                            if (this.selectedId) this.selectRecord(this.selectedId);
-                            await this.getLessonTotalScore();
-                        }
-                    } catch (err) { console.warn("[Sync] Offline mode"); } finally { this.loading = false; }
-                },
-                async callAPI(paramsObj) {
-                    try {
-                        const res = await fetch(this.VERCEL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(paramsObj) });
-                        return await res.json();
-                    } catch (e) { console.error("[Sync Error]:", e); return { status: 'error' }; }
-                },
-                filteredDiaries() {
-                    return this.showPinnedOnly ? this.diaries.filter(d => d.pinned) : this.diaries;
-                },
-                selectedItem() {
-                    return this.diaries.find(d => d.id == this.selectedId);
-                },
-                isSpeakDisabled() {
-                    const item = this.selectedItem(); if (!item) return true;
-                    return this.currentTab === 1 ? !item.paragraph : (this.currentTab === 2 ? !item.conversation : true);
-                },
-                switchTab(idx) {
-                    this.currentTab = idx; localStorage.setItem("diary_current_tab", idx);
-                },
-                selectRecord(id) {
-                    this.selectedId = id; localStorage.setItem("diary_selected_id", id);
-                    const url = new URL(window.location); url.searchParams.set('id', id); window.history.replaceState({}, '', url);
-                },
-                togglePinFilter() {
-                    this.showPinnedOnly = !this.showPinnedOnly; localStorage.setItem("diary_show_pinned_only", this.showPinnedOnly);
-                },
-                saveTTSSettings() {
-                    localStorage.setItem("diary_voice", this.ttsVoice); localStorage.setItem("diary_rate", this.ttsRate); localStorage.setItem("diary_repeat", this.isRepeating);
-                },
-                toggleRepeat() {
-                    this.isRepeating = !this.isRepeating; this.saveTTSSettings();
-                    if (this.isPlaying) { this.handleGlobalSpeak(); this.handleGlobalSpeak(); }
-                },
-                clearEditMode() {
-                    this.editingId = null; this.inputText = '';
-                },
-                startEdit(item) {
-                    this.editingId = item.id; this.inputText = item.text; window.scrollTo({ top: 0, behavior: 'smooth' });
-                },
-                async saveOrUpdate() {
-                    const txt = this.inputText.trim(); if (!txt) return;
-                    if (this.editingId) {
-                        const item = this.diaries.find(i => i.id == this.editingId); if (!item) return;
-                        item.text = txt; const tid = this.editingId; this.clearEditMode();
-                        await this.callAPI({ act: 'updateByPosVal', pos: 0, val: tid, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify([item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount]) });
-                    } else {
-                        const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
-                        const newItem = { id, date, text: txt, paragraph: "", conversation: "", pinned: false, voiceCount: 0, badgeCount: 0, maxScore: 0 };
-                        this.diaries.unshift(newItem); this.inputText = '';
-                        await this.callAPI({ act: 'add', sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify([id, date, txt, "", "", "false", 0]) });
-                        this.selectRecord(id);
-                    }
-                },
-                async deleteDiary(id) {
-                    if (confirm("Xóa nhật ký này?")) {
-                        this.diaries = this.diaries.filter(i => i.id != id);
-                        await this.callAPI({ act: 'deleteByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' });
-                    }
-                },
-                async togglePin(item) {
-                    item.pinned = !item.pinned;
-                    await this.callAPI({ act: 'updateByPosVal', pos: 0, val: item.id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify([item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount]) });
-                },
-                async askAI(item) {
-                    this.selectRecord(item.id); this.switchTab(1); this.aiLoading = true;
-                    try {
-                        const res = await (await fetch('https://hsk-gilt.vercel.app/api/aiGenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: item.text, lessionId: item.id }) })).json();
-                        if (res.status === 'success') { item.paragraph = res.paragraph; item.conversation = res.conversation; } else { alert(res.message); this.switchTab(0); }
-                    } catch (e) { console.error(e); } finally { this.aiLoading = false; }
-                },
-                handleRecordBadgeClick(id) {
-                    this.selectRecord(id);
-                    document.getElementById('audioFrame').src = `./recorder.html?lessionId=${id}&tab=1`;
-                    document.getElementById('audioModal').style.display = 'block';
-                },
-                closeAudioModal() {
-                    document.getElementById('audioFrame').src = ""; document.getElementById('audioModal').style.display = 'none';
-                },
-                async handleGlobalSpeak() {
-                    if (this.isPlaying) { if (window.stopSpeak) window.stopSpeak(); this.isPlaying = false; return; }
-                    const targetEl = document.getElementById(this.currentTab === 1 ? 'p-content' : (this.currentTab === 2 ? 'c-content' : null));
-                    if (!targetEl || !window.speakCommon) return;
-                    this.isPlaying = true;
-                    await window.speakCommon({ text: targetEl.innerText, voice: this.ttsVoice, rate: this.ttsRate, filename: `Diary_AI_${this.selectedId}`, loop: this.isRepeating });
-                    if (!this.isRepeating) this.isPlaying = false;
-                },
-                async getLessonTotalScore() {
-                    try {
-                        const res = await this.callAPI({ sheet: 'ScoreList', act: 'read', spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A' });
-                        if (res.values && Array.isArray(res.values)) {
-                            this.diaries.forEach(item => {
-                                let count = 0, max = 0;
-                                res.values.forEach(row => { if (row[0] === item.id) { count++; const s = parseInt(row[3]) || 0; if (s > max) max = s; } });
-                                item.badgeCount = count; item.maxScore = max;
-                            });
-                        }
-                    } catch (err) { console.error("[Summary Error]:", err); }
+         </div>
+      </div>
+      <script>
+         function diaryApp() {
+    return {
+        VERCEL_URL: 'https://hsk-gilt.vercel.app/api/gSheet',
+        diaries: [],
+        loading: true,
+        aiLoading: false,
+        inputText: '',
+        editingId: null,
+        isPlaying: false,
+        selectedId: new URLSearchParams(window.location.search).get('id') || localStorage.getItem("diary_selected_id") || null,
+        isRepeating: localStorage.getItem("diary_repeat") === "true",
+        currentTab: parseInt(localStorage.getItem("diary_current_tab")) || 0,
+        showPinnedOnly: localStorage.getItem("diary_show_pinned_only") === "true",
+        ttsVoice: localStorage.getItem("diary_voice") || "ja-JP-KeitaNeural",
+        ttsRate: localStorage.getItem("diary_rate") || "0.70",
+        init() {
+            console.log("[System] App Initialized");
+            if (this.selectedId) localStorage.setItem("diary_selected_id", this.selectedId);
+            this.loadDiaries();
+        },
+        async loadDiaries() {
+            try {
+                const res = await fetch(this.VERCEL_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sheet: 'DairyList',
+                        act: 'read',
+                        spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k'
+                    })
+                });
+                const data = await res.json();
+                if (data.values) {
+                    this.diaries = data.values.map(r => ({
+                        id: r[0],
+                        date: r[1],
+                        text: r[2],
+                        paragraph: r[3],
+                        conversation: r[4],
+                        pinned: String(r[5]).toLowerCase() === 'true',
+                        voiceCount: parseInt(r[6] || 0),
+                        badgeCount: parseInt(r[6] || 0),
+                        maxScore: 0
+                    })).reverse();
+                    if (this.selectedId) this.selectRecord(this.selectedId);
+                    await this.getLessonTotalScore();
                 }
+            } catch (err) {
+                console.warn("[Sync] Offline mode");
+            } finally {
+                this.loading = false;
+            }
+        },
+        async callAPI(paramsObj) {
+            try {
+                const res = await fetch(this.VERCEL_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(paramsObj)
+                });
+                return await res.json();
+            } catch (e) {
+                console.error("[Sync Error]:", e);
+                return {
+                    status: 'error'
+                };
+            }
+        },
+        filteredDiaries() {
+            return this.showPinnedOnly ? this.diaries.filter(d => d.pinned) : this.diaries;
+        },
+        selectedItem() {
+            return this.diaries.find(d => d.id == this.selectedId);
+        },
+        isSpeakDisabled() {
+            const item = this.selectedItem();
+            if (!item) return true;
+            return this.currentTab === 1 ? !item.paragraph : (this.currentTab === 2 ? !item.conversation : true);
+        },
+        switchTab(idx) {
+            this.currentTab = idx;
+            localStorage.setItem("diary_current_tab", idx);
+        },
+        selectRecord(id) {
+            this.selectedId = id;
+            localStorage.setItem("diary_selected_id", id);
+            const url = new URL(window.location);
+            url.searchParams.set('id', id);
+            window.history.replaceState({}, '', url);
+        },
+        togglePinFilter() {
+            this.showPinnedOnly = !this.showPinnedOnly;
+            localStorage.setItem("diary_show_pinned_only", this.showPinnedOnly);
+        },
+        saveTTSSettings() {
+            localStorage.setItem("diary_voice", this.ttsVoice);
+            localStorage.setItem("diary_rate", this.ttsRate);
+            localStorage.setItem("diary_repeat", this.isRepeating);
+        },
+        toggleRepeat() {
+            this.isRepeating = !this.isRepeating;
+            this.saveTTSSettings();
+            if (this.isPlaying) {
+                this.handleGlobalSpeak();
+                this.handleGlobalSpeak();
+            }
+        },
+        clearEditMode() {
+            this.editingId = null;
+            this.inputText = '';
+        },
+        startEdit(item) {
+            this.editingId = item.id;
+            this.inputText = item.text;
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        },
+        async saveOrUpdate() {
+            const txt = this.inputText.trim();
+            if (!txt) return;
+            if (this.editingId) {
+                const item = this.diaries.find(i => i.id == this.editingId);
+                if (!item) return;
+                item.text = txt;
+                const tid = this.editingId;
+                this.clearEditMode();
+                await this.callAPI({
+                    act: 'updateByPosVal',
+                    pos: 0,
+                    val: tid,
+                    sheet: 'DairyList',
+                    spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k',
+                    data: JSON.stringify([item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount])
+                });
+            } else {
+                const id = Date.now().toString(),
+                    date = new Date().toLocaleString('vi-VN');
+                const newItem = {
+                    id,
+                    date,
+                    text: txt,
+                    paragraph: "",
+                    conversation: "",
+                    pinned: false,
+                    voiceCount: 0,
+                    badgeCount: 0,
+                    maxScore: 0
+                };
+                this.diaries.unshift(newItem);
+                this.inputText = '';
+                await this.callAPI({
+                    act: 'add',
+                    sheet: 'DairyList',
+                    spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k',
+                    data: JSON.stringify([id, date, txt, "", "", "false", 0])
+                });
+                this.selectRecord(id);
+            }
+        },
+        async deleteDiary(id) {
+            if (confirm("Xóa nhật ký này?")) {
+                this.diaries = this.diaries.filter(i => i.id != id);
+                await this.callAPI({
+                    act: 'deleteByPosVal',
+                    pos: 0,
+                    val: id,
+                    sheet: 'DairyList',
+                    spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k'
+                });
+            }
+        },
+        async togglePin(item) {
+            item.pinned = !item.pinned;
+            await this.callAPI({
+                act: 'updateByPosVal',
+                pos: 0,
+                val: item.id,
+                sheet: 'DairyList',
+                spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k',
+                data: JSON.stringify([item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount])
+            });
+        },
+        async askAI(item) {
+            this.selectRecord(item.id);
+            this.switchTab(1);
+            this.aiLoading = true;
+            try {
+                const res = await (await fetch('https://hsk-gilt.vercel.app/api/aiGenerate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: item.text,
+                        lessionId: item.id
+                    })
+                })).json();
+                if (res.status === 'success') {
+                    item.paragraph = res.paragraph;
+                    item.conversation = res.conversation;
+                } else {
+                    alert(res.message);
+                    this.switchTab(0);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.aiLoading = false;
+            }
+        },
+        handleRecordBadgeClick(id) {
+            this.selectRecord(id);
+            document.getElementById('audioFrame').src = `./recorder.html?lessionId=${id}&tab=1`;
+            document.getElementById('audioModal').style.display = 'block';
+        },
+        closeAudioModal() {
+            document.getElementById('audioFrame').src = "";
+            document.getElementById('audioModal').style.display = 'none';
+        },
+        async handleGlobalSpeak() {
+            if (this.isPlaying) {
+                if (window.stopSpeak) window.stopSpeak();
+                this.isPlaying = false;
+                return;
+            }
+            const targetEl = document.getElementById(this.currentTab === 1 ? 'p-content' : (this.currentTab === 2 ? 'c-content' : null));
+            if (!targetEl || !window.speakCommon) return;
+            this.isPlaying = true;
+            await window.speakCommon({
+                text: targetEl.innerText,
+                voice: this.ttsVoice,
+                rate: this.ttsRate,
+                filename: `Diary_AI_${this.selectedId}`,
+                loop: this.isRepeating
+            });
+            if (!this.isRepeating) this.isPlaying = false;
+        },
+        async getLessonTotalScore() {
+            try {
+                const res = await this.callAPI({
+                    sheet: 'ScoreList',
+                    act: 'read',
+                    spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A'
+                });
+                if (res.values && Array.isArray(res.values)) {
+                    this.diaries.forEach(item => {
+                        let count = 0,
+                            max = 0;
+                        res.values.forEach(row => {
+                            if (row[0] === item.id) {
+                                count++;
+                                const s = parseInt(row[3]) || 0;
+                                if (s > max) max = s;
+                            }
+                        });
+                        item.badgeCount = count;
+                        item.maxScore = max;
+                    });
+                }
+            } catch (err) {
+                console.error("[Summary Error]:", err);
             }
         }
-    </script>
-</body>
+    }
+}
+      </script>
+   </body>
 </html>

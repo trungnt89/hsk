@@ -3,40 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Diary - AI Integrated (Bootstrap)</title>
-    <!-- Nhúng Google Fonts (Inter) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Nhúng Thư viện Bootstrap CSS v5.3.3 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Diary - AI Integrated</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script type="module">
         import JapaneseLookup from '../com/japanese-lookup.js?v=1';
     </script>
+    <style>
+        /* Chỉ giữ lại các định dạng bổ trợ không có sẵn trong Bootstrap hoặc để đảm bảo cấu trúc layout cố định */
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 14px; }
+        :root {
+            --bg-color: #f5f7fb; --primary-color: #6c5ce7; --secondary-color: #a29bfe;
+            --text-color: #2d3436; --text-light: #636e72; --card-bg: #ffffff;
+            --danger-color: #ff7675; --edit-color: #0984e3; --success-color: #2ecc71;
+            --ai-color: #00b894;
+        }
+        body { background-color: #f5f7fb; color: #2d3436; height: 100vh; overflow: hidden; }
+        header { background: linear-gradient(135deg, #6c5ce7, #a29bfe); }
+        
+        .toggle-container { display: inline-flex; align-items: center; cursor: pointer; position: relative; margin-left: 4px; }
+        .toggle-switch { position: relative; width: 30px; height: 16px; background-color: #ccc; border-radius: 10px; transition: 0.3s; }
+        .toggle-switch::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: 0.3s; }
+        .toggle-active .toggle-switch { background-color: #2ecc71; }
+        .toggle-active .toggle-switch::after { left: 16px; }
+        .toggle-label { font-size: 0.6rem; margin-right: 2px; color: inherit; font-weight: bold; display: none; }
+
+        .diary-item { border-left: 4px solid #dfe6e9; cursor: pointer; position: relative; }
+        .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0 !important; }
+        .diary-item.selected { border-left-color: #e67e22 !important; background-color: #fff3e0 !important; outline: 3px solid #ffcc80; outline-offset: -3px; }
+        
+        .ai-content-box { border-left: 4px solid #00b894; color: #2c3e50; }
+        .item-action-btn { background: none; border: none; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 1; text-align: center; padding: 5px 0; white-space: nowrap; border-right: 1px solid #eee; }
+        .item-action-btn:last-child { border-right: none; }
+        .item-action-btn.disabled { color: #ccc !important; cursor: not-allowed; pointer-events: none; opacity: 0.6; }
+        
+        .audio-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .audio-modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 80%; background: white; border-radius: 12px; overflow: hidden; }
+        iframe#audioFrame { width: 100%; height: calc(100% - 40px); border: none; }
+    </style>
 </head>
-<body class="bg-light text-dark d-flex flex-column vh-100 overflow-hidden fs-6" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+<body class="d-flex flex-column">
     <script src="../com/assistive.js"></script>
     <script src="../com/TTSClient.js"></script>
 
-    <header class="bg-primary text-white p-3 text-center shadow-sm flex-shrink-0">
-        <h1 class="h5 fw-semibold m-0 tracking-wide">Diary & AI</h1>
+    <header class="text-white p-2 text-center shadow-sm flex-shrink-0">
+        <h1 class="fs-6 fw-bold m-0" style="font-size: 1.2rem !important;">Diary & AI</h1>
     </header>
 
-    <main class="flex-grow-1 d-flex flex-column gap-2 p-2 overflow-hidden">
-        <!-- Input Area -->
-        <div class="bg-white p-3 rounded-3 shadow-sm flex-shrink-0 border border-light-subtle">
-            <textarea id="diaryInput" class="form-control p-3 fs-6 text-dark bg-white border border-secondary-subtle rounded-3 mb-2" style="height: 120px; resize: none;" placeholder="Hôm nay của bạn thế nào?..."></textarea>
-            <div class="d-flex justify-content-between align-items-center gap-2 w-full">
-                <button id="cancelBtn" class="btn btn-secondary fw-medium px-3 py-1.5 fs-7 text-white" style="display:none;">Hủy</button>
-                <button id="saveBtn" class="btn btn-primary fw-semibold px-4 py-1.5 fs-7 text-white shadow-sm">Lưu lại</button>
-                <div class="d-flex align-items-center gap-2 ms-auto flex-grow-1 justify-content-end overflow-hidden">
-                    <button id="btnMainSpeak" class="btn btn-success fw-bold px-3 py-1 rounded-pill text-xs text-white" style="min-w: 70px;" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
-                    <button id="btnRepeat" class="btn btn-outline-secondary bg-white text-dark p-1.5 fs-7" onclick="toggleRepeat()">🔂</button>
-                    <select id="voiceSelect" class="form-select p-1 fs-7 text-dark bg-white border border-secondary-subtle rounded-2 w-auto" onchange="saveTTSSettings()">
+    <main class="flex-grow-1 overflow-hidden p-2 d-flex flex-column gap-2">
+        <div class="write-card bg-white p-2 rounded-3 shadow-sm flex-shrink-0">
+            <textarea id="diaryInput" class="form-control" style="height: 120px; resize: none; font-size: 15px;" placeholder="Hôm nay của bạn thế nào?..."></textarea>
+            <div class="action-area d-flex justify-content-between align-items-center mt-2 gap-1 w-100">
+                <button id="cancelBtn" class="btn btn-light btn-sm text-nowrap" style="display:none; font-size: 13px; padding: 6px 12px;">Hủy</button>
+                <button id="saveBtn" class="btn text-white btn-sm fw-bold text-nowrap" style="background-color: #6c5ce7; font-size: 13px; padding: 6px 12px;">Lưu lại</button>
+                <div class="tts-controls d-flex align-items-center gap-1 ms-auto flex-grow-1 justify-content-end overflow-hidden">
+                    <button id="btnMainSpeak" class="btn text-white fw-bold rounded-pill text-nowrap" style="background-color: #00b894; font-size: 0.75rem; padding: 4px 10px; min-width: 65px;" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
+                    <button id="btnRepeat" class="btn btn-light btn-sm border" style="padding: 4px 8px; font-size: 12px;" onclick="toggleRepeat()">🔂</button>
+                    <select id="voiceSelect" class="form-select form-select-sm d-inline-block w-auto" style="padding: 2px 24px 2px 8px; font-size: 11px;" onchange="saveTTSSettings()">
                         <option value="ja-JP-KeitaNeural" selected>Nam (JP)</option>
-                        <option value="ja-JP-NanamiNeural" >Nữ (JP)</option>
+                        <option value="ja-JP-NanamiNeural">Nữ (JP)</option>
                     </select>
-                    <select id="rateSelect" class="form-select p-1 fs-7 text-dark bg-white border border-secondary-subtle rounded-2 w-auto" onchange="saveTTSSettings()">
+                    <select id="rateSelect" class="form-select form-select-sm d-inline-block w-auto" style="padding: 2px 24px 2px 8px; font-size: 11px;" onchange="saveTTSSettings()">
                         <option value="0.65">0.65</option>
                         <option value="0.68">0.68</option>
                         <option value="0.70" selected>0.70</option>
@@ -49,38 +75,33 @@
             </div>
         </div>
 
-        <!-- Navigation Tabs -->
-        <div class="d-flex bg-secondary bg-opacity-10 p-1 rounded-3 flex-shrink-0 gap-1">
-            <button class="flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-content-center gap-1 text-primary shadow-sm bg-white rounded-2" id="tab-btn-0" onclick="switchTab(0)">
+        <div class="tabs d-flex bg-light rounded-3 p-1 mt-1 flex-shrink-0">
+            <button class="btn btn-sm flex-grow-1 fw-bold d-flex align-items-center justify-content-center gap-1 active bg-white shadow-sm text-primary" id="tab-btn-0" style="font-size: 0.8rem; padding: 8px;" onclick="switchTab(0)">
                 <span>📝 Nhật ký</span>
-                <div class="d-inline-flex align-items-center position-relative ms-1" style="cursor: pointer;" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
-                    <span class="d-none" id="pinLabelText">Tất cả</span>
-                    <div class="position-relative bg-success rounded-pill" style="width: 30px; height: 16px; transition: all 0.3s;" id="toggleSwitchEl">
-                        <div class="position-absolute bg-white rounded-circle" style="width: 12px; height: 12px; top: 2px; left: 16px; transition: all 0.3s;" id="toggleCircleEl"></div>
-                    </div>
+                <div class="toggle-container" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
+                    <span class="toggle-label" id="pinLabelText">Tất cả</span>
+                    <div class="toggle-switch"></div>
                 </div>
             </button>
-            <button class="text-decoration-none text-secondary flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-content-center gap-1 bg-transparent" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
-            <button class="text-decoration-none text-secondary flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-content-center gap-1 bg-transparent" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
+            <button class="btn btn-sm flex-grow-1 fw-bold text-secondary d-flex align-items-center justify-content-center" id="tab-btn-1" style="font-size: 0.8rem; padding: 8px; background: transparent;" onclick="switchTab(1)">📖 Đoạn văn</button>
+            <button class="btn btn-sm flex-grow-1 fw-bold text-secondary d-flex align-items-center justify-content-center" id="tab-btn-2" style="font-size: 0.8rem; padding: 8px; background: transparent;" onclick="switchTab(2)">💬 Hội thoại</button>
         </div>
 
-        <!-- Tab Containers -->
-        <div id="tab-diary" class="d-block flex-grow-1 overflow-y-auto pb-5 scroll-smooth">
-            <div id="diaryContainer"><p class="text-center text-secondary p-5 fs-6">Đang tải dữ liệu...</p></div>
+        <div id="tab-diary" class="tab-content active flex-grow-1 overflow-auto pb-4" style="scroll-behavior: smooth;">
+            <div id="diaryContainer"><p class="text-center text-muted p-4 fs-6" style="font-size: 0.9rem !important;">Đang tải dữ liệu...</p></div>
         </div>
-        <div id="tab-paragraph" class="d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth"><div id="paragraphContainer"></div></div>
-        <div id="tab-conversation" class="d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth"><div id="conversationContainer"></div></div>
+        <div id="tab-paragraph" class="tab-content flex-grow-1 overflow-auto pb-4" style="display: none; scroll-behavior: smooth;"><div id="paragraphContainer"></div></div>
+        <div id="tab-conversation" class="tab-content flex-grow-1 overflow-auto pb-4" style="display: none; scroll-behavior: smooth;"><div id="conversationContainer"></div></div>
     </main>
 
-    <!-- Modal Frame -->
-    <div id="audioModal" class="fixed-top w-100 h-100 bg-black bg-opacity-50" style="display: none; z-index: 1000;">
-        <div class="position-absolute top-50 left-50 translate-middle bg-white rounded-3 overflow-hidden shadow-lg" style="width: 90%; height: 80%;">
-            <div class="p-2 bg-light d-flex justify-content-between align-items-center border-b border-light-subtle">
-                <button class="btn btn-outline-danger btn-sm fw-bold px-3 py-1" onclick="closeAudioModal()">✕ ĐÓNG</button>
-                <button class="btn btn-outline-success btn-sm fw-bold px-3 py-1" onclick="reloadAudioModal()">F5 RELOAD</button>
-                <button class="btn btn-outline-primary btn-sm fw-bold px-3 py-1" onclick="backAudioModal()">BACK ↩</button>
+    <div id="audioModal" class="audio-modal">
+        <div class="audio-modal-content shadow-lg">
+            <div class="audio-modal-header bg-light p-2 d-flex justify-content-between align-items-center border-bottom">
+                <button class="btn btn-sm btn-outline-danger fw-bold" style="font-size: 12px; padding: 4px 12px;" onclick="closeAudioModal()">✕ ĐÓNG</button>
+                <button class="btn btn-sm btn-outline-success fw-bold" style="font-size: 12px; padding: 4px 12px;" onclick="reloadAudioModal()">F5 RELOAD</button>
+                <button class="btn btn-sm btn-outline-primary fw-bold" style="font-size: 12px; padding: 4px 12px;" onclick="backAudioModal()">BACK ↩</button>
             </div>
-            <iframe id="audioFrame" class="w-100 border-0" style="height: calc(100% - 40px);" src=""></iframe>
+            <iframe id="audioFrame" src=""></iframe>
         </div>
     </div>
 
@@ -99,7 +120,7 @@
         let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("[System] App Initialized With Bootstrap CSS Framework");
+            console.log("[System] App Initialized");
             initApp();
             loadTTSSettings();
             document.getElementById('saveBtn').addEventListener('click', () => {
@@ -166,25 +187,8 @@
             container.innerHTML = '';
             const toggleWrapper = document.getElementById('pinToggleWrapper');
             const pinLabel = document.getElementById('pinLabelText');
-            const tsSwitch = document.getElementById('toggleSwitchEl');
-            const tsCircle = document.getElementById('toggleCircleEl');
-
             if(toggleWrapper) {
-                if(tsSwitch && tsCircle) {
-                    if (showPinnedOnly) {
-                        tsSwitch.className = "position-relative bg-success rounded-pill";
-                        tsSwitch.style.width = "30px";
-                        tsSwitch.style.height = "16px";
-                        tsSwitch.style.transition = "all 0.3s";
-                        tsCircle.style.left = '16px';
-                    } else {
-                        tsSwitch.className = "position-relative bg-secondary rounded-pill";
-                        tsSwitch.style.width = "30px";
-                        tsSwitch.style.height = "16px";
-                        tsSwitch.style.transition = "all 0.3s";
-                        tsCircle.style.left = '2px';
-                    }
-                }
+                toggleWrapper.classList.toggle('toggle-active', showPinnedOnly);
                 if(pinLabel) pinLabel.innerText = showPinnedOnly ? "Ghim" : "Tất cả";
             }
             let displayData = diaries;
@@ -198,23 +202,7 @@
         function createItemEl(item) {
             const isGen = !!(item.paragraph || item.conversation);
             const div = document.createElement('div');
-            
-            let itemClasses = "bg-white p-4 rounded-3 mb-3 shadow-sm position-relative ";
-            let borderStyle = "border-left: 4px solid #cbd5e1 !important;";
-            let backgroundStyle = "";
-            let outlineStyle = "";
-
-            if (item.id == selectedDiaryId) {
-                borderStyle = "border-left: 4px solid #f97316 !important;";
-                backgroundStyle = "background-color: #fff7ed !important;";
-                outlineStyle = "outline: 3px solid #ffedd5; outline-offset: -3px;";
-            } else if (item.pinned) {
-                borderStyle = "border-left: 4px solid #eab308 !important;";
-                backgroundStyle = "background-color: #fefce8 !important;";
-            }
-
-            div.className = itemClasses;
-            div.style.cssText = `${borderStyle} ${backgroundStyle} ${outlineStyle} cursor: pointer;`;
+            div.className = `diary-item bg-white p-3 rounded-2 mb-2 shadow-sm ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
             div.id = `item-${item.id}`;
             div.onclick = (e) => {
                 if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger')) {
@@ -223,25 +211,25 @@
             };
             div.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="text-secondary fw-semibold m-0 fs-7">
+                    <div class="diary-date text-muted fw-bold m-0" style="font-size: 0.75rem;">
                         ${item.date} - ${item.id}
-                        <span class="count-trigger ms-2 text-white px-2 py-0.5 rounded-pill d-inline-block fw-bold" 
+                        <span class="count-trigger text-white rounded-pill ms-2 fw-bold d-inline-block" 
                               onclick="event.stopPropagation(); handleRecordBadgeClick('${item.id}')" 
-                              style="background:${item.voiceCount > 0 ? '#f97316' : '#94a3b8'}; cursor:pointer; font-size: 11px;">
+                              style="background:${item.voiceCount > 0 ? '#e67e22' : '#ccc'}; padding:2px 8px; font-size:0.7rem; cursor:pointer;">
                             🎙️ ${item.voiceCount || 0}
                         </span>
                     </div>
-                    <div class="d-flex gap-3">
-                        <div class="item-action-btn text-primary fw-semibold fs-7 cursor-pointer" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
-                        <div class="item-action-btn text-danger fw-semibold fs-7 cursor-pointer" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
+                    <div class="d-flex gap-2">
+                        <div class="item-action-btn p-0 border-0 text-primary fw-bold" style="font-size:0.75rem;" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
+                        <div class="item-action-btn p-0 border-0 text-danger fw-bold" style="font-size:0.75rem;" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
                     </div>
                 </div>
-                <div class="mb-3 fs-5 leading-relaxed text-dark" style="white-space: pre-wrap;">${item.text}</div>
-                <div class="d-flex justify-content-between align-items-center border-top border-light-subtle pt-2 w-100">
-                    <div class="item-action-btn text-warning fw-semibold text-center flex-grow-1 py-1 border-end border-light-subtle fs-7 cursor-pointer" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
-                    <div class="item-action-btn text-primary fw-semibold text-center flex-grow-1 py-1 border-end border-light-subtle ${item.paragraph ? '' : 'disabled opacity-40'}" style="font-size:12px; cursor: ${item.paragraph ? 'pointer' : 'not-allowed'};" onclick="event.stopPropagation(); if(${!!item.paragraph}) { selectRecord('${item.id}'); switchTab(1); }">📖 Đoạn</div>
-                    <div class="item-action-btn text-warning fw-semibold text-center flex-grow-1 py-1 border-end border-light-subtle ${item.conversation ? '' : 'disabled opacity-40'}" style="font-size:12px; cursor: ${item.conversation ? 'pointer' : 'not-allowed'};" onclick="event.stopPropagation(); if(${!!item.conversation}) { selectRecord('${item.id}'); switchTab(2); }">💬 Hội thoại</div>
-                    <div class="item-action-btn fw-semibold text-center flex-grow-1 py-1 ${isGen ? 'text-success' : 'text-info'} fs-7 cursor-pointer" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
+                <div class="diary-content text-dark mb-2" style="font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap;">${item.text}</div>
+                <div class="item-actions d-flex justify-content-between align-items-center border-top pt-2 w-100">
+                    <div class="item-action-btn text-warning" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
+                    <div class="item-action-btn" style="color:#6c5ce7; font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Đoạn</div>
+                    <div class="item-action-btn" style="color:#e67e22; font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Hội thoại</div>
+                    <div class="item-action-btn ai-btn ${isGen ? 'text-success' : 'text-info'}" style="font-size:0.75rem;" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
                 </div>
             `;
             return div;
@@ -330,7 +318,7 @@
         async function askAI(id, content) {
             selectRecord(id); switchTab(1);
             const pContainer = document.getElementById('paragraphContainer'), cContainer = document.getElementById('conversationContainer');
-            pContainer.innerHTML = cContainer.innerHTML = '<p class="text-center text-secondary p-5 fs-6">🤖 Đang biên soạn nội dung...</p>';
+            pContainer.innerHTML = cContainer.innerHTML = '<p class="text-center text-muted p-4 fs-6" style="font-size: 0.9rem !important;">🤖 Đang biên soạn nội dung...</p>';
             const res = await (await fetch('https://hsk-gilt.vercel.app/api/aiGenerate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -353,22 +341,28 @@
             currentTabIndex = index;
             localStorage.setItem("diary_current_tab", index);
             
-            const btn0 = document.getElementById('tab-btn-0');
-            const btn1 = document.getElementById('tab-btn-1');
-            const btn2 = document.getElementById('tab-btn-2');
-            
-            [btn0, btn1, btn2].forEach((btn, i) => {
+            // Xử lý ẩn hiện nội dung tab bằng Bootstrap logic kết hợp d-none
+            document.querySelectorAll('.tab-content').forEach((tab, i) => {
                 if (i === index) {
-                    btn.className = "flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-center gap-1 text-primary shadow-sm bg-white rounded-2";
+                    tab.style.display = 'block';
+                    tab.classList.add('active');
                 } else {
-                    btn.className = "text-decoration-none text-secondary flex-grow-1 py-2 px-1 fs-6 fw-semibold border-0 d-flex items-center justify-center gap-1 bg-transparent";
+                    tab.style.display = 'none';
+                    tab.classList.remove('active');
                 }
             });
-
-            document.getElementById('tab-diary').className = (index === 0) ? "d-block flex-grow-1 overflow-y-auto pb-5 scroll-smooth" : "d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth";
-            document.getElementById('tab-paragraph').className = (index === 1) ? "d-block flex-grow-1 overflow-y-auto pb-5 scroll-smooth" : "d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth";
-            document.getElementById('tab-conversation').className = (index === 2) ? "d-block flex-grow-1 overflow-y-auto pb-5 scroll-smooth" : "d-none flex-grow-1 overflow-y-auto pb-5 scroll-smooth";
             
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                if (i === index) {
+                    btn.classList.add('active', 'bg-white', 'shadow-sm', 'text-primary');
+                    btn.classList.remove('text-secondary');
+                    btn.style.background = '';
+                } else {
+                    btn.classList.remove('active', 'bg-white', 'shadow-sm', 'text-primary');
+                    btn.classList.add('text-secondary');
+                    btn.style.background = 'transparent';
+                }
+            });
             updateAIView();
         }
 
@@ -377,10 +371,9 @@
             const newUrl = new URL(window.location);
             newUrl.searchParams.set('id', id);
             window.history.replaceState({}, '', newUrl); 
-            
-            renderList(currentDiaries);
+            document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
             const el = document.getElementById(`item-${id}`);
-            if (el && scroll) { setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }
+            if (el) { el.classList.add('selected'); if (scroll) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }
             updateAIView();
         }
 
@@ -389,23 +382,8 @@
             if (!item) return;
             const pContent = item.paragraph;
             const cContent = item.conversation;
-            
-            const boxClass = "bg-white p-4 rounded-3 fs-5 mb-3 text-dark shadow-sm";
-            
-            const pBox = document.getElementById('paragraphContainer');
-            if(pContent) {
-                pBox.innerHTML = `<div id="p-content" class="${boxClass}" style="white-space: pre-wrap; border-left: 4px solid #10b981 !important;">${pContent}</div>`;
-            } else {
-                pBox.innerHTML = `<p class="text-center text-secondary p-5 fs-6">Chưa có nội dung AI.</p>`;
-            }
-
-            const cBox = document.getElementById('conversationContainer');
-            if(cContent) {
-                cBox.innerHTML = `<div id="c-content" class="${boxClass}" style="white-space: pre-wrap; border-left: 4px solid #10b981 !important;">${cContent}</div>`;
-            } else {
-                cBox.innerHTML = `<p class="text-center text-secondary p-5 fs-6">Chưa có nội dung AI.</p>`;
-            }
-            
+            document.getElementById('paragraphContainer').innerHTML = pContent ? `<div id="p-content" class="ai-content-box bg-white p-3 rounded-2 m-0 mb-2" style="line-height: 1.7; font-size: 1rem; white-space: pre-wrap;">${pContent}</div>` : `<p class="text-center text-muted p-4 fs-6" style="font-size: 0.9rem !important;">Chưa có nội dung AI.</p>`;
+            document.getElementById('conversationContainer').innerHTML = cContent ? `<div id="c-content" class="ai-content-box bg-white p-3 rounded-2 m-0 mb-2" style="line-height: 1.7; font-size: 1rem; white-space: pre-wrap;">${cContent}</div>` : `<p class="text-center text-muted p-4 fs-6" style="font-size: 0.9rem !important;">Chưa có nội dung AI.</p>`;
             const btnSpeak = document.getElementById('btnMainSpeak');
             btnSpeak.disabled = (currentTabIndex === 1) ? !pContent : (currentTabIndex === 2 ? !cContent : true);
         }
@@ -414,13 +392,8 @@
             const v = localStorage.getItem("diary_voice"), r = localStorage.getItem("diary_rate");
             if(v) document.getElementById("voiceSelect").value = v;
             if(r) document.getElementById("rateSelect").value = r;
-            
-            const btnRepeat = document.getElementById("btnRepeat");
-            if (isRepeating) {
-                btnRepeat.className = "btn btn-primary text-white p-1.5 fs-7";
-            } else {
-                btnRepeat.className = "btn btn-outline-secondary bg-white text-dark p-1.5 fs-7";
-            }
+            document.getElementById("btnRepeat").classList.toggle("btn-info", isRepeating);
+            document.getElementById("btnRepeat").classList.toggle("btn-light", !isRepeating);
         }
 
         function saveTTSSettings() {
@@ -431,14 +404,10 @@
 
         function toggleRepeat() { 
             isRepeating = !isRepeating; 
-            const btnRepeat = document.getElementById("btnRepeat");
-            if (isRepeating) {
-                btnRepeat.className = "btn btn-primary text-white p-1.5 fs-7";
-            } else {
-                btnRepeat.className = "btn btn-outline-secondary bg-white text-dark p-1.5 fs-7";
-            }
+            document.getElementById("btnRepeat").classList.toggle("btn-info", isRepeating); 
+            document.getElementById("btnRepeat").classList.toggle("btn-light", !isRepeating); 
             saveTTSSettings(); 
-            if (document.getElementById('btnMainSpeak').className.includes("btn-danger")) {
+            if (document.getElementById('btnMainSpeak').classList.contains("btn-danger")) {
                 handleGlobalSpeak(); handleGlobalSpeak(); 
             }
         }
@@ -446,9 +415,9 @@
         async function speakText(elId, btnId) {
             const el = document.getElementById(elId), btn = document.getElementById(btnId);
             if(!el || !window.speakCommon) return;
-            btn.className = "btn btn-danger fw-bold px-3 py-1 rounded-pill text-xs text-white";
-            btn.style.minWidth = "70px";
-            btn.innerHTML = '⏹ Dừng';
+            btn.classList.remove("text-white");
+            btn.style.backgroundColor = "";
+            btn.classList.add("btn-danger"); btn.innerHTML = '⏹ Dừng';
             await window.speakCommon({ 
                 text: el.innerText, 
                 voice: document.getElementById("voiceSelect").value, 
@@ -461,7 +430,7 @@
 
         function handleGlobalSpeak() {
             const btn = document.getElementById('btnMainSpeak');
-            if (btn.className.includes("btn-danger")) { 
+            if (btn.classList.contains("btn-danger")) { 
                 if (window.stopSpeak) window.stopSpeak(); 
                 resetSpeakBtns(); 
                 return; 
@@ -472,17 +441,12 @@
 
         function resetSpeakBtns() { 
             const b = document.getElementById('btnMainSpeak'); 
-            b.className = "btn btn-success fw-bold px-3 py-1 rounded-pill text-xs text-white"; 
-            b.style.minWidth = "70px";
+            b.classList.remove('btn-danger'); 
+            b.style.backgroundColor = "#00b894";
+            b.classList.add('text-white');
             b.innerHTML = '🔊 Đọc'; 
         }
-        
-        function clearEditMode() { 
-            editingId = null; 
-            document.getElementById('diaryInput').value = ''; 
-            document.getElementById('saveBtn').innerText = 'Lưu lại'; 
-            document.getElementById('cancelBtn').style.display = 'none'; 
-        }
+        function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
     </script>
     <script>
         async function getLessonTotalScore() {
@@ -510,16 +474,12 @@
                                     if (score > maxScore) maxScore = score;
                                 }
                             });
-                            if (count > 0) {
-                                badge.innerHTML = `🎙️ ${count} (⭐ ${maxScore})`;
-                                badge.style.backgroundColor = '#10b981';
-                            }
+                            badge.innerHTML = `🎙️ ${count} | 🏆 ${maxScore}`;
+                            if (count > 0) badge.style.backgroundColor = '#e67e22';
                         }
                     });
                 }
-            } catch (error) {
-                console.error("Error fetching score:", error);
-            }
+            } catch (err) { console.error("[Summary Error]:", err); }
         }
     </script>
 </body>

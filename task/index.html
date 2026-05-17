@@ -94,7 +94,7 @@
                 let val = dataRows[i][j] || "";
                 
                 if (headers[j] === "TASK") {
-                    cardBodyContent += `<div class="mb-2"><span class="text-uppercase text-secondary font-weight-bold small d-block">${headers[j]}</span><div class="p-2 bg-light rounded text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</div></div>`;
+                    cardBodyContent += `<div class="mb-0"><div class="p-2 bg-light rounded text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</div></div>`;
                 } else {
                     cardBodyContent += `<div class="mb-2 d-flex justify-content-between align-items-center border-bottom pb-1"><span class="text-uppercase text-secondary font-weight-bold small">${headers[j]}:</span><span class="text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val}</span></div>`;
                 }
@@ -109,12 +109,12 @@
                                 <input class="form-check-input" type="checkbox" role="switch" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})">
                             </div>
                         </div>
-                        <div class="card-body py-3">
+                        <div class="card-body py-2">
                             ${cardBodyContent}
                         </div>
-                        <div class="card-footer bg-white border-top-0 d-flex justify-content-end gap-2 pb-3 pt-0">
-                            <button class="btn btn-warning btn-sm font-weight-medium text-white px-3" onclick="openModal('edit', ${origIdx})">Sửa</button>
-                            <button class="btn btn-danger btn-sm font-weight-medium px-3" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button>
+                        <div class="card-footer bg-white border-top-0 d-flex justify-content-end gap-2 pb-2 pt-0">
+                            <button class="btn btn-warning btn-sm text-white px-2 py-0" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="openModal('edit', ${origIdx})">Sửa</button>
+                            <button class="btn btn-danger btn-sm px-2 py-0" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button>
                         </div>
                     </div>
                 </div>

@@ -1,12 +1,12 @@
 import * as util from './com/sheet';
 
+
+const URL = 'https://docs.google.com/spreadsheets/d/1bSEEle1sTKAEwIM5YYkKZ6nXijtdAcB3D65urXCzZiw/gviz/tq?tqx=out:csv&sheet=LIST';
 const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
 const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
 const SHEET = 'TASK';
 
 export default async function handler(req, res) {
-    await util.ensureAuthenticated();
-
     try {
         const rows = await fetchTasks();
         //writeLog("DATA : " + JSON.stringify(rows));
@@ -23,8 +23,7 @@ export default async function handler(req, res) {
 }
 
 async function fetchTasks() {
-    const url = 'https://docs.google.com/spreadsheets/d/1bSEEle1sTKAEwIM5YYkKZ6nXijtdAcB3D65urXCzZiw/gviz/tq?tqx=out:csv&sheet=LIST';
-    const response = await fetch(url);
+    const response = await fetch(URL);
     const csvText = await response.text();
     
     // Phân tách chuỗi CSV thành mảng dữ liệu 2 chiều dạng hàng/cột tương đương data.values
@@ -70,7 +69,7 @@ async function checkAndProcessTasks(rows, now) {
             const newTimeJST = getJSTTime(now);
             rowData[6] = newTimeJST;
             await UpdateTask(id, rowData);
-			SendNotification(id, rowData);
+			//SendNotification(id, rowData);
             sentIds.push(id);
         }
     }

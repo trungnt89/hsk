@@ -124,8 +124,8 @@ async function UpdateTask(id, rowData) {
     await util.ensureAuthenticated();
     const upRes = await util.handleUpdateByPosVal(SPREAD_ID, SHEET, 0, id, JSON.stringify(rowData));
     writeLog("[UPDATE_RESPONSE] " + JSON.stringify(upRes));
-    if (SPREAD_ID.success) {
-        writeLog(`[SUCCESS] Task ${id} update thành công hàng ${SPREAD_ID.updatedRow}. Giờ JST: ${rowData[6]}`);
+    if (upRes.success) {
+        writeLog(`[SUCCESS] Task ${id} update thành công hàng ${upRes.updatedRow}. Giờ JST: ${rowData[6]}`);
     } else {
         writeLog(`[FAIL] Task ${id} update thất bại.`);
     }

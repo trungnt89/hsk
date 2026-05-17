@@ -99,18 +99,6 @@ async function UpdateTask(id, rowData) {
     }
 }
 
-async function UpdateTask(id, rowData) {
-	await util.ensureAuthenticated();
-	const upRes = = await util.handleUpdateByPosVal(SPREAD_ID, SHEET, 0, id, JSON.stringify(rowData));
-    const dataUp = await upRes.json();
-    writeLog(JSON.stringify(dataUp));
-    if (dataUp.success) {
-        writeLog(`[SUCCESS] Task ${id} update thành công hàng ${dataUp.updatedRow}. Giờ JST: ${rowData[6]}`);
-    } else {
-        writeLog(`[FAIL] Task ${id} update thất bại.`);
-    }
-}
-
 async function SendNotification(id, rowData) {
 	const chatId = "8536107228";
     const text = rowData[2] || "Trống nội dung task";

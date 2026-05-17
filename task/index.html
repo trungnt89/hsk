@@ -82,11 +82,13 @@
             let fregVal = dataRows[i][headers.indexOf("FREG")] || "";
             let lastTimeVal = dataRows[i][headers.indexOf("LAST_TIME")] || "";
             
+            startVal = formatLastTime(startVal);
+            fregVal = formatLastTime(fregVal);
             lastTimeVal = formatLastTime(lastTimeVal);
             
             let cardBodyContent = "";
             for (let j = 0; j < headers.length; j++) {
-                if (headers[j] === "ID" || headers[j] === "NOTE" || headers[j] === "STATUS" || headers[j] === "START" || headers[j] === "FREG" || headers[j] === "UPDATE" || headers[j] === "LAST_TIME") continue;
+                if (headers[j] === "ID" || headers[j] === "NOTE" || headers[j] === "STATUS" || headers[j] === "START" || headers[j] === "FREG" || headers[j] === "LAST_TIME") continue;
                 let val = dataRows[i][j] || "";
                 
                 if (headers[j] === "TASK") {
@@ -96,8 +98,7 @@
                 }
             }
             
-            let headerText = `<span class="badge text-bg-primary font-weight-bold mx-1" style="font-size: 12px; padding: 2px 6px;">${startVal}</span>`;
-            headerText += ` | ${fregVal}`;
+            let headerText = `<span class="badge text-bg-primary font-weight-bold mx-1" style="font-size: 12px; padding: 2px 6px;">${startVal}</span> | ${fregVal}`;
 
             const cardHtml = `
                 <div class="col-12 task-card-item" data-id="${dataRows[i][0]}" data-status-active="${isActive ? "1" : "0"}">

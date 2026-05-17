@@ -4,43 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Management</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-	<script src="../com/assistive.js"></script>     
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="../com/assistive.js"></script>     
 </head>
-<body class="bg-gray-100 p-6">
-    <div class="sticky top-0 bg-gray-100 py-3 z-30">
-        <div class="flex justify-content-between items-center justify-between">
-            <h2 class="text-2xl font-bold text-gray-800">Danh sách Task từ Server</h2>
-            <div class="flex items-center gap-4">
-                <!-- Toggle Switch theo phong cách iOS / Utility-First -->
-                <label class="relative inline-flex items-center cursor-pointer text-xl">
-                    <input type="checkbox" id="filterToggle" checked onchange="filterTasks()" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-                <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow" onclick="openModal('add')">Thêm Mới Task</button>
+<body class="bg-light p-3 p-md-4">
+    <div class="sticky-top bg-light py-3 z-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h4 h2-md font-weight-bold text-dark mb-0">Danh sách Task từ Server</h2>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Form Check Switch Bootstrap thay thế phong cách iOS -->
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input style-none" type="checkbox" role="switch" id="filterToggle" checked onchange="filterTasks()" style="transform: scale(1.3); cursor: pointer;">
+                </div>
+                <button class="btn btn-primary shadow-sm" onclick="openModal('add')">Thêm Mới Task</button>
             </div>
         </div>
     </div>
-    <div id="loading" class="my-4 text-gray-600 font-medium">Đang tải dữ liệu...</div>
-    <table id="taskTable" class="min-w-full divide-y divide-gray-200 border border-gray-300 bg-white mt-4 shadow-sm rounded" style="display:none;">
-        <thead class="bg-green-100">
-            <tr id="headerRow"></tr>
-        </thead>
-        <tbody id="taskBody" class="divide-y divide-gray-200"></tbody>
-    </table>
-    <!-- Tailwind Custom Popup Modal -->
-    <div id="taskModal" class="fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-50" style="display: none;">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full m-4 overflow-hidden animate-fade-in">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h5 id="modalTitle" class="text-xl font-bold text-gray-800">Thêm Mới Task</h5>
-            </div>
-            <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
-                <div id="dynamicFormContainer"></div>
-            </div>
-            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2 border-t border-gray-200">
-                <button class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded" onclick="closeModal()">Hủy</button>
-                <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded" onclick="submitModalForm()">Lưu</button>
+    <div id="loading" class="my-4 text-secondary font-weight-medium">Đang tải dữ liệu...</div>
+    <div class="table-responsive mt-3">
+        <table id="taskTable" class="table table-bordered table-hover align-middle bg-white shadow-sm" style="display:none;">
+            <thead class="table-success">
+                <tr id="headerRow"></tr>
+            </thead>
+            <tbody id="taskBody"></tbody>
+        </table>
+    </div>
+    <!-- Bootstrap Popup Modal (Dựng thủ công lớp nền để đồng bộ hiển thị) -->
+    <div id="taskModal" class="modal fade show" style="display: none; background: rgba(0,0,0,0.5); z-index: 1050;" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header">
+                    <h5 id="modalTitle" class="modal-title font-weight-bold text-dark">Thêm Mới Task</h5>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div id="dynamicFormContainer"></div>
+                </div>
+                <div class="modal-footer bg-light gap-2">
+                    <button class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+                    <button class="btn btn-success" onclick="submitModalForm()">Lưu</button>
+                </div>
             </div>
         </div>
     </div>
@@ -75,7 +78,7 @@
     function renderTable(values) {
         console.log("Bắt đầu dựng cấu trúc bảng hiển thị...");
         const headers = values[0], startColIdx = headers.indexOf("START");
-        document.getElementById('headerRow').innerHTML = headers.filter(h => h !== "ID" && h !== "NOTE").map(h => `<th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider border-b border-gray-300">${h}</th>`).join('') + '<th class="px-4 py-3 text-left text-xs font-semibold text-green-800 uppercase tracking-wider border-b border-gray-300">HÀNH ĐỘNG</th>';
+        document.getElementById('headerRow').innerHTML = headers.filter(h => h !== "ID" && h !== "NOTE").map(h => `<th class="text-uppercase text-secondary font-weight-bold p-3 small border-bottom">${h}</th>`).join('') + '<th class="text-uppercase text-secondary font-weight-bold p-3 small border-bottom">HÀNH ĐỘNG</th>';
         document.getElementById('taskBody').innerHTML = "";
         allRowsData = JSON.parse(JSON.stringify(values));
         let dataRows = values.slice(1);
@@ -84,20 +87,20 @@
             if (dataRows[i].length < 2) continue;
             const origIdx = allRowsData.findIndex(r => r[0] === dataRows[i][0]), tr = document.createElement('tr');
             tr.setAttribute('data-id', dataRows[i][0]);
-            tr.className = "hover:bg-gray-50 transition-colors";
+            tr.className = "";
             let rowHtml = "", isActive = dataRows[i][headers.indexOf("STATUS")] === "1";
             for (let j = 0; j < headers.length; j++) {
                 if (headers[j] === "ID" || headers[j] === "NOTE") continue;
                 let val = dataRows[i][j] || "";
                 if (headers[j] === "LAST_TIME") val = formatLastTime(val);
                 if (headers[j] === "STATUS") {
-                    rowHtml += `<td class="px-4 py-3 whitespace-nowrap border border-gray-200"><label class="relative inline-flex items-center cursor-pointer text-xl"><input type="checkbox" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})" class="sr-only peer"><div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></td>`;
+                    rowHtml += `<td class="p-3 text-nowrap"><div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" role="switch" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})" style="transform: scale(1.2); cursor: pointer;"></div></td>`;
                 } else {
-                    rowHtml += `<td class="px-4 py-3 border border-gray-200 text-sm text-gray-700" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</td>`;
+                    rowHtml += `<td class="p-3 text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</td>`;
                 }
             }
             tr.setAttribute('data-status-active', isActive ? "1" : "0");
-            tr.innerHTML = rowHtml + `<td class="px-4 py-3 whitespace-nowrap border border-gray-200 text-sm"><div class="flex gap-2"><button class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1 px-3 rounded text-xs transition-colors" onclick="openModal('edit', ${origIdx})">Sửa</button><button class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded text-xs transition-colors" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button></div></td>`;
+            tr.innerHTML = rowHtml + `<td class="p-3 text-nowrap"><div class="d-flex gap-2"><button class="btn btn-warning btn-sm font-weight-medium text-white px-3" onclick="openModal('edit', ${origIdx})">Sửa</button><button class="btn btn-danger btn-sm font-weight-medium px-3" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button></div></td>`;
             document.getElementById('taskBody').appendChild(tr);
         }
         document.getElementById('loading').style.display = 'none';
@@ -119,10 +122,10 @@
         for (let j = 0; j < headers.length; j++) {
             if (headers[j] === "ID") continue;
             let val = mode === 'add' ? (headers[j] === "STATUS" ? "1" : "") : (allRowsData[rowIndex][j] || "");
-            container.innerHTML += `<div class="mb-4 flex flex-col gap-1"><label class="text-xs font-semibold text-gray-600 uppercase mb-1">${headers[j]}</label><input type="text" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" id="modal_field_${j}" value="${val}"></div>`;
+            container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><input type="text" class="form-control form-control-sm" id="modal_field_${j}" value="${val}"></div>`;
         }
         const modalEl = document.getElementById('taskModal');
-        modalEl.style.display = 'flex';
+        modalEl.style.display = 'block';
     }
     function closeModal() {
         const modalEl = document.getElementById('taskModal');

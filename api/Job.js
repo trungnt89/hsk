@@ -87,6 +87,19 @@ function getJSTTime(date) {
 }
 
 async function UpdateTask(id, rowData) {
+    writeLog(`[UPDATE_START] Cập nhật thời gian mới cho Task ${id}`);
+    await util.ensureAuthenticated();
+    const upRes = await util.handleUpdateByPosVal(SPREAD_ID, SHEET, 0, id, JSON.stringify(rowData));
+    const dataUp = await upRes.json();
+    writeLog("[UPDATE_RESPONSE] " + JSON.stringify(dataUp));
+    if (dataUp.success) {
+        writeLog(`[SUCCESS] Task ${id} update thành công hàng ${dataUp.updatedRow}. Giờ JST: ${rowData[6]}`);
+    } else {
+        writeLog(`[FAIL] Task ${id} update thất bại.`);
+    }
+}
+
+async function UpdateTask(id, rowData) {
 	await util.ensureAuthenticated();
 	const upRes = = await util.handleUpdateByPosVal(SPREAD_ID, SHEET, 0, id, JSON.stringify(rowData));
     const dataUp = await upRes.json();

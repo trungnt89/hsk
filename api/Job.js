@@ -161,7 +161,7 @@ async function SendNotification(id, rowData) {
         });
 
         const resContent = await response.text();
-		writeLog("[SendNotification] " + JSON.stringify(resContent));
+		writeLog("[SendNotification] " + resContent);
         if (response.status === 200) {
             writeLog(`[TG_SEND_SUCCESS] Gửi Telegram thành công tới ChatID: ${chatId}`);
 			return true;

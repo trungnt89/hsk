@@ -23,7 +23,6 @@ export default async function handler(req, res) {
 }
 
 async function fetchTasks() {
-    writeLog(`[FETCH] Đang tải dữ liệu từ URL: ${URL}`);
     const response = await fetch(URL);
     const csvText = await response.text();
     
@@ -65,7 +64,6 @@ async function fetchTasks() {
         values.push(currentRow);
     }
 
-    writeLog(`[FETCH_SUCCESS] Tải dữ liệu thành công. Tổng số hàng: ${values.length}`);
     return values;
 }
 

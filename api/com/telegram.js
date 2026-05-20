@@ -39,7 +39,6 @@ export async function ReceiveMessage(msgData) {
     const replyText = msgData.message.text;
     const originalText = msgData.message.reply_to_message.text;
     const idMatch = originalText.match(/ID:?\s*([^|\s\n]+)/i);
-    
     if (idMatch) {
         const taskId = idMatch[1].trim(); 
         

@@ -114,8 +114,8 @@ async function checkAndProcessTasks(rows, now) {
         if (isExpired) {
             const newTimeJST = getJSTTime(now);
             rowData[6] = newTimeJST;
-            
-			let res = await tg.SendMessage(rowData[2]);
+            let text = `【ID: ${rowData[0]}】\n${rowData[2]}`;
+			let res = await tg.SendMessage(text);
 			if(res) {
 				await UpdateTask(id, rowData);
 				sentIds.push(id);

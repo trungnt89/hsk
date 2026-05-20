@@ -6,7 +6,6 @@ import * as tg from './com/telegram';
 const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
 const SHEET_1   = 'TASK';
 const SHEET_2   = 'TASK_DETAIL';
-const URL       = 'https://docs.google.com/spreadsheets/d/1bSEEle1sTKAEwIM5YYkKZ6nXijtdAcB3D65urXCzZiw/gviz/tq?tqx=out:csv&sheet=LIST';
 
 // Biến toàn cục lưu trữ thời gian thực thi đồng bộ của Request
 let nowJST;

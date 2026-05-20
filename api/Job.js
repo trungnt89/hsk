@@ -35,14 +35,36 @@ export default async function handler(req, res) {
 }
 
 async function handleCronJob() {
-    const rows = await fetchTasks();
-    //writeLog("DATA : " + JSON.stringify(rows));
+    // 1. Trả về tất cả các task từ sheet
+    const allTasks = await GetTaskAll();
 
-    const sentIds = await checkAndProcessTasks(rows);
+    // 2. Sử dụng kết quả 1 để trả về các task thỏa mãn điều kiện gửi
+    const rows = await GetTaskSend(allTasks);
+
+    const sentIds = [];
+
+    // 3. Sử dụng kết quả 2 để SendMessage và 4. Sử dụng kết quả 3 để UpdateSheet
+    for (let i = 0; i < rows.length; i++) {
+        const rowData = rows[i];
+        const id = rowData[0];
+
+        const newTimeJST = getJSTTime();
+        rowData[6] = newTimeJST;
+        let text = `【ID: ${rowData[0]}】\n${rowData[2]}`;
+
+        // Thực hiện gửi tin nhắn
+        let res = await tg.SendMessage(text);
+        if (res) {
+            // Thực hiện cập nhật sheet sau khi gửi thành công
+            await UpdateTask(SHEET_1, id, rowData);
+            sentIds.push(id);
+        }
+    }
+
     return sentIds;
 }
 
-async function fetchTasks() {
+async function GetTaskAll() {
     writeLog(`[FETCH] Đang tải dữ liệu từ URL: ${URL}`);
     const response = await fetch(URL);
     const csvText = await response.text();
@@ -89,12 +111,13 @@ async function fetchTasks() {
     return values;
 }
 
-async function checkAndProcessTasks(rows) {
+async function GetTaskSend(allTasks) {
     const currentTimeStr = nowJST.getHours().toString().padStart(2, '0') + ":" + nowJST.getMinutes().toString().padStart(2, '0');
-    
-    const sentIds = [];
-    for (let i = 1; i < rows.length; i++) {
-        const rowData = [...rows[i]];
+    const tasksToSend = [];
+
+    // Duyệt qua toàn bộ hàng (bỏ qua hàng tiêu đề index 0)
+    for (let i = 1; i < allTasks.length; i++) {
+        const rowData = [...allTasks[i]];
 
         const id = rowData[0];
         const status = rowData[3];
@@ -103,7 +126,6 @@ async function checkAndProcessTasks(rows) {
         const lastTimeRaw = rowData[6] || "";
         let isExpired = false;
 
-        //writeLog(`id=${id},status=${status}, now=${currentTimeStr}, start=${start}`);
         if (status == "1" && currentTimeStr >= start) {
             if (!lastTimeRaw || lastTimeRaw.trim() === "") {
                 writeLog(`[TRIGGER] Task ${id}: LAST_TIME trống.`);
@@ -117,25 +139,19 @@ async function checkAndProcessTasks(rows) {
                 }
             }
         }
-    
+
         if (isExpired) {
-            const newTimeJST = getJSTTime();
-            rowData[6] = newTimeJST;
-            let text = `【ID: ${rowData[0]}】\n${rowData[2]}`;
-            let res = await tg.SendMessage(text);
-            if(res) {
-                await UpdateTask(SHEET_1, id, rowData);
-                sentIds.push(id);
-            }
+            tasksToSend.push(rowData);
         }
     }
-    return sentIds;
+
+    return tasksToSend;
 }
 
 function getJSTTime() {
     const y = nowJST.getFullYear();
     const mo = nowJST.getMonth() + 1;
-    const d = date = nowJST.getDate();
+    const d = nowJST.getDate();
     const h = nowJST.getHours().toString().padStart(2, '0');
     const mi = nowJST.getMinutes().toString().padStart(2, '0');
     const s = nowJST.getSeconds().toString().padStart(2, '0');

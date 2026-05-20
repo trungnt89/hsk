@@ -64,14 +64,9 @@ async function ControlSendMessage() {
 
 async function GetTaskList() {
 	await util.ensureAuthenticated();
-	const upRes = await util.handleRead(SPREAD_ID, SHEET_1);
-	return upRes;
-}
-
-async function GetTaskDetail() {
-	await util.ensureAuthenticated();
-	const upRes = await util.handleRead(SPREAD_ID, SHEET_2);
-	return upRes;
+	const taskList   = await util.handleRead(SPREAD_ID, SHEET_1);
+	const taskDetail = await util.handleRead(SPREAD_ID, SHEET_2);
+	return taskList;
 }
 
 async function GetTaskSend(allTasks) {

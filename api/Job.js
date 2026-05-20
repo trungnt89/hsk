@@ -21,7 +21,7 @@ export default async function handler(req, res) {
             // FIX: Kiểm tra nếu result là object chứa taskId (thay vì kiểm tra biến boolean như trước)
             if (result && result.taskId) {
                 await util.ensureAuthenticated();
-				const rowData = [result.taskId, result.replyText, getJSTDate(), getJSTHour()];
+				const rowData = [result.taskId, result.replyText, getJSTTime()];
 			    const upRes = await util.handleAdd(SPREAD_ID, SHEET_2,JSON.stringify(rowData));
                 return res.status(200).json({ status: "Success", type: "Webhook", data: result });
             }
@@ -85,7 +85,7 @@ async function GetTaskList() {
         const rawDate = (row[2] || '').toString().trim();
         
 
-        if (content.toLowerCase() === 'done' && rawDate === todayStr) {
+        if (content.toLowerCase().includes('done') && rawDate.includes(todayStr))
             doneIdsToday.add(id);
         }
     }
@@ -149,14 +149,14 @@ function getJSTDate() {
 	
 	mo = mo.toString().padStart(2, '0');
 	d  = d.toString().padStart(2, '0');
-    return `${y}／${mo}／${d}`;
+    return `${y}/${mo}/${d}`;
 }
 
 function getJSTHour() {
     let h = nowJST.getHours().toString().padStart(2, '0');
     let mi = nowJST.getMinutes().toString().padStart(2, '0');
     let s = nowJST.getSeconds().toString().padStart(2, '0');
-    return `${h}：${mi}：${s}`;
+    return `${h}:${mi}:${s}`;
 }
 
 async function UpdateTask(sheet, id, rowData) {

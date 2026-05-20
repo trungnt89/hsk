@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
 async function ControlSendMessage() {
     // 1. Trả về tất cả các task từ sheet
-    const allTasks = await GetTaskAll();
+    const allTasks = await GetTaskList();
 
     // 2. Sử dụng kết quả 1 để trả về các task thỏa mãn điều kiện gửi
     const rows = await GetTaskSend(allTasks);
@@ -62,9 +62,15 @@ async function ControlSendMessage() {
     return rows;
 }
 
-async function GetTaskAll() {
+async function GetTaskList() {
 	await util.ensureAuthenticated();
 	const upRes = await util.handleRead(SPREAD_ID, SHEET_1);
+	return upRes;
+}
+
+async function GetTaskDetail() {
+	await util.ensureAuthenticated();
+	const upRes = await util.handleRead(SPREAD_ID, SHEET_2);
 	return upRes;
 }
 
@@ -112,7 +118,7 @@ function getJSTTime() {
     const h = nowJST.getHours().toString().padStart(2, '0');
     const mi = nowJST.getMinutes().toString().padStart(2, '0');
     const s = nowJST.getSeconds().toString().padStart(2, '0');
-    return `${y}/${mo}/${d}- ${h}:${mi}:${s}`;
+    return `${y}/${mo}/${d} - ${h}:${mi}:${s}`;
 }
 
 async function UpdateTask(sheet, id, rowData) {

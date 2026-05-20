@@ -62,7 +62,7 @@ async function ControlSendMessage() {
         }
     }
 
-    return sentIds;
+    return allTasks;
 }
 
 async function GetTaskAll() {

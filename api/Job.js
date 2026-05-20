@@ -66,47 +66,9 @@ async function ControlSendMessage() {
 }
 
 async function GetTaskAll() {
-    const response = await fetch(URL);
-    const csvText = await response.text();
-    
-    // Sử dụng thuật toán State Machine để phân tách CSV có chứa dấu xuống dòng trong ô
-    const values = [];
-    let currentRow = [];
-    let currentCell = '';
-    let insideQuotes = false;
-    
-    for (let i = 0; i < csvText.length; i++) {
-        const char = csvText[i];
-        const nextChar = csvText[i + 1];
-
-        if (char === '"') {
-            if (insideQuotes && nextChar === '"') {
-                currentCell += '"';
-                i++; // Bỏ qua dấu ngoặc kép bọc kép tiếp theo
-            } else {
-                insideQuotes = !insideQuotes;
-            }
-        } else if (char === ',' && !insideQuotes) {
-            currentRow.push(currentCell.trim());
-            currentCell = '';
-        } else if ((char === '\r' || char === '\n') && !insideQuotes) {
-            if (char === '\r' && nextChar === '\n') i++;
-            currentRow.push(currentCell.trim());
-            if (currentRow.length > 0 && (currentRow.length > 1 || currentRow[0] !== '')) {
-                values.push(currentRow);
-            }
-            currentRow = [];
-            currentCell = '';
-        } else {
-            currentCell += char;
-        }
-    }
-    
-    if (currentCell || currentRow.length > 0) {
-        currentRow.push(currentCell.trim());
-        values.push(currentRow);
-    }
-    return values;
+	await util.ensureAuthenticated();
+	const upRes = await util.handleRead(SPREAD_ID, SHEET_1);
+	return upRes;
 }
 
 async function GetTaskSend(allTasks) {

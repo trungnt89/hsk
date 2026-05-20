@@ -152,6 +152,7 @@ function getJSTDate() {
     return `${y}/${mo}/${d}`;
 }
 
+
 function getJSTHour() {
     let h = nowJST.getHours().toString().padStart(2, '0');
     let mi = nowJST.getMinutes().toString().padStart(2, '0');

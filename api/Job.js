@@ -114,6 +114,9 @@ function getJSTDate() {
     const y = nowJST.getFullYear();
     const mo = nowJST.getMonth() + 1;
     const d = nowJST.getDate();
+	
+	mo = mo.toString().padStart(2, '0');
+	d  = d.toString().padStart(2, '0');
     return `${y}／${mo}／${d}`;
 }
 

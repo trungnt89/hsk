@@ -1,4 +1,6 @@
+// api/handler.js
 import * as util from './com/sheet';
+import * as tg from './com/telegram';
 
 
 const URL = 'https://docs.google.com/spreadsheets/d/1bSEEle1sTKAEwIM5YYkKZ6nXijtdAcB3D65urXCzZiw/gviz/tq?tqx=out:csv&sheet=LIST';
@@ -8,18 +10,28 @@ const SHEET = 'TASK';
 
 export default async function handler(req, res) {
     try {
-        const rows = await fetchTasks();
-        //writeLog("DATA : " + JSON.stringify(rows));
+        if (req.method === 'POST') {
+            const isProcessed = await tg.ReceiveMessage(req.body);
+            if (isProcessed) {
+                return res.status(200).json({ status: "Success", type: "Webhook" });
+            }
+        }
 
-        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
-
-        const sentIds = await checkAndProcessTasks(rows, now);
-
+        const sentIds = await handleCronJob();
         res.status(200).json({ status: "Success", timezone: "JST", sentIds });
     } catch (error) {
         writeLog("[ERROR]", error.message);
         res.status(500).json({ error: error.message });
     }
+}
+
+async function handleCronJob() {
+    const rows = await fetchTasks();
+    //writeLog("DATA : " + JSON.stringify(rows));
+
+    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+    const sentIds = await checkAndProcessTasks(rows, now);
+    return sentIds;
 }
 
 async function fetchTasks() {
@@ -93,7 +105,7 @@ async function checkAndProcessTasks(rows, now) {
                 const diffMinutes = (now - lastTime) / (1000 * 60);
                 if (diffMinutes > freg) {
                     isExpired = true;
-                    writeLog(`[TRIGGER] Task ${id}: Quá hạn ${Math.floor(diffMinutes)} phút.`);
+                    writeLog(`[TRIGGER] Task ${id}: Quá hạn ${Math.floor(diffMinutes)} minutes.`);
                 }
             }
         }
@@ -102,7 +114,7 @@ async function checkAndProcessTasks(rows, now) {
             const newTimeJST = getJSTTime(now);
             rowData[6] = newTimeJST;
             
-			let res = await SendNotification(id, rowData);
+			let res = await tg.SendMessage(rowData[2]);
 			if(res) {
 				await UpdateTask(id, rowData);
 				sentIds.push(id);
@@ -133,50 +145,6 @@ async function UpdateTask(id, rowData) {
         writeLog(`[FAIL] Task ${id} update thất bại.`);
     }
 }
-
-async function SendNotification(id, rowData) {
-	const chatId = "8536107228";
-    const text = rowData[2] || "Trống nội dung task";
-    writeLog(`[TG_SEND_START] Bắt đầu tiến trình gửi Telegram tới ChatID: ${chatId}`);
-    
-    try {
-        // Sử dụng biến môi trường của Node.js (Vercel) thay cho CONFIG của GAS
-        const token = process.env.TELEGRAM_TOKEN;
-        if (!token) {
-            writeLog(`[TG_SEND_ERR] Không tìm thấy biến môi trường TELEGRAM_TOKEN trên hệ thống.`);
-            return;
-        }
-
-        const url = `https://api.telegram.org/bot${token}/sendMessage`;
-        const cleanText = text.replace(/[*_`\[\]]/g, '');
-
-        // Chuyển đổi UrlFetchApp.fetch (GAS) sang fetch chuẩn Node.js
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                chat_id: String(chatId).trim(), 
-                text: cleanText 
-            })
-        });
-
-        const resContent = await response.text();
-		writeLog(resContent);
-        if (response.status === 200) {
-            writeLog(`[TG_SEND_SUCCESS] Gửi Telegram thành công tới ChatID: ${chatId}`);
-			return true;
-        } else {
-            writeLog(`[TG_SEND_FAIL] Lỗi kết nối Telegram tới ${chatId} - HTTP Code: ${response.status} - Response: ${resContent}`);
-			return false;
-        }
-    } catch (error) {
-        writeLog(`[TG_SEND_ERR] Ngoại lệ khi call API Telegram gửi tới ${chatId}: ${error.message}`);
-		return false;
-    }
-}
-
-
-
 
 function writeLog(message) {
     util.writeLog(message, "JOB");

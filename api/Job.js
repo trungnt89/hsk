@@ -65,7 +65,6 @@ async function SendMessage() {
 }
 
 async function GetTaskAll() {
-    writeLog(`[FETCH] Đang tải dữ liệu từ URL: ${URL}`);
     const response = await fetch(URL);
     const csvText = await response.text();
     
@@ -106,8 +105,6 @@ async function GetTaskAll() {
         currentRow.push(currentCell.trim());
         values.push(currentRow);
     }
-
-    writeLog(`[FETCH_SUCCESS] Tải dữ liệu thành công. Tổng số hàng: ${values.length}`);
     return values;
 }
 

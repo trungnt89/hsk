@@ -42,8 +42,6 @@ async function ControlSendMessage() {
     // 2. Sử dụng kết quả 1 để trả về các task thỏa mãn điều kiện gửi
     const rows = await GetTaskSend(allTasks);
 
-    const sentIds = [];
-
     // 3. Sử dụng kết quả 2 để SendMessage và 4. Sử dụng kết quả 3 để UpdateSheet
     for (let i = 0; i < rows.length; i++) {
         const rowData = rows[i];
@@ -58,7 +56,6 @@ async function ControlSendMessage() {
         if (res) {
             // Thực hiện cập nhật sheet sau khi gửi thành công
             await UpdateTask(SHEET_1, id, rowData);
-            sentIds.push(id);
         }
     }
 

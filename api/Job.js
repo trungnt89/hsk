@@ -63,17 +63,52 @@ async function ControlSendMessage() {
 }
 
 async function GetTaskList() {
-	await util.ensureAuthenticated();
-	const taskList   = await util.handleRead(SPREAD_ID, SHEET_1);
-	const taskDetail = await util.handleRead(SPREAD_ID, SHEET_2);
-	return taskList;
+    await util.ensureAuthenticated();
+    const taskList   = await util.handleRead(SPREAD_ID, SHEET_1);
+    const taskDetail = await util.handleRead(SPREAD_ID, SHEET_2);
+
+	taskList = taskList.values;
+	taskDetail = taskDetail.values;
+
+    if (!taskList || taskList.length <= 1) return taskList;
+    if (!taskDetail || taskDetail.length === 0) return taskList;
+
+    const headers1 = taskList[0];
+    const idIdx1 = headers1.indexOf('ID');
+    if (idIdx1 === -1) return taskList;
+
+    const todayStr = getJSTDate();
+
+    const doneIdsToday = new Set();
+    for (let i = 0; i < taskDetail.length; i++) {
+        const row = taskDetail[i];
+        
+        const id = (row[0] || '').toString().trim();
+        const content = (row[1] || '').toString().trim();
+        const rawDate = (row[2] || '').toString().trim();
+        
+
+        if (content.toLowerCase() === 'done' && rawDate === todayStr) {
+            doneIdsToday.add(id);
+        }
+    }
+
+    const filteredTaskList = [headers1];
+    for (let i = 1; i < taskList.length; i++) {
+        const row = taskList[i];
+        const id = (row[idIdx1] || '').toString().trim();
+        if (!doneIdsToday.has(id)) {
+            filteredTaskList.push(row);
+        }
+    }
+
+    return filteredTaskList;
 }
 
 async function GetTaskSend(allTasks) {
     const currentTimeStr = nowJST.getHours().toString().padStart(2, '0') + ":" + nowJST.getMinutes().toString().padStart(2, '0');
     const tasksToSend = [];
 	
-	allTasks = allTasks.values;
     for (let i = 1; i < allTasks.length; i++) {
         const rowData = [...allTasks[i]];
 

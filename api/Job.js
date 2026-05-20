@@ -70,9 +70,6 @@ async function GetTaskList() {
 	taskList = taskList.values;
 	taskDetail = taskDetail.values;
 
-    if (!taskList || taskList.length <= 1) return taskList;
-    if (!taskDetail || taskDetail.length === 0) return taskList;
-
     const headers1 = taskList[0];
     const idIdx1 = headers1.indexOf('ID');
     if (idIdx1 === -1) return taskList;

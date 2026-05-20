@@ -20,8 +20,9 @@ export default async function handler(req, res) {
             const result = await tg.ReceiveMessage(req.body);
             // FIX: Kiểm tra nếu result là object chứa taskId (thay vì kiểm tra biến boolean như trước)
             if (result && result.taskId) {
-                const rowData = [result.taskId, result.replyText, getJSTTime()];
-                await UpdateTask(SHEET_2, result.taskId, rowData);
+                await util.ensureAuthenticated();
+				const rowData = [result.taskId, result.replyText, getJSTTime()];
+			    const upRes = await util.handleAdd(SPREAD_ID, SHEET_2,JSON.stringify(rowData));
                 return res.status(200).json({ status: "Success", type: "Webhook", data: result });
             }
         }

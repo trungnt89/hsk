@@ -11,9 +11,10 @@ const SHEET = 'TASK';
 export default async function handler(req, res) {
     try {
         if (req.method === 'POST') {
-            const isProcessed = await tg.ReceiveMessage(req.body);
-            if (isProcessed) {
-                return res.status(200).json({ status: "Success", type: "Webhook" });
+            const result = await tg.ReceiveMessage(req.body);
+            // FIX: Kiểm tra nếu result là object chứa taskId (thay vì kiểm tra biến boolean như trước)
+            if (result && result.taskId) {
+                return res.status(200).json({ status: "Success", type: "Webhook", data: result });
             }
         }
 
@@ -24,7 +25,6 @@ export default async function handler(req, res) {
         res.status(500).json({ error: error.message });
     }
 }
-
 
 async function handleCronJob() {
     const rows = await fetchTasks();

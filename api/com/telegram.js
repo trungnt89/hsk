@@ -43,23 +43,8 @@ export async function ReceiveMessage(msgData) {
     if (idMatch) {
         const taskId = idMatch[1].trim(); 
         
-        const config = getTelegramConfig();
-        const url = `https://api.telegram.org/bot${config.token}/sendMessage`;
-        
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                chat_id: String(msgData.message.chat.id), 
-                text: `✅ Đã ghi nhận ID ${taskId}.`,
-                reply_markup: { 
-                    inline_keyboard: [[{ text: "📊 Mở Dashboard", url: config.dashboardUrl + "?id=" + taskId }]] 
-                }
-            })
-        });
-        
-        const resContent = await response.text();
-        return true;
+        // FIX: Trả về object chứa cả 2 biến taskId và replyText thay vì chỉ trả về true
+        return { taskId, replyText };
     }
     return false;
 }

@@ -119,14 +119,14 @@ function getJSTDate() {
     const y = nowJST.getFullYear();
     const mo = nowJST.getMonth() + 1;
     const d = nowJST.getDate();
-    return `${y}/${mo}/${d}`;
+    return `${y}／${mo}／${d}`;
 }
 
 function getJSTHour() {
     const h = nowJST.getHours().toString().padStart(2, '0');
     const mi = nowJST.getMinutes().toString().padStart(2, '0');
     const s = nowJST.getSeconds().toString().padStart(2, '0');
-    return `${h}:${mi}:${s}`;
+    return `${h}：${mi}：${s}`;
 }
 
 async function UpdateTask(sheet, id, rowData) {

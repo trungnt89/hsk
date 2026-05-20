@@ -64,8 +64,8 @@ async function ControlSendMessage() {
 
 async function GetTaskList() {
     await util.ensureAuthenticated();
-    const taskList   = await util.handleRead(SPREAD_ID, SHEET_1);
-    const taskDetail = await util.handleRead(SPREAD_ID, SHEET_2);
+    let taskList   = await util.handleRead(SPREAD_ID, SHEET_1);
+    let taskDetail = await util.handleRead(SPREAD_ID, SHEET_2);
 
 	taskList = taskList.values;
 	taskDetail = taskDetail.values;
@@ -146,9 +146,9 @@ function getJSTTime() {
 }
 
 function getJSTDate() {
-    const y = nowJST.getFullYear();
-    const mo = nowJST.getMonth() + 1;
-    const d = nowJST.getDate();
+    let y = nowJST.getFullYear();
+    let mo = nowJST.getMonth() + 1;
+    let d = nowJST.getDate();
 	
 	mo = mo.toString().padStart(2, '0');
 	d  = d.toString().padStart(2, '0');
@@ -156,9 +156,9 @@ function getJSTDate() {
 }
 
 function getJSTHour() {
-    const h = nowJST.getHours().toString().padStart(2, '0');
-    const mi = nowJST.getMinutes().toString().padStart(2, '0');
-    const s = nowJST.getSeconds().toString().padStart(2, '0');
+    let h = nowJST.getHours().toString().padStart(2, '0');
+    let mi = nowJST.getMinutes().toString().padStart(2, '0');
+    let s = nowJST.getSeconds().toString().padStart(2, '0');
     return `${h}：${mi}：${s}`;
 }
 

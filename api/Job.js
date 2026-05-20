@@ -147,6 +147,7 @@ async function UpdateTask(id, rowData) {
     }
 }
 
+
 function writeLog(message) {
     util.writeLog(message, "JOB");
 }

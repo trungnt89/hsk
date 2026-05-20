@@ -62,7 +62,7 @@ async function ControlSendMessage() {
         }
     }
 
-    return allTasks;
+    return rows;
 }
 
 async function GetTaskAll() {
@@ -74,8 +74,8 @@ async function GetTaskAll() {
 async function GetTaskSend(allTasks) {
     const currentTimeStr = nowJST.getHours().toString().padStart(2, '0') + ":" + nowJST.getMinutes().toString().padStart(2, '0');
     const tasksToSend = [];
-
-    // Duyệt qua toàn bộ hàng (bỏ qua hàng tiêu đề index 0)
+	
+	allTasks = allTasks.values;
     for (let i = 1; i < allTasks.length; i++) {
         const rowData = [...allTasks[i]];
 

@@ -27,7 +27,7 @@ export default async function handler(req, res) {
             }
         }
 
-        const sentIds = await SendMessage();
+        const sentIds = await ControlSendMessage();
         res.status(200).json({ status: "Success", timezone: "JST", sentIds });
     } catch (error) {
         writeLog("[ERROR]", error.message);
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     }
 }
 
-async function SendMessage() {
+async function ControlSendMessage() {
     // 1. Trả về tất cả các task từ sheet
     const allTasks = await GetTaskAll();
 

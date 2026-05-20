@@ -6,14 +6,23 @@ import * as tg from './com/telegram';
 const URL = 'https://docs.google.com/spreadsheets/d/1bSEEle1sTKAEwIM5YYkKZ6nXijtdAcB3D65urXCzZiw/gviz/tq?tqx=out:csv&sheet=LIST';
 const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
 const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
-const SHEET = 'TASK';
+const SHEET_1 = 'TASK';
+const SHEET_2 = 'TASK_DETAIL';
+
+// Biến toàn cục lưu trữ thời gian thực thi đồng bộ của Request
+let nowJST;
 
 export default async function handler(req, res) {
     try {
+        // Khởi tạo thời gian JST dùng chung cho toàn bộ tiến trình của Request hiện tại
+        nowJST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+
         if (req.method === 'POST') {
             const result = await tg.ReceiveMessage(req.body);
             // FIX: Kiểm tra nếu result là object chứa taskId (thay vì kiểm tra biến boolean như trước)
             if (result && result.taskId) {
+                const rowData = [result.taskId, result.replyText, getJSTTime()];
+                await UpdateTask(SHEET_2, result.taskId, rowData);
                 return res.status(200).json({ status: "Success", type: "Webhook", data: result });
             }
         }
@@ -30,8 +39,7 @@ async function handleCronJob() {
     const rows = await fetchTasks();
     //writeLog("DATA : " + JSON.stringify(rows));
 
-    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
-    const sentIds = await checkAndProcessTasks(rows, now);
+    const sentIds = await checkAndProcessTasks(rows);
     return sentIds;
 }
 
@@ -82,8 +90,8 @@ async function fetchTasks() {
     return values;
 }
 
-async function checkAndProcessTasks(rows, now) {
-    const currentTimeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+async function checkAndProcessTasks(rows) {
+    const currentTimeStr = nowJST.getHours().toString().padStart(2, '0') + ":" + nowJST.getMinutes().toString().padStart(2, '0');
     
     const sentIds = [];
     for (let i = 1; i < rows.length; i++) {
@@ -96,14 +104,14 @@ async function checkAndProcessTasks(rows, now) {
         const lastTimeRaw = rowData[6] || "";
         let isExpired = false;
 
-		//writeLog(`id=${id},status=${status}, now=${currentTimeStr}, start=${start}`);
+        //writeLog(`id=${id},status=${status}, now=${currentTimeStr}, start=${start}`);
         if (status == "1" && currentTimeStr >= start) {
             if (!lastTimeRaw || lastTimeRaw.trim() === "") {
                 writeLog(`[TRIGGER] Task ${id}: LAST_TIME trống.`);
                 isExpired = true;
             } else {
                 const lastTime = new Date(lastTimeRaw.replace('-', ''));
-                const diffMinutes = (now - lastTime) / (1000 * 60);
+                const diffMinutes = (nowJST - lastTime) / (1000 * 60);
                 if (diffMinutes > freg) {
                     isExpired = true;
                     writeLog(`[TRIGGER] Task ${id}: Quá hạn ${Math.floor(diffMinutes)} minutes.`);
@@ -112,33 +120,33 @@ async function checkAndProcessTasks(rows, now) {
         }
     
         if (isExpired) {
-            const newTimeJST = getJSTTime(now);
+            const newTimeJST = getJSTTime();
             rowData[6] = newTimeJST;
             let text = `【ID: ${rowData[0]}】\n${rowData[2]}`;
-			let res = await tg.SendMessage(text);
-			if(res) {
-				await UpdateTask(id, rowData);
-				sentIds.push(id);
-			}
+            let res = await tg.SendMessage(text);
+            if(res) {
+                await UpdateTask(SHEET_1, id, rowData);
+                sentIds.push(id);
+            }
         }
     }
     return sentIds;
 }
 
-function getJSTTime(date) {
-    const y = date.getFullYear();
-    const mo = date.getMonth() + 1;
-    const d = date.getDate();
-    const h = date.getHours().toString().padStart(2, '0');
-    const mi = date.getMinutes().toString().padStart(2, '0');
-    const s = date.getSeconds().toString().padStart(2, '0');
+function getJSTTime() {
+    const y = nowJST.getFullYear();
+    const mo = nowJST.getMonth() + 1;
+    const d = date = nowJST.getDate();
+    const h = nowJST.getHours().toString().padStart(2, '0');
+    const mi = nowJST.getMinutes().toString().padStart(2, '0');
+    const s = nowJST.getSeconds().toString().padStart(2, '0');
     return `${y}/${mo}/${d}- ${h}:${mi}:${s}`;
 }
 
-async function UpdateTask(id, rowData) {
+async function UpdateTask(sheet, id, rowData) {
     writeLog(`[UPDATE_START] Cập nhật thời gian mới cho Task ${id}`);
     await util.ensureAuthenticated();
-    const upRes = await util.handleUpdateByPosVal(SPREAD_ID, SHEET, 0, id, JSON.stringify(rowData));
+    const upRes = await util.handleUpdateByPosVal(SPREAD_ID, sheet, 0, id, JSON.stringify(rowData));
     writeLog("[UPDATE_RESPONSE] " + JSON.stringify(upRes));
     if (upRes.success) {
         writeLog(`[SUCCESS] Task ${id} update thành công hàng ${upRes.updatedRow}. Giờ JST: ${rowData[6]}`);
@@ -146,7 +154,6 @@ async function UpdateTask(id, rowData) {
         writeLog(`[FAIL] Task ${id} update thất bại.`);
     }
 }
-
 
 function writeLog(message) {
     util.writeLog(message, "JOB");

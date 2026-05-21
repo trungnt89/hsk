@@ -129,13 +129,14 @@
 			const taskId = String(dataRows[i][0]).trim();
 			const content = (dataRows[i][1] || "").trim();
 			const timestamp = dataRows[i][2] || "";
+			const timePart = `[${timestamp.substring(13, 18)}] `;
 			
 			if (timestamp.startsWith(todayStr)) {
 				if (!groupMap[taskId]) {
 					groupMap[taskId] = [];
 				}
 				if (content) {
-					groupMap[taskId].push(content);
+					groupMap[taskId].push(`[${timePart}] ${content}`);
 				}
 			}
 		}

@@ -77,7 +77,7 @@
 			const data = await response.json();
 			console.log("Tải dữ liệu từ server thành công.", data);
 			renderTable(data.values);
-			fetchDataDetail();
+			await fetchDataDetail();
 		} catch (error) {
 			console.error("Lỗi xảy ra trong quá trình fetchData:", error);
 			document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
@@ -121,7 +121,7 @@
 			if (taskCard) {
 				const cardBody = taskCard.querySelector('.card-body');
 				if (cardBody) {
-					let detailHtml = `<div class="mt-2 pt-2 border-top text-muted small"><strong class="text-uppercase text-dark d-block mb-1" style="font-size: 11px;">Chi Tiết Mapping:</strong><div class="p-2 bg-light rounded text-dark" style="white-space: pre-line; border-left: 3px solid #0d6efd;">${detailContent}</div></div>`;
+					let detailHtml = `<div class="mt-2 pt-2 border-top text-muted small detail-mapping-block"><strong class="text-uppercase text-dark d-block mb-1" style="font-size: 11px;">Chi Tiết Mapping:</strong><div class="p-2 bg-light rounded text-dark" style="white-space: pre-line; border-left: 3px solid #0d6efd;">${detailContent}</div></div>`;
 					cardBody.innerHTML += detailHtml;
 				}
 			}
@@ -266,6 +266,7 @@
 			allRowsData.push(newRow);
 			closeModal();
 			renderTable(allRowsData);
+			await fetchDataDetail();
 		} catch (error) {
 			console.error("Lỗi khi thêm Task:", error);
 		}
@@ -297,6 +298,7 @@
 			console.log(`Cập nhật dữ liệu từ popup cho Task ${id} thành công.`);
 			closeModal();
 			renderTable(allRowsData);
+			await fetchDataDetail();
 		} catch (error) {
 			console.error("Lỗi khi update dữ liệu từ modal:", error);
 		}
@@ -325,6 +327,7 @@
 			if (!response.ok) throw new Error('Lỗi mạng khi update nội dung ô');
 			console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
 			renderTable(allRowsData);
+			await fetchDataDetail();
 		} catch (error) {
 			console.error("Lỗi khi update ô dữ liệu:", error);
 		}
@@ -350,6 +353,7 @@
 			console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
 			allRowsData.splice(rowIndex, 1);
 			renderTable(allRowsData);
+			await fetchDataDetail();
 		} catch (error) {
 			console.error(`Gặp lỗi nghiêm trọng khi thực hiện xóa Task ${id}:`, error);
 		}
@@ -377,6 +381,7 @@
 			if (!response.ok) throw new Error('Không thể đồng bộ hóa trạng thái Switch');
 			console.log(`Đồng bộ trạng thái Switch cho Task ID ${id} thành công.`);
 			renderTable(allRowsData);
+			await fetchDataDetail();
 		} catch (error) {
 			console.error("Lỗi khi thay đổi trạng thái Switch:", error);
 		}

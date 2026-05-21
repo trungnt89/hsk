@@ -111,20 +111,52 @@
 	}
 	function renderTableDetail(values) {
 		if (!values || values.length <= 1) return;
-		console.log("Bắt đầu xử lý hiển thị thông tin chi tiết (Mapping)...");
+		console.log("Bắt đầu xử lý hiển thị thông tin chi tiết (Mapping) theo nhóm ngày...");
+		
+		// Lấy chuỗi ngày hiện tại động từ thời gian thực của thiết bị hệ thống
+		const today = new Date();
+		const yyyy = today.getFullYear();
+		const mm = String(today.getMonth() + 1).padStart(2, '0');
+		const dd = String(today.getDate()).padStart(2, '0');
+		const todayStr = `${yyyy}/${mm}/${dd}`;
+		
 		const dataRows = values;
+		const groupMap = {};
+		
 		for (let i = 0; i < dataRows.length; i++) {
 			if (dataRows[i].length < 2) continue;
+			
 			const taskId = String(dataRows[i][0]).trim();
-			const detailContent = dataRows[i][1] || "";
+			const content = (dataRows[i][1] || "").trim();
+			const timestamp = dataRows[i][2] || "";
+			
+			if (timestamp.startsWith(todayStr)) {
+				if (!groupMap[taskId]) {
+					groupMap[taskId] = [];
+				}
+				if (content) {
+					groupMap[taskId].push(content);
+				}
+			}
+		}
+		
+		document.querySelectorAll('.task-card-item').forEach(card => {
+			const cardBody = card.querySelector('.card-body');
+			if (cardBody) {
+				const oldBlock = cardBody.querySelector('.detail-mapping-block');
+				if (oldBlock) oldBlock.remove();
+			}
+		});
+		
+		for (const taskId in groupMap) {
+			if (groupMap[taskId].length === 0) continue;
+			
 			const taskCard = document.querySelector(`.task-card-item[data-id="${taskId}"]`);
 			if (taskCard) {
 				const cardBody = taskCard.querySelector('.card-body');
 				if (cardBody) {
-					const oldBlock = cardBody.querySelector('.detail-mapping-block');
-					if (oldBlock) oldBlock.remove();
-					
-					let detailHtml = `<div class="mt-2 pt-2 border-top text-muted small detail-mapping-block"><strong class="text-uppercase text-dark d-block mb-1" style="font-size: 11px;">Chi Tiết Mapping:</strong><div class="p-2 bg-light rounded text-dark" style="white-space: pre-line; border-left: 3px solid #0d6efd;">${detailContent}</div></div>`;
+					const combinedContent = groupMap[taskId].join("<br>");
+					let detailHtml = `<div class="mt-2 pt-2 border-top text-muted small detail-mapping-block"><strong class="text-uppercase text-dark d-block mb-1" style="font-size: 11px;">Chi Tiết Mapping (${todayStr}):</strong><div class="p-2 bg-light rounded text-dark" style="border-left: 3px solid #0d6efd;">${combinedContent}</div></div>`;
 					cardBody.innerHTML += detailHtml;
 				}
 			}

@@ -76,7 +76,7 @@
 			if (!response.ok) throw new Error('Network response was not ok');
 			const data = await response.json();
 			console.log("Tải dữ liệu từ server thành công.", data);
-			renderTable(data.values);
+			await renderTable(data.values);
 			
 		} catch (error) {
 			console.error("Lỗi xảy ra trong quá trình fetchData:", error);
@@ -115,12 +115,15 @@
 		const dataRows = values.slice(1);
 		for (let i = 0; i < dataRows.length; i++) {
 			if (dataRows[i].length < 2) continue;
-			const taskId = dataRows[i][0];
+			const taskId = String(dataRows[i][0]).trim();
 			const detailContent = dataRows[i][1] || "";
 			const taskCard = document.querySelector(`.task-card-item[data-id="${taskId}"]`);
 			if (taskCard) {
 				const cardBody = taskCard.querySelector('.card-body');
 				if (cardBody) {
+					const oldBlock = cardBody.querySelector('.detail-mapping-block');
+					if (oldBlock) oldBlock.remove();
+					
 					let detailHtml = `<div class="mt-2 pt-2 border-top text-muted small detail-mapping-block"><strong class="text-uppercase text-dark d-block mb-1" style="font-size: 11px;">Chi Tiết Mapping:</strong><div class="p-2 bg-light rounded text-dark" style="white-space: pre-line; border-left: 3px solid #0d6efd;">${detailContent}</div></div>`;
 					cardBody.innerHTML += detailHtml;
 				}
@@ -137,19 +140,19 @@
 		return timeStr;
 	}
 
-	function renderTable(values) {
+	async function renderTable(values) {
 		console.log("Bắt đầu dựng cấu trúc bảng hiển thị...");
 		const headers = values[0],
 			startColIdx = headers.indexOf("START");
 		const container = document.getElementById('taskContainer');
 		container.innerHTML = "";
 		allRowsData = JSON.parse(JSON.stringify(values));
-		let dataRows = values.slice(1);
+		let dataRows = values.slice(1).filter(r => r[0] && String(r[0]).trim() !== "");
 		if (startColIdx !== -1) dataRows.sort((a, b) => (a[startColIdx] || "").localeCompare(b[startColIdx] || ""));
 		for (let i = 0; i < dataRows.length; i++) {
 			if (dataRows[i].length < 2) continue;
-			const origIdx = allRowsData.findIndex(r => r[0] === dataRows[i][0]);
-			let isActive = dataRows[i][headers.indexOf("STATUS")] === "1";
+			const origIdx = allRowsData.findIndex(r => String(r[0]) === String(dataRows[i][0]));
+			let isActive = String(dataRows[i][headers.indexOf("STATUS")]) === "1";
 
 			let idVal = dataRows[i][0] || "";
 			let startVal = dataRows[i][headers.indexOf("START")] || "";
@@ -266,7 +269,7 @@
 			console.log("Thêm mới Task lên server thành công.");
 			allRowsData.push(newRow);
 			closeModal();
-			renderTable(allRowsData);
+			await renderTable(allRowsData);
 			
 		} catch (error) {
 			console.error("Lỗi khi thêm Task:", error);
@@ -298,7 +301,7 @@
 			if (!response.ok) throw new Error('Lỗi hệ thống khi update dữ liệu từ modal');
 			console.log(`Cập nhật dữ liệu từ popup cho Task ${id} thành công.`);
 			closeModal();
-			renderTable(allRowsData);
+			await renderTable(allRowsData);
 			
 		} catch (error) {
 			console.error("Lỗi khi update dữ liệu từ modal:", error);
@@ -327,7 +330,7 @@
 			});
 			if (!response.ok) throw new Error('Lỗi mạng khi update nội dung ô');
 			console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
-			renderTable(allRowsData);
+			await renderTable(allRowsData);
 			
 		} catch (error) {
 			console.error("Lỗi khi update ô dữ liệu:", error);
@@ -353,7 +356,7 @@
 			if (!response.ok) throw new Error('Lỗi phản hồi hệ thống khi thực hiện lệnh xóa');
 			console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
 			allRowsData.splice(rowIndex, 1);
-			renderTable(allRowsData);
+			await renderTable(allRowsData);
 			
 		} catch (error) {
 			console.error(`Gặp lỗi nghiêm trọng khi thực hiện xóa Task ${id}:`, error);
@@ -381,7 +384,7 @@
 			});
 			if (!response.ok) throw new Error('Không thể đồng bộ hóa trạng thái Switch');
 			console.log(`Đồng bộ trạng thái Switch cho Task ID ${id} thành công.`);
-			renderTable(allRowsData);
+			await renderTable(allRowsData);
 			
 		} catch (error) {
 			console.error("Lỗi khi thay đổi trạng thái Switch:", error);

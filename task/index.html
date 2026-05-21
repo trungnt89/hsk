@@ -77,12 +77,56 @@
 			const data = await response.json();
 			console.log("Tải dữ liệu từ server thành công.", data);
 			renderTable(data.values);
+			fetchDataDetail();
 		} catch (error) {
 			console.error("Lỗi xảy ra trong quá trình fetchData:", error);
 			document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
 		}
 	}
 
+	async function fetchDataDetail() {
+		console.log("Bắt đầu tải dữ liệu từ server...");
+		try {
+			const response = await fetch(API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					"sheet": G_SHEET2,
+					"act": "read",
+					"spread": G_SPREAD
+				})
+			});
+			
+			
+			if (!response.ok) throw new Error('Network response was not ok');
+			const data = await response.json();
+			console.log("Tải dữ liệu từ server thành công.", data);
+			renderTableDetail(data.values);
+		} catch (error) {
+			console.error("Lỗi xảy ra trong quá trình fetchData:", error);
+			document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
+		}
+	}
+	function renderTableDetail(values) {
+		if (!values || values.length <= 1) return;
+		console.log("Bắt đầu xử lý hiển thị thông tin chi tiết (Mapping)...");
+		const dataRows = values.slice(1);
+		for (let i = 0; i < dataRows.length; i++) {
+			if (dataRows[i].length < 2) continue;
+			const taskId = dataRows[i][0];
+			const detailContent = dataRows[i][1] || "";
+			const taskCard = document.querySelector(`.task-card-item[data-id="${taskId}"]`);
+			if (taskCard) {
+				const cardBody = taskCard.querySelector('.card-body');
+				if (cardBody) {
+					let detailHtml = `<div class="mt-2 pt-2 border-top text-muted small"><strong class="text-uppercase text-dark d-block mb-1" style="font-size: 11px;">Chi Tiết Mapping:</strong><div class="p-2 bg-light rounded text-dark" style="white-space: pre-line; border-left: 3px solid #0d6efd;">${detailContent}</div></div>`;
+					cardBody.innerHTML += detailHtml;
+				}
+			}
+		}
+	}
 	function formatLastTime(timeStr) {
 		if (!timeStr) return "";
 		if (timeStr.includes(":") && timeStr.split(":").length >= 2) {

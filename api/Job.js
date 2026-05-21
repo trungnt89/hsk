@@ -84,7 +84,7 @@ async function GetTaskList() {
         const rawDate = (row[2] || '').toString().trim();
         
 
-        if (content.toLowerCase().includes('done') && rawDate.includes(todayStr)){
+        if ((content.toLowerCase().includes('done') || content.toLowerCase().includes('stop')) && rawDate.includes(todayStr)){
             doneIdsToday.add(id);
         }
     }

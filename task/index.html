@@ -39,193 +39,305 @@
     </div>
 <script>
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
-    const G_SHEET = "TASK";
-    const G_SPREAD = "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8";
-    let allRowsData = [], currentModalMode = 'add', currentEditRowIndex = -1;
-    async function fetchData() {
-        console.log("Bắt đầu tải dữ liệu từ server...");
-        try {
-            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "sheet": G_SHEET, "act": "read", "spread": G_SPREAD }) });
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
-            console.log("Tải dữ liệu từ server thành công.", data);
-            renderTable(data.values);
-        } catch (error) {
-            console.error("Lỗi xảy ra trong quá trình fetchData:", error);
-            document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
-        }
-    }
-    function formatLastTime(timeStr) {
-        if (!timeStr) return "";
-        if (timeStr.includes(":") && timeStr.split(":").length >= 2) {
-            let t = timeStr.includes(" - ") ? timeStr.split(" - ")[1] : timeStr;
-            let parts = t.split(":");
-            return parts[0] + ":" + parts[1];
-        }
-        return timeStr;
-    }
-    function renderTable(values) {
-        console.log("Bắt đầu dựng cấu trúc bảng hiển thị...");
-        const headers = values[0], startColIdx = headers.indexOf("START");
-        const container = document.getElementById('taskContainer');
-        container.innerHTML = "";
-        allRowsData = JSON.parse(JSON.stringify(values));
-        let dataRows = values.slice(1);
-        if (startColIdx !== -1) dataRows.sort((a, b) => (a[startColIdx] || "").localeCompare(b[startColIdx] || ""));
-        for (let i = 0; i < dataRows.length; i++) {
-            if (dataRows[i].length < 2) continue;
-            const origIdx = allRowsData.findIndex(r => r[0] === dataRows[i][0]);
-            let isActive = dataRows[i][headers.indexOf("STATUS")] === "1";
-            
-            let idVal = dataRows[i][0] || "";
-            let startVal = dataRows[i][headers.indexOf("START")] || "";
-            let fregVal = dataRows[i][headers.indexOf("FREG")] || "";
-            let lastTimeVal = dataRows[i][headers.indexOf("LAST_TIME")] || "";
-            
-            startVal = formatLastTime(startVal);
-            fregVal = formatLastTime(fregVal);
-            lastTimeVal = formatLastTime(lastTimeVal);
-            
-            let cardBodyContent = "";
-            for (let j = 0; j < headers.length; j++) {
-                if (headers[j] === "ID" || headers[j] === "NOTE" || headers[j] === "STATUS" || headers[j] === "START" || headers[j] === "FREG" || headers[j] === "LAST_TIME") continue;
-                let val = dataRows[i][j] || "";
-                
-                if (headers[j] === "TASK") {
-                    cardBodyContent += `<div class="mb-0"><div class="p-2 bg-light rounded text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</div></div>`;
-                } else {
-                    cardBodyContent += `<div class="mb-2 d-flex justify-content-between align-items-center border-bottom pb-1"><span class="text-uppercase text-secondary font-weight-bold small">${headers[j]}:</span><span class="text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val}</span></div>`;
-                }
-            }
-            
-            let headerText = `<span class="badge text-bg-primary font-weight-bold mx-1" style="font-size: 12px; padding: 2px 6px;">${startVal}</span> | <span class="text-primary font-weight-bold">${lastTimeVal}</span> | ${fregVal}`;
+	const G_SHEET = "TASK";
+	const G_SHEET2 = "MAPPING";
+	const G_SPREAD = "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8";
+	let allRowsData = [],
+		currentModalMode = 'add',
+		currentEditRowIndex = -1;
+	async function fetchData() {
+		console.log("Bắt đầu tải dữ liệu từ server...");
+		try {
+			const response = await fetch(API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					"sheet": G_SHEET,
+					"act": "read",
+					"spread": G_SPREAD
+				})
+			});
+			
+			const response2 = await fetch(API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					"sheet": G_SHEET2,
+					"act": "read",
+					"spread": G_SPREAD
+				})
+			});
+			
+			
+			if (!response.ok) throw new Error('Network response was not ok');
+			const data = await response.json();
+			console.log("Tải dữ liệu từ server thành công.", data);
+			renderTable(data.values);
+		} catch (error) {
+			console.error("Lỗi xảy ra trong quá trình fetchData:", error);
+			document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
+		}
+	}
 
-            const cardHtml = `
-                <div class="col-12 task-card-item" data-id="${dataRows[i][0]}" data-status-active="${isActive ? "1" : "0"}">
-                    <div class="card h-100 shadow-sm bg-white border">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
-                            <span class="font-weight-bold text-dark small" style="letter-spacing: 0.5px; word-spacing: 1px;">${headerText}</span>
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})">
-                            </div>
-                        </div>
-                        <div class="card-body py-2">
-                            ${cardBodyContent}
-                        </div>
-                        <div class="card-footer bg-white border-top-0 d-flex justify-content-end gap-2 pb-2 pt-0">
-                            <button class="btn btn-warning btn-sm text-white px-2 py-0" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="openModal('edit', ${origIdx})">Sửa</button>
-                            <button class="btn btn-danger btn-sm px-2 py-0" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.innerHTML += cardHtml;
-        }
-        document.getElementById('loading').style.display = 'none';
-        container.style.display = 'flex';
-        console.log("Dựng bảng hoàn tất. Tiến hành chạy bộ lọc khởi tạo.");
-        filterTasks();
-    }
-    function filterTasks() {
-        const isEnforceActive = document.getElementById('filterToggle').checked;
-        console.log(`Áp dụng bộ lọc hiển thị iPhone Toggle. Chỉ hiện status=1: ${isEnforceActive}`);
-        document.querySelectorAll('.task-card-item').forEach(row => row.style.display = (!isEnforceActive || row.getAttribute('data-status-active') === "1") ? '' : 'none');
-    }
-    function openModal(mode, rowIndex) {
-        console.log(`Mở modal chế độ: ${mode}, Chỉ mục dòng: ${rowIndex}`);
-        const headers = allRowsData[0], container = document.getElementById('dynamicFormContainer');
-        container.innerHTML = "";
-        document.getElementById('modalTitle').innerText = mode === 'add' ? "Thêm Mới Task" : "Chỉnh Sửa Task";
-        currentModalMode = mode;
-        currentEditRowIndex = mode === 'edit' ? rowIndex : -1;
-        for (let j = 0; j < headers.length; j++) {
-            if (headers[j] === "ID") continue;
-            let val = mode === 'add' ? (headers[j] === "STATUS" ? "1" : (headers[j] === "START" ? "00:00" : "")) : (allRowsData[rowIndex][j] || "");
-            if (headers[j] === "START") {
-                container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><input type="time" class="form-control form-control-sm" id="modal_field_${j}" value="${val}"></div>`;
-            } else if (headers[j] === "TASK") {
-                container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><textarea class="form-control form-control-sm" id="modal_field_${j}" rows="3">${val}</textarea></div>`;
-            } else {
-                container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><input type="text" class="form-control form-control-sm" id="modal_field_${j}" value="${val}"></div>`;
-            }
-        }
-        const modalEl = document.getElementById('taskModal');
-        modalEl.style.display = 'block';
-    }
-    function closeModal() {
-        console.log("Đóng popup modal form.");
-        const modalEl = document.getElementById('taskModal');
-        modalEl.style.display = 'none';
-    }
-    function submitModalForm() { currentModalMode === 'add' ? addTask() : updateRowFromModal(currentEditRowIndex); }
-    async function addTask() {
-        const headers = allRowsData[0], newRow = new Array(headers.length).fill("");
-        newRow[0] = Date.now();
-        for (let j = 1; j < headers.length; j++) {
-            const el = document.getElementById(`modal_field_${j}`);
-            newRow[j] = el ? el.value.trim() : "";
-        }
-        console.log(`Bắt đầu xử lý thêm mới Task qua Popup Modal`, newRow);
-        try {
-            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "act": "add", "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(newRow) }) });
-            if (!response.ok) throw new Error('Mạng không ổn định khi append dữ liệu');
-            console.log("Thêm mới Task lên server thành công.");
-            allRowsData.push(newRow);
-            closeModal();
-            renderTable(allRowsData);
-        } catch (error) { console.error("Lỗi khi thêm Task:", error); }
-    }
-    async function updateRowFromModal(rowIndex) {
-        const headers = allRowsData[0], id = allRowsData[rowIndex][0];
-        console.log(`Bắt đầu cập nhật toàn bộ dòng từ popup modal cho ID: ${id}`);
-        for (let j = 0; j < headers.length; j++) {
-            const el = document.getElementById(`modal_field_${j}`);
-            if (el) allRowsData[rowIndex][j] = el.value.trim();
-        }
-        try {
-            const response = await fetch(API_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(allRowsData[rowIndex]) }) });
-            if (!response.ok) throw new Error('Lỗi hệ thống khi update dữ liệu từ modal');
-            console.log(`Cập nhật dữ liệu từ popup cho Task ${id} thành công.`);
-            closeModal();
-            renderTable(allRowsData);
-        } catch (error) { console.error("Lỗi khi update dữ liệu từ modal:", error); }
-    }
-    async function updateCellData(cellEl, rowIndex, colIndex) {
-        const txt = cellEl.innerText.trim(), id = allRowsData[rowIndex][0];
-        console.log(`Bắt đầu sự kiện cập nhật ô dữ liệu dòng ${rowIndex}, cột ${colIndex} -> Nội dung mới: ${txt}`);
-        if (allRowsData[rowIndex][colIndex] === txt) return;
-        allRowsData[rowIndex][colIndex] = txt;
-        try {
-            const response = await fetch(API_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(allRowsData[rowIndex]) }) });
-            if (!response.ok) throw new Error('Lỗi mạng khi update nội dung ô');
-            console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
-            renderTable(allRowsData);
-        } catch (error) { console.error("Lỗi khi update ô dữ liệu:", error); }
-    }
-    async function deleteTask(id, rowIndex) {
-        if (!confirm("Bạn có chắc chắn muốn xóa Task này không?")) return;
-        console.log(`Kích hoạt tiến trình xóa Task ID: ${id} tại hàng chỉ mục: ${rowIndex}`);
-        try {
-            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "act": "deleteByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD }) });
-            if (!response.ok) throw new Error('Lỗi phản hồi hệ thống khi thực hiện lệnh xóa');
-            console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
-            allRowsData.splice(rowIndex, 1);
-            renderTable(allRowsData);
-        } catch (error) { console.error(`Gặp lỗi nghiêm trọng khi thực hiện xóa Task ${id}:`, error); }
-    }
-    async function toggleStatus(id, el, rowIndex) {
-        const newStatus = el.checked ? "1" : "0";
-        console.log(`Bắt đầu cập nhật trạng thái Switch Toggle cho Task ID ${id}: ${newStatus}`);
-        const statusColIdx = allRowsData[0].indexOf("STATUS");
-        if (statusColIdx !== -1) allRowsData[rowIndex][statusColIdx] = newStatus;
-        try {
-            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "act": "updateByPosVal", "pos": 0, "val": id, "sheet": G_SHEET, "spread": G_SPREAD, "data": JSON.stringify(allRowsData[rowIndex]) }) });
-            if (!response.ok) throw new Error('Không thể đồng bộ hóa trạng thái Switch');
-            console.log(`Đồng bộ trạng thái Switch cho Task ID ${id} thành công.`);
-            renderTable(allRowsData);
-        } catch (error) { console.error("Lỗi khi thay đổi trạng thái Switch:", error); }
-    }
-    window.onload = fetchData;
+	function formatLastTime(timeStr) {
+		if (!timeStr) return "";
+		if (timeStr.includes(":") && timeStr.split(":").length >= 2) {
+			let t = timeStr.includes(" - ") ? timeStr.split(" - ")[1] : timeStr;
+			let parts = t.split(":");
+			return parts[0] + ":" + parts[1];
+		}
+		return timeStr;
+	}
+
+	function renderTable(values) {
+		console.log("Bắt đầu dựng cấu trúc bảng hiển thị...");
+		const headers = values[0],
+			startColIdx = headers.indexOf("START");
+		const container = document.getElementById('taskContainer');
+		container.innerHTML = "";
+		allRowsData = JSON.parse(JSON.stringify(values));
+		let dataRows = values.slice(1);
+		if (startColIdx !== -1) dataRows.sort((a, b) => (a[startColIdx] || "").localeCompare(b[startColIdx] || ""));
+		for (let i = 0; i < dataRows.length; i++) {
+			if (dataRows[i].length < 2) continue;
+			const origIdx = allRowsData.findIndex(r => r[0] === dataRows[i][0]);
+			let isActive = dataRows[i][headers.indexOf("STATUS")] === "1";
+
+			let idVal = dataRows[i][0] || "";
+			let startVal = dataRows[i][headers.indexOf("START")] || "";
+			let fregVal = dataRows[i][headers.indexOf("FREG")] || "";
+			let lastTimeVal = dataRows[i][headers.indexOf("LAST_TIME")] || "";
+
+			startVal = formatLastTime(startVal);
+			fregVal = formatLastTime(fregVal);
+			lastTimeVal = formatLastTime(lastTimeVal);
+
+			let cardBodyContent = "";
+			for (let j = 0; j < headers.length; j++) {
+				if (headers[j] === "ID" || headers[j] === "NOTE" || headers[j] === "STATUS" || headers[j] === "START" || headers[j] === "FREG" || headers[j] === "LAST_TIME") continue;
+				let val = dataRows[i][j] || "";
+
+				if (headers[j] === "TASK") {
+					cardBodyContent += `<div class="mb-0"><div class="p-2 bg-light rounded text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</div></div>`;
+				} else {
+					cardBodyContent += `<div class="mb-2 d-flex justify-content-between align-items-center border-bottom pb-1"><span class="text-uppercase text-secondary font-weight-bold small">${headers[j]}:</span><span class="text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val}</span></div>`;
+				}
+			}
+
+			let headerText = `<span class="badge text-bg-primary font-weight-bold mx-1" style="font-size: 12px; padding: 2px 6px;">${startVal}</span> | <span class="text-primary font-weight-bold">${lastTimeVal}</span> | ${fregVal}`;
+
+			const cardHtml = `
+					<div class="col-12 task-card-item" data-id="${dataRows[i][0]}" data-status-active="${isActive ? "1" : "0"}">
+						<div class="card h-100 shadow-sm bg-white border">
+							<div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+								<span class="font-weight-bold text-dark small" style="letter-spacing: 0.5px; word-spacing: 1px;">${headerText}</span>
+								<div class="form-check form-switch mb-0">
+									<input class="form-check-input" type="checkbox" role="switch" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})">
+								</div>
+							</div>
+							<div class="card-body py-2">
+								${cardBodyContent}
+							</div>
+							<div class="card-footer bg-white border-top-0 d-flex justify-content-end gap-2 pb-2 pt-0">
+								<button class="btn btn-warning btn-sm text-white px-2 py-0" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="openModal('edit', ${origIdx})">Sửa</button>
+								<button class="btn btn-danger btn-sm px-2 py-0" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button>
+							</div>
+						</div>
+					</div>
+				`;
+			container.innerHTML += cardHtml;
+		}
+		document.getElementById('loading').style.display = 'none';
+		container.style.display = 'flex';
+		console.log("Dựng bảng hoàn tất. Tiến hành chạy bộ lọc khởi tạo.");
+		filterTasks();
+	}
+
+	function filterTasks() {
+		const isEnforceActive = document.getElementById('filterToggle').checked;
+		console.log(`Áp dụng bộ lọc hiển thị iPhone Toggle. Chỉ hiện status=1: ${isEnforceActive}`);
+		document.querySelectorAll('.task-card-item').forEach(row => row.style.display = (!isEnforceActive || row.getAttribute('data-status-active') === "1") ? '' : 'none');
+	}
+
+	function openModal(mode, rowIndex) {
+		console.log(`Mở modal chế độ: ${mode}, Chỉ mục dòng: ${rowIndex}`);
+		const headers = allRowsData[0],
+			container = document.getElementById('dynamicFormContainer');
+		container.innerHTML = "";
+		document.getElementById('modalTitle').innerText = mode === 'add' ? "Thêm Mới Task" : "Chỉnh Sửa Task";
+		currentModalMode = mode;
+		currentEditRowIndex = mode === 'edit' ? rowIndex : -1;
+		for (let j = 0; j < headers.length; j++) {
+			if (headers[j] === "ID") continue;
+			let val = mode === 'add' ? (headers[j] === "STATUS" ? "1" : (headers[j] === "START" ? "00:00" : "")) : (allRowsData[rowIndex][j] || "");
+			if (headers[j] === "START") {
+				container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><input type="time" class="form-control form-control-sm" id="modal_field_${j}" value="${val}"></div>`;
+			} else if (headers[j] === "TASK") {
+				container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><textarea class="form-control form-control-sm" id="modal_field_${j}" rows="3">${val}</textarea></div>`;
+			} else {
+				container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><input type="text" class="form-control form-control-sm" id="modal_field_${j}" value="${val}"></div>`;
+			}
+		}
+		const modalEl = document.getElementById('taskModal');
+		modalEl.style.display = 'block';
+	}
+
+	function closeModal() {
+		console.log("Đóng popup modal form.");
+		const modalEl = document.getElementById('taskModal');
+		modalEl.style.display = 'none';
+	}
+
+	function submitModalForm() {
+		currentModalMode === 'add' ? addTask() : updateRowFromModal(currentEditRowIndex);
+	}
+	async function addTask() {
+		const headers = allRowsData[0],
+			newRow = new Array(headers.length).fill("");
+		newRow[0] = Date.now();
+		for (let j = 1; j < headers.length; j++) {
+			const el = document.getElementById(`modal_field_${j}`);
+			newRow[j] = el ? el.value.trim() : "";
+		}
+		console.log(`Bắt đầu xử lý thêm mới Task qua Popup Modal`, newRow);
+		try {
+			const response = await fetch(API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					"act": "add",
+					"sheet": G_SHEET,
+					"spread": G_SPREAD,
+					"data": JSON.stringify(newRow)
+				})
+			});
+			if (!response.ok) throw new Error('Mạng không ổn định khi append dữ liệu');
+			console.log("Thêm mới Task lên server thành công.");
+			allRowsData.push(newRow);
+			closeModal();
+			renderTable(allRowsData);
+		} catch (error) {
+			console.error("Lỗi khi thêm Task:", error);
+		}
+	}
+	async function updateRowFromModal(rowIndex) {
+		const headers = allRowsData[0],
+			id = allRowsData[rowIndex][0];
+		console.log(`Bắt đầu cập nhật toàn bộ dòng từ popup modal cho ID: ${id}`);
+		for (let j = 0; j < headers.length; j++) {
+			const el = document.getElementById(`modal_field_${j}`);
+			if (el) allRowsData[rowIndex][j] = el.value.trim();
+		}
+		try {
+			const response = await fetch(API_URL, {
+				method: 'POST',
+				headers: {
+					'content-type': 'application/json'
+				},
+				body: JSON.stringify({
+					"act": "updateByPosVal",
+					"pos": 0,
+					"val": id,
+					"sheet": G_SHEET,
+					"spread": G_SPREAD,
+					"data": JSON.stringify(allRowsData[rowIndex])
+				})
+			});
+			if (!response.ok) throw new Error('Lỗi hệ thống khi update dữ liệu từ modal');
+			console.log(`Cập nhật dữ liệu từ popup cho Task ${id} thành công.`);
+			closeModal();
+			renderTable(allRowsData);
+		} catch (error) {
+			console.error("Lỗi khi update dữ liệu từ modal:", error);
+		}
+	}
+	async function updateCellData(cellEl, rowIndex, colIndex) {
+		const txt = cellEl.innerText.trim(),
+			id = allRowsData[rowIndex][0];
+		console.log(`Bắt đầu sự kiện cập nhật ô dữ liệu dòng ${rowIndex}, cột ${colIndex} -> Nội dung mới: ${txt}`);
+		if (allRowsData[rowIndex][colIndex] === txt) return;
+		allRowsData[rowIndex][colIndex] = txt;
+		try {
+			const response = await fetch(API_URL, {
+				method: 'POST',
+				headers: {
+					'content-type': 'application/json'
+				},
+				body: JSON.stringify({
+					"act": "updateByPosVal",
+					"pos": 0,
+					"val": id,
+					"sheet": G_SHEET,
+					"spread": G_SPREAD,
+					"data": JSON.stringify(allRowsData[rowIndex])
+				})
+			});
+			if (!response.ok) throw new Error('Lỗi mạng khi update nội dung ô');
+			console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
+			renderTable(allRowsData);
+		} catch (error) {
+			console.error("Lỗi khi update ô dữ liệu:", error);
+		}
+	}
+	async function deleteTask(id, rowIndex) {
+		if (!confirm("Bạn có chắc chắn muốn xóa Task này không?")) return;
+		console.log(`Kích hoạt tiến trình xóa Task ID: ${id} tại hàng chỉ mục: ${rowIndex}`);
+		try {
+			const response = await fetch(API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					"act": "deleteByPosVal",
+					"pos": 0,
+					"val": id,
+					"sheet": G_SHEET,
+					"spread": G_SPREAD
+				})
+			});
+			if (!response.ok) throw new Error('Lỗi phản hồi hệ thống khi thực hiện lệnh xóa');
+			console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
+			allRowsData.splice(rowIndex, 1);
+			renderTable(allRowsData);
+		} catch (error) {
+			console.error(`Gặp lỗi nghiêm trọng khi thực hiện xóa Task ${id}:`, error);
+		}
+	}
+	async function toggleStatus(id, el, rowIndex) {
+		const newStatus = el.checked ? "1" : "0";
+		console.log(`Bắt đầu cập nhật trạng thái Switch Toggle cho Task ID ${id}: ${newStatus}`);
+		const statusColIdx = allRowsData[0].indexOf("STATUS");
+		if (statusColIdx !== -1) allRowsData[rowIndex][statusColIdx] = newStatus;
+		try {
+			const response = await fetch(API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					"act": "updateByPosVal",
+					"pos": 0,
+					"val": id,
+					"sheet": G_SHEET,
+					"spread": G_SPREAD,
+					"data": JSON.stringify(allRowsData[rowIndex])
+				})
+			});
+			if (!response.ok) throw new Error('Không thể đồng bộ hóa trạng thái Switch');
+			console.log(`Đồng bộ trạng thái Switch cho Task ID ${id} thành công.`);
+			renderTable(allRowsData);
+		} catch (error) {
+			console.error("Lỗi khi thay đổi trạng thái Switch:", error);
+		}
+	}
+	window.onload = fetchData;
 </script>
 </body>
 </html>

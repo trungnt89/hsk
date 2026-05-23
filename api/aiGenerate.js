@@ -26,8 +26,12 @@ export default async function handler(req, res) {
   let resPromt = await util.handleReadByPosVal(spreadsheetId, SHEET_2, 2, 1);
   writeLog(JSON.stringify(resPromt));
   promt = jsonResponse.values[0].data[1];
+  promt + ="\n\nNội dung: "+content;
+  
   writeLog(`--- Bắt đầu xử lý yêu cầu cho ID: ${lessionId} ---`);
   writeLog(promt);
+  
+  
   return;
   let fullText = null;
 

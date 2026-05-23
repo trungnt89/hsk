@@ -30,11 +30,12 @@
                 </div>
                 <div class="card-body">
                     <form id="prompt-form">
-                        <input type="hidden" id="prompt-row-index"> <!-- Dùng để định vị dòng khi Sửa/Xóa nếu API yêu cầu -->
+                        <input type="hidden" id="prompt-row-index">
+                        <input type="hidden" id="prompt-original-id">
                         <div class="row g-3">
                             <div class="col-md-2">
                                 <label for="prompt-id" class="form-label">ID</label>
-                                <input type="text" class="form-control" id="prompt-id" placeholder="VD: P001" required>
+                                <input type="text" class="form-control" id="prompt-id" placeholder="Tự động" disabled>
                             </div>
                             <div class="col-md-7">
                                 <label for="prompt-content" class="form-label">Prompt</label>
@@ -83,7 +84,7 @@
                                     <th style="width: 15%">STATUS</th>
                                     <th style="width: 15%" class="text-center">HÀNH ĐỘNG</th>
                                 </tr>
-                            </thead >
+                            </thead>
                             <tbody id="data-table-body">
                                 <!-- Dữ liệu từ API sẽ map vào đây -->
                             </tbody>
@@ -123,15 +124,16 @@
             const res = await callAPI({ ...SHEET_CONFIG, act: "read" });
             if (res && res.values && res.values.length > 0) {
                 res.values.forEach((row, idx) => {
-                    const promptText = row[0] || '';
+                    const promptId = row[0] || '';
+                    const promptText = row[1] || '';
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><strong>P${idx + 1}</strong></td>
+                        <td><strong>${promptId}</strong></td>
                         <td>${promptText}</td>
                         <td><span class="badge bg-success">Active</span></td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-outline-warning me-1" onclick="editMode('${idx}', '${promptText.replace(/'/g, "\\'")}')">Sửa</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteData('${idx}')">Xóa</button>
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick="editMode('${idx}', '${promptId.replace(/'/g, "\\'")}', '${promptText.replace(/'/g, "\\'")}')">Sửa</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteData('${idx}', '${promptId.replace(/'/g, "\\'")}')">Xóa</button>
                         </td>`;
                     tbody.appendChild(tr);
                 });
@@ -141,13 +143,13 @@
         } finally { toggleLoading(false); }
     }
 
-    function editMode(id, prompt) {
+    function editMode(idx, id, prompt) {
         isEditing = true;
         document.getElementById('form-title').innerText = "Cập Nhật Kỷ Lục Prompt";
-        document.getElementById('prompt-id').value = "P" + (parseInt(id) + 1);
-        document.getElementById('prompt-id').disabled = true;
+        document.getElementById('prompt-id').value = id;
         document.getElementById('prompt-content').value = prompt;
-        document.getElementById('prompt-row-index').value = id;
+        document.getElementById('prompt-row-index').value = idx;
+        document.getElementById('prompt-original-id').value = id;
         document.getElementById('btn-cancel').classList.remove('d-none');
         document.getElementById('btn-submit').className = "btn btn-warning";
         document.getElementById('btn-submit').innerText = "Cập Nhật";
@@ -157,9 +159,9 @@
         isEditing = false;
         document.getElementById('form-title').innerText = "Thêm Mới Prompt";
         document.getElementById('prompt-id').value = '';
-        document.getElementById('prompt-id').disabled = false;
         document.getElementById('prompt-content').value = '';
         document.getElementById('prompt-row-index').value = '';
+        document.getElementById('prompt-original-id').value = '';
         document.getElementById('btn-cancel').classList.add('d-none');
         document.getElementById('btn-submit').className = "btn btn-success";
         document.getElementById('btn-submit').innerText = "Lưu Dữ Liệu";
@@ -169,8 +171,9 @@
         toggleLoading(true);
         const val = document.getElementById('prompt-content').value;
         const pos = document.getElementById('prompt-row-index').value;
+        const originalId = document.getElementById('prompt-original-id').value;
         const body = isEditing 
-            ? { act: "updateByPosVal", pos: parseInt(pos), val: "1779530326166", data: "[]", ...SHEET_CONFIG }
+            ? { act: "updateByPosVal", pos: parseInt(pos), val: originalId, data: "[]", ...SHEET_CONFIG }
             : { act: "add", data: "[]", ...SHEET_CONFIG };
         try {
             await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -179,11 +182,11 @@
         } catch (e) { alert('Lỗi kết nối API.'); } finally { toggleLoading(false); }
     }
 
-    async function deleteData(pos) {
+    async function deleteData(pos, id) {
         if (!confirm('Bạn có chắc chắn muốn xóa bản ghi này?')) return;
         toggleLoading(true);
         try {
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ act: "deleteByPosVal", pos: parseInt(pos), val: "1779545920022", sheet: "DairyList", spread: SHEET_CONFIG.spread }) });
+            await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ act: "deleteByPosVal", pos: parseInt(pos), val: id, ...SHEET_CONFIG }) });
             alert('Xóa bản ghi thành công!');
             fetchData();
         } catch (e) { alert('Lỗi kết nối API.'); } finally { toggleLoading(false); }

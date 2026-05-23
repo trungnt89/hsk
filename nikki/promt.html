@@ -10,10 +10,11 @@
         body { background-color: #f8f9fa; padding-top: 20px; }
         .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .form-switch .form-check-input { width: 2.5em; height: 1.25em; cursor: pointer; }
+        .container-fluid { max-width: 100% !important; }
     </style>
 </head>
 <body>
-<div class="container">
+<div class="container-fluid px-4">
     <div class="row m-2 text-center">
         <div class="col-12">
             <h2>Hệ thống Quản lý Prompt</h2>
@@ -75,7 +76,7 @@
         isEditing = !!id;
         document.getElementById('form-title').innerText = isEditing ? "Cập Nhật Prompt" : "Thêm Mới Prompt";
         document.getElementById('prompt-id').value = id;
-        document.getElementById('prompt-content').value = prompt;
+        document.getElementById('prompt-content').value = prompt || '';
         modal.show();
     }
 
@@ -86,7 +87,9 @@
         const res = await callAPI({ ...SHEET_CONFIG, act: "read" });
         if (res && res.values) {
             res.values.forEach(row => {
-                const [id, prompt, status] = row;
+                const id = row[0] || '';
+                const prompt = row[1] || '';
+                const status = row[2] ?? '0';
                 tbody.innerHTML += `<tr><td>${id}</td><td>${prompt}</td>
                     <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" ${status == '1' ? 'checked' : ''} onchange="toggleStatus('${id}', '${prompt.replace(/'/g, "\\'")}', this.checked)"></div></td>
                     <td class="text-center">

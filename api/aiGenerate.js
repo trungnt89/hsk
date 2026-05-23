@@ -1,4 +1,5 @@
-import * as util from './com/sheet';
+//import * as util from './com/sheet';
+const util = require('./com/sheet');
 // Sử dụng biến môi trường (Environment Variables) trên Vercel để bảo mật Key
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;

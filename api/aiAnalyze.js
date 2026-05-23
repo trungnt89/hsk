@@ -1,4 +1,4 @@
-import * as util from './com/sheet.js';
+import * as util from './com/sheet';
 import fetch from 'node-fetch';
 
 

@@ -1,4 +1,4 @@
-const util = require('./com/file.js');
+const util = require('./com/file');
 
 const SPREADSHEET_ID = "1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A";
 

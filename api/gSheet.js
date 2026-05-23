@@ -1,4 +1,4 @@
-import * as util from './com/sheet.js';
+import * as util from './com/sheet';
 
 /**
  * GOOGLE SHEETS API - CLEAN VERSION

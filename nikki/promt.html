@@ -74,7 +74,7 @@
 <script>
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
     const SHEET_CONFIG = { sheet: "Promt", spread: "1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k" };
-    let isEditing = false, currentPos = null;
+    let isEditing = false;
 
     document.getElementById('prompt-form').addEventListener('submit', e => { e.preventDefault(); saveData(); });
     document.addEventListener('DOMContentLoaded', fetchData);
@@ -94,7 +94,7 @@
         tbody.innerHTML = '';
         const res = await callAPI({ ...SHEET_CONFIG, act: "read" });
         if (res && res.values) {
-            res.values.forEach((row, idx) => {
+            res.values.forEach((row) => {
                 const [id, prompt, status] = [row[0] || '', row[1] || '', row[2] ?? '0'];
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -102,12 +102,12 @@
                     <td>${prompt}</td>
                     <td>
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" ${status == '1' ? 'checked' : ''} onchange="toggleStatus(${idx}, '${id}', '${prompt.replace(/'/g, "\\'")}', this.checked)">
+                            <input class="form-check-input" type="checkbox" ${status == '1' ? 'checked' : ''} onchange="toggleStatus('${id}', '${prompt.replace(/'/g, "\\'")}', this.checked)">
                         </div>
                     </td>
                     <td class="text-center">
-                        <button class="btn btn-sm btn-outline-warning me-1" onclick="editMode(${idx}, '${id}', '${prompt.replace(/'/g, "\\'")}')">Sửa</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteData(${idx}, '${id}')">Xóa</button>
+                        <button class="btn btn-sm btn-outline-warning me-1" onclick="editMode('${id}', '${prompt.replace(/'/g, "\\'")}')">Sửa</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteData('${id}')">Xóa</button>
                     </td>`;
                 tbody.appendChild(tr);
             });
@@ -115,8 +115,8 @@
         toggleLoading(false);
     }
 
-    function editMode(idx, id, prompt) {
-        isEditing = true; currentPos = idx;
+    function editMode(id, prompt) {
+        isEditing = true;
         document.getElementById('form-title').innerText = "Cập Nhật Kỷ Lục Prompt";
         document.getElementById('prompt-id').value = id;
         document.getElementById('prompt-content').value = prompt;
@@ -126,7 +126,7 @@
     }
 
     function resetForm() {
-        isEditing = false; currentPos = null;
+        isEditing = false;
         document.getElementById('prompt-form').reset();
         document.getElementById('form-title').innerText = "Thêm Mới Prompt";
         document.getElementById('btn-cancel').classList.add('d-none');
@@ -136,24 +136,4 @@
 
     async function saveData() {
         toggleLoading(true);
-        const txt = document.getElementById('prompt-content').value;
-        const body = isEditing 
-            ? { act: "updateByPosVal", pos: 0, val: document.getElementById('prompt-id').value, data: JSON.stringify([document.getElementById('prompt-id').value, txt, "0"]), ...SHEET_CONFIG }
-            : { act: "add", data: JSON.stringify(["", txt, "0"]), ...SHEET_CONFIG };
-        if (await callAPI(body)) { alert('Thành công!'); resetForm(); fetchData(); } else { alert('Lỗi!'); toggleLoading(false); }
-    }
-
-    async function toggleStatus(pos, id, prompt, isChecked) {
-        toggleLoading(true);
-        const body = { act: "updateByPosVal", pos, val: id, data: JSON.stringify([id, prompt, isChecked ? "1" : "0"]), ...SHEET_CONFIG };
-        if (await callAPI(body)) fetchData(); else { alert('Lỗi khi đổi trạng thái!'); fetchData(); }
-    }
-
-    async function deleteData(pos, id) {
-        if (!confirm('Bạn có chắc chắn muốn xóa?')) return;
-        toggleLoading(true);
-        if (await callAPI({ act: "deleteByPosVal", pos, val: id, ...SHEET_CONFIG })) fetchData(); else { alert('Lỗi!'); toggleLoading(false); }
-    }
-</script>
-</body>
-</html>
+        const txt

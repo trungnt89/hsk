@@ -42,7 +42,7 @@ export default async function handler(req, res) {
   writeLog(promt);
   
   
-   return res.status(500).json({ status: 'error', message: "AAAAA" });
+   return res.status(500).json({ status: 'error', message: promt});
   let fullText = null;
 
   try {

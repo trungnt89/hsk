@@ -27,8 +27,7 @@ export default async function handler(req, res) {
   ///////////////////////////////////////////////////
     await util.ensureAuthenticated();
   let resPromt = await util.handleReadByPosVal(spreadsheetId, SHEET_2, 2, 1);
-  const json1 = await resPromt.json();
-  writeLog(JSON.stringify(json1));
+  writeLog(JSON.stringify(resPromt));
   promt = (resPromt.values[0])[1];
   ///////////////////////////////////////////////////
   ///////////////////////////////////////////////////

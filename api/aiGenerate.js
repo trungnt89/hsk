@@ -24,27 +24,19 @@ export default async function handler(req, res) {
   let promt = "Hãy viết 1 đoạn văn 200 chữ bằng TIẾNG NHẬT trình độ N4,N3 (---PARAGRAPH---) và 1 hội thoại thể lịch sự,trang trọng N4,N3 giữa 2 người A và B (---CONVERSATION---).Yêu cầu: Không lời chào, Không giải thích. Không cần viết cách đọc hira của kanji. Bố cục ,đoạn văn rõ ràng gồm 3 phần: đầu- thân - cuối. 3 Đoạn văn và hội thoại có phân cách xuống dòng,khi xuống dòng thì cách nhau thêm 1 dòng trống nữa đễ nhìn rõ ràng, rành mạch , dễ nhìn cho cả hội thoại và đoạn văn. Viết theo lối văn đoạn mở đầu là mở ra vấn đề,đoạn thân bài là giải thích,diễn giải,quy nạp.Đoạn cuối là kết luận.Cam kết KHÔNG được sử dụng từ vựng,ngữ pháp N2,N1\n\nNội dung: "+content;
   
   await util.ensureAuthenticated();
-	let resPromt = await util.handleReadByPosVal(spreadsheetId, SHEET_2, 2, 1);
-	writeLog(JSON.stringify(resPromt));
-
-	// Kiểm tra dữ liệu trước khi truy xuất để tránh lỗi
-	if (resPromt && resPromt.values && resPromt.values.length > 0) {
-		// Lưu ý: Kiểm tra cấu trúc object data nếu nó trả về dạng phức tạp
-		promt = resPromt.values[0].data ? resPromt.values[0].data[1] : resPromt.values[0][1];
-		
-		// Sửa lỗi cú pháp += tại đây
-		promt += "\n\nNội dung: " + content;
-	} else {
-		writeLog("Cảnh báo: Không tìm thấy dữ liệu prompt!");
-	}
+  let resPromt = await util.handleReadByPosVal(spreadsheetId, SHEET_2, 2, 1);
+  writeLog(JSON.stringify(resPromt));
+  if (resPromt && resPromt.values && resPromt.values.length > 0) {
+  	promt = resPromt.values[0].data ? resPromt.values[0].data[1] : resPromt.values[0][1];
+  	promt += "\n\nNội dung: " + content;
+  } else {
+  	writeLog("Cảnh báo: Không tìm thấy dữ liệu prompt!");
+  }
   
   writeLog(`--- Bắt đầu xử lý yêu cầu cho ID: ${lessionId} ---`);
   writeLog(promt);
   
-  
-   return res.status(500).json({ status: 'error', message: promt});
   let fullText = null;
-
   try {
     // Bước 1: Thử DeepSeek
     try {

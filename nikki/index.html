@@ -183,7 +183,7 @@
                 const data = await response.json();
                 if (data.values) {
                     currentDiaries = data.values.map(r => ({
-                        id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0)
+                        id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0), paragraph_trans: r[7], conversation_trans: r[8]
                     })).reverse();
                     renderList(currentDiaries);
                     if (selectedDiaryId) selectRecord(selectedDiaryId, true);
@@ -297,11 +297,11 @@
             const text = document.getElementById('diaryInput').value.trim();
             if (!text) return;
             const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
-            const newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0 };
+            const newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0, paragraph_trans: "", conversation_trans: "" };
             currentDiaries.unshift(newItem);
             renderList(currentDiaries);
             document.getElementById('diaryInput').value = '';
-            const rowData = [id, date, text, "", "", "false", 0];
+            const rowData = [id, date, text, "", "", "false", 0, "", ""];
             await callAPI({ act: 'add', sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
             selectRecord(id, true);
         }
@@ -323,7 +323,7 @@
             renderList(currentDiaries);
             const tid = editingId;
             clearEditMode();
-            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
+            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
             await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
         }
 
@@ -347,7 +347,7 @@
             const item = currentDiaries[idx];
             item.pinned = !item.pinned;
             renderList(currentDiaries);
-            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount];
+            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
             await callAPI({ act: 'updateByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
         }
 
@@ -365,6 +365,8 @@
                 if (idx !== -1) {
                     currentDiaries[idx].paragraph = res.paragraph;
                     currentDiaries[idx].conversation = res.conversation;
+                    if(res.paragraph_trans) currentDiaries[idx].paragraph_trans = res.paragraph_trans;
+                    if(res.conversation_trans) currentDiaries[idx].conversation_trans = res.conversation_trans;
                     renderList(currentDiaries); updateAIView();
                 }
             }else{
@@ -399,8 +401,19 @@
             if (!item) return;
             const pContent = item.paragraph;
             const cContent = item.conversation;
-            document.getElementById('paragraphContainer').innerHTML = pContent ? `<div id="p-content" class="ai-content-box">${pContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
-            document.getElementById('conversationContainer').innerHTML = cContent ? `<div id="c-content" class="ai-content-box">${cContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
+            const pTrans = item.paragraph_trans;
+            const cTrans = item.conversation_trans;
+            
+            let pHTML = '';
+            if (pTrans) pHTML += `<div class="ai-content-box" style="border-left-color: var(--primary-color); margin-bottom: 8px;">${pTrans}</div>`;
+            pHTML += pContent ? `<div id="p-content" class="ai-content-box">${pContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
+            document.getElementById('paragraphContainer').innerHTML = pHTML;
+
+            let cHTML = '';
+            if (cTrans) cHTML += `<div class="ai-content-box" style="border-left-color: #e67e22; margin-bottom: 8px;">${cTrans}</div>`;
+            cHTML += cContent ? `<div id="c-content" class="ai-content-box">${cContent}</div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
+            document.getElementById('conversationContainer').innerHTML = cHTML;
+
             const btnSpeak = document.getElementById('btnMainSpeak');
             btnSpeak.disabled = (currentTabIndex === 1) ? !pContent : (currentTabIndex === 2 ? !cContent : true);
         }

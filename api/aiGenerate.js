@@ -1,7 +1,8 @@
-import * as util from './com/sheet';
+import * as util from './com/sheet.js';
 // Sử dụng biến môi trường (Environment Variables) trên Vercel để bảo mật Key
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
 
 /**
  * Handler chính cho Vercel (Serverless Function)

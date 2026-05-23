@@ -1,8 +1,9 @@
-const util = require('./com/file');
+const util = require('./com/file.js');
 
 const SPREADSHEET_ID = "1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A";
 
 const config = { api: { bodyParser: { sizeLimit: '15mb' } } };
+
 
 async function handler(req, res) {
     // Trích xuất an toàn để tránh lỗi "Cannot read properties of undefined"

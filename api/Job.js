@@ -9,6 +9,7 @@ const SHEET_2   = 'TASK_DETAIL';
 // Biến toàn cục lưu trữ thời gian thực thi đồng bộ của Request
 let nowJST;
 
+
 export default async function handler(req, res) {
     try {
         // Khởi tạo thời gian JST dùng chung cho toàn bộ tiến trình của Request hiện tại

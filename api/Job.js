@@ -1,7 +1,6 @@
 // api/handler.js
-import * as util from './com/sheet';
-import * as tg from './com/telegram';
-
+import * as util from './com/sheet.js';
+import * as tg from './com/telegram.js';
 
 const SPREAD_ID = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
 const SHEET_1   = 'TASK';

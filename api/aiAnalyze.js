@@ -1,5 +1,6 @@
-import * as util from './com/sheet';
+import * as util from './com/sheet.js';
 import fetch from 'node-fetch';
+
 
 export default async function handler(req, res) {
     writeLog("[LOG] --- Bắt đầu xử lý request phân tích âm thanh ---");

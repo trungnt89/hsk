@@ -33,7 +33,7 @@ export default async function handler(req, res) {
   writeLog(promt);
   
   
-  return;
+   return res.status(500).json({ status: 'error', message: "AAAAA" });
   let fullText = null;
 
   try {

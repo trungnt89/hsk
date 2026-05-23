@@ -50,6 +50,7 @@
             <div class="modal-body">
                 <form id="prompt-form" class="h-100">
                     <input type="hidden" id="prompt-id">
+                    <input type="hidden" id="prompt-status">
                     <textarea class="form-control h-100" id="prompt-content" placeholder="Nhập nội dung prompt..." required></textarea>
                 </form>
             </div>
@@ -80,10 +81,11 @@
         } catch { return null; }
     }
 
-    function openModal(id = '', prompt = '') {
+    function openModal(id = '', prompt = '', status = '0') {
         isEditing = !!id;
         document.getElementById('form-title').innerText = isEditing ? "Cập Nhật" : "Thêm Mới";
         document.getElementById('prompt-id').value = id;
+        document.getElementById('prompt-status').value = status;
         document.getElementById('prompt-content').value = prompt || '';
         modal.show();
     }
@@ -101,7 +103,7 @@
                 tbody.innerHTML += `<tr><td>${id}</td><td class="prompt-cell">${prompt}</td>
                     <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" ${status == '1' ? 'checked' : ''} onchange="toggleStatus('${id}', \`${prompt.replace(/`/g, "\\`")}\`, this.checked)"></div></td>
                     <td class="text-center">
-                        <button class="btn btn-sm btn-outline-warning" onclick="openModal('${id}', \`${prompt.replace(/`/g, "\\`")}\`)"><i class="bi bi-pencil-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="openModal('${id}', \`${prompt.replace(/`/g, "\\`")}\`, '${status}')"><i class="bi bi-pencil-fill"></i></button>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteData('${id}')"><i class="bi bi-trash-fill"></i></button>
                     </td></tr>`;
             });
@@ -112,7 +114,8 @@
     async function saveData() {
         const id = document.getElementById('prompt-id').value || Date.now().toString();
         const txt = document.getElementById('prompt-content').value;
-        const body = { act: isEditing ? "updateByPosVal" : "add", pos: 0, val: id, data: JSON.stringify([id, txt, "0"]), ...SHEET_CONFIG };
+        const status = document.getElementById('prompt-status').value || "0";
+        const body = { act: isEditing ? "updateByPosVal" : "add", pos: 0, val: id, data: JSON.stringify([id, txt, status]), ...SHEET_CONFIG };
         if (await callAPI(body)) { modal.hide(); fetchData(); } else alert('Lỗi!');
     }
 

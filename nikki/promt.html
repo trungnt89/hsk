@@ -136,4 +136,24 @@
 
     async function saveData() {
         toggleLoading(true);
-        const txt
+        const txt = document.getElementById('prompt-content').value;
+        const body = isEditing 
+            ? { act: "updateByPosVal", pos: 0, val: document.getElementById('prompt-id').value, data: JSON.stringify([document.getElementById('prompt-id').value, txt, "0"]), ...SHEET_CONFIG }
+            : { act: "add", data: JSON.stringify([Date.now().toString(), txt, "0"]), ...SHEET_CONFIG };
+        if (await callAPI(body)) { alert('Thành công!'); resetForm(); fetchData(); } else { alert('Lỗi!'); toggleLoading(false); }
+    }
+
+    async function toggleStatus(id, prompt, isChecked) {
+        toggleLoading(true);
+        const body = { act: "updateByPosVal", pos: 0, val: id, data: JSON.stringify([id, prompt, isChecked ? "1" : "0"]), ...SHEET_CONFIG };
+        if (await callAPI(body)) fetchData(); else { alert('Lỗi khi đổi trạng thái!'); fetchData(); }
+    }
+
+    async function deleteData(id) {
+        if (!confirm('Bạn có chắc chắn muốn xóa?')) return;
+        toggleLoading(true);
+        if (await callAPI({ act: "deleteByPosVal", pos: 0, val: id, ...SHEET_CONFIG })) fetchData(); else { alert('Lỗi!'); toggleLoading(false); }
+    }
+</script>
+</body>
+</html>

@@ -138,7 +138,7 @@
         toggleLoading(true);
         const txt = document.getElementById('prompt-content').value;
         const body = isEditing 
-            ? { act: "updateByPosVal", pos: currentPos, val: document.getElementById('prompt-id').value, data: JSON.stringify([document.getElementById('prompt-id').value, txt, "0"]), ...SHEET_CONFIG }
+            ? { act: "updateByPosVal", pos: 0, val: document.getElementById('prompt-id').value, data: JSON.stringify([document.getElementById('prompt-id').value, txt, "0"]), ...SHEET_CONFIG }
             : { act: "add", data: JSON.stringify(["", txt, "0"]), ...SHEET_CONFIG };
         if (await callAPI(body)) { alert('Thành công!'); resetForm(); fetchData(); } else { alert('Lỗi!'); toggleLoading(false); }
     }

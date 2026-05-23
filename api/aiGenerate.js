@@ -4,6 +4,12 @@ const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 
+const spreadsheetId = "1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k";
+const SHEET_1 = "DairyList";
+const SHEET_2 = "Promt";
+	
+	
+
 /**
  * Handler chính cho Vercel (Serverless Function)
  */
@@ -15,8 +21,19 @@ export default async function handler(req, res) {
 
   const { content, lessionId } = req.body;
   const promt = "Hãy viết 1 đoạn văn 200 chữ bằng TIẾNG NHẬT trình độ N4,N3 (---PARAGRAPH---) và 1 hội thoại thể lịch sự,trang trọng N4,N3 giữa 2 người A và B (---CONVERSATION---).Yêu cầu: Không lời chào, Không giải thích. Không cần viết cách đọc hira của kanji. Bố cục ,đoạn văn rõ ràng gồm 3 phần: đầu- thân - cuối. 3 Đoạn văn và hội thoại có phân cách xuống dòng,khi xuống dòng thì cách nhau thêm 1 dòng trống nữa đễ nhìn rõ ràng, rành mạch , dễ nhìn cho cả hội thoại và đoạn văn. Viết theo lối văn đoạn mở đầu là mở ra vấn đề,đoạn thân bài là giải thích,diễn giải,quy nạp.Đoạn cuối là kết luận.Cam kết KHÔNG được sử dụng từ vựng,ngữ pháp N2,N1\n\nNội dung: "+content;
+  
+  // SUA CODE O DAY 
+  ///////////////////////////////////////////////////
+  ///////////////////////////////////////////////////
+    await util.ensureAuthenticated();
+  let resPromt = await util.handleReadByPosVal(spreadsheetId, SHEET_2, 2, 1);
+  promt = (resPromt.values[0])[1];
+  ///////////////////////////////////////////////////
+  ///////////////////////////////////////////////////
+  ///////////////////////////////////////////////////
   writeLog(`--- Bắt đầu xử lý yêu cầu cho ID: ${lessionId} ---`);
   writeLog(promt);
+  return;
   let fullText = null;
 
   try {
@@ -38,14 +55,11 @@ export default async function handler(req, res) {
 
     writeLog('Parsed thành công Paragraph và Conversation');
 
-    // Cập nhật Google Sheet
-    await util.ensureAuthenticated();
-    const spreadsheetId = "1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k";
-    const sheetName = "DairyList";
+    
     const pos = 0;
     const val = lessionId;
     
-    let result = await util.handleReadByPosVal(spreadsheetId, sheetName, pos, val);
+    let result = await util.handleReadByPosVal(spreadsheetId, SHEET_1, pos, val);
     
     var rawData = result.values[0].data;
 	
@@ -58,7 +72,7 @@ export default async function handler(req, res) {
     
 	
 	
-    await util.handleUpdateByPosVal(spreadsheetId, sheetName, pos, val, rawData);
+    await util.handleUpdateByPosVal(spreadsheetId, SHEET_1, pos, val, rawData);
 
     // Trả về kết quả
     return res.status(200).json({

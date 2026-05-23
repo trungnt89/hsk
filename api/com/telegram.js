@@ -16,8 +16,8 @@ export async function SendMessage(msgData) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
                 chat_id: String(config.chatId).trim(), 
-                text: cleanText,
-				reply_markup: { inline_keyboard: [[{ text: "📊 Mở Dashboard", url: "https://hsk-gilt.vercel.app/task/" }]] }
+                //reply_markup: { inline_keyboard: [[{ text: "📊 Mở Dashboard", url: "https://hsk-gilt.vercel.app/task/" }]] }
+				text: cleanText
             })
         });
 

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Danh sách Prompt</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; padding-top: 20px; }
@@ -84,7 +83,7 @@
                                     <th style="width: 15%">STATUS</th>
                                     <th style="width: 15%" class="text-center">HÀNH ĐỘNG</th>
                                 </tr>
-                            </thead>
+                            </thead >
                             <tbody id="data-table-body">
                                 <!-- Dữ liệu từ API sẽ map vào đây -->
                             </tbody>
@@ -100,188 +99,94 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // Cấu hình tham số mặc định từ yêu cầu curl của bạn
     const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
-    const SHEET_CONFIG = {
-        sheet: "Promt",
-        spread: "1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k"
-    };
-
+    const SHEET_CONFIG = { sheet: "Promt", spread: "1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k" };
     let isEditing = false;
 
-    // Tự động tải dữ liệu khi trang web được nạp thành công
     document.addEventListener('DOMContentLoaded', () => {
         fetchData();
-        
-        // Lắng nghe sự kiện submit form
-        document.getElementById('prompt-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            saveData();
-        });
+        document.getElementById('prompt-form').addEventListener('submit', e => { e.preventDefault(); saveData(); });
     });
 
-    // Hàm hiển thị/ẩn trạng thái loading
-    function toggleLoading(show) {
-        document.getElementById('loading-status').style.display = show ? 'block' : 'none';
+    const toggleLoading = show => document.getElementById('loading-status').style.display = show ? 'block' : 'none';
+
+    async function callAPI(body) {
+        const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        return res.ok ? res.json() : null;
     }
 
-    // 1. READ: Đọc dữ liệu từ Google Sheet
     async function fetchData() {
         toggleLoading(true);
         const tbody = document.getElementById('data-table-body');
         tbody.innerHTML = '';
-
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...SHEET_CONFIG,
-                    act: "read"
-                })
-            });
-
-            const result = await response.json();
-            
-            // Giả định API trả về mảng dữ liệu trong thuộc tính 'data' hoặc chính 'result'
-            const list = result.data || result;
-
-            if (Array.isArray(list) && list.length > 0) {
-                // Bỏ qua dòng tiêu đề đầu tiên nếu API trả về thô từ Google Sheet (ID, PROMPT, STATUS)
-                const dataRows = (list[0].ID || list[0].id || list[0][0] === 'ID') ? list.slice(1) : list;
-                
-                dataRows.forEach((item, index) => {
-                    // Chuẩn hóa dữ liệu theo cả dạng Object lẫn Array phòng trường hợp API trả về mảng thô
-                    const id = item.ID || item.id || item[0] || '';
-                    const prompt = item.PROMPT || item.prompt || item[1] || '';
-                    const status = item.STATUS || item.status || item[2] || '';
-                    
-                    // Vị trí dòng thực tế trên Google Sheet để xử lý Edit/Delete (thường là index + 2 nếu bỏ tiêu đề)
-                    const rowIndex = index + 2; 
-
+            const res = await callAPI({ ...SHEET_CONFIG, act: "read" });
+            if (res && res.values && res.values.length > 0) {
+                res.values.forEach((row, idx) => {
+                    const promptText = row[0] || '';
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><strong>${id}</strong></td>
-                        <td>${prompt}</td>
-                        <td><span class="badge ${status.toLowerCase() === 'active' ? 'bg-success' : 'bg-secondary'}">${status}</span></td>
+                        <td><strong>P${idx + 1}</strong></td>
+                        <td>${promptText}</td>
+                        <td><span class="badge bg-success">Active</span></td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-outline-warning me-1" onclick="editMode('${id}', '${prompt.replace(/'/g, "\\'")}', '${status}', ${rowIndex})">Sửa</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteData('${id}', ${rowIndex})">Xóa</button>
-                        </td>
-                    `;
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick="editMode('${idx}', '${promptText.replace(/'/g, "\\'")}')">Sửa</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteData('${idx}')">Xóa</button>
+                        </td>`;
                     tbody.appendChild(tr);
                 });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu hoặc API thay đổi cấu trúc cấu trúc.</td></tr>`;
-            }
-        } catch (error) {
-            console.error('Lỗi đọc dữ liệu:', error);
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Không thể kết nối đến API. Hãy kiểm tra lại CORS hoặc Network.</td></tr>`;
-        } finally {
-            toggleLoading(false);
-        }
+            } else tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu.</td></tr>`;
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Lỗi kết nối API.</td></tr>`;
+        } finally { toggleLoading(false); }
     }
 
-    // Chuyển form sang chế độ Sửa
-    function editMode(id, prompt, status, rowIndex) {
+    function editMode(id, prompt) {
         isEditing = true;
         document.getElementById('form-title').innerText = "Cập Nhật Kỷ Lục Prompt";
-        document.getElementById('prompt-id').value = id;
-        document.getElementById('prompt-id').disabled = true; // Thường không cho sửa ID khóa chính
+        document.getElementById('prompt-id').value = "P" + (parseInt(id) + 1);
+        document.getElementById('prompt-id').disabled = true;
         document.getElementById('prompt-content').value = prompt;
-        document.getElementById('prompt-status').value = status;
-        document.getElementById('prompt-row-index').value = rowIndex;
-        
+        document.getElementById('prompt-row-index').value = id;
         document.getElementById('btn-cancel').classList.remove('d-none');
         document.getElementById('btn-submit').className = "btn btn-warning";
         document.getElementById('btn-submit').innerText = "Cập Nhật";
     }
 
-    // Reset Form về trạng thái Thêm Mới ban đầu
     function resetForm() {
         isEditing = false;
         document.getElementById('form-title').innerText = "Thêm Mới Prompt";
         document.getElementById('prompt-id').value = '';
         document.getElementById('prompt-id').disabled = false;
         document.getElementById('prompt-content').value = '';
-        document.getElementById('prompt-status').value = 'Active';
         document.getElementById('prompt-row-index').value = '';
-        
         document.getElementById('btn-cancel').classList.add('d-none');
         document.getElementById('btn-submit').className = "btn btn-success";
         document.getElementById('btn-submit').innerText = "Lưu Dữ Liệu";
     }
 
-    // 2. CREATE / UPDATE: Thêm hoặc Cập nhật bản ghi
     async function saveData() {
         toggleLoading(true);
-        const id = document.getElementById('prompt-id').value;
-        const prompt = document.getElementById('prompt-content').value;
-        const status = document.getElementById('prompt-status').value;
-        const rowIndex = document.getElementById('prompt-row-index').value;
-
-        // Xác định hành động (act) dựa trên cấu trúc API Google Sheet của bạn
-        // Thông thường: "append"/"write" cho thêm mới, "update"/"edit" cho chỉnh sửa.
-        const actAction = isEditing ? "update" : "append"; 
-
-        const payload = {
-            ...SHEET_CONFIG,
-            act: actAction,
-            data: { ID: id, PROMPT: prompt, STATUS: status },
-            row: rowIndex // Truyền vị trí dòng nếu API yêu cầu xử lý update theo dòng
-        };
-
+        const val = document.getElementById('prompt-content').value;
+        const pos = document.getElementById('prompt-row-index').value;
+        const body = isEditing 
+            ? { act: "updateByPosVal", pos: parseInt(pos), val: "1779530326166", data: "[]", ...SHEET_CONFIG }
+            : { act: "add", data: "[]", ...SHEET_CONFIG };
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                alert(isEditing ? 'Cập nhật thành công!' : 'Thêm mới thành công!');
-                resetForm();
-                fetchData(); // Tải lại bảng dữ liệu
-            } else {
-                alert('Có lỗi xảy ra phản hồi từ Server.');
-            }
-        } catch (error) {
-            console.error('Lỗi khi ghi dữ liệu:', error);
-            alert('Không thể kết nối đến API để lưu dữ liệu.');
-        } finally {
-            toggleLoading(false);
-        }
+            await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            alert(isEditing ? 'Cập nhật thành công!' : 'Thêm mới thành công!');
+            resetForm(); fetchData();
+        } catch (e) { alert('Lỗi kết nối API.'); } finally { toggleLoading(false); }
     }
 
-    // 3. DELETE: Xóa dữ liệu bản ghi
-    async function deleteData(id, rowIndex) {
-        if (!confirm(`Bạn có chắc chắn muốn xóa Prompt có ID: ${id}?`)) return;
-        
+    async function deleteData(pos) {
+        if (!confirm('Bạn có chắc chắn muốn xóa bản ghi này?')) return;
         toggleLoading(true);
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...SHEET_CONFIG,
-                    act: "delete", // hoặc "remove" tùy thuộc backend của gSheet API xử lý
-                    id: id,
-                    row: rowIndex
-                })
-            });
-
-            if (response.ok) {
-                alert('Xóa bản ghi thành công!');
-                fetchData();
-            } else {
-                alert('Lỗi thao tác Xóa từ Server.');
-            }
-        } catch (error) {
-            console.error('Lỗi khi xóa dữ liệu:', error);
-            alert('Không thể kết nối đến API để xóa dữ liệu.');
-        } finally {
-            toggleLoading(false);
-        }
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ act: "deleteByPosVal", pos: parseInt(pos), val: "1779545920022", sheet: "DairyList", spread: SHEET_CONFIG.spread }) });
+            alert('Xóa bản ghi thành công!');
+            fetchData();
+        } catch (e) { alert('Lỗi kết nối API.'); } finally { toggleLoading(false); }
     }
 </script>
 </body>

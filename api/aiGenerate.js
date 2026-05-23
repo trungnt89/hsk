@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 	// Kiểm tra dữ liệu trước khi truy xuất để tránh lỗi
 	if (resPromt && resPromt.values && resPromt.values.length > 0) {
 		// Lưu ý: Kiểm tra cấu trúc object data nếu nó trả về dạng phức tạp
-		let promt = resPromt.values[0].data ? resPromt.values[0].data[1] : resPromt.values[0][1];
+		promt = resPromt.values[0].data ? resPromt.values[0].data[1] : resPromt.values[0][1];
 		
 		// Sửa lỗi cú pháp += tại đây
 		promt += "\n\nNội dung: " + content;

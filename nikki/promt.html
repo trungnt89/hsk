@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Danh sách Prompt</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding-top: 20px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .loading { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row m-2">
+        <div class="col-12 text-center">
+            <h2>Hệ thống Quản lý Prompt</h2>
+            <p class="text-muted">Đồng bộ dữ liệu trực tiếp với Google Sheet</p>
+        </div>
+    </div>
+
+    <!-- Khối Form Thêm / Sửa -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <span id="form-title">Thêm Mới Prompt</span>
+                </div>
+                <div class="card-body">
+                    <form id="prompt-form">
+                        <input type="hidden" id="prompt-row-index"> <!-- Dùng để định vị dòng khi Sửa/Xóa nếu API yêu cầu -->
+                        <div class="row g-3">
+                            <div class="col-md-2">
+                                <label for="prompt-id" class="form-label">ID</label>
+                                <input type="text" class="form-control" id="prompt-id" placeholder="VD: P001" required>
+                            </div>
+                            <div class="col-md-7">
+                                <label for="prompt-content" class="form-label">Prompt</label>
+                                <input type="text" class="form-control" id="prompt-content" placeholder="Nhập nội dung prompt..." required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="prompt-status" class="form-label">Status</label>
+                                <select class="form-select" id="prompt-status">
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Pending">Pending</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-end">
+                            <button type="button" id="btn-cancel" class="btn btn-secondary d-none" onclick="resetForm()">Hủy</button>
+                            <button type="submit" id="btn-submit" class="btn btn-success">Lưu Dữ Liệu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Khối Bảng Dữ Liệu -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <span>Danh Sách Dữ Liệu (Sheet: Promt)</span>
+                    <button class="btn btn-sm btn-light" onclick="fetchData()">Tải lại dữ liệu</button>
+                </div>
+                <div class="card-body">
+                    <!-- Trạng thái Loading -->
+                    <div id="loading-status" class="text-center my-3 text-primary">
+                        <div class="spinner-border spinner-border-sm" role="status"></div> 
+                        <span> Đang xử lý dữ liệu với Google Sheet...</span>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 15%">ID</th>
+                                    <th style="width: 55%">PROMPT</th>
+                                    <th style="width: 15%">STATUS</th>
+                                    <th style="width: 15%" class="text-center">HÀNH ĐỘNG</th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-table-body">
+                                <!-- Dữ liệu từ API sẽ map vào đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Cấu hình tham số mặc định từ yêu cầu curl của bạn
+    const API_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
+    const SHEET_CONFIG = {
+        sheet: "Promt",
+        spread: "1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k"
+    };
+
+    let isEditing = false;
+
+    // Tự động tải dữ liệu khi trang web được nạp thành công
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchData();
+        
+        // Lắng nghe sự kiện submit form
+        document.getElementById('prompt-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveData();
+        });
+    });
+
+    // Hàm hiển thị/ẩn trạng thái loading
+    function toggleLoading(show) {
+        document.getElementById('loading-status').style.display = show ? 'block' : 'none';
+    }
+
+    // 1. READ: Đọc dữ liệu từ Google Sheet
+    async function fetchData() {
+        toggleLoading(true);
+        const tbody = document.getElementById('data-table-body');
+        tbody.innerHTML = '';
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...SHEET_CONFIG,
+                    act: "read"
+                })
+            });
+
+            const result = await response.json();
+            
+            // Giả định API trả về mảng dữ liệu trong thuộc tính 'data' hoặc chính 'result'
+            const list = result.data || result;
+
+            if (Array.isArray(list) && list.length > 0) {
+                // Bỏ qua dòng tiêu đề đầu tiên nếu API trả về thô từ Google Sheet (ID, PROMPT, STATUS)
+                const dataRows = (list[0].ID || list[0].id || list[0][0] === 'ID') ? list.slice(1) : list;
+                
+                dataRows.forEach((item, index) => {
+                    // Chuẩn hóa dữ liệu theo cả dạng Object lẫn Array phòng trường hợp API trả về mảng thô
+                    const id = item.ID || item.id || item[0] || '';
+                    const prompt = item.PROMPT || item.prompt || item[1] || '';
+                    const status = item.STATUS || item.status || item[2] || '';
+                    
+                    // Vị trí dòng thực tế trên Google Sheet để xử lý Edit/Delete (thường là index + 2 nếu bỏ tiêu đề)
+                    const rowIndex = index + 2; 
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${id}</strong></td>
+                        <td>${prompt}</td>
+                        <td><span class="badge ${status.toLowerCase() === 'active' ? 'bg-success' : 'bg-secondary'}">${status}</span></td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick="editMode('${id}', '${prompt.replace(/'/g, "\\'")}', '${status}', ${rowIndex})">Sửa</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteData('${id}', ${rowIndex})">Xóa</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu hoặc API thay đổi cấu trúc cấu trúc.</td></tr>`;
+            }
+        } catch (error) {
+            console.error('Lỗi đọc dữ liệu:', error);
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Không thể kết nối đến API. Hãy kiểm tra lại CORS hoặc Network.</td></tr>`;
+        } finally {
+            toggleLoading(false);
+        }
+    }
+
+    // Chuyển form sang chế độ Sửa
+    function editMode(id, prompt, status, rowIndex) {
+        isEditing = true;
+        document.getElementById('form-title').innerText = "Cập Nhật Kỷ Lục Prompt";
+        document.getElementById('prompt-id').value = id;
+        document.getElementById('prompt-id').disabled = true; // Thường không cho sửa ID khóa chính
+        document.getElementById('prompt-content').value = prompt;
+        document.getElementById('prompt-status').value = status;
+        document.getElementById('prompt-row-index').value = rowIndex;
+        
+        document.getElementById('btn-cancel').classList.remove('d-none');
+        document.getElementById('btn-submit').className = "btn btn-warning";
+        document.getElementById('btn-submit').innerText = "Cập Nhật";
+    }
+
+    // Reset Form về trạng thái Thêm Mới ban đầu
+    function resetForm() {
+        isEditing = false;
+        document.getElementById('form-title').innerText = "Thêm Mới Prompt";
+        document.getElementById('prompt-id').value = '';
+        document.getElementById('prompt-id').disabled = false;
+        document.getElementById('prompt-content').value = '';
+        document.getElementById('prompt-status').value = 'Active';
+        document.getElementById('prompt-row-index').value = '';
+        
+        document.getElementById('btn-cancel').classList.add('d-none');
+        document.getElementById('btn-submit').className = "btn btn-success";
+        document.getElementById('btn-submit').innerText = "Lưu Dữ Liệu";
+    }
+
+    // 2. CREATE / UPDATE: Thêm hoặc Cập nhật bản ghi
+    async function saveData() {
+        toggleLoading(true);
+        const id = document.getElementById('prompt-id').value;
+        const prompt = document.getElementById('prompt-content').value;
+        const status = document.getElementById('prompt-status').value;
+        const rowIndex = document.getElementById('prompt-row-index').value;
+
+        // Xác định hành động (act) dựa trên cấu trúc API Google Sheet của bạn
+        // Thông thường: "append"/"write" cho thêm mới, "update"/"edit" cho chỉnh sửa.
+        const actAction = isEditing ? "update" : "append"; 
+
+        const payload = {
+            ...SHEET_CONFIG,
+            act: actAction,
+            data: { ID: id, PROMPT: prompt, STATUS: status },
+            row: rowIndex // Truyền vị trí dòng nếu API yêu cầu xử lý update theo dòng
+        };
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert(isEditing ? 'Cập nhật thành công!' : 'Thêm mới thành công!');
+                resetForm();
+                fetchData(); // Tải lại bảng dữ liệu
+            } else {
+                alert('Có lỗi xảy ra phản hồi từ Server.');
+            }
+        } catch (error) {
+            console.error('Lỗi khi ghi dữ liệu:', error);
+            alert('Không thể kết nối đến API để lưu dữ liệu.');
+        } finally {
+            toggleLoading(false);
+        }
+    }
+
+    // 3. DELETE: Xóa dữ liệu bản ghi
+    async function deleteData(id, rowIndex) {
+        if (!confirm(`Bạn có chắc chắn muốn xóa Prompt có ID: ${id}?`)) return;
+        
+        toggleLoading(true);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...SHEET_CONFIG,
+                    act: "delete", // hoặc "remove" tùy thuộc backend của gSheet API xử lý
+                    id: id,
+                    row: rowIndex
+                })
+            });
+
+            if (response.ok) {
+                alert('Xóa bản ghi thành công!');
+                fetchData();
+            } else {
+                alert('Lỗi thao tác Xóa từ Server.');
+            }
+        } catch (error) {
+            console.error('Lỗi khi xóa dữ liệu:', error);
+            alert('Không thể kết nối đến API để xóa dữ liệu.');
+        } finally {
+            toggleLoading(false);
+        }
+    }
+</script>
+</body>
+</html>

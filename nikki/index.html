@@ -401,12 +401,12 @@
             const jpEl = document.getElementById(`${type}-jp-view`);
             const viEl = document.getElementById(`${type}-vi-view`);
             if (jpEl && viEl) {
-                if (jpEl.style.display === 'none') {
-                    jpEl.style.display = 'block';
-                    viEl.style.display = 'none';
-                } else {
-                    jpEl.style.display = 'none';
+                if (viEl.style.display === 'none') {
                     viEl.style.display = 'block';
+                    jpEl.style.display = 'none';
+                } else {
+                    viEl.style.display = 'none';
+                    jpEl.style.display = 'block';
                 }
             }
         }
@@ -422,8 +422,8 @@
             let pHTML = '';
             if (pContent || pTrans) {
                 pHTML += `<div class="ai-content-box" onclick="toggleContentLang('p')" style="cursor: pointer;">`;
-                pHTML += `<div id="p-jp-view" style="display: block;"><div id="p-content">${pContent || ''}</div></div>`;
-                pHTML += `<div id="p-vi-view" style="display: none; color: #2c3e50;">${pTrans || 'Chưa có bản dịch.'}</div>`;
+                pHTML += `<div id="p-vi-view" style="display: block; color: #2c3e50;">${pTrans || 'Chưa có bản dịch.'}</div>`;
+                pHTML += `<div id="p-jp-view" style="display: none;"><div id="p-content">${pContent || ''}</div></div>`;
                 pHTML += `</div>`;
             } else {
                 pHTML += `<p class="loading-text">Chưa có nội dung AI.</p>`;
@@ -433,8 +433,8 @@
             let cHTML = '';
             if (cContent || cTrans) {
                 cHTML += `<div class="ai-content-box" onclick="toggleContentLang('c')" style="cursor: pointer; border-left-color: #e67e22;">`;
-                cHTML += `<div id="c-jp-view" style="display: block;"><div id="c-content">${cContent || ''}</div></div>`;
-                cHTML += `<div id="c-vi-view" style="display: none; color: #2c3e50;">${cTrans || 'Chưa có bản dịch.'}</div>`;
+                cHTML += `<div id="c-vi-view" style="display: block; color: #2c3e50;">${cTrans || 'Chưa có bản dịch.'}</div>`;
+                cHTML += `<div id="c-jp-view" style="display: none;"><div id="c-content">${cContent || ''}</div></div>`;
                 cHTML += `</div>`;
             } else {
                 cHTML += `<p class="loading-text">Chưa có nội dung AI.</p>`;
@@ -517,16 +517,21 @@
                             result.values.forEach(row => {
                                 if (row[0] === lessonID) {
                                     count++;
-                                    const score = parseInt(row[3]) || 0;
-                                    if (score > maxScore) maxScore = score;
+                                    let score = parseInt(row[3]);
+                                    if (!isNaN(score) && score > maxScore) {
+                                        maxScore = score;
+                                    }
                                 }
                             });
-                            badge.innerHTML = `🎙️ ${count} | 🏆 ${maxScore}`;
-                            if (count > 0) badge.style.backgroundColor = '#e67e22';
+                            if (count > 0) {
+                                badge.innerHTML = `🎙️ ${count} _ 🏆 ${maxScore}`;
+                            }
                         }
                     });
                 }
-            } catch (err) { console.error("[Summary Error]:", err); }
+            } catch (e) {
+                console.error(e);
+            }
         }
     </script>
 </body>

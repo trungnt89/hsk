@@ -442,7 +442,7 @@
             document.getElementById('conversationContainer').innerHTML = cHTML;
 
             const btnSpeak = document.getElementById('btnMainSpeak');
-            btnSpeak.disabled = (currentTabIndex === 1) ? !pContent : (currentTabIndex === 2 ? !cContent : true);
+            btnSpeak.disabled = (currentTabIndex === 1) ? !(pContent || pTrans) : (currentTabIndex === 2 ? !(cContent || cTrans) : true);
         }
 
         function loadTTSSettings() {
@@ -471,9 +471,15 @@
             const el = document.getElementById(elId), btn = document.getElementById(btnId);
             if(!el || !window.speakCommon) return;
             btn.classList.add("playing"); btn.innerHTML = '⏹ Dừng';
+            
+            let voiceValue = document.getElementById("voiceSelect").value;
+            if (elId === 'p-vi-view' || elId === 'c-vi-view') {
+                voiceValue = 'vi-VN-HoaiAnNeural';
+            }
+            
             await window.speakCommon({ 
                 text: el.innerText, 
-                voice: document.getElementById("voiceSelect").value, 
+                voice: voiceValue, 
                 rate: document.getElementById("rateSelect").value, 
                 filename: `Diary_AI_${selectedDiaryId}`,
                 loop: isRepeating 
@@ -488,7 +494,14 @@
                 resetSpeakBtns(); 
                 return; 
             }
-            const tid = currentTabIndex === 1 ? 'p-content' : (currentTabIndex === 2 ? 'c-content' : null);
+            let tid = null;
+            if (currentTabIndex === 1) {
+                const viEl = document.getElementById('p-vi-view');
+                tid = (viEl && viEl.style.display !== 'none') ? 'p-vi-view' : 'p-content';
+            } else if (currentTabIndex === 2) {
+                const viEl = document.getElementById('c-vi-view');
+                tid = (viEl && viEl.style.display !== 'none') ? 'c-vi-view' : 'c-content';
+            }
             if (tid) speakText(tid, 'btnMainSpeak');
         }
 
@@ -518,20 +531,13 @@
                                 if (row[0] === lessonID) {
                                     count++;
                                     let score = parseInt(row[3]);
-                                    if (!isNaN(score) && score > maxScore) {
-                                        maxScore = score;
-                                    }
+                                    if (!isNaN(score) && score > maxScore) maxScore = score;
                                 }
                             });
-                            if (count > 0) {
-                                badge.innerHTML = `🎙️ ${count} _ 🏆 ${maxScore}`;
-                            }
                         }
                     });
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
     </script>
 </body>

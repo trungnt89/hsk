@@ -7,64 +7,100 @@
     <script type="module">
         import JapaneseLookup from '../com/japanese-lookup.js?v=1';
     </script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        * { font-family: 'Segoe UI', Tahoma, sans-serif; font-size:14px}
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; font-size:14px}
         :root {
             --bg-color: #f5f7fb; --primary-color: #6c5ce7; --secondary-color: #a29bfe;
             --text-color: #2d3436; --text-light: #636e72; --card-bg: #ffffff;
             --danger-color: #ff7675; --edit-color: #0984e3; --success-color: #2ecc71;
             --ai-color: #00b894;
         }
-        body { background-color: var(--bg-color); color: var(--text-color); }
-        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
+        header h1 { font-size: 1.2rem; font-weight: 600; }
+        main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         
-        .btn-save { background-color: var(--primary-color); }
-        .btn-main-speak { background: var(--ai-color); }
+        .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
+        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 10px; font-size: 15px; resize: none; height: 120px; outline: none; display: block; }
+        
+        .action-area { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; gap: 5px; width: 100%; }
+        .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 1; font-size: 13px; }
+        .btn-save:disabled { background-color: #ccc; cursor: not-allowed; }
+        .btn-cancel { background-color: #eee; color: #333; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; flex-shrink: 1; font-size: 13px; }
+        .tts-controls { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: 1; justify-content: flex-end; overflow: hidden; }
+        .btn-main-speak { background: var(--ai-color); color: white; border: none; padding: 6px 8px; border-radius: 20px; cursor: pointer; font-size: 0.75rem; font-weight: bold; min-width: 65px; transition: 0.3s; flex-shrink: 1; }
+        .btn-main-speak:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
         .btn-main-speak.playing { background: var(--danger-color); }
         
-        .tab-btn { color: var(--text-light); }
+        .tabs { display: flex; background: #eee; border-radius: 8px; padding: 4px; margin-top: 5px; flex-shrink: 0; }
+        .tab-btn { flex: 1; border: none; padding: 10px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 4px; }
         .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
+        .toggle-container { display: inline-flex; align-items: center; cursor: pointer; position: relative; margin-left: 4px; }
+        .toggle-switch { position: relative; width: 30px; height: 16px; background-color: #ccc; border-radius: 10px; transition: 0.3s; }
+        .toggle-switch::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: 0.3s; }
         .toggle-active .toggle-switch { background-color: var(--success-color); }
         .toggle-active .toggle-switch::after { left: 16px; }
+        .toggle-label { font-size: 0.6rem; margin-right: 2px; color: inherit; font-weight: bold; display: none; }
+
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 20px; scroll-behavior: smooth; }
+        .tab-content.active { display: block; }
         
-        .diary-item { background: var(--card-bg); border-left: 4px solid #dfe6e9; }
+        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; position: relative; }
         .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
         .diary-item.selected { border-left-color: #e67e22 !important; background-color: #fff3e0 !important; outline: 3px solid #ffcc80; outline-offset: -3px; }
         
-        .ai-content-box { background: var(--card-bg); border-left: 4px solid var(--ai-color); }
-        .btn-repeat.active { border-color: var(--primary-color); color: var(--primary-color); }
-        .diary-date { color: var(--text-light); }
+        .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.7; font-size: 1rem; white-space: pre-wrap; margin-bottom: 10px; border-left: 4px solid var(--ai-color); color: #2c3e50; }
+        .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
+        select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
+        .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
+        .diary-content { font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
         
+        .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 8px; width: 100%; }
+        .item-action-btn { background: none; border: none; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 1; text-align: center; padding: 5px 0; white-space: nowrap; border-right: 1px solid #eee; }
+        .item-action-btn:last-child { border-right: none; }
+        .item-action-btn.disabled { color: #ccc !important; cursor: not-allowed; pointer-events: none; opacity: 0.6; }
+        .pin-btn { color: #f39c12; }
         .edit-btn { color: var(--edit-color); }
         .delete-btn { color: var(--danger-color); }
         .ai-btn { color: var(--ai-color); }
-        .loading-text { color: var(--text-light); }
+        .ai-btn.generated { color: #27ae60; }
+        .loading-text { text-align: center; padding: 40px; font-size: 0.9rem; color: var(--text-light); }
+
+        /* Popup Modal Styles */
+        .audio-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .audio-modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 80%; background: white; border-radius: 12px; overflow: hidden; }
+        .audio-modal-header { padding: 8px 12px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
+        .modal-btn { background: #fff; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .close-modal-btn { color: #ef4444; }
+        .btn-main-speak.playing { background: var(--danger-color); }
+        .back-modal-btn { color: #2563eb; }
+        iframe#audioFrame { width: 100%; height: calc(100% - 40px); border: none; }
     </style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body>
     <script src="../com/assistive.js"></script>
     <script src="../com/TTSClient.js"></script>
+    
+    <script src="./diary-server.js"></script>
 
-    <header class="text-white p-[10px_15px] text-center shadow-[0_2px_10px_rgba(0,0,0,0.1)] flex-shrink-0">
-        <h1 class="text-[1.2rem] font-semibold">Diary & AI</h1>
-    </header>
+    <header><h1>Diary & AI</h1></header>
 
-    <main class="flex-1 overflow-hidden p-2.5 flex flex-col gap-2">
-        <div class="write-card bg-[var(--card-bg)] p-2.5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex-shrink-0">
-            <textarea id="diaryInput" class="w-full border border-[#dfe6e9] rounded-lg p-2.5 text-[15px] resize-none h-[120px] outline-none block" placeholder="Hôm nay của bạn thế nào?..."></textarea>
-            <div class="action-area flex justify-between items-center mt-1.25 gap-1.25 w-full">
-                <button id="cancelBtn" class="btn-cancel bg-[#eee] text-[#333] border-none p-[8px_12px] rounded-lg cursor-pointer whitespace-nowrap flex-shrink text-[13px]" style="display:none;">Hủy</button>
-                <button id="saveBtn" class="btn-save text-white border-none p-[8px_12px] rounded-lg font-semibold cursor-pointer whitespace-nowrap flex-shrink text-[13px] disabled:bg-[#ccc] disabled:cursor-not-allowed">Lưu lại</button>
-                <div class="tts-controls flex items-center gap-1 ml-auto flex-1 justify-end overflow-hidden">
-                    <button id="btnMainSpeak" class="btn-main-speak text-white border-none p-[6px_8px] rounded-[20px] cursor-pointer text-[0.75rem] font-bold min-width-[65px] transition duration-300 flex-shrink disabled:bg-[#ccc] disabled:cursor-not-allowed disabled:opacity-60" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
-                    <button id="btnRepeat" class="btn-repeat bg-[#eee] border border-[#ccc] p-[4px_8px] rounded cursor-pointer text-[12px] active:bg-[#dbeafe]" onclick="toggleRepeat()">🔂</button>
-                    <select id="voiceSelect" class="tts-select p-1 rounded border border-[#ccc] text-[11px]" onchange="saveTTSSettings()">
+    <main>
+        <div class="write-card">
+            <textarea id="diaryInput" placeholder="Hôm nay của bạn thế nào?..."></textarea>
+            <div class="action-area">
+                <button id="cancelBtn" class="btn-cancel" style="display:none;">Hủy</button>
+                <button id="saveBtn" class="btn-save">Lưu lại</button>
+                <div class="tts-controls">
+                    <button id="btnMainSpeak" class="btn-main-speak" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
+                    <button id="btnRepeat" class="btn-repeat" onclick="toggleRepeat()">🔂</button>
+                    <select id="voiceSelect" class="tts-select" onchange="saveTTSSettings()">
                         <option value="ja-JP-KeitaNeural" selected>Nam</option>
                         <option value="ja-JP-NanamiNeural" >Nữ</option>
                     </select>
-                    <select id="rateSelect" class="tts-select p-1 rounded border border-[#ccc] text-[11px]" onchange="saveTTSSettings()">
+                    <select id="rateSelect" class="tts-select" onchange="saveTTSSettings()">
                         <option value="0.65">0.65</option>
                         <option value="0.68">0.68</option>
                         <option value="0.70" selected>0.70</option>
@@ -77,39 +113,37 @@
             </div>
         </div>
 
-        <div class="tabs flex bg-[#eee] rounded-lg p-1 mt-1.25 flex-shrink-0">
-            <button class="tab-btn active flex-1 border-none p-[10px_8px] rounded-md text-[0.8rem] font-semibold cursor-pointer bg-transparent transition duration-300 flex items-center justify-center gap-1" id="tab-btn-0" onclick="switchTab(0)">
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)">
                 <span>📝 Nhật ký</span>
-                <div class="toggle-container inline-flex items-center cursor-pointer relative ml-1" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
-                    <span class="toggle-label text-[0.6rem] mr-0.5 font-bold hidden" id="pinLabelText">Tất cả</span>
-                    <div class="toggle-switch relative w-[30px] height-[16px] bg-[#ccc] rounded-[10px] transition duration-300 after:content-[''] after:absolute after:w-3 after:h-3 after:rounded-full after:bg-white after:top-0.5 after:left-0.5 after:transition after:duration-300"></div>
+                <div class="toggle-container" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
+                    <span class="toggle-label" id="pinLabelText">Tất cả</span>
+                    <div class="toggle-switch"></div>
                 </div>
             </button>
-            <button class="tab-btn flex-1 border-none p-[10px_8px] rounded-md text-[0.8rem] font-semibold cursor-pointer bg-transparent transition duration-300 flex items-center justify-center gap-1" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
-            <button class="tab-btn flex-1 border-none p-[10px_8px] rounded-md text-[0.8rem] font-semibold cursor-pointer bg-transparent transition duration-300 flex items-center justify-center gap-1" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
+            <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
+            <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
         </div>
 
-        <div id="tab-diary" class="tab-content hidden flex-1 overflow-y-auto pb-5 scroll-smooth active:block">
-            <div id="diaryContainer"><p class="loading-text text-center p-10 text-[0.9rem]">Đang tải dữ liệu...</p></div>
+        <div id="tab-diary" class="tab-content active">
+            <div id="diaryContainer"><p class="loading-text">Đang tải dữ liệu...</p></div>
         </div>
-        <div id="tab-paragraph" class="tab-content hidden flex-1 overflow-y-auto pb-5 scroll-smooth active:block"><div id="paragraphContainer"></div></div>
-        <div id="tab-conversation" class="tab-content hidden flex-1 overflow-y-auto pb-5 scroll-smooth active:block"><div id="conversationContainer"></div></div>
+        <div id="tab-paragraph" class="tab-content"><div id="paragraphContainer"></div></div>
+        <div id="tab-conversation" class="tab-content"><div id="conversationContainer"></div></div>
     </main>
 
-    <div id="audioModal" class="audio-modal hidden fixed z-[1000] left-0 top-0 w-full h-full bg-[rgba(0,0,0,0.5)]">
-        <div class="audio-modal-content absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-[80%] bg-white rounded-xl overflow-hidden">
-            <div class="audio-modal-header p-[8px_12px] bg-[#f8fafc] flex justify-between items-center border-b border-[#ddd]">
-                <button class="modal-btn close-modal-btn bg-white border border-[#cbd5e1] p-[5px_12px] rounded-md cursor-pointer font-bold text-[12px]" onclick="closeAudioModal()">✕ ĐÓNG</button>
-                <button class="modal-btn bg-white border border-[#cbd5e1] p-[5px_12px] rounded-md cursor-pointer font-bold text-[12px]" style="color:#059669;" onclick="reloadAudioModal()">F5 RELOAD</button>
-                <button class="modal-btn back-modal-btn bg-white border border-[#cbd5e1] p-[5px_12px] rounded-md cursor-pointer font-bold text-[12px]" onclick="backAudioModal()">BACK ↩</button>
+    <div id="audioModal" class="audio-modal">
+        <div class="audio-modal-content">
+            <div class="audio-modal-header">
+                <button class="modal-btn close-modal-btn" onclick="closeAudioModal()">✕ ĐÓNG</button>
+                <button class="modal-btn" style="color:#059669;" onclick="reloadAudioModal()">F5 RELOAD</button>
+                <button class="modal-btn back-modal-btn" onclick="backAudioModal()">BACK ↩</button>
             </div>
-            <iframe id="audioFrame" class="w-full h-[calc(100%-40px)] border-none" src=""></iframe>
+            <iframe id="audioFrame" src=""></iframe>
         </div>
     </div>
 
     <script>
-        // CONFIG URLS
-        const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
         let currentDiaries = [];
         let editingId = null;
         let urlId = new URLSearchParams(window.location.search).get('id');
@@ -132,42 +166,6 @@
         async function initApp() {
             loadDiaries();
         }
-
-        async function loadDiaries() {
-            try {
-                const response = await fetch(VERCEL_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        sheet: 'DairyList', 
-                        act: 'read', 
-                        spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' 
-                    })
-                });
-                const data = await response.json();
-                if (data.values) {
-                    currentDiaries = data.values.map(r => ({
-                        id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0), paragraph_trans: r[7], conversation_trans: r[8]
-                    })).reverse();
-                    renderList(currentDiaries);
-                    if (selectedDiaryId) selectRecord(selectedDiaryId, true);
-                }
-            } catch (err) { console.warn("[Sync] Offline mode"); }
-        }
-
-        async function callAPI(paramsObj) {
-            try {
-                const response = await fetch(VERCEL_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(paramsObj)
-                });
-                return await response.json();
-            } catch (e) {
-                clone.error("[Sync Error]:", e);
-                return { status: 'error', message: "Lỗi kết nối server" };
-            }
-        }
         
         function renderList(diaries) {
             const container = document.getElementById('diaryContainer');
@@ -189,7 +187,7 @@
         function createItemEl(item) {
             const isGen = !!(item.paragraph || item.conversation);
             const div = document.createElement('div');
-            div.className = `diary-item p-3 rounded-lg mb-2 cursor-pointer relative ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
+            div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
             div.id = `item-${item.id}`;
             div.onclick = (e) => {
                 if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger')) {
@@ -197,30 +195,28 @@
                 }
             };
             div.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <div class="diary-date mb-0 text-[0.75rem] font-semibold">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div class="diary-date" style="margin-bottom:0;">
                         ${item.date} - ${item.id}
-                        <span class="count-trigger ml-2 text-white bg-[${item.voiceCount > 0 ? '#e67e22' : '#ccc'}] p-[2px_8px] rounded-[10px] text-[0.7rem] cursor-pointer font-bold inline-block" 
-                              onclick="event.stopPropagation(); handleRecordBadgeClick('${item.id}')">
+                        <span class="count-trigger" 
+                              onclick="event.stopPropagation(); handleRecordBadgeClick('${item.id}')" 
+                              style="margin-left:8px; color:white; background:${item.voiceCount > 0 ? '#e67e22' : '#ccc'}; padding:2px 8px; border-radius:10px; font-size:0.7rem; cursor:pointer; font-weight:bold; display:inline-block;">
                             🎙️ ${item.voiceCount || 0}
                         </span>
                     </div>
-                    <div class="flex gap-2.5">
-                        <div class="item-action-btn edit-btn text-[0.75rem] cursor-pointer font-semibold flex-1 text-center p-[5px_0] whitespace-nowrap" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
-                        <div class="item-action-btn delete-btn text-[0.75rem] cursor-pointer font-semibold flex-1 text-center p-[5px_0] whitespace-nowrap" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
+                        <div class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
                     </div>
                 </div>
-                <div class="diary-content text-[1.1rem] leading-[1.5] whitespace-pre-wrap mb-2.5">${item.text}</div>
-                <div class="item-actions flex justify-between items-center border-t border-[#eee] pt-2 w-full">
-                    <div class="item-action-btn pin-btn border-r border-[#eee] text-[0.75rem] cursor-pointer font-semibold flex-1 text-center p-[5px_0] whitespace-nowrap" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
-                    <div class="item-action-btn ${item.paragraph ? '' : 'disabled'} border-r border-[#eee] text-[0.75rem] cursor-pointer font-semibold flex-1 text-center p-[5px_0] whitespace-nowrap" style="color:var(--primary-color);" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Đoạn</div>
-                    <div class="item-action-btn ${item.conversation ? '' : 'disabled'} border-r border-[#eee] text-[0.75rem] cursor-pointer font-semibold flex-1 text-center p-[5px_0] whitespace-nowrap" style="color:#e67e22;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Hội thoại</div>
-                    <div class="item-action-btn ai-btn ${isGen ? 'generated' : ''} text-[0.75rem] cursor-pointer font-semibold flex-1 text-center p-[5px_0] whitespace-nowrap" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
+                <div class="diary-content">${item.text}</div>
+                <div class="item-actions">
+                    <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
+                    <div class="item-action-btn ${item.paragraph ? '' : 'disabled'}" style="color:var(--primary-color); font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Đoạn</div>
+                    <div class="item-action-btn ${item.conversation ? '' : 'disabled'}" style="color:#e67e22; font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Hội thoại</div>
+                    <div class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" style="font-size:0.75rem;" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
                 </div>
             `;
-            // Remove border-right on last child of dynamic item-actions
-            const lastBtn = div.querySelector('.item-actions').lastElementChild;
-            if (lastBtn) lastBtn.style.borderRight = 'none';
             return div;
         }
 
@@ -246,19 +242,6 @@
             if (iframe.src) iframe.src = iframe.src;
         }
 
-        async function saveDiary() {
-            const text = document.getElementById('diaryInput').value.trim();
-            if (!text) return;
-            const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
-            const newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0, paragraph_trans: "", conversation_trans: "" };
-            currentDiaries.unshift(newItem);
-            renderList(currentDiaries);
-            document.getElementById('diaryInput').value = '';
-            const rowData = [id, date, text, "", "", "false", 0, "", ""];
-            await callAPI({ act: 'add', sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
-            selectRecord(id, true);
-        }
-
         function startEdit(id, text) {
             editingId = id;
             document.getElementById('diaryInput').value = text;
@@ -267,66 +250,10 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function updateDiary() {
-            const text = document.getElementById('diaryInput').value.trim();
-            const idx = currentDiaries.findIndex(i => i.id == editingId);
-            if (idx === -1) return;
-            const item = currentDiaries[idx];
-            item.text = text;
-            renderList(currentDiaries);
-            const tid = editingId;
-            clearEditMode();
-            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
-            await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
-        }
-
-        async function deleteDiary(id) {
-            if (confirm("Xóa nhật ký này?")) {
-                currentDiaries = currentDiaries.filter(i => i.id != id);
-                renderList(currentDiaries);
-                await callAPI({ act: 'deleteByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' });
-            }
-        }
-
         function togglePinFilter() {
             showPinnedOnly = !showPinnedOnly;
             localStorage.setItem("diary_show_pinned_only", showPinnedOnly);
             renderList(currentDiaries);
-        }
-
-        async function togglePin(id) {
-            const idx = currentDiaries.findIndex(d => d.id == id);
-            if (idx === -1) return;
-            const item = currentDiaries[idx];
-            item.pinned = !item.pinned;
-            renderList(currentDiaries);
-            const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
-            await callAPI({ act: 'updateByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
-        }
-
-        async function askAI(id, content) {
-            selectRecord(id); switchTab(1);
-            const pContainer = document.getElementById('paragraphContainer'), cContainer = document.getElementById('conversationContainer');
-            pContainer.innerHTML = cContainer.innerHTML = '<p class="loading-text text-center p-10 text-[0.9rem]">🤖 Đang biên soạn nội dung...</p>';
-            const res = await (await fetch('https://hsk-gilt.vercel.app/api/aiGenerate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, lessionId: id })
-            })).json();
-            if (res.status === 'success') {
-                const idx = currentDiaries.findIndex(d => d.id == id);
-                if (idx !== -1) {
-                    currentDiaries[idx].paragraph = res.paragraph;
-                    currentDiaries[idx].conversation = res.conversation;
-                    if(res.paragraph_trans) currentDiaries[idx].paragraph_trans = res.paragraph_trans;
-                    if(res.conversation_trans) currentDiaries[idx].conversation_trans = res.conversation_trans;
-                    renderList(currentDiaries); updateAIView();
-                    window.location.reload();
-                }
-            }else{
-                alert(res.message);
-                switchTab(0);
-            }
         }
 
         function switchTab(index) {
@@ -374,23 +301,23 @@
             
             let pHTML = '';
             if (pContent || pTrans) {
-                pHTML += `<div class="ai-content-box p-[15px] rounded-lg text-[1rem] whitespace-pre-wrap mb-2.5" onclick="toggleContentLang('p')" style="cursor: pointer; line-height: 1.7;">`;
+                pHTML += `<div class="ai-content-box" onclick="toggleContentLang('p')" style="cursor: pointer;">`;
                 pHTML += `<div id="p-vi-view" style="display: block; color: #2c3e50;">${pTrans || 'Chưa có bản dịch.'}</div>`;
                 pHTML += `<div id="p-jp-view" style="display: none;"><div id="p-content">${pContent || ''}</div></div>`;
                 pHTML += `</div>`;
             } else {
-                pHTML += `<p class="loading-text text-center p-10 text-[0.9rem]">Chưa có nội dung AI.</p>`;
+                pHTML += `<p class="loading-text">Chưa có nội dung AI.</p>`;
             }
             document.getElementById('paragraphContainer').innerHTML = pHTML;
 
             let cHTML = '';
             if (cContent || cTrans) {
-                cHTML += `<div class="ai-content-box p-[15px] rounded-lg text-[1rem] whitespace-pre-wrap mb-2.5" onclick="toggleContentLang('c')" style="cursor: pointer; border-left-color: #e67e22; line-height: 1.7;">`;
+                cHTML += `<div class="ai-content-box" onclick="toggleContentLang('c')" style="cursor: pointer; border-left-color: #e67e22;">`;
                 cHTML += `<div id="c-vi-view" style="display: block; color: #2c3e50;">${cTrans || 'Chưa có bản dịch.'}</div>`;
                 cHTML += `<div id="c-jp-view" style="display: none;"><div id="c-content">${cContent || ''}</div></div>`;
                 cHTML += `</div>`;
             } else {
-                cHTML += `<p class="loading-text text-center p-10 text-[0.9rem]">Chưa có nội dung AI.</p>`;
+                cHTML += `<p class="loading-text">Chưa có nội dung AI.</p>`;
             }
             document.getElementById('conversationContainer').innerHTML = cHTML;
 
@@ -465,38 +392,6 @@
 
         function resetSpeakBtns() { const b = document.getElementById('btnMainSpeak'); b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
         function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
-    </script>
-    <script>
-        async function getLessonTotalScore() {
-            try {
-                const res = await fetch(VERCEL_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        sheet: 'ScoreList', 
-                        act: 'read', 
-                        spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A' 
-                    })
-                });
-                const result = await res.json();
-                if (result.values && Array.isArray(result.values)) {
-                    document.querySelectorAll('.count-trigger').forEach(badge => {
-                        const match = badge.getAttribute('onclick').match(/'([^']+)'/);
-                        if (match && match[1]) {
-                            const lessonID = match[1];
-                            let count = 0, maxScore = 0;
-                            result.values.forEach(row => {
-                                if (row[0] === lessonID) {
-                                    count++;
-                                    let score = parseInt(row[3]);
-                                    if (!isNaN(score) && score > maxScore) maxScore = score;
-                                }
-                            });
-                        }
-                    });
-                }
-            } catch (e) { console.error(e); }
-        }
     </script>
 </body>
 </html>

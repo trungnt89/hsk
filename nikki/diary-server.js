@@ -100,7 +100,7 @@ async function askAI(id, content) {
                 if(res.paragraph_trans) currentDiaries[idx].paragraph_trans = res.paragraph_trans;
                 if(res.conversation_trans) currentDiaries[idx].conversation_trans = res.conversation_trans;
                 renderList(currentDiaries); updateAIView();
-                window.location.reload();
+                loadDiaries();
             }
         } else {
             alert(res.message);

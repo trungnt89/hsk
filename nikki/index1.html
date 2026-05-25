@@ -110,8 +110,6 @@
     <script>
         // CONFIG URLS
         const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec';
-
         let currentDiaries = [];
         let editingId = null;
         let urlId = new URLSearchParams(window.location.search).get('id');
@@ -168,19 +166,6 @@
             } catch (e) {
                 clone.error("[Sync Error]:", e);
                 return { status: 'error', message: "Lỗi kết nối server" };
-            }
-        }
-
-        async function callGAS(paramsObj) {
-            console.log("[GAS Action]:", paramsObj.action);
-            const params = new URLSearchParams();
-            for (const key in paramsObj) if (paramsObj[key] != null) params.append(key, paramsObj[key]);
-            try {
-                const response = await fetch(`${GAS_URL}?${params.toString()}`);
-                return await response.json();
-            } catch (e) {
-                console.error("[Sync Error]:", e);
-                return { status: 'error', message: "Lỗi kết nối" };
             }
         }
         

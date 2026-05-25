@@ -93,15 +93,7 @@ async function askAI(id, content) {
         });
         const res = await response.json();
         if (res.status === 'success') {
-            const idx = currentDiaries.findIndex(d => d.id == id);
-            if (idx !== -1) {
-                currentDiaries[idx].paragraph = res.paragraph;
-                currentDiaries[idx].conversation = res.conversation;
-                if(res.paragraph_trans) currentDiaries[idx].paragraph_trans = res.paragraph_trans;
-                if(res.conversation_trans) currentDiaries[idx].conversation_trans = res.conversation_trans;
-                renderList(currentDiaries); updateAIView();
-                loadDiaries();
-            }
+            loadDiaries();
         } else {
             alert(res.message);
             switchTab(0);

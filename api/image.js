@@ -2,9 +2,9 @@ import fetch from 'node-fetch';
 import FormData from 'form-data';
 
 /**
- * CẤU HÌNH HỆ THỐNG
+ * CẤU HÌNH HỆ THỐNG (SỬ DỤNG BIẾN MÔI TRƯỜNG ĐỂ BẢO MẬT TOKEN)
  */
-const TELEGRAM_TOKEN = "8019068142:AAEyOi2cg-TBIr-XPfkHP4iqMw_rj9XLw1s";
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || "8019068142:AAEyOi2cg-TBIr-XPfkHP4iqMw_rj9XLw1s";
 const CHAT_ID = "8536107228";
 const TARGET_URL = "https://m.lophoctiengnhat.com/free-moi-ngay-mot-bai-dokkai-n1.html";
 
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     const URL = (urlParam !== "") ? urlParam : TARGET_URL;
     log("1. Mục tiêu: " + URL);
     
-    // Cấu hình Microlink
+    // TỐI ƯU HÓA MICROLINK URL: Giảm waitForTimeout từ 15000 xuống 3000 để tránh lỗi HTTP 504 Gateway Timeout
     const microlinkUrl = `https://api.microlink.io/?url=${encodeURIComponent(URL)}` + 
                          `&screenshot=true` +
                          `&embed=screenshot.url` +
@@ -51,9 +51,9 @@ export default async function handler(req, res) {
                          `&viewport.isMobile=true` +
                          `&screenshot.fullPage=true` + 
                          `&waitForNetworkIdle=true` +
-                         `&waitForTimeout=15000&t=` + new Date().getTime();
+                         `&waitForTimeout=3000&t=` + new Date().getTime();
 
-    log("2. Đang gửi yêu cầu chụp ảnh tới Microlink (Đợi khoảng 10-15s)...");
+    log("2. Đang gửi yêu cầu chụp ảnh tới Microlink (Đợi khoảng 5-10s)...");
     
     // 1. Tải file ảnh từ Microlink
     const response = await fetch(microlinkUrl);

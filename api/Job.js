@@ -50,12 +50,14 @@ async function ControlSendMessage() {
         rowData[6] = newTimeJST;
         let text = `【ID: ${rowData[0]}】\n${rowData[2]}`;
 
-        // Thực hiện gửi tin nhắn
-        let res = await tg.SendMessage(text);
+        let res;
+        res = await tg.SendMessage(text);
         if (res) {
-            // Thực hiện cập nhật sheet sau khi gửi thành công
-            await UpdateTask(SHEET_1, id, rowData);
-        }
+            await UpdateTask(SHEET_1, id, rowData);			
+			if (text.includes("N1")) {
+				await fetch("https://hsk-gilt.vercel.app/api/image");
+			}
+		}
     }
 
     return rows;

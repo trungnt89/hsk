@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Diary - AI Integrated</title>
+    <script type="module">
+        import JapaneseLookup from '../com/japanese-lookup.js?v=1';
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; font-size:14px}
+        :root {
+            --bg-color: #f5f7fb; --primary-color: #6c5ce7; --secondary-color: #a29bfe;
+            --text-color: #2d3436; --text-light: #636e72; --card-bg: #ffffff;
+            --danger-color: #ff7675; --edit-color: #0984e3; --success-color: #2ecc71;
+            --ai-color: #00b894;
+        }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
+        header h1 { font-size: 1.2rem; font-weight: 600; }
+        main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
+        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 10px; font-size: 15px; resize: none; height: 120px; outline: none; display: block; }
+        .action-area { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; gap: 5px; width: 100%; }
+        .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 1; font-size: 13px; }
+        .btn-save:disabled { background-color: #ccc; cursor: not-allowed; }
+        .btn-cancel { background-color: #eee; color: #333; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; flex-shrink: 1; font-size: 13px; }
+        .tts-controls { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: 1; justify-content: flex-end; overflow: hidden; }
+        .btn-main-speak { background: var(--ai-color); color: white; border: none; padding: 6px 8px; border-radius: 20px; cursor: pointer; font-size: 0.75rem; font-weight: bold; min-width: 65px; transition: 0.3s; flex-shrink: 1; }
+        .btn-main-speak:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
+        .btn-main-speak.playing { background: var(--danger-color); }
+        .tabs { display: flex; background: #eee; border-radius: 8px; padding: 4px; margin-top: 5px; flex-shrink: 0; }
+        .tab-btn { flex: 1; border: none; padding: 10px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .toggle-container { display: inline-flex; align-items: center; cursor: pointer; position: relative; margin-left: 4px; }
+        .toggle-switch { position: relative; width: 30px; height: 16px; background-color: #ccc; border-radius: 10px; transition: 0.3s; }
+        .toggle-switch::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: 0.3s; }
+        .toggle-active .toggle-switch { background-color: var(--success-color); }
+        .toggle-active .toggle-switch::after { left: 16px; }
+        .toggle-label { font-size: 0.6rem; margin-right: 2px; color: inherit; font-weight: bold; display: none; }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding-bottom: 20px; scroll-behavior: smooth; }
+        .tab-content.active { display: block; }
+        .diary-item { background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #dfe6e9; cursor: pointer; position: relative; }
+        .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
+        .diary-item.selected { border-left-color: #e67e22 !important; background-color: #fff3e0 !important; outline: 3px solid #ffcc80; outline-offset: -3px; }
+        .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.7; font-size: 1rem; white-space: pre-wrap; margin-bottom: 10px; border-left: 4px solid var(--ai-color); color: #2c3e50; }
+        .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
+        select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
+        .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
+        .diary-content { font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
+        .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 8px; width: 100%; }
+        .item-action-btn { background: none; border: none; font-size: 0.75rem; cursor: pointer; font-weight: 600; flex: 1; text-align: center; padding: 5px 0; white-space: nowrap; border-right: 1px solid #eee; }
+        .item-action-btn:last-child { border-right: none; }
+        .item-action-btn.disabled { color: #ccc !important; cursor: not-allowed; pointer-events: none; opacity: 0.6; }
+        .pin-btn { color: #f39c12; }
+        .edit-btn { color: var(--edit-color); }
+        .delete-btn { color: var(--danger-color); }
+        .ai-btn { color: var(--ai-color); }
+        .ai-btn.generated { color: #27ae60; }
+        .loading-text { text-align: center; padding: 40px; font-size: 0.9rem; color: var(--text-light); }
+        .audio-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .audio-modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 80%; background: white; border-radius: 12px; overflow: hidden; }
+        .audio-modal-header { padding: 8px 12px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
+        .modal-btn { background: #fff; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .close-modal-btn { color: #ef4444; }
+        .back-modal-btn { color: #2563eb; }
+        iframe#audioFrame { width: 100%; height: calc(100% - 40px); border: none; }
+    </style>
+</head>
+<body>
+    <script src="../com/assistive.js"></script>
+    <script src="../com/TTSClient.js"></script>
+
+    <header><h1>Diary & AI</h1></header>
+
+    <main>
+        <div class="write-card">
+            <textarea id="diaryInput" placeholder="Hôm nay của bạn thế nào?..."></textarea>
+            <div class="action-area">
+                <button id="cancelBtn" class="btn-cancel" style="display:none;">Hủy</button>
+                <button id="saveBtn" class="btn-save">Lưu lại</button>
+                <div class="tts-controls">
+                    <button id="btnMainSpeak" class="btn-main-speak" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
+                    <button id="btnRepeat" class="btn-repeat" onclick="toggleRepeat()">🔂</button>
+                    <select id="voiceSelect" class="tts-select" onchange="saveTTSSettings()">
+                        <option value="ja-JP-KeitaNeural" selected>Nam</option>
+                        <option value="ja-JP-NanamiNeural" >Nữ</option>
+                    </select>
+                    <select id="rateSelect" class="tts-select" onchange="saveTTSSettings()">
+                        <option value="0.65">0.65</option>
+                        <option value="0.68">0.68</option>
+                        <option value="0.70" selected>0.70</option>
+                        <option value="0.72">0.72</option>
+                        <option value="0.75">0.75</option>
+                        <option value="0.80">0.80</option>
+                        <option value="1.0">1.0</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)">
+                <span>📝 Nhật ký</span>
+                <div class="toggle-container" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
+                    <span class="toggle-label" id="pinLabelText">Tất cả</span>
+                    <div class="toggle-switch"></div>
+                </div>
+            </button>
+            <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
+            <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
+        </div>
+
+        <div id="tab-diary" class="tab-content active">
+            <div id="diaryContainer"><p class="loading-text">Đang tải dữ liệu...</p></div>
+        </div>
+        <div id="tab-paragraph" class="tab-content"><div id="paragraphContainer"></div></div>
+        <div id="tab-conversation" class="tab-content"><div id="conversationContainer"></div></div>
+    </main>
+
+    <div id="audioModal" class="audio-modal">
+        <div class="audio-modal-content">
+            <div class="audio-modal-header">
+                <button class="modal-btn close-modal-btn" onclick="closeAudioModal()">✕ ĐÓNG</button>
+                <button class="modal-btn" style="color:#059669;" onclick="reloadAudioModal()">F5 RELOAD</button>
+                <button class="modal-btn back-modal-btn" onclick="backAudioModal()">BACK ↩</button>
+            </div>
+            <iframe id="audioFrame" src=""></iframe>
+        </div>
+    </div>
+
+    <script>
+        const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/gSheet', GAS_URL = 'https://script.google.com/macros/s/AKfycbwoSa8pQjddIlaP5cv-whNGFAd2j4sX3XuaFXHnwyQzdVvQ7nO8CWQTc2ykbHpO7OEw/exec', SPREAD_ID = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
+        let currentDiaries = [], editingId = null, urlId = new URLSearchParams(window.location.search).get('id'), selectedDiaryId = urlId || localStorage.getItem("diary_selected_id"), isRepeating = localStorage.getItem("diary_repeat") === "true", currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0, showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
+        if (urlId && urlId !== localStorage.getItem("diary_selected_id")) localStorage.setItem("diary_selected_id", urlId);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDiaries();
+            loadTTSSettings();
+            document.getElementById('saveBtn').addEventListener('click', () => editingId ? updateDiary() : saveDiary());
+            document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
+        });
+
+        async function loadDiaries() {
+            try {
+                const response = await fetch(VERCEL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sheet: 'DairyList', act: 'read', spread: SPREAD_ID }) });
+                const data = await response.json();
+                if (data.values) {
+                    currentDiaries = data.values.map(r => ({ id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0), paragraph_trans: r[7], conversation_trans: r[8] })).reverse();
+                    renderList(currentDiaries);
+                    if (selectedDiaryId) selectRecord(selectedDiaryId, true);
+                }
+            } catch (err) { console.warn("[Sync] Offline mode"); }
+        }
+
+        async function callAPI(paramsObj) {
+            try {
+                const response = await fetch(VERCEL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(paramsObj) });
+                return await response.json();
+            } catch (e) { return { status: 'error', message: "Lỗi kết nối server" }; }
+        }
+        
+        function renderList(diaries) {
+            const container = document.getElementById('diaryContainer'), toggleWrapper = document.getElementById('pinToggleWrapper'), pinLabel = document.getElementById('pinLabelText');
+            if (toggleWrapper) {
+                toggleWrapper.classList.toggle('toggle-active', showPinnedOnly);
+                if (pinLabel) pinLabel.innerText = showPinnedOnly ? "Ghim" : "Tất cả";
+            }
+            const displayData = showPinnedOnly ? diaries.filter(d => d.pinned) : diaries;
+            container.innerHTML = '';
+            displayData.forEach(item => container.appendChild(createItemEl(item)));
+            getLessonTotalScore(); 
+        }
+
+        function createItemEl(item) {
+            const isGen = !!(item.paragraph || item.conversation), div = document.createElement('div'), escapedText = item.text.replace(/`/g, '\\`');
+            div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
+            div.id = `item-${item.id}`;
+            div.onclick = e => { if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger')) selectRecord(item.id); };
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div class="diary-date" style="margin-bottom:0;">
+                        ${item.date} - ${item.id}
+                        <span class="count-trigger" onclick="event.stopPropagation(); handleRecordBadgeClick('${item.id}')" style="margin-left:8px; color:white; background:${item.voiceCount > 0 ? '#e67e22' : '#ccc'}; padding:2px 8px; border-radius:10px; font-size:0.7rem; cursor:pointer; font-weight:bold; display:inline-block;">🎙️ ${item.voiceCount || 0}</span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${escapedText}\`)">✏️ Sửa</div>
+                        <div class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
+                    </div>
+                </div>
+                <div class="diary-content">${item.text}</div>
+                <div class="item-actions">
+                    <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
+                    <div class="item-action-btn ${item.paragraph ? '' : 'disabled'}" style="color:var(--primary-color); font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Đoạn</div>
+                    <div class="item-action-btn ${item.conversation ? '' : 'disabled'}" style="color:#e67e22; font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Hội thoại</div>
+                    <div class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" style="font-size:0.75rem;" onclick="event.stopPropagation(); askAI('${item.id}', \`${escapedText}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
+                </div>`;
+            return div;
+        }
+
+        function handleRecordBadgeClick(id) {
+            selectRecord(id);
+            document.getElementById('audioFrame').src = `./recorder.html?lessionId=${id}&tab=1`;
+            document.getElementById('audioModal').style.display = 'block';
+        }
+
+        function closeAudioModal() {
+            document.getElementById('audioFrame').src = "";
+            document.getElementById('audioModal').style.display = 'none';
+        }
+
+        function backAudioModal() { const iframe = document.getElementById('audioFrame'); if (iframe.contentWindow) iframe.contentWindow.history.back(); }
+        function reloadAudioModal() { const iframe = document.getElementById('audioFrame'); if (iframe.src) iframe.src = iframe.src; }
+
+        async function saveDiary() {
+            const text = document.getElementById('diaryInput').value.trim();
+            if (!text) return;
+            const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN'), newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0, paragraph_trans: "", conversation_trans: "" };
+            currentDiaries.unshift(newItem);
+            renderList(currentDiaries);
+            document.getElementById('diaryInput').value = '';
+            await callAPI({ act: 'add', sheet: 'DairyList', spread: SPREAD_ID, data: JSON.stringify([id, date, text, "", "", "false", 0, "", ""]) });
+            selectRecord(id, true);
+        }
+
+        function startEdit(id, text) {
+            editingId = id;
+            document.getElementById('diaryInput').value = text;
+            document.getElementById('saveBtn').innerText = 'Cập nhật';
+            document.getElementById('cancelBtn').style.display = 'inline-block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function updateDiary() {
+            const text = document.getElementById('diaryInput').value.trim(), idx = currentDiaries.findIndex(i => i.id == editingId);
+            if (idx === -1) return;
+            const item = currentDiaries[idx];
+            item.text = text;
+            renderList(currentDiaries);
+            const tid = editingId;
+            clearEditMode();
+            await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, sheet: 'DairyList', spread: SPREAD_ID, data: JSON.stringify([item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""]) });
+        }
+
+        async function deleteDiary(id) {
+            if (confirm("Xóa nhật ký này?")) {
+                currentDiaries = currentDiaries.filter(i => i.id != id);
+                renderList(currentDiaries);
+                await callAPI({ act: 'deleteByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: SPREAD_ID });
+            }
+        }
+
+        function togglePinFilter() { showPinnedOnly = !showPinnedOnly; localStorage.setItem("diary_show_pinned_only", showPinnedOnly); renderList(currentDiaries); }
+
+        async function togglePin(id) {
+            const idx = currentDiaries.findIndex(d => d.id == id);
+            if (idx === -1) return;
+            const item = currentDiaries[idx];
+            item.pinned = !item.pinned;
+            renderList(currentDiaries);
+            await callAPI({ act: 'updateByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: SPREAD_ID, data: JSON.stringify([item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""]) });
+        }
+
+        async function askAI(id, content) {
+            selectRecord(id); switchTab(1);
+            document.getElementById('paragraphContainer').innerHTML = document.getElementById('conversationContainer').innerHTML = '<p class="loading-text">🤖 Đang biên soạn nội dung...</p>';
+            const res = await (await fetch('https://hsk-gilt.vercel.app/api/aiGenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, lessionId: id }) })).json();
+            if (res.status === 'success') {
+                const idx = currentDiaries.findIndex(d => d.id == id);
+                if (idx !== -1) {
+                    Object.assign(currentDiaries[idx], { paragraph: res.paragraph, conversation: res.conversation, paragraph_trans: res.paragraph_trans || currentDiaries[idx].paragraph_trans, conversation_trans: res.conversation_trans || currentDiaries[idx].conversation_trans });
+                    renderList(currentDiaries); updateAIView(); window.location.reload();
+                }
+            } else { alert(res.message); switchTab(0); }
+        }
+
+        function switchTab(index) {
+            currentTabIndex = index; localStorage.setItem("diary_current_tab", index);
+            document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === index));
+            updateAIView();
+        }
+
+        function selectRecord(id, scroll = true) {
+            selectedDiaryId = id; localStorage.setItem("diary_selected_id", id);
+            const newUrl = new URL(window.location); newUrl.searchParams.set('id', id); window.history.replaceState({}, '', newUrl); 
+            document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
+            const el = document.getElementById(`item-${id}`);
+            if (el) { el.classList.add('selected'); if (scroll) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }
+            updateAIView();
+        }
+
+        function toggleContentLang(type) {
+            const jpEl = document.getElementById(`${type}-jp-view`), viEl = document.getElementById(`${type}-vi-view`);
+            if (jpEl && viEl) { const isViHidden = viEl.style.display === 'none'; viEl.style.display = isViHidden ? 'block' : 'none'; jpEl.style.display = isViHidden ? 'none' : 'block'; }
+        }
+
+        function updateAIView() {
+            const item = currentDiaries.find(d => d.id == selectedDiaryId);
+            if (!item) return;
+            const viewConfig = [ { id: 'paragraphContainer', prefix: 'p', content: item.paragraph, trans: item.paragraph_trans, border: '' }, { id: 'conversationContainer', prefix: 'c', content: item.conversation, trans: item.conversation_trans, border: 'border-left-color: #e67e22;' } ];
+            viewConfig.forEach(cfg => {
+                document.getElementById(cfg.id).innerHTML = (cfg.content || cfg.trans) ? `<div class="ai-content-box" onclick="toggleContentLang('${cfg.prefix}')" style="cursor: pointer; ${cfg.border}"><div id="${cfg.prefix}-vi-view" style="display: block; color: #2c3e50;">${cfg.trans || 'Chưa có bản dịch.'}</div><div id="${cfg.prefix}-jp-view" style="display: none;"><div id="${cfg.prefix}-content">${cfg.content || ''}</div></div></div>` : `<p class="loading-text">Chưa có nội dung AI.</p>`;
+            });
+            document.getElementById('btnMainSpeak').disabled = currentTabIndex === 1 ? !(item.paragraph || item.paragraph_trans) : currentTabIndex === 2 ? !(item.conversation || item.conversation_trans) : true;
+        }
+
+        function loadTTSSettings() {
+            const v = localStorage.getItem("diary_voice"), r = localStorage.getItem("diary_rate");
+            if (v) document.getElementById("voiceSelect").value = v;
+            if (r) document.getElementById("rateSelect").value = r;
+            document.getElementById("btnRepeat").classList.toggle("active", isRepeating);
+        }
+
+        function saveTTSSettings() { localStorage.setItem("diary_voice", document.getElementById("voiceSelect").value); localStorage.setItem("diary_rate", document.getElementById("rateSelect").value); localStorage.setItem("diary_repeat", isRepeating); }
+
+        function toggleRepeat() { 
+            isRepeating = !isRepeating; document.getElementById("btnRepeat").classList.toggle("active", isRepeating); saveTTSSettings(); 
+            if (document.getElementById('btnMainSpeak').classList.contains("playing")) { handleGlobalSpeak(); handleGlobalSpeak(); }
+        }
+
+        async function speakText(elId, btnId) {
+            const el = document.getElementById(elId), btn = document.getElementById(btnId);
+            if (!el || !window.speakCommon) return;
+            btn.classList.add("playing"); btn.innerHTML = '⏹ Dừng';
+            let voiceValue = document.getElementById("voiceSelect").value;
+            if ((elId === 'p-vi-view' || elId === 'c-vi-view')) voiceValue = voiceValue === 'ja-JP-KeitaNeural' ? 'vi-VN-NamMinhNeural' : (voiceValue === 'ja-JP-NanamiNeural' ? 'vi-VN-HoaiMyNeural' : voiceValue);
+            await window.speakCommon({ text: el.innerText, voice: voiceValue, rate: document.getElementById("rateSelect").value, filename: `Diary_AI_${selectedDiaryId}`, loop: isRepeating });
+            if (!isRepeating) resetSpeakBtns();
+        }
+
+        function handleGlobalSpeak() {
+            const btn = document.getElementById('btnMainSpeak');
+            if (btn.classList.contains("playing")) { if (window.stopSpeak) window.stopSpeak(); resetSpeakBtns(); return; }
+            let tid = null;
+            if (currentTabIndex === 1) { const viEl = document.getElementById('p-vi-view'); tid = (viEl && viEl.style.display !== 'none') ? 'p-vi-view' : 'p-content'; }
+            else if (currentTabIndex === 2) { const viEl = document.getElementById('c-vi-view'); tid = (viEl && viEl.style.display !== 'none') ? 'c-vi-view' : 'c-content'; }
+            if (tid) speakText(tid, 'btnMainSpeak');
+        }
+
+        function resetSpeakBtns() { const b = document.getElementById('btnMainSpeak'); b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
+        function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
+
+        async function getLessonTotalScore() {
+            try {
+                const res = await fetch(VERCEL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sheet: 'ScoreList', act: 'read', spread: '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A' }) });
+                const result = await res.json();
+                if (result.values && Array.isArray(result.values)) {
+                    document.querySelectorAll('.count-trigger').forEach(badge => {
+                        const match = badge.getAttribute('onclick').match(/'([^']+)'/);
+                        if (match && match[1]) {
+                            const lessonID = match[1];
+                            result.values.forEach(row => { if (row[0] === lessonID) { /* logic giữ nguyên cấu trúc */ } });
+                        }
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+    </script>
+</body>
+</html>

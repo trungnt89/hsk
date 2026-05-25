@@ -46,7 +46,7 @@
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.7; font-size: 1rem; white-space: pre-wrap; margin-bottom: 10px; border-left: 4px solid var(--ai-color); color: #2c3e50; }
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
-        select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
+        .select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
         .diary-content { font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
         .item-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 8px; width: 100%; }
@@ -144,12 +144,13 @@
 
         async function loadDiaries() {
             try {
-                const response = await fetch(VERCEL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sheet: 'DairyList', act: 'read', spread: SPREAD_ID }) });
+                const response = await fetch(VERCEL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sheet: 'DairyList', act: 'read', spread: SPREID_ID || SPREAD_ID }) });
                 const data = await response.json();
                 if (data.values) {
                     currentDiaries = data.values.map(r => ({ id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0), paragraph_trans: r[7], conversation_trans: r[8] })).reverse();
                     renderList(currentDiaries);
-                    if (selectedDiaryId) selectRecord(selectedDiaryId, true);
+                    switchTab(currentTabIndex);
+                    if (selectedDiaryId) selectRecord(selectedDiaryId, currentTabIndex === 0);
                 }
             } catch (err) { console.warn("[Sync] Offline mode"); }
         }

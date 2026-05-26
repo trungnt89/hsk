@@ -104,6 +104,9 @@ async function callAPI(paramsObj) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(paramsObj)
         });
+		
+		// Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
+		await clearDiaryCache();
         return await response.json();
     } catch (e) {
         console.error("[Sync Error]:", e);
@@ -120,9 +123,6 @@ async function saveDiary() {
     renderList(currentDiaries);
     document.getElementById('diaryInput').value = '';
     const rowData = [id, date, text, "", "", "false", 0, "", ""];
-    
-    // Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
-    await clearDiaryCache();
 
     await callAPI({ act: 'add', sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
     selectRecord(id, true);
@@ -138,10 +138,6 @@ async function updateDiary() {
     const tid = editingId;
     clearEditMode();
     const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
-    
-    // Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
-    await clearDiaryCache();
-
     await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
 }
 
@@ -149,10 +145,6 @@ async function deleteDiary(id) {
     if (confirm("Xóa nhật ký này?")) {
         currentDiaries = currentDiaries.filter(i => i.id != id);
         renderList(currentDiaries);
-        
-        // Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
-        await clearDiaryCache();
-
         await callAPI({ act: 'deleteByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' });
     }
 }
@@ -164,10 +156,6 @@ async function togglePin(id) {
     item.pinned = !item.pinned;
     renderList(currentDiaries);
     const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
-    
-    // Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
-    await clearDiaryCache();
-
     await callAPI({ act: 'updateByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
 }
 

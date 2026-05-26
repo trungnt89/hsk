@@ -1,8 +1,78 @@
 // CONFIG URLS
 const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
 
+// --- KHỞI TẠO VÀ QUẢN LÝ INDEXEDDB ---
+const DB_NAME = 'DiaryCacheDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'diaries';
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+        };
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function getCachedDiaries() {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    } catch (err) {
+        console.error("IndexedDB Get Error:", err);
+        return [];
+    }
+}
+
+async function saveDiariesToCache(diaries) {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.clear(); // Làm sạch cache cũ trước khi ghi đè cache mới nhất
+        diaries.forEach(item => store.put(item));
+        return tx.complete;
+    } catch (err) {
+        console.error("IndexedDB Save Error:", err);
+    }
+}
+
+async function clearDiaryCache() {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.clear();
+        return tx.complete;
+    } catch (err) {
+        console.error("IndexedDB Clear Error:", err);
+    }
+}
+// -------------------------------------
+
 async function loadDiaries() {
     try {
+        // Kiểm tra xem có dữ liệu trong IndexedDB không
+        const cachedData = await getCachedDiaries();
+        if (cachedData && cachedData.length > 0) {
+            currentDiaries = cachedData;
+            renderList(currentDiaries);
+            if (selectedDiaryId) selectRecord(selectedDiaryId, true);
+            return; // Lấy dữ liệu thành công từ IndexedDB, không gọi API nữa
+        }
+
         const response = await fetch(VERCEL_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -17,6 +87,10 @@ async function loadDiaries() {
             currentDiaries = data.values.map(r => ({
                 id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0), paragraph_trans: r[7], conversation_trans: r[8]
             })).reverse();
+            
+            // Lưu dữ liệu vừa lấy từ API vào IndexedDB để dùng cho lần sau
+            await saveDiariesToCache(currentDiaries);
+
             renderList(currentDiaries);
             if (selectedDiaryId) selectRecord(selectedDiaryId, true);
         }
@@ -46,6 +120,10 @@ async function saveDiary() {
     renderList(currentDiaries);
     document.getElementById('diaryInput').value = '';
     const rowData = [id, date, text, "", "", "false", 0, "", ""];
+    
+    // Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
+    await clearDiaryCache();
+
     await callAPI({ act: 'add', sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
     selectRecord(id, true);
 }
@@ -60,6 +138,10 @@ async function updateDiary() {
     const tid = editingId;
     clearEditMode();
     const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
+    
+    // Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
+    await clearDiaryCache();
+
     await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
 }
 
@@ -67,6 +149,10 @@ async function deleteDiary(id) {
     if (confirm("Xóa nhật ký này?")) {
         currentDiaries = currentDiaries.filter(i => i.id != id);
         renderList(currentDiaries);
+        
+        // Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
+        await clearDiaryCache();
+
         await callAPI({ act: 'deleteByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k' });
     }
 }
@@ -78,6 +164,10 @@ async function togglePin(id) {
     item.pinned = !item.pinned;
     renderList(currentDiaries);
     const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
+    
+    // Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
+    await clearDiaryCache();
+
     await callAPI({ act: 'updateByPosVal', pos: 0, val: id, sheet: 'DairyList', spread: '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k', data: JSON.stringify(rowData) });
 }
 

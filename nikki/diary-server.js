@@ -12,7 +12,8 @@ function openDB() {
         request.onupgradeneeded = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                // Sử dụng key tự sinh (autoIncrement) hoặc key chỉ định khi put để lưu một chuỗi data duy nhất
+                db.createObjectStore(STORE_NAME);
             }
         };
         request.onsuccess = (e) => resolve(e.target.result);
@@ -26,8 +27,18 @@ async function getCachedDiaries() {
         return new Promise((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readonly');
             const store = tx.objectStore(STORE_NAME);
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
+            const request = store.get('all_diaries_string'); // Lấy chuỗi JSON duy nhất
+            request.onsuccess = () => {
+                if (request.result) {
+                    try {
+                        resolve(JSON.parse(request.result)); // Parse ngược lại thành mảng đúng thứ tự ban đầu
+                    } catch (pErr) {
+                        resolve([]);
+                    }
+                } else {
+                    resolve([]);
+                }
+            };
             request.onerror = () => reject(request.error);
         });
     } catch (err) {
@@ -42,7 +53,11 @@ async function saveDiariesToCache(diaries) {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         store.clear(); // Làm sạch cache cũ trước khi ghi đè cache mới nhất
-        diaries.forEach(item => store.put(item));
+        
+        // Stringify toàn bộ mảng data để giữ nguyên cấu trúc và thứ tự phần tử
+        const dataString = JSON.stringify(diaries);
+        store.put(dataString, 'all_diaries_string'); 
+        
         return tx.complete;
     } catch (err) {
         console.error("IndexedDB Save Error:", err);

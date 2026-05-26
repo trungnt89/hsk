@@ -293,7 +293,7 @@ const JapaneseLookup = (() => {
             `).join('') || '<div style="padding:20px; text-align:center;">Trống.</div>';
         },
 
-        deleteFromList: (word, el = null) => {
+        deleteFromList: async (word, el = null) => {
             if (!confirm(`Xóa "${word}"?`)) return;
             if (el) el.style.display = 'none';
             savedWordsMap.delete(word);
@@ -304,6 +304,16 @@ const JapaneseLookup = (() => {
                     p.normalize();
                 }
             });
+
+            // Xóa data danh sách từ vựng đã lưu trong IndexedDB khi xóa một từ khỏi danh sách
+            try {
+                const db = await initDB();
+                const tx = db.transaction("cache", "readwrite");
+                tx.objectStore("cache").delete("word_list_data");
+            } catch (e) {
+                console.warn("[Log] IndexedDB Delete Cache Error:", e);
+            }
+
             console.log("[Log] Deleting word: " + word);
             fetch(CONFIG.API_URL, { 
                 method: "POST",

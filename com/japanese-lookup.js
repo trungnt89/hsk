@@ -127,6 +127,15 @@ const JapaneseLookup = (() => {
         const isKanji = kanjiDict && text.length === 1 && kanjiDict[text];
         showPopup(text, '...', '', '', false);
 
+        // Xóa data danh sách từ vựng đã lưu trong IndexedDB khi bắt đầu tra từ mới
+        try {
+            const db = await initDB();
+            const tx = db.transaction("cache", "readwrite");
+            tx.objectStore("cache").delete("word_list_data");
+        } catch (e) {
+            console.warn("[Log] IndexedDB Clear Cache Error:", e);
+        }
+
         try {
             const res = await fetch(CONFIG.vercel_api, {
                 method: 'POST',
@@ -173,19 +182,37 @@ const JapaneseLookup = (() => {
             createUI();
             await loadKanjiDict();
             try {
-                console.log("[Log] Fetching data from API...");
-                const res = await fetch(CONFIG.API_URL, {
-                    method: "POST",
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sheet: CONFIG.sheet, spread: CONFIG.spread, act: "read", v: Date.now() })
-                });
-                const data = await res.json();
-                data.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
-                dataLoaded = true;
-                Module.applyHighlight();
-                console.log("[Log] Data initialized from Vercel API.");
+                const db = await initDB();
+                // 1. Kiểm tra nếu có data danh sách từ vựng trong IndexedDB thì lấy luôn
+                let cachedData = await getDBData(db, "word_list_data");
+                
+                if (cachedData && cachedData.values) {
+                    console.log("[Log] Data initialized from IndexedDB cache.");
+                    cachedData.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
+                    dataLoaded = true;
+                    Module.applyHighlight();
+                } else {
+                    // Nếu chưa có cache thì mới gọi API từ Vercel
+                    console.log("[Log] Fetching data from API...");
+                    const res = await fetch(CONFIG.API_URL, {
+                        method: "POST",
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sheet: CONFIG.sheet, spread: CONFIG.spread, act: "read", v: Date.now() })
+                    });
+                    const data = await res.json();
+                    
+                    // Lưu dữ liệu lấy từ API vào IndexedDB
+                    if (data && data.values) {
+                        saveDBData(db, "word_list_data", data);
+                        data.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
+                    }
+                    
+                    dataLoaded = true;
+                    Module.applyHighlight();
+                    console.log("[Log] Data initialized from Vercel API và lưu vào cache.");
+                }
             } catch (e) { 
-                console.warn("[Log] API load failed.");
+                console.warn("[Log] API or DB load failed.");
                 dataLoaded = true; 
             }
 

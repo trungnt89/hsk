@@ -113,6 +113,7 @@ async function loadDiaries() {
 }
 
 async function callAPI(paramsObj) {
+	await clearDiaryCache();
     try {
         const response = await fetch(VERCEL_URL, {
             method: 'POST',
@@ -121,7 +122,6 @@ async function callAPI(paramsObj) {
         });
 		
 		// Xóa dữ liệu đã lưu trong IndexedDB trước khi gọi API
-		await clearDiaryCache();
         return await response.json();
     } catch (e) {
         console.error("[Sync Error]:", e);

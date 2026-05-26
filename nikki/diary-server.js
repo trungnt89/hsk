@@ -224,7 +224,7 @@ async function getLessonTotalScore() {
                         }
                     });
                     badge.innerHTML = `🎙️ ${count} ${maxScore ? ' 🏆 ' + maxScore : ''}`;
-                    adge.style.backgroundColor = count > 0 ? 'orange' : 'gray';
+                    badge.style.backgroundColor = count > 0 ? 'orange' : 'gray';
                 }
             });
         }

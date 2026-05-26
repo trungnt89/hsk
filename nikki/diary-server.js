@@ -223,7 +223,7 @@ async function getLessonTotalScore() {
                             if (!isNaN(score) && score > maxScore) maxScore = score;
                         }
                     });
-                    badge.innerHTML = `🎙️ ${count} ${maxScore ? ' | 🏆 ' + maxScore : ''}`;
+                    badge.innerHTML = `🎙️ ${count} ${maxScore ? ' 🏆 ' + maxScore : ''}`;
                     badge.style.color = count > 0 ? 'orange' : 'gray';
                 }
             });

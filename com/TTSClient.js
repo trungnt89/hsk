@@ -1,12 +1,12 @@
 // ../com/TTSClient.js - Shared Audio Logic (Global Script Version)
 (function() {
-    const DB_NAME = "TodoAppDB";
-    const DB_STORE = "AUDIO";
+    const DB_NAME = "TTS";
+    const DB_STORE = "MP3";
     let ttsDb;
     let globalAudio = null;
 
     // Khởi tạo IndexedDB
-    const ttsDbReq = indexedDB.open(DB_NAME, 1);
+    const ttsDbReq = indexedDB.open(DB_NAME, 2);
     ttsDbReq.onupgradeneeded = (e) => {
         if (!e.target.result.objectStoreNames.contains(DB_STORE)) {
             e.target.result.createObjectStore(DB_STORE);

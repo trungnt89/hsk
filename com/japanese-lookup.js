@@ -39,43 +39,22 @@ const JapaneseLookup = (() => {
     let savedWordsMap = new Map();
 
     const initDB = () => new Promise((res, rej) => {
-        // Giữ nguyên Version 1 theo yêu cầu của bạn
-        const req = indexedDB.open("TodoAppDB", 1);
-        req.onupgradeneeded = () => {
-            const db = req.result;
-            if (!db.objectStoreNames.contains("MAZII")) {
-                db.createObjectStore("MAZII");
-            }
-        };
+        const req = indexedDB.open("MAZII", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("WORDS");
         req.onsuccess = () => res(req.result);
         req.onerror = () => rej(req.error);
     });
 
     const getDBData = (db, key) => new Promise(res => {
-        try {
-            // Kiểm tra chủ động sự tồn tại của Store trước khi khởi tạo transaction
-            if (!db.objectStoreNames.contains("MAZII")) {
-                res(null);
-                return;
-            }
-            const tx = db.transaction("MAZII", "readonly");
-            const req = tx.objectStore("MAZII").get(key);
-            req.onsuccess = () => res(req.result);
-            req.onerror = () => res(null);
-        } catch (err) {
-            console.warn("[Log] Transaction error in getDBData:", err);
-            res(null);
-        }
+        const tx = db.transaction("WORDS", "readonly");
+        const req = tx.objectStore("WORDS").get(key);
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => res(null);
     });
 
     const saveDBData = (db, key, val) => {
-        try {
-            if (!db.objectStoreNames.contains("MAZII")) return;
-            const tx = db.transaction("MAZII", "readwrite");
-            tx.objectStore("MAZII").put(val, key);
-        } catch (err) {
-            console.warn("[Log] Transaction error in saveDBData:", err);
-        }
+        const tx = db.transaction("WORDS", "readwrite");
+        tx.objectStore("WORDS").put(val, key);
     };
 
     const loadKanjiDict = async () => {
@@ -90,9 +69,7 @@ const JapaneseLookup = (() => {
             } else {
                 console.log("[Log] Kanji loaded from IndexedDB.");
             }
-            if (data) {
-                kanjiDict = data.reduce((acc, curr) => { acc[curr.w] = curr.h; return acc; }, {});
-            }
+            kanjiDict = data.reduce((acc, curr) => { acc[curr.w] = curr.h; return acc; }, {});
         } catch (e) { console.warn("[Log] Kanji Load Error:", e); }
     };
 
@@ -153,10 +130,8 @@ const JapaneseLookup = (() => {
         // Xóa data danh sách từ vựng đã lưu trong IndexedDB khi bắt đầu tra từ mới
         try {
             const db = await initDB();
-            if (db.objectStoreNames.contains("MAZII")) {
-                const tx = db.transaction("MAZII", "readwrite");
-                tx.objectStore("MAZII").delete("word_list_data");
-            }
+            const tx = db.transaction("WORDS", "readwrite");
+            tx.objectStore("WORDS").delete("word_list_data");
         } catch (e) {
             console.warn("[Log] IndexedDB Clear Cache Error:", e);
         }
@@ -208,6 +183,7 @@ const JapaneseLookup = (() => {
             await loadKanjiDict();
             try {
                 const db = await initDB();
+                // 1. Kiểm tra nếu có data danh sách từ vựng trong IndexedDB thì lấy luôn
                 let cachedData = await getDBData(db, "word_list_data");
                 
                 if (cachedData && cachedData.values) {
@@ -216,6 +192,7 @@ const JapaneseLookup = (() => {
                     dataLoaded = true;
                     Module.applyHighlight();
                 } else {
+                    // Nếu chưa có cache thì mới gọi API từ Vercel
                     console.log("[Log] Fetching data from API...");
                     const res = await fetch(CONFIG.API_URL, {
                         method: "POST",
@@ -224,6 +201,7 @@ const JapaneseLookup = (() => {
                     });
                     const data = await res.json();
                     
+                    // Lưu dữ liệu lấy từ API vào IndexedDB
                     if (data && data.values) {
                         saveDBData(db, "word_list_data", data);
                         data.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
@@ -327,12 +305,11 @@ const JapaneseLookup = (() => {
                 }
             });
 
+            // Xóa data danh sách từ vựng đã lưu trong IndexedDB khi xóa một từ khỏi danh sách
             try {
                 const db = await initDB();
-                if (db.objectStoreNames.contains("MAZII")) {
-                    const tx = db.transaction("MAZII", "readwrite");
-                    tx.objectStore("MAZII").delete("word_list_data");
-                }
+                const tx = db.transaction("WORDS", "readwrite");
+                tx.objectStore("WORDS").delete("word_list_data");
             } catch (e) {
                 console.warn("[Log] IndexedDB Delete Cache Error:", e);
             }

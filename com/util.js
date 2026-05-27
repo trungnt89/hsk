@@ -45,7 +45,6 @@ async function saveToDB(storeName,key, data) {
         const db = await openDB(storeName);
         const tx = db.transaction(storeName, 'readwrite');
         const store = tx.objectStore(storeName);
-        store.clear(); // Làm sạch cache cũ trước khi ghi đè cache mới nhất
         
         const dataString = JSON.stringify(data);
         store.put(dataString, key); 

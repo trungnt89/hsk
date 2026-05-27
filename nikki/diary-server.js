@@ -1,5 +1,3 @@
-import { getFromDB, saveToDB, callAjax } from '../com/util.js';
-
 const URL_VERCEL_API  = 'https://hsk-gilt.vercel.app/api/gSheet';
 const URL_AI_GENERATE = 'https://hsk-gilt.vercel.app/api/aiGenerate';
 

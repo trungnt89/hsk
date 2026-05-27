@@ -1,6 +1,6 @@
-export const DB_NAME = 'TodoAppDB';
+const DB_NAME = 'TodoAppDB';
 
-export function openDB(storeName) {
+function openDB(storeName) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, 1);
         request.onupgradeneeded = (e) => {
@@ -14,7 +14,7 @@ export function openDB(storeName) {
     });
 }
 
-export async function getFromDB(storeName,key) {
+async function getFromDB(storeName,key) {
     try {
         const db = await openDB(storeName);
         return new Promise((resolve, reject) => {
@@ -40,7 +40,7 @@ export async function getFromDB(storeName,key) {
     }
 }
 
-export async function saveToDB(storeName,key, data) {
+async function saveToDB(storeName,key, data) {
     try {
         const db = await openDB(storeName);
         const tx = db.transaction(storeName, 'readwrite');
@@ -54,7 +54,7 @@ export async function saveToDB(storeName,key, data) {
     }
 }
 
-export async function deleteFromDB(storeName,key) {
+async function deleteFromDB(storeName,key) {
     try {
         const db = await openDB(storeName);
         const tx = db.transaction(storeName, 'readwrite');
@@ -66,7 +66,7 @@ export async function deleteFromDB(storeName,key) {
     }
 }
 
-export async function callAjax(url, body) {
+async function callAjax(url, body) {
     try {
         const response = await fetch(url, {
             method: 'POST',

@@ -1,10 +1,13 @@
-const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
+const URL_VERCEL_API  = 'https://hsk-gilt.vercel.app/api/gSheet';
 const URL_AI_GENERATE = 'https://hsk-gilt.vercel.app/api/aiGenerate';
-const SPREAD_DIARY = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
-const SPREAD_SCORE = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
-const SHEET_DIARY = 'DairyList';
-const SHEET_SCORE = 'ScoreList';
-const STORE_NAME = 'NIKKI';
+
+const SPREAD_DIARY    = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
+const SHEET_DIARY     = 'DairyList';
+
+const SPREAD_SCORE    = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
+const SHEET_SCORE     = 'ScoreList';
+
+const STORE_NAME      = 'NIKKI';
 
 async function loadDiaries() {
     try {
@@ -17,7 +20,7 @@ async function loadDiaries() {
             return; // Lấy dữ liệu thành công từ IndexedDB, không gọi API nữa
         }
 
-        const data = await callAjax(VERCEL_URL, { 
+        const data = await callAjax(URL_VERCEL_API, { 
             sheet: SHEET_DIARY, 
             act: 'read', 
             spread: SPREAD_DIARY 
@@ -38,8 +41,8 @@ async function loadDiaries() {
 
 async function callAPI(paramsObj,URL='') {
     await deleteFromDB(STORE_NAME, SHEET_DIARY);
-    URL = (URL=='') ? VERCEL_URL : URL;
-    return await callAjax(VERCEL_URL, paramsObj);
+    URL = (URL=='') ? URL_VERCEL_API : URL;
+    return await callAjax(URL_VERCEL_API, paramsObj);
 }
 
 async function saveDiary() {
@@ -113,7 +116,7 @@ async function getLessonTotalScore() {
         if (cachedScores && cachedScores.values && cachedScores.values.length > 0) {
             result = cachedScores;
         } else {
-            result = await callAjax(VERCEL_URL, { 
+            result = await callAjax(URL_VERCEL_API, { 
                 sheet: SHEET_SCORE, 
                 act: 'read', 
                 spread: SPREAD_SCORE 

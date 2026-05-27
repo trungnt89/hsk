@@ -1,6 +1,6 @@
 // ../com/TTSClient.js - Shared Audio Logic (Global Script Version)
 (function() {
-    const DB_NAME = "AUDIO_DATA_CACHE";
+    const DB_NAME = "TodoAppDB";
     const DB_STORE = "AUDIO";
     let ttsDb;
     let globalAudio = null;

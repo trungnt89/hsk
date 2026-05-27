@@ -110,7 +110,12 @@
             const db = e.target.result;
             const dbCard = document.createElement('div');
             dbCard.className = 'db-card';
-            dbCard.innerHTML = `<div style="margin-bottom:10px"><b>📂 DB: ${dbName}</b></div>`;
+            dbCard.innerHTML = `
+                <div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+                    <b>📂 DB: ${dbName}</b>
+                    <button class="btn-clear" onclick="deleteDatabase('${dbName}')">🔥 Xóa Database</button>
+                </div>
+            `;
 
             Array.from(db.objectStoreNames).forEach(sName => {
                 const safeId = btoa(unescape(encodeURIComponent(dbName + sName))).replace(/[^a-z0-9]/gi, "");
@@ -121,7 +126,6 @@
                         <span>📦 <b>${sName}</b></span>
                         <div class="btn-group">
                             <button class="btn-view" onclick="toggleView('${dbName}', '${sName}', '${safeId}')">👁️ View</button>
-                            <button class="btn-clear" onclick="clearStore('${dbName}', '${sName}', '${safeId}')">🗑️ Clear Store</button>
                         </div>
                     </div>
                     <div class="data-viewer" id="view_${safeId}">
@@ -189,7 +193,6 @@
                     recordDiv.innerHTML = `
                         <div class="record-header">
                             <span>Bản ghi #${count}</span>
-                            <button class="btn-del-row" onclick="deleteRow('${dbName}', '${storeName}', '${key}', '${safeId}')">Xóa dòng</button>
                         </div>
                         <span class="record-key">🔑 ${key}</span>
                         <div class="record-value">${valueDisplay}</div>
@@ -204,44 +207,26 @@
         };
     }
 
-    function deleteRow(dbName, storeName, key, safeId) {
-        if (!confirm(`Xác nhận xóa bản ghi với Key: ${key}?`)) return;
+    function deleteDatabase(dbName) {
+        if (!confirm(`CẢNH BÁO NGUY HIỂM: Bạn có chắc chắn muốn XÓA HOÀN TOÀN Database [${dbName}]? \nHành động này không thể hoàn tác.`)) return;
         
-        writeLog(`Đang xóa dòng [${key}] trong Store [${storeName}]...`);
-        const req = indexedDB.open(dbName);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction(storeName, "readwrite");
-            const store = tx.objectStore(storeName);
-            
-            store.delete(key);
-            tx.oncomplete = () => {
-                writeLog(`Đã xóa thành công row [${key}].`);
-                showToast("Đã xóa 1 bản ghi");
-                db.close();
-                document.getElementById(`view_${safeId}`).style.display = "none";
-                toggleView(dbName, storeName, safeId);
-            };
+        writeLog(`Đang tiến hành xóa Database [${dbName}]...`);
+        const req = indexedDB.deleteDatabase(dbName);
+        
+        req.onsuccess = () => {
+            writeLog(`Đã xóa thành công Database [${dbName}].`);
+            showToast(`Đã xóa hoàn toàn DB: ${dbName}`);
+            deepScan();
         };
-    }
-
-    function clearStore(dbName, storeName, safeId) {
-        if (!confirm(`CẢNH BÁO: Bạn muốn xóa sạch tất cả dữ liệu trong Store [${storeName}]?`)) return;
         
-        writeLog(`Đang làm sạch Store [${storeName}]...`);
-        const req = indexedDB.open(dbName);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction(storeName, "readwrite");
-            const store = tx.objectStore(storeName);
-            
-            store.clear();
-            tx.oncomplete = () => {
-                writeLog(`Đã dọn dẹp sạch Store [${storeName}].`);
-                showToast("Đã xóa toàn bộ bản ghi trong bảng");
-                db.close();
-                deepScan();
-            };
+        req.onerror = () => {
+            writeLog(`Lỗi: Không thể xóa Database [${dbName}].`);
+            showToast("Xóa thất bại!");
+        };
+        
+        req.onblocked = () => {
+            writeLog(`Xóa DB [${dbName}] bị hoãn (Blocked) do có kết nối chưa đóng. Hãy thử tải lại trang.`);
+            showToast("Yêu cầu bị chặn!");
         };
     }
 </script>

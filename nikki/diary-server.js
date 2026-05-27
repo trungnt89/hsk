@@ -1,16 +1,15 @@
 const VERCEL_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
 const URL_AI_GENERATE = 'https://hsk-gilt.vercel.app/api/aiGenerate';
-const DB_NAME_DIARIES = 'all_diaries_string';
 const SPREAD_DIARY = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
 const SPREAD_SCORE = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
 const SHEET_DIARY = 'DairyList';
 const SHEET_SCORE = 'ScoreList';
-const STORE_NAME = 'diaries';
+const STORE_NAME = 'NIKKI';
 
 async function loadDiaries() {
     try {
         // Kiểm tra xem có dữ liệu trong IndexedDB không
-        const cachedData = await getFromDB(DB_NAME_DIARIES, STORE_NAME);
+        const cachedData = await getFromDB(STORE_NAME, SHEET_DIARY);
         if (cachedData && cachedData.length > 0) {
             currentDiaries = cachedData;
             renderList(currentDiaries);
@@ -29,7 +28,7 @@ async function loadDiaries() {
             })).reverse();
             
             // Lưu dữ liệu vừa lấy từ API vào IndexedDB để dùng cho lần sau
-            await saveToDB(DB_NAME_DIARIES, currentDiaries, STORE_NAME);
+            await saveToDB(STORE_NAME, SHEET_DIARY,currentDiaries);
 
             renderList(currentDiaries);
             if (selectedDiaryId) selectRecord(selectedDiaryId, true);
@@ -38,8 +37,8 @@ async function loadDiaries() {
 }
 
 async function callAPI(paramsObj,URL='') {
-    await deleteFromDB(DB_NAME_DIARIES, STORE_NAME);
-	URL = (URL=='') ? VERCEL_URL : URL;
+    await deleteFromDB(STORE_NAME, SHEET_DIARY);
+    URL = (URL=='') ? VERCEL_URL : URL;
     return await callAjax(VERCEL_URL, paramsObj);
 }
 
@@ -109,12 +108,21 @@ async function askAI(id, content) {
 
 async function getLessonTotalScore() {
     try {
-        const result = await callAjax(VERCEL_URL, { 
-            sheet: SHEET_SCORE, 
-            act: 'read', 
-            spread: SPREAD_SCORE 
-        });
-        if (result.values && Array.isArray(result.values)) {
+        let result;
+        const cachedScores = await getFromDB(STORE_NAME, SHEET_SCORE);
+        if (cachedScores && cachedScores.values && cachedScores.values.length > 0) {
+            result = cachedScores;
+        } else {
+            result = await callAjax(VERCEL_URL, { 
+                sheet: SHEET_SCORE, 
+                act: 'read', 
+                spread: SPREAD_SCORE 
+            });
+            if (result && result.values && result.values.length > 0) {
+                await saveToDB(STORE_NAME, SHEET_SCORE,result);
+            }
+        }
+        if (result && result.values && Array.isArray(result.values)) {
             document.querySelectorAll('.count-trigger').forEach(badge => {
                 const match = badge.getAttribute('onclick').match(/'([^']+)'/);
                 if (match && match[1]) {

@@ -6,7 +6,6 @@ function openDB(storeName) {
         request.onupgradeneeded = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains(storeName)) {
-                // Sử dụng key tự sinh (autoIncrement) hoặc key chỉ định khi put để lưu một chuỗi data duy nhất
                 db.createObjectStore(storeName);
             }
         };
@@ -15,8 +14,7 @@ function openDB(storeName) {
     });
 }
 
-// 1.1 Thao tác IndexedDB tổng quát bằng Key (Get, Save, Delete)
-async function getFromDB(key, storeName) {
+async function getFromDB(storeName,key) {
     try {
         const db = await openDB(storeName);
         return new Promise((resolve, reject) => {
@@ -42,7 +40,7 @@ async function getFromDB(key, storeName) {
     }
 }
 
-async function saveToDB(key, data, storeName) {
+async function saveToDB(storeName,key, data) {
     try {
         const db = await openDB(storeName);
         const tx = db.transaction(storeName, 'readwrite');
@@ -57,7 +55,7 @@ async function saveToDB(key, data, storeName) {
     }
 }
 
-async function deleteFromDB(key, storeName) {
+async function deleteFromDB(storeName,key) {
     try {
         const db = await openDB(storeName);
         const tx = db.transaction(storeName, 'readwrite');

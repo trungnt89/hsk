@@ -6,7 +6,7 @@
     let globalAudio = null;
 
     // Khởi tạo IndexedDB
-    const ttsDbReq = indexedDB.open(DB_NAME, 2);
+    const ttsDbReq = indexedDB.open(DB_NAME, 1);
     ttsDbReq.onupgradeneeded = (e) => {
         if (!e.target.result.objectStoreNames.contains(DB_STORE)) {
             e.target.result.createObjectStore(DB_STORE);

@@ -39,22 +39,22 @@ const JapaneseLookup = (() => {
     let savedWordsMap = new Map();
 
     const initDB = () => new Promise((res, rej) => {
-        const req = indexedDB.open("JA_Lookup_DB", 1);
-        req.onupgradeneeded = () => req.result.createObjectStore("cache");
+        const req = indexedDB.open("TodoAppDB", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("MAZII");
         req.onsuccess = () => res(req.result);
         req.onerror = () => rej(req.error);
     });
 
     const getDBData = (db, key) => new Promise(res => {
-        const tx = db.transaction("cache", "readonly");
-        const req = tx.objectStore("cache").get(key);
+        const tx = db.transaction("MAZII", "readonly");
+        const req = tx.objectStore("MAZII").get(key);
         req.onsuccess = () => res(req.result);
         req.onerror = () => res(null);
     });
 
     const saveDBData = (db, key, val) => {
-        const tx = db.transaction("cache", "readwrite");
-        tx.objectStore("cache").put(val, key);
+        const tx = db.transaction("MAZII", "readwrite");
+        tx.objectStore("MAZII").put(val, key);
     };
 
     const loadKanjiDict = async () => {
@@ -130,8 +130,8 @@ const JapaneseLookup = (() => {
         // Xóa data danh sách từ vựng đã lưu trong IndexedDB khi bắt đầu tra từ mới
         try {
             const db = await initDB();
-            const tx = db.transaction("cache", "readwrite");
-            tx.objectStore("cache").delete("word_list_data");
+            const tx = db.transaction("MAZII", "readwrite");
+            tx.objectStore("MAZII").delete("word_list_data");
         } catch (e) {
             console.warn("[Log] IndexedDB Clear Cache Error:", e);
         }
@@ -308,8 +308,8 @@ const JapaneseLookup = (() => {
             // Xóa data danh sách từ vựng đã lưu trong IndexedDB khi xóa một từ khỏi danh sách
             try {
                 const db = await initDB();
-                const tx = db.transaction("cache", "readwrite");
-                tx.objectStore("cache").delete("word_list_data");
+                const tx = db.transaction("MAZII", "readwrite");
+                tx.objectStore("MAZII").delete("word_list_data");
             } catch (e) {
                 console.warn("[Log] IndexedDB Delete Cache Error:", e);
             }

@@ -42,7 +42,7 @@ async function loadDiaries() {
 async function callAPI(paramsObj,URL='') {
     await deleteFromDB(STORE_NAME, SHEET_DIARY);
     URL = (URL=='') ? URL_VERCEL_API : URL;
-    return await callAjax(URL_VERCEL_API, paramsObj);
+    return await callAjax(URL, paramsObj);
 }
 
 async function saveDiary() {

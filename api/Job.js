@@ -54,9 +54,11 @@ async function ControlSendMessage() {
         res = await tg.SendMessage(text);
         if (res) {
             await UpdateTask(SHEET_1, id, rowData);			
+			/*
 			if (text.includes("N1")) {
 				await fetch("https://hsk-gilt.vercel.app/api/image");
 			}
+			*/
 		}
     }
 

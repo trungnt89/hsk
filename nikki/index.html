@@ -16,8 +16,10 @@
             --ai-color: #00b894;
         }
         body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
+        header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 10px 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
         header h1 { font-size: 1.2rem; font-weight: 600; }
+        .btn-reset { background-color: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.3s; }
+        .btn-reset:hover { background-color: rgba(255, 255, 255, 0.3); }
         main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
          
         .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
@@ -85,7 +87,10 @@
 	<script src="../com/util.js"></script>
     <script src="./diary-server.js"></script>
 
-    <header><h1>Diary & AI</h1></header>
+    <header>
+        <h1>Diary & AI</h1>
+        <button class="btn-reset" onclick="resetAppData()">🔄 Reset</button>
+    </header>
 
     <main>
         <div class="write-card">
@@ -401,6 +406,18 @@
 
         function resetSpeakBtns() { const b = document.getElementById('btnMainSpeak'); b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
         function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
+
+        async function resetAppData() {
+            if (confirm("Bạn có chắc chắn muốn reset toàn bộ dữ liệu nhật ký không?")) {
+                try {
+                    await deleteFromDB(STORE_NAME, SHEET_DIARY);
+                    window.location.reload();
+                } catch (error) {
+                    console.error("Lỗi khi xóa IndexedDB:", error);
+                    alert("Không thể xóa dữ liệu IndexedDB.");
+                }
+            }
+        }
     </script>
 </body>
 </html>

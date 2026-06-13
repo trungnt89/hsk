@@ -364,7 +364,7 @@
 
         .example-cn {
             font-size: 2.8rem;
-            color: #334155;
+            color: var(--accent);
             margin-bottom: 4px;
         }
 
@@ -1029,10 +1029,10 @@
             if(current.exCn) {
                 document.getElementById('example-box').style.display = 'block';
                 
-                // Tô đỏ từ gốc có trong ví dụ chữ Hán
+                // Tô màu khác (primary) cho từ gốc có trong ví dụ chữ Hán (vốn có màu đỏ accent)
                 if (current.word && current.exCn.includes(current.word)) {
                     const regex = new RegExp(current.word, 'g');
-                    document.getElementById('ex-cn').innerHTML = current.exCn.replace(regex, `<span style="color: var(--accent); font-weight: bold;">${current.word}</span>`);
+                    document.getElementById('ex-cn').innerHTML = current.exCn.replace(regex, `<span style="color: var(--primary); font-weight: bold;">${current.word}</span>`);
                 } else {
                     document.getElementById('ex-cn').innerText = current.exCn;
                 }

@@ -36,7 +36,7 @@
 
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 750px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -99,21 +99,38 @@
             outline: none;
         }
 
-        .toggle-btn {
-            background-color: #cbd5e1;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
+        .toggle-btn-icon {
+            background-color: white;
+            border: 1px solid #cbd5e1;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             color: #334155;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            outline: none;
         }
 
-        .toggle-btn.active {
+        .toggle-btn-icon:hover {
+            background-color: #f1f5f9;
+            transform: translateY(-1px);
+            border-color: #94a3b8;
+        }
+
+        .toggle-btn-icon:active {
+            transform: translateY(1px);
+        }
+
+        .toggle-btn-icon.active {
             background-color: #22c55e;
             color: white;
+            border-color: #22c55e;
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.2);
         }
 
         /* Pagination Settings Bar */
@@ -156,7 +173,7 @@
         .flashcard-wrapper {
             perspective: 1000px;
             width: 100%;
-            height: 380px;
+            height: 480px;
             cursor: pointer;
             position: relative;
         }
@@ -307,7 +324,7 @@
 
         /* Front Content */
         .word {
-            font-size: 5rem;
+            font-size: 6rem;
             font-weight: bold;
             color: var(--accent);
             margin-bottom: 10px;
@@ -367,41 +384,51 @@
         /* Controls */
         .controls {
             display: flex;
-            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
             width: 100%;
+            margin-top: 10px;
         }
 
-        .btn {
-            flex: 1;
-            padding: 14px 24px;
-            font-size: 1rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 12px;
+        .btn-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            border: 1px solid #cbd5e1;
+            background-color: white;
+            color: #334155;
             cursor: pointer;
-            transition: all 0.2s ease;
-            background-color: var(--primary);
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            outline: none;
         }
 
-        .btn:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-1px);
+        .btn-icon:hover {
+            transform: translateY(-2px);
+            background-color: #f1f5f9;
+            border-color: #94a3b8;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
-        .btn:active {
+        .btn-icon:active {
             transform: translateY(1px);
         }
 
-        .btn-secondary {
-            background-color: #e2e8f0;
-            color: var(--text-main);
-            box-shadow: none;
+        .btn-icon.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
 
-        .btn-secondary:hover {
-            background-color: #cbd5e1;
+        .btn-icon.active:hover {
+            background-color: var(--primary-hover);
         }
 
         /* Loading */
@@ -437,9 +464,11 @@
                     <option value="HSK5">HSK5</option>
                     <option value="HSK6">HSK6</option>
                 </select>
-                <button id="tts-toggle" class="toggle-btn active" onclick="toggleTts(event)">TTS: BẬT</button>
-                <button id="display-mode-toggle" class="toggle-btn" onclick="toggleDisplayMode(event)">Chế độ: Tuần tự</button>
-                <button id="filter-toggle" class="toggle-btn" onclick="toggleFilter(event)">Xem: Tất cả</button>
+                <div style="display: flex; gap: 8px;">
+                    <button id="tts-toggle" class="toggle-btn-icon active" onclick="toggleTts(event)" title="Âm thanh (TTS): BẬT">🔊</button>
+                    <button id="display-mode-toggle" class="toggle-btn-icon" onclick="toggleDisplayMode(event)" title="Chế độ: Tuần tự">🔁</button>
+                    <button id="filter-toggle" class="toggle-btn-icon" onclick="toggleFilter(event)" title="Xem: Tất cả">🗂️</button>
+                </div>
             </div>
             <div class="pagination-bar">
                 <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Số dòng/trang:</label>
@@ -486,9 +515,9 @@
         </div>
 
         <div class="controls">
-            <button class="btn btn-secondary" onclick="prevCard()">Trước đó</button>
-            <button id="auto-play-btn" class="btn btn-secondary" onclick="toggleAutoPlay()">Tự động đọc: TẮT</button>
-            <button class="btn" onclick="nextCard()">Tiếp theo</button>
+            <button class="btn-icon" onclick="prevCard()" title="Thẻ trước đó">←</button>
+            <button id="auto-play-btn" class="btn-icon" onclick="toggleAutoPlay()" title="Tự động lật & đọc: TẮT">▶</button>
+            <button class="btn-icon active" onclick="nextCard()" title="Thẻ tiếp theo">→</button>
         </div>
     </div>
 
@@ -708,6 +737,11 @@
             const cardElement = document.getElementById('card');
             if (cardElement && !isTransitioning) {
                 isTransitioning = true;
+                
+                // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
+                cardElement.classList.remove('flipped');
+                cardElement.classList.remove('flipped-vertical');
+                
                 cardElement.classList.add('page-flip-next-out');
                 setTimeout(() => {
                     updatePagination();
@@ -814,6 +848,11 @@
             isTransitioning = true;
             
             const cardElement = document.getElementById('card');
+            
+            // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
+            cardElement.classList.remove('flipped');
+            cardElement.classList.remove('flipped-vertical');
+            
             cardElement.classList.add('page-flip-next-out');
             
             setTimeout(() => {
@@ -835,6 +874,11 @@
             isTransitioning = true;
             
             const cardElement = document.getElementById('card');
+            
+            // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
+            cardElement.classList.remove('flipped');
+            cardElement.classList.remove('flipped-vertical');
+            
             cardElement.classList.add('page-flip-prev-out');
             
             setTimeout(() => {
@@ -857,7 +901,8 @@
             saveSetting('isTtsEnabled', isTtsEnabled);
             const ttsBtn = document.getElementById('tts-toggle');
             if (isTtsEnabled) {
-                ttsBtn.innerText = "TTS: BẬT";
+                ttsBtn.innerHTML = "🔊";
+                ttsBtn.title = "Âm thanh (TTS): BẬT";
                 ttsBtn.classList.add('active');
                 // Phát lại nội dung tương ứng với mặt hiện tại khi kích hoạt lại
                 if (paginatedFlashcards.length > 0 && typeof window.speakCommon === 'function' && !isAutoPlaying) {
@@ -868,7 +913,8 @@
                     window.speakCommon({ text: textToSpeak, voice: "zh-CN-XiaoxiaoNeural" });
                 }
             } else {
-                ttsBtn.innerText = "TTS: TẮT";
+                ttsBtn.innerHTML = "🔇";
+                ttsBtn.title = "Âm thanh (TTS): TẮT";
                 ttsBtn.classList.remove('active');
                 if (isAutoPlaying) {
                     toggleAutoPlay(); // Tắt tự động chạy nếu tắt TTS
@@ -885,11 +931,13 @@
             const modeBtn = document.getElementById('display-mode-toggle');
             if (displayMode === 'sequential') {
                 displayMode = 'random';
-                modeBtn.innerText = "Chế độ: Ngẫu nhiên";
+                modeBtn.innerHTML = "🔀";
+                modeBtn.title = "Chế độ: Ngẫu nhiên";
                 modeBtn.classList.add('active');
             } else {
                 displayMode = 'sequential';
-                modeBtn.innerText = "Chế độ: Tuần tự";
+                modeBtn.innerHTML = "🔁";
+                modeBtn.title = "Chế độ: Tuần tự";
                 modeBtn.classList.remove('active');
             }
             saveSetting('displayMode', displayMode);
@@ -909,17 +957,18 @@
                     isTtsEnabled = true;
                     saveSetting('isTtsEnabled', isTtsEnabled);
                     const ttsBtn = document.getElementById('tts-toggle');
-                    ttsBtn.innerText = "TTS: BẬT";
+                    ttsBtn.innerHTML = "🔊";
+                    ttsBtn.title = "Âm thanh (TTS): BẬT";
                     ttsBtn.classList.add('active');
                 }
-                autoPlayBtn.innerText = "Tự động đọc: BẬT";
-                autoPlayBtn.classList.remove('btn-secondary');
+                autoPlayBtn.innerHTML = "⏸";
+                autoPlayBtn.title = "Dừng tự động đọc";
                 autoPlayBtn.classList.add('active');
                 runAutoPlayLoop();
             } else {
-                autoPlayBtn.innerText = "Tự động đọc: TẮT";
+                autoPlayBtn.innerHTML = "▶";
+                autoPlayBtn.title = "Tự động lật & đọc: TẮT";
                 autoPlayBtn.classList.remove('active');
-                autoPlayBtn.classList.add('btn-secondary');
                 if (autoPlayTimeout) {
                     clearTimeout(autoPlayTimeout);
                     autoPlayTimeout = null;
@@ -965,6 +1014,11 @@
                     if (!isAutoPlaying) return;
                     
                     isTransitioning = true;
+                    
+                    // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
+                    
                     cardElement.classList.add('page-flip-next-out');
                     setTimeout(() => {
                         currentIndex = (currentIndex + 1) % paginatedFlashcards.length;
@@ -991,15 +1045,18 @@
             const filterBtn = document.getElementById('filter-toggle');
             if (currentFilter === 'all') {
                 currentFilter = 'unmastered';
-                filterBtn.innerText = "Xem: Chưa thuộc";
+                filterBtn.innerHTML = "⏳";
+                filterBtn.title = "Xem: Chưa thuộc";
                 filterBtn.classList.add('active');
             } else if (currentFilter === 'unmastered') {
                 currentFilter = 'mastered';
-                filterBtn.innerText = "Xem: Đã thuộc";
+                filterBtn.innerHTML = "✅";
+                filterBtn.title = "Xem: Đã thuộc";
                 filterBtn.classList.add('active');
             } else {
                 currentFilter = 'all';
-                filterBtn.innerText = "Xem: Tất cả";
+                filterBtn.innerHTML = "🗂️";
+                filterBtn.title = "Xem: Tất cả";
                 filterBtn.classList.remove('active');
             }
             saveSetting('currentFilter', currentFilter);
@@ -1127,31 +1184,38 @@
             
             const ttsBtn = document.getElementById('tts-toggle');
             if (isTtsEnabled) {
-                ttsBtn.innerText = "TTS: BẬT";
+                ttsBtn.innerHTML = "🔊";
+                ttsBtn.title = "Âm thanh (TTS): BẬT";
                 ttsBtn.classList.add('active');
             } else {
-                ttsBtn.innerText = "TTS: TẮT";
+                ttsBtn.innerHTML = "🔇";
+                ttsBtn.title = "Âm thanh (TTS): TẮT";
                 ttsBtn.classList.remove('active');
             }
 
             const modeBtn = document.getElementById('display-mode-toggle');
             if (displayMode === 'random') {
-                modeBtn.innerText = "Chế độ: Ngẫu nhiên";
+                modeBtn.innerHTML = "🔀";
+                modeBtn.title = "Chế độ: Ngẫu nhiên";
                 modeBtn.classList.add('active');
             } else {
-                modeBtn.innerText = "Chế độ: Tuần tự";
+                modeBtn.innerHTML = "🔁";
+                modeBtn.title = "Chế độ: Tuần tự";
                 modeBtn.classList.remove('active');
             }
 
             const filterBtn = document.getElementById('filter-toggle');
             if (currentFilter === 'unmastered') {
-                filterBtn.innerText = "Xem: Chưa thuộc";
+                filterBtn.innerHTML = "⏳";
+                filterBtn.title = "Xem: Chưa thuộc";
                 filterBtn.classList.add('active');
             } else if (currentFilter === 'mastered') {
-                filterBtn.innerText = "Xem: Đã thuộc";
+                filterBtn.innerHTML = "✅";
+                filterBtn.title = "Xem: Đã thuộc";
                 filterBtn.classList.add('active');
             } else {
-                filterBtn.innerText = "Xem: Tất cả";
+                filterBtn.innerHTML = "🗂️";
+                filterBtn.title = "Xem: Tất cả";
                 filterBtn.classList.remove('active');
             }
 

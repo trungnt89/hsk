@@ -81,9 +81,22 @@
         .top-bar {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             width: 100%;
             gap: 10px;
             margin-bottom: 5px;
+        }
+
+        .select-box {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background-color: white;
+            color: #334155;
+            cursor: pointer;
+            outline: none;
         }
 
         .toggle-btn {
@@ -313,6 +326,14 @@
         <div class="header">
             <h1 id="sheet-title">HSK Flashcards</h1>
             <div class="top-bar">
+                <select id="hsk-level-select" class="select-box" onchange="changeHskLevel(event)">
+                    <option value="HSK1">HSK1</option>
+                    <option value="HSK2">HSK2</option>
+                    <option value="HSK3">HSK3</option>
+                    <option value="HSK4">HSK4</option>
+                    <option value="HSK5">HSK5</option>
+                    <option value="HSK6">HSK6</option>
+                </select>
                 <button id="tts-toggle" class="toggle-btn active" onclick="toggleTts(event)">TTS: BẬT</button>
                 <button id="display-mode-toggle" class="toggle-btn" onclick="toggleDisplayMode(event)">Chế độ: Tuần tự</button>
                 <button id="filter-toggle" class="toggle-btn" onclick="toggleFilter(event)">Xem: Tất cả</button>
@@ -355,7 +376,6 @@
     </div>
 
     <script>
-        const apiUrl = 'https://hsk-gilt.vercel.app/api/gSheet?sheet=HSK1&act=read&spread=105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
         let rawFlashcards = [];
         let filteredFlashcards = [];
         let currentIndex = 0;
@@ -367,6 +387,7 @@
         let displayMode = 'sequential'; // sequential, random
         let isAutoPlaying = false;
         let autoPlayTimeout = null;
+        let currentHskLevel = 'HSK1';
 
         // Biến kiểm soát vuốt chạm (Swipe) trên mobile
         let touchStartX = 0;
@@ -374,8 +395,81 @@
         let touchStartY = 0;
         let touchEndY = 0;
 
-        // Fetch dữ liệu từ API khi trang được tải
+        // Cấu hình IndexedDB để lưu trữ setting
+        const dbName = "HskFlashcardsDB";
+        const dbVersion = 1;
+        let db = null;
+
+        function initDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, dbVersion);
+                request.onerror = (event) => {
+                    console.error("IndexedDB error:", event.target.error);
+                    resolve(null);
+                };
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve(db);
+                };
+                request.onupgradeneeded = (event) => {
+                    const database = event.target.result;
+                    if (!database.objectStoreNames.contains("settings")) {
+                        database.createObjectStore("settings", { keyPath: "key" });
+                    }
+                };
+            });
+        }
+
+        function saveSetting(key, value) {
+            if (!db) return;
+            const transaction = db.transaction(["settings"], "readwrite");
+            const store = transaction.objectStore("settings");
+            store.put({ key: key, value: value });
+        }
+
+        function loadSetting(key, defaultValue) {
+            return new Promise((resolve) => {
+                if (!db) {
+                    resolve(defaultValue);
+                    return;
+                }
+                const transaction = db.transaction(["settings"], "readonly");
+                const store = transaction.objectStore("settings");
+                const request = store.get(key);
+                request.onsuccess = (event) => {
+                    if (event.target.result) {
+                        resolve(event.target.result.value);
+                    } else {
+                        resolve(defaultValue);
+                    }
+                };
+                request.onerror = () => {
+                    resolve(defaultValue);
+                };
+            });
+        }
+
+        // Hàm xáo trộn mảng bằng giải thuật Fisher-Yates shuffle
+        function shuffleList(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // Fetch dữ liệu từ API dựa trên giá trị selectbox
         async function fetchData() {
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+
+            const baseUrl = 'https://hsk-gilt.vercel.app/api/gSheet';
+            const spreadId = '105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
+            const apiUrl = `${baseUrl}?sheet=${currentHskLevel}&act=read&spread=${spreadId}`;
+
             try {
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('Network response error');
@@ -400,7 +494,6 @@
                         document.getElementById('error').style.display = 'none';
                         document.getElementById('main-content').style.display = 'flex';
                         applyFilterAndRender();
-                        initSwipeEvents();
                     } else {
                         showError();
                     }
@@ -418,14 +511,22 @@
             document.getElementById('error').style.display = 'block';
         }
 
-        // Áp dụng bộ lọc danh sách thuộc / chưa thuộc
+        // Áp dụng bộ lọc danh sách thuộc / chưa thuộc và chế độ ngẫu nhiên cố định danh sách
         function applyFilterAndRender() {
+            let baseList = [];
             if (currentFilter === 'all') {
-                filteredFlashcards = [...rawFlashcards];
+                baseList = [...rawFlashcards];
             } else if (currentFilter === 'mastered') {
-                filteredFlashcards = rawFlashcards.filter(item => masteredIds.includes(item.stt));
+                baseList = rawFlashcards.filter(item => masteredIds.includes(item.stt));
             } else if (currentFilter === 'unmastered') {
-                filteredFlashcards = rawFlashcards.filter(item => !masteredIds.includes(item.stt));
+                baseList = rawFlashcards.filter(item => !masteredIds.includes(item.stt));
+            }
+
+            // Nếu chế độ là ngẫu nhiên, xáo trộn danh sách cố định để hỗ trợ tiến lùi đồng nhất
+            if (displayMode === 'random') {
+                filteredFlashcards = shuffleList(baseList);
+            } else {
+                filteredFlashcards = baseList;
             }
 
             // Đồng bộ bộ đếm thống kê tổng
@@ -533,22 +634,14 @@
         // Chuyển sang thẻ tiếp theo
         function nextCard() {
             if (filteredFlashcards.length === 0) return;
-            if (displayMode === 'random') {
-                currentIndex = Math.floor(Math.random() * filteredFlashcards.length);
-            } else {
-                currentIndex = (currentIndex + 1) % filteredFlashcards.length;
-            }
+            currentIndex = (currentIndex + 1) % filteredFlashcards.length;
             renderCard();
         }
 
         // Quay lại thẻ trước đó
         function prevCard() {
             if (filteredFlashcards.length === 0) return;
-            if (displayMode === 'random') {
-                currentIndex = Math.floor(Math.random() * filteredFlashcards.length);
-            } else {
-                currentIndex = (currentIndex - 1 + filteredFlashcards.length) % filteredFlashcards.length;
-            }
+            currentIndex = (currentIndex - 1 + filteredFlashcards.length) % filteredFlashcards.length;
             renderCard();
         }
 
@@ -556,6 +649,7 @@
         function toggleTts(event) {
             event.stopPropagation();
             isTtsEnabled = !isTtsEnabled;
+            saveSetting('isTtsEnabled', isTtsEnabled);
             const ttsBtn = document.getElementById('tts-toggle');
             if (isTtsEnabled) {
                 ttsBtn.innerText = "TTS: BẬT";
@@ -593,6 +687,9 @@
                 modeBtn.innerText = "Chế độ: Tuần tự";
                 modeBtn.classList.remove('active');
             }
+            saveSetting('displayMode', displayMode);
+            currentIndex = 0;
+            applyFilterAndRender();
         }
 
         // Bật / Tắt chế độ tự động đọc chuyển từ tuần tự/ngẫu nhiên
@@ -605,6 +702,7 @@
                 // Ép buộc bật TTS nếu chưa bật
                 if (!isTtsEnabled) {
                     isTtsEnabled = true;
+                    saveSetting('isTtsEnabled', isTtsEnabled);
                     const ttsBtn = document.getElementById('tts-toggle');
                     ttsBtn.innerText = "TTS: BẬT";
                     ttsBtn.classList.add('active');
@@ -661,11 +759,7 @@
                 autoPlayTimeout = setTimeout(() => {
                     if (!isAutoPlaying) return;
                     
-                    if (displayMode === 'random') {
-                        currentIndex = Math.floor(Math.random() * filteredFlashcards.length);
-                    } else {
-                        currentIndex = (currentIndex + 1) % filteredFlashcards.length;
-                    }
+                    currentIndex = (currentIndex + 1) % filteredFlashcards.length;
                     
                     renderCard();
                     // Đệ quy kích hoạt chu kỳ mới cho thẻ kế tiếp
@@ -693,8 +787,18 @@
                 filterBtn.innerText = "Xem: Tất cả";
                 filterBtn.classList.remove('active');
             }
+            saveSetting('currentFilter', currentFilter);
             currentIndex = 0;
             applyFilterAndRender();
+        }
+
+        // Thử đổi cấp độ HSK từ selectbox
+        function changeHskLevel(event) {
+            currentHskLevel = event.target.value;
+            saveSetting('currentHskLevel', currentHskLevel);
+            currentIndex = 0;
+            if (isAutoPlaying) toggleAutoPlay();
+            fetchData();
         }
 
         // Thêm / Xóa từ khỏi danh sách đã thuộc (Lưu LocalStorage)
@@ -769,8 +873,53 @@
             }
         });
 
-        // Khởi chạy ứng dụng
-        fetchData();
+        // Khởi chạy ứng dụng và khôi phục cài đặt từ IndexedDB
+        async function initApp() {
+            await initDatabase();
+            
+            isTtsEnabled = await loadSetting('isTtsEnabled', true);
+            displayMode = await loadSetting('displayMode', 'sequential');
+            currentFilter = await loadSetting('currentFilter', 'all');
+            currentHskLevel = await loadSetting('currentHskLevel', 'HSK1');
+
+            // Cập nhật giao diện theo cài đặt đã khôi phục
+            document.getElementById('hsk-level-select').value = currentHskLevel;
+            
+            const ttsBtn = document.getElementById('tts-toggle');
+            if (isTtsEnabled) {
+                ttsBtn.innerText = "TTS: BẬT";
+                ttsBtn.classList.add('active');
+            } else {
+                ttsBtn.innerText = "TTS: TẮT";
+                ttsBtn.classList.remove('active');
+            }
+
+            const modeBtn = document.getElementById('display-mode-toggle');
+            if (displayMode === 'random') {
+                modeBtn.innerText = "Chế độ: Ngẫu nhiên";
+                modeBtn.classList.add('active');
+            } else {
+                modeBtn.innerText = "Chế độ: Tuần tự";
+                modeBtn.classList.remove('active');
+            }
+
+            const filterBtn = document.getElementById('filter-toggle');
+            if (currentFilter === 'unmastered') {
+                filterBtn.innerText = "Xem: Chưa thuộc";
+                filterBtn.classList.add('active');
+            } else if (currentFilter === 'mastered') {
+                filterBtn.innerText = "Xem: Đã thuộc";
+                filterBtn.classList.add('active');
+            } else {
+                filterBtn.innerText = "Xem: Tất cả";
+                filterBtn.classList.remove('active');
+            }
+
+            initSwipeEvents();
+            fetchData();
+        }
+
+        initApp();
     </script>
 </body>
 </html>

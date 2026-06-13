@@ -323,7 +323,7 @@
                     <div class="word" id="front-word">...</div>
                     <div class="hint">Nhấp để lật mặt sau hoặc vuốt để chuyển</div>
                 </div>
-                <div class="card-face card-back">
+                <div class="card-face card-face card-back">
                     <div class="card-action-corner">
                         <button id="mark-btn-back" class="action-icon-btn" onclick="toggleMastered(event)" title="Đánh dấu thuộc">✓</button>
                     </div>
@@ -384,6 +384,7 @@
 
                     if (rawFlashcards.length > 0) {
                         document.getElementById('loading').style.display = 'none';
+                        document.getElementById('error').style.display = 'none';
                         document.getElementById('main-content').style.display = 'flex';
                         applyFilterAndRender();
                         initSwipeEvents();
@@ -450,7 +451,15 @@
             
             if(current.exCn) {
                 document.getElementById('example-box').style.display = 'block';
-                document.getElementById('ex-cn').innerText = current.exCn;
+                
+                // Tô đỏ từ gốc có trong ví dụ chữ Hán
+                if (current.word && current.exCn.includes(current.word)) {
+                    const regex = new RegExp(current.word, 'g');
+                    document.getElementById('ex-cn').innerHTML = current.exCn.replace(regex, `<span style="color: var(--accent); font-weight: bold;">${current.word}</span>`);
+                } else {
+                    document.getElementById('ex-cn').innerText = current.exCn;
+                }
+                
                 document.getElementById('ex-py').innerText = current.exPy;
                 document.getElementById('ex-vn').innerText = current.exVn;
             } else {
@@ -579,7 +588,8 @@
 
         // Thiết lập bộ sự kiện nhận diện thao tác vuốt di động (Swipe Touch)
         function initSwipeEvents() {
-            const wrapper = document.getElementById('cardWrapper');
+            const wrapper = document.querySelector('.flashcard-wrapper');
+            if (!wrapper) return;
             
             wrapper.addEventListener('touchstart', (e) => {
                 touchStartX = e.changedTouches[0].screenX;
@@ -618,6 +628,9 @@
                 nextCard();
             } else if (e.code === 'ArrowLeft') {
                 prevCard();
+            } else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
+                e.preventDefault();
+                flipCard();
             }
         });
 

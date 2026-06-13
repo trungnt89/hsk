@@ -6,12 +6,21 @@ const API_URL = 'https://hsk-gilt.vercel.app/api/gRecorder';
 
 
 export default async function handler(req, context) {
-	res.setHeader('Access-Control-Allow-Origin', '*');
-	res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,PUT,DELETE');
-	res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // 1. Tạo headers chuẩn CORS hỗ trợ tất cả các domain bao gồm cả file://
+  const headers = new Headers({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS,PUT,DELETE',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  });
+
+  // 2. Xử lý Preflight Request (OPTIONS) cho môi trường Edge Runtime
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 200, headers });
+  }
+
   try {
     const { searchParams } = new URL(req.url);
-    if (req.url.includes('favicon.ico')) return new Response(null, { status: 204 });
+    if (req.url.includes('favicon.ico')) return new Response(null, { status: 204, headers });
 
     const text = (searchParams.get('text') || '你好').trim();
     const lang = searchParams.get('lang') || 'ja-JP';
@@ -31,7 +40,14 @@ export default async function handler(req, context) {
     // 1️⃣ CHECK DRIVE CACHE
     try {
       const cached = await checkDriveCache(filename, context);
-      if (cached) return cached;
+      if (cached) {
+        // Gắn thêm CORS headers vào response cache trước khi trả về
+        const cachedWithCors = new Response(cached.body, cached);
+        cachedWithCors.headers.set('Access-Control-Allow-Origin', '*');
+        cachedWithCors.headers.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,PUT,DELETE');
+        cachedWithCors.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        return cachedWithCors;
+      }
     } catch (e) {
       console.warn("Cache Error", e.message);
     }
@@ -52,16 +68,16 @@ export default async function handler(req, context) {
       await uploadToDrive(base64, filename, context);
     })());
 
-    return new Response(arrayBuffer, {
-      headers: { 
-        'Content-Type': 'audio/mpeg', 
-        'X-Audio-Source': 'Azure-Streaming' 
-      }
-    });
+    // Thêm các CORS header cần thiết vào phản hồi audio gốc
+    headers.set('Content-Type', 'audio/mpeg');
+    headers.set('X-Audio-Source', 'Azure-Streaming');
+
+    return new Response(arrayBuffer, { headers });
 
   } catch (e) {
     context.waitUntil(writeLog("TTS", `Error: ${e.message}`));
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    headers.set('Content-Type', 'application/json');
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers });
   }
 }
 

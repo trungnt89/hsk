@@ -206,15 +206,19 @@
         /* Page Flip Animations */
         .page-flip-next-out {
             animation: flipNextOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
         }
         .page-flip-next-in {
             animation: flipNextIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
         }
         .page-flip-prev-out {
             animation: flipPrevOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
         }
         .page-flip-prev-in {
             animation: flipPrevIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
         }
 
         @keyframes flipNextOut {
@@ -224,14 +228,14 @@
                 opacity: 1;
             }
             100% {
-                transform: rotateY(180deg);
+                transform: rotateY(-90deg);
                 transform-origin: center center;
                 opacity: 0;
             }
         }
         @keyframes flipNextIn {
             0% {
-                transform: rotateY(-180deg);
+                transform: rotateY(90deg);
                 transform-origin: center center;
                 opacity: 0;
             }
@@ -248,14 +252,14 @@
                 opacity: 1;
             }
             100% {
-                transform: rotateY(-180deg);
+                transform: rotateY(90deg);
                 transform-origin: center center;
                 opacity: 0;
             }
         }
         @keyframes flipPrevIn {
             0% {
-                transform: rotateY(180deg);
+                transform: rotateY(-90deg);
                 transform-origin: center center;
                 opacity: 0;
             }
@@ -692,7 +696,6 @@
             renderCard();
         }
 
-        // Thay đổi số dòng trên trang
         function changeRecordsPerPage(event) {
             recordsPerPage = event.target.value;
             saveSetting('recordsPerPage', recordsPerPage);
@@ -700,7 +703,6 @@
             updatePagination();
         }
 
-        // Thay đổi sang trang từ selectbox
         function changePage(event) {
             currentPage = parseInt(event.target.value);
             const cardElement = document.getElementById('card');

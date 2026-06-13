@@ -33,6 +33,8 @@
             min-height: 100vh;
             padding: 10px;
             user-select: none;
+            overflow-x: hidden;
+            overscroll-behavior: none;
         }
 
         .container {
@@ -173,6 +175,7 @@
             height: 420px;
             cursor: pointer;
             position: relative;
+            touch-action: none;
         }
 
         .flashcard {
@@ -1203,6 +1206,10 @@
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
+
+        cardWrapper.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
 
         cardWrapper.addEventListener('touchend', (e) => {
             touchEndX = e.changedTouches[0].screenX;

@@ -530,7 +530,7 @@
         // Trạng thái cấu hình chức năng thêm
         let isTtsEnabled = true;
         let currentFilter = 'all'; // all, mastered, unmastered
-        let masteredIds = JSON.parse(localStorage.getItem('hsk_mastered_ids') || '[]');
+        let masteredIds = []; // Sẽ đọc bất đồng bộ từ IndexedDB/LocalStorage khi khởi động
         let displayMode = 'sequential'; // sequential, random
         let isAutoPlaying = false;
         let autoPlayTimeout = null;
@@ -609,11 +609,27 @@
             return array;
         }
 
-        // Fetch dữ liệu từ API dựa trên giá trị selectbox
-        async function fetchData() {
-            document.getElementById('main-content').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
+        // Fetch dữ liệu từ API dựa trên giá trị selectbox kết hợp hỗ trợ Offline/Cache chất lượng cao từ IndexedDB
+        async function fetchData(preservePosition = false) {
+            let hasCache = false;
+
+            // Thử nạp danh sách từ IndexedDB trước tiên (Trực quan hóa tức thời, không bị gián đoạn mạng)
+            const cachedList = await loadSetting('rawFlashcards_' + currentHskLevel, null);
+            if (cachedList && cachedList.length > 0) {
+                rawFlashcards = cachedList;
+                hasCache = true;
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('main-content').style.display = 'flex';
+                
+                await applyFilterAndRender(preservePosition);
+            } else {
+                // Hiển thị màn hình chờ nếu chưa có sẵn cache của cấp độ này
+                document.getElementById('main-content').style.display = 'none';
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+            }
 
             const baseUrl = 'https://hsk-gilt.vercel.app/api/gSheet';
             const spreadId = '105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
@@ -628,7 +644,7 @@
                 if (data && data.values && data.values.length > 1) {
                     const rows = data.values.slice(1);
                     
-                    rawFlashcards = rows.map(row => ({
+                    const remoteFlashcards = rows.map(row => ({
                         stt: row[0] || '',
                         word: row[1] || '',
                         pinyin: row[2] || '',
@@ -638,20 +654,28 @@
                         exVn: row[6] || ''
                     })).filter(item => item.word);
 
-                    if (rawFlashcards.length > 0) {
+                    if (remoteFlashcards.length > 0) {
+                        // Lưu trữ danh sách mới tải từ server vào bộ nhớ IndexedDB
+                        rawFlashcards = remoteFlashcards;
+                        saveSetting('rawFlashcards_' + currentHskLevel, remoteFlashcards);
+
                         document.getElementById('loading').style.display = 'none';
                         document.getElementById('error').style.display = 'none';
                         document.getElementById('main-content').style.display = 'flex';
-                        applyFilterAndRender();
-                    } else {
+                        
+                        await applyFilterAndRender(preservePosition);
+                    } else if (!hasCache) {
                         showError();
                     }
-                } else {
+                } else if (!hasCache) {
                     showError();
                 }
             } catch (error) {
-                console.error('Error fetching data:', error);
-                showError();
+                console.error('Error fetching data from server:', error);
+                // Nếu chưa có cache thì mới hiển thị màn hình báo lỗi
+                if (!hasCache) {
+                    showError();
+                }
             }
         }
 
@@ -661,7 +685,7 @@
         }
 
         // Áp dụng bộ lọc danh sách thuộc / chưa thuộc và chế độ ngẫu nhiên cố định danh sách
-        function applyFilterAndRender() {
+        async function applyFilterAndRender(preservePosition = false) {
             let baseList = [];
             if (currentFilter === 'all') {
                 baseList = [...rawFlashcards];
@@ -683,12 +707,18 @@
             const unmasteredCount = rawFlashcards.length - masteredCount;
             document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
 
-            currentPage = 1;
-            updatePagination();
+            if (preservePosition) {
+                const savedPage = await loadSetting('currentPage_' + currentHskLevel, 1);
+                currentPage = parseInt(savedPage) || 1;
+            } else {
+                currentPage = 1;
+                saveSetting('currentPage_' + currentHskLevel, currentPage);
+            }
+            await updatePagination(preservePosition);
         }
 
         // Cập nhật giao diện phân trang dựa trên số records hiển thị
-        function updatePagination() {
+        async function updatePagination(preservePosition = false) {
             const pageSelect = document.getElementById('page-select');
             const pageSelectLabel = document.getElementById('page-select-label');
             pageSelect.innerHTML = '';
@@ -721,7 +751,16 @@
                 }
             }
 
-            currentIndex = 0;
+            if (preservePosition) {
+                const savedIndex = await loadSetting('currentIndex_' + currentHskLevel, 0);
+                currentIndex = parseInt(savedIndex) || 0;
+                if (currentIndex >= paginatedFlashcards.length) {
+                    currentIndex = 0;
+                }
+            } else {
+                currentIndex = 0;
+                saveSetting('currentIndex_' + currentHskLevel, currentIndex);
+            }
             renderCard();
         }
 
@@ -729,11 +768,13 @@
             recordsPerPage = event.target.value;
             saveSetting('recordsPerPage', recordsPerPage);
             currentPage = 1;
-            updatePagination();
+            saveSetting('currentPage_' + currentHskLevel, currentPage);
+            updatePagination(false);
         }
 
         function changePage(event) {
             currentPage = parseInt(event.target.value);
+            saveSetting('currentPage_' + currentHskLevel, currentPage);
             const cardElement = document.getElementById('card');
             if (cardElement && !isTransitioning) {
                 isTransitioning = true;
@@ -744,7 +785,7 @@
                 
                 cardElement.classList.add('page-flip-next-out');
                 setTimeout(() => {
-                    updatePagination();
+                    updatePagination(false);
                     cardElement.classList.remove('page-flip-next-out');
                     cardElement.classList.add('page-flip-next-in');
                     setTimeout(() => {
@@ -753,7 +794,7 @@
                     }, 300);
                 }, 300);
             } else {
-                updatePagination();
+                updatePagination(false);
             }
         }
 
@@ -860,6 +901,7 @@
             
             setTimeout(() => {
                 currentIndex = (currentIndex + 1) % paginatedFlashcards.length;
+                saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                 renderCard();
                 cardElement.classList.remove('page-flip-next-out');
                 cardElement.classList.add('page-flip-next-in');
@@ -889,6 +931,7 @@
             
             setTimeout(() => {
                 currentIndex = (currentIndex - 1 + paginatedFlashcards.length) % paginatedFlashcards.length;
+                saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                 renderCard();
                 cardElement.classList.remove('page-flip-prev-out');
                 cardElement.classList.add('page-flip-prev-in');
@@ -1037,6 +1080,7 @@
                         cardElement.classList.add('page-flip-next-out');
                         setTimeout(() => {
                             currentIndex = (currentIndex + 1) % paginatedFlashcards.length;
+                            saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                             renderCard();
                             cardElement.classList.remove('page-flip-next-out');
                             cardElement.classList.add('page-flip-next-in');
@@ -1085,12 +1129,11 @@
         function changeHskLevel(event) {
             currentHskLevel = event.target.value;
             saveSetting('currentHskLevel', currentHskLevel);
-            currentIndex = 0;
             if (isAutoPlaying) toggleAutoPlay();
-            fetchData();
+            fetchData(true);
         }
 
-        // Thêm / Xóa từ khỏi danh sách đã thuộc (Lưu LocalStorage)
+        // Thêm / Xóa từ khỏi danh sách đã thuộc (Lưu IndexedDB và LocalStorage)
         function toggleMastered(event) {
             event.stopPropagation();
             if (paginatedFlashcards.length === 0) return;
@@ -1103,6 +1146,7 @@
                 masteredIds.push(current.stt);
             }
             localStorage.setItem('hsk_mastered_ids', JSON.stringify(masteredIds));
+            saveSetting('masteredIds', masteredIds);
 
             // Cập nhật lại giao diện bộ đếm thống kê tổng
             const masteredCount = rawFlashcards.filter(item => masteredIds.includes(item.stt)).length;
@@ -1112,7 +1156,7 @@
             // Nếu đang xem ở chế độ lọc Thuộc hoặc Chưa thuộc, xóa thẻ ra khỏi danh sách đang render hiện tại
             if (currentFilter !== 'all') {
                 if (isAutoPlaying) toggleAutoPlay();
-                applyFilterAndRender();
+                applyFilterAndRender(true);
             } else {
                 // Nếu ở chế độ Tất cả, chỉ cập nhật trạng thái icon Active của thẻ
                 const isMasteredNow = masteredIds.includes(current.stt);
@@ -1195,6 +1239,14 @@
             currentHskLevel = await loadSetting('currentHskLevel', 'HSK1');
             recordsPerPage = await loadSetting('recordsPerPage', 'all');
 
+            // Đồng bộ bộ nhớ danh sách đã học từ IndexedDB hoặc tự động nhập từ LocalStorage cũ nếu có
+            const localMastered = JSON.parse(localStorage.getItem('hsk_mastered_ids') || '[]');
+            masteredIds = await loadSetting('masteredIds', null);
+            if (!masteredIds) {
+                masteredIds = localMastered;
+                saveSetting('masteredIds', masteredIds);
+            }
+
             // Đồng bộ trạng thái UI tương ứng với cấu hình khôi phục
             document.getElementById('hsk-level-select').value = currentHskLevel;
             document.getElementById('records-per-page-select').value = recordsPerPage;
@@ -1236,7 +1288,8 @@
                 filterBtn.classList.remove('active');
             }
 
-            fetchData();
+            // Gọi tải dữ liệu và yêu cầu phục hồi đúng vị trí thẻ học của phiên làm việc trước đó
+            fetchData(true);
         });
     </script>
 </body>

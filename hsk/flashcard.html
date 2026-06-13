@@ -126,6 +126,10 @@
             transform: rotateY(180deg);
         }
 
+        .flashcard.flipped-vertical {
+            transform: rotateX(180deg);
+        }
+
         .card-face {
             position: absolute;
             width: 100%;
@@ -144,6 +148,10 @@
         .card-back {
             transform: rotateY(180deg);
             background-color: #f1f5f9;
+        }
+
+        .flashcard.flipped-vertical .card-back {
+            transform: rotateX(180deg);
         }
 
         /* Action Buttons inside Card Corner */
@@ -207,7 +215,7 @@
         }
 
         .meaning {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: bold;
             color: var(--text-main);
             margin-bottom: 25px;
@@ -439,8 +447,8 @@
         // Hiển thị nội dung thẻ hiện tại và điều khiển luồng phát âm thanh TTS
         function renderCard() {
             const cardElement = document.getElementById('card');
-            const wasFlipped = cardElement.classList.contains('flipped');
             cardElement.classList.remove('flipped');
+            cardElement.classList.remove('flipped-vertical');
 
             const current = filteredFlashcards[currentIndex];
             
@@ -478,15 +486,9 @@
                 backMarkBtn.classList.remove('status-mastered');
             }
 
-            // Phát âm tự động khi chuyển thẻ nếu bật TTS
+            // Phát âm tự động khi chuyển thẻ nếu bật TTS - Mặc định luôn đọc từ chính khi chuyển thẻ
             if (isTtsEnabled && typeof window.speakCommon === 'function') {
-                if (wasFlipped) {
-                    // Nếu thẻ trước đó đang mở mặt sau, đọc câu ví dụ hoặc từ kèm theo
-                    window.speakCommon({ text: current.exCn || current.word, voice: "zh-CN-XiaoxiaoNeural" });
-                } else {
-                    // Nếu ở mặt trước, tiến hành đọc từ chính
-                    window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
-                }
+                window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
             }
         }
 
@@ -494,22 +496,26 @@
         function flipCard() {
             if (filteredFlashcards.length === 0) return;
             const cardElement = document.getElementById('card');
-            cardElement.classList.toggle('flipped');
             
-            const isNowFlipped = cardElement.classList.contains('flipped');
+            // Nếu đang lật dọc (từ phím Up/Down), tiếp tục toggle lật dọc, ngược lại lật ngang
+            if (cardElement.classList.contains('flipped-vertical') || currentFlipDirection === 'vertical') {
+                cardElement.classList.toggle('flipped-vertical');
+                cardElement.classList.remove('flipped');
+            } else {
+                cardElement.classList.toggle('flipped');
+                cardElement.classList.remove('flipped-vertical');
+            }
+            currentFlipDirection = 'normal'; // Reset trạng thái hướng lật sau click trực tiếp
+            
             const current = filteredFlashcards[currentIndex];
 
-            // Phát âm tự động khi lật thẻ
+            // Phát âm tự động khi lật thẻ - Mặc định luôn đọc từ chính
             if (isTtsEnabled && typeof window.speakCommon === 'function') {
-                if (isNowFlipped) {
-                    // Đọc câu ví dụ (ưu tiên câu ví dụ tiếng Trung, nếu không có đọc từ chính)
-                    window.speakCommon({ text: current.exCn || current.word, voice: "zh-CN-XiaoxiaoNeural" });
-                } else {
-                    // Quay về mặt trước thì đọc lại từ chính
-                    window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
-                }
+                window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
             }
         }
+
+        let currentFlipDirection = 'normal';
 
         // Chuyển sang thẻ tiếp theo
         function nextCard() {
@@ -536,8 +542,7 @@
                 // Phát lại từ hiện tại khi kích hoạt lại
                 if (filteredFlashcards.length > 0 && typeof window.speakCommon === 'function') {
                     const current = filteredFlashcards[currentIndex];
-                    const isFlipped = document.getElementById('card').classList.contains('flipped');
-                    window.speakCommon({ text: isFlipped ? (current.exCn || current.word) : current.word, voice: "zh-CN-XiaoxiaoNeural" });
+                    window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
                 }
             } else {
                 ttsBtn.innerText = "TTS: TẮT";
@@ -623,6 +628,7 @@
             if (filteredFlashcards.length === 0) return;
             if (e.code === 'Space') {
                 e.preventDefault();
+                currentFlipDirection = 'normal';
                 flipCard();
             } else if (e.code === 'ArrowRight') {
                 nextCard();
@@ -630,6 +636,7 @@
                 prevCard();
             } else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
                 e.preventDefault();
+                currentFlipDirection = 'vertical';
                 flipCard();
             }
         });

@@ -314,6 +314,7 @@
             <h1 id="sheet-title">HSK Flashcards</h1>
             <div class="top-bar">
                 <button id="tts-toggle" class="toggle-btn active" onclick="toggleTts(event)">TTS: BẬT</button>
+                <button id="display-mode-toggle" class="toggle-btn" onclick="toggleDisplayMode(event)">Chế độ: Tuần tự</button>
                 <button id="filter-toggle" class="toggle-btn" onclick="toggleFilter(event)">Xem: Tất cả</button>
             </div>
             <div class="progress-box">
@@ -348,6 +349,7 @@
 
         <div class="controls">
             <button class="btn btn-secondary" onclick="prevCard()">Trước đó</button>
+            <button id="auto-play-btn" class="btn btn-secondary" onclick="toggleAutoPlay()">Tự động đọc: TẮT</button>
             <button class="btn" onclick="nextCard()">Tiếp theo</button>
         </div>
     </div>
@@ -362,6 +364,9 @@
         let isTtsEnabled = true;
         let currentFilter = 'all'; // all, mastered, unmastered
         let masteredIds = JSON.parse(localStorage.getItem('hsk_mastered_ids') || '[]');
+        let displayMode = 'sequential'; // sequential, random
+        let isAutoPlaying = false;
+        let autoPlayTimeout = null;
 
         // Biến kiểm soát vuốt chạm (Swipe) trên mobile
         let touchStartX = 0;
@@ -486,9 +491,12 @@
                 backMarkBtn.classList.remove('status-mastered');
             }
 
-            // Phát âm tự động khi chuyển thẻ nếu bật TTS - Mặc định luôn đọc từ chính khi chuyển thẻ
-            if (isTtsEnabled && typeof window.speakCommon === 'function') {
-                window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
+            // Nếu đang trong chế độ chạy tự động, không kích hoạt speak tại renderCard để tránh trùng lặp
+            if (!isAutoPlaying) {
+                // Phát âm tự động khi chuyển thẻ nếu bật TTS - Mặc định luôn đọc từ chính khi chuyển thẻ
+                if (isTtsEnabled && typeof window.speakCommon === 'function') {
+                    window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
+                }
             }
         }
 
@@ -509,11 +517,14 @@
             
             const current = filteredFlashcards[currentIndex];
 
-            // Phát âm tự động khi lật thẻ - Đọc theo mặt hiển thị sau khi lật
-            if (isTtsEnabled && typeof window.speakCommon === 'function') {
-                const isFlippedNow = cardElement.classList.contains('flipped') || cardElement.classList.contains('flipped-vertical');
-                const textToSpeak = isFlippedNow ? (current.exCn || current.word) : current.word;
-                window.speakCommon({ text: textToSpeak, voice: "zh-CN-XiaoxiaoNeural" });
+            // Chỉ kích hoạt speak thủ công khi không chạy tự động
+            if (!isAutoPlaying) {
+                // Phát âm tự động khi lật thẻ - Đọc theo mặt hiển thị sau khi lật
+                if (isTtsEnabled && typeof window.speakCommon === 'function') {
+                    const isFlippedNow = cardElement.classList.contains('flipped') || cardElement.classList.contains('flipped-vertical');
+                    const textToSpeak = isFlippedNow ? (current.exCn || current.word) : current.word;
+                    window.speakCommon({ text: textToSpeak, voice: "zh-CN-XiaoxiaoNeural" });
+                }
             }
         }
 
@@ -522,14 +533,22 @@
         // Chuyển sang thẻ tiếp theo
         function nextCard() {
             if (filteredFlashcards.length === 0) return;
-            currentIndex = (currentIndex + 1) % filteredFlashcards.length;
+            if (displayMode === 'random') {
+                currentIndex = Math.floor(Math.random() * filteredFlashcards.length);
+            } else {
+                currentIndex = (currentIndex + 1) % filteredFlashcards.length;
+            }
             renderCard();
         }
 
         // Quay lại thẻ trước đó
         function prevCard() {
             if (filteredFlashcards.length === 0) return;
-            currentIndex = (currentIndex - 1 + filteredFlashcards.length) % filteredFlashcards.length;
+            if (displayMode === 'random') {
+                currentIndex = Math.floor(Math.random() * filteredFlashcards.length);
+            } else {
+                currentIndex = (currentIndex - 1 + filteredFlashcards.length) % filteredFlashcards.length;
+            }
             renderCard();
         }
 
@@ -542,7 +561,7 @@
                 ttsBtn.innerText = "TTS: BẬT";
                 ttsBtn.classList.add('active');
                 // Phát lại nội dung tương ứng với mặt hiện tại khi kích hoạt lại
-                if (filteredFlashcards.length > 0 && typeof window.speakCommon === 'function') {
+                if (filteredFlashcards.length > 0 && typeof window.speakCommon === 'function' && !isAutoPlaying) {
                     const current = filteredFlashcards[currentIndex];
                     const cardElement = document.getElementById('card');
                     const isFlippedNow = cardElement.classList.contains('flipped') || cardElement.classList.contains('flipped-vertical');
@@ -552,10 +571,109 @@
             } else {
                 ttsBtn.innerText = "TTS: TẮT";
                 ttsBtn.classList.remove('active');
+                if (isAutoPlaying) {
+                    toggleAutoPlay(); // Tắt tự động chạy nếu tắt TTS
+                }
                 if (typeof window.stopSpeak === 'function') {
                     window.stopSpeak();
                 }
             }
+        }
+
+        // Chuyển đổi chế độ hiển thị danh sách (Tuần tự / Ngẫu nhiên)
+        function toggleDisplayMode(event) {
+            event.stopPropagation();
+            const modeBtn = document.getElementById('display-mode-toggle');
+            if (displayMode === 'sequential') {
+                displayMode = 'random';
+                modeBtn.innerText = "Chế độ: Ngẫu nhiên";
+                modeBtn.classList.add('active');
+            } else {
+                displayMode = 'sequential';
+                modeBtn.innerText = "Chế độ: Tuần tự";
+                modeBtn.classList.remove('active');
+            }
+        }
+
+        // Bật / Tắt chế độ tự động đọc chuyển từ tuần tự/ngẫu nhiên
+        function toggleAutoPlay() {
+            if (filteredFlashcards.length === 0) return;
+            isAutoPlaying = !isAutoPlaying;
+            const autoPlayBtn = document.getElementById('auto-play-btn');
+            
+            if (isAutoPlaying) {
+                // Ép buộc bật TTS nếu chưa bật
+                if (!isTtsEnabled) {
+                    isTtsEnabled = true;
+                    const ttsBtn = document.getElementById('tts-toggle');
+                    ttsBtn.innerText = "TTS: BẬT";
+                    ttsBtn.classList.add('active');
+                }
+                autoPlayBtn.innerText = "Tự động đọc: BẬT";
+                autoPlayBtn.classList.remove('btn-secondary');
+                autoPlayBtn.classList.add('active');
+                runAutoPlayLoop();
+            } else {
+                autoPlayBtn.innerText = "Tự động đọc: TẮT";
+                autoPlayBtn.classList.remove('active');
+                autoPlayBtn.classList.add('btn-secondary');
+                if (autoPlayTimeout) {
+                    clearTimeout(autoPlayTimeout);
+                    autoPlayTimeout = null;
+                }
+                if (typeof window.stopSpeak === 'function') {
+                    window.stopSpeak();
+                }
+                // Đồng bộ trả thẻ về trạng thái mặt trước khi dừng loop
+                const cardElement = document.getElementById('card');
+                cardElement.classList.remove('flipped');
+                cardElement.classList.remove('flipped-vertical');
+            }
+        }
+
+        // Vòng lặp điều hướng quy trình tự động lật và đọc thẻ
+        function runAutoPlayLoop() {
+            if (!isAutoPlaying || filteredFlashcards.length === 0) return;
+
+            const cardElement = document.getElementById('card');
+            const current = filteredFlashcards[currentIndex];
+
+            // Bước 1: Trở về mặt trước, hiển thị nội dung, và phát âm mặt trước (Từ gốc)
+            cardElement.classList.remove('flipped');
+            cardElement.classList.remove('flipped-vertical');
+            
+            if (typeof window.speakCommon === 'function') {
+                window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
+            }
+
+            // Bước 2: Chờ thời gian đọc mặt trước xong, tiến hành lật và đọc mặt sau (Ví dụ hoặc từ)
+            autoPlayTimeout = setTimeout(() => {
+                if (!isAutoPlaying) return;
+                
+                cardElement.classList.add('flipped');
+                
+                if (typeof window.speakCommon === 'function') {
+                    const textToSpeak = current.exCn || current.word;
+                    window.speakCommon({ text: textToSpeak, voice: "zh-CN-XiaoxiaoNeural" });
+                }
+
+                // Bước 3: Chờ thời gian đọc mặt sau xong, tiến hành chuyển sang thẻ kế tiếp
+                autoPlayTimeout = setTimeout(() => {
+                    if (!isAutoPlaying) return;
+                    
+                    if (displayMode === 'random') {
+                        currentIndex = Math.floor(Math.random() * filteredFlashcards.length);
+                    } else {
+                        currentIndex = (currentIndex + 1) % filteredFlashcards.length;
+                    }
+                    
+                    renderCard();
+                    // Đệ quy kích hoạt chu kỳ mới cho thẻ kế tiếp
+                    runAutoPlayLoop();
+
+                }, 4000); // Thời gian chờ đọc mặt sau và chuẩn bị chuyển từ (4 giây)
+
+            }, 3000); // Thời gian chờ đọc mặt trước trước khi lật (3 giây)
         }
 
         // Chuyển đổi qua lại giữa các trạng thái bộ lọc (Tất cả / Thuộc / Chưa thuộc)
@@ -620,6 +738,7 @@
             
             // Đảm bảo thao tác vuốt theo phương ngang rõ rệt hơn phương dọc
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+                if (isAutoPlaying) toggleAutoPlay(); // Dừng auto play nếu người dùng tương tác chuyển thẻ
                 if (deltaX > 0) {
                     prevCard(); // Vuốt sang phải -> Thẻ trước
                 } else {
@@ -633,14 +752,18 @@
             if (filteredFlashcards.length === 0) return;
             if (e.code === 'Space') {
                 e.preventDefault();
+                if (isAutoPlaying) toggleAutoPlay();
                 currentFlipDirection = 'normal';
                 flipCard();
             } else if (e.code === 'ArrowRight') {
+                if (isAutoPlaying) toggleAutoPlay();
                 nextCard();
             } else if (e.code === 'ArrowLeft') {
+                if (isAutoPlaying) toggleAutoPlay();
                 prevCard();
             } else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
                 e.preventDefault();
+                if (isAutoPlaying) toggleAutoPlay();
                 currentFlipDirection = 'vertical';
                 flipCard();
             }

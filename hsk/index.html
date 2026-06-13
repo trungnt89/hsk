@@ -445,6 +445,207 @@
             margin-top: 100px;
             font-weight: 500;
         }
+
+        /* Word List Panel & Modal Styles */
+        .word-list-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .word-list-modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .word-list-content {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 500px;
+            height: 85vh;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.15);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .word-list-modal.open .word-list-content {
+            transform: translateY(0);
+        }
+
+        .word-list-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .word-list-header h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .word-list-close {
+            background: #f1f5f9;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.2s ease;
+        }
+
+        .word-list-close:hover {
+            background: #e2e8f0;
+            transform: scale(1.05);
+        }
+
+        .word-list-search-box {
+            padding: 12px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            background-color: #f8fafc;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.9rem;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1), inset 0 1px 2px rgba(0,0,0,0.02);
+            background-color: #ffffff;
+        }
+
+        .word-list-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .word-list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .word-list-item:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .word-list-item.active-word {
+            background-color: #f5f3ff;
+            border-color: #c4b5fd;
+            border-left: 5px solid var(--primary);
+        }
+
+        .item-index {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            min-width: 24px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 3px 6px;
+            text-align: center;
+        }
+
+        .item-word-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .item-word-zh {
+            font-size: 1.4rem;
+            font-weight: 750;
+            color: var(--accent);
+            line-height: 1.2;
+        }
+
+        .item-word-py {
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .item-word-meaning {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .item-action-btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #64748b;
+            flex-shrink: 0;
+            outline: none;
+        }
+
+        .item-action-btn:hover {
+            transform: scale(1.1);
+            background: #f1f5f9;
+        }
+
+        .item-action-btn.item-mastered {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #15803d;
+        }
     </style>
 </head>
 <body>
@@ -468,6 +669,7 @@
                     <button id="tts-toggle" class="toggle-btn-icon active" onclick="toggleTts(event)" title="Âm thanh (TTS): BẬT">🔊</button>
                     <button id="display-mode-toggle" class="toggle-btn-icon" onclick="toggleDisplayMode(event)" title="Chế độ: Tuần tự">🔁</button>
                     <button id="filter-toggle" class="toggle-btn-icon" onclick="toggleFilter(event)" title="Xem: Tất cả">🗂️</button>
+                    <button id="word-list-toggle" class="toggle-btn-icon" onclick="toggleWordList(event)" title="Xem danh sách từ">📋</button>
                 </div>
             </div>
             <div class="pagination-bar">
@@ -1178,6 +1380,18 @@
 
         // Lăng nghe sự kiện điều khiển bàn phím Máy tính (Desktop PC)
         document.addEventListener('keydown', (event) => {
+            // Kiểm tra nếu danh sách từ đang mở
+            const wordListModal = document.getElementById('word-list-modal');
+            const isModalOpen = wordListModal && wordListModal.classList.contains('open');
+
+            if (isModalOpen) {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closeWordList();
+                }
+                return; // Tạm dừng mọi phím di chuyển/lật thẻ lúc gõ tìm kiếm từ
+            }
+
             if (document.getElementById('main-content').style.display === 'none') return;
 
             if (event.key === 'ArrowRight' || event.key === ' ') {
@@ -1235,6 +1449,226 @@
                 if (Math.abs(diffY) > threshold) {
                     currentFlipDirection = 'vertical';
                     flipCard(); // Vuốt dọc -> Kích hoạt lật thẻ đứng
+                }
+            }
+        }
+
+        // Chức năng bật/tắt toàn bộ danh sách từ
+        function toggleWordList(event) {
+            if (event) event.stopPropagation();
+            const modal = document.getElementById('word-list-modal');
+            const isOpen = modal.classList.contains('open');
+            if (isOpen) {
+                closeWordList();
+            } else {
+                openWordList();
+            }
+        }
+
+        function openWordList() {
+            if (isAutoPlaying) toggleAutoPlay(); // Tắt đọc tự dộng khi mở danh sách để không xung đột
+            
+            const modal = document.getElementById('word-list-modal');
+            const searchInput = document.getElementById('word-search');
+            searchInput.value = ''; // Reset thanh tìm kiếm
+            
+            // Cập nhật tiêu đề modal kèm số lượng từ
+            document.getElementById('modal-title').innerText = `Danh sách từ lớp ${currentHskLevel} (${rawFlashcards.length} từ)`;
+            
+            renderWordListItems();
+            
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden'; // Khóa cuộn trang nền
+        }
+
+        function closeWordList(event) {
+            if (event) event.stopPropagation();
+            const modal = document.getElementById('word-list-modal');
+            modal.classList.remove('open');
+            document.body.style.overflow = ''; // Mở khóa cuộn trang nền
+        }
+
+        function closeWordListOnOverlay(event) {
+            if (event.target === document.getElementById('word-list-modal')) {
+                closeWordList();
+            }
+        }
+
+        // Hiển thị danh sách từ dạng HTML, hỗ trợ tô đậm từ đang xem và đánh dấu thuộc/chưa thuộc trực tiếp
+        function renderWordListItems(filterText = '') {
+            const container = document.getElementById('word-list-items-container');
+            container.innerHTML = '';
+            
+            const query = filterText.toLowerCase().trim();
+            const filtered = rawFlashcards.filter(item => {
+                if (!query) return true;
+                return (item.word && item.word.toLowerCase().includes(query)) ||
+                       (item.pinyin && item.pinyin.toLowerCase().includes(query)) ||
+                       (item.meaning && item.meaning.toLowerCase().includes(query));
+            });
+
+            if (filtered.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.style.textAlign = 'center';
+                emptyMsg.style.padding = '40px 10px';
+                emptyMsg.style.color = 'var(--text-muted)';
+                emptyMsg.style.fontWeight = '500';
+                emptyMsg.innerText = 'Không tìm thấy từ nào phù hợp.';
+                container.appendChild(emptyMsg);
+                return;
+            }
+
+            // Lấy từ đang hiển thị ở thẻ chính để bôi đậm
+            const currentItem = paginatedFlashcards[currentIndex];
+
+            filtered.forEach((item, idx) => {
+                const isMastered = masteredIds.includes(item.stt);
+                const isActive = currentItem && currentItem.stt === item.stt;
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `word-list-item ${isActive ? 'active-word' : ''}`;
+                
+                // Khi nhấp dòng, nhảy thẳng đến thẻ đó
+                itemDiv.onclick = () => selectWordFromList(item.stt);
+
+                itemDiv.innerHTML = `
+                    <div class="item-index">${item.stt || (idx + 1)}</div>
+                    <div class="item-word-info">
+                        <div class="item-word-zh">${item.word}</div>
+                        <div class="item-word-py">${item.pinyin}</div>
+                        <div class="item-word-meaning">${item.meaning}</div>
+                    </div>
+                    <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
+                            onclick="toggleMasteredFromList(event, '${item.stt}')" 
+                            title="${isMastered ? 'Bỏ thuộc' : 'Đánh dấu thuộc'}">
+                        ✓
+                    </button>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function filterWordListItems() {
+            const query = document.getElementById('word-search').value;
+            renderWordListItems(query);
+        }
+
+        // Đồng bộ chuyển trang/vị trí thẻ khi click chọn từ từ danh sách
+        function selectWordFromList(stt) {
+            // Tìm từ trong toàn bộ danh sách HSK gốc
+            const itemIndexInRaw = rawFlashcards.findIndex(item => item.stt === stt);
+            if (itemIndexInRaw === -1) return;
+
+            // Kiểm tra xem từ có nằm trong bộ lọc hiện không, nếu không thì reset bộ lọc về 'all'
+            const matchInFiltered = filteredFlashcards.findIndex(item => item.stt === stt);
+            if (matchInFiltered === -1) {
+                currentFilter = 'all';
+                const filterBtn = document.getElementById('filter-toggle');
+                filterBtn.innerHTML = "🗂️";
+                filterBtn.title = "Xem: Tất cả";
+                filterBtn.classList.remove('active');
+                saveSetting('currentFilter', currentFilter);
+                
+                // Nếu chế độ là ngẫu nhiên, ta đưa về tuần tự để có tính định vị tự nhiên
+                if (displayMode === 'random') {
+                    displayMode = 'sequential';
+                    const modeBtn = document.getElementById('display-mode-toggle');
+                    modeBtn.innerHTML = "🔁";
+                    modeBtn.title = "Chế độ: Tuần tự";
+                    modeBtn.classList.remove('active');
+                    saveSetting('displayMode', displayMode);
+                }
+                
+                filteredFlashcards = [...rawFlashcards];
+                const masteredCount = rawFlashcards.filter(item => masteredIds.includes(item.stt)).length;
+                const unmasteredCount = rawFlashcards.length - masteredCount;
+                document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
+            }
+
+            // Tìm lại vị trí trong filteredFlashcards
+            const finalIndex = filteredFlashcards.findIndex(item => item.stt === stt);
+            if (finalIndex !== -1) {
+                if (recordsPerPage === 'all') {
+                    currentPage = 1;
+                    currentIndex = finalIndex;
+                } else {
+                    const size = parseInt(recordsPerPage);
+                    currentPage = Math.floor(finalIndex / size) + 1;
+                    currentIndex = finalIndex % size;
+                }
+                saveSetting('currentPage_' + currentHskLevel, currentPage);
+                saveSetting('currentIndex_' + currentHskLevel, currentIndex);
+                
+                // Đồng bộ hóa dropdown chọn trang
+                const pageSelect = document.getElementById('page-select');
+                const pageSelectLabel = document.getElementById('page-select-label');
+                pageSelect.innerHTML = '';
+
+                if (recordsPerPage === 'all') {
+                    paginatedFlashcards = [...filteredFlashcards];
+                    pageSelect.style.display = 'none';
+                    pageSelectLabel.style.display = 'none';
+                } else {
+                    const size = parseInt(recordsPerPage);
+                    const totalPages = Math.ceil(filteredFlashcards.length / size);
+                    
+                    const start = (currentPage - 1) * size;
+                    const end = start + size;
+                    paginatedFlashcards = filteredFlashcards.slice(start, end);
+
+                    pageSelect.style.display = 'inline-block';
+                    pageSelectLabel.style.display = 'inline-block';
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        const option = document.createElement('option');
+                        option.value = i;
+                        option.innerText = `Trang ${i}`;
+                        if (i === currentPage) {
+                            option.selected = true;
+                        }
+                        pageSelect.appendChild(option);
+                    }
+                }
+                renderCard();
+            }
+
+            closeWordList();
+        }
+
+        // Cho phép đánh dấu thuộc nhanh trực tiếp từ danh sách từ
+        function toggleMasteredFromList(event, stt) {
+            event.stopPropagation();
+            
+            const index = masteredIds.indexOf(stt);
+            if (index > -1) {
+                masteredIds.splice(index, 1);
+            } else {
+                masteredIds.push(stt);
+            }
+            localStorage.setItem('hsk_mastered_ids', JSON.stringify(masteredIds));
+            saveSetting('masteredIds', masteredIds);
+
+            // Cập nhật bộ đếm trong app nền
+            const masteredCount = rawFlashcards.filter(item => masteredIds.includes(item.stt)).length;
+            const unmasteredCount = rawFlashcards.length - masteredCount;
+            document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
+
+            // Vẽ lại danh sách từ để cập nhật trạng thái icon tick ✓
+            const query = document.getElementById('word-search').value;
+            renderWordListItems(query);
+
+            // Cập nhật nút bôi đỏ/xanh mặt thẻ nếu thẻ hiện tại trùng từ vừa tick
+            const currentItem = paginatedFlashcards[currentIndex];
+            if (currentItem && currentItem.stt === stt) {
+                const isMasteredNow = masteredIds.includes(stt);
+                const frontMarkBtn = document.getElementById('mark-btn-front');
+                const backMarkBtn = document.getElementById('mark-btn-back');
+                if (isMasteredNow) {
+                    frontMarkBtn.classList.add('status-mastered');
+                    backMarkBtn.classList.add('status-mastered');
+                } else {
+                    frontMarkBtn.classList.remove('status-mastered');
+                    backMarkBtn.classList.remove('status-mastered');
                 }
             }
         }
@@ -1303,5 +1737,21 @@
             fetchData(true);
         });
     </script>
+
+    <!-- Word List Panel & Modal (Bottom Sheet style) -->
+    <div id="word-list-modal" class="word-list-modal" onclick="closeWordListOnOverlay(event)">
+        <div class="word-list-content">
+            <div class="word-list-header">
+                <h2 id="modal-title">Danh sách từ HSK</h2>
+                <button class="word-list-close" onclick="closeWordList(event)">✕</button>
+            </div>
+            <div class="word-list-search-box">
+                <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa..." oninput="filterWordListItems()">
+            </div>
+            <div class="word-list-body" id="word-list-items-container">
+                <!-- Nội dung được tự động kết nạp từ JS -->
+            </div>
+        </div>
+    </div>
 </body>
 </html>

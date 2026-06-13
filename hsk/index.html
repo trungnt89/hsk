@@ -845,6 +845,9 @@
         // Chuyển sang thẻ tiếp theo
         function nextCard() {
             if (paginatedFlashcards.length === 0 || isTransitioning) return;
+            if (isAutoPlaying) {
+                toggleAutoPlay();
+            }
             isTransitioning = true;
             
             const cardElement = document.getElementById('card');
@@ -871,6 +874,9 @@
         // Quay lại thẻ trước đó
         function prevCard() {
             if (paginatedFlashcards.length === 0 || isTransitioning) return;
+            if (isAutoPlaying) {
+                toggleAutoPlay();
+            }
             isTransitioning = true;
             
             const cardElement = document.getElementById('card');

@@ -1,3 +1,4 @@
+// FULL MÃ NGUỒN HOÀN THIỆN
 const { GoogleAuth } = require('google-auth-library');
 const { google } = require('googleapis');
 
@@ -10,7 +11,7 @@ export async function ensureAuthenticated() {
         credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY),
         scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
-	console.log("[LOG] Initializing Google Auth.3333..");
+    console.log("[LOG] Initializing Google Auth.3333..");
     const client = await auth.getClient();
     cachedSheetsClient = google.sheets({ version: 'v4', auth: client });
     return cachedSheetsClient;
@@ -19,7 +20,9 @@ export async function ensureAuthenticated() {
 export async function handleRead(spreadsheetId, sheetName) {
     await ensureAuthenticated();
     console.log(`[LOG] handleRead: Reading data from ${sheetName}`);
-    const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: sheetName });
+    // Sửa lỗi truyền trùng lặp tên hoặc thiếu dải cột
+    const safeRange = sheetName.includes('!') ? sheetName : `'${sheetName}'!A:Z`;
+    const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: safeRange });
     const rowCount = response.data.values ? response.data.values.length : 0;
     console.log(`[LOG] handleRead: Success. Total rows read: ${rowCount}`);
     return { values: response.data.values || [] };
@@ -51,7 +54,9 @@ export async function handleAdd(spreadsheetId, sheetName, rawData) {
 export async function handleReadByPosVal(spreadsheetId, sheetName, pos, val) {
     await ensureAuthenticated();
     console.log(`[LOG] handleReadByPosVal: Searching ${sheetName} at index ${pos} for value "${val}"`);
-    const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: sheetName });
+    // Sửa lỗi truyền trùng lặp tên hoặc thiếu dải cột tương tự handleRead
+    const safeRange = sheetName.includes('!') ? sheetName : `'${sheetName}'!A:Z`;
+    const response = await cachedSheetsClient.spreadsheets.values.get({ spreadsheetId, range: safeRange });
     const rows = response.data.values || [];
     const results = rows
         .map((row, index) => ({ rowID: index + 1, data: row }))
@@ -103,20 +108,18 @@ export async function handleDeleteByPosVal(spreadsheetId, sheetName, pos, val) {
     return { success: true, deletedRow: rowID };
 }
 
-/** 
- * Hàm ghi log tối ưu tốc độ (Realtime)
+/** * Hàm ghi log tối ưu tốc độ (Realtime)
  * Sử dụng append thay vì read-then-write để giảm độ trễ API.
  */
 export async function writeLog(content, type) {
-	const SHEET_TASK = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
+    const SHEET_TASK = '1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8';
     const SHEET_LOG = '1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc';
-	const SHEET_NAME = 'Logs';
+    const SHEET_NAME = 'Logs';
     
-    // Kiểm tra nếu nội dung chứa chính ID của Spreadsheet thì bỏ qua
-	if (typeof content === 'string' && content.includes(SHEET_TASK)) {
+    if (typeof content === 'string' && content.includes(SHEET_TASK)) {
         return;
     }
-	
+    
     if (typeof content === 'string' && content.includes(SHEET_LOG)) {
         return;
     }
@@ -137,7 +140,6 @@ export async function writeLog(content, type) {
             hour12: false 
         }).replace(/\s+/, '-');
 
-        // Ghi trực tiếp vào cuối sheet - Chỉ tốn 1 round-trip
         await cachedSheetsClient.spreadsheets.values.append({
             spreadsheetId: SHEET_LOG,
             range: `${SHEET_NAME}!A1`,
@@ -150,6 +152,7 @@ export async function writeLog(content, type) {
         console.error("[LOG ERR]", e.message);
     }
 }
+
 function parseData(input) {
     if (typeof input === 'string') {
         try { 

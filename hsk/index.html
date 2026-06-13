@@ -1015,32 +1015,43 @@
                     window.speakCommon({ text: textToSpeak, voice: "zh-CN-XiaoxiaoNeural" });
                 }
 
-                // Bước 3: Chờ thời gian đọc mặt sau xong, tiến hành chuyển sang thẻ kế tiếp
+                // Bước 3: Chờ phát âm Tiếng Trung xong, tiến hành phát âm phần dịch Tiếng Việt của câu ví dụ hoặc nghĩa của từ
                 autoPlayTimeout = setTimeout(() => {
                     if (!isAutoPlaying) return;
-                    
-                    isTransitioning = true;
-                    
-                    // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
-                    cardElement.classList.remove('flipped');
-                    cardElement.classList.remove('flipped-vertical');
-                    
-                    cardElement.classList.add('page-flip-next-out');
-                    setTimeout(() => {
-                        currentIndex = (currentIndex + 1) % paginatedFlashcards.length;
-                        renderCard();
-                        cardElement.classList.remove('page-flip-next-out');
-                        cardElement.classList.add('page-flip-next-in');
-                        
-                        setTimeout(() => {
-                            cardElement.classList.remove('page-flip-next-in');
-                            isTransitioning = false;
-                            // Đệ quy kích hoạt chu kỳ mới cho thẻ kế tiếp
-                            runAutoPlayLoop();
-                        }, 300);
-                    }, 300);
 
-                }, 4000); // Thời gian chờ đọc mặt sau và chuẩn bị chuyển từ (4 giây)
+                    if (typeof window.speakCommon === 'function') {
+                        const textToSpeakVn = current.exVn || current.meaning;
+                        window.speakCommon({ text: textToSpeakVn, voice: "vi-VN-HoaiMyNeural" });
+                    }
+
+                    // Bước 4: Chờ thời gian đọc mặt sau Tiếng Việt xong, tiến hành chuyển sang thẻ kế tiếp
+                    autoPlayTimeout = setTimeout(() => {
+                        if (!isAutoPlaying) return;
+                        
+                        isTransitioning = true;
+                        
+                        // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
+                        cardElement.classList.remove('flipped');
+                        cardElement.classList.remove('flipped-vertical');
+                        
+                        cardElement.classList.add('page-flip-next-out');
+                        setTimeout(() => {
+                            currentIndex = (currentIndex + 1) % paginatedFlashcards.length;
+                            renderCard();
+                            cardElement.classList.remove('page-flip-next-out');
+                            cardElement.classList.add('page-flip-next-in');
+                            
+                            setTimeout(() => {
+                                cardElement.classList.remove('page-flip-next-in');
+                                isTransitioning = false;
+                                // Đệ quy kích hoạt chu kỳ mới cho thẻ kế tiếp
+                                runAutoPlayLoop();
+                            }, 300);
+                        }, 300);
+
+                    }, 3500); // Thời gian chờ phát âm tiếng Việt xong (3.5 giây)
+
+                }, 4000); // Thời gian chờ phát âm tiếng Trung xong (4 giây)
 
             }, 3000); // Thời gian chờ đọc mặt trước trước khi lật (3 giây)
         }

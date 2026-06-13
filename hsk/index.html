@@ -851,15 +851,33 @@
                 if (data && data.values && data.values.length > 1) {
                     const rows = data.values.slice(1);
                     
-                    const remoteFlashcards = rows.map(row => ({
-                        stt: row[0] || '',
-                        word: row[1] || '',
-                        pinyin: row[2] || '',
-                        meaning: row[3] || '',
-                        exCn: row[4] || '',
-                        exPy: row[5] || '',
-                        exVn: row[6] || ''
-                    })).filter(item => item.word);
+                    const remoteFlashcards = rows.map(row => {
+                        const item = {
+                            stt: row[0] || '',
+                            word: row[1] || '',
+                            pinyin: row[2] || '',
+                            meaning: row[3] || '',
+                            exCn: row[4] || '',
+                            exPy: row[5] || '',
+                            exVn: row[6] || ''
+                        };
+                        const sheetStatus = row[7];
+                        if (sheetStatus === '1') {
+                            if (!masteredIds.includes(item.stt)) {
+                                masteredIds.push(item.stt);
+                            }
+                        } else if (sheetStatus === '0') {
+                            const idx = masteredIds.indexOf(item.stt);
+                            if (idx > -1) {
+                                masteredIds.splice(idx, 1);
+                            }
+                        }
+                        return item;
+                    }).filter(item => item.word);
+
+                    // Đồng bộ ngược lại về IndexedDB và LocalStorage sau khi hòa trộn từ Google Sheets
+                    localStorage.setItem('hsk_mastered_ids', JSON.stringify(masteredIds));
+                    saveSetting('masteredIds', masteredIds);
 
                     if (remoteFlashcards.length > 0) {
                         // Lưu trữ danh sách mới tải từ server vào bộ nhớ IndexedDB
@@ -1340,6 +1358,50 @@
             fetchData(true);
         }
 
+        // Cập nhật trạng thái nhớ/chưa nhớ trực tiếp lên Google Sheet qua API
+        async function updateMasteredOnSheet(wordItem, isMastered) {
+            const baseUrl = 'https://hsk-gilt.vercel.app/api/gSheet';
+            const spreadId = '105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
+
+            const rowData = [
+                wordItem.stt || '',
+                wordItem.word || '',
+                wordItem.pinyin || '',
+                wordItem.meaning || '',
+                wordItem.exCn || '',
+                wordItem.exPy || '',
+                wordItem.exVn || '',
+                isMastered ? '1' : '0'
+            ];
+
+            try {
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        act: 'updateByPosVal',
+                        pos: 1,
+                        val: wordItem.word,
+                        sheet: currentHskLevel,
+                        spread: spreadId,
+                        data: JSON.stringify(rowData)
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP status error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Cập nhật trạng thái lên Google Sheet thành công:', result);
+            } catch (error) {
+                console.error('Lỗi khi cập nhật trạng thái lên Google Sheet:', error);
+            }
+        }
+
         // Thêm / Xóa từ khỏi danh sách đã thuộc (Lưu IndexedDB và LocalStorage)
         function toggleMastered(event) {
             event.stopPropagation();
@@ -1347,10 +1409,12 @@
             const current = paginatedFlashcards[currentIndex];
             
             const index = masteredIds.indexOf(current.stt);
+            let isNowMastered = false;
             if (index > -1) {
                 masteredIds.splice(index, 1);
             } else {
                 masteredIds.push(current.stt);
+                isNowMastered = true;
             }
             localStorage.setItem('hsk_mastered_ids', JSON.stringify(masteredIds));
             saveSetting('masteredIds', masteredIds);
@@ -1359,6 +1423,9 @@
             const masteredCount = rawFlashcards.filter(item => masteredIds.includes(item.stt)).length;
             const unmasteredCount = rawFlashcards.length - masteredCount;
             document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
+
+            // Gửi bất đồng bộ lên Google Sheet
+            updateMasteredOnSheet(current, isNowMastered);
 
             // Nếu đang xem ở chế độ lọc Thuộc hoặc Chưa thuộc, xóa thẻ ra khỏi danh sách đang render hiện tại
             if (currentFilter !== 'all') {
@@ -1641,13 +1708,21 @@
             event.stopPropagation();
             
             const index = masteredIds.indexOf(stt);
+            let isNowMastered = false;
             if (index > -1) {
                 masteredIds.splice(index, 1);
             } else {
                 masteredIds.push(stt);
+                isNowMastered = true;
             }
             localStorage.setItem('hsk_mastered_ids', JSON.stringify(masteredIds));
             saveSetting('masteredIds', masteredIds);
+
+            // Tìm thông tin từ gốc để sync lên Google Sheet
+            const originalWordItem = rawFlashcards.find(item => item.stt === stt);
+            if (originalWordItem) {
+                updateMasteredOnSheet(originalWordItem, isNowMastered);
+            }
 
             // Cập nhật bộ đếm trong app nền
             const masteredCount = rawFlashcards.filter(item => masteredIds.includes(item.stt)).length;

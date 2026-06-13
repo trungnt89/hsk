@@ -6,6 +6,9 @@ const API_URL = 'https://hsk-gilt.vercel.app/api/gRecorder';
 
 
 export default async function handler(req, context) {
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,PUT,DELETE');
+	res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   try {
     const { searchParams } = new URL(req.url);
     if (req.url.includes('favicon.ico')) return new Response(null, { status: 204 });

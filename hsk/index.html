@@ -920,12 +920,8 @@
                 baseList = rawFlashcards.filter(item => !masteredIds.includes(item.stt));
             }
 
-            // Nếu chế độ là ngẫu nhiên, xáo trộn danh sách cố định để hỗ trợ tiến lùi đồng nhất
-            if (displayMode === 'random') {
-                filteredFlashcards = shuffleList(baseList);
-            } else {
-                filteredFlashcards = baseList;
-            }
+            // Với yêu cầu mới, không xáo trộn toàn bộ list mà chỉ xáo trộn cục bộ theo phân trang
+            filteredFlashcards = baseList;
 
             // Đồng bộ bộ đếm thống kê tổng
             const masteredCount = rawFlashcards.filter(item => masteredIds.includes(item.stt)).length;
@@ -950,6 +946,9 @@
 
             if (recordsPerPage === 'all' || filteredFlashcards.length === 0) {
                 paginatedFlashcards = [...filteredFlashcards];
+                if (displayMode === 'random') {
+                    paginatedFlashcards = shuffleList(paginatedFlashcards);
+                }
                 pageSelect.style.display = 'none';
                 pageSelectLabel.style.display = 'none';
             } else {
@@ -960,7 +959,12 @@
 
                 const start = (currentPage - 1) * size;
                 const end = start + size;
-                paginatedFlashcards = filteredFlashcards.slice(start, end);
+                const pageItems = filteredFlashcards.slice(start, end);
+                if (displayMode === 'random') {
+                    paginatedFlashcards = shuffleList([...pageItems]);
+                } else {
+                    paginatedFlashcards = pageItems;
+                }
 
                 pageSelect.style.display = 'inline-block';
                 pageSelectLabel.style.display = 'inline-block';
@@ -1653,19 +1657,16 @@
                 document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
             }
 
-            // Tìm lại vị trí trong filteredFlashcards
+            // Tìm lại vị trí trong filteredFlashcards (vốn là thứ tự sequential chuẩn)
             const finalIndex = filteredFlashcards.findIndex(item => item.stt === stt);
             if (finalIndex !== -1) {
                 if (recordsPerPage === 'all') {
                     currentPage = 1;
-                    currentIndex = finalIndex;
                 } else {
                     const size = parseInt(recordsPerPage);
                     currentPage = Math.floor(finalIndex / size) + 1;
-                    currentIndex = finalIndex % size;
                 }
                 saveSetting('currentPage_' + currentHskLevel, currentPage);
-                saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                 
                 // Đồng bộ hóa dropdown chọn trang
                 const pageSelect = document.getElementById('page-select');
@@ -1674,6 +1675,9 @@
 
                 if (recordsPerPage === 'all') {
                     paginatedFlashcards = [...filteredFlashcards];
+                    if (displayMode === 'random') {
+                        paginatedFlashcards = shuffleList(paginatedFlashcards);
+                    }
                     pageSelect.style.display = 'none';
                     pageSelectLabel.style.display = 'none';
                 } else {
@@ -1682,7 +1686,12 @@
                     
                     const start = (currentPage - 1) * size;
                     const end = start + size;
-                    paginatedFlashcards = filteredFlashcards.slice(start, end);
+                    const pageItems = filteredFlashcards.slice(start, end);
+                    if (displayMode === 'random') {
+                        paginatedFlashcards = shuffleList([...pageItems]);
+                    } else {
+                        paginatedFlashcards = pageItems;
+                    }
 
                     pageSelect.style.display = 'inline-block';
                     pageSelectLabel.style.display = 'inline-block';
@@ -1697,6 +1706,15 @@
                         pageSelect.appendChild(option);
                     }
                 }
+
+                // Định hướng đúng vị trí của stt đã chọn trong paginatedFlashcards (có thể đã shuffle)
+                const foundIndex = paginatedFlashcards.findIndex(item => item.stt === stt);
+                if (foundIndex !== -1) {
+                    currentIndex = foundIndex;
+                } else {
+                    currentIndex = 0;
+                }
+                saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                 renderCard();
             }
 

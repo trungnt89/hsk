@@ -938,33 +938,39 @@
             await updatePagination(preservePosition);
         }
 
+        // Lấy danh sách từ tuần tự của trang hiện tại
+        function getPageSequentialItems() {
+            if (recordsPerPage === 'all' || filteredFlashcards.length === 0) {
+                return [...filteredFlashcards];
+            } else {
+                const size = parseInt(recordsPerPage);
+                const totalPages = Math.ceil(filteredFlashcards.length / size);
+                if (currentPage > totalPages) currentPage = 1;
+                const start = (currentPage - 1) * size;
+                const end = start + size;
+                return filteredFlashcards.slice(start, end);
+            }
+        }
+
         // Cập nhật giao diện phân trang dựa trên số records hiển thị
         async function updatePagination(preservePosition = false) {
             const pageSelect = document.getElementById('page-select');
             const pageSelectLabel = document.getElementById('page-select-label');
             pageSelect.innerHTML = '';
 
+            const pageItems = getPageSequentialItems();
+            if (displayMode === 'random') {
+                paginatedFlashcards = shuffleList([...pageItems]);
+            } else {
+                paginatedFlashcards = pageItems;
+            }
+
             if (recordsPerPage === 'all' || filteredFlashcards.length === 0) {
-                paginatedFlashcards = [...filteredFlashcards];
-                if (displayMode === 'random') {
-                    paginatedFlashcards = shuffleList(paginatedFlashcards);
-                }
                 pageSelect.style.display = 'none';
                 pageSelectLabel.style.display = 'none';
             } else {
                 const size = parseInt(recordsPerPage);
                 const totalPages = Math.ceil(filteredFlashcards.length / size);
-                
-                if (currentPage > totalPages) currentPage = 1;
-
-                const start = (currentPage - 1) * size;
-                const end = start + size;
-                const pageItems = filteredFlashcards.slice(start, end);
-                if (displayMode === 'random') {
-                    paginatedFlashcards = shuffleList([...pageItems]);
-                } else {
-                    paginatedFlashcards = pageItems;
-                }
 
                 pageSelect.style.display = 'inline-block';
                 pageSelectLabel.style.display = 'inline-block';
@@ -1129,7 +1135,11 @@
             cardElement.classList.add('page-flip-next-out');
             
             setTimeout(() => {
-                currentIndex = (currentIndex + 1) % paginatedFlashcards.length;
+                let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
+                if (nextIdx === 0 && displayMode === 'random' && paginatedFlashcards.length > 1) {
+                    paginatedFlashcards = shuffleList([...getPageSequentialItems()]);
+                }
+                currentIndex = nextIdx;
                 saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                 renderCard();
                 cardElement.classList.remove('page-flip-next-out');
@@ -1159,7 +1169,11 @@
             cardElement.classList.add('page-flip-prev-out');
             
             setTimeout(() => {
-                currentIndex = (currentIndex - 1 + paginatedFlashcards.length) % paginatedFlashcards.length;
+                let prevIdx = (currentIndex - 1 + paginatedFlashcards.length) % paginatedFlashcards.length;
+                if (currentIndex === 0 && displayMode === 'random' && paginatedFlashcards.length > 1) {
+                    paginatedFlashcards = shuffleList([...getPageSequentialItems()]);
+                }
+                currentIndex = prevIdx;
                 saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                 renderCard();
                 cardElement.classList.remove('page-flip-prev-out');
@@ -1308,7 +1322,11 @@
                         
                         cardElement.classList.add('page-flip-next-out');
                         setTimeout(() => {
-                            currentIndex = (currentIndex + 1) % paginatedFlashcards.length;
+                            let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
+                            if (nextIdx === 0 && displayMode === 'random' && paginatedFlashcards.length > 1) {
+                                paginatedFlashcards = shuffleList([...getPageSequentialItems()]);
+                            }
+                            currentIndex = nextIdx;
                             saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                             renderCard();
                             cardElement.classList.remove('page-flip-next-out');
@@ -1673,25 +1691,19 @@
                 const pageSelectLabel = document.getElementById('page-select-label');
                 pageSelect.innerHTML = '';
 
+                const pageItems = getPageSequentialItems();
+                if (displayMode === 'random') {
+                    paginatedFlashcards = shuffleList([...pageItems]);
+                } else {
+                    paginatedFlashcards = pageItems;
+                }
+
                 if (recordsPerPage === 'all') {
-                    paginatedFlashcards = [...filteredFlashcards];
-                    if (displayMode === 'random') {
-                        paginatedFlashcards = shuffleList(paginatedFlashcards);
-                    }
                     pageSelect.style.display = 'none';
                     pageSelectLabel.style.display = 'none';
                 } else {
                     const size = parseInt(recordsPerPage);
                     const totalPages = Math.ceil(filteredFlashcards.length / size);
-                    
-                    const start = (currentPage - 1) * size;
-                    const end = start + size;
-                    const pageItems = filteredFlashcards.slice(start, end);
-                    if (displayMode === 'random') {
-                        paginatedFlashcards = shuffleList([...pageItems]);
-                    } else {
-                        paginatedFlashcards = pageItems;
-                    }
 
                     pageSelect.style.display = 'inline-block';
                     pageSelectLabel.style.display = 'inline-block';

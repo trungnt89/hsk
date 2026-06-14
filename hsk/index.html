@@ -1218,8 +1218,15 @@
         }
 
         // Chuyển đổi chế độ hiển thị danh sách (Tuần tự / Ngẫu nhiên)
-        function toggleDisplayMode(event) {
+        async function toggleDisplayMode(event) {
             event.stopPropagation();
+            
+            // Lấy stt của từ hiện tại để lát duy trì đúng từ này
+            let currentStt = null;
+            if (paginatedFlashcards.length > 0 && paginatedFlashcards[currentIndex]) {
+                currentStt = paginatedFlashcards[currentIndex].stt;
+            }
+            
             const modeBtn = document.getElementById('display-mode-toggle');
             if (displayMode === 'sequential') {
                 displayMode = 'random';
@@ -1233,8 +1240,19 @@
                 modeBtn.classList.remove('active');
             }
             saveSetting('displayMode', displayMode);
-            currentIndex = 0;
-            applyFilterAndRender();
+            
+            // Bảo toàn trang hiện tại (gọi với preservePosition = true)
+            await applyFilterAndRender(true);
+            
+            // Tìm lại vị trí index của từ đang học trong list trang mới sau khi đã chuyển ngẫu nhiên / tuần tự
+            if (currentStt && paginatedFlashcards.length > 0) {
+                const foundIndex = paginatedFlashcards.findIndex(item => item.stt === currentStt);
+                if (foundIndex !== -1) {
+                    currentIndex = foundIndex;
+                    saveSetting('currentIndex_' + currentHskLevel, currentIndex);
+                }
+            }
+            renderCard();
         }
 
         // Bật / Tắt chế độ tự động đọc chuyển từ tuần tự/ngẫu nhiên

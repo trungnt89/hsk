@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng Phát Âm Pinyin Tiếng Trung Toàn Diện</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+            --th-bg: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+        }
+
+        /* Thanh lọc Thanh mẫu nhanh */
+        .filter-container {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            justify-content: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .filter-btn {
+            background: var(--bg-main);
+            border: 1px solid #e2e8f0;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Khung chứa bảng cuộn */
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow-x: auto;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05);
+            border: 1px solid var(--border);
+        }
+
+        /* Thiết kế Bảng phát âm duy nhất */
+        .pinyin-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            min-width: 600px;
+        }
+
+        .pinyin-table th {
+            background-color: var(--th-bg);
+            color: var(--text-main);
+            font-weight: 700;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border);
+            font-size: 1rem;
+        }
+
+        .pinyin-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .pinyin-table tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .pinyin-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Cột tiêu đề âm gốc */
+        .row-base-title {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.1rem;
+            background-color: #f8fafc;
+            border-right: 1px solid var(--border);
+            width: 15%;
+        }
+
+        /* Thẻ nút bấm phát âm bên trong ô bảng */
+        .cell-tone-btn {
+            display: block;
+            width: 100%;
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 0.6rem;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+        }
+
+        .cell-tone-btn:hover {
+            background-color: #e0e7ff;
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .cell-tone-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Nhãn hiển thị phụ trợ cho Thanh Điệu ở Header */
+        .tone-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: normal;
+            margin-top: 0.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Bảng Phát Âm Tiếng Trung Tập Trung</h1>
+        <p>Bảng ma trận so sánh 4 thanh điệu song song. Nhấp vào âm tiết bất kỳ để nghe giọng đọc bản xứ.</p>
+    </header>
+
+    <div class="filter-container" id="filterContainer">
+        <button class="filter-btn active" onclick="filterInitial('all')">Tất cả các âm</button>
+    </div>
+
+    <div class="table-container">
+        <table class="pinyin-table">
+            <thead>
+                <tr>
+                    <th style="border-right: 1px solid var(--border);">Âm gốc</th>
+                    <th>Thanh 1 ( ¯ )<span class="tone-label">Cao, phẳng</span></th>
+                    <th>Thanh 2 ( ´ )<span class="tone-label">Lên giọng</span></th>
+                    <th>Thanh 3 ( ˇ )<span class="tone-label">Xuống rồi lên</span></th>
+                    <th>Thanh 4 ( ` )<span class="tone-label">Nhấn mạnh, xuống</span></th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Data gốc của bạn
+    const pinyinData = {
+      "pinyin_tones_map": {
+        "b": {
+          "ba": ["bā", "bá", "bǎ", "bà"], "bo": ["bō", "bó", "bǒ", "bò"], "bai": ["bāi", "bái", "bǎi", "bài"], "bei": ["bēi", "béi", "běi", "bèi"], "bao": ["bāo", "báo", "bǎo", "bào"], "bie": ["biē", "bié", "biě", "biè"], "ban": ["bān", "bán", "bǎn", "bàn"], "ben": ["bēn", "bén", "běn", "bèn"], "bang": ["bāng", "báng", "bǎng", "bàng"], "beng": ["bēng", "béng", "běng", "bèng"], "bi": ["bī", "bí", "bǐ", "bì"], "biao": ["biāo", "biáo", "biǎo", "biào"], "bian": ["biān", "bián", "biǎn", "biàn"], "bin": ["bīn", "bín", "bǐn", "bìn"], "bing": ["bīng", "bíng", "bǐng", "bìng"], "bu": ["bū", "bú", "bǔ", "bù"]
+        },
+        "p": {
+          "pa": ["pā", "pá", "pǎ", "pà"], "po": ["pō", "pó", "pǒ", "pò"], "pai": ["pāi", "pái", "pǎi", "pài"], "pei": ["pēi", "péi", "pěi", "pèi"], "pao": ["pāo", "páo", "pǎo", "pào"], "pou": ["pōu", "póu", "pǒu", "pòu"], "pie": ["piē", "pié", "piě", "piè"], "pan": ["pān", "pán", "pǎn", "pàn"], "pen": ["pēn", "pén", "pěn", "pèn"], "pang": ["pāng", "páng", "pǎng", "pàng"], "peng": ["pēng", "péng", "pěng", "pèng"], "pi": ["pī", "pí", "pǐ", "pì"], "piao": ["piāo", "piáo", "piǎo", "piào"], "pian": ["piān", "pián", "piǎn", "piàn"], "pin": ["pīn", "pín", "pǐn", "pìn"], "ping": ["pīng", "píng", "pǐng", "pìng"], "pu": ["pū", "pú", "pǔ", "pù"]
+        },
+        "m": {
+          "ma": ["mā", "má", "mǎ", "mà"], "mo": ["mō", "mó", "mǒ", "mò"], "me": ["mē", "méi", "mě", "mè"], "mai": ["māi", "mái", "mǎi", "mài"], "mei": ["mēi", "méi", "měi", "mèi"], "mao": ["māo", "máo", "mǎo", "mào"], "mou": ["mōu", "móu", "mǒu", "mòu"], "mie": ["miē", "mié", "miě", "miè"], "miu": ["miū", "miú", "miǔ", "miù"], "man": ["mān", "mán", "mǎn", "màn"], "men": ["mēn", "mén", "měn", "mèn"], "mang": ["māng", "máng", "mǎng", "màng"], "meng": ["mēng", "méng", "měng", "mèng"], "mi": ["mī", "mí", "mǐ", "mì"], "miao": ["miāo", "miáo", "miǎo", "miào"], "mian": ["miān", "mián", "miǎn", "miàn"], "min": ["mīn", "mín", "mǐn", "mìn"], "ming": ["mīng", "míng", "mǐng", "mìng"], "mu": ["mū", "mú", "mǔ", "mù"]
+        },
+        "f": {
+          "fa": ["fā", "fá", "fǎ", "fà"], "fo": ["fō", "fó", "fǒ", "fò"], "fei": ["fēi", "féi", "fěi", "fèi"], "fou": ["fōu", "fóu", "fǒu", "fòu"], "fan": ["fān", "fán", "fǎn", "fàn"], "fen": ["fēn", "fén", "fěn", "fèn"], "fang": ["fāng", "fáng", "fǎng", "fàng"], "feng": ["fēng", "féng", "fěng", "fèng"], "fu": ["fū", "fú", "fǔ", "fù"]
+        },
+        "d": {
+          "da": ["dā", "dá", "dǎ", "dà"], "de": ["dē", "dé", "dě", "dè"], "dai": ["dāi", "dái", "dǎi", "dài"], "dei": ["dēi", "déi", "děi", "dèi"], "dao": ["dāo", "dáo", "dǎo", "dào"], "dou": ["dōu", "dóu", "dǒu", "dòu"], "die": ["diē", "dié", "diě", "diè"], "diu": ["diū", "diú", "diǔ", "diù"], "dan": ["dān", "dán", "dǎn", "dàn"], "den": ["dēn", "dén", "děn", "dèn"], "dang": ["dāng", "dáng", "dǎng", "dàng"], "deng": ["dēng", "déng", "děng", "dèng"], "dong": ["dōng", "dóng", "dǒng", "dòng"], "di": ["dī", "dí", "dǐ", "dì"], "diao": ["diāo", "diáo", "diǎo", "diào"], "dian": ["diān", "dián", "diǎn", "diàn"], "ding": ["dīng", "díng", "dǐng", "dìng"], "du": ["dū", "dú", "dǔ", "dù"], "duo": ["duō", "duó", "duǒ", "duò"], "dui": ["duī", "duí", "duǐ", "duì"], "duan": ["duān", "duán", "duǎn", "duàn"], "dun": ["dūn", "dún", "dǔn", "dùn"]
+        },
+        "t": {
+          "ta": ["tā", "tá", "tǎ", "tà"], "te": ["tē", "té", "tě", "tè"], "tai": ["tāi", "tái", "tǎi", "tài"], "tei": ["tēi", "téi", "těi", "tèi"], "tao": ["tāo", "táo", "tǎo", "tào"], "tou": ["tōu", "tóu", "tǒu", "tòu"], "tie": ["tiē", "tié", "tiě", "tiè"], "tan": ["tān", "tán", "tǎn", "tàn"], "tang": ["tāng", "táng", "tǎng", "tàng"], "teng": ["tēng", "téng", "těng", "tèng"], "tong": ["tōng", "tóng", "tǒng", "tòng"], "ti": ["tī", "tí", "tǐ", "tì"], "tiao": ["tiāo", "tiáo", "tiǎo", "tiào"], "tian": ["tiān", "tián", "tiǎn", "tiàn"], "ting": ["tīng", "tíng", "tǐng", "tìng"], "tu": ["tū", "tú", "tǔ", "tù"], "tuo": ["tuō", "tuó", "tuǒ", "tuò"], "tui": ["tuī", "tuí", "tuǐ", "tuì"], "tuan": ["tuān", "tuán", "tuǎn", "tuàn"], "tun": ["tūn", "tún", "tǔn", "tùn"]
+        },
+        "n": {
+          "na": ["nā", "ná", "nǎ", "nà"], "ne": ["nē", "né", "ně", "nè"], "nai": ["nāi", "nái", "nǎi", "nài"], "nei": ["nēi", "néi", "něi", "nèi"], "nao": ["nāo", "náo", "nǎo", "nào"], "nou": ["nōu", "nóu", "nǒu", "nòu"], "nie": ["niē", "nié", "niě", "niè"], "niu": ["niū", "niú", "niǔ", "niù"], "nan": ["nān", "nán", "nǎn", "nàn"], "nen": ["nēn", "nén", "něn", "nèn"], "nang": ["nāng", "náng", "nǎng", "nàng"], "neng": ["nēng", "néng", "něng", "nèng"], "nong": ["nōng", "nóng", "nǒng", "nòng"], "ni": ["nī", "ní", "nǐ", "nì"], "niao": ["niāo", "niáo", "niǎo", "niào"], "nian": ["niān", "nián", "niǎn", "niàn"], "nin": ["nīn", "nín", "nǐn", "nìn"], "niang": ["niāng", "niáng", "niǎng", "niàng"], "ning": ["nīng", "níng", "nǐng", "nìng"], "nu": ["nū", "nú", "nǔ", "nù"], "nuo": ["nuō", "nuó", "nuǒ", "nuò"], "nuan": ["nuān", "nuán", "nuǎn", "nuàn"], "nv": ["nǖ", "nǘ", "nǚ", "nǜ"], "nve": ["nüē", "nüé", "nüě", "nüè"]
+        },
+        "l": {
+          "la": ["lā", "lá", "lǎ", "là"], "le": ["lē", "lé", "lě", "lè"], "lai": ["lāi", "lái", "lǎi", "lài"], "lei": ["lēi", "léi", "lěi", "lèi"], "lao": ["lāo", "láo", "lǎo", "lào"], "lou": ["lōu", "lóu", "lǒu", "lòu"], "lie": ["liē", "lié", "liě", "liè"], "liu": ["liū", "liú", "liǔ", "liù"], "lan": ["lān", "lán", "lǎn", "làn"], "lang": ["lāng", "láng", "lǎng", "làng"], "leng": ["lēng", "léng", "lěng", "lèng"], "long": ["lōng", "lóng", "lǒng", "lòng"], "li": ["lī", "lí", "lǐ", "lì"], "lia": ["liā", "liá", "liǎ", "lià"], "liao": ["liāo", "liáo", "liǎo", "liào"], "lian": ["liān", "lián", "liǎn", "liàn"], "lin": ["līn", "lín", "lǐn", "lìn"], "liang": ["liāng", "liáng", "liǎng", "liàng"], "ling": ["līng", "líng", "lǐng", "lìng"], "lu": ["lū", "lú", "lǔ", "lù"], "luo": ["luō", "luó", "luǒ", "luò"], "luan": ["luān", "luán", "luǎn", "luàn"], "lun": ["lūn", "lún", "lǔn", "lùn"], "lv": ["lǖ", "lǘ", "lǚ", "lǜ"], "lve": ["lüē", "lüé", "lüě", "lüè"]
+        },
+        "g": {
+          "ga": ["gā", "gá", "gǎ", "gà"], "ge": ["gē", "gé", "gě", "gè"], "gai": ["gāi", "gái", "gǎi", "gài"], "gei": ["gēi", "géi", "gěi", "gèi"], "gao": ["gāo", "gáo", "gǎo", "gào"], "gou": ["gōu", "góu", "gǒu", "gòu"], "gan": ["gān", "gán", "gǎn", "gàn"], "gen": ["gēn", "gén", "gěn", "gèn"], "gang": ["gāng", "gáng", "gǎng", "gàng"], "geng": ["gēng", "géng", "gěng", "gèng"], "gong": ["gōng", "góng", "gǒng", "gòng"], "gu": ["gū", "gú", "gǔ", "gù"], "gua": ["guā", "guá", "guǎ", "guà"], "guo": ["guō", "guó", "guǒ", "guò"], "guai": ["guāi", "guái", "guǎi", "guài"], "gui": ["guī", "guí", "guǐ", "guì"], "guan": ["guān", "guán", "guǎn", "guàn"], "gun": ["gūn", "gún", "gǔn", "gùn"], "guang": ["guāng", "guáng", "guǎng", "guàng"]
+        },
+        "k": {
+          "ka": ["kā", "ká", "kǎ", "kà"], "ke": ["kē", "ké", "kě", "kè"], "kai": ["kāi", "kái", "kǎi", "kài"], "kei": ["kēi", "kéi", "kěi", "kèi"], "kao": ["kāo", "káo", "kǎo", "kào"], "kou": ["kōu", "kóu", "kǒu", "kòu"], "kan": ["kān", "kán", "kǎn", "kàn"], "ken": ["kēn", "kén", "kěn", "kèn"], "kang": ["kāng", "káng", "kǎng", "kàng"], "keng": ["kēng", "kéng", "kěng", "kèng"], "kong": ["kōng", "kóng", "kǒng", "kòng"], "ku": ["kū", "kú", "kǔ", "kù"], "kua": ["kuā", "kuá", "kuǎ", "kuà"], "kuo": ["kuō", "kuó", "kuǒ", "kuò"], "kuai": ["kuāi", "kuái", "kuǎǐ", "kuài"], "kui": ["kuī", "kuí", "kuǐ", "kuì"], "kuan": ["kuān", "kuán", "kuǎn", "kuàn"], "kun": ["kūn", "kún", "kǔn", "kùn"], "kuang": ["kuāng", "kuáng", "kuǎng", "kuàng"]
+        },
+        "h": {
+          "ha": ["hā", "há", "hǎ", "hà"], "he": ["hē", "hé", "hě", "hè"], "hai": ["hāi", "hái", "hǎi", "hài"], "hei": ["hēi", "héi", "hěi", "hèi"], "hao": ["hāo", "háo", "hǎo", "hào"], "hou": ["hōu", "hóu", "hǒu", "hòu"], "han": ["hān", "hán", "hǎn", "hàn"], "hen": ["hēn", "hén", "hěn", "hèn"], "hang": ["hāng", "háng", "hǎng", "hàng"], "heng": ["hēng", "héng", "hěng", "hèng"], "hong": ["hōng", "hóng", "hǒng", "hòng"], "hu": ["hū", "hú", "hǔ", "hù"], "hua": ["huā", "huá", "huǎ", "huà"], "huo": ["huō", "huó", "huǒ", "huò"], "huai": ["huāi", "huái", "huǎǐ", "huài"], "hui": ["huī", "huí", "huǐ", "huì"], "huan": ["huān", "huán", "huǎn", "huàn"], "hun": ["hūn", "hún", "hǔn", "hùn"], "huang": ["huāng", "huáng", "huǎng", "huàng"]
+        },
+        "j": {
+          "ji": ["jī", "jí", "jǐ", "jì"], "jia": ["jiā", "jiá", "jiǎ", "jià"], "jie": ["jiē", "jié", "jiě", "jiè"], "jiao": ["jiāo", "jiáo", "jiǎo", "jiào"], "jiu": ["jiū", "jiú", "jiǔ", "jiù"], "jian": ["jiān", "jián", "jiǎn", "jiàn"], "jin": ["jīn", "jín", "jǐn", "jìn"], "jiang": ["jiāng", "jiáng", "jiǎng", "jiàng"], "jing": ["jīng", "jíng", "jǐng", "jìng"], "jiong": ["jiōng", "jióng", "jiǒng", "jiòng"], "ju": ["jū", "jú", "jǔ", "jù"], "jue": ["juē", "jué", "juě", "juè"], "juan": ["juān", "juán", "juǎn", "juàn"], "jun": ["jūn", "jún", "jǔn", "jùn"]
+        },
+        "q": {
+          "qi": ["qī", "qí", "qǐ", "qì"], "qia": ["qiā", "qiá", "qiǎ", "qià"], "qie": ["qiē", "qié", "qiě", "qiè"], "qiao": ["qiāo", "qiáo", "qiǎo", "qiào"], "qiu": ["qiū", "qiú", "qiǔ", "qiù"], "qian": ["qiān", "qián", "qiǎn", "qiàn"], "qin": ["qīn", "qín", "qǐn", "qìn"], "qiang": ["qiāng", "qiáng", "qiǎng", "qiàng"], "qing": ["qīng", "qíng", "qǐng", "qìng"], "qiong": ["qiōng", "qióng", "qiǒng", "qiòng"], "qu": ["qū", "qú", "qǔ", "qù"], "que": ["quē", "qué", "quě", "què"], "quan": ["quān", "quán", "quǎn", "quàn"], "qun": ["qūn", "qún", "qǔn", "qùn"]
+        },
+        "x": {
+          "xi": ["xī", "xí", "xǐ", "xì"], "xia": ["xiā", "xiá", "xiǎ", "xià"], "xie": ["xiē", "xié", "xiě", "xiè"], "xiao": ["xiāo", "xiáo", "xiǎo", "xiào"], "xiu": ["xiū", "xiú", "xiǔ", "xiù"], "xian": ["xiān", "xián", "xiǎn", "xiàn"], "xin": ["xīn", "xín", "xǐn", "xìn"], "xiang": ["xiāng", "xiáng", "xiǎng", "xiàng"], "xing": ["xīng", "xíng", "xǐng", "xìng"], "xiong": ["xiōng", "xióng", "xiǒng", "xiòng"], "xu": ["xū", "xú", "xǔ", "xù"], "xue": ["xuē", "xué", "xuě", "xuè"], "xuan": ["xuān", "xuán", "xuǎn", "xuàn"], "xun": ["xūn", "xún", "xǔn", "xùn"]
+        },
+        "zh": {
+          "zha": ["zhā", "zhá", "zhǎ", "zhà"], "zhe": ["zhē", "zhé", "zhě", "zhè"], "zhi": ["zhī", "zhí", "zhǐ", "zhì"], "zhai": ["zhāi", "zhái", "zhǎi", "zhài"], "zhei": ["zhēi", "zhéi", "zhěi", "zhèi"], "zhao": ["zhāo", "zháo", "zhǎo", "zhào"], "zhou": ["zhōu", "zhóu", "zhǒu", "zhòu"], "zhan": ["zhān", "zhán", "zhǎn", "zhàn"], "zhen": ["zhēn", "zhén", "zhěn", "zhèn"], "zhang": ["zhāng", "zháng", "zhǎng", "zhàng"], "zheng": ["zhēng", "zhéng", "zhěng", "zhèng"], "zhong": ["zhōng", "zhóng", "zhǒng", "zhòng"], "zhu": ["zhū", "zhú", "zhǔ", "zhù"], "zhua": ["zhuā", "zhuá", "zhuǎ", "zhuà"], "zhuo": ["zhuō", "zhuó", "zhuǒ", "zhuò"], "zhuai": ["zhuāi", "zhuái", "zhuǎi", "zhuài"], "zhui": ["zhuī", "zhuí", "zhuǐ", "zhuì"], "zhuan": ["zhuān", "zhuán", "zhuǎn", "zhuàn"], "zhun": ["zhūn", "zhún", "zhǔn", "zhùn"], "zhuang": ["zhuāng", "zhuáng", "zhuǎng", "zhuāng"]
+        },
+        "ch": {
+          "cha": ["chā", "chá", "chǎ", "chà"], "che": ["chē", "ché", "chě", "chè"], "chi": ["chī", "chí", "chǐ", "chì"], "chai": ["chāi", "chái", "chǎi", "chài"], "chao": ["chāo", "cháo", "chǎo", "chào"], "chou": ["chōu", "chóu", "chǒu", "chòu"], "chan": ["chān", "chán", "chǎn", "chàn"], "chen": ["chēn", "chén", "chěn", "chèn"], "chang": ["chāng", "cháng", "chǎng", "chàng"], "cheng": ["chēng", "chéng", "chěng", "chèng"], "chong": ["chōng", "chóng", "chǒng", "chòng"], "chu": ["chū", "chú", "chǔ", "chù"], "chua": ["chuā", "chuá", "chuǎ", "chuà"], "chuo": ["chuō", "chuó", "chuǒ", "chuò"], "chuai": ["chuāi", "chuái", "chuǎi", "chuài"], "chui": ["chuī", "chuí", "chuǐ", "chuì"], "chuan": ["chuān", "chuán", "chuǎn", "chuàn"], "chun": ["chūn", "chún", "chǔn", "chùn"], "chuang": ["chuāng", "chuáng", "chuǎng", "chuàng"]
+        },
+        "sh": {
+          "sha": ["shā", "shá", "shǎ", "shà"], "she": ["shē", "shé", "shě", "shè"], "shi": ["shī", "shí", "shǐ", "shì"], "shai": ["shāi", "shái", "shǎi", "shài"], "shei": ["shēi", "shéi", "shěi", "shèi"], "shao": ["shāo", "sháo", "shǎo", "shào"], "shou": ["shōu", "shóu", "shǒu", "shòu"], "shan": ["shān", "shán", "shǎn", "shàn"], "shen": ["shēn", "shén", "shěn", "shèn"], "shang": ["shāng", "sháng", "shǎng", "shàng"], "sheng": ["shēng", "shéng", "shěng", "shèng"], "shu": ["shū", "shú", "shǔ", "shù"], "shua": ["shuā", "shuá", "shuǎ", "shuà"], "shuo": ["shuō", "shuó", "shuǒ", "shuò"], "shuai": ["shuāi", "shuái", "shuǎi", "shuài"], "shui": ["shuī", "shuí", "shuǐ", "shuì"], "shuan": ["shuān", "shuán", "shuǎn", "shuàn"], "shun": ["shūn", "shún", "shǔn", "shùn"], "shuang": ["shuāng", "shuáng", "shuǎng", "shuàng"]
+        },
+        "r": {
+          "re": ["rē", "ré", "rě", "rè"], "ri": ["rī", "rí", "rǐ", "rì"], "rao": ["ráo", "ráo", "rǎo", "rào"], "rou": ["rōu", "róu", "rǒu", "ròu"], "ran": ["rān", "rán", "rǎn", "ràn"], "ren": ["rēn", "rén", "rěn", "rèn"], "rang": ["rāng", "ráng", "rǎng", "ràng"], "reng": ["rēng", "réng", "rěng", "rèng"], "rong": ["rōng", "róng", "rǒng", "ròng"], "ru": ["rū", "rú", "rǔ", "rù"], "rua": ["ruā", "ruá", "ruǎ", "ruà"], "ruo": ["ruō", "ruó", "ruǒ", "ruò"], "rui": ["ruī", "ruí", "ruǐ", "ruì"], "ruan": ["ruān", "ruán", "ruǎn", "ruàn"], "run": ["rūn", "rún", "rǔn", "rùn"]
+        },
+        "z": {
+          "za": ["zā", "zá", "zǎ", "zà"], "ze": ["zē", "zé", "zě", "zè"], "zi": ["zī", "zí", "zǐ", "zì"], "zai": ["zāi", "zái", "zǎi", "zài"], "zei": ["zēi", "zéi", "zěi", "zèi"], "zao": ["zāo", "záo", "zǎo", "zào"], "zou": ["zōu", "zóu", "zǒu", "zòu"], "zan": ["zān", "zán", "zǎn", "zàn"], "zen": ["zēn", "zén", "zěn", "zèn"], "zang": ["zāng", "záng", "zǎng", "zàng"], "zeng": ["zēng", "zéng", "zěng", "zèng"], "zong": ["zōng", "zóng", "zǒng", "zòng"], "zu": ["zū", "zú", "zǔ", "zù"], "zuo": ["zuō", "zuó", "zuǒ", "zuò"], "zui": ["zuī", "zuí", "zuǐ", "zuì"], "zuan": ["zuān", "zuán", "zuǎn", "zuàn"], "zun": ["zūn", "zún", "zǔn", "zùn"]
+        },
+        "c": {
+          "ca": ["cā", "cá", "cǎ", "cà"], "ce": ["cē", "cé", "cě", "cè"], "ci": ["cī", "cí", "cǐ", "cì"], "cai": ["cāi", "cái", "cǎi", "cài"], "cao": ["cāo", "cáo", "cǎo", "cào"], "cou": ["cōu", "cóu", "cǒu", "còu"], "can": ["cān", "cán", "cǎn", "càn"], "cen": ["cēn", "cén", "cěn", "cèn"], "cang": ["cāng", "cáng", "cǎng", "càng"], "ceng": ["cēng", "céng", "cěng", "cèng"], "cong": ["cōng", "cóng", "cǒng", "còng"], "cu": ["cū", "cú", "cǔ", "cù"], "cuo": ["cuō", "cuó", "cuǒ", "cuò"], "cui": ["cuī", "cuí", "cuǐ", "cuì"], "cuan": ["cuān", "cuán", "cuǎn", "cuàn"], "cun": ["cūn", "cún", "cǔn", "cùn"]
+        },
+        "s": {
+          "sa": ["sā", "sá", "sǎ", "sà"], "se": ["sē", "sé", "sě", "sè"], "si": ["sī", "sí", "sǐ", "sì"], "sai": ["sāi", "sái", "sǎi", "sài"], "sao": ["sāo", "sáo", "sǎo", "sào"], "sou": ["sōu", "sóu", "sǒu", "sòu"], "san": ["sān", "sán", "sǎn", "sàn"], "sen": ["sēn", "sén", "sěn", "sèn"], "sang": ["sāng", "sáng", "sǎng", "sàng"], "seng": ["sēng", "séng", "sěng", "sèng"], "song": ["sōng", "sóng", "sǒng", "sòng"], "su": ["sū", "sú", "sǔ", "sù"], "suo": ["suō", "suó", "suǒ", "suò"], "sui": ["suī", "suí", "suǐ", "suì"], "suan": ["suān", "suán", "suǎn", "suàn"], "sun": ["sūn", "sún", "sǔn", "sùn"]
+        },
+        "zero_initial": {
+          "a": ["ā", "á", "ǎ", "à"], "o": ["ō", "ó", "ǒ", "ò"], "e": ["ē", "é", "ě", "è"], "er": ["ēr", "ér", "ěr", "èr"], "ai": ["āi", "ái", "ǎi", "ài"], "ei": ["ēi", "éi", "ěi", "èi"], "ao": ["āo", "áo", "ǎo", "ào"], "ou": ["ōu", "óu", "ǒu", "òu"], "an": ["ān", "án", "ǎn", "àn"], "en": ["ēn", "én", "ěn", "èn"], "ang": ["āng", "áng", "ǎng", "àng"], "eng": ["ēng", "éng", "ěng", "èng"], "yi": ["yī", "yí", "yǐ", "yì"], "ya": ["yā", "yá", "yǎ", "yà"], "ye": ["yē", "yé", "yě", "yè"], "yao": ["yāo", "yáo", "yǎo", "yào"], "you": ["yōu", "yóu", "yǒu", "yòu"], "yan": ["yān", "yán", "yǎn", "yàn"], "yin": ["yīn", "yín", "yǐn", "yìn"], "yang": ["yāng", "yáng", "yǎng", "yàng"], "ying": ["yīng", "yíng", "yǐng", "yìng"], "yong": ["yōng", "yóng", "yǒng", "yòng"], "wu": ["wū", "wú", "wǔ", "wù"], "wa": ["wā", "wá", "wǎ", "wà"], "wo": ["wō", "wó", "wǒ", "wò"], "wai": ["wāi", "wái", "wǎi", "wài"], "wei": ["wēi", "wéi", "wěi", "wèi"], "wan": ["wān", "wán", "wǎn", "wàn"], "wen": ["wēn", "wén", "wěn", "wèn"], "wang": ["wāng", "wáng", "wǎng", "wàng"], "weng": ["wēng", "wéng", "wěng", "wèng"], "yu": ["yū", "yú", "yǔ", "yù"], "yue": ["yuē", "yué", "yuě", "yuè"], "yuan": ["yuān", "yuán", "yuǎn", "yuàn"], "yun": ["yūn", "yún", "yǔn", "yìn"]
+        }
+      }
+    };
+
+    const mapData = pinyinData.pinyin_tones_map;
+    const filterContainer = document.getElementById('filterContainer');
+    const tableBody = document.getElementById('tableBody');
+
+    // Khởi tạo bộ lọc Thanh mẫu
+    Object.keys(mapData).forEach(initial => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.textContent = initial === 'zero_initial' ? 'Vần độc lập' : initial;
+        btn.onclick = () => filterInitial(initial, btn);
+        filterContainer.appendChild(btn);
+    });
+
+    // API phát âm Text-to-Speech tiếng Trung
+    function speakPinyin(text) {
+        window.speechSynthesis.cancel(); // Dừng âm trước đó ngay lập tức để tránh chồng chéo
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.8; // Đặt tốc độ hơi chậm để nghe rõ độ cao dấu
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Hàm render bảng dữ liệu tập trung
+    function renderTable(targetInitial = 'all') {
+        tableBody.innerHTML = '';
+
+        Object.keys(mapData).forEach(initial => {
+            if (targetInitial !== 'all' && targetInitial !== initial) return;
+
+            const syllables = mapData[initial];
+            
+            Object.keys(syllables).forEach(base => {
+                const tr = document.createElement('tr');
+
+                // Ô 1: Hiển thị âm gốc ghép vần (ví dụ: ba, pa, ma...)
+                const tdBase = document.createElement('td');
+                tdBase.className = 'row-base-title';
+                tdBase.textContent = base;
+                tr.appendChild(tdBase);
+
+                // Các ô tiếp theo: 4 thanh điệu song song trên cùng 1 hàng
+                const tones = syllables[base];
+                for (let i = 0; i < 4; i++) {
+                    const tdTone = document.createElement('td');
+                    
+                    if (tones[i]) {
+                        const btn = document.createElement('button');
+                        btn.className = 'cell-tone-btn';
+                        btn.textContent = tones[i];
+                        btn.onclick = () => speakPinyin(tones[i]);
+                        tdTone.appendChild(btn);
+                    } else {
+                        tdTone.textContent = '-';
+                    }
+                    
+                    tr.appendChild(tdTone);
+                }
+
+                tableBody.appendChild(tr);
+            });
+        });
+    }
+
+    // Xử lý khi nhấn bộ lọc thanh mẫu
+    function filterInitial(initial, clickedBtn = null) {
+        const buttons = filterContainer.getElementsByClassName('filter-btn');
+        for (let btn of buttons) {
+            btn.classList.remove('active');
+        }
+        
+        if (clickedBtn) {
+            clickedBtn.classList.add('active');
+        } else {
+            buttons[0].classList.add('active');
+        }
+
+        renderTable(initial);
+    }
+
+    // Chạy tải dữ liệu toàn bộ lần đầu tiên
+    renderTable('all');
+</script>
+
+</body>
+</html>

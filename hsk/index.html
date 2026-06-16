@@ -543,10 +543,10 @@
 
         .search-input {
             width: 100%;
-            padding: 10px 16px;
+            padding: 10px 40px 10px 16px;
             border-radius: 12px;
             border: 1px solid #cbd5e1;
-            font-size: 0.9rem;
+            font-size: 16px;
             font-weight: 500;
             outline: none;
             transition: all 0.2s;
@@ -1772,6 +1772,8 @@
             const modal = document.getElementById('word-list-modal');
             const searchInput = document.getElementById('word-search');
             searchInput.value = ''; // Reset thanh tìm kiếm
+            const clearBtn = document.getElementById('word-search-clear');
+            if (clearBtn) clearBtn.style.display = 'none';
             
             // Khôi phục bộ lọc danh sách về trạng thái Mặc định 'Tất cả' khi mở lại modal
             listFilterMode = 'all';
@@ -1950,8 +1952,23 @@
         }
 
         function filterWordListItems() {
-            const query = document.getElementById('word-search').value;
+            const searchInput = document.getElementById('word-search');
+            const clearBtn = document.getElementById('word-search-clear');
+            const query = searchInput ? searchInput.value : '';
+            
+            if (clearBtn) {
+                clearBtn.style.display = query ? 'flex' : 'none';
+            }
             renderWordListItems(query);
+        }
+
+        function clearWordSearch() {
+            const searchInput = document.getElementById('word-search');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus();
+            }
+            filterWordListItems();
         }
 
         // Đồng bộ chuyển trang/vị trí thẻ khi click chọn từ từ danh sách
@@ -2164,7 +2181,10 @@
                 <button class="word-list-close" onclick="closeWordList(event)">✕</button>
             </div>
             <div class="word-list-search-box">
-                <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa..." oninput="filterWordListItems()">
+                <div style="position: relative; width: 100%;">
+                    <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa..." oninput="filterWordListItems()">
+                    <button id="word-search-clear" onclick="clearWordSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #cbd5e1; border: none; font-size: 0.75rem; color: #475569; cursor: pointer; display: none; padding: 0; border-radius: 50%; width: 20px; height: 20px; align-items: center; justify-content: center; line-height: 1; font-weight: bold; transition: all 0.2s;">✕</button>
+                </div>
                 <div class="list-filter-tabs">
                     <button id="list-filter-all" class="list-filter-btn active" onclick="changeListFilter('all')" title="Tất cả">🗂️ <b>-</b></button>
                     <button id="list-filter-mastered" class="list-filter-btn" onclick="changeListFilter('mastered')" title="Đã thuộc">✅ <b>-</b></button>

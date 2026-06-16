@@ -798,6 +798,8 @@
         let recordsPerPage = 'all'; // 10, 20, 30, 40, 50, all
         let currentPage = 1;
         let listFilterMode = 'all'; // all, mastered, unmastered
+        let showListPinyin = true;
+        let showListMeaning = true;
 
         // Biến kiểm soát vuốt chạm (Swipe) trên mobile
         let touchStartX = 0;
@@ -2017,8 +2019,8 @@
                             <div class="item-word-zh" style="flex-shrink: 0; white-space: nowrap;">${item.word}</div>
                             ${wordHanViet ? `<span class="item-word-hv" style="color: #475569; font-size: 1.0rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[${wordHanViet}]</span>` : ''}
                         </div>
-                        <div class="item-word-py" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.pinyin}</div>
-                        <div class="item-word-meaning">${item.meaning}</div>
+                        <div class="item-word-py" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${showListPinyin ? '' : 'display: none;'}">${item.pinyin}</div>
+                        <div class="item-word-meaning" style="${showListMeaning ? '' : 'display: none;'}">${item.meaning}</div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
                         <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
@@ -2068,6 +2070,26 @@
                 searchInput.focus();
             }
             filterWordListItems();
+        }
+
+        // Thay đổi hiển thị pinyin/nghĩa trong danh sách từ
+        function toggleListFormat(type) {
+            if (type === 'pinyin') {
+                const pinyinChk = document.getElementById('show-pinyin-setting');
+                if (pinyinChk) {
+                    showListPinyin = pinyinChk.checked;
+                    saveSetting('showListPinyin', showListPinyin);
+                }
+            } else if (type === 'meaning') {
+                const meaningChk = document.getElementById('show-meaning-setting');
+                if (meaningChk) {
+                    showListMeaning = meaningChk.checked;
+                    saveSetting('showListMeaning', showListMeaning);
+                }
+            }
+            const queryInput = document.getElementById('word-search');
+            const query = queryInput ? queryInput.value : '';
+            renderWordListItems(query);
         }
 
         // Đồng bộ chuyển trang/vị trí thẻ khi click chọn từ từ danh sách
@@ -2227,6 +2249,8 @@
             displayMode = await loadSetting('displayMode', 'sequential');
             currentHskLevel = await loadSetting('currentHskLevel', 'HSK1');
             recordsPerPage = await loadSetting('recordsPerPage', 'all');
+            showListPinyin = await loadSetting('showListPinyin', true);
+            showListMeaning = await loadSetting('showListMeaning', true);
 
             // Đồng bộ bộ nhớ danh sách đã học từ IndexedDB hoặc tự động nhập từ LocalStorage cũ nếu có
             const localMastered = JSON.parse(localStorage.getItem('hsk_mastered_ids') || '[]');
@@ -2239,6 +2263,11 @@
             // Đồng bộ trạng thái UI tương ứng với cấu hình khôi phục
             document.getElementById('hsk-level-select').value = currentHskLevel;
             document.getElementById('records-per-page-select').value = recordsPerPage;
+            
+            const pinyinChk = document.getElementById('show-pinyin-setting');
+            if (pinyinChk) pinyinChk.checked = showListPinyin;
+            const meaningChk = document.getElementById('show-meaning-setting');
+            if (meaningChk) meaningChk.checked = showListMeaning;
             
             const ttsBtn = document.getElementById('tts-toggle');
             if (isTtsEnabled) {
@@ -2293,6 +2322,16 @@
                 <div style="position: relative; width: 100%;">
                     <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa..." oninput="filterWordListItems()">
                     <button id="word-search-clear" onclick="clearWordSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #cbd5e1; border: none; font-size: 0.75rem; color: #475569; cursor: pointer; display: none; padding: 0; border-radius: 50%; width: 20px; height: 20px; align-items: center; justify-content: center; line-height: 1; font-weight: bold; transition: all 0.2s;">✕</button>
+                </div>
+                <div style="display: flex; gap: 16px; margin: 8px 4px 6px; align-items: center; justify-content: flex-end; font-size: 0.8rem; font-weight: 600; color: #475569;">
+                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="show-pinyin-setting" checked onchange="toggleListFormat('pinyin')" style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--primary);">
+                        Hiện Pinyin
+                    </label>
+                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="show-meaning-setting" checked onchange="toggleListFormat('meaning')" style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--primary);">
+                        Hiện Nghĩa
+                    </label>
                 </div>
                 <div class="list-filter-tabs">
                     <button id="list-filter-all" class="list-filter-btn active" onclick="changeListFilter('all')" title="Tất cả">🗂️ <b>-</b></button>

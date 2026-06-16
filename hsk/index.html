@@ -792,6 +792,7 @@
         let masteredIds = []; // Sẽ đọc bất đồng bộ từ IndexedDB/LocalStorage khi khởi động
         let displayMode = 'sequential'; // sequential, random
         let isAutoPlaying = false;
+        let autoPlayMode = 1; // 1: Chỉ mặt trước, 2: 2 mặt phát âm Trung, 3: 2 mặt phát âm Trung + Việt
         let autoPlayTimeout = null;
         let currentHskLevel = 'HSK1';
         let recordsPerPage = 'all'; // 10, 20, 30, 40, 50, all
@@ -1196,7 +1197,7 @@
         function nextCard() {
             if (paginatedFlashcards.length === 0 || isTransitioning) return;
             if (isAutoPlaying) {
-                toggleAutoPlay();
+                toggleAutoPlay(true);
             }
             isTransitioning = true;
             
@@ -1230,7 +1231,7 @@
         function prevCard() {
             if (paginatedFlashcards.length === 0 || isTransitioning) return;
             if (isAutoPlaying) {
-                toggleAutoPlay();
+                toggleAutoPlay(true);
             }
             isTransitioning = true;
             
@@ -1267,7 +1268,7 @@
             const totalPages = Math.ceil(filteredFlashcards.length / size);
 
             if (isAutoPlaying) {
-                toggleAutoPlay();
+                toggleAutoPlay(true);
             }
 
             if (currentPage <= 1) {
@@ -1311,7 +1312,7 @@
             const totalPages = Math.ceil(filteredFlashcards.length / size);
 
             if (isAutoPlaying) {
-                toggleAutoPlay();
+                toggleAutoPlay(true);
             }
 
             if (currentPage >= totalPages) {
@@ -1371,7 +1372,7 @@
                 ttsBtn.title = "Âm thanh (TTS): TẮT";
                 ttsBtn.classList.remove('active');
                 if (isAutoPlaying) {
-                    toggleAutoPlay(); // Tắt tự động chạy nếu tắt TTS
+                    toggleAutoPlay(true); // Tắt tự động chạy nếu tắt TTS
                 }
                 if (typeof window.stopSpeak === 'function') {
                     window.stopSpeak();
@@ -1417,13 +1418,40 @@
             renderCard();
         }
 
-        // Bật / Tắt chế độ tự động đọc chuyển từ tuần tự/ngẫu nhiên
-        function toggleAutoPlay() {
+        // Bật / Tắt chế độ tự động đọc chuyển từ tuần tự/ngẫu nhiên luân phiên 3 chế độ
+        function toggleAutoPlay(forceOff = false) {
             if (paginatedFlashcards.length === 0) return;
-            isAutoPlaying = !isAutoPlaying;
             const autoPlayBtn = document.getElementById('auto-play-btn');
             
-            if (isAutoPlaying) {
+            if (forceOff) {
+                isAutoPlaying = false;
+                autoPlayMode = 1; // Khởi tạo lại chế độ 1 mặc định cho lần kích hoạt sau
+                saveSetting('autoPlayMode', autoPlayMode);
+                
+                autoPlayBtn.innerHTML = "▶";
+                autoPlayBtn.title = "Tự động lật & đọc: TẮT";
+                autoPlayBtn.classList.remove('active');
+                
+                if (autoPlayTimeout) {
+                    clearTimeout(autoPlayTimeout);
+                    autoPlayTimeout = null;
+                }
+                if (typeof window.stopSpeak === 'function') {
+                    window.stopSpeak();
+                }
+                // Đồng bộ trả thẻ về trạng thái mặt trước khi dừng loop
+                const cardElement = document.getElementById('card');
+                cardElement.classList.remove('flipped');
+                cardElement.classList.remove('flipped-vertical');
+                return;
+            }
+
+            if (!isAutoPlaying) {
+                // Đang TẮT -> kích hoạt chế độ 1
+                isAutoPlaying = true;
+                autoPlayMode = 1;
+                saveSetting('autoPlayMode', autoPlayMode);
+                
                 // Ép buộc bật TTS nếu chưa bật
                 if (!isTtsEnabled) {
                     isTtsEnabled = true;
@@ -1433,14 +1461,40 @@
                     ttsBtn.title = "Âm thanh (TTS): BẬT";
                     ttsBtn.classList.add('active');
                 }
-                autoPlayBtn.innerHTML = "⏸";
-                autoPlayBtn.title = "Dừng tự động đọc";
+                autoPlayBtn.innerHTML = "❶";
+                autoPlayBtn.title = "Tự động: 1 (Chỉ đọc mặt trước) - Bấm để đổi Chế độ 2";
                 autoPlayBtn.classList.add('active');
                 runAutoPlayLoop();
+            } else if (autoPlayMode === 1) {
+                // Chế độ 1 -> chuyển chế độ 2
+                autoPlayMode = 2;
+                saveSetting('autoPlayMode', autoPlayMode);
+                autoPlayBtn.innerHTML = "❷";
+                autoPlayBtn.title = "Tự động: 2 (Đọc từ + Ví dụ Trung) - Bấm để đổi Chế độ 3";
+                if (autoPlayTimeout) {
+                    clearTimeout(autoPlayTimeout);
+                }
+                runAutoPlayLoop();
+            } else if (autoPlayMode === 2) {
+                // Chế độ 2 -> chuyển chế độ 3
+                autoPlayMode = 3;
+                saveSetting('autoPlayMode', autoPlayMode);
+                autoPlayBtn.innerHTML = "❸";
+                autoPlayBtn.title = "Tự động: 3 (Đọc từ + Ví dụ Trung + Việt) - Bấm để TẮT";
+                if (autoPlayTimeout) {
+                    clearTimeout(autoPlayTimeout);
+                }
+                runAutoPlayLoop();
             } else {
+                // Chế độ 3 -> TẮT hoàn toàn
+                isAutoPlaying = false;
+                autoPlayMode = 1;
+                saveSetting('autoPlayMode', autoPlayMode);
+                
                 autoPlayBtn.innerHTML = "▶";
                 autoPlayBtn.title = "Tự động lật & đọc: TẮT";
                 autoPlayBtn.classList.remove('active');
+                
                 if (autoPlayTimeout) {
                     clearTimeout(autoPlayTimeout);
                     autoPlayTimeout = null;
@@ -1468,57 +1522,90 @@
             
             speakUniversalText(current.word, false);
 
-            // Bước 2: Chờ thời gian đọc mặt trước xong, tiến hành lật và đọc mặt sau (Ví dụ hoặc từ)
-            autoPlayTimeout = setTimeout(() => {
-                if (!isAutoPlaying) return;
-                
-                cardElement.classList.add('flipped-vertical');
-                
-                const textToSpeak = current.exCn || current.word;
-                speakUniversalText(textToSpeak, false);
-
-                // Bước 3: Chờ phát âm Tiếng Trung xong, tiến hành phát âm phần dịch Tiếng Việt của câu ví dụ hoặc nghĩa của từ
+            if (autoPlayMode === 1) {
+                // Chế độ 1: Chỉ hiện và đọc mặt trước -> Chuyển sang thẻ kế tiếp sau 3.5s
                 autoPlayTimeout = setTimeout(() => {
                     if (!isAutoPlaying) return;
+                    transitionToNextCardAutoPlay();
+                }, 3500);
+            } else if (autoPlayMode === 2) {
+                // Chế độ 2: Hiện cả 2 mặt và đọc từ + ví dụ tiếng trung
+                // Chờ phát âm từ mặt trước xong (3s), lật và đọc câu ví dụ tiếng Trung
+                autoPlayTimeout = setTimeout(() => {
+                    if (!isAutoPlaying) return;
+                    
+                    cardElement.classList.add('flipped-vertical');
+                    
+                    const textToSpeak = current.exCn || current.word;
+                    speakUniversalText(textToSpeak, false);
 
-                    const textToSpeakVn = current.exVn || current.meaning;
-                    speakUniversalText(textToSpeakVn, true);
-
-                    // Bước 4: Chờ thời gian đọc mặt sau Tiếng Việt xong, tiến hành chuyển sang thẻ kế tiếp
+                    // Chờ đọc chữ Hán ví dụ tiếng Trung xong (4.5s), chuyển tiếp sang thẻ kế sau
                     autoPlayTimeout = setTimeout(() => {
                         if (!isAutoPlaying) return;
-                        
-                        isTransitioning = true;
-                        
-                        // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
-                        cardElement.classList.remove('flipped');
-                        cardElement.classList.remove('flipped-vertical');
-                        
-                        cardElement.classList.add('page-flip-next-out');
-                        setTimeout(() => {
-                            let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
-                            if (nextIdx === 0 && displayMode === 'random' && paginatedFlashcards.length > 1) {
-                                paginatedFlashcards = shuffleList([...getPageSequentialItems()]);
-                            }
-                            currentIndex = nextIdx;
-                            saveSetting('currentIndex_' + currentHskLevel, currentIndex);
-                            renderCard();
-                            cardElement.classList.remove('page-flip-next-out');
-                            cardElement.classList.add('page-flip-next-in');
-                            
-                            setTimeout(() => {
-                                cardElement.classList.remove('page-flip-next-in');
-                                isTransitioning = false;
-                                // Đệ quy kích hoạt chu kỳ mới cho thẻ kế tiếp
-                                runAutoPlayLoop();
-                            }, 300);
-                        }, 300);
+                        transitionToNextCardAutoPlay();
+                    }, 4500);
 
-                    }, 3500); // Thời gian chờ phát âm tiếng Việt xong (3.5 giây)
+                }, 3000);
+            } else if (autoPlayMode === 3) {
+                // Chế độ 3: Hiện cả 2 mặt và đọc từ + ví dụ tiếng trung + đọc dịch tiếng việt
+                // Chờ đọc mặt trước xong (3s), lật và đọc câu ví dụ tiếng Trung
+                autoPlayTimeout = setTimeout(() => {
+                    if (!isAutoPlaying) return;
+                    
+                    cardElement.classList.add('flipped-vertical');
+                    
+                    const textToSpeak = current.exCn || current.word;
+                    speakUniversalText(textToSpeak, false);
 
-                }, 4000); // Thời gian chờ phát âm tiếng Trung xong (4 giây)
+                    // Chờ phát âm chữ Trung xong (4s), đọc phần dịch Tiếng Việt của câu ví dụ / nghĩa của từ
+                    autoPlayTimeout = setTimeout(() => {
+                        if (!isAutoPlaying) return;
 
-            }, 3000); // Thời gian chờ đọc mặt trước trước khi lật (3 giây)
+                        const textToSpeakVn = current.exVn || current.meaning;
+                        speakUniversalText(textToSpeakVn, true);
+
+                        // Chờ thời gian đọc xong câu tiếng Việt (3.5s), chuyển tiếp sang thẻ kế sau
+                        autoPlayTimeout = setTimeout(() => {
+                            if (!isAutoPlaying) return;
+                            transitionToNextCardAutoPlay();
+                        }, 3500);
+
+                    }, 4000);
+
+                }, 3000);
+            }
+        }
+
+        // Chuyển thẻ tự động trong quá trình lặp Autoplay
+        function transitionToNextCardAutoPlay() {
+            if (!isAutoPlaying) return;
+            isTransitioning = true;
+            
+            const cardElement = document.getElementById('card');
+            
+            // Đảm bảo xóa bỏ góc xoay lật trước khi cuộn slide ngang
+            cardElement.classList.remove('flipped');
+            cardElement.classList.remove('flipped-vertical');
+            
+            cardElement.classList.add('page-flip-next-out');
+            setTimeout(() => {
+                let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
+                if (nextIdx === 0 && displayMode === 'random' && paginatedFlashcards.length > 1) {
+                    paginatedFlashcards = shuffleList([...getPageSequentialItems()]);
+                }
+                currentIndex = nextIdx;
+                saveSetting('currentIndex_' + currentHskLevel, currentIndex);
+                renderCard();
+                cardElement.classList.remove('page-flip-next-out');
+                cardElement.classList.add('page-flip-next-in');
+                
+                setTimeout(() => {
+                    cardElement.classList.remove('page-flip-next-in');
+                    isTransitioning = false;
+                    // Kích hoạt chu kỳ mới cho thẻ kế tiếp
+                    runAutoPlayLoop();
+                }, 300);
+            }, 300);
         }
 
         // Chuyển đổi qua lại giữa các trạng thái bộ lọc (Tất cả / Thuộc / Chưa thuộc)
@@ -1550,7 +1637,7 @@
         function changeHskLevel(event) {
             currentHskLevel = event.target.value;
             saveSetting('currentHskLevel', currentHskLevel);
-            if (isAutoPlaying) toggleAutoPlay();
+            if (isAutoPlaying) toggleAutoPlay(true);
             
             // Xóa danh sách cũ để tránh hiển thị trạng thái đã thuộc/chưa thuộc cũ trước khi nạp xong dữ liệu mới
             rawFlashcards = [];
@@ -1636,7 +1723,7 @@
 
             // Nếu đang xem ở chế độ lọc Thuộc hoặc Chưa thuộc, xóa thẻ ra khỏi danh sách đang render hiện tại
             if (currentFilter !== 'all') {
-                if (isAutoPlaying) toggleAutoPlay();
+                if (isAutoPlaying) toggleAutoPlay(true);
                 applyFilterAndRender(true);
             } else {
                 // Nếu ở chế độ Tất cả, chỉ cập nhật trạng thái icon Active của thẻ
@@ -1760,7 +1847,7 @@
         }
 
         function openWordList() {
-            if (isAutoPlaying) toggleAutoPlay(); // Tắt đọc tự dộng khi mở danh sách để không xung đột
+            if (isAutoPlaying) toggleAutoPlay(true); // Tắt đọc tự dộng khi mở danh sách để không xung đột
             
             const modal = document.getElementById('word-list-modal');
             const searchInput = document.getElementById('word-search');

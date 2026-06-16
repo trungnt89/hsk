@@ -1247,6 +1247,94 @@
             }, 300);
         }
 
+        // Quay lại trang trước đó (bàn phím số 7)
+        function prevPage() {
+            if (recordsPerPage === 'all' || isTransitioning) return;
+            const size = parseInt(recordsPerPage);
+            const totalPages = Math.ceil(filteredFlashcards.length / size);
+
+            if (isAutoPlaying) {
+                toggleAutoPlay();
+            }
+
+            if (currentPage <= 1) {
+                currentPage = totalPages;
+            } else {
+                currentPage--;
+            }
+            saveSetting('currentPage_' + currentHskLevel, currentPage);
+
+            const pageSelect = document.getElementById('page-select');
+            if (pageSelect) {
+                pageSelect.value = currentPage;
+            }
+
+            isTransitioning = true;
+            const cardElement = document.getElementById('card');
+            if (cardElement) {
+                cardElement.classList.remove('flipped');
+                cardElement.classList.remove('flipped-vertical');
+                cardElement.classList.add('page-flip-prev-out');
+
+                setTimeout(() => {
+                    updatePagination(false);
+                    cardElement.classList.remove('page-flip-prev-out');
+                    cardElement.classList.add('page-flip-prev-in');
+                    setTimeout(() => {
+                        cardElement.classList.remove('page-flip-prev-in');
+                        isTransitioning = false;
+                    }, 300);
+                }, 300);
+            } else {
+                updatePagination(false);
+                isTransitioning = false;
+            }
+        }
+
+        // Tiến thêm 1 trang (bàn phím số 9)
+        function nextPage() {
+            if (recordsPerPage === 'all' || isTransitioning) return;
+            const size = parseInt(recordsPerPage);
+            const totalPages = Math.ceil(filteredFlashcards.length / size);
+
+            if (isAutoPlaying) {
+                toggleAutoPlay();
+            }
+
+            if (currentPage >= totalPages) {
+                currentPage = 1;
+            } else {
+                currentPage++;
+            }
+            saveSetting('currentPage_' + currentHskLevel, currentPage);
+
+            const pageSelect = document.getElementById('page-select');
+            if (pageSelect) {
+                pageSelect.value = currentPage;
+            }
+
+            isTransitioning = true;
+            const cardElement = document.getElementById('card');
+            if (cardElement) {
+                cardElement.classList.remove('flipped');
+                cardElement.classList.remove('flipped-vertical');
+                cardElement.classList.add('page-flip-next-out');
+
+                setTimeout(() => {
+                    updatePagination(false);
+                    cardElement.classList.remove('page-flip-next-out');
+                    cardElement.classList.add('page-flip-next-in');
+                    setTimeout(() => {
+                        cardElement.classList.remove('page-flip-next-in');
+                        isTransitioning = false;
+                    }, 300);
+                }, 300);
+            } else {
+                updatePagination(false);
+                isTransitioning = false;
+            }
+        }
+
         // Bật / Tắt trạng thái TTS phát âm tự động
         function toggleTts(event) {
             event.stopPropagation();
@@ -1560,6 +1648,19 @@
 
         // Lăng nghe sự kiện điều khiển bàn phím Máy tính (Desktop PC)
         document.addEventListener('keydown', (event) => {
+            // Tránh kích hoạt hotkeys khi đang gõ vào ô nhập liệu hoặc ô tìm kiếm
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) {
+                if (event.key === 'Escape') {
+                    const wordListModal = document.getElementById('word-list-modal');
+                    const isModalOpen = wordListModal && wordListModal.classList.contains('open');
+                    if (isModalOpen) {
+                        event.preventDefault();
+                        closeWordList();
+                    }
+                }
+                return;
+            }
+
             // Kiểm tra nếu danh sách từ đang mở
             const wordListModal = document.getElementById('word-list-modal');
             const isModalOpen = wordListModal && wordListModal.classList.contains('open');
@@ -1590,6 +1691,12 @@
             } else if (event.key.toLowerCase() === 'p') {
                 event.preventDefault();
                 toggleAutoPlay();
+            } else if (event.key === '7') {
+                event.preventDefault();
+                prevPage();
+            } else if (event.key === '9') {
+                event.preventDefault();
+                nextPage();
             }
         });
 

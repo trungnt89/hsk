@@ -9,7 +9,7 @@
     <script>
         // Tải các script hệ thống bất đồng bộ để tránh lỗi biên dịch tĩnh của Vite
         (function() {
-            const scripts = ['../com/TTSClient.js', '../com/assistive.js'];
+            const scripts = ['https://hsk-gilt.vercel.app/com/TTSClient.js', 'https://hsk-gilt.vercel.app/com/assistive.js'];
             scripts.forEach(src => {
                 const script = document.createElement('script');
                 script.src = src;
@@ -775,9 +775,8 @@
 
         <div class="controls">
             <button id="word-list-toggle" class="btn-icon" onclick="toggleWordList(event)" title="Xem danh sách từ">📋</button>
-            <button class="btn-icon" onclick="prevCard()" title="Thẻ trước đó">←</button>
+            <button id="speak-card-btn" class="btn-icon active" onclick="speakCurrentCardManual(event)" title="Phát âm thẻ hiện tại">🔊</button>
             <button id="auto-play-btn" class="btn-icon" onclick="toggleAutoPlay()" title="Tự động lật & đọc: TẮT">▶</button>
-            <button class="btn-icon active" onclick="nextCard()" title="Thẻ tiếp theo">→</button>
         </div>
     </div>
 
@@ -1162,8 +1161,8 @@
             // Nếu đang trong chế độ chạy tự động, không kích hoạt speak tại renderCard để tránh trùng lặp
             if (!isAutoPlaying) {
                 // Phát âm tự động khi chuyển thẻ nếu bật TTS - Mặc định luôn đọc từ chính khi chuyển thẻ
-                if (isTtsEnabled && typeof window.speakCommon === 'function') {
-                    window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
+                if (isTtsEnabled) {
+                    speakUniversalText(current.word, false);
                 }
             }
         }
@@ -1182,10 +1181,10 @@
             // Chỉ kích hoạt speak thủ công khi không chạy tự động
             if (!isAutoPlaying) {
                 // Phát âm tự động khi lật thẻ - Đọc theo mặt hiển thị sau khi lật
-                if (isTtsEnabled && typeof window.speakCommon === 'function') {
+                if (isTtsEnabled) {
                     const isFlippedNow = cardElement.classList.contains('flipped-vertical');
                     const textToSpeak = isFlippedNow ? (current.exCn || current.word) : current.word;
-                    window.speakCommon({ text: textToSpeak, voice: "zh-CN-XiaoxiaoNeural" });
+                    speakUniversalText(textToSpeak, false);
                 }
             }
         }
@@ -1360,12 +1359,12 @@
                 ttsBtn.title = "Âm thanh (TTS): BẬT";
                 ttsBtn.classList.add('active');
                 // Phát lại nội dung tương ứng với mặt hiện tại khi kích hoạt lại
-                if (paginatedFlashcards.length > 0 && typeof window.speakCommon === 'function' && !isAutoPlaying) {
+                if (paginatedFlashcards.length > 0 && !isAutoPlaying) {
                     const current = paginatedFlashcards[currentIndex];
                     const cardElement = document.getElementById('card');
                     const isFlippedNow = cardElement.classList.contains('flipped-vertical');
                     const textToSpeak = isFlippedNow ? (current.exCn || current.word) : current.word;
-                    window.speakCommon({ text: textToSpeak, voice: "zh-CN-XiaoxiaoNeural" });
+                    speakUniversalText(textToSpeak, false);
                 }
             } else {
                 ttsBtn.innerHTML = "🔇";
@@ -1467,9 +1466,7 @@
             cardElement.classList.remove('flipped');
             cardElement.classList.remove('flipped-vertical');
             
-            if (typeof window.speakCommon === 'function') {
-                window.speakCommon({ text: current.word, voice: "zh-CN-XiaoxiaoNeural" });
-            }
+            speakUniversalText(current.word, false);
 
             // Bước 2: Chờ thời gian đọc mặt trước xong, tiến hành lật và đọc mặt sau (Ví dụ hoặc từ)
             autoPlayTimeout = setTimeout(() => {
@@ -1477,19 +1474,15 @@
                 
                 cardElement.classList.add('flipped-vertical');
                 
-                if (typeof window.speakCommon === 'function') {
-                    const textToSpeak = current.exCn || current.word;
-                    window.speakCommon({ text: textToSpeak, voice: "zh-CN-XiaoxiaoNeural" });
-                }
+                const textToSpeak = current.exCn || current.word;
+                speakUniversalText(textToSpeak, false);
 
                 // Bước 3: Chờ phát âm Tiếng Trung xong, tiến hành phát âm phần dịch Tiếng Việt của câu ví dụ hoặc nghĩa của từ
                 autoPlayTimeout = setTimeout(() => {
                     if (!isAutoPlaying) return;
 
-                    if (typeof window.speakCommon === 'function') {
-                        const textToSpeakVn = current.exVn || current.meaning;
-                        window.speakCommon({ text: textToSpeakVn, voice: "vi-VN-NamMinhNeural" });
-                    }
+                    const textToSpeakVn = current.exVn || current.meaning;
+                    speakUniversalText(textToSpeakVn, true);
 
                     // Bước 4: Chờ thời gian đọc mặt sau Tiếng Việt xong, tiến hành chuyển sang thẻ kế tiếp
                     autoPlayTimeout = setTimeout(() => {
@@ -1814,24 +1807,48 @@
             }
         }
 
-        // Phát âm từ vựng trực tiếp từ danh mục của word list
-        function speakWordFromList(event, word) {
-            if (event && typeof event.stopPropagation === 'function') {
-                event.stopPropagation();
-            }
+        // Hàm phát âm chung: Tự động phân phối cuộc gọi đến TTS hoặc speechSynthesis fallback
+        function speakUniversalText(text, isVietnamese = false) {
+            if (!text) return;
+            const voice = isVietnamese ? "vi-VN-NamMinhNeural" : "zh-CN-XiaoxiaoNeural";
+            const lang = isVietnamese ? "vi-VN" : "zh-CN";
+
             if (typeof window.speakCommon === 'function') {
-                window.speakCommon({ text: word, voice: "zh-CN-XiaoxiaoNeural" });
+                window.speakCommon({ text: text, voice: voice });
             } else if ('speechSynthesis' in window) {
                 try {
                     window.speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(word);
-                    utterance.lang = 'zh-CN';
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = lang;
                     utterance.rate = 1;
                     window.speechSynthesis.speak(utterance);
                 } catch (e) {
                     console.error('Lỗi phát âm native:', e);
                 }
             }
+        }
+
+        // Phát âm từ vựng trực tiếp từ danh mục của word list
+        function speakWordFromList(event, word) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+            speakUniversalText(word, false);
+        }
+
+        // Phát âm thủ công thẻ flashcard dựa trên mặt đang hiển thị (mặt trước: từ, mặt sau: ví dụ)
+        function speakCurrentCardManual(event) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+            if (!paginatedFlashcards || paginatedFlashcards.length === 0) return;
+            const current = paginatedFlashcards[currentIndex];
+            if (!current) return;
+            const cardElement = document.getElementById('card');
+            const isFlippedNow = cardElement && cardElement.classList.contains('flipped-vertical');
+            const textToSpeak = isFlippedNow ? (current.exCn || current.word) : current.word;
+            
+            speakUniversalText(textToSpeak, false);
         }
 
         // Hiển thị danh sách từ dạng HTML, hỗ trợ tô đậm từ đang xem và đánh dấu thuộc/chưa thuộc trực tiếp

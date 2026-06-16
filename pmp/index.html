@@ -1302,8 +1302,7 @@ function toggleAns() {
 let isMoving = false;
 function move(dir) {
     if (isMoving) return;
-    if (dir === 'next' && idx >= filteredData.length - 1) return;
-    if (dir === 'prev' && idx <= 0) return;
+    if (filteredData.length <= 1) return;
     isMoving = true;
     const card = document.getElementById('book-page');
     
@@ -1320,7 +1319,19 @@ function move(dir) {
     card.classList.add(dir === 'next' ? 'page-flip-next-out' : 'page-flip-prev-out');
     
     setTimeout(() => {
-        if (dir === 'next') idx++; else idx--;
+        if (dir === 'next') {
+            if (idx >= filteredData.length - 1) {
+                idx = 0;
+            } else {
+                idx++;
+            }
+        } else {
+            if (idx <= 0) {
+                idx = filteredData.length - 1;
+            } else {
+                idx--;
+            }
+        }
         update(); 
         
         // Remove exit posture, immediately slide in Y-axis from the opposite side (300ms)

@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HSK Flashcards</title>
-    <script src="../com/HanVietData.js"></script>
+    <script src="https://hsk-gilt.vercel.app/com/HanVietData.js"></script>
     <script>
         // Tải các script hệ thống bất đồng bộ để tránh lỗi biên dịch tĩnh của Vite
         (function() {
@@ -595,13 +596,13 @@
         }
 
         .item-index {
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             color: var(--text-muted);
             font-weight: 700;
-            min-width: 24px;
+            min-width: 18px;
             background: #f1f5f9;
-            border-radius: 8px;
-            padding: 3px 6px;
+            border-radius: 6px;
+            padding: 2px 4px;
             text-align: center;
         }
 
@@ -636,12 +637,12 @@
             background: white;
             border: 1px solid #cbd5e1;
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
+            font-size: 1.15rem;
             cursor: pointer;
             transition: all 0.2s ease;
             color: #64748b;
@@ -1785,6 +1786,17 @@
             
             modal.classList.add('open');
             document.body.style.overflow = 'hidden'; // Khóa cuộn trang nền
+
+            // Tự động cuộn danh sách đến vị trí của thẻ đang xem
+            const container = document.getElementById('word-list-items-container');
+            if (container) {
+                const activeWordEl = container.querySelector('.active-word');
+                if (activeWordEl) {
+                    setTimeout(() => {
+                        activeWordEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 120);
+                }
+            }
         }
 
         function closeWordList(event) {
@@ -1837,13 +1849,22 @@
             const masteredCount = queryMatched.filter(item => masteredIds.includes(currentHskLevel + '_' + item.stt)).length;
             const unmasteredCount = totalCount - masteredCount;
 
-            // Cập nhật số đếm trực tiếp vào các tab lọc để người dùng dễ theo dõi
+            // Cập nhật số đếm trực tiếp vào các tab lọc để người dùng dễ theo dõi (dạng icon nén gọn không bị tràn 2 dòng)
             const tabAll = document.getElementById('list-filter-all');
             const tabMastered = document.getElementById('list-filter-mastered');
             const tabUnmastered = document.getElementById('list-filter-unmastered');
-            if (tabAll) tabAll.innerText = `Tất cả (${totalCount})`;
-            if (tabMastered) tabMastered.innerText = `Đã thuộc (${masteredCount})`;
-            if (tabUnmastered) tabUnmastered.innerText = `Chưa thuộc (${unmasteredCount})`;
+            if (tabAll) {
+                tabAll.innerHTML = `🗂️ <b>${totalCount}</b>`;
+                tabAll.title = `Tất cả (${totalCount})`;
+            }
+            if (tabMastered) {
+                tabMastered.innerHTML = `✅ <b>${masteredCount}</b>`;
+                tabMastered.title = `Đã thuộc (${masteredCount})`;
+            }
+            if (tabUnmastered) {
+                tabUnmastered.innerHTML = `⏳ <b>${unmasteredCount}</b>`;
+                tabUnmastered.title = `Chưa thuộc (${unmasteredCount})`;
+            }
 
             // Lọc danh sách hiển thị theo tab đã chọn
             const filtered = queryMatched.filter(item => {
@@ -1881,14 +1902,15 @@
                 itemDiv.onclick = () => selectWordFromList(item.stt);
 
                 const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
-                const hanVietBadge = wordHanViet ? `<div class="item-word-hv" style="color: #475569; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; margin-top: 2px;">[${wordHanViet}]</div>` : '';
 
                 itemDiv.innerHTML = `
                     <div class="item-index">${item.stt || (idx + 1)}</div>
                     <div class="item-word-info">
-                        <div class="item-word-zh">${item.word}</div>
-                        <div class="item-word-py">${item.pinyin}</div>
-                        ${hanVietBadge}
+                        <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap;">
+                            <div class="item-word-zh" style="flex-shrink: 0; white-space: nowrap;">${item.word}</div>
+                            ${wordHanViet ? `<span class="item-word-hv" style="color: #475569; font-size: 1.0rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[${wordHanViet}]</span>` : ''}
+                        </div>
+                        <div class="item-word-py" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.pinyin}</div>
                         <div class="item-word-meaning">${item.meaning}</div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
@@ -2144,9 +2166,9 @@
             <div class="word-list-search-box">
                 <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa..." oninput="filterWordListItems()">
                 <div class="list-filter-tabs">
-                    <button id="list-filter-all" class="list-filter-btn active" onclick="changeListFilter('all')">Tất cả</button>
-                    <button id="list-filter-mastered" class="list-filter-btn" onclick="changeListFilter('mastered')">Đã thuộc</button>
-                    <button id="list-filter-unmastered" class="list-filter-btn" onclick="changeListFilter('unmastered')">Chưa thuộc</button>
+                    <button id="list-filter-all" class="list-filter-btn active" onclick="changeListFilter('all')" title="Tất cả">🗂️ <b>-</b></button>
+                    <button id="list-filter-mastered" class="list-filter-btn" onclick="changeListFilter('mastered')" title="Đã thuộc">✅ <b>-</b></button>
+                    <button id="list-filter-unmastered" class="list-filter-btn" onclick="changeListFilter('unmastered')" title="Chưa thuộc">⏳ <b>-</b></button>
                 </div>
             </div>
             <div class="word-list-body" id="word-list-items-container">

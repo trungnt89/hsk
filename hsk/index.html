@@ -184,7 +184,7 @@
         .flashcard-wrapper {
             perspective: 1000px;
             width: 100%;
-            height: 420px;
+            height: 500px;
             cursor: pointer;
             position: relative;
             touch-action: none;
@@ -1894,24 +1894,15 @@
             }
         }
 
-        // Hàm phát âm chung: Tự động phân phối cuộc gọi đến TTS hoặc speechSynthesis fallback
+        // Hàm phát âm chung: Chỉ gọi đến TTS hệ thống qua window.speakCommon
         function speakUniversalText(text, isVietnamese = false) {
             if (!text) return;
             const voice = isVietnamese ? "vi-VN-NamMinhNeural" : "zh-CN-XiaoxiaoNeural";
-            const lang = isVietnamese ? "vi-VN" : "zh-CN";
 
             if (typeof window.speakCommon === 'function') {
                 window.speakCommon({ text: text, voice: voice });
-            } else if ('speechSynthesis' in window) {
-                try {
-                    window.speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = lang;
-                    utterance.rate = 1;
-                    window.speechSynthesis.speak(utterance);
-                } catch (e) {
-                    console.error('Lỗi phát âm native:', e);
-                }
+            } else {
+                console.warn('Hệ thống TTS (window.speakCommon) chưa sẵn sàng.');
             }
         }
 

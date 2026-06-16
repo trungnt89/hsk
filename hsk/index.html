@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HSK Flashcards</title>
+    <script src="./com/HanVietData.js"></script>
     <script>
         // Tải các script hệ thống bất đồng bộ để tránh lỗi biên dịch tĩnh của Vite
         (function() {
@@ -752,6 +753,7 @@
                         <button id="mark-btn-front" class="action-icon-btn" onclick="toggleMastered(event)" title="Đánh dấu thuộc">✓</button>
                     </div>
                     <div class="word" id="front-word">...</div>
+                    <div id="front-hanviet" style="font-size: 1.4rem; font-weight: bold; color: #475569; margin-top: -5px; margin-bottom: 10px; text-transform: uppercase; display: none;"></div>
                     <div class="hint">Nhấp để lật mặt sau hoặc vuốt để chuyển</div>
                 </div>
                 <div class="card-face card-back">
@@ -759,6 +761,7 @@
                         <button id="mark-btn-back" class="action-icon-btn" onclick="toggleMastered(event)" title="Đánh dấu thuộc">✓</button>
                     </div>
                     <div class="pinyin" id="back-pinyin">...</div>
+                    <div id="back-hanviet" style="font-size: 1.0rem; font-weight: bold; color: #475569; margin-bottom: 15px; text-transform: uppercase; display: none;"></div>
                     <div class="meaning" id="back-meaning">...</div>
                     <div class="example-box" id="example-box">
                         <div class="example-cn" id="ex-cn">...</div>
@@ -1115,6 +1118,16 @@
             document.getElementById('front-word').innerText = current.word;
             document.getElementById('back-pinyin').innerText = current.pinyin;
             document.getElementById('back-meaning').innerText = current.meaning;
+
+            const hanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(current.word) : '';
+            const frontHvEl = document.getElementById('front-hanviet');
+            const backHvEl = document.getElementById('back-hanviet');
+            if (hanViet && hanViet!=' ') {
+                //frontHvEl.innerText = hanViet;
+                //frontHvEl.style.display = hanViet ? 'block' : 'none';
+				backHvEl.innerText = hanViet ? `[${hanViet}]` : '';
+                backHvEl.style.display = hanViet ? 'block' : 'none';
+            }
             
             if(current.exCn) {
                 document.getElementById('example-box').style.display = 'block';
@@ -1867,11 +1880,15 @@
                 // Khi nhấp dòng, nhảy thẳng đến thẻ đó
                 itemDiv.onclick = () => selectWordFromList(item.stt);
 
+                const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
+                const hanVietBadge = wordHanViet ? `<div class="item-word-hv" style="color: #475569; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; margin-top: 2px;">${wordHanViet}</div>` : '';
+
                 itemDiv.innerHTML = `
                     <div class="item-index">${item.stt || (idx + 1)}</div>
                     <div class="item-word-info">
                         <div class="item-word-zh">${item.word}</div>
                         <div class="item-word-py">${item.pinyin}</div>
+                        ${hanVietBadge}
                         <div class="item-word-meaning">${item.meaning}</div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">

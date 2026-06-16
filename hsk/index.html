@@ -1816,7 +1816,9 @@
 
         // Phát âm từ vựng trực tiếp từ danh mục của word list
         function speakWordFromList(event, word) {
-            event.stopPropagation();
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
             if (typeof window.speakCommon === 'function') {
                 window.speakCommon({ text: word, voice: "zh-CN-XiaoxiaoNeural" });
             } else if ('speechSynthesis' in window) {
@@ -1824,7 +1826,7 @@
                     window.speechSynthesis.cancel();
                     const utterance = new SpeechSynthesisUtterance(word);
                     utterance.lang = 'zh-CN';
-                    utterance.rate = 0.85;
+                    utterance.rate = 1;
                     window.speechSynthesis.speak(utterance);
                 } catch (e) {
                     console.error('Lỗi phát âm native:', e);
@@ -1842,9 +1844,13 @@
             // Toàn bộ các từ khớp với từ khóa tìm kiếm (để tính tổng số lượng của từng trạng thái)
             const queryMatched = rawFlashcards.filter(item => {
                 if (!query) return true;
+                const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') 
+                    ? window.getHanVietForWord(item.word) 
+                    : '';
                 return (item.word && item.word.toLowerCase().includes(query)) ||
                        (item.pinyin && item.pinyin.toLowerCase().includes(query)) ||
-                       (item.meaning && item.meaning.toLowerCase().includes(query));
+                       (item.meaning && item.meaning.toLowerCase().includes(query)) ||
+                       (wordHanViet && wordHanViet.toLowerCase().includes(query));
             });
 
             const totalCount = queryMatched.length;
@@ -1899,9 +1905,13 @@
                 
                 const itemDiv = document.createElement('div');
                 itemDiv.className = `word-list-item ${isActive ? 'active-word' : ''}`;
+                itemDiv.setAttribute('data-stt', item.stt);
                 
-                // Khi nhấp dòng, nhảy thẳng đến thẻ đó
-                itemDiv.onclick = () => selectWordFromList(item.stt);
+                // Khi nhấp dòng, phát âm thanh và nhảy thẳng đến thẻ đó
+                itemDiv.onclick = () => {
+                    speakWordFromList(null, item.word);
+                    selectWordFromList(item.stt);
+                };
 
                 const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
 
@@ -1916,12 +1926,6 @@
                         <div class="item-word-meaning">${item.meaning}</div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
-                        <button class="item-action-btn" 
-                                onclick="speakWordFromList(event, '${item.word}')" 
-                                title="Phát âm từ"
-                                style="background: white; border: 1px solid #cbd5e1; color: var(--primary);">
-                            🔊
-                        </button>
                         <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
                                 onclick="toggleMasteredFromList(event, '${item.stt}')" 
                                 title="${isMastered ? 'Bỏ thuộc' : 'Đánh dấu thuộc'}">
@@ -2058,7 +2062,17 @@
                 renderCard();
             }
 
-            closeWordList();
+            // Cập nhật trạng thái hiển thị 'active' của các phần tử trong danh sách từ mà không cần đóng modal hay vẽ lại toàn bộ
+            const container = document.getElementById('word-list-items-container');
+            if (container) {
+                container.querySelectorAll('.word-list-item').forEach(el => {
+                    if (el.getAttribute('data-stt') === String(stt)) {
+                        el.classList.add('active-word');
+                    } else {
+                        el.classList.remove('active-word');
+                    }
+                });
+            }
         }
 
         // Cho phép đánh dấu thuộc nhanh trực tiếp từ danh sách từ

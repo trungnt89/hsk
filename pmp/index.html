@@ -1347,11 +1347,32 @@ function move(dir) {
     }, 300); 
 }
 
+let touchStartX = 0;
 let touchStartY = 0;
+let touchEndX = 0;
 let touchEndY = 0;
+let touchTargetIsScrollable = false;
+
 document.getElementById('swipe-area').addEventListener('touchstart', e => { 
     touchStartX = e.changedTouches[0].screenX; 
     touchStartY = e.changedTouches[0].screenY; 
+    
+    // Check if touch started inside an active scrollable body or textarea
+    let target = e.target;
+    touchTargetIsScrollable = false;
+    while (target && target !== document.getElementById('swipe-area')) {
+        if (target.classList && target.classList.contains('q-scroll-body')) {
+            if (target.scrollHeight > target.clientHeight) {
+                touchTargetIsScrollable = true;
+            }
+            break;
+        }
+        if (target.classList && (target.classList.contains('note-area') || target.tagName === 'TEXTAREA')) {
+            touchTargetIsScrollable = true;
+            break;
+        }
+        target = target.parentElement;
+    }
 }, {passive: true});
 
 document.getElementById('swipe-area').addEventListener('touchend', e => { 
@@ -1372,6 +1393,9 @@ function handleSwipe() {
             else move('prev');
         }
     } else {
+        if (touchTargetIsScrollable) {
+            return; // Ignore vertical swipe to flip card when they are searching/scrolling the scrollable content
+        }
         if (Math.abs(diffY) > threshold) {
             flipCard();
         }

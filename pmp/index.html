@@ -4,99 +4,783 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PMP Master Pro - V1.9.3 Final</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="../com/assistive.js"></script>    
-    <script src="data1.js"></script><script src="data2.js"></script>
-    <script src="data3.js"></script><script src="data4.js"></script>
-    <script src="data5.js"></script>
+    <script src="https://hsk-gilt.vercel.app/pmp/data1.js"></script>
+	<script src="https://hsk-gilt.vercel.app/pmp/data2.js"></script>
+    <script src="https://hsk-gilt.vercel.app/pmp/data3.js"></script>
+	<script src="https://hsk-gilt.vercel.app/pmp/data4.js"></script>
+    <script src="https://hsk-gilt.vercel.app/pmp/data5.js"></script>
 	
     <style>
         :root { 
-            --primary: #007AFF; --easy: #28CD41; --medium: #FF9500; --hard: #FF3B30;
-            --bg: #F2F2F7; --card: #FFFFFF; --text-main: #1C1C1E;
+            --primary: #2563EB; /* Elegant royal blue */
+            --easy: #10B981;    /* Vibrant emerald */
+            --medium: #F59E0B;  /* Amber */
+            --hard: #EF4444;    /* Alert red */
+            --bg: #F8FAFC;      /* Extremely clean premium light gray */
+            --card: #FFFFFF; 
+            --text-main: #0F172A; /* Slate-900 */
         }
         
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100vw; 
-            font-family: -apple-system, 'Inter', sans-serif; 
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; 
             background-color: var(--bg); display: flex; flex-direction: column; 
             overflow: hidden;
+            color: var(--text-main);
         }
 
         .system-header { 
-            background: white; border-bottom: 0.5px solid rgba(0,0,0,0.1); flex-shrink: 0; 
+            background: #FFFFFF; 
+            border-bottom: 1px solid rgba(0,0,0,0.05); 
+            flex-shrink: 0; 
             padding-top: env(safe-area-inset-top);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.015);
+            z-index: 100;
         }
-        .nav-row { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .brand { font-size: 15px; font-weight: 900; color: var(--text-main); }
+        .nav-row { 
+            padding: 12px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .brand { 
+            font-size: 16px; 
+            font-weight: 800; 
+            color: var(--text-main); 
+            letter-spacing: -0.02em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .brand:hover {
+            transform: scale(1.02);
+        }
         
-        #storage-info { font-size: 10px; font-weight: 800; color: #8E8E93; background: #F2F2F7; padding: 2px 8px; border-radius: 10px; }
-
-        .filter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 12px 12px; }
-        .tab-pill {
-            border: none; padding: 12px; border-radius: 12px; 
-            font-size: 11px; font-weight: 800; background: rgba(0,0,0,0.05); 
-            color: #3A3A3C; text-align: center; cursor: pointer;
-            display: flex; flex-direction: column; gap: 2px;
+        #storage-info { 
+            font-size: 11px; 
+            font-weight: 700; 
+            color: #475569; 
+            background: #F1F5F9; 
+            padding: 3px 10px; 
+            border-radius: 99px; 
+            border: 1px solid rgba(0,0,0,0.02);
         }
-        .tab-pill.active { background: var(--text-main); color: white; }
 
-        .content-viewport { flex-grow: 1; position: relative; overflow: hidden; perspective: 1000px; }
+        #set-select {
+            padding: 6px 14px;
+            border-radius: 99px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background-color: #F1F5F9;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1E293B;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        #set-select:hover {
+            background-color: #E2E8F0;
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+
+        .segments-container {
+            padding: 0 20px 12px;
+        }
+        .segment-slider-bg {
+            display: flex;
+            background: #F1F5F9;
+            padding: 4px;
+            border-radius: 14px;
+            position: relative;
+            gap: 4px;
+        }
+        .segment-tab {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            color: #64748B;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            outline: none;
+        }
+        .segment-tab.active {
+            background: #FFFFFF;
+            color: #0F172A;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+        .badge-cnt {
+            font-size: 10px;
+            font-weight: 800;
+            background: #E2E8F0;
+            color: #475569;
+            padding: 1px 6px;
+            border-radius: 99px;
+            transition: all 0.2s ease;
+        }
+        .segment-tab.active .badge-cnt {
+            background: #EFF6FF;
+            color: var(--primary);
+        }
+
+        .content-viewport { 
+            flex-grow: 1; 
+            position: relative; 
+            overflow: hidden; 
+            perspective: 1200px; /* Perspective for stunning 3D rotation transition */
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+        }
         
         .main-card { 
-            position: absolute; inset: 0; background: var(--card); 
-            margin: 10px; border-radius: 20px; box-sizing: border-box; 
-            display: flex; flex-direction: column; overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 1; transform: translateX(0);
+            position: absolute; 
+            left: 14px;
+            right: 14px;
+            top: 14px;
+            bottom: 84px; /* Cozy gap above bottom bar */
+            border-radius: 24px; 
+            box-sizing: border-box; 
+            display: flex; 
+            flex-direction: column; 
+            opacity: 1; 
+            transform: rotateX(0deg) rotateY(0deg) scale(1) translateX(0);
+            transform-style: preserve-3d;
+            transform-origin: center center;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s ease;
+            background: transparent;
         }
 
-        .slide-out-left { opacity: 0 !important; transform: translateX(-100%) !important; }
-        .slide-out-right { opacity: 0 !important; transform: translateX(100%) !important; }
-        .slide-in-init-left { opacity: 0 !important; transform: translateX(-100%) !important; transition: none !important; }
-        .slide-in-init-right { opacity: 0 !important; transform: translateX(100%) !important; transition: none !important; }
+        .main-card.flipped {
+            transform: rotateX(180deg) scale(1);
+        }
 
-        .q-sticky-header { padding: 12px 16px; background: white; border-bottom: 0.5px solid #F2F2F7; display: flex; justify-content: space-between; align-items: center; z-index: 10; border-radius: 20px 20px 0 0; }
-        .q-scroll-body { flex-grow: 1; overflow-y: auto; padding: 16px; padding-bottom: 120px; }
-        .q-counter { font-size: 12px; font-weight: 800; color: var(--primary); }
-        .diff-status-box { display: flex; gap: 5px; }
-        .q-diff-tag { font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 6px; border: 1.5px solid #EEE; color: #CCC; cursor: pointer; text-align: center; }
-        .q-diff-tag.active[data-type="Easy"] { background: var(--easy); color: white; border-color: var(--easy); }
-        .q-diff-tag.active[data-type="Medium"] { background: var(--medium); color: white; border-color: var(--medium); }
-        .q-diff-tag.active[data-type="Hard"] { background: var(--hard); color: white; border-color: var(--hard); }
+        .card-face {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 24px;
+            background: var(--card);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.015);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-        .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 0 0 20px; white-space: pre-wrap; }
-        .option-item { font-size: 14px; padding: 15px; background: #F2F2F7; border-radius: 14px; margin-bottom: 10px; border: 2.5px solid transparent; transition: all 0.2s; white-space: pre-wrap; }
-        .option-item.selected { border-color: var(--primary); background: #E5F1FF; }
-        .option-item.correct { background: #D4EDDA !important; border-color: #28CD41 !important; color: #155724; font-weight: 700; }
-        .option-item.wrong { background: #F8D7DA !important; border-color: #FF3B30 !important; color: #721C24; }
-        #exp-box { margin-top: 15px; padding: 15px; background: #F2F2F7; border-radius: 12px; font-size: 13px; border-left:4px solid var(--primary); white-space: pre-wrap; }
+        .card-front {
+            z-index: 2;
+            transform: rotateX(0deg);
+        }
 
-        .note-area { width: 100%; height: 80px; margin-top: 15px; border-radius: 12px; border: 1px solid #DDD; padding: 10px; font-family: inherit; font-size: 13px; background: #FAFAFA; resize: none; box-sizing: border-box; }
+        .card-back {
+            transform: rotateX(180deg);
+            background: #F8FAFC; 
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
 
-        #trans-display { display: none; position: fixed; bottom: 85px; left: 10px; right: 10px; background: #1C1C1E; color: white; border-radius: 12px; font-size: 14px; z-index: 2000; box-shadow: 0 -5px 25px rgba(0,0,0,0.4); line-height: 1.5; max-height: 50vh; flex-direction: column; overflow: hidden; }
-        .trans-header { padding: 10px 14px; background: #2C2C2E; border-bottom: 0.5px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; color: #AAA; letter-spacing: 1px; }
-        .trans-content { padding: 14px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .trans-close { color: var(--primary); padding-left: 10px; cursor: pointer; }
+        .flip-trigger-btn {
+            background: #F1F5F9;
+            border: 1px solid rgba(0,0,0,0.02);
+            color: #475569;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            margin-left: 8px;
+        }
+        .flip-trigger-btn:hover {
+            background: #E2E8F0;
+            color: var(--primary);
+            transform: scale(1.08);
+        }
 
-        .bottom-nav { height: 65px; background: white; border-top: 0.5px solid rgba(0,0,0,0.1); display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; padding: 4px 6px env(safe-area-inset-bottom); position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        .nav-btn { border: 1px solid #E5E5EA; background: white; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #8E8E93; cursor: pointer; font-size: 7.5px; font-weight: 800; line-height: 1.1; }
-        .nav-btn.active { border-color: var(--primary); color: var(--primary); background: #F0F7FF; }
-        .nav-btn i { font-style: normal; font-size: 16px; margin-bottom: 3px; }
+        @keyframes spinTranslation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-        #vocab-page { display:none; position:fixed; inset:0; background:var(--bg); z-index:3000; flex-direction:column; padding-top:env(safe-area-inset-top); }
-        .vocab-list { flex-grow:1; overflow-y:auto; padding:12px; }
-        .vocab-item { background:white; padding:15px; border-radius:15px; margin-bottom:10px; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
-        .v-meta { font-size:10px; color:#8E8E93; font-weight:bold; margin-bottom:5px; }
-        .v-en { font-size:15px; font-weight:700; color:var(--primary); margin-bottom:4px; }
-        .v-vi { font-size:14px; color:var(--text-main); }
-        .v-del { position:absolute; right:15px; top:15px; color:var(--hard); font-weight:900; padding: 5px; cursor: pointer; }
-        .v-ctrl { padding:15px; display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:white; border-top:1px solid #DDD; }
-        .btn-v { padding:12px; border-radius:10px; border:none; font-weight:800; font-size:11px; cursor:pointer; background:#E5E5EA; }
-        .btn-close { background:var(--text-main); color:white; }
-        .btn-exp { background:var(--easy); color:white; }
-        .btn-imp { background:var(--medium); color:white; }
+        /* High-fidelity, smooth 3D turning-axis keyframe animations from source sample */
+        .page-flip-next-out {
+            animation: flipNextOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
+        }
+        .page-flip-next-in {
+            animation: flipNextIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
+        }
+        .page-flip-prev-out {
+            animation: flipPrevOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
+        }
+        .page-flip-prev-in {
+            animation: flipPrevIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
+        }
+
+        @keyframes flipNextOut {
+            0% {
+                transform: rotateY(0deg);
+                transform-origin: center center;
+                opacity: 1;
+            }
+            100% {
+                transform: rotateY(-90deg);
+                transform-origin: center center;
+                opacity: 0;
+            }
+        }
+        @keyframes flipNextIn {
+            0% {
+                transform: rotateY(90deg);
+                transform-origin: center center;
+                opacity: 0;
+            }
+            100% {
+                transform: rotateY(0deg);
+                transform-origin: center center;
+                opacity: 1;
+            }
+        }
+        @keyframes flipPrevOut {
+            0% {
+                transform: rotateY(0deg);
+                transform-origin: center center;
+                opacity: 1;
+            }
+            100% {
+                transform: rotateY(90deg);
+                transform-origin: center center;
+                opacity: 0;
+            }
+        }
+        @keyframes flipPrevIn {
+            0% {
+                transform: rotateY(-90deg);
+                transform-origin: center center;
+                opacity: 0;
+            }
+            100% {
+                transform: rotateY(0deg);
+                transform-origin: center center;
+                opacity: 1;
+            }
+        }
+
+        .q-sticky-header { 
+            padding: 12px 18px; 
+            background: white; 
+            border-bottom: 1px solid #F1F5F9; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            z-index: 10; 
+            border-radius: 24px 24px 0 0; 
+        }
+        .q-scroll-body { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding: 14px 18px; 
+            padding-bottom: 35px; 
+        }
+        .q-counter { 
+            font-size: 14px; 
+            font-weight: 800; 
+            color: #1E293B; 
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .q-counter::before {
+            content: '';
+            width: 6px;
+            height: 14px;
+            background: var(--primary);
+            border-radius: 99px;
+            display: inline-block;
+        }
+
+        .diff-status-box { 
+            display: flex; 
+            gap: 5px; 
+            background: #F1F5F9;
+            padding: 4px;
+            border-radius: 99px;
+            border: 1px solid rgba(0, 0, 0, 0.02);
+        }
+        .q-diff-tag { 
+            font-size: 11px; 
+            font-weight: 800; 
+            padding: 6px 14px; 
+            border-radius: 99px; 
+            color: #64748B; 
+            cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            background: transparent;
+        }
+        .q-diff-tag:hover {
+            color: #0F172A;
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .q-diff-tag.active[data-type="Easy"] { background: var(--easy); color: white; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
+        .q-diff-tag.active[data-type="Medium"] { background: var(--medium); color: white; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
+        .q-diff-tag.active[data-type="Hard"] { background: var(--hard); color: white; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
+
+        .q-text { 
+            font-size: 16px; 
+            font-weight: 600; 
+            line-height: 1.5; 
+            margin: 0 0 14px; 
+            white-space: pre-wrap; 
+            color: #0F172A;
+            letter-spacing: -0.01em;
+        }
+        
+        .option-item { 
+            display: flex;
+            align-items: flex-start;
+            font-size: 14px; 
+            padding: 8px 12px; 
+            background: #F8FAFC; 
+            border-radius: 10px; 
+            margin-bottom: 6px; 
+            border: 2px solid rgba(0, 0, 0, 0.01); 
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
+            white-space: pre-wrap; 
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.01);
+            line-height: 1.4;
+        }
+        .option-item:hover {
+            transform: translateY(-1px);
+            background: #F1F5F9;
+            border-color: rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .option-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border-radius: 5px;
+            background: #E2E8F0;
+            color: #475569;
+            font-weight: 800;
+            margin-right: 8px;
+            font-size: 11.5px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-top: 1px;
+            position: relative;
+        }
+        .option-content {
+            flex-grow: 1;
+            line-height: 1.4;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .option-item.selected { 
+            border-color: var(--primary); 
+            background: #EFF6FF; 
+            box-shadow: 0 3px 10px rgba(37, 99, 235, 0.06);
+        }
+        .option-item.selected .option-badge {
+            background: var(--primary);
+            color: white;
+        }
+        .option-item.correct { 
+            background: #F0FDF4 !important; 
+            border-color: var(--easy) !important; 
+            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.06); 
+        }
+        .option-item.correct .option-badge {
+            background: var(--easy) !important;
+            color: white !important;
+        }
+        .option-item.correct .option-content {
+            color: #15803D;
+            font-weight: 700;
+        }
+        .option-item.wrong { 
+            background: #FEF2F2 !important; 
+            border-color: var(--hard) !important; 
+            box-shadow: 0 3px 10px rgba(239, 68, 68, 0.06); 
+        }
+        .option-item.wrong .option-badge {
+            background: var(--hard) !important;
+            color: white !important;
+        }
+        .option-item.wrong .option-content {
+            color: #B91C1C;
+        }
+
+        #exp-box { 
+            margin-top: 12px; 
+            padding: 12px 14px; 
+            background: #F8FAFC; 
+            border-radius: 12px; 
+            font-size: 13px; 
+            line-height: 1.5;
+            border-left: 4px solid var(--primary); 
+            white-space: pre-wrap; 
+            color: #334155;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            animation: slideFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .note-area { 
+            width: 100%; 
+            height: 52px; 
+            margin-top: 14px; 
+            border-radius: 10px; 
+            border: 1px solid #E2E8F0; 
+            padding: 8px 12px; 
+            font-family: inherit; 
+            font-size: 13px; 
+            color: #1E293B;
+            background: #F8FAFC; 
+            resize: none; 
+            box-sizing: border-box; 
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .note-area:focus {
+            background: #FFFFFF;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        #trans-display { 
+            display: none; 
+            position: fixed; 
+            bottom: 85px; 
+            left: 16px; 
+            right: 16px; 
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(15, 23, 42, 0.95); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #F8FAFC; 
+            border-radius: 20px; 
+            font-size: 14px; 
+            z-index: 2000; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3); 
+            line-height: 1.6; 
+            max-height: 45vh; 
+            flex-direction: column; 
+            overflow: hidden; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: popUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes popUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .trans-header { 
+            padding: 12px 18px; 
+            background: rgba(255, 255, 255, 0.05); 
+            border-bottom: 1px solid rgba(255,255,255,0.08); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-size: 11px; 
+            font-weight: 800; 
+            color: #94A3B8; 
+            letter-spacing: 1.5px; 
+        }
+        .trans-content { 
+            padding: 16px 18px; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
+            color: #F1F5F9;
+        }
+        .trans-close { 
+            color: #3B82F6; 
+            padding-left: 10px; 
+            cursor: pointer; 
+            font-weight: 800;
+        }
+
+        .bottom-nav { 
+            height: 72px; 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.6); 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 8px; 
+            padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); 
+            position: fixed; 
+            bottom: 12px; 
+            left: 12px;
+            right: 12px;
+            width: calc(100% - 24px);
+            max-width: 736px;
+            margin: 0 auto;
+            border-radius: 20px;
+            box-sizing: border-box; 
+            z-index: 100;
+            box-shadow: 0 16px 40px -12px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+        .nav-btn { 
+            border: 1px solid rgba(0, 0, 0, 0.03); 
+            background: #FFFFFF; 
+            border-radius: 14px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            color: #475569; 
+            cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            gap: 2px;
+            padding: 4px;
+        }
+        .nav-btn:hover {
+            background: #F8FAFC;
+            transform: translateY(-2px);
+            border-color: rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+        .nav-btn:active {
+            transform: translateY(0) scale(0.96);
+        }
+        
+        .nav-btn svg {
+            width: 22px;
+            height: 22px;
+            display: block;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.2s ease, fill 0.2s ease;
+        }
+        .nav-btn:hover svg {
+            transform: scale(1.12);
+        }
+        
+        /* Distinctive LÙI / TIẾP primary highlights with gorgeous gradients */
+        .nav-btn-prev {
+            background: #FFFFFF !important;
+            border: 1.5px solid #E2E8F0 !important;
+            color: #1E293B !important;
+        }
+        .nav-btn-prev:hover svg {
+            transform: translateX(-3px) scale(1.1);
+        }
+
+        .nav-btn-next {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8) !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.24) !important;
+        }
+        .nav-btn-next svg {
+            color: #FFFFFF !important;
+        }
+        .nav-btn-next:hover svg {
+            transform: translateX(3px) scale(1.1);
+        }
+        .nav-btn-next:hover {
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35) !important;
+        }
+
+        /* Specific active style for answer explanation toggler */
+        #btn-ans.active { 
+            border-color: rgba(37, 99, 235, 0.3); 
+            color: var(--primary) !important; 
+            background: #EFF6FF !important; 
+            box-shadow: inset 0 1px 3px rgba(37, 99, 235, 0.08);
+        }
+        #btn-ans.active svg {
+            stroke: var(--primary) !important;
+            fill: rgba(37, 99, 235, 0.1) !important;
+        }
+
+        /* Distinctive states for difficulty filters */
+        #filt-Easy.active { 
+            background: #10B981 !important; 
+            color: #FFFFFF !important; 
+            border-color: transparent !important;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+        }
+        #filt-Easy.active svg {
+            stroke: #FFFFFF !important;
+        }
+        #filt-Easy.active svg circle {
+            fill: rgba(255, 255, 255, 0.25) !important;
+        }
+        #filt-Easy.active .filt-cnt { color: rgba(255, 255, 255, 0.95); }
+        
+        #filt-Medium.active { 
+            background: #F59E0B !important; 
+            color: #FFFFFF !important; 
+            border-color: transparent !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25) !important;
+        }
+        #filt-Medium.active svg {
+            stroke: #FFFFFF !important;
+        }
+        #filt-Medium.active svg path {
+            fill: rgba(255, 255, 255, 0.25) !important;
+        }
+        #filt-Medium.active .filt-cnt { color: rgba(255, 255, 255, 0.95); }
+
+        #filt-Hard.active { 
+            background: #EF4444 !important; 
+            color: #FFFFFF !important; 
+            border-color: transparent !important;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25) !important;
+        }
+        #filt-Hard.active svg {
+            stroke: #FFFFFF !important;
+        }
+        #filt-Hard.active svg polygon {
+            fill: rgba(255, 255, 255, 0.25) !important;
+        }
+        #filt-Hard.active .filt-cnt { color: rgba(255, 255, 255, 0.95); }
+
+        .filt-cnt {
+            font-size: 9px;
+            font-weight: 800;
+            color: #64748B;
+            transition: color 0.2s ease;
+        }
+
+        #vocab-page { 
+            display:none; 
+            position:fixed; 
+            inset:0; 
+            background:var(--bg); 
+            z-index:3000; 
+            flex-direction:column; 
+            padding-top:env(safe-area-inset-top); 
+            animation: slideInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideInDown {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .vocab-list { 
+            flex-grow:1; 
+            overflow-y:auto; 
+            padding:20px 16px; 
+        }
+        .vocab-item { 
+            background:white; 
+            padding:20px; 
+            border-radius:20px; 
+            margin-bottom:14px; 
+            position:relative; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.012); 
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: all 0.2s ease;
+        }
+        .vocab-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+        }
+        .v-meta { 
+            font-size:11px; 
+            color:#64748B; 
+            font-weight:700; 
+            margin-bottom:8px; 
+            background: #EDF2F7;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 99px;
+        }
+        .v-en { 
+            font-size:16px; 
+            font-weight:800; 
+            color:var(--primary); 
+            margin-bottom:6px; 
+            line-height: 1.4;
+        }
+        .v-vi { 
+            font-size:15px; 
+            color:var(--text-main); 
+            line-height: 1.5;
+        }
+        .v-del { 
+            position:absolute; 
+            right:20px; 
+            top:20px; 
+            color:var(--hard); 
+            font-weight:800; 
+            padding: 4px 10px; 
+            border-radius: 8px;
+            background: #FEF2F2;
+            cursor: pointer;
+            font-size: 11px;
+            border: 1px solid rgba(239, 68, 68, 0.1);
+            transition: all 0.2s ease;
+        }
+        .v-del:hover {
+            background: var(--hard);
+            color: white;
+        }
+        .v-ctrl { 
+            padding:20px 16px calc(20px + env(safe-area-inset-bottom)); 
+            display:grid; 
+            grid-template-columns:repeat(3, 1fr); 
+            gap:12px; 
+            background:white; 
+            border-top:1px solid #E2E8F0; 
+            box-shadow: 0 -8px 30px rgba(0,0,0,0.03);
+        }
+        .btn-v { 
+            padding:14px; 
+            border-radius:12px; 
+            border:none; 
+            font-weight:800; 
+            font-size:13px; 
+            cursor:pointer; 
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: center;
+        }
+        .btn-v:active {
+            transform: scale(0.96);
+        }
+        .btn-close { background:#0F172A; color:white; }
+        .btn-close:hover { background: #1E293B; }
+        .btn-exp { 
+            background:var(--easy); 
+            color:white; 
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+        .btn-exp:hover { background: #059669; }
+        .btn-imp { 
+            background:var(--medium); 
+            color:white; 
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+        }
+        .btn-imp:hover { background: #D97706; }
     </style>
 </head>
 <body>
@@ -104,7 +788,11 @@
 <div id="trans-display"></div>
 
 <div id="vocab-page">
-    <div class="system-header"><div class="nav-row"><div class="brand">DANH SÁCH TỪ VỰNG</div></div></div>
+    <div class="system-header">
+        <div class="nav-row">
+            <div class="brand">DANH SÁCH TỪ VỰNG 📖</div>
+        </div>
+    </div>
     <div class="vocab-list" id="vocab-list-container"></div>
     <div class="v-ctrl">
         <button class="btn-v btn-exp" onclick="exportVocab()">EXPORT CSV</button>
@@ -116,9 +804,9 @@
 
 <header class="system-header">
     <div class="nav-row">
-        <div class="brand" onclick="toggleVocabPage(true)">PMP MASTER PRO 📖</div>
+        <div class="brand" onclick="toggleVocabPage(true)">PMP MASTER PRO ✨</div>
         <div id="storage-info" title="Dung lượng đã dùng trong Sheet">0/50k</div>
-        <select id="set-select" onchange="changeExamSet(this.value)" style="border:none; font-weight:800; color:var(--primary); background:transparent; font-size:14px;">
+        <select id="set-select" onchange="changeExamSet(this.value)">
             <option value="DATA_SET_1">ĐỀ 01</option>
             <option value="DATA_SET_2">ĐỀ 02</option>
             <option value="DATA_SET_3">ĐỀ 03</option>
@@ -126,9 +814,18 @@
             <option value="DATA_SET_5">ĐỀ 05</option>
         </select>
     </div>
-    <div class="filter-grid">
-        <button class="tab-pill" id="tab-todo" onclick="switchTab('todo')">MỚI <span id="top-todo-cnt">(0)</span></button>
-        <button class="tab-pill" id="tab-done" onclick="switchTab('done')">ĐÃ HỌC <span id="top-done-cnt">(0)</span></button>
+    
+    <div class="segments-container">
+        <div class="segment-slider-bg">
+            <button class="segment-tab" id="tab-todo" onclick="switchTab('todo')">
+                <span>MỚI</span>
+                <span id="top-todo-cnt" class="badge-cnt">(0)</span>
+            </button>
+            <button class="segment-tab" id="tab-done" onclick="switchTab('done')">
+                <span>ĐÃ HỌC</span>
+                <span id="top-done-cnt" class="badge-cnt">(0)</span>
+            </button>
+        </div>
     </div>
 </header>
 
@@ -137,12 +834,21 @@
 </main>
 
 <nav class="bottom-nav">
-    <div class="nav-btn" onclick="move('prev')"><i>⬅️</i>LÙI</div>
-    <div class="nav-btn" id="btn-ans" onclick="toggleAns()"><i>👁️</i>ĐÁP ÁN</div>
-    <div class="nav-btn" id="filt-Easy" onclick="toggleFilter('Easy')"><i>✅</i>DỄ<br><span id="cnt-Easy">(0)</span></div>
-    <div class="nav-btn" id="filt-Medium" onclick="toggleFilter('Medium')"><i>🟠</i>VỪA<br><span id="cnt-Medium">(0)</span></div>
-    <div class="nav-btn" id="filt-Hard" onclick="toggleFilter('Hard')"><i>⚠️</i>KHÓ<br><span id="cnt-Hard">(0)</span></div>
-    <div class="nav-btn" onclick="move('next')"><i>➡️</i>TIẾP</div>
+    <div class="nav-btn" id="btn-ans" onclick="toggleAns()" title="Đáp án">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>
+    </div>
+    <div class="nav-btn" id="filt-Easy" onclick="toggleFilter('Easy')" title="Dễ">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="rgba(16, 185, 129, 0.1)"/><path d="m9 12 2 2 4-4"/></svg>
+        <span id="cnt-Easy" class="filt-cnt">(0)</span>
+    </div>
+    <div class="nav-btn" id="filt-Medium" onclick="toggleFilter('Medium')" title="Vừa">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="rgba(245, 158, 11, 0.1)"/></svg>
+        <span id="cnt-Medium" class="filt-cnt">(0)</span>
+    </div>
+    <div class="nav-btn" id="filt-Hard" onclick="toggleFilter('Hard')" title="Khó">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(239, 68, 68, 0.1)"/></svg>
+        <span id="cnt-Hard" class="filt-cnt">(0)</span>
+    </div>
 </nav>
 
 <script>
@@ -195,6 +901,79 @@ async function save() {
 
 let state = {};
 let currentData = []; let filteredData = []; let idx = 0; let isFirstLoad = true;
+let isFlipped = false;
+
+function flipCard() {
+    const card = document.getElementById('book-page');
+    if (!card) return;
+    const q = filteredData[idx];
+    if (!q) return;
+    
+    isFlipped = !isFlipped;
+    card.classList.toggle('flipped', isFlipped);
+    console.log(`[LOG] Lật thẻ: ${isFlipped ? "Mặt sau (Dịch tiếng Việt)" : "Mặt trước (Tiếng Anh)"}`);
+}
+
+async function translateQuestion(q) {
+    const key = state.set + q.id;
+    if (state.progress[key] && state.progress[key].translation) {
+        return state.progress[key].translation;
+    }
+    
+    if (q.isTranslating) return null;
+    q.isTranslating = true;
+    
+    try {
+        console.log(`[LOG] Đang tự động dịch câu ${q.id} sang tiếng Việt...`);
+        
+        const translateText = async (text) => {
+            if (!text) return "";
+            try {
+                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
+                const data = await res.json();
+                return data[0].map(s => s[0]).join("");
+            } catch (e) {
+                console.error("[LOG] Lỗi dịch nhãn:", e);
+                return "";
+            }
+        };
+
+        const optionKeys = Object.keys(q.options);
+        const optionValues = Object.values(q.options);
+        
+        const promises = [
+            translateText(q.question),
+            translateText(q.explanation || ""),
+            ...optionValues.map(optVal => translateText(optVal))
+        ];
+        
+        const results = await Promise.all(promises);
+        
+        const questionVi = results[0];
+        const explanationVi = results[1];
+        const optionsVi = {};
+        optionKeys.forEach((k, optionIdx) => {
+            optionsVi[k] = results[optionIdx + 2];
+        });
+        
+        const translation = {
+            questionVi,
+            explanationVi,
+            optionsVi
+        };
+        
+        if (!state.progress[key]) state.progress[key] = {};
+        state.progress[key].translation = translation;
+        
+        console.log(`[LOG] Dịch thành công câu ${q.id}`);
+        save();
+        render(); // Re-render to update the Vietnamese back face
+    } catch (e) {
+        console.error(`[LOG] Lỗi dịch câu ${q.id}:`, e);
+    } finally {
+        q.isTranslating = false;
+    }
+}
 
 function changeExamSet(v) { 
     console.log("[LOG] Đổi bộ đề sang:", v);
@@ -323,8 +1102,6 @@ function update() {
     if (isFirstLoad) { idx = (state.lastIdx < filteredData.length) ? state.lastIdx : 0; isFirstLoad = false; }
     if (idx >= filteredData.length && filteredData.length > 0) idx = 0;
     
-    // ĐÃ XÓA save() TẠI ĐÂY ĐỂ TRÁNH LỖI GHI ĐÈ KHI LOAD
-    
     document.getElementById('tab-todo').classList.toggle('active', state.tab === 'todo');
     document.getElementById('tab-done').classList.toggle('active', state.tab === 'done');
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -337,24 +1114,120 @@ function render() {
     const q = filteredData[idx];
     if (!q) { container.innerHTML = "<center style='padding-top:100px; color:#999'>Trống</center>"; return; }
     const p = state.progress[state.set + q.id] || {};
+    const key = state.set + q.id;
+    
+    // Synchronize flip state class
+    if (isFlipped) {
+        container.classList.add('flipped');
+    } else {
+        container.classList.remove('flipped');
+    }
+    
+    const hasTranslation = p.translation && p.translation.questionVi;
+    
+    let backContentHtml = "";
+    if (hasTranslation) {
+        const trans = p.translation;
+        backContentHtml = `
+            <div class="q-sticky-header">
+                <div class="q-counter">${idx+1}/${filteredData.length}(ID:${q.id})</div>
+                <div style="display: flex; align-items: center;">
+                    <div class="diff-status-box">
+                        <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
+                        <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
+                        <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
+                    </div>
+                </div>
+            </div>
+            <div class="q-scroll-body">
+                <div class="q-text" style="color: #0F172A; font-weight: 700;">${trans.questionVi}</div>
+                <div class="options">
+                    ${Object.entries(q.options).map(([k,v]) => {
+                        const optTransText = trans.optionsVi[k] || v;
+                        return `
+                            <div class="option-item ${p.ans===k?'selected':''}" id="opt-vi-${k}" onclick="setAns('${q.id}','${k}')">
+                                <span class="option-badge">${k}</span><span class="option-content">${optTransText}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div id="vi-exp-box" style="${document.getElementById('btn-ans')?.classList.contains('active') ? 'display:block;' : 'display:none;'} border-left:4px solid #10B981; margin-top: 12px; padding: 12px 14px; background: #F0FDF4; border-radius: 12px; font-size: 13px; line-height: 1.5; color: #15803D;">
+                    <div style="font-weight: 800; margin-bottom: 6px; color: #10B981;">📖 BẢN DỊCH GIẢI THÍCH CHI TIẾT:</div>
+                    ${trans.explanationVi || "Chưa có bản dịch giải thích."}
+                </div>
+                <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." onchange="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
+            </div>
+        `;
+    } else {
+        backContentHtml = `
+            <div class="q-sticky-header">
+                <div class="q-counter">${idx+1}/${filteredData.length}(ID:${q.id})</div>
+                <div style="display: flex; align-items: center;">
+                    <div class="diff-status-box">
+                        <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
+                        <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
+                        <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
+                    </div>
+                </div>
+            </div>
+            <div class="q-scroll-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #64748B; padding-top: 60px;">
+                <div class="spinner-translation" style="width: 40px; height: 40px; border: 4px solid rgba(37, 99, 235, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spinTranslation 1s linear infinite; margin-bottom: 16px;"></div>
+                <div style="font-weight: 700; font-size: 15px; color: #334155; margin-bottom: 6px;">Đang chuẩn bị bản dịch tiếng Việt...</div>
+                <div style="font-size: 13px; max-width: 280px; line-height: 1.5; color: #64748B;">Hệ thống AI đang dịch tự động câu hỏi và các lựa chọn đáp án cho bạn.</div>
+            </div>
+        `;
+        translateQuestion(q);
+    }
+    
     container.innerHTML = `
-        <div class="q-sticky-header">
-            <div class="q-counter">#${idx+1} : ${q.id}</div>
-            <div class="diff-status-box">
-                <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
-                <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
-                <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
+        <!-- MẶT TRƯỚC (TIẾNG ANH) -->
+        <div class="card-face card-front">
+            <div class="q-sticky-header">
+                <div class="q-counter">${idx+1}/${filteredData.length}(ID:${q.id})</div>
+                <div style="display: flex; align-items: center;">
+                    <div class="diff-status-box">
+                        <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
+                        <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
+                        <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
+                    </div>
+                </div>
+            </div>
+            <div class="q-scroll-body">
+                <div class="q-text">${q.question}</div>
+                <div class="options">
+                    ${Object.entries(q.options).map(([k,v]) => `
+                        <div class="option-item ${p.ans===k?'selected':''}" id="opt-${k}" onclick="setAns('${q.id}','${k}')">
+                            <span class="option-badge">${k}</span><span class="option-content">${v}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div id="exp-box" style="${document.getElementById('btn-ans')?.classList.contains('active') ? 'display:block;' : 'display:none;'} border-left:4px solid var(--primary);">
+                    <div style="font-weight: 800; margin-bottom: 6px; color: var(--primary);">📖 GIẢI THÍCH CHI TIẾT:</div>
+                    ${q.explanation}
+                </div>
+                <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." onchange="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
             </div>
         </div>
-        <div class="q-scroll-body">
-            <div class="q-text">${q.question}</div>
-            <div class="options">
-                ${Object.entries(q.options).map(([k,v]) => `<div class="option-item ${p.ans===k?'selected':''}" id="opt-${k}" onclick="setAns('${q.id}','${k}')"><b>${k}.</b> ${v}</div>`).join('')}
-            </div>
-            <div id="exp-box" style="display:none; border-left:4px solid var(--primary);">${q.explanation}</div>
-            <textarea class="note-area" placeholder="Ghi chú..." onchange="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
+        
+        <!-- MẶT SAU (TIẾNG VIỆT) -->
+        <div class="card-face card-back">
+            ${backContentHtml}
         </div>
     `;
+
+    // Highlight correct & wrong options synchronously if Answer panel is visible
+    const isAnsActive = document.getElementById('btn-ans')?.classList.contains('active');
+    if (isAnsActive) {
+        document.querySelectorAll('.option-item').forEach(el => {
+            const optKey = el.id.split('-').pop();
+            const isCorrect = Array.isArray(q.answer) ? q.answer.includes(optKey) : optKey === q.answer;
+            if (isCorrect) {
+                 el.classList.add('correct');
+            } else if (el.classList.contains('selected')) {
+                 el.classList.add('wrong');
+            }
+        });
+    }
 }
 
 function setStatus(qid, level) {
@@ -372,7 +1245,14 @@ function setAns(qid, k) {
     console.log(`[LOG] Người dùng chọn đáp án cho câu ${qid}: ${k}`);
     updateCountsOnly();
     document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
-    if(state.progress[key].ans) document.getElementById('opt-'+k).classList.add('selected');
+    
+    // Highlight symmetrically on both faces
+    if (state.progress[key].ans) {
+        const optEng = document.getElementById('opt-' + k);
+        const optVie = document.getElementById('opt-vi-' + k);
+        if (optEng) optEng.classList.add('selected');
+        if (optVie) optVie.classList.add('selected');
+    }
     save(); 
 }
 
@@ -400,14 +1280,18 @@ function updateCountsOnly() {
 
 function toggleAns() {
     const box = document.getElementById('exp-box');
-    const isShow = box.style.display === 'none';
+    const viBox = document.getElementById('vi-exp-box');
+    const isShow = box ? box.style.display === 'none' : true;
     const q = filteredData[idx];
-    box.style.display = isShow ? 'block' : 'none';
+    
+    if (box) box.style.display = isShow ? 'block' : 'none';
+    if (viBox) viBox.style.display = isShow ? 'block' : 'none';
+    
     document.getElementById('btn-ans').classList.toggle('active', isShow);
     document.querySelectorAll('.option-item').forEach(el => {
         el.classList.remove('correct', 'wrong');
         if (isShow) {
-            const optKey = el.id.split('-')[1];
+            const optKey = el.id.split('-').pop();
             const isCorrect = Array.isArray(q.answer) ? q.answer.includes(optKey) : optKey === q.answer;
             if (isCorrect) el.classList.add('correct');
             else if (el.classList.contains('selected')) el.classList.add('wrong');
@@ -422,27 +1306,85 @@ function move(dir) {
     if (dir === 'prev' && idx <= 0) return;
     isMoving = true;
     const card = document.getElementById('book-page');
-    card.classList.add(dir === 'next' ? 'slide-out-left' : 'slide-out-right');
+    
+    // reset flip back to front before turning page
+    if (isFlipped) {
+        isFlipped = false;
+        card.classList.remove('flipped');
+    }
+    
+    // Clear any leftover animation classes
+    card.classList.remove('page-flip-next-out', 'page-flip-next-in', 'page-flip-prev-out', 'page-flip-prev-in');
+    
+    // Smoothly exit Y-axis rotation (300ms)
+    card.classList.add(dir === 'next' ? 'page-flip-next-out' : 'page-flip-prev-out');
+    
     setTimeout(() => {
         if (dir === 'next') idx++; else idx--;
         update(); 
-        card.classList.remove('slide-out-left', 'slide-out-right');
-        card.classList.add(dir === 'next' ? 'slide-in-init-right' : 'slide-in-init-left');
+        
+        // Remove exit posture, immediately slide in Y-axis from the opposite side (300ms)
+        card.classList.remove('page-flip-next-out', 'page-flip-prev-out');
+        card.classList.add(dir === 'next' ? 'page-flip-next-in' : 'page-flip-prev-in');
+        
         setTimeout(() => {
-            card.classList.remove('slide-in-init-right', 'slide-in-init-left');
-            setTimeout(() => { isMoving = false; }, 700);
+            // Clean up entered classes and unlock moving
+            card.classList.remove('page-flip-next-in', 'page-flip-prev-in');
+            isMoving = false;
             save(); // Lưu vị trí câu hiện tại
-        }, 50);
-    }, 700);
+        }, 300);
+    }, 300); 
 }
 
-document.getElementById('swipe-area').addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
-document.getElementById('swipe-area').addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
+let touchStartY = 0;
+let touchEndY = 0;
+document.getElementById('swipe-area').addEventListener('touchstart', e => { 
+    touchStartX = e.changedTouches[0].screenX; 
+    touchStartY = e.changedTouches[0].screenY; 
+}, {passive: true});
+
+document.getElementById('swipe-area').addEventListener('touchend', e => { 
+    touchEndX = e.changedTouches[0].screenX; 
+    touchEndY = e.changedTouches[0].screenY; 
+    handleSwipe(); 
+}, {passive: true});
+
 function handleSwipe() {
     if (window.getSelection().toString().trim() !== "") return;
-    if (touchEndX < touchStartX - 60) move('next');
-    if (touchEndX > touchStartX + 60) move('prev');
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+    const threshold = 55;
+    
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (Math.abs(diffX) > threshold) {
+            if (diffX < 0) move('next');
+            else move('prev');
+        }
+    } else {
+        if (Math.abs(diffY) > threshold) {
+            flipCard();
+        }
+    }
 }
+
+// Bắt phím ArrowLeft / ArrowRight làm điều hướng chính, ArrowUp / ArrowDown làm lật mặt thẻ
+document.addEventListener('keydown', e => {
+    // Không chuyển trang nếu đang gõ chữ trong các ô nhập liệu hay ghi chú
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        return;
+    }
+    if (e.key === 'ArrowLeft' || e.key === '7') {
+        move('prev');
+    } else if (e.key === 'ArrowRight' || e.key === '9') {
+        move('next');
+    } else if (e.key === 'ArrowUp' || e.key === '8') {
+        e.preventDefault();
+        flipCard();
+    } else if (e.key === 'ArrowDown' || e.key === '2') {
+        e.preventDefault();
+        flipCard();
+    }
+});
 
 async function startApp() {
     console.log("[LOG] Khởi chạy ứng dụng...");

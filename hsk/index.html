@@ -794,6 +794,11 @@
         let isAutoPlaying = false;
         let autoPlayMode = 1; // 1: Chỉ mặt trước, 2: 2 mặt phát âm Trung, 3: 2 mặt phát âm Trung + Việt
         let autoPlayTimeout = null;
+        let silentAudioHelper = null;
+        let autoPlayState = 0; // 0: Đọc từ (mặt trước), 1: Đọc ví dụ (mặt sau), 2: Đọc nghĩa của từ (mặt sau), 3: Chờ chuyển thẻ
+        let autoPlayStateTimeLimit = 3000; // Thời gian chờ của state hiện tại (ms)
+        let autoPlayElapsedTime = 0; // Thời gian đã trôi qua trong state hiện tại (ms)
+        let lastTickTime = Date.now();
         let currentHskLevel = 'HSK1';
         let recordsPerPage = 'all'; // 10, 20, 30, 40, 50, all
         let currentPage = 1;
@@ -1421,75 +1426,214 @@
             renderCard();
         }
 
+        // Khởi tạo audio im lặng giúp giữ tiến trình chạy ngầm mượt mà trên iOS Safari
+        function initSilentAudioHelper() {
+            if (!silentAudioHelper) {
+                // File WAV im lặng khoảng 1 giây, lặp liên tiếp để duy trì luồng phát phương tiện nền trên iOS
+                silentAudioHelper = new Audio("data:audio/wav;base64,UklGRpwAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YXBCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+                silentAudioHelper.loop = true;
+                
+                // Đăng ký bộ lắng nghe timeupdate hoạt động ngay cả khi tắt màn hình khóa trên iOS
+                silentAudioHelper.addEventListener('timeupdate', () => {
+                    if (isAutoPlaying) {
+                        runAutoPlayTimeUpdate();
+                    }
+                });
+            }
+        }
+
+        // Cập nhật thời gian trôi qua của State Machine
+        function runAutoPlayTimeUpdate() {
+            if (!isAutoPlaying || paginatedFlashcards.length === 0) return;
+            
+            const now = Date.now();
+            const delta = now - lastTickTime;
+            lastTickTime = now;
+            
+            // Xử lý bù đắp nếu delta bị nhảy lệch quá lớn khi trình duyệt bị treo tạm thời
+            if (delta <= 0 || delta > 2000) {
+                autoPlayElapsedTime += 250;
+            } else {
+                autoPlayElapsedTime += delta;
+            }
+            
+            if (autoPlayElapsedTime >= autoPlayStateTimeLimit) {
+                autoPlayElapsedTime = 0;
+                advanceAutoPlayState();
+            }
+        }
+
+        // State Machine điều hướng Autoplay chạy tốt kể cả khi khóa màn hình
+        function advanceAutoPlayState() {
+            if (!isAutoPlaying || paginatedFlashcards.length === 0) return;
+            
+            const cardElement = document.getElementById('card');
+            const current = paginatedFlashcards[currentIndex];
+            if (!current) return;
+            
+            if (autoPlayState === 0) {
+                // Hết thời gian đọc mặt trước (3s) -> Lật và đọc mặt sau
+                if (autoPlayMode === 1) {
+                    // Chế độ 1: Chỉ đọc mặt trước -> Chuyển sang State 3 (Chờ chuyển thẻ)
+                    autoPlayState = 3;
+                    autoPlayStateTimeLimit = document.hidden ? 50 : 600;
+                    transitionToNextCardAutoPlay();
+                } else {
+                    // Chế độ 2 & Chế độ 3: Lật mặt sau và đọc tiếng Trung
+                    autoPlayState = 1;
+                    autoPlayStateTimeLimit = (autoPlayMode === 3) ? 4000 : 4500;
+                    
+                    if (cardElement) {
+                        cardElement.classList.add('flipped-vertical');
+                    }
+                    const textToSpeak = current.exCn || current.word;
+                    speakUniversalText(textToSpeak, false);
+                }
+            } else if (autoPlayState === 1) {
+                // Hết thời gian đọc tiếng Trung mặt sau
+                if (autoPlayMode === 2) {
+                    // Chế độ 2: Chỉ đọc Trung -> Chuyển sang State 3 (Chờ chuyển thẻ)
+                    autoPlayState = 3;
+                    autoPlayStateTimeLimit = document.hidden ? 50 : 600;
+                    transitionToNextCardAutoPlay();
+                } else if (autoPlayMode === 3) {
+                    // Chế độ 3: Đọc tiếp nghĩa tiếng Việt
+                    autoPlayState = 2;
+                    autoPlayStateTimeLimit = 3500;
+                    
+                    const textToSpeakVn = current.exVn || current.meaning;
+                    speakUniversalText(textToSpeakVn, true);
+                }
+            } else if (autoPlayState === 2) {
+                // Hết thời gian đọc nghĩa Việt -> Chuyển sang State 3 (Chờ chuyển thẻ)
+                autoPlayState = 3;
+                autoPlayStateTimeLimit = document.hidden ? 50 : 600;
+                transitionToNextCardAutoPlay();
+            } else if (autoPlayState === 3) {
+                // Hoàn tất chờ chuyển thẻ -> Reset trạng thái về State 0 và đọc từ mới
+                autoPlayState = 0;
+                autoPlayStateTimeLimit = 3000;
+                autoPlayElapsedTime = 0;
+                
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
+                }
+                speakUniversalText(current.word, false);
+            }
+        }
+
         // Bật / Tắt chế độ tự động đọc chuyển từ tuần tự/ngẫu nhiên luân phiên 3 chế độ
         function toggleAutoPlay(forceOff = false) {
             if (paginatedFlashcards.length === 0) return;
             const autoPlayBtn = document.getElementById('auto-play-btn');
             
+            // Đảm bảo helper đã được khởi tạo qua tương tác người dùng
+            initSilentAudioHelper();
+            
             if (forceOff) {
                 isAutoPlaying = false;
-                autoPlayMode = 1; // Khởi tạo lại chế độ 1 mặc định cho lần kích hoạt sau
+                autoPlayMode = 1;
                 saveSetting('autoPlayMode', autoPlayMode);
                 
                 autoPlayBtn.innerHTML = "▶";
                 autoPlayBtn.title = "Tự động lật & đọc: TẮT";
                 autoPlayBtn.classList.remove('active');
                 
-                if (autoPlayTimeout) {
-                    clearTimeout(autoPlayTimeout);
-                    autoPlayTimeout = null;
+                if (silentAudioHelper) {
+                    silentAudioHelper.pause();
                 }
                 if (typeof window.stopSpeak === 'function') {
                     window.stopSpeak();
                 }
-                // Đồng bộ trả thẻ về trạng thái mặt trước khi dừng loop
                 const cardElement = document.getElementById('card');
-                cardElement.classList.remove('flipped');
-                cardElement.classList.remove('flipped-vertical');
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
+                }
                 return;
             }
 
             if (!isAutoPlaying) {
-                // Đang TẮT -> kích hoạt chế độ 1
                 isAutoPlaying = true;
                 autoPlayMode = 1;
                 saveSetting('autoPlayMode', autoPlayMode);
                 
-                // Ép buộc bật TTS nếu chưa bật
                 if (!isTtsEnabled) {
                     isTtsEnabled = true;
                     saveSetting('isTtsEnabled', isTtsEnabled);
                     const ttsBtn = document.getElementById('tts-toggle');
-                    ttsBtn.innerHTML = "🔊";
-                    ttsBtn.title = "Âm thanh (TTS): BẬT";
-                    ttsBtn.classList.add('active');
+                    if (ttsBtn) {
+                        ttsBtn.innerHTML = "🔊";
+                        ttsBtn.title = "Âm thanh (TTS): BẬT";
+                        ttsBtn.classList.add('active');
+                    }
                 }
                 autoPlayBtn.innerHTML = "❶";
                 autoPlayBtn.title = "Tự động: 1 (Chỉ đọc mặt trước) - Bấm để đổi Chế độ 2";
                 autoPlayBtn.classList.add('active');
-                runAutoPlayLoop();
+                
+                // Chạy silent audio helper lặp tuần hoàn để giữ luồng background hoạt động
+                if (silentAudioHelper) {
+                    silentAudioHelper.play().catch(e => console.warn('Bỏ qua lỗi tự động phát Audio im lặng:', e));
+                }
+                
+                // Khởi tạo các trạng thái đếm giờ của State Machine
+                autoPlayState = 0;
+                autoPlayElapsedTime = 0;
+                lastTickTime = Date.now();
+                autoPlayStateTimeLimit = 3000;
+                
+                const cardElement = document.getElementById('card');
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
+                }
+                const current = paginatedFlashcards[currentIndex];
+                if (current) {
+                    speakUniversalText(current.word, false);
+                }
             } else if (autoPlayMode === 1) {
-                // Chế độ 1 -> chuyển chế độ 2
                 autoPlayMode = 2;
                 saveSetting('autoPlayMode', autoPlayMode);
                 autoPlayBtn.innerHTML = "❷";
                 autoPlayBtn.title = "Tự động: 2 (Đọc từ + Ví dụ Trung) - Bấm để đổi Chế độ 3";
-                if (autoPlayTimeout) {
-                    clearTimeout(autoPlayTimeout);
+                
+                autoPlayState = 0;
+                autoPlayElapsedTime = 0;
+                lastTickTime = Date.now();
+                autoPlayStateTimeLimit = 3000;
+                
+                const cardElement = document.getElementById('card');
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
                 }
-                runAutoPlayLoop();
+                const current = paginatedFlashcards[currentIndex];
+                if (current) {
+                    speakUniversalText(current.word, false);
+                }
             } else if (autoPlayMode === 2) {
-                // Chế độ 2 -> chuyển chế độ 3
                 autoPlayMode = 3;
                 saveSetting('autoPlayMode', autoPlayMode);
                 autoPlayBtn.innerHTML = "❸";
                 autoPlayBtn.title = "Tự động: 3 (Đọc từ + Ví dụ Trung + Việt) - Bấm để TẮT";
-                if (autoPlayTimeout) {
-                    clearTimeout(autoPlayTimeout);
+                
+                autoPlayState = 0;
+                autoPlayElapsedTime = 0;
+                lastTickTime = Date.now();
+                autoPlayStateTimeLimit = 3000;
+                
+                const cardElement = document.getElementById('card');
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
                 }
-                runAutoPlayLoop();
+                const current = paginatedFlashcards[currentIndex];
+                if (current) {
+                    speakUniversalText(current.word, false);
+                }
             } else {
-                // Chế độ 3 -> TẮT hoàn toàn
                 isAutoPlaying = false;
                 autoPlayMode = 1;
                 saveSetting('autoPlayMode', autoPlayMode);
@@ -1498,117 +1642,62 @@
                 autoPlayBtn.title = "Tự động lật & đọc: TẮT";
                 autoPlayBtn.classList.remove('active');
                 
-                if (autoPlayTimeout) {
-                    clearTimeout(autoPlayTimeout);
-                    autoPlayTimeout = null;
+                if (silentAudioHelper) {
+                    silentAudioHelper.pause();
                 }
                 if (typeof window.stopSpeak === 'function') {
                     window.stopSpeak();
                 }
-                // Đồng bộ trả thẻ về trạng thái mặt trước khi dừng loop
                 const cardElement = document.getElementById('card');
-                cardElement.classList.remove('flipped');
-                cardElement.classList.remove('flipped-vertical');
-            }
-        }
-
-        // Vòng lặp điều hướng quy trình tự động lật và đọc thẻ
-        function runAutoPlayLoop() {
-            if (!isAutoPlaying || paginatedFlashcards.length === 0) return;
-
-            const cardElement = document.getElementById('card');
-            const current = paginatedFlashcards[currentIndex];
-
-            // Bước 1: Trở về mặt trước, hiển thị nội dung, và phát âm mặt trước (Từ gốc)
-            cardElement.classList.remove('flipped');
-            cardElement.classList.remove('flipped-vertical');
-            
-            speakUniversalText(current.word, false);
-
-            if (autoPlayMode === 1) {
-                // Chế độ 1: Chỉ hiện và đọc mặt trước -> Chuyển sang thẻ kế tiếp sau 3.5s
-                autoPlayTimeout = setTimeout(() => {
-                    if (!isAutoPlaying) return;
-                    transitionToNextCardAutoPlay();
-                }, 3500);
-            } else if (autoPlayMode === 2) {
-                // Chế độ 2: Hiện cả 2 mặt và đọc từ + ví dụ tiếng trung
-                // Chờ phát âm từ mặt trước xong (3s), lật và đọc câu ví dụ tiếng Trung
-                autoPlayTimeout = setTimeout(() => {
-                    if (!isAutoPlaying) return;
-                    
-                    cardElement.classList.add('flipped-vertical');
-                    
-                    const textToSpeak = current.exCn || current.word;
-                    speakUniversalText(textToSpeak, false);
-
-                    // Chờ đọc chữ Hán ví dụ tiếng Trung xong (4.5s), chuyển tiếp sang thẻ kế sau
-                    autoPlayTimeout = setTimeout(() => {
-                        if (!isAutoPlaying) return;
-                        transitionToNextCardAutoPlay();
-                    }, 4500);
-
-                }, 3000);
-            } else if (autoPlayMode === 3) {
-                // Chế độ 3: Hiện cả 2 mặt và đọc từ + ví dụ tiếng trung + đọc dịch tiếng việt
-                // Chờ đọc mặt trước xong (3s), lật và đọc câu ví dụ tiếng Trung
-                autoPlayTimeout = setTimeout(() => {
-                    if (!isAutoPlaying) return;
-                    
-                    cardElement.classList.add('flipped-vertical');
-                    
-                    const textToSpeak = current.exCn || current.word;
-                    speakUniversalText(textToSpeak, false);
-
-                    // Chờ phát âm chữ Trung xong (4s), đọc phần dịch Tiếng Việt của câu ví dụ / nghĩa của từ
-                    autoPlayTimeout = setTimeout(() => {
-                        if (!isAutoPlaying) return;
-
-                        const textToSpeakVn = current.exVn || current.meaning;
-                        speakUniversalText(textToSpeakVn, true);
-
-                        // Chờ thời gian đọc xong câu tiếng Việt (3.5s), chuyển tiếp sang thẻ kế sau
-                        autoPlayTimeout = setTimeout(() => {
-                            if (!isAutoPlaying) return;
-                            transitionToNextCardAutoPlay();
-                        }, 3500);
-
-                    }, 4000);
-
-                }, 3000);
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
+                }
             }
         }
 
         // Chuyển thẻ tự động trong quá trình lặp Autoplay
         function transitionToNextCardAutoPlay() {
             if (!isAutoPlaying) return;
-            isTransitioning = true;
             
             const cardElement = document.getElementById('card');
             
-            // Đảm bảo xóa bỏ góc xoay lật trước khi cuộn slide ngang
-            cardElement.classList.remove('flipped');
-            cardElement.classList.remove('flipped-vertical');
-            
-            cardElement.classList.add('page-flip-next-out');
-            setTimeout(() => {
-                let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
-                if (nextIdx === 0 && displayMode === 'random' && paginatedFlashcards.length > 1) {
-                    paginatedFlashcards = shuffleList([...getPageSequentialItems()]);
-                }
-                currentIndex = nextIdx;
-                saveSetting('currentIndex_' + currentHskLevel, currentIndex);
+            let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
+            if (nextIdx === 0 && displayMode === 'random' && paginatedFlashcards.length > 1) {
+                paginatedFlashcards = shuffleList([...getPageSequentialItems()]);
+            }
+            currentIndex = nextIdx;
+            saveSetting('currentIndex_' + currentHskLevel, currentIndex);
+
+            if (document.hidden) {
+                // Tắt hoàn toàn transition để xử lý đồng bộ và tức thời khi tắt màn hình/chạy ngầm
                 renderCard();
-                cardElement.classList.remove('page-flip-next-out');
-                cardElement.classList.add('page-flip-next-in');
+                autoPlayState = 3; // Tiếp tục ở State 3
+                autoPlayStateTimeLimit = 50; // Chờ 50ms rồi tự động chuyển qua State 0 để phát tiếng
+                autoPlayElapsedTime = 0;
+            } else {
+                isTransitioning = true;
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
+                    cardElement.classList.add('page-flip-next-out');
+                }
                 
                 setTimeout(() => {
-                    cardElement.classList.remove('page-flip-next-in');
-                    isTransitioning = false;
-                    // Kích hoạt chu kỳ mới cho thẻ kế tiếp
-                    runAutoPlayLoop();
+                    renderCard();
+                    if (cardElement) {
+                        cardElement.classList.remove('page-flip-next-out');
+                        cardElement.classList.add('page-flip-next-in');
+                    }
+                    
+                    setTimeout(() => {
+                        if (cardElement) {
+                            cardElement.classList.remove('page-flip-next-in');
+                        }
+                        isTransitioning = false;
+                    }, 300);
                 }, 300);
-            }, 300);
+            }
         }
 
         // Chuyển đổi qua lại giữa các trạng thái bộ lọc (Tất cả / Thuộc / Chưa thuộc)

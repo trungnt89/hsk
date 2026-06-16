@@ -1352,6 +1352,8 @@ let touchStartY = 0;
 let touchEndX = 0;
 let touchEndY = 0;
 let touchTargetIsScrollable = false;
+let touchStartScrollTop = 0;
+let touchStartMaxScroll = 0;
 
 document.getElementById('swipe-area').addEventListener('touchstart', e => { 
     touchStartX = e.changedTouches[0].screenX; 
@@ -1360,15 +1362,21 @@ document.getElementById('swipe-area').addEventListener('touchstart', e => {
     // Check if touch started inside an active scrollable body or textarea
     let target = e.target;
     touchTargetIsScrollable = false;
+    touchStartScrollTop = 0;
+    touchStartMaxScroll = 0;
     while (target && target !== document.getElementById('swipe-area')) {
         if (target.classList && target.classList.contains('q-scroll-body')) {
             if (target.scrollHeight > target.clientHeight) {
                 touchTargetIsScrollable = true;
+                touchStartScrollTop = target.scrollTop;
+                touchStartMaxScroll = target.scrollHeight - target.clientHeight;
             }
             break;
         }
         if (target.classList && (target.classList.contains('note-area') || target.tagName === 'TEXTAREA')) {
             touchTargetIsScrollable = true;
+            touchStartScrollTop = target.scrollTop;
+            touchStartMaxScroll = target.scrollHeight - target.clientHeight;
             break;
         }
         target = target.parentElement;
@@ -1394,13 +1402,29 @@ function handleSwipe() {
         }
     } else {
         if (touchTargetIsScrollable) {
-            return; // Ignore vertical swipe to flip card when they are searching/scrolling the scrollable content
+            // Smarter gesture: If they swipe down (diffY > threshold) but touchStartScrollTop is at top limits (<= 3), then allow flip.
+            // If they swipe up (diffY < -threshold) but touchStartScrollTop is at bottom limits (>= max - 3), then allow flip.
+            // Otherwise, it's standard scrolling, so do not trigger a flip.
+            const isAtTopBoundary = (diffY > 0 && touchStartScrollTop <= 3);
+            const isAtBottomBoundary = (diffY < 0 && touchStartScrollTop >= touchStartMaxScroll - 3);
+            if (!isAtTopBoundary && !isAtBottomBoundary) {
+                return; // Standard scrolling, ignore flip
+            }
         }
         if (Math.abs(diffY) > threshold) {
             flipCard();
         }
     }
 }
+
+// Cho phép nhấp đúp vào vùng trống của thẻ để lật mặt nhanh
+document.getElementById('book-page').addEventListener('dblclick', e => {
+    // Không lật nếu kích chuột vào ô nhập ghi chú, các lựa chọn trắc nghiệm hoặc nút bấm liên quan
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.closest('.option-item') || e.target.closest('.q-diff-tag')) {
+        return;
+    }
+    flipCard();
+});
 
 // Bắt phím ArrowLeft / ArrowRight làm điều hướng chính, ArrowUp / ArrowDown làm lật mặt thẻ
 document.addEventListener('keydown', e => {

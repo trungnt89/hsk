@@ -2707,15 +2707,31 @@
                 if (memoryAudioCache.has(audioUrl)) continue;
 
                 try {
-                    let blob = await getAudioFromCache(audioUrl);
+                    let blob = null;
+                    try {
+                        blob = await getAudioFromCache(audioUrl);
+                    } catch (dbErr) {
+                        console.warn("Không đọc được từ IndexedDB khi prefetch:", dbErr);
+                    }
+
                     if (!blob) {
                         const response = await fetch(audioUrl);
                         if (response.ok) {
                             blob = await response.blob();
-                            saveAudioToCache(audioUrl, blob);
+                            // Lưu vào RAM ngay để phát tức thì
+                            memoryAudioCache.set(audioUrl, blob);
+                            
+                            // Chạy ngầm việc lưu vào IndexedDB sau để không làm nghẽn luồng loading/prefetching
+                            const capturedBlob = blob;
+                            setTimeout(() => {
+                                try {
+                                    saveAudioToCache(audioUrl, capturedBlob);
+                                } catch (saveErr) {
+                                    console.warn("Lưu ngầm IndexedDB thất bại khi prefetch:", saveErr);
+                                }
+                            }, 50);
                         }
-                    }
-                    if (blob) {
+                    } else {
                         memoryAudioCache.set(audioUrl, blob);
                     }
                 } catch (e) {
@@ -2920,15 +2936,21 @@
         // Hàm tải không đồng bộ từ cache IndexedDB hoặc từ mạng, sau đó phát
         async function loadAndPlayAudioAsync(audioUrl, wasPlaying) {
             let blob = null;
+            let loadedFromNetwork = false;
             try {
-                blob = await getAudioFromCache(audioUrl);
+                // Thử lấy từ IndexedDB trước, nếu lỗi thì bỏ qua lỗi để tải từ mạng
+                try {
+                    blob = await getAudioFromCache(audioUrl);
+                } catch (dbErr) {
+                    console.warn("Không đọc được từ IndexedDB khi load:", dbErr);
+                }
+
                 if (!blob) {
                     console.log(`[Cache Miss] Đang tải mới âm thanh tự tạo: ${audioUrl}`);
                     const response = await fetch(audioUrl);
                     if (response.ok) {
                         blob = await response.blob();
-                        saveAudioToCache(audioUrl, blob);
-                        memoryAudioCache.set(audioUrl, blob);
+                        loadedFromNetwork = true;
                     }
                 } else {
                     console.log(`[Cache Hit] Lấy tệp âm thanh thành công từ IndexedDB: ${audioUrl}`);
@@ -2939,7 +2961,21 @@
             }
 
             if (blob) {
+                // Phát âm thanh ngay lập tức để người dùng nghe được không trễ
                 playAudioBlobSynchronously(blob, audioUrl, wasPlaying);
+                
+                // Sau đó mới chạy ngầm lưu vào IndexedDB và RAM Cache để không cản trở luồng phát
+                if (loadedFromNetwork) {
+                    const capturedBlob = blob;
+                    setTimeout(() => {
+                        try {
+                            memoryAudioCache.set(audioUrl, capturedBlob);
+                            saveAudioToCache(audioUrl, capturedBlob);
+                        } catch (saveErr) {
+                            console.warn("Lỗi chạy ngầm lưu IndexedDB:", saveErr);
+                        }
+                    }, 100); // Chờ 100ms sau khi phát rồi lưu ngầm dữ liệu
+                }
             } else {
                 // Thất bại: Vẫn tiếp tục dọn dẹp và duy trì luồng autoplay không để bị nghẽn
                 currentPlayingTone = null;

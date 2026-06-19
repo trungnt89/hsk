@@ -2614,8 +2614,14 @@
         let selectedToneIndex = 1; // Thanh điệu được chọn hiện tại (1 -> 4)
         let isAutoPlaying = false; // Trạng thái tự động đọc phát âm
         let currentPlayingTone = null;
-        let activeAudio = null;
+        
+        // Khởi tạo một đối tượng Audio dùng chung duy nhất để tránh bị chặn trên iOS/Safari
+        const globalAudio = new Audio();
+        let activeAudio = globalAudio; 
         let playTimeout = null;
+
+        // Bộ nhớ đệm RAM đồng bộ lưu trữ Blobs của syllable hiện tại
+        const memoryAudioCache = new Map();
 
         // Khởi tạo IndexedDB lưu trữ âm thanh (Audio Cache)
         let db = null;
@@ -2674,6 +2680,47 @@
                 store.put(blob, key);
             } catch (e) {
                 console.error("Lỗi lưu dữ liệu vào IndexedDB:", e);
+            }
+        }
+
+        // Mở khóa tiếng cho iOS Safari bằng cách phát chuỗi tiếng câm
+        function unlockAudio() {
+            if (globalAudio && globalAudio.paused) {
+                const originalSrc = globalAudio.src;
+                if (!originalSrc || originalSrc.startsWith("data:")) {
+                    globalAudio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"; 
+                    globalAudio.play().catch(() => {});
+                }
+            }
+        }
+
+        // Tải trước 4 âm phát của từ ghép đang chọn để lưu sẵn vào RAM (memoryAudioCache) cứu cánh Safari
+        async function prefetchCurrentSyllableAudios() {
+            const row = CSV_ROWS[selectedRowIdx];
+            const syllable = row.syllables[selectedInitial];
+            if (!syllable) return;
+
+            for (let i = 1; i <= 4; i++) {
+                const normalizedSyllable = syllable.toLowerCase();
+                const audioUrl = `https://cdn.yoyochinese.com/audio/pychart/${normalizedSyllable}${i}.mp3`;
+                
+                if (memoryAudioCache.has(audioUrl)) continue;
+
+                try {
+                    let blob = await getAudioFromCache(audioUrl);
+                    if (!blob) {
+                        const response = await fetch(audioUrl);
+                        if (response.ok) {
+                            blob = await response.blob();
+                            saveAudioToCache(audioUrl, blob);
+                        }
+                    }
+                    if (blob) {
+                        memoryAudioCache.set(audioUrl, blob);
+                    }
+                } catch (e) {
+                    console.warn("Lỗi prefetch âm thanh:", audioUrl, e);
+                }
             }
         }
 
@@ -2782,6 +2829,8 @@
                 `;
 
                 cardBox.onclick = () => {
+                    // Mở khóa tiếng tức thì trước khi chạy bất kỳ đoạn code chứa await nào
+                    unlockAudio();
                     // When clicked manually, we save the selected tone position and play it
                     selectedToneIndex = i;
                     playCurrentSelectedPosition();
@@ -2792,10 +2841,9 @@
 
         // Dừng tất cả âm thanh & bộ đếm đang hoạt động
         function stopAllPlaying() {
-            if (activeAudio) {
-                activeAudio.pause();
-                activeAudio.onended = null;
-                activeAudio = null;
+            if (globalAudio) {
+                globalAudio.pause();
+                globalAudio.onended = null;
             }
             if (playTimeout) {
                 clearTimeout(playTimeout);
@@ -2821,15 +2869,95 @@
             }, 800);
         }
 
+        let currentObjectUrl = null;
+
+        // Hàm phát âm thanh trực tiếp từ Blob (Đồng bộ tuyệt đối không await để chiều iOS/Safari)
+        function playAudioBlobSynchronously(blob, audioUrl, wasPlaying) {
+            if (currentObjectUrl) {
+                try {
+                    URL.revokeObjectURL(currentObjectUrl);
+                } catch (e) {}
+                currentObjectUrl = null;
+            }
+
+            let finished = false;
+            const onPlayFinished = () => {
+                if (finished) return;
+                finished = true;
+                currentPlayingTone = null;
+                renderTonesTable();
+
+                if (currentObjectUrl) {
+                    try {
+                        URL.revokeObjectURL(currentObjectUrl);
+                    } catch (e) {}
+                    currentObjectUrl = null;
+                }
+                
+                if (isAutoPlaying) {
+                    scheduleNextAutoTone();
+                }
+            };
+
+            try {
+                currentObjectUrl = URL.createObjectURL(blob);
+                globalAudio.src = currentObjectUrl;
+                
+                globalAudio.play()
+                    .then(() => {
+                        globalAudio.onended = onPlayFinished;
+                    })
+                    .catch(err => {
+                        console.warn("Lỗi phát blob đồng bộ:", err);
+                        onPlayFinished();
+                    });
+            } catch (err) {
+                console.warn("Lỗi phát âm blob đồng bộ:", err);
+                onPlayFinished();
+            }
+        }
+
+        // Hàm tải không đồng bộ từ cache IndexedDB hoặc từ mạng, sau đó phát
+        async function loadAndPlayAudioAsync(audioUrl, wasPlaying) {
+            let blob = null;
+            try {
+                blob = await getAudioFromCache(audioUrl);
+                if (!blob) {
+                    console.log(`[Cache Miss] Đang tải mới âm thanh tự tạo: ${audioUrl}`);
+                    const response = await fetch(audioUrl);
+                    if (response.ok) {
+                        blob = await response.blob();
+                        saveAudioToCache(audioUrl, blob);
+                        memoryAudioCache.set(audioUrl, blob);
+                    }
+                } else {
+                    console.log(`[Cache Hit] Lấy tệp âm thanh thành công từ IndexedDB: ${audioUrl}`);
+                    memoryAudioCache.set(audioUrl, blob);
+                }
+            } catch (err) {
+                console.warn("Lỗi tải âm thanh async:", err);
+            }
+
+            if (blob) {
+                playAudioBlobSynchronously(blob, audioUrl, wasPlaying);
+            } else {
+                // Thất bại: Vẫn tiếp tục dọn dẹp và duy trì luồng autoplay không để bị nghẽn
+                currentPlayingTone = null;
+                renderTonesTable();
+                if (isAutoPlaying) {
+                    scheduleNextAutoTone();
+                }
+            }
+        }
+
         // Phát âm thanh của vị trí đã chọn (selectedToneIndex)
-        async function playCurrentSelectedPosition() {
+        function playCurrentSelectedPosition() {
             const wasPlaying = isAutoPlaying;
             
             // Dừng các luồng phát cũ để tránh chồng chéo
-            if (activeAudio) {
-                activeAudio.pause();
-                activeAudio.onended = null;
-                activeAudio = null;
+            if (globalAudio) {
+                globalAudio.pause();
+                globalAudio.onended = null;
             }
             if (playTimeout) {
                 clearTimeout(playTimeout);
@@ -2867,63 +2995,21 @@
             const normalizedSyllable = syllable.toLowerCase();
             const audioUrl = `https://cdn.yoyochinese.com/audio/pychart/${normalizedSyllable}${selectedToneIndex}.mp3`;
 
-            let objectUrl = null;
-            let finished = false;
+            // Kiểm tra xem đã có sẵn trong bộ nhớ đệm RAM chưa để phát ĐỒNG BỘ chống chặn Safari
+            const cachedBlob = memoryAudioCache.get(audioUrl);
 
-            const onPlayFinished = () => {
-                if (finished) return;
-                finished = true;
-                currentPlayingTone = null;
-                renderTonesTable();
-
-                if (objectUrl) {
-                    URL.revokeObjectURL(objectUrl);
-                }
-                
-                if (isAutoPlaying) {
-                    scheduleNextAutoTone();
-                }
-            };
-
-            try {
-                // Thử lấy tệp từ bộ nhớ đệm IndexedDB
-                let audioBlob = await getAudioFromCache(audioUrl);
-
-                if (!audioBlob) {
-                    // Nếu chưa lưu trữ, tải mới từ CDN
-                    console.log(`[Cache Miss] Đang tải mới âm thanh từ server: ${audioUrl}`);
-                    const response = await fetch(audioUrl);
-                    if (!response.ok) {
-                        throw new Error(`Lỗi tải file HTTP: ${response.status}`);
-                    }
-                    audioBlob = await response.blob();
-                    
-                    // Lưu trữ vào IndexedDB cho các lần dùng sau
-                    saveAudioToCache(audioUrl, audioBlob);
-                } else {
-                    console.log(`[Cache Hit] Lấy tệp âm thanh thành công từ IndexedDB: ${audioUrl}`);
-                }
-
-                objectUrl = URL.createObjectURL(audioBlob);
-                activeAudio = new Audio(objectUrl);
-
-                activeAudio.play()
-                    .then(() => {
-                        activeAudio.onended = onPlayFinished;
-                    })
-                    .catch(err => {
-                        console.warn("Lỗi phát audio blob gốc:", err);
-                        onPlayFinished();
-                    });
-
-            } catch (err) {
-                console.warn("Lỗi tải/phát âm thanh qua IndexedDB hoặc CDN:", err);
-                onPlayFinished();
+            if (cachedBlob) {
+                // Khớp bộ nhớ đệm RAM -> Phát đồng bộ 100% không qua bất kỳ await nào!
+                playAudioBlobSynchronously(cachedBlob, audioUrl, wasPlaying);
+            } else {
+                // Không khớp RAM -> Phát bất đồng bộ
+                loadAndPlayAudioAsync(audioUrl, wasPlaying);
             }
         }
 
         // Cập nhật chế độ AutoPlay khi thay đổi nút gạt iPhone
         function toggleAutoplay() {
+            unlockAudio();
             const toggleCheckbox = document.getElementById("autoplayToggle");
             if (toggleCheckbox) {
                 isAutoPlaying = toggleCheckbox.checked;
@@ -2942,20 +3028,30 @@
 
         // Chọn Phụ âm mới
         function selectInitial(initial) {
+            unlockAudio();
             selectedInitial = initial;
             initConsonants();
             initVowels();
-            // Tự động phát tại vị trí đã selected
-            playCurrentSelectedPosition();
+            // Tải trước âm trong cache để phát đồng bộ
+            prefetchCurrentSyllableAudios().then(() => {
+                playCurrentSelectedPosition();
+            }).catch(() => {
+                playCurrentSelectedPosition();
+            });
         }
 
         // Chọn Nguyên âm / Từ mới
         function selectRow(idx) {
+            unlockAudio();
             selectedRowIdx = idx;
             initConsonants();
             initVowels();
-            // Tự động phát tại vị trí đã selected
-            playCurrentSelectedPosition();
+            // Tải trước âm trong cache để phát đồng bộ
+            prefetchCurrentSyllableAudios().then(() => {
+                playCurrentSelectedPosition();
+            }).catch(() => {
+                playCurrentSelectedPosition();
+            });
         }
 
         // Hàm giúp lấy nhóm lớp nút tương đương linh hoạt
@@ -3000,7 +3096,12 @@
         initDB().then(() => {
             initConsonants();
             initVowels();
-            renderTonesTable();
+            // Tải trước các file âm thanh vào cache RAM cho âm mặc định ban đầu
+            prefetchCurrentSyllableAudios().then(() => {
+                renderTonesTable();
+            }).catch(() => {
+                renderTonesTable();
+            });
         }).catch(() => {
             initConsonants();
             initVowels();

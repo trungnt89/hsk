@@ -185,7 +185,7 @@
         .flashcard-wrapper {
             perspective: 1000px;
             width: 100%;
-            height: 500px;
+            height: 450px;
             cursor: pointer;
             position: relative;
             touch-action: none;
@@ -484,16 +484,16 @@
 
         .word-list-content {
             background-color: #ffffff;
-            width: calc(100% - 10px);
-            max-width: 490px;
-            height: 94vh;
-            height: 94dvh;
-            border-radius: 24px;
-            margin-bottom: 5px;
+            width: 100%;
+            max-width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            border-radius: 0;
+            margin-bottom: 0;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 -10px 25px -5px rgba(0, 0, 0, 0.15);
-            transform: translateY(110%);
+            box-shadow: none;
+            transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -573,7 +573,8 @@
         .word-list-item {
             display: flex;
             align-items: center;
-            padding: 12px 14px;
+            height: 96px !important;
+            padding: 10px 14px;
             border: 1px solid #e2e8f0;
             background-color: #ffffff;
             border-radius: 16px;
@@ -581,6 +582,9 @@
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             gap: 12px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            box-sizing: border-box;
+            overflow: hidden;
+            flex-shrink: 0;
         }
 
         .word-list-item:hover {
@@ -611,9 +615,11 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             gap: 2px;
             min-width: 0;
-			height:65px!important;
+            height: 100% !important;
+            overflow: hidden;
         }
 
         .item-word-zh {
@@ -808,6 +814,7 @@
         let showListPinyin = true;
         let showListMeaning = true;
         let showListHanViet = true;
+        let listContentMode = 'word'; // 'word' hoặc 'example'
 
         // Biến kiểm soát vuốt chạm (Swipe) trên mobile
         let touchStartX = 0;
@@ -1882,12 +1889,6 @@
             } else if (event.key === '7') {
                 event.preventDefault();
                 prevPage();
-            } else if (event.key === '8') {
-                event.preventDefault();
-                const randomBtn = document.getElementById('display-mode-toggle');
-                if (randomBtn) {
-                     randomBtn.click();
-                }
             } else if (event.key === '9') {
                 event.preventDefault();
                 nextPage();
@@ -2104,30 +2105,54 @@
                 
                 // Khi nhấp dòng, phát âm thanh và nhảy thẳng đến thẻ đó
                 itemDiv.onclick = () => {
-                    speakWordFromList(null, item.word);
+                    const textSpeak = (listContentMode === 'example') ? (item.exCn || item.word) : item.word;
+                    speakWordFromList(null, textSpeak);
                     selectWordFromList(item.stt);
                 };
 
                 const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
 
-                itemDiv.innerHTML = `
-                    <div class="item-index">${idx + 1}</div>
-                    <div class="item-word-info">
-                        <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap;">
-                            <div class="item-word-zh" style="flex-shrink: 0; white-space: nowrap;">${item.word}</div>
-                            ${wordHanViet ? `<span class="item-word-hv" style="color: #475569; font-size: 1.0rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${showListHanViet ? '' : 'display: none;'}">[${wordHanViet}]</span>` : ''}
+                if (listContentMode === 'example') {
+                    let exCnHtml = item.exCn || item.word;
+                    if (item.word && item.exCn && item.exCn.includes(item.word)) {
+                        const regex = new RegExp(item.word, 'g');
+                        exCnHtml = item.exCn.replace(regex, `<span style="color: red; background: powderblue; font-weight: bold;">${item.word}</span>`);
+                    }
+                    itemDiv.innerHTML = `
+                        <div class="item-index">${idx + 1}</div>
+                        <div class="item-word-info">
+                            <div class="item-word-zh" style="font-size: 1.15rem; line-height: 1.4; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${exCnHtml}</div>
+                            <div class="item-word-py" style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; ${showListPinyin ? '' : 'display: none;'}">${item.exPy || ''}</div>
+                            <div class="item-word-meaning" style="font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; ${showListMeaning ? '' : 'display: none;'}">${item.exVn || 'Chưa cập nhật ví dụ'}</div>
                         </div>
-                        <div class="item-word-py" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${showListPinyin ? '' : 'display: none;'}">${item.pinyin}</div>
-                        <div class="item-word-meaning" style="${showListMeaning ? '' : 'display: none;'}">${item.meaning}</div>
-                    </div>
-                    <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
-                        <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
-                                onclick="toggleMasteredFromList(event, '${item.stt}')" 
-                                title="${isMastered ? 'Bỏ thuộc' : 'Đánh dấu thuộc'}">
-                            ✓
-                        </button>
-                    </div>
-                `;
+                        <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
+                            <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
+                                    onclick="toggleMasteredFromList(event, '${item.stt}')" 
+                                    title="${isMastered ? 'Bỏ thuộc' : 'Đánh dấu thuộc'}">
+                                ✓
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    itemDiv.innerHTML = `
+                        <div class="item-index">${idx + 1}</div>
+                        <div class="item-word-info">
+                            <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap;">
+                                <div class="item-word-zh" style="flex-shrink: 0; white-space: nowrap;">${item.word}</div>
+                                ${wordHanViet ? `<span class="item-word-hv" style="color: #475569; font-size: 1.0rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${showListHanViet ? '' : 'display: none;'}">[${wordHanViet}]</span>` : ''}
+                            </div>
+                            <div class="item-word-py" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${showListPinyin ? '' : 'display: none;'}">${item.pinyin}</div>
+                            <div class="item-word-meaning" style="${showListMeaning ? '' : 'display: none;'}">${item.meaning}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
+                            <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
+                                    onclick="toggleMasteredFromList(event, '${item.stt}')" 
+                                    title="${isMastered ? 'Bỏ thuộc' : 'Đánh dấu thuộc'}">
+                                ✓
+                            </button>
+                        </div>
+                    `;
+                }
                 container.appendChild(itemDiv);
             });
         }
@@ -2196,6 +2221,41 @@
             const queryInput = document.getElementById('word-search');
             const query = queryInput ? queryInput.value : '';
             renderWordListItems(query);
+        }
+
+        // Chuyển đổi giữa chế độ chỉ hiển thị Từ / hiển thị Câu ví dụ làm nội dung chính
+        function setListContentMode(mode) {
+            listContentMode = mode;
+            saveSetting('listContentMode', mode);
+            
+            const toggleCheckbox = document.getElementById('iphone-toggle-checkbox');
+            if (toggleCheckbox) {
+                toggleCheckbox.checked = (mode === 'example');
+            }
+            updateIphoneToggleStyle(mode === 'example');
+            
+            const queryInput = document.getElementById('word-search');
+            const query = queryInput ? queryInput.value : '';
+            renderWordListItems(query);
+        }
+
+        function updateIphoneToggleStyle(isChecked) {
+            const bg = document.getElementById('iphone-toggle-bg');
+            const dot = document.getElementById('iphone-toggle-dot');
+            if (bg && dot) {
+                if (isChecked) {
+                    bg.style.backgroundColor = '#22c55e'; // Green iOS
+                    dot.style.transform = 'translateX(18px)';
+                } else {
+                    bg.style.backgroundColor = '#cbd5e1';
+                    dot.style.transform = 'translateX(0)';
+                }
+            }
+        }
+
+        function toggleIphoneListMode(chk) {
+            const mode = chk.checked ? 'example' : 'word';
+            setListContentMode(mode);
         }
 
         // Đồng bộ chuyển trang/vị trí thẻ khi click chọn từ từ danh sách
@@ -2358,6 +2418,7 @@
             showListPinyin = await loadSetting('showListPinyin', true);
             showListMeaning = await loadSetting('showListMeaning', true);
             showListHanViet = await loadSetting('showListHanViet', true);
+            listContentMode = await loadSetting('listContentMode', 'word');
 
             // Đồng bộ bộ nhớ danh sách đã học từ IndexedDB hoặc tự động nhập từ LocalStorage cũ nếu có
             const localMastered = JSON.parse(localStorage.getItem('hsk_mastered_ids') || '[]');
@@ -2377,6 +2438,12 @@
             if (meaningChk) meaningChk.checked = showListMeaning;
             const hanvietChk = document.getElementById('show-hanviet-setting');
             if (hanvietChk) hanvietChk.checked = showListHanViet;
+
+            const toggleCheckbox = document.getElementById('iphone-toggle-checkbox');
+            if (toggleCheckbox) {
+                toggleCheckbox.checked = (listContentMode === 'example');
+            }
+            updateIphoneToggleStyle(listContentMode === 'example');
             
             const ttsBtn = document.getElementById('tts-toggle');
             if (isTtsEnabled) {
@@ -2432,16 +2499,22 @@
                     <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa..." oninput="filterWordListItems()">
                     <button id="word-search-clear" onclick="clearWordSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #cbd5e1; border: none; font-size: 0.75rem; color: #475569; cursor: pointer; display: none; padding: 0; border-radius: 50%; width: 20px; height: 20px; align-items: center; justify-content: center; line-height: 1; font-weight: bold; transition: all 0.2s;">✕</button>
                 </div>
-                <div style="display: flex; gap: 16px; margin: 8px 4px 6px; align-items: center; justify-content: flex-end; font-size: 0.8rem; font-weight: 600; color: #475569; flex-wrap: wrap;">
-					<label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+                <div style="display: flex; gap: 12px; margin: 8px 4px 10px; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: #475569; flex-wrap: nowrap; width: calc(100% - 8px); overflow-x: auto;">
+                    <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; flex-shrink: 0;">
+                        <div style="position: relative; width: 38px; height: 20px; background-color: #cbd5e1; border-radius: 9999px; transition: background-color 0.2s;" id="iphone-toggle-bg">
+                            <input type="checkbox" id="iphone-toggle-checkbox" onchange="toggleIphoneListMode(this)" style="position: absolute; width: 100%; height: 100%; top:0; left:0; opacity:0; cursor:pointer; margin:0; z-index: 10;">
+                            <div style="position: absolute; width: 16px; height: 16px; border-radius: 50%; background: white; top: 2px; left: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s; pointer-events: none;" id="iphone-toggle-dot"></div>
+                        </div>
+                    </label>
+					<label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; flex-shrink: 0;">
                         <input type="checkbox" id="show-hanviet-setting" checked onchange="toggleListFormat('hanviet')" style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--primary);">
                         Hán Việt
                     </label>
-                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; flex-shrink: 0;">
                         <input type="checkbox" id="show-pinyin-setting" checked onchange="toggleListFormat('pinyin')" style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--primary);">
                         Pinyin
                     </label>
-                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; flex-shrink: 0;">
                         <input type="checkbox" id="show-meaning-setting" checked onchange="toggleListFormat('meaning')" style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--primary);">
                         Nghĩa
                     </label>

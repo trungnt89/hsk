@@ -2887,8 +2887,8 @@
 
         let currentObjectUrl = null;
 
-        // Hàm phát âm thanh trực tiếp từ Blob (Đồng bộ tuyệt đối không await để chiều iOS/Safari)
-        function playAudioBlobSynchronously(blob, audioUrl, wasPlaying) {
+        // Hàm phát âm thanh trực tiếp từ Blob hoặc URL liên kết trực tiếp (Đồng bộ tuyệt đối không await để chiều iOS/Safari)
+        function playAudioSourceSynchronously(source, audioUrl, wasPlaying) {
             if (currentObjectUrl) {
                 try {
                     URL.revokeObjectURL(currentObjectUrl);
@@ -2916,73 +2916,88 @@
             };
 
             try {
-                currentObjectUrl = URL.createObjectURL(blob);
-                globalAudio.src = currentObjectUrl;
+                if (source instanceof Blob) {
+                    currentObjectUrl = URL.createObjectURL(source);
+                    globalAudio.src = currentObjectUrl;
+                } else if (typeof source === "string") {
+                    globalAudio.src = source;
+                } else {
+                    throw new Error("Nguồn phát âm thanh không hợp lệ");
+                }
                 
                 globalAudio.play()
                     .then(() => {
                         globalAudio.onended = onPlayFinished;
                     })
                     .catch(err => {
-                        console.warn("Lỗi phát blob đồng bộ:", err);
+                        console.warn("Lỗi gọi play() đồng bộ:", err);
                         onPlayFinished();
                     });
             } catch (err) {
-                console.warn("Lỗi phát âm blob đồng bộ:", err);
+                console.warn("Lỗi gán nguồn phát âm thanh:", err);
                 onPlayFinished();
             }
         }
 
-        // Hàm tải không đồng bộ từ cache IndexedDB hoặc từ mạng, sau đó phát
+        // Hàm chạy ngầm để tải và lưu tệp âm thanh vào IndexedDB & RAM cache
+        function backgroundCacheAudio(audioUrl) {
+            setTimeout(async () => {
+                if (memoryAudioCache.has(audioUrl)) return;
+                
+                try {
+                    let blob = null;
+                    try {
+                        blob = await getAudioFromCache(audioUrl);
+                    } catch (dbErr) {
+                        console.warn("Lỗi đọc cache ngầm từ IndexedDB:", dbErr);
+                    }
+                    
+                    if (!blob) {
+                        console.log(`[Cache Background] Đang tải mới ngầm từ mạng cho: ${audioUrl}`);
+                        const response = await fetch(audioUrl);
+                        if (response.ok) {
+                            blob = await response.blob();
+                            memoryAudioCache.set(audioUrl, blob);
+                            try {
+                                saveAudioToCache(audioUrl, blob);
+                            } catch (saveErr) {
+                                console.warn("Lỗi lưu ngầm IndexedDB:", saveErr);
+                            }
+                        }
+                    } else {
+                        memoryAudioCache.set(audioUrl, blob);
+                    }
+                } catch (err) {
+                    console.warn("Lỗi chạy ngầm cache:", err);
+                }
+            }, 100);
+        }
+
+        // Hàm tải không đồng bộ từ cache IndexedDB hoặc phát trực tiếp từ link sau đó lưu ngầm
         async function loadAndPlayAudioAsync(audioUrl, wasPlaying) {
             let blob = null;
-            let loadedFromNetwork = false;
             try {
-                // Thử lấy từ IndexedDB trước, nếu lỗi thì bỏ qua lỗi để tải từ mạng
+                // Thử lấy từ IndexedDB trước, nếu lỗi thì bỏ qua lỗi để phát trực tiếp từ mạng
                 try {
                     blob = await getAudioFromCache(audioUrl);
                 } catch (dbErr) {
                     console.warn("Không đọc được từ IndexedDB khi load:", dbErr);
-                }
-
-                if (!blob) {
-                    console.log(`[Cache Miss] Đang tải mới âm thanh tự tạo: ${audioUrl}`);
-                    const response = await fetch(audioUrl);
-                    if (response.ok) {
-                        blob = await response.blob();
-                        loadedFromNetwork = true;
-                    }
-                } else {
-                    console.log(`[Cache Hit] Lấy tệp âm thanh thành công từ IndexedDB: ${audioUrl}`);
-                    memoryAudioCache.set(audioUrl, blob);
                 }
             } catch (err) {
                 console.warn("Lỗi tải âm thanh async:", err);
             }
 
             if (blob) {
-                // Phát âm thanh ngay lập tức để người dùng nghe được không trễ
-                playAudioBlobSynchronously(blob, audioUrl, wasPlaying);
-                
-                // Sau đó mới chạy ngầm lưu vào IndexedDB và RAM Cache để không cản trở luồng phát
-                if (loadedFromNetwork) {
-                    const capturedBlob = blob;
-                    setTimeout(() => {
-                        try {
-                            memoryAudioCache.set(audioUrl, capturedBlob);
-                            saveAudioToCache(audioUrl, capturedBlob);
-                        } catch (saveErr) {
-                            console.warn("Lỗi chạy ngầm lưu IndexedDB:", saveErr);
-                        }
-                    }, 100); // Chờ 100ms sau khi phát rồi lưu ngầm dữ liệu
-                }
+                console.log(`[Cache Hit] Lấy tệp âm thanh thành công từ IndexedDB: ${audioUrl}`);
+                memoryAudioCache.set(audioUrl, blob);
+                playAudioSourceSynchronously(blob, audioUrl, wasPlaying);
             } else {
-                // Thất bại: Vẫn tiếp tục dọn dẹp và duy trì luồng autoplay không để bị nghẽn
-                currentPlayingTone = null;
-                renderTonesTable();
-                if (isAutoPlaying) {
-                    scheduleNextAutoTone();
-                }
+                console.log(`[Cache Miss] Phát trực tiếp từ URL và tải ngầm lưu IndexedDB: ${audioUrl}`);
+                // Phát trực tiếp từ CDN trước để phản hồi tức thì
+                playAudioSourceSynchronously(audioUrl, audioUrl, wasPlaying);
+                
+                // Tận dụng chạy ngầm tải và lưu vào cache
+                backgroundCacheAudio(audioUrl);
             }
         }
 
@@ -3036,7 +3051,7 @@
 
             if (cachedBlob) {
                 // Khớp bộ nhớ đệm RAM -> Phát đồng bộ 100% không qua bất kỳ await nào!
-                playAudioBlobSynchronously(cachedBlob, audioUrl, wasPlaying);
+                playAudioSourceSynchronously(cachedBlob, audioUrl, wasPlaying);
             } else {
                 // Không khớp RAM -> Phát bất đồng bộ
                 loadAndPlayAudioAsync(audioUrl, wasPlaying);

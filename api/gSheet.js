@@ -1,19 +1,71 @@
 import * as util from './com/sheet';
 
 /**
- * GOOGLE SHEETS API - CLEAN VERSION
+ * GOOGLE SHEETS API - SECURED VERSION (BẢO MẬT BẰNG COOKIE)
  * Hỗ trợ bóc tách dữ liệu lồng nhau từ Frontend {data: {data: []}}
+ * 
+ * CHỈ CHO PHÉP: User có cookie 'PASWORD' khớp với biến môi trường PASSWORD của Vercel mới vào được.
+ * Nếu sai hoặc thiếu cookie, ngay lập tức trả về lỗi 401 và DỪNG xử lý, không chạm vào Google Sheets.
  */
 
-
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // 1. Cấu hình CORS đầu tiên
+    // Sử dụng origin từ client gửi lên hoặc '*' để tương thích với Credentials
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,PUT,DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // Bắt buộc bật Credentials để trình duyệt gửi cookie chéo miền
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
+
+    // =========================================================================
+    // KHU VỰC BẢO MẬT: KIỂM TRA COOKIE VÀ BIẾN MÔI TRƯỜNG PASSWORD
+    // =========================================================================
+    
+    const SECURE_PASSWORD = process.env.PASSWORD;
+
+    // Nếu biến môi trường PASSWORD trên Vercel chưa được cấu hình
+    if (!SECURE_PASSWORD) {
+        writeLog("[LỖI BẢO MẬT] Chưa định nghĩa biến PASSWORD trong Environment Variables của Vercel!");
+        return res.status(500).json({ 
+            error: "Lỗi cấu hình hệ thống: Thiếu biến môi trường PASSWORD trên Vercel." 
+        });
+    }
+
+    // Đọc Cookie từ request gửi lên
+    const cookies = req.cookies || {};
+    let clientPasswordCookie = cookies.PASWORD || cookies.PASSWORD;
+
+    // Hỗ trợ tự giải mã cookie thô từ headers nếu môi trường serverless không tự động bóc tách
+    if (!clientPasswordCookie && req.headers.cookie) {
+        const rawCookies = req.headers.cookie.split(';');
+        const cookieMap = {};
+        rawCookies.forEach(item => {
+            const parts = item.split('=');
+            if (parts.length === 2) {
+                cookieMap[parts[0].trim()] = parts[1].trim();
+            }
+        });
+        clientPasswordCookie = cookieMap.PASWORD || cookieMap.PASSWORD;
+    }
+
+    // So sánh Cookie khách gửi lên với mật khẩu được setting trên Vercel
+    if (!clientPasswordCookie || clientPasswordCookie !== SECURE_PASSWORD) {
+        const clientIP = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        writeLog(`[CẢNH BÁO BẢO MẬT] Chặn đứng truy cập không hợp lệ từ IP: ${clientIP}!`);
+        
+        // Trả về lỗi 401 Unauthorized ngay lập tức, KHÔNG XỬ LÝ GÌ THÊM
+        return res.status(401).json({ 
+            error: "Yêu cầu bị từ chối: Sai mật khẩu hoặc thiếu cookie xác thực PASWORD." 
+        });
+    }
+
+    // =========================================================================
+    // ĐÃ VỢT QUA XÁC THỰC -> BẤT ĐẦU XỬ LÝ GOOGLE SHEETS
+    // =========================================================================
 
     const { method, query, body } = req;
 

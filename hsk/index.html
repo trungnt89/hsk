@@ -1412,12 +1412,12 @@
         }
 
         // Tiến thêm 1 trang (bàn phím số 9)
-        function nextPage() {
+        function nextPage(preserveAutoPlay = false) {
             if (recordsPerPage === 'all' || isTransitioning) return;
             const size = parseInt(recordsPerPage);
             const totalPages = Math.ceil(filteredFlashcards.length / size);
 
-            if (isAutoPlaying) {
+            if (isAutoPlaying && !preserveAutoPlay) {
                 toggleAutoPlay(true);
             }
 
@@ -1433,9 +1433,9 @@
                 pageSelect.value = currentPage;
             }
 
-            isTransitioning = true;
             const cardElement = document.getElementById('card');
-            if (cardElement) {
+            if (cardElement && !document.hidden) {
+                isTransitioning = true;
                 cardElement.classList.remove('flipped');
                 cardElement.classList.remove('flipped-vertical');
                 cardElement.classList.add('page-flip-next-out');
@@ -1763,9 +1763,44 @@
             const cardElement = document.getElementById('card');
             
             let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
+            let cycleCompleted = false;
+
+            // Nếu nextIdx quay về 0, nghĩa là đã đọc hết 1 vòng (từ đầu đến cuối trang)
+            if (nextIdx === 0 && paginatedFlashcards.length > 0) {
+                pageManualReadCount++;
+                cycleCompleted = true;
+            }
+
             if (nextIdx === 0 && displayMode === 'random' && paginatedFlashcards.length > 1) {
                 paginatedFlashcards = shuffleList([...getPageSequentialItems()]);
             }
+
+            if (cycleCompleted) {
+                if (pageManualReadCount >= 10) {
+                    showToast("Đã đọc đủ 10 lần! Chuyển sang trang tiếp theo.");
+                    pageManualReadCount = 0;
+                    updateCyclesBadge();
+                    
+                    if (recordsPerPage !== 'all') {
+                        nextPage(true);
+                    } else {
+                        // Nếu "Tất cả" (chỉ có 1 trang), quay trở lại đầu thẻ (index 0)
+                        currentIndex = 0;
+                        saveSetting('currentIndex_' + currentHskLevel, currentIndex);
+                        renderCard();
+                    }
+                    
+                    // Cài đặt lại trạng thái chờ cho State 3 sau khi chuyển trang
+                    autoPlayState = 3;
+                    autoPlayStateTimeLimit = document.hidden ? 50 : 600;
+                    autoPlayElapsedTime = 0;
+                    return;
+                } else {
+                    showToast(`Đã đọc ${pageManualReadCount}/10 lần`);
+                    updateCyclesBadge();
+                }
+            }
+
             currentIndex = nextIdx;
             saveSetting('currentIndex_' + currentHskLevel, currentIndex);
 

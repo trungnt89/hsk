@@ -798,6 +798,7 @@
             </div>
             <div class="progress-box">
                 <div class="progress" id="progress-text">0 / 0</div>
+                <div id="cycles-badge" style="background-color: #fee2e2; color: #ef4444; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px; border: 1px solid #fca5a5;">Đã đọc: 0/10 lần</div>
                 <div class="stats" id="stats-text">Thuộc: 0 | Chưa thuộc: 0</div>
             </div>
         </div>
@@ -1090,6 +1091,7 @@
         // Cập nhật giao diện phân trang dựa trên số records hiển thị
         async function updatePagination(preservePosition = false) {
             pageManualReadCount = 0;
+            updateCyclesBadge();
             const pageSelect = document.getElementById('page-select');
             const pageSelectLabel = document.getElementById('page-select-label');
             pageSelect.innerHTML = '';
@@ -1271,24 +1273,6 @@
                 toggleAutoPlay(true);
             }
             
-            // Increment the manual read counter for the current page
-            pageManualReadCount++;
-            
-            if (pageManualReadCount >= 10) {
-                showToast("Đã đọc 10 lần");
-                pageManualReadCount = 0;
-                
-                if (recordsPerPage !== 'all') {
-                    nextPage();
-                } else {
-                    // Nếu "Tất cả" (chỉ có 1 trang), quay trở lại đầu thẻ (index 0)
-                    currentIndex = 0;
-                    saveSetting('currentIndex_' + currentHskLevel, currentIndex);
-                    renderCard();
-                }
-                return;
-            }
-
             isTransitioning = true;
             
             const cardElement = document.getElementById('card');
@@ -1301,9 +1285,41 @@
             
             setTimeout(() => {
                 let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
+                let cycleCompleted = false;
+
+                // Nếu nextIdx quay về 0, nghĩa là đã đọc hết 1 vòng (từ đầu đến cuối trang)
+                if (nextIdx === 0 && paginatedFlashcards.length > 0) {
+                    pageManualReadCount++;
+                    cycleCompleted = true;
+                }
+
                 if (nextIdx === 0 && displayMode === 'random' && paginatedFlashcards.length > 1) {
                     paginatedFlashcards = shuffleList([...getPageSequentialItems()]);
                 }
+
+                if (cycleCompleted) {
+                    if (pageManualReadCount >= 10) {
+                        showToast("Đã đọc đủ 10 lần! Chuyển sang trang tiếp theo.");
+                        pageManualReadCount = 0;
+                        updateCyclesBadge();
+                        cardElement.classList.remove('page-flip-next-out');
+                        isTransitioning = false;
+                        
+                        if (recordsPerPage !== 'all') {
+                            nextPage();
+                        } else {
+                            // Nếu "Tất cả" (chỉ có 1 trang), quay trở lại đầu thẻ (index 0)
+                            currentIndex = 0;
+                            saveSetting('currentIndex_' + currentHskLevel, currentIndex);
+                            renderCard();
+                        }
+                        return;
+                    } else {
+                        showToast(`Đã đọc ${pageManualReadCount}/10 lần`);
+                        updateCyclesBadge();
+                    }
+                }
+
                 currentIndex = nextIdx;
                 saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                 renderCard();
@@ -2076,6 +2092,13 @@
             toast.timeoutId = setTimeout(() => {
                 toast.classList.remove('show');
             }, 2500);
+        }
+
+        function updateCyclesBadge() {
+            const badge = document.getElementById('cycles-badge');
+            if (badge) {
+                badge.innerText = `Đã đọc: ${pageManualReadCount}/10 lần`;
+            }
         }
 
         function closeWordList(event) {

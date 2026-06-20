@@ -814,7 +814,7 @@
                     </div>
                     <div class="word" id="front-word">...</div>
                     <div id="front-hanviet" style="font-size: 1.4rem; font-weight: bold; color: #475569; margin-top: -5px; margin-bottom: 10px; text-transform: uppercase; display: none;"></div>
-                    <div class="hint">Nhấp để lật mặt sau hoặc vuốt để chuyển</div>
+                    <div class="pinyin" id="front-pinyin" style="margin-top: 15px;">...</div>
                 </div>
                 <div class="card-face card-back">
                     <div class="card-action-corner">
@@ -1179,6 +1179,7 @@
 
             if (paginatedFlashcards.length === 0) {
                 document.getElementById('front-word').innerText = "Trống";
+                document.getElementById('front-pinyin').innerText = "";
                 document.getElementById('back-pinyin').innerText = "";
                 document.getElementById('back-meaning').innerText = "Không có thẻ nào trong danh mục này";
                 document.getElementById('example-box').style.display = 'none';
@@ -1190,6 +1191,7 @@
             
             document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${paginatedFlashcards.length}`;
             document.getElementById('front-word').innerText = current.word;
+            document.getElementById('front-pinyin').innerText = current.pinyin;
             document.getElementById('back-pinyin').innerText = current.pinyin;
             document.getElementById('back-meaning').innerText = current.meaning;
 
@@ -1967,31 +1969,83 @@
             }
         }
 
+        // Hàm chuyển từ tiếp theo hoặc trước đó trong danh sách từ dạng vòng lặp
+        function navigateWordList(direction) {
+            const container = document.getElementById('word-list-items-container');
+            if (!container) return;
+            const items = Array.from(container.querySelectorAll('.word-list-item'));
+            if (items.length === 0) return;
+
+            let activeIdx = items.findIndex(el => el.classList.contains('active-word'));
+            let targetIdx = 0;
+
+            if (activeIdx === -1) {
+                targetIdx = direction === 'next' ? 0 : items.length - 1;
+            } else {
+                if (direction === 'next') {
+                    targetIdx = (activeIdx + 1) % items.length;
+                } else {
+                    targetIdx = (activeIdx - 1 + items.length) % items.length;
+                }
+            }
+
+            const targetEl = items[targetIdx];
+            if (targetEl) {
+                targetEl.click();
+                if (targetIdx === 0) {
+                    container.scrollTop = 0;
+                } else if (targetIdx === items.length - 1) {
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        }
+
         // Lăng nghe sự kiện điều khiển bàn phím Máy tính (Desktop PC)
         document.addEventListener('keydown', (event) => {
-            // Tránh kích hoạt hotkeys khi đang gõ vào ô nhập liệu hoặc ô tìm kiếm
+            const wordListModal = document.getElementById('word-list-modal');
+            const isModalOpen = wordListModal && wordListModal.classList.contains('open');
+
+            // Tránh kích hoạt hotkeys khi đang gõ vào ô nhập liệu hoặc ô tìm kiếm ngoại trừ điều hướng danh sách từ
             if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) {
-                if (event.key === 'Escape') {
-                    const wordListModal = document.getElementById('word-list-modal');
-                    const isModalOpen = wordListModal && wordListModal.classList.contains('open');
-                    if (isModalOpen) {
+                if (isModalOpen) {
+                    if (event.key === 'Escape') {
                         event.preventDefault();
                         closeWordList();
+                        return;
+                    }
+                    if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        navigateWordList('next');
+                        return;
+                    }
+                    if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        navigateWordList('prev');
+                        return;
                     }
                 }
                 return;
             }
 
-            // Kiểm tra nếu danh sách từ đang mở
-            const wordListModal = document.getElementById('word-list-modal');
-            const isModalOpen = wordListModal && wordListModal.classList.contains('open');
-
             if (isModalOpen) {
                 if (event.key === 'Escape') {
                     event.preventDefault();
                     closeWordList();
+                    return;
                 }
-                return; // Tạm dừng mọi phím di chuyển/lật thẻ lúc gõ tìm kiếm từ
+                if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    navigateWordList('next');
+                    return;
+                }
+                if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    navigateWordList('prev');
+                    return;
+                }
+                return; // Tạm dừng mọi phím di chuyển/lật thẻ lúc mở danh sách
             }
 
             if (document.getElementById('main-content').style.display === 'none') return;

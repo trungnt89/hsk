@@ -1488,7 +1488,9 @@
 
         // Chuyển đổi chế độ hiển thị danh sách (Tuần tự / Ngẫu nhiên)
         async function toggleDisplayMode(event) {
-            event.stopPropagation();
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
             
             // Lấy stt của từ hiện tại để lát duy trì đúng từ này
             let currentStt = null;
@@ -1984,6 +1986,9 @@
             } else if (event.key === '9') {
                 event.preventDefault();
                 nextPage();
+            } else if (event.key === '0') {
+                event.preventDefault();
+                toggleDisplayMode(event);
             }
         });
 

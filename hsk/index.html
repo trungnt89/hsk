@@ -231,6 +231,22 @@
             transform: rotateX(180deg);
         }
 
+        /* Pointer events alignment during card flip to prevent click interception */
+        .flashcard .card-front {
+            pointer-events: auto;
+        }
+        .flashcard .card-back {
+            pointer-events: none;
+        }
+        .flashcard.flipped .card-front,
+        .flashcard.flipped-vertical .card-front {
+            pointer-events: none;
+        }
+        .flashcard.flipped .card-back,
+        .flashcard.flipped-vertical .card-back {
+            pointer-events: auto;
+        }
+
         /* Page Flip Animations */
         .page-flip-next-out {
             animation: flipNextOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
@@ -302,6 +318,16 @@
         .card-action-corner {
             position: absolute;
             top: 15px;
+            left: 15px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Speaker Button in Bottom-Left Corner of Card */
+        .card-action-corner-bottom-left {
+            position: absolute;
+            bottom: 15px;
             left: 15px;
             z-index: 10;
             display: flex;
@@ -759,6 +785,9 @@
                     <div class="card-action-corner">
                         <button id="mark-btn-front" class="action-icon-btn" onclick="toggleMastered(event)" title="Đánh dấu thuộc">✓</button>
                     </div>
+                    <div class="card-action-corner-bottom-left">
+                        <button class="action-icon-btn speak-card-btn" onclick="speakCurrentCardManual(event)" title="Phát âm thẻ">🔊</button>
+                    </div>
                     <div class="word" id="front-word">...</div>
                     <div id="front-hanviet" style="font-size: 1.4rem; font-weight: bold; color: #475569; margin-top: -5px; margin-bottom: 10px; text-transform: uppercase; display: none;"></div>
                     <div class="hint">Nhấp để lật mặt sau hoặc vuốt để chuyển</div>
@@ -766,6 +795,9 @@
                 <div class="card-face card-back">
                     <div class="card-action-corner">
                         <button id="mark-btn-back" class="action-icon-btn" onclick="toggleMastered(event)" title="Đánh dấu thuộc">✓</button>
+                    </div>
+                    <div class="card-action-corner-bottom-left">
+                        <button class="action-icon-btn speak-card-btn" onclick="speakCurrentCardManual(event)" title="Phát âm thẻ">🔊</button>
                     </div>
                     <div class="pinyin" id="back-pinyin">...</div>
                     <div id="back-hanviet" style="font-size: 1.0rem; font-weight: bold; color: #475569; margin-bottom: 15px; text-transform: uppercase; display: none;"></div>
@@ -781,7 +813,6 @@
 
         <div class="controls">
             <button id="word-list-toggle" class="btn-icon" onclick="toggleWordList(event)" title="Xem danh sách từ">📋</button>
-            <button id="speak-card-btn" class="btn-icon active" onclick="speakCurrentCardManual(event)" title="Phát âm thẻ hiện tại">🔊</button>
             <button id="auto-play-btn" class="btn-icon" onclick="toggleAutoPlay()" title="Tự động lật & đọc: TẮT">▶</button>
         </div>
     </div>
@@ -1874,10 +1905,13 @@
             } else if (event.key === 'ArrowLeft') {
                 event.preventDefault();
                 prevCard();
-            } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+            } else if (event.key === 'ArrowUp') {
                 event.preventDefault();
                 currentFlipDirection = 'vertical';
                 flipCard();
+            } else if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                speakCurrentCardManual(event);
             } else if (event.key.toLowerCase() === 'm' || event.key === 'Enter') {
                 event.preventDefault();
                 toggleMastered(event);
@@ -2085,7 +2119,7 @@
                 emptyMsg.style.padding = '40px 10px';
                 emptyMsg.style.color = 'var(--text-muted)';
                 emptyMsg.style.fontWeight = '500';
-                emptyMsg.text = 'Không tìm thấy từ nào phù hợp.';
+                emptyMsg.innerText = 'Không tìm thấy từ nào phù hợp.';
                 container.appendChild(emptyMsg);
                 return;
             }
@@ -2101,10 +2135,12 @@
                 itemDiv.className = `word-list-item ${isActive ? 'active-word' : ''}`;
                 itemDiv.setAttribute('data-stt', item.stt);
                 
+                // Xác định nội dung phát âm tương ứng với chế độ hiện tại ngay tại thời điểm tạo dòng
+                const targetText = (listContentMode === 'example') ? (item.exCn || item.word) : item.word;
+                
                 // Khi nhấp dòng, phát âm thanh và nhảy thẳng đến thẻ đó
                 itemDiv.onclick = () => {
-                    const textSpeak = (listContentMode === 'example') ? (item.exCn || item.word) : item.word;
-                    speakWordFromList(null, textSpeak);
+                    speakWordFromList(null, targetText);
                     selectWordFromList(item.stt, true);
                 };
 

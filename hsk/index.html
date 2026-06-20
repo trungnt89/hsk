@@ -730,6 +730,29 @@
             border-color: var(--primary);
             box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
         }
+
+        /* Toast notifications styling */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background-color: rgba(15, 23, 42, 0.9);
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .toast-container.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -822,6 +845,7 @@
         let filteredFlashcards = [];
         let paginatedFlashcards = [];
         let currentIndex = 0;
+        let pageManualReadCount = 0;
         
         // Trạng thái cấu hình chức năng thêm
         let isTtsEnabled = true;
@@ -1065,6 +1089,7 @@
 
         // Cập nhật giao diện phân trang dựa trên số records hiển thị
         async function updatePagination(preservePosition = false) {
+            pageManualReadCount = 0;
             const pageSelect = document.getElementById('page-select');
             const pageSelectLabel = document.getElementById('page-select-label');
             pageSelect.innerHTML = '';
@@ -1245,6 +1270,25 @@
             if (isAutoPlaying) {
                 toggleAutoPlay(true);
             }
+            
+            // Increment the manual read counter for the current page
+            pageManualReadCount++;
+            
+            if (pageManualReadCount >= 10) {
+                showToast("Đã đọc 10 lần");
+                pageManualReadCount = 0;
+                
+                if (recordsPerPage !== 'all') {
+                    nextPage();
+                } else {
+                    // Nếu "Tất cả" (chỉ có 1 trang), quay trở lại đầu thẻ (index 0)
+                    currentIndex = 0;
+                    saveSetting('currentIndex_' + currentHskLevel, currentIndex);
+                    renderCard();
+                }
+                return;
+            }
+
             isTransitioning = true;
             
             const cardElement = document.getElementById('card');
@@ -2012,6 +2056,26 @@
                     }, 120);
                 }
             }
+        }
+
+        function showToast(message) {
+            let toast = document.getElementById('app-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'app-toast';
+                toast.className = 'toast-container';
+                document.body.appendChild(toast);
+            }
+            toast.innerText = message;
+            toast.classList.add('show');
+            
+            if (toast.timeoutId) {
+                clearTimeout(toast.timeoutId);
+            }
+            
+            toast.timeoutId = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
         }
 
         function closeWordList(event) {

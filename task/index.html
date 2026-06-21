@@ -61,7 +61,7 @@
 				})
 			});
 			
-			const response2 = await fetch(API_URL, {
+			const response2 = await fetch(API_GSHEET_URL, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -88,7 +88,7 @@
 	async function fetchDataDetail() {
 		console.log("Bắt đầu tải dữ liệu từ server...");
 		try {
-			const response = await fetch(API_URL, {
+			const response = await fetch(API_GSHEET_URL, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -287,7 +287,7 @@
 		}
 		console.log(`Bắt đầu xử lý thêm mới Task qua Popup Modal`, newRow);
 		try {
-			const response = await fetch(API_URL, {
+			const response = await fetch(API_GSHEET_URL, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -318,7 +318,7 @@
 			if (el) allRowsData[rowIndex][j] = el.value.trim();
 		}
 		try {
-			const response = await fetch(API_URL, {
+			const response = await fetch(API_GSHEET_URL, {
 				method: 'POST',
 				headers: {
 					'content-type': 'application/json'
@@ -348,7 +348,7 @@
 		if (allRowsData[rowIndex][colIndex] === txt) return;
 		allRowsData[rowIndex][colIndex] = txt;
 		try {
-			const response = await fetch(API_URL, {
+			const response = await fetch(API_GSHEET_URL, {
 				method: 'POST',
 				headers: {
 					'content-type': 'application/json'
@@ -374,7 +374,7 @@
 		if (!confirm("Bạn có chắc chắn muốn xóa Task này không?")) return;
 		console.log(`Kích hoạt tiến trình xóa Task ID: ${id} tại hàng chỉ mục: ${rowIndex}`);
 		try {
-			const response = await fetch(API_URL, {
+			const response = await fetch(API_GSHEET_URL, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -402,7 +402,7 @@
 		const statusColIdx = allRowsData[0].indexOf("STATUS");
 		if (statusColIdx !== -1) allRowsData[rowIndex][statusColIdx] = newStatus;
 		try {
-			const response = await fetch(API_URL, {
+			const response = await fetch(API_GSHEET_URL, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'

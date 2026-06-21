@@ -1954,7 +1954,7 @@
 
         // Cập nhật trạng thái nhớ/chưa nhớ trực tiếp lên Google Sheet qua API
         async function updateMasteredOnSheet(wordItem, isMastered) {
-            const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet?token='+sessionStorage.getItem('token');
+            const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
             const spreadId = '105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
 
             const rowData = [
@@ -1981,7 +1981,8 @@
                         val: wordItem.word,
                         sheet: currentHskLevel,
                         spread: spreadId,
-                        data: JSON.stringify(rowData)
+                        data: JSON.stringify(rowData),
+						token:sessionStorage.getItem('token')
                     })
                 });
 

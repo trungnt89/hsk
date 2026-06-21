@@ -9,7 +9,7 @@
 const JapaneseLookup = (() => {
     const CONFIG = {
         vercel_api: "/api/mazii", 
-        API_URL: "https://hsk-gilt.vercel.app/api/gSheet?token="+sessionStorage.getItem('token');,
+        API_URL: "https://hsk-gilt.vercel.app/api/gSheet',
         sheet: "WordList",
         spread: "1PYwmqxUS_AbkFGapkwMTsEJE5Vx9p6R7pO4YFfiniXI"
     };
@@ -166,7 +166,8 @@ const JapaneseLookup = (() => {
                             act: "updateByPosVal", 
                             pos: 1, 
                             val: text, 
-                            data: [ts, text, item.phonetic, item.short_mean || detailed] 
+                            data: [ts, text, item.phonetic, item.short_mean || detailed] ,
+							token:sessionStorage.getItem('token')
                         }) 
                     });
                 }

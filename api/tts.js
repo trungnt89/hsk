@@ -28,6 +28,11 @@ export default async function handler(req, context) {
     const rate = searchParams.get('rate') || '1.0';
     const format = searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
+	const token = searchParams.get('token') || '';
+	if(token != process.env.PWTOKEN){
+		return res.status(400).json({ error: "Token "+token+" is invalid!" });
+	}
+	
     const safeText = text
       .replace(/[\r\n]+/g, ' ')
       .replace(/[^\w\s\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff]/gi, '')

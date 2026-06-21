@@ -3179,7 +3179,7 @@
             lastTouchEnd = now;
         }, false);
 
-        const API_URL = "https://hsk-gilt.vercel.app/api/gSheet?sheet=pinin&act=read&spread=1woW9-B9UBFwrz_yNxA3zNeB4FPFtfx9td-dhYsczLls";
+        const API_GSHEET_URL = "https://hsk-gilt.vercel.app/api/gSheet?sheet=pinin&act=read&spread=1woW9-B9UBFwrz_yNxA3zNeB4FPFtfx9td-dhYsczLls&token="+sessionStorage.getItem('token');
         const DEFAULT_PRONUNCIATIONS = [
             ["eng", "âng"],
             ["iang", "ieng"],
@@ -3238,7 +3238,7 @@
             }
 
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(API_GSHEET_URL);
                 if (response.ok) {
                     const data = await response.json();
                     if (data && Array.isArray(data.values) && data.values.length > 0) {

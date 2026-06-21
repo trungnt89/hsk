@@ -1039,9 +1039,9 @@
                 document.getElementById('error').style.display = 'none';
             }
 
-            const baseUrl = 'https://hsk-gilt.vercel.app/api/gSheet';
+            const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
             const spreadId = '105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
-            const apiUrl = `${baseUrl}?sheet=${currentHskLevel}&act=read&spread=${spreadId}`;
+            const apiUrl = `${API_GSHEET_URL}?sheet=${currentHskLevel}&act=read&spread=${spreadId}&token={sessionStorage.getItem('token')}`;
 
             try {
                 const response = await fetch(apiUrl);
@@ -1954,7 +1954,7 @@
 
         // Cập nhật trạng thái nhớ/chưa nhớ trực tiếp lên Google Sheet qua API
         async function updateMasteredOnSheet(wordItem, isMastered) {
-            const baseUrl = 'https://hsk-gilt.vercel.app/api/gSheet';
+            const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet?token='+sessionStorage.getItem('token');
             const spreadId = '105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
 
             const rowData = [
@@ -1969,7 +1969,7 @@
             ];
 
             try {
-                const response = await fetch(baseUrl, {
+                const response = await fetch(API_GSHEET_URL, {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',

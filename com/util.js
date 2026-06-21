@@ -68,6 +68,7 @@ async function deleteFromDB(storeName,key) {
 
 async function callAjax(url, body) {
     try {
+		body.token=sessionStorage.getItem('token');
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

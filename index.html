@@ -24,6 +24,7 @@
         header {
             padding: 15px 15px 5px; text-align: center;
             background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+            position: relative;
         }
 
         header h1 { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--primary); }
@@ -81,82 +82,320 @@
             color: #94a3b8; font-weight: 600; flex-shrink: 0;
             background: white; border-top: 1px solid #f1f5f9;
         }
+
+        /* --- PHẦN POPUP BẢO MẬT BẰNG SESSION --- */
+        #mainContentWrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            overflow: hidden;
+            width: 100%;
+            transition: filter 0.3s ease;
+        }
+
+        .blur-content {
+            filter: blur(12px);
+            pointer-events: none;
+        }
+
+        /* Fullscreen Backdrop */
+        .login-backdrop {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-backdrop.active {
+            display: flex;
+        }
+
+        /* Container của Popup */
+        .login-modal {
+            background: #ffffff;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 360px;
+            padding: 32px 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .login-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: var(--primary);
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .login-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .login-desc {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0 0 24px 0;
+            line-height: 1.5;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 14px;
+            font-size: 14px;
+            font-family: inherit;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            outline: none;
+            transition: all 0.2s;
+            text-align: center;
+            letter-spacing: 0.05em;
+        }
+
+        .login-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+
+        .login-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Nút đăng xuất nhỏ gọn trên header */
+        .logout-pill {
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            display: none; /* Hiển thị bằng JS */
+            align-items: center;
+            gap: 4px;
+            font-family: inherit;
+        }
+
+        .logout-pill:hover {
+            background: #fee2e2;
+            color: #ef4444;
+            border-color: #fca5a5;
+        }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>LEARNING HUB</h1>
-    <p>Hệ thống học tập cá nhân</p>
-</header>
-
-<div class="dashboard">
-    <div class="nav-card important-1">
-        <div class="group-header">
-            <div class="icon-wrapper">🏆</div>
-            <div>
-                <div class="group-title">Chứng chỉ</div>
-                <div class="group-desc">PMP Exam Preparation</div>
-            </div>
-        </div>
-        <ul class="group-links">
-            <li class="full-width"><a href="pmp/index.html">📘 PMP Exam Prep</a></li>
-        </ul>
-    </div>
-    
-    <div class="nav-card important-2">
-        <div class="group-header">
-            <div class="icon-wrapper">🎓</div>
-            <div>
-                <div class="group-title">Học ngôn ngữ</div>
-                <div class="group-desc">Japanese & Chinese</div>
-            </div>
-        </div>
-        <ul class="group-links">
-            <li class="full-width"><a href="nikki/index.html">🤖 日記 & AI</a></li>
-			<li><a href="n1/index.html">🇯🇵 Nhật ngữ</a></li>
-            <li><a href="hsk/index.html">🇨🇳 Hoa ngữ</a></li>
-        </ul>
-    </div>
-
-    <div class="nav-card">
-        <div class="group-header">
-            <div class="icon-wrapper">⏱️</div>
-            <div>
-                <div class="group-title">Năng suất</div>
-                <div class="group-desc">Thói quen & Quản lý</div>
-            </div>
-        </div>
-        <ul class="group-links">
-            <li><a href="task/index.html">📊 Monitoring</a></li>
-            <li><a href="pomodoro/index.html">🍅 Pomodoro</a></li>
-        </ul>
-    </div>
-
-    <div class="nav-card group-system">
-        <div class="group-header">
-            <div class="icon-wrapper">🛠️</div>
-            <div>
-                <div class="group-title">Hệ thống</div>
-                <div class="group-desc">Dữ liệu & Cấu hình</div>
-            </div>
-        </div>
-        <ul class="group-links">
-            <li><a href="sms/index.html">💬 SMS</a></li>
-            <li><a href="notify/index.html">⏱ Sched.</a></li>
-            <li><a href="db/index.html">🗄️ DB</a></li>
-        </ul>
+<!-- Màn che yêu cầu Nhập Session (Popup Challenge) -->
+<div class="login-backdrop" id="loginBackdrop">
+    <div class="login-modal">
+        <div class="login-logo">🔑</div>
+        <h2 class="login-title">Kích hoạt Session</h2>
+        <p class="login-desc">Vui lòng nhập Token / Mật khẩu truy cập để mở khóa hệ thống học tập.</p>
+        <input type="password" id="popupToken" class="login-input" placeholder="Nhập Token của bạn..." onkeydown="if(event.key === 'Enter') submitSessionToken()">
+        <button class="login-btn" onclick="submitSessionToken()">XÁC NHẬN</button>
     </div>
 </div>
 
-<footer>
-    PHÁT TRIỂN BỞI AI ASSISTANT • 2026
-</footer>
+<!-- Nội dung ứng dụng chính -->
+<div id="mainContentWrapper">
+    <header>
+        <h1>LEARNING HUB</h1>
+        <p>Hệ thống học tập cá nhân</p>
+        <button class="logout-pill" onclick="logout()" id="logoutBtn">🔒 Đăng xuất</button>
+    </header>
+
+    <div class="dashboard">
+        <div class="nav-card important-1">
+            <div class="group-header">
+                <div class="icon-wrapper">🏆</div>
+                <div>
+                    <div class="group-title">Chứng chỉ</div>
+                    <div class="group-desc">PMP Exam Preparation</div>
+                </div>
+            </div>
+            <ul class="group-links">
+                <li class="full-width"><a href="pmp/index.html">📘 PMP Exam Prep</a></li>
+            </ul>
+        </div>
+        
+        <div class="nav-card important-2">
+            <div class="group-header">
+                <div class="icon-wrapper">🎓</div>
+                <div>
+                    <div class="group-title">Học ngôn ngữ</div>
+                    <div class="group-desc">Japanese & Chinese</div>
+                </div>
+            </div>
+            <ul class="group-links">
+                <li class="full-width"><a href="nikki/index.html">🤖 日記 & AI</a></li>
+                <li><a href="n1/index.html">🇯🇵 Nhật ngữ</a></li>
+                <li><a href="hsk/index.html">🇨🇳 Hoa ngữ</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-card">
+            <div class="group-header">
+                <div class="icon-wrapper">⏱️</div>
+                <div>
+                    <div class="group-title">Năng suất</div>
+                    <div class="group-desc">Thói quen & Quản lý</div>
+                </div>
+            </div>
+            <ul class="group-links">
+                <li><a href="task/index.html">📊 Monitoring</a></li>
+                <li><a href="pomodoro/index.html">🍅 Pomodoro</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-card group-system">
+            <div class="group-header">
+                <div class="icon-wrapper">🛠️</div>
+                <div>
+                    <div class="group-title">Hệ thống</div>
+                    <div class="group-desc">Dữ liệu & Cấu hình</div>
+                </div>
+            </div>
+            <ul class="group-links">
+                <li><a href="sms/index.html">💬 SMS</a></li>
+                <li><a href="notify/index.html">⏱ Sched.</a></li>
+                <li><a href="db/index.html">🗄️ DB</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <footer>
+        PHÁT TRIỂN BỞI AI ASSISTANT • 2026
+    </footer>
+</div>
 
 <script>
     console.log("[Log] Final layout optimized: Solid colors for priority, Flex-grid for alignment.");
     console.log("[Log] Đã di chuyển Nhật ký AI lên mục Học ngôn ngữ để tích hợp Kaiwa.");
     console.log("[Log] Cấu trúc Logic và CSS được giữ nguyên theo cam kết.");
+
+    // --- LOGIC KIỂM TRA SESSION & POPUP ---
+
+    function checkAuth() {
+        // Kiểm tra Token từ sessionStorage
+        const token = sessionStorage.getItem('token');
+
+        const mainContent = document.getElementById('mainContentWrapper');
+        const backdrop = document.getElementById('loginBackdrop');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        if (token) {
+            // Đã kích hoạt session
+            backdrop.classList.remove('active');
+            mainContent.classList.remove('blur-content');
+            if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+        } else {
+            // Chưa kích hoạt session
+            backdrop.classList.add('active');
+            mainContent.classList.add('blur-content');
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            // Tự động focus vào ô nhập
+            setTimeout(() => {
+                const input = document.getElementById('popupToken');
+                if (input) input.focus();
+            }, 150);
+        }
+    }
+
+    function submitSessionToken() {
+        const input = document.getElementById('popupToken');
+        const val = input.value.trim();
+        if (!val) {
+            alert('Vui lòng nhập Token / Mật khẩu truy cập!');
+            return;
+        }
+
+        // Lưu vào sessionStorage
+        sessionStorage.setItem('token', val);
+
+        // Đồng bộ lưu thêm vào cả Cookie để các cuộc gọi đến gSheet.js backend (CORS) 
+        // vẫn tự động nhận diện cookie PASWORD nếu server được cấu hình CORS Credentials.
+        document.cookie = `PASWORD=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=None; Secure`;
+        document.cookie = `PASSWORD=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=None; Secure`;
+        
+        input.value = ''; // xóa text
+        checkAuth();
+    }
+
+    function logout() {
+        if (confirm('Bạn có chắc chắn muốn đăng xuất và hủy session hiện tại?')) {
+            // Xóa sessionStorage
+            sessionStorage.removeItem('token');
+
+            // Xóa cookies tương ứng
+            document.cookie = "PASWORD=; path=/; max-age=-1; SameSite=None; Secure";
+            document.cookie = "PASSWORD=; path=/; max-age=-1; SameSite=None; Secure";
+            
+            checkAuth();
+        }
+    }
+
+    // Tự động kiểm tra session khi load trang
+    window.addEventListener('DOMContentLoaded', () => {
+        checkAuth();
+    });
 </script>
 
 </body>

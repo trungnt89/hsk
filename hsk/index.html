@@ -665,6 +665,24 @@
             font-weight: 500;
         }
 
+        .item-word-meaning[contenteditable="true"] {
+            cursor: text;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s, border-color 0.2s;
+            border: 1px dashed transparent;
+        }
+        .item-word-meaning[contenteditable="true"]:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .item-word-meaning[contenteditable="true"]:focus {
+            background-color: #ffffff;
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+
         .item-action-btn {
             background: white;
             border: 1px solid #cbd5e1;
@@ -1953,27 +1971,32 @@
         }
 
         // Cập nhật trạng thái nhớ/chưa nhớ trực tiếp lên Google Sheet qua API
-        async function updateMasteredOnSheet(wordItem, isMastered) {
+        async function updateMasteredOnSheet(wordItem, isMastered, showSuccessToast = false) {
             const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
             const spreadId = '105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
 
             const rowData = [
-                wordItem.stt || '',
-                wordItem.word || '',
-                wordItem.pinyin || '',
-                wordItem.meaning || '',
-                wordItem.exCn || '',
-                wordItem.exPy || '',
-                wordItem.exVn || '',
+                String(wordItem.stt !== undefined && wordItem.stt !== null ? wordItem.stt : ''),
+                String(wordItem.word !== undefined && wordItem.word !== null ? wordItem.word : ''),
+                String(wordItem.pinyin !== undefined && wordItem.pinyin !== null ? wordItem.pinyin : ''),
+                String(wordItem.meaning !== undefined && wordItem.meaning !== null ? wordItem.meaning : ''),
+                String(wordItem.exCn !== undefined && wordItem.exCn !== null ? wordItem.exCn : ''),
+                String(wordItem.exPy !== undefined && wordItem.exPy !== null ? wordItem.exPy : ''),
+                String(wordItem.exVn !== undefined && wordItem.exVn !== null ? wordItem.exVn : ''),
                 isMastered ? '1' : '0'
             ];
+
+            let token = sessionStorage.getItem('token');
+            if (!token || token === 'null') {
+                token = null;
+            }
 
             try {
                 const response = await fetch(API_GSHEET_URL, {
                     method: 'POST',
                     headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'accept': 'application/json',
+                        'content-type': 'application/json'
                     },
                     body: JSON.stringify({
                         act: 'updateByPosVal',
@@ -1982,7 +2005,7 @@
                         sheet: currentHskLevel,
                         spread: spreadId,
                         data: JSON.stringify(rowData),
-						token:sessionStorage.getItem('token')
+                        token: token
                     })
                 });
 
@@ -1992,8 +2015,14 @@
 
                 const result = await response.json();
                 console.log('Cập nhật trạng thái lên Google Sheet thành công:', result);
+                if (showSuccessToast) {
+                    showToast(`Đã lưu thay đổi cho từ "${wordItem.word}"`);
+                }
             } catch (error) {
                 console.error('Lỗi khi cập nhật trạng thái lên Google Sheet:', error);
+                if (showSuccessToast) {
+                    showToast(`Lỗi đồng bộ Google Sheets, nhưng đã lưu trên thiết bị.`);
+                }
             }
         }
 
@@ -2473,7 +2502,7 @@
                         <div class="item-word-info">
                             <div class="item-word-zh" style="font-size: 1.15rem; line-height: 1.4; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${exCnHtml}</div>
                             <div class="item-word-py" style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; ${showListPinyin ? '' : 'display: none;'}">${item.exPy || ''}</div>
-                            <div class="item-word-meaning" style="font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; ${showListMeaning ? '' : 'display: none;'}">${item.exVn || 'Chưa cập nhật ví dụ'}</div>
+                            <div class="item-word-meaning" contenteditable="true" style="font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; ${showListMeaning ? '' : 'display: none;'}" onclick="event.stopPropagation();" onblur="saveExVnFromList(event, '${item.stt}')" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.target.blur(); }">${item.exVn || 'Chưa cập nhật ví dụ'}</div>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
                             <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
@@ -2492,7 +2521,7 @@
                                 ${wordHanViet ? `<span class="item-word-hv" style="color: #475569; font-size: 1.0rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${showListHanViet ? '' : 'display: none;'}">[${wordHanViet}]</span>` : ''}
                             </div>
                             <div class="item-word-py" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${showListPinyin ? '' : 'display: none;'}">${item.pinyin}</div>
-                            <div class="item-word-meaning" style="${showListMeaning ? '' : 'display: none;'}">${item.meaning}</div>
+                            <div class="item-word-meaning" contenteditable="true" style="${showListMeaning ? '' : 'display: none;'}" onclick="event.stopPropagation();" onblur="saveMeaningFromList(event, '${item.stt}')" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.target.blur(); }">${item.meaning}</div>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
                             <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
@@ -2611,11 +2640,11 @@
         // Đồng bộ chuyển trang/vị trí thẻ khi click chọn từ từ danh sách
         function selectWordFromList(stt, preventSpeak = false) {
             // Tìm từ trong toàn bộ danh sách HSK gốc
-            const itemIndexInRaw = rawFlashcards.findIndex(item => item.stt === stt);
+            const itemIndexInRaw = rawFlashcards.findIndex(item => String(item.stt) === String(stt));
             if (itemIndexInRaw === -1) return;
 
             // Kiểm tra xem từ có nằm trong bộ lọc hiện không, nếu không thì reset bộ lọc về 'all'
-            const matchInFiltered = filteredFlashcards.findIndex(item => item.stt === stt);
+            const matchInFiltered = filteredFlashcards.findIndex(item => String(item.stt) === String(stt));
             if (matchInFiltered === -1) {
                 currentFilter = 'all';
                 const filterBtn = document.getElementById('filter-toggle');
@@ -2641,7 +2670,7 @@
             }
 
             // Tìm lại vị trí trong filteredFlashcards (vốn là thứ tự sequential chuẩn)
-            const finalIndex = filteredFlashcards.findIndex(item => item.stt === stt);
+            const finalIndex = filteredFlashcards.findIndex(item => String(item.stt) === String(stt));
             if (finalIndex !== -1) {
                 if (recordsPerPage === 'all') {
                     currentPage = 1;
@@ -2685,7 +2714,7 @@
                 }
 
                 // Định hướng đúng vị trí của stt đã chọn trong paginatedFlashcards (có thể đã shuffle)
-                const foundIndex = paginatedFlashcards.findIndex(item => item.stt === stt);
+                const foundIndex = paginatedFlashcards.findIndex(item => String(item.stt) === String(stt));
                 if (foundIndex !== -1) {
                     currentIndex = foundIndex;
                 } else {
@@ -2725,7 +2754,7 @@
             saveSetting('masteredIds', masteredIds);
 
             // Tìm thông tin từ gốc để sync lên Google Sheet
-            const originalWordItem = rawFlashcards.find(item => item.stt === stt);
+            const originalWordItem = rawFlashcards.find(item => String(item.stt) === String(stt));
             if (originalWordItem) {
                 updateMasteredOnSheet(originalWordItem, isNowMastered);
             }
@@ -2741,7 +2770,7 @@
 
             // Cập nhật nút bôi đỏ/xanh mặt thẻ nếu thẻ hiện tại trùng từ vừa tick
             const currentItem = paginatedFlashcards[currentIndex];
-            if (currentItem && currentItem.stt === stt) {
+            if (currentItem && String(currentItem.stt) === String(stt)) {
                 const isMasteredNow = masteredIds.includes(mKey);
                 const frontMarkBtn = document.getElementById('mark-btn-front');
                 const backMarkBtn = document.getElementById('mark-btn-back');
@@ -2753,6 +2782,70 @@
                     backMarkBtn.classList.remove('status-mastered');
                 }
             }
+        }
+
+        // Lưu nghĩa tiếng Việt khi move out (blur) khỏi ô sửa
+        function saveMeaningFromList(event, stt) {
+            const newMeaning = event.target.innerText.trim();
+            const wordItem = rawFlashcards.find(item => String(item.stt) === String(stt));
+            if (!wordItem) return;
+
+            // Nếu không thay đổi gì thì không cần lưu
+            if (wordItem.meaning === newMeaning) return;
+
+            wordItem.meaning = newMeaning;
+
+            // Đồng bộ sang các mảng phụ khác
+            const filteredItem = filteredFlashcards.find(item => String(item.stt) === String(stt));
+            if (filteredItem) filteredItem.meaning = newMeaning;
+
+            const paginatedItem = paginatedFlashcards.find(item => String(item.stt) === String(stt));
+            if (paginatedItem) paginatedItem.meaning = newMeaning;
+
+            // Lưu cache local IndexedDB
+            saveSetting('rawFlashcards_' + currentHskLevel, rawFlashcards);
+
+            // Cập nhật card hiển thị chính nếu đúng từ đang hoạt động
+            const currentItem = paginatedFlashcards[currentIndex];
+            if (currentItem && String(currentItem.stt) === String(stt)) {
+                renderCard(true); // render lại mà không phát âm
+            }
+
+            // Gửi lên Google Sheet với hàm updateMasteredOnSheet chuẩn
+            const isMastered = masteredIds.includes(currentHskLevel + '_' + wordItem.stt);
+            updateMasteredOnSheet(wordItem, isMastered, true);
+        }
+
+        // Lưu câu dịch tiếng Việt khi move out (blur) khỏi ô sửa (ở chế độ ví dụ)
+        function saveExVnFromList(event, stt) {
+            const newExVn = event.target.innerText.trim();
+            const wordItem = rawFlashcards.find(item => String(item.stt) === String(stt));
+            if (!wordItem) return;
+
+            // Nếu không thay đổi gì thì không cần lưu
+            if (wordItem.exVn === newExVn) return;
+
+            wordItem.exVn = newExVn;
+
+            // Đồng bộ sang các mảng phụ khác
+            const filteredItem = filteredFlashcards.find(item => String(item.stt) === String(stt));
+            if (filteredItem) filteredItem.exVn = newExVn;
+
+            const paginatedItem = paginatedFlashcards.find(item => String(item.stt) === String(stt));
+            if (paginatedItem) paginatedItem.exVn = newExVn;
+
+            // Lưu cache local IndexedDB
+            saveSetting('rawFlashcards_' + currentHskLevel, rawFlashcards);
+
+            // Cập nhật card hiển thị chính nếu đúng từ đang hoạt động
+            const currentItem = paginatedFlashcards[currentIndex];
+            if (currentItem && String(currentItem.stt) === String(stt)) {
+                renderCard(true); // render lại mà không phát âm
+            }
+
+            // Gửi lên Google Sheet với hàm updateMasteredOnSheet chuẩn
+            const isMastered = masteredIds.includes(currentHskLevel + '_' + wordItem.stt);
+            updateMasteredOnSheet(wordItem, isMastered, true);
         }
 
         // Khởi tạo ứng dụng sau khi load cấu hình IndexedDB xong

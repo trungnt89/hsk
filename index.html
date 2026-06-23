@@ -239,6 +239,56 @@
             color: #ef4444;
             border-color: #fca5a5;
         }
+
+        /* --- TOAST NOTIFICATIONS --- */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: #1e293b;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            background: #10b981; /* green */
+            border-left: 4px solid #047857;
+        }
+
+        .toast-error {
+            background: #ef4444; /* red */
+            border-left: 4px solid #b91c1c;
+        }
+
+        .toast-warning {
+            background: #f59e0b; /* orange */
+            border-left: 4px solid #d97706;
+        }
     </style>
 </head>
 <body>
@@ -326,10 +376,44 @@
     </footer>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
 <script>
     console.log("[Log] Final layout optimized: Solid colors for priority, Flex-grid for alignment.");
     console.log("[Log] Đã di chuyển Nhật ký AI lên mục Học ngôn ngữ để tích hợp Kaiwa.");
     console.log("[Log] Cấu trúc Logic và CSS được giữ nguyên theo cam kết.");
+
+    // --- TOAST NOTIFICATION UTILITY ---
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        let icon = 'ℹ️';
+        if (type === 'success') icon = '✅';
+        else if (type === 'error') icon = '❌';
+        else if (type === 'warning') icon = '⚠️';
+
+        toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+        container.appendChild(toast);
+
+        // Force reflow
+        toast.offsetHeight;
+
+        // Show toast
+        toast.classList.add('show');
+
+        // Remove toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
 
     // --- LOGIC KIỂM TRA SESSION & POPUP ---
 
@@ -365,7 +449,7 @@
         const val = input.value.trim();
         
         if (!val) {
-            alert('Vui lòng nhập Token / Mật khẩu truy cập!');
+            showToast('Vui lòng nhập Token / Mật khẩu truy cập!', 'warning');
             return;
         }
 
@@ -393,6 +477,8 @@
             const data = await response.json();
 
             if (response.ok && data.success) {
+                showToast('Xác thực thành công! Đang mở khóa...', 'success');
+                
                 // Lưu vào sessionStorage
                 sessionStorage.setItem('token', val);
 
@@ -402,17 +488,19 @@
                 document.cookie = `PASSWORD=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=None; Secure`;
                 
                 input.value = ''; // xóa text
-                checkAuth();
+                setTimeout(() => {
+                    checkAuth();
+                }, 800);
             } else {
                 // Xác thực thất bại hoặc token sai
                 const errMsg = data.error || 'Token không chính xác hoặc đã hết hạn!';
-                alert(`Xác thực thất bại: ${errMsg}`);
+                showToast(`Xác thực thất bại: ${errMsg}`, 'error');
                 input.value = '';
                 input.focus();
             }
         } catch (error) {
             console.error('Lỗi khi gọi API xác thực:', error);
-            alert('Lỗi kết nối đến máy chủ xác thực. Vui lòng kiểm tra lại kết nối mạng!');
+            showToast('Lỗi kết nối máy chủ xác thực. Vui lòng kiểm tra lại mạng!', 'error');
         } finally {
             // Khôi phục trạng thái giao diện đăng nhập
             input.disabled = false;
@@ -434,6 +522,7 @@
             document.cookie = "PASWORD=; path=/; max-age=-1; SameSite=None; Secure";
             document.cookie = "PASSWORD=; path=/; max-age=-1; SameSite=None; Secure";
             
+            showToast('Đã đăng xuất và hủy session thành công!', 'warning');
             checkAuth();
         }
     }

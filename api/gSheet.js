@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 	
 	const token   = p.token;
 	if(token != process.env.PWTOKEN){
-		return res.status(400).json({ error: "Token "+token+" is invalid!" });
+		return res.status(401).json({ success: false, error: "Invalid token" });
 	}
 	
     writeLog(`Action: ${action}, Sheet: ${sheetName}, pos=${pos}, val=${val}, SpreadID: ${spreadsheetId}, `);

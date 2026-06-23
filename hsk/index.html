@@ -2414,7 +2414,7 @@
             
             const query = filterText.toLowerCase().trim();
             
-            // Toàn bộ các từ khớp với từ khóa tìm kiếm (để tính tổng số lượng của từng trạng thái)
+            // Toàn bộ các từ và ví dụ khớp với từ khóa tìm kiếm (để tính tổng số lượng của từng trạng thái)
             const queryMatched = rawFlashcards.filter(item => {
                 if (!query) return true;
                 const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') 
@@ -2423,7 +2423,10 @@
                 return (item.word && item.word.toLowerCase().includes(query)) ||
                        (item.pinyin && item.pinyin.toLowerCase().includes(query)) ||
                        (item.meaning && item.meaning.toLowerCase().includes(query)) ||
-                       (wordHanViet && wordHanViet.toLowerCase().includes(query));
+                       (wordHanViet && wordHanViet.toLowerCase().includes(query)) ||
+                       (item.exCn && item.exCn.toLowerCase().includes(query)) ||
+                       (item.exPy && item.exPy.toLowerCase().includes(query)) ||
+                       (item.exVn && item.exVn.toLowerCase().includes(query));
             });
 
             const totalCount = queryMatched.length;
@@ -2939,7 +2942,7 @@
             </div>
             <div class="word-list-search-box">
                 <div style="position: relative; width: 100%;">
-                    <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa..." oninput="filterWordListItems()">
+                    <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa, ví dụ..." oninput="filterWordListItems()">
                     <button id="word-search-clear" onclick="clearWordSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #cbd5e1; border: none; font-size: 0.75rem; color: #475569; cursor: pointer; display: none; padding: 0; border-radius: 50%; width: 20px; height: 20px; align-items: center; justify-content: center; line-height: 1; font-weight: bold; transition: all 0.2s;">✕</button>
                 </div>
                 <div style="display: flex; gap: 12px; margin: 8px 4px 10px; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: #475569; flex-wrap: nowrap; width: calc(100% - 8px); overflow-x: auto;">

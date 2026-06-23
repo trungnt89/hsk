@@ -285,7 +285,7 @@
                 </div>
             </div>
             <ul class="group-links">
-                <li class="full-width"><a href="nikki/index.html">🤖 日記 & AI</a></li>
+                <li class="full-width"><a href="nikki/index.html">🤖 Nhật ký & AI</a></li>
                 <li><a href="n1/index.html">🇯🇵 Nhật ngữ</a></li>
                 <li><a href="hsk/index.html">🇨🇳 Hoa ngữ</a></li>
             </ul>
@@ -359,24 +359,70 @@
         }
     }
 
-    function submitSessionToken() {
+    async function submitSessionToken() {
         const input = document.getElementById('popupToken');
+        const btn = document.querySelector('.login-btn');
         const val = input.value.trim();
+        
         if (!val) {
             alert('Vui lòng nhập Token / Mật khẩu truy cập!');
             return;
         }
 
-        // Lưu vào sessionStorage
-        sessionStorage.setItem('token', val);
+        // Vô hiệu hóa input và thay đổi trạng thái nút khi gửi yêu cầu
+        input.disabled = true;
+        let originalBtnText = 'XÁC NHẬN';
+        if (btn) {
+            originalBtnText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'ĐANG XÁC THỰC...';
+            btn.style.opacity = '0.7';
+            btn.style.cursor = 'not-allowed';
+        }
 
-        // Đồng bộ lưu thêm vào cả Cookie để các cuộc gọi đến gSheet.js backend (CORS) 
-        // vẫn tự động nhận diện cookie PASWORD nếu server được cấu hình CORS Credentials.
-        document.cookie = `PASWORD=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=None; Secure`;
-        document.cookie = `PASSWORD=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=None; Secure`;
-        
-        input.value = ''; // xóa text
-        checkAuth();
+        try {
+            // Gửi yêu cầu POST tới API xác thực
+            const response = await fetch('https://hsk-gilt.vercel.app/api/auth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: val })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Lưu vào sessionStorage
+                sessionStorage.setItem('token', val);
+
+                // Đồng bộ lưu thêm vào cả Cookie để các cuộc gọi đến gSheet.js backend (CORS) 
+                // vẫn tự động nhận diện cookie PASWORD nếu server được cấu hình CORS Credentials.
+                document.cookie = `PASWORD=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=None; Secure`;
+                document.cookie = `PASSWORD=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=None; Secure`;
+                
+                input.value = ''; // xóa text
+                checkAuth();
+            } else {
+                // Xác thực thất bại hoặc token sai
+                const errMsg = data.error || 'Token không chính xác hoặc đã hết hạn!';
+                alert(`Xác thực thất bại: ${errMsg}`);
+                input.value = '';
+                input.focus();
+            }
+        } catch (error) {
+            console.error('Lỗi khi gọi API xác thực:', error);
+            alert('Lỗi kết nối đến máy chủ xác thực. Vui lòng kiểm tra lại kết nối mạng!');
+        } finally {
+            // Khôi phục trạng thái giao diện đăng nhập
+            input.disabled = false;
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = originalBtnText;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        }
     }
 
     function logout() {

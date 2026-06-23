@@ -29,56 +29,67 @@
         }
     </style>
 </head>
-<body class="bg-white text-slate-800 h-screen w-screen overflow-x-hidden overflow-y-auto m-0 p-0 font-sans">
+<body class="bg-slate-50 text-slate-800 h-screen w-screen m-0 p-0 font-sans flex flex-col overflow-hidden">
 
-    <div class="w-full min-h-full bg-white p-3 sm:p-5 space-y-3 flex flex-col justify-start">
-        
-        <!-- Tiêu đề -->
-        <div class="border-b border-slate-100 pb-2 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <h1 class="text-base sm:text-lg font-bold text-indigo-600 text-center sm:text-left">Bảng Phát Âm Pinyin Tiếng Trung</h1>
-            <button onclick="openSpecialPronunciationsModal()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-700 border border-indigo-100 rounded-xl text-xs font-semibold shadow-[0_1px_2px_rgba(79,70,229,0.05)] transition-all cursor-pointer select-none">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                </svg>
-                <span>Mẹo phát âm vận mẫu</span>
-            </button>
+    <!-- THANH BAR CỐ ĐỊNH TRÊN CÙNG -->
+    <div class="bg-white border-b border-slate-200 p-4 sm:p-5 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex flex-col gap-3 shrink-0">
+        <!-- Hàng 1: Tiêu đề & Từ đang ghép -->
+        <div class="flex items-center justify-between">
+            <h1 class="text-base sm:text-xl font-extrabold text-indigo-600 tracking-tight">Bảng Phát Âm Pinyin Tiếng Trung</h1>
+            <span class="text-xs sm:text-sm text-slate-500 font-semibold flex items-center bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+                Từ đang ghép: <strong id="selectedWordLabel" class="text-indigo-600 uppercase font-mono text-sm sm:text-base ml-1.5">ba</strong>
+            </span>
         </div>
 
+        <!-- Hàng 2: 2 Nút bấm To, Thân Thiện Dễ Nhấp -->
+        <div class="grid grid-cols-2 gap-3 sm:gap-4">
+            <!-- Nút 1: Mẹo phát âm -->
+            <button onclick="openSpecialPronunciationsModal()" class="h-14 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-700 border-2 border-indigo-200 hover:border-indigo-300 active:border-indigo-400 rounded-2xl flex items-center justify-center space-x-2 font-black text-sm sm:text-base cursor-pointer select-none shadow-sm hover:shadow active:scale-95 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                <span>Mẹo phát âm</span>
+            </button>
+
+            <!-- Nút 2: Tự động đọc -->
+            <button id="autoplayBigBtn" onclick="toggleAutoplay()" class="h-14 bg-slate-100 hover:bg-slate-200 active:bg-slate-350 text-slate-700 border-2 border-slate-300 rounded-2xl flex items-center justify-center space-x-2 font-black text-sm sm:text-base cursor-pointer select-none shadow-sm active:scale-95 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" id="autoplayIcon" class="h-6 w-6 text-slate-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                </svg>
+                <span id="autoplayText">Tự động đọc: TẮT</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- PHẦN NỘI DUNG CUỘN Ở DƯỚI -->
+    <div class="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4 custom-scrollbar">
+        
         <!-- Dòng 1: Chọn Phụ Âm -->
-        <div class="space-y-1">
-            <label class="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Thanh mẫu
+        <div class="space-y-1.5">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                Thanh mẫu (Phụ âm đầu)
             </label>
-            <div id="consonantContainer" class="flex flex-wrap gap-1 p-1 bg-slate-50 rounded-xl border border-slate-150">
+            <div id="consonantContainer" class="flex flex-wrap gap-1.5 p-2 bg-indigo-50/10 rounded-2xl border border-slate-200/60 max-w-full">
                 <!-- Javascript tự động chèn nút bấm tại đây -->
             </div>
         </div>
 
         <!-- Dòng 2: Chọn Nguyên Âm -->
-        <div class="space-y-1">
-            <label class="block text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Vận mẫu
+        <div class="space-y-1.5">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                Vận mẫu (Nguyên âm & Âm cuối)
             </label>
-            <div id="vowelContainer" class="flex flex-col gap-0.5 p-1.5 sm:p-2 bg-slate-50 rounded-2xl border border-slate-150">
+            <div id="vowelContainer" class="flex flex-col gap-1.5 p-2 bg-emerald-50/10 rounded-2xl border border-slate-200/60">
                 <!-- Javascript tự động chèn nút bấm tại đây -->
             </div>
         </div>
 
         <!-- Kết quả bên dưới: Bảng 4 Thanh điệu -->
-        <div class="pt-2 border-t border-slate-100 space-y-2">
-            <div class="flex items-center justify-between">
-                <span class="text-[11px] text-slate-450 font-medium">Từ đang ghép: <strong id="selectedWordLabel" class="text-indigo-600 uppercase font-mono text-sm sm:text-base ml-1">ba</strong></span>
-                <!-- iPhone Toggle Style -->
-                <label class="inline-flex items-center space-x-2 cursor-pointer select-none">
-                    <span class="text-[11px] font-semibold text-slate-600">Tự động đọc</span>
-                    <div class="relative inline-flex items-center">
-                        <input type="checkbox" id="autoplayToggle" class="sr-only peer" onchange="toggleAutoplay()">
-                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 transition-colors"></div>
-                    </div>
-                </label>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="tonesContainer">
+        <div class="pt-3 border-t border-slate-200 space-y-2">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                Luyện đọc 4 Thanh điệu
+            </label>
+            <div class="grid grid-cols-1 gap-2.5" id="tonesContainer">
                 <!-- Các ô thanh điệu phát âm sẽ hiển thị tại đây -->
             </div>
         </div>
@@ -3094,15 +3105,11 @@
             }
         }
 
-        // Cập nhật chế độ AutoPlay khi thay đổi nút gạt iPhone
+        // Cập nhật chế độ AutoPlay khi bấm nút to
         function toggleAutoplay() {
             unlockAudio();
-            const toggleCheckbox = document.getElementById("autoplayToggle");
-            if (toggleCheckbox) {
-                isAutoPlaying = toggleCheckbox.checked;
-            } else {
-                isAutoPlaying = !isAutoPlaying;
-            }
+            isAutoPlaying = !isAutoPlaying;
+            updateAutoplayUI();
             
             if (isAutoPlaying) {
                 // Bắt đầu đọc tự động tại vị trí selected hiện tại
@@ -3110,6 +3117,30 @@
             } else {
                 stopAllPlaying();
                 renderTonesTable();
+            }
+        }
+
+        // Cập nhật trạng thái hiển thị của nút tự động đọc
+        function updateAutoplayUI() {
+            const btn = document.getElementById("autoplayBigBtn");
+            const icon = document.getElementById("autoplayIcon");
+            const text = document.getElementById("autoplayText");
+            if (!btn) return;
+
+            if (isAutoPlaying) {
+                // Trạng thái BẬT - màu xanh lá cây
+                btn.className = "h-14 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-2 border-emerald-600 rounded-2xl flex items-center justify-center space-x-2 font-black text-sm sm:text-base cursor-pointer select-none shadow-[0_4px_12px_rgba(16,185,129,0.2)] transition-all";
+                text.textContent = "Tự động đọc: BẬT";
+                // icon pause
+                icon.innerHTML = `<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v4a1 1 0 11-2 0V8z" clip-rule="evenodd" />`;
+                icon.setAttribute("class", "h-6 w-6 text-white");
+            } else {
+                // Trạng thái TẮT - màu xám sang trọng
+                btn.className = "h-14 bg-slate-100 hover:bg-slate-200 active:bg-slate-350 text-slate-700 border-2 border-slate-300 rounded-2xl flex items-center justify-center space-x-2 font-black text-sm sm:text-base cursor-pointer select-none shadow-sm transition-all";
+                text.textContent = "Tự động đọc: TẮT";
+                // icon play
+                icon.innerHTML = `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />`;
+                icon.setAttribute("class", "h-6 w-6 text-slate-500");
             }
         }
 
@@ -3257,6 +3288,7 @@
 
         // Chạy khởi tạo lần đầu
         initDB().then(() => {
+            updateAutoplayUI();
             initConsonants();
             initVowels();
             fetchSpecialPronunciations();
@@ -3267,6 +3299,7 @@
                 renderTonesTable();
             });
         }).catch(() => {
+            updateAutoplayUI();
             initConsonants();
             initVowels();
             fetchSpecialPronunciations();

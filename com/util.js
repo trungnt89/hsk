@@ -119,7 +119,7 @@ window.fetch = async function (...args) {
       sessionStorage.removeItem('token'); 
       
       // Chuyển hướng về trang login
-      window.location.href = 'https://hsk-gilt.vercel.app/index.html';
+      window.location.href = '../index.html';
     }
     return response;
   } catch (error) {

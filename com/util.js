@@ -83,3 +83,24 @@ async function callAjax(url, body) {
         return { status: 'error', message: "Lỗi kết nối server" };
     }
 }
+
+const originalFetch = window.fetch;
+window.fetch = async function (...args) {
+  try {
+    const response = await originalFetch(...args);
+
+    // Bắt lỗi 401 tại đây
+    if (response.status === 401) {
+      console.warn("Token không hợp lệ hoặc hết hạn! Đang chuyển hướng...");
+      
+      // Xóa token cũ nếu cần
+      localStorage.removeItem('token'); 
+      
+      // Chuyển hướng về trang login
+      window.location.href = 'https://hsk-gilt.vercel.app/index.html';
+    }
+    return response;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};

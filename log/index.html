@@ -95,9 +95,16 @@
         }
 
         async function fetchLogs() {
-            const API_GSHEET_URL = "https://hsk-gilt.vercel.app/api/gSheet?spread=1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc&sheet=Logs&token="+sessionStorage.getItem('token');
+            const API_GSHEET_URL = "https://hsk-gilt.vercel.app/api/gSheet?spread=1g2COnzVdo8SlqJVq5osT5hfNVfdTsXqzYp0bN1S8ZIc&sheet=Logs";
             try {
-                const response = await fetch(API_GSHEET_URL);
+				const response = await fetch(API_GSHEET_URL, {
+				  method: 'GET',
+				  headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `${sessionStorage.getItem('token')}` 
+				  }
+				});
+
                 const data = await response.json();
                 const container = document.getElementById('monitor-box');
                 

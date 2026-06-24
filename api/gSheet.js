@@ -32,7 +32,7 @@ export default async function handler(req, res) {
 	}
 	
     writeLog(`Action: ${action}, Sheet: ${sheetName}, pos=${pos}, val=${val}, SpreadID: ${spreadsheetId}, `);
-    if(JSON.stringify(body) && JSON.stringify(body)!="") writeLog(JSON.stringify(body));
+    if(JSON.stringify(body) && JSON.stringify(body)!="" && JSON.stringify(body)!="[]") writeLog(JSON.stringify(body));
 
     try {
         await util.ensureAuthenticated();

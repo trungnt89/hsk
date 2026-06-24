@@ -318,7 +318,7 @@ const JapaneseLookup = (() => {
             fetch(CONFIG.API_URL, { 
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sheet: CONFIG.sheet, spread: CONFIG.spread, act: "deleteByPosVal", pos: 1, val: word)
+                body: JSON.stringify({ sheet: CONFIG.sheet, spread: CONFIG.spread, act: "deleteByPosVal", pos: 1, val: word })
             });
         }
     };

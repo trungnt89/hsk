@@ -30,7 +30,7 @@ export default async function handler(req, context) {
 
 	const authHeader = req.headers['authorization'];
 	if(authHeader != process.env.PWTOKEN){
-		return res.status(401).json({ success: false, error: "Auth Invalid token" });
+		return new Response(JSON.stringify({ error: "Auth Invalid token" }), { status: 401, headers });
 	}
 	
     const safeText = text

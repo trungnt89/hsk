@@ -93,14 +93,14 @@ window.fetch = async function (...args) {
   // 3. Lấy token từ localStorage (hoặc nơi bạn lưu trữ)
   const token = localStorage.getItem('token');
 
-  // 4. Nếu có token, tự động thêm vào Header (Ví dụ: Bearer Token)
+  // 4. Nếu có token, tự động thêm vào Header
   if (token) {
     // Nếu options.headers là một đối tượng Headers thuần của Fetch API
     if (options.headers instanceof Headers) {
-      options.headers.set('Authorization', `Bearer ${token}`);
+      options.headers.set('Authorization', `${token}`);
     } else {
       // Nếu options.headers là một Object thường {}
-      options.headers['Authorization'] = `Bearer ${token}`;
+      options.headers['Authorization'] = `${token}`;
     }
   }
 

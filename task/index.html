@@ -49,7 +49,7 @@
 	async function fetchData() {
 		console.log("Bắt đầu tải dữ liệu từ server...");
 		try {			
-			const response = await callAjax(API_GSHEET_URL,{
+			const data = await callAjax(API_GSHEET_URL,{
 				"sheet": G_SHEET,
 				"act": "read",
 				"spread": G_SPREAD,
@@ -57,7 +57,7 @@
 			});
 
             console.log("Tải dữ liệu từ server thành công.", data);
-			await renderTable(response.values);
+			await renderTable(data.values);
 			
 		} catch (error) {
 			console.error("Lỗi xảy ra trong quá trình fetchData:", error);
@@ -68,15 +68,15 @@
 	async function fetchDataDetail() {
 		console.log("Bắt đầu tải dữ liệu từ server...");
 		try {			
-			const response = await callAjax(API_GSHEET_URL,{
+			const data = await callAjax(API_GSHEET_URL,{
 				"sheet": G_SHEET2,
 				"act": "read",
 				"token": sessionStorage.getItem('token'),
 				"spread": G_SPREAD
 			});
 			
-			if (!response.ok) throw new Error('Network response was not ok');
-			const data = await response.json();
+
+
 			console.log("Tải dữ liệu từ server thành công.", data);
 			renderTableDetail(data.values);
 		} catch (error) {
@@ -269,7 +269,6 @@
 				"data": JSON.stringify(newRow)
 			});
 			
-			if (!response.ok) throw new Error('Mạng không ổn định khi append dữ liệu');
 			console.log("Thêm mới Task lên server thành công.");
 			allRowsData.push(newRow);
 			closeModal();
@@ -298,7 +297,6 @@
 				"data": JSON.stringify(allRowsData[rowIndex])
 			});
 			
-			if (!response.ok) throw new Error('Lỗi hệ thống khi update dữ liệu từ modal');
 			console.log(`Cập nhật dữ liệu từ popup cho Task ${id} thành công.`);
 			closeModal();
 			await renderTable(allRowsData);
@@ -324,7 +322,6 @@
 				"data": JSON.stringify(allRowsData[rowIndex])
 			});
 			
-			if (!response.ok) throw new Error('Lỗi mạng khi update nội dung ô');
 			console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
 			await renderTable(allRowsData);
 			
@@ -345,7 +342,6 @@
 				"spread": G_SPREAD
 			});
 			
-			if (!response.ok) throw new Error('Lỗi phản hồi hệ thống khi thực hiện lệnh xóa');
 			console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
 			allRowsData.splice(rowIndex, 1);
 			await renderTable(allRowsData);
@@ -370,7 +366,6 @@
 				"data": JSON.stringify(allRowsData[rowIndex])
 			});
 			
-			if (!response.ok) throw new Error('Không thể đồng bộ hóa trạng thái Switch');
 			console.log(`Đồng bộ trạng thái Switch cho Task ID ${id} thành công.`);
 			await renderTable(allRowsData);
 			

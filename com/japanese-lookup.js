@@ -166,8 +166,7 @@ const JapaneseLookup = (() => {
                             act: "updateByPosVal", 
                             pos: 1, 
                             val: text, 
-                            data: [ts, text, item.phonetic, item.short_mean || detailed] ,
-							token:sessionStorage.getItem('token')
+                            data: [ts, text, item.phonetic, item.short_mean || detailed] 
                         }) 
                     });
                 }
@@ -198,7 +197,7 @@ const JapaneseLookup = (() => {
                     const res = await fetch(CONFIG.API_URL, {
                         method: "POST",
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({sheet: CONFIG.sheet,spread: CONFIG.spread,act: "read",token:sessionStorage.getItem('token'),v: Date.now()})
+                        body: JSON.stringify({sheet: CONFIG.sheet,spread: CONFIG.spread,act: "read",v: Date.now()})
                     });
                     const data = await res.json();
                     
@@ -319,7 +318,7 @@ const JapaneseLookup = (() => {
             fetch(CONFIG.API_URL, { 
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sheet: CONFIG.sheet, spread: CONFIG.spread, act: "deleteByPosVal", pos: 1, val: word,token:sessionStorage.getItem('token') })
+                body: JSON.stringify({ sheet: CONFIG.sheet, spread: CONFIG.spread, act: "deleteByPosVal", pos: 1, val: word)
             });
         }
     };

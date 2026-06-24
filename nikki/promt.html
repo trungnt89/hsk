@@ -76,7 +76,6 @@
 
     async function callAPI(body) {
         try {
-			body.token  = sessionStorage.getItem('token');
             const res = await fetch(API_GSHEET_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
             return res.ok ? res.json() : null;
         } catch { return null; }

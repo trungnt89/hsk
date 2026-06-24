@@ -129,8 +129,7 @@
 			const res = await fetch(url, {
 			  method: 'GET',
 			  headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `${sessionStorage.getItem('token')}` 
+				'Content-Type': 'application/json'
 			  }
 			});
             if (!res.ok) throw new Error(`HTTP ${res.status}`);

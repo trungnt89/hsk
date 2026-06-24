@@ -1075,8 +1075,7 @@
                 const response = await fetch(apiUrl, {
 				  method: 'GET',
 				  headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `${sessionStorage.getItem('token')}` 
+					'Content-Type': 'application/json'
 				  }
 				});
 
@@ -2003,11 +2002,6 @@
                 isMastered ? '1' : '0'
             ];
 
-            let token = sessionStorage.getItem('token');
-            if (!token || token === 'null') {
-                token = null;
-            }
-
             try {
                 const response = await fetch(API_GSHEET_URL, {
                     method: 'POST',
@@ -2022,7 +2016,6 @@
                         sheet: currentHskLevel,
                         spread: spreadId,
                         data: JSON.stringify(rowData),
-                        token: token
                     })
                 });
 

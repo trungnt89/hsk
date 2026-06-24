@@ -28,9 +28,9 @@ export default async function handler(req, context) {
     const rate = searchParams.get('rate') || '1.0';
     const format = searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
-	const token = searchParams.get('token') || '';
-	if(token != process.env.PWTOKEN){
-		return res.status(401).json({ success: false, error: "Invalid token" });
+	const authHeader = req.headers['authorization'];
+	if(authHeader != process.env.PWTOKEN){
+		return res.status(401).json({ success: false, error: "Auth Invalid token" });
 	}
 	
     const safeText = text

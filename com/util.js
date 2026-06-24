@@ -71,7 +71,10 @@ async function callAjax(url, body) {
 		body.token=sessionStorage.getItem('token');
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `${sessionStorage.getItem('token')}` 
+			}
             body: JSON.stringify(body)
         });
         return await response.json();

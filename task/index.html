@@ -6,6 +6,7 @@
     <title>Task Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="../com/assistive.js"></script>     
+	<script src="../com/util.js"></script>    
 </head>
 <body class="bg-light p-3 p-md-4">
     <div class="sticky-top bg-light py-3 z-3">
@@ -47,33 +48,13 @@
 		currentEditRowIndex = -1;
 	async function fetchData() {
 		console.log("Bắt đầu tải dữ liệu từ server...");
-		try {
-			const response = await fetch(API_GSHEET_URL, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					"sheet": G_SHEET,
-					"act": "read",
-					"spread": G_SPREAD,
-					"token": sessionStorage.getItem('token')
-				})
+		try {			
+			const response = await callAjax(API_GSHEET_URL,{
+				"sheet": G_SHEET,
+				"act": "read",
+				"spread": G_SPREAD,
+				"token": sessionStorage.getItem('token')
 			});
-			
-			const response2 = await fetch(API_GSHEET_URL, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					"sheet": G_SHEET2,
-					"act": "read",
-					"token": sessionStorage.getItem('token'),
-					"spread": G_SPREAD
-				})
-			});
-			
 			
 			if (!response.ok) throw new Error('Network response was not ok');
 			const data = await response.json();
@@ -88,20 +69,13 @@
 
 	async function fetchDataDetail() {
 		console.log("Bắt đầu tải dữ liệu từ server...");
-		try {
-			const response = await fetch(API_GSHEET_URL, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					"sheet": G_SHEET2,
-					"act": "read",
-					"token": sessionStorage.getItem('token'),
-					"spread": G_SPREAD
-				})
+		try {			
+			const response = await callAjax(API_GSHEET_URL,{
+				"sheet": G_SHEET2,
+				"act": "read",
+				"token": sessionStorage.getItem('token'),
+				"spread": G_SPREAD
 			});
-			
 			
 			if (!response.ok) throw new Error('Network response was not ok');
 			const data = await response.json();
@@ -289,19 +263,14 @@
 		}
 		console.log(`Bắt đầu xử lý thêm mới Task qua Popup Modal`, newRow);
 		try {
-			const response = await fetch(API_GSHEET_URL, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					"act": "add",
-					"sheet": G_SHEET,
-					"spread": G_SPREAD,
-					"token": sessionStorage.getItem('token'),
-					"data": JSON.stringify(newRow)
-				})
+			const response = await callAjax(API_GSHEET_URL,{
+				"act": "add",
+				"sheet": G_SHEET,
+				"spread": G_SPREAD,
+				"token": sessionStorage.getItem('token'),
+				"data": JSON.stringify(newRow)
 			});
+			
 			if (!response.ok) throw new Error('Mạng không ổn định khi append dữ liệu');
 			console.log("Thêm mới Task lên server thành công.");
 			allRowsData.push(newRow);
@@ -321,21 +290,16 @@
 			if (el) allRowsData[rowIndex][j] = el.value.trim();
 		}
 		try {
-			const response = await fetch(API_GSHEET_URL, {
-				method: 'POST',
-				headers: {
-					'content-type': 'application/json'
-				},
-				body: JSON.stringify({
-					"act": "updateByPosVal",
-					"pos": 0,
-					"val": id,
-					"sheet": G_SHEET,
-					"spread": G_SPREAD,
-					"token": sessionStorage.getItem('token'),
-					"data": JSON.stringify(allRowsData[rowIndex])
-				})
+			const response = await callAjax(API_GSHEET_URL, {
+				"act": "updateByPosVal",
+				"pos": 0,
+				"val": id,
+				"sheet": G_SHEET,
+				"spread": G_SPREAD,
+				"token": sessionStorage.getItem('token'),
+				"data": JSON.stringify(allRowsData[rowIndex])
 			});
+			
 			if (!response.ok) throw new Error('Lỗi hệ thống khi update dữ liệu từ modal');
 			console.log(`Cập nhật dữ liệu từ popup cho Task ${id} thành công.`);
 			closeModal();
@@ -352,21 +316,16 @@
 		if (allRowsData[rowIndex][colIndex] === txt) return;
 		allRowsData[rowIndex][colIndex] = txt;
 		try {
-			const response = await fetch(API_GSHEET_URL, {
-				method: 'POST',
-				headers: {
-					'content-type': 'application/json'
-				},
-				body: JSON.stringify({
-					"act": "updateByPosVal",
-					"pos": 0,
-					"val": id,
-					"sheet": G_SHEET,
-					"spread": G_SPREAD,
-					"token": sessionStorage.getItem('token'),
-					"data": JSON.stringify(allRowsData[rowIndex])
-				})
+			const response = await callAjax(API_GSHEET_URL, {
+				"act": "updateByPosVal",
+				"pos": 0,
+				"val": id,
+				"sheet": G_SHEET,
+				"spread": G_SPREAD,
+				"token": sessionStorage.getItem('token'),
+				"data": JSON.stringify(allRowsData[rowIndex])
 			});
+			
 			if (!response.ok) throw new Error('Lỗi mạng khi update nội dung ô');
 			console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
 			await renderTable(allRowsData);
@@ -379,20 +338,15 @@
 		if (!confirm("Bạn có chắc chắn muốn xóa Task này không?")) return;
 		console.log(`Kích hoạt tiến trình xóa Task ID: ${id} tại hàng chỉ mục: ${rowIndex}`);
 		try {
-			const response = await fetch(API_GSHEET_URL, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					"act": "deleteByPosVal",
-					"pos": 0,
-					"val": id,
-					"sheet": G_SHEET,
-					"token": sessionStorage.getItem('token'),
-					"spread": G_SPREAD
-				})
+			const response = await callAjax(API_GSHEET_URL, {
+				"act": "deleteByPosVal",
+				"pos": 0,
+				"val": id,
+				"sheet": G_SHEET,
+				"token": sessionStorage.getItem('token'),
+				"spread": G_SPREAD
 			});
+			
 			if (!response.ok) throw new Error('Lỗi phản hồi hệ thống khi thực hiện lệnh xóa');
 			console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
 			allRowsData.splice(rowIndex, 1);
@@ -408,21 +362,16 @@
 		const statusColIdx = allRowsData[0].indexOf("STATUS");
 		if (statusColIdx !== -1) allRowsData[rowIndex][statusColIdx] = newStatus;
 		try {
-			const response = await fetch(API_GSHEET_URL, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					"act": "updateByPosVal",
-					"pos": 0,
-					"val": id,
-					"sheet": G_SHEET,
-					"spread": G_SPREAD,
-					"token": sessionStorage.getItem('token'),
-					"data": JSON.stringify(allRowsData[rowIndex])
-				})
+			const response = await callAjax(API_GSHEET_URL, {
+				"act": "updateByPosVal",
+				"pos": 0,
+				"val": id,
+				"sheet": G_SHEET,
+				"spread": G_SPREAD,
+				"token": sessionStorage.getItem('token'),
+				"data": JSON.stringify(allRowsData[rowIndex])
 			});
+			
 			if (!response.ok) throw new Error('Không thể đồng bộ hóa trạng thái Switch');
 			console.log(`Đồng bộ trạng thái Switch cho Task ID ${id} thành công.`);
 			await renderTable(allRowsData);

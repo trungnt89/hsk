@@ -24,11 +24,16 @@ export default async function handler(req, res) {
 	  
     const pos     = p.pos;
     const val     = p.val;
-    const rawData = p.data;
-	
+    const rawData = p.data;	
 	const token   = p.token;
+
 	if(token != process.env.PWTOKEN){
 		return res.status(401).json({ success: false, error: "Invalid token" });
+	}
+	
+	const authHeader = req.headers['authorization'];
+	if(authHeader != process.env.PWTOKEN){
+		return res.status(401).json({ success: false, error: "Auth　Invalid token" });
 	}
 	
     writeLog(`Action: ${action}, Sheet: ${sheetName}, pos=${pos}, val=${val}, SpreadID: ${spreadsheetId}, `);

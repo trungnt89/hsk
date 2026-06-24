@@ -29,6 +29,7 @@ export default async function handler(req, context) {
     const format = searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
 	const authHeader = req.headers['authorization'];
+	context.waitUntil(writeLog("TTS",JSON.stringify(req.headers)));
 	if(authHeader != process.env.PWTOKEN){
 		return new Response(JSON.stringify({ error: "Auth Invalid token" }), { status: 401, headers });
 	}

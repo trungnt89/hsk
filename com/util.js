@@ -74,7 +74,7 @@ async function callAjax(url, body) {
 			headers: {
 				'Content-Type': 'application/json',
 				'Authorization': `${sessionStorage.getItem('token')}` 
-			}
+			},
             body: JSON.stringify(body)
         });
         return await response.json();

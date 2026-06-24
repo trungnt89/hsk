@@ -123,11 +123,16 @@
         }
 
         // 2. Gọi API TTS
-        const url = `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}&token=${sessionStorage.getItem('token')}`;
-        
+        const url = `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}`;
         try {
             console.log("[TTS Log] Fetching from API...");
-            const res = await fetch(url);
+			const res = await fetch(url, {
+			  method: 'GET',
+			  headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `${sessionStorage.getItem('token')}` 
+			  }
+			});
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             
             const blob = await res.blob();

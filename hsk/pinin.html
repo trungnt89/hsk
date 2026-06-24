@@ -3263,7 +3263,13 @@
             }
 
             try {
-                const response = await fetch(API_GSHEET_URL);
+				const response = await fetch(API_GSHEET_URL, {
+				  method: 'GET',
+				  headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `${sessionStorage.getItem('token')}` 
+				  }
+				});
                 if (response.ok) {
                     const data = await response.json();
                     if (data && Array.isArray(data.values) && data.values.length > 0) {

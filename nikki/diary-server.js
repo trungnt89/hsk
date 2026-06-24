@@ -36,6 +36,7 @@ async function loadDiaries() {
             renderList(currentDiaries);
             if (selectedDiaryId) selectRecord(selectedDiaryId, true);
         }
+        
     } catch (err) { console.warn("[Sync] Offline mode"); }
 }
 

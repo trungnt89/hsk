@@ -1346,7 +1346,7 @@
             if (!isAutoPlaying) {
                 // Phát âm tự động khi chuyển thẻ nếu bật TTS - Mặc định luôn đọc từ chính khi chuyển thẻ
                 if (isTtsEnabled && !preventSpeak) {
-                    speakUniversalText(current.word, false);
+                    speakUniversalText(current.word, false, current.pinyin);
                 }
             }
         }
@@ -1368,7 +1368,8 @@
                 if (isTtsEnabled) {
                     const isFlippedNow = cardElement.classList.contains('flipped-vertical');
                     const textToSpeak = isFlippedNow ? (current.exCn || current.word) : current.word;
-                    speakUniversalText(textToSpeak, false);
+                    const pinyinToSpeak = isFlippedNow ? (current.exPy || '') : current.pinyin;
+                    speakUniversalText(textToSpeak, false, pinyinToSpeak);
                 }
             }
         }
@@ -1581,7 +1582,8 @@
                     const cardElement = document.getElementById('card');
                     const isFlippedNow = cardElement.classList.contains('flipped-vertical');
                     const textToSpeak = isFlippedNow ? (current.exCn || current.word) : current.word;
-                    speakUniversalText(textToSpeak, false);
+                    const pinyinToSpeak = isFlippedNow ? (current.exPy || '') : current.pinyin;
+                    speakUniversalText(textToSpeak, false, pinyinToSpeak);
                 }
             } else {
                 ttsBtn.innerHTML = "🔇";
@@ -1697,7 +1699,8 @@
                         cardElement.classList.add('flipped-vertical');
                     }
                     const textToSpeak = current.exCn || current.word;
-                    speakUniversalText(textToSpeak, false);
+                    const pinyinToSpeak = current.exPy || '';
+                    speakUniversalText(textToSpeak, false, pinyinToSpeak);
                 }
             } else if (autoPlayState === 1) {
                 // Hết thời gian đọc tiếng Trung mặt sau
@@ -1729,7 +1732,7 @@
                     cardElement.classList.remove('flipped');
                     cardElement.classList.remove('flipped-vertical');
                 }
-                speakUniversalText(current.word, false);
+                speakUniversalText(current.word, false, current.pinyin);
             }
         }
 
@@ -1801,7 +1804,7 @@
                 }
                 const current = paginatedFlashcards[currentIndex];
                 if (current) {
-                    speakUniversalText(current.word, false);
+                    speakUniversalText(current.word, false, current.pinyin);
                 }
             } else if (autoPlayMode === 1) {
                 autoPlayMode = 2;
@@ -1821,7 +1824,7 @@
                 }
                 const current = paginatedFlashcards[currentIndex];
                 if (current) {
-                    speakUniversalText(current.word, false);
+                    speakUniversalText(current.word, false, current.pinyin);
                 }
             } else if (autoPlayMode === 2) {
                 autoPlayMode = 3;
@@ -1841,7 +1844,7 @@
                 }
                 const current = paginatedFlashcards[currentIndex];
                 if (current) {
-                    speakUniversalText(current.word, false);
+                    speakUniversalText(current.word, false, current.pinyin);
                 }
             } else {
                 isAutoPlaying = false;
@@ -2385,23 +2388,23 @@
         }
 
         // Hàm phát âm chung: Chỉ gọi đến TTS hệ thống qua window.speakCommon
-        function speakUniversalText(text, isVietnamese = false) {
+        function speakUniversalText(text, isVietnamese = false, pinyin = '') {
             if (!text) return;
             const voice = isVietnamese ? "vi-VN-NamMinhNeural" : "zh-CN-XiaoxiaoNeural";
 
             if (typeof window.speakCommon === 'function') {
-                window.speakCommon({ text: text, voice: voice });
+                window.speakCommon({ text: text, voice: voice, pinyin: pinyin });
             } else {
                 console.warn('Hệ thống TTS (window.speakCommon) chưa sẵn sàng.');
             }
         }
 
         // Phát âm từ vựng trực tiếp từ danh mục của word list
-        function speakWordFromList(event, word) {
+        function speakWordFromList(event, word, pinyin = '') {
             if (event && typeof event.stopPropagation === 'function') {
                 event.stopPropagation();
             }
-            speakUniversalText(word, false);
+            speakUniversalText(word, false, pinyin);
         }
 
         // Phát âm thủ công thẻ flashcard dựa trên mặt đang hiển thị (mặt trước: từ, mặt sau: ví dụ)
@@ -2415,8 +2418,9 @@
             const cardElement = document.getElementById('card');
             const isFlippedNow = cardElement && cardElement.classList.contains('flipped-vertical');
             const textToSpeak = isFlippedNow ? (current.exCn || current.word) : current.word;
+            const pinyinToSpeak = isFlippedNow ? (current.exPy || '') : current.pinyin;
             
-            speakUniversalText(textToSpeak, false);
+            speakUniversalText(textToSpeak, false, pinyinToSpeak);
         }
 
         // Hiển thị danh sách từ dạng HTML, hỗ trợ tô đậm từ đang xem và đánh dấu thuộc/chưa thuộc trực tiếp
@@ -2497,10 +2501,11 @@
                 
                 // Xác định nội dung phát âm tương ứng với chế độ hiện tại ngay tại thời điểm tạo dòng
                 const targetText = (listContentMode === 'example') ? (item.exCn || item.word) : item.word;
+                const targetPinyin = (listContentMode === 'example') ? (item.exPy || '') : item.pinyin;
                 
                 // Khi nhấp dòng, phát âm thanh và nhảy thẳng đến thẻ đó
                 itemDiv.onclick = () => {
-                    speakWordFromList(null, targetText);
+                    speakWordFromList(null, targetText, targetPinyin);
                     selectWordFromList(item.stt, true);
                 };
 

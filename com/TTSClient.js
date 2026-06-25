@@ -100,7 +100,7 @@
                 title: text,
                 artist: pinyin,
                 album: filename,
-                artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/3039/3039387.png', sizes: '512x512', type: 'image/png' }]
+                artwork: [{ src: 'https://cdn-icons-png.flaticon.com/128/260/260446.png', sizes: '400x400', type: 'image/png' }]
             });
             navigator.mediaSession.setActionHandler('pause', () => { window.stopSpeak(); });
             navigator.mediaSession.setActionHandler('stop', () => { window.stopSpeak(); });

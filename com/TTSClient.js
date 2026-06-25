@@ -62,6 +62,41 @@
 
     const artworkCache = new Map();
 
+    function wrapText(text, maxChars = 6) {
+        const lines = [];
+        if (!text.includes(' ')) {
+            for (let i = 0; i < text.length; i += maxChars) {
+                lines.push(text.substring(i, i + maxChars));
+            }
+            return lines;
+        }
+        const words = text.split(/\s+/);
+        let currentLine = "";
+        for (let i = 0; i < words.length; i++) {
+            const word = words[i];
+            const nextLine = currentLine ? (currentLine + " " + word) : word;
+            if (nextLine.length <= maxChars) {
+                currentLine = nextLine;
+            } else {
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+                if (word.length > maxChars) {
+                    for (let j = 0; j < word.length; j += maxChars) {
+                        lines.push(word.substring(j, j + maxChars));
+                    }
+                    currentLine = "";
+                } else {
+                    currentLine = word;
+                }
+            }
+        }
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+        return lines;
+    }
+
     function createTextArtwork(text) {
         if (!text) return '';
         if (artworkCache.has(text)) {
@@ -73,41 +108,49 @@
             canvas.height = 300;
             const ctx = canvas.getContext('2d');
 
-            // Tạo màu nền gradient sang trọng cho ảnh bìa
-            const gradient = ctx.createLinearGradient(0, 0, 300, 300);
-            gradient.addColorStop(0, '#4f46e5'); // Màu Indigo
-            gradient.addColorStop(1, '#06b6d4'); // Màu Cyan
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 300, 300);
+            // Bỏ màu nền và viền tròn hoàn toàn để đạt độ trong suốt và tránh nhấp nháy (flicker) khi load lại hình ảnh mới.
 
-            // Vẽ viền tròn trang nhã bao quanh chữ
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-            ctx.lineWidth = 8;
-            ctx.beginPath();
-            ctx.arc(150, 150, 130, 0, Math.PI * 2);
-            ctx.stroke();
+            // Phân chia dòng chữ tối đa 6 ký tự mỗi dòng
+            const lines = wrapText(text, 6);
+            const lineCount = lines.length;
 
-            // Cấu hình vẽ chữ
+            // Tính kích cỡ font tối ưu dựa vào chiều dài từ dài nhất trong các dòng
+            let maxLineLen = 0;
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].length > maxLineLen) {
+                    maxLineLen = lines[i].length;
+                }
+            }
+
+            let fontSize = 80;
+            if (maxLineLen > 2) fontSize = 52;
+            if (maxLineLen > 4) fontSize = 38;
+            if (maxLineLen > 6) fontSize = 32;
+
+            if (lineCount > 3) fontSize = Math.min(fontSize, 24);
+            if (lineCount > 5) fontSize = Math.min(fontSize, 18);
+
+            ctx.font = `bold ${fontSize}px "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
-            // Tính toán kích cỡ font phù hợp với độ dài văn bản
-            let fontSize = 96;
-            if (text.length > 2) fontSize = 52;
-            if (text.length > 6) fontSize = 32;
-            if (text.length > 12) fontSize = 22;
+            const lineHeight = fontSize * 1.3;
+            const totalHeight = (lineCount - 1) * lineHeight;
+            const startY = 150 - (totalHeight / 2);
 
-            ctx.font = `bold ${fontSize}px "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif`;
+            for (let i = 0; i < lineCount; i++) {
+                const lineY = startY + i * lineHeight;
 
-            // Giả lập bóng đổ phẳng (flat shadow) siêu nhanh thay vì dùng shadowBlur ngốn CPU
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            ctx.fillText(text, 152, 152);
+                // Bóng đổ phẳng nhẹ
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillText(lines[i], 152, lineY + 2);
 
-            // Vẽ chữ trắng chính lên trung tâm Canvas
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(text, 150, 150);
+                // Chữ chính màu trắng tinh
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(lines[i], 150, lineY);
+            }
 
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            const dataUrl = canvas.toDataURL('image/png');
             artworkCache.set(text, dataUrl);
             return dataUrl;
         } catch (e) {
@@ -160,7 +203,7 @@
                 title: text,
                 artist: pin,
                 album: filename,
-                artwork: [{ src: createTextArtwork(text), sizes: '300x300', type: 'image/jpeg' }]
+                artwork: [{ src: createTextArtwork(text), sizes: '300x300', type: 'image/png' }]
             });
             navigator.mediaSession.setActionHandler('pause', () => { window.stopSpeak(); });
             navigator.mediaSession.setActionHandler('stop', () => { window.stopSpeak(); });

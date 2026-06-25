@@ -60,6 +60,56 @@
         }
     };
 
+    function createTextArtwork(text) {
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // Tạo màu nền gradient sang trọng cho ảnh bìa
+            const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+            gradient.addColorStop(0, '#4f46e5'); // Màu Indigo
+            gradient.addColorStop(1, '#06b6d4'); // Màu Cyan
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 512);
+
+            // Vẽ viền tròn trang nhã bao quanh chữ
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 14;
+            ctx.beginPath();
+            ctx.arc(256, 256, 220, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Cấu hình vẽ chữ
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Tính toán kích cỡ font phù hợp với độ dài văn bản
+            let fontSize = 160;
+            if (text.length > 2) fontSize = 90;
+            if (text.length > 6) fontSize = 56;
+            if (text.length > 12) fontSize = 36;
+
+            ctx.font = `bold ${fontSize}px "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif`;
+
+            // Vẽ đổ bóng nhẹ để chữ nổi bật hơn
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 3;
+
+            // Vẽ chữ lên trung tâm Canvas
+            ctx.fillText(text, 256, 256);
+
+            return canvas.toDataURL('image/png');
+        } catch (e) {
+            console.warn('[TTS Log] Error creating text artwork canvas, falling back to icon:', e);
+            return 'https://cdn-icons-png.flaticon.com/128/9973/9973171.png';
+        }
+    }
+
     /**
      * Hàm gọi chính - Xuất ra phạm vi toàn cục (window)
      */
@@ -93,16 +143,18 @@
             console.log("[TTS Log] No text provided to speak");
             return;
         }
-
-		var pin = (pinyin) ? pinyin : "HSK Master";
+		
+		if (!pinyin || pinyin === "" || pinyin === " ") {
+            pinyin = "HSK Master";
+        }
 
         // Cấu hình MediaSession
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: text,
-                artist: pin,
+                artist: pinyin,
                 album: filename,
-                artwork: [{ src: 'https://cdn-icons-png.flaticon.com/128/9973/9973171.png', sizes: '400x400', type: 'image/png' }]
+                artwork: [{ src: createTextArtwork(text), sizes: '512x512', type: 'image/png' }]
             });
             navigator.mediaSession.setActionHandler('pause', () => { window.stopSpeak(); });
             navigator.mediaSession.setActionHandler('stop', () => { window.stopSpeak(); });

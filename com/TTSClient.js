@@ -93,6 +93,10 @@
             console.log("[TTS Log] No text provided to speak");
             return;
         }
+		
+		if (!pinyin || pinyin = "" || pinyin = " ") {
+            pinyin = "HSK Master";
+        }
 
         // Cấu hình MediaSession
         if ('mediaSession' in navigator) {

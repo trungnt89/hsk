@@ -94,7 +94,7 @@
             return;
         }
 		
-		if (!pinyin || pinyin == "" || pinyin == " ") {
+		if (!pinyin) {
             pinyin = "HSK Master";
         }
 

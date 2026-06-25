@@ -108,7 +108,9 @@
             canvas.height = 300;
             const ctx = canvas.getContext('2d');
 
-            // Bỏ màu nền và viền tròn hoàn toàn để đạt độ trong suốt và tránh nhấp nháy (flicker) khi load lại hình ảnh mới.
+            // Fill canvas with a solid background color matching the iOS lock screen background
+            ctx.fillStyle = '#949494';
+            ctx.fillRect(0, 0, 300, 300);
 
             // Phân chia dòng chữ tối đa 6 ký tự mỗi dòng
             const lines = wrapText(text, 6);

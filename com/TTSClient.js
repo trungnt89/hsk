@@ -66,6 +66,7 @@
     window.speakCommon = async function(config = {}) {
         const { 
             text = "", 
+			pinyin = "HSK Master",
             voice = "zh-CN-XiaoxiaoNeural", 
             rate = "1.0", 
             filename = "hsk_data",
@@ -97,7 +98,7 @@
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: text,
-                artist: 'HSK Master',
+                artist: pinyin,
                 album: filename,
                 artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/3039/3039387.png', sizes: '512x512', type: 'image/png' }]
             });

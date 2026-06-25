@@ -93,16 +93,14 @@
             console.log("[TTS Log] No text provided to speak");
             return;
         }
-		
-		if (!pinyin) {
-            pinyin = "HSK Master";
-        }
+
+		var pin = (pinyin) ? pinyin : "HSK Master";
 
         // Cấu hình MediaSession
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: text,
-                artist: pinyin,
+                artist: pin,
                 album: filename,
                 artwork: [{ src: 'https://cdn-icons-png.flaticon.com/128/260/260446.png', sizes: '400x400', type: 'image/png' }]
             });

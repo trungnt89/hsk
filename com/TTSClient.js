@@ -144,15 +144,13 @@
             return;
         }
 		
-		if (!pinyin || pinyin === "" || pinyin === " ") {
-            pinyin = "HSK Master";
-        }
+		var pin = (pinyin) ? pinyin : "HSK Master";
 
         // Cấu hình MediaSession
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: text,
-                artist: pinyin,
+                artist: pin,
                 album: filename,
                 artwork: [{ src: createTextArtwork(text), sizes: '512x512', type: 'image/png' }]
             });

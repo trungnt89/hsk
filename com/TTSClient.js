@@ -169,25 +169,21 @@
 
             // Draw Vietnamese meaning if available in the last two lines
             if (meaningText) {
-                const meaningLines = wrapText(meaningText, 18).slice(0, 2);
+                const meaningLines = wrapText(meaningText, 25).slice(0, 2);
                 if (meaningLines.length > 0) {
-                    ctx.font = `bold 16px "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif`;
+                    ctx.font = `normal 10px "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
-                    const meaningLineHeight = 22;
+                    const meaningLineHeight = 14;
                     const mTotalHeight = (meaningLines.length - 1) * meaningLineHeight;
-                    const mStartY = 245 - (mTotalHeight / 2);
+                    const mStartY = 265 - (mTotalHeight / 2);
 
                     for (let i = 0; i < meaningLines.length; i++) {
                         const mLineY = mStartY + i * meaningLineHeight;
 
-                        // Soft shadow
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                        ctx.fillText(meaningLines[i], 151, mLineY + 1);
-
-                        // Soft light gray color
-                        ctx.fillStyle = '#e2e8f0';
+                        // Very subtle, close-to-background color to make it extremely hard to read
+                        ctx.fillStyle = '#9c9c9c';
                         ctx.fillText(meaningLines[i], 150, mLineY);
                     }
                 }

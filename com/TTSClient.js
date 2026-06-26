@@ -183,7 +183,7 @@
                         const mLineY = mStartY + i * meaningLineHeight;
 
                         // Very subtle, close-to-background color to make it extremely hard to read
-                        ctx.fillStyle = '#9c9c9c';
+                        ctx.fillStyle = '#ccc';
                         ctx.fillText(meaningLines[i], 150, mLineY);
                     }
                 }

@@ -2,63 +2,228 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Danh sách Link theo Thư mục</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Danh Mục Link Dự Án</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f4f7f6; }
-        .folder-group { margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
-        ul { list-style-type: none; padding-left: 10px; }
-        li { margin: 5px 0; }
-        a { text-decoration: none; color: #007bff; }
-        a:hover { text-decoration: underline; color: #0056b3; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: #F2F2F7; /* Màu nền xám hệ thống iOS tiêu chuẩn */
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        /* Hiệu ứng đàn hồi nhấn phím kiểu iOS */
+        .ios-press:active {
+            transform: scale(0.98);
+            opacity: 0.8;
+        }
+        /* Tối ưu hóa thanh cuộn ẩn tinh tế */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 99px;
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen text-slate-900 pb-6 px-3 pt-2 flex justify-center">
 
-    <h1>Danh mục dự án</h1>
-    <div id="container"></div>
+    <div class="w-full max-w-md flex flex-col space-y-2.5">
+        
+        <!-- DANH SÁCH ACCORDION (THẺ TRẮNG BO GÓC) -->
+        <div class="grid grid-cols-2 gap-2 items-start" id="groups-container">
+            <!-- Loading overlay -->
+            <div class="col-span-2 flex flex-col items-center justify-center py-10 text-slate-400">
+                <div class="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                <span class="text-[9px] font-mono font-bold tracking-wider uppercase">Đang đồng bộ...</span>
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        async function loadAndGroupLinks() {
+        // Tạo dải màu sắc rực rỡ và các biểu tượng đặc thù cho thư mục iOS
+        function getFolderStyle(folder) {
+            const hash = Array.from(folder).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const styles = [
+                { text: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100", icon: "database" },
+                { text: "text-emerald-500", bg: "bg-emerald-50", border: "border-emerald-100", icon: "check-square" },
+                { text: "text-amber-500", bg: "bg-amber-50", border: "border-amber-100", icon: "clock" },
+                { text: "text-rose-500", bg: "bg-rose-50", border: "border-rose-100", icon: "heart" },
+                { text: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100", icon: "graduation-cap" },
+                { text: "text-sky-500", bg: "bg-sky-50", border: "border-sky-100", icon: "message-circle" },
+                { text: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100", icon: "music" },
+                { text: "text-teal-500", bg: "bg-teal-50", border: "border-teal-100", icon: "play" }
+            ];
+            return styles[hash % styles.length];
+        }
+
+        // Định dạng tên tệp tin hiển thị đẹp mắt, không fix cứng
+        function formatDisplayName(path, folder) {
+            let fileName = path.split('/').pop().replace('.html', '');
+            let folderName = folder.toUpperCase();
+            if (fileName.toLowerCase() === "index") {
+                return `${folderName} - Bảng chính`;
+            }
+            
+            let formatted = fileName.replace(/[-_]/g, ' ')
+                .split(' ')
+                .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(' ');
+
+            return formatted;
+        }
+
+        // Đóng/Mở Accordion Thư mục
+        function toggleFolder(folderId) {
+            const content = document.getElementById(`content-${folderId}`);
+            const chevron = document.getElementById(`chevron-${folderId}`);
+            if (!content) return;
+            const isHidden = content.classList.contains('hidden');
+
+            // Đóng tất cả các folder khác trước khi mở folder mới
+            if (isHidden) {
+                const allContents = document.querySelectorAll('[id^="content-"]');
+                const allChevrons = document.querySelectorAll('[id^="chevron-"]');
+                allContents.forEach(item => {
+                    if (item.id !== `content-${folderId}`) {
+                        item.classList.add('hidden');
+                    }
+                });
+                allChevrons.forEach(item => {
+                    if (item.id !== `chevron-${folderId}`) {
+                        item.classList.remove('rotate-90');
+                    }
+                });
+            }
+
+            if (isHidden) {
+                content.classList.remove('hidden');
+                if (chevron) chevron.classList.add('rotate-90');
+            } else {
+                content.classList.add('hidden');
+                if (chevron) chevron.classList.remove('rotate-90');
+            }
+        }
+
+        // Tải dữ liệu list.txt động bằng fetch
+        async function fetchAndRenderLinks() {
             try {
                 const response = await fetch('list.txt');
+                if (!response.ok) throw new Error();
                 const text = await response.text();
                 const lines = text.split('\n');
                 
                 const groups = {};
+                let totalCount = 0;
 
                 lines.forEach(line => {
-                    const cleanLine = line.trim();
-                    if (!cleanLine) return;
+                    const cleanPath = line.trim();
+                    if (!cleanPath) return;
+                    if (cleanPath === "./index.html" || cleanPath === "index.html") return;
 
-                    // Lấy tên thư mục cha (ví dụ: ./db/index.html -> db)
-                    const parts = cleanLine.split('/');
+                    const parts = cleanPath.split('/');
                     const folder = parts.length > 2 ? parts[1] : 'Root';
 
+                    let displayName = formatDisplayName(cleanPath, folder);
+
                     if (!groups[folder]) groups[folder] = [];
-                    groups[folder].push(cleanLine);
+                    groups[folder].push({
+                        path: cleanPath,
+                        displayName: displayName
+                    });
+                    totalCount++;
                 });
 
-                const container = document.getElementById('container');
+                const linkCountEl = document.getElementById('link-count');
+                if (linkCountEl) {
+                    linkCountEl.textContent = `${totalCount} Links`;
+                }
+
+                const container = document.getElementById('groups-container');
+                container.innerHTML = "";
+
                 for (const folder in groups) {
+                    const style = getFolderStyle(folder);
+                    const folderId = `folder-${folder.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+
                     const section = document.createElement('div');
-                    section.className = 'folder-group';
-                    section.innerHTML = `<h2>${folder.toUpperCase()}</h2><ul></ul>`;
-                    
-                    const ul = section.querySelector('ul');
+                    // Giao diện hộp trắng bo góc dạng bọc, đổ bóng tinh tế của iOS
+                    section.className = "folder-group bg-white rounded-lg border border-slate-150 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.01)] transition-all duration-200";
+                    section.innerHTML = `
+                        <!-- Nút kích hoạt Folder -->
+                        <button onclick="toggleFolder('${folderId}')" class="w-full flex items-center justify-between px-2.5 py-1.5 hover:bg-slate-50 active:bg-slate-100 transition-colors duration-150 text-left focus:outline-none select-none ios-press">
+                            <div class="flex items-center gap-2">
+                                <div class="w-5.5 h-5.5 rounded flex items-center justify-center ${style.bg} border ${style.border} ${style.text}">
+                                    <i data-lucide="${style.icon}" class="w-3 h-3"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-[11px] font-bold text-slate-800 uppercase tracking-tight">${folder}</h2>
+                                    <p class="text-[8px] text-slate-400 -mt-0.5">${groups[folder].length} tệp</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <i data-lucide="chevron-right" id="chevron-${folderId}" class="w-3 h-3 text-slate-350 transition-transform duration-200"></i>
+                            </div>
+                        </button>
+                        
+                        <!-- Danh sách các link con bên trong (Chỉ hiện khi click) -->
+                        <div id="content-${folderId}" class="hidden divide-y divide-slate-100 border-t border-slate-100 bg-[#FAF9F6]">
+                        </div>
+                    `;
+
+                    const listWrapper = section.querySelector(`#content-${folderId}`);
                     groups[folder].forEach(link => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `<a href="${link}">${link}</a>`;
-                        ul.appendChild(li);
+                        const row = document.createElement('a');
+                        row.href = link.path;
+                        row.className = "link-item flex items-center justify-between px-3 py-1 hover:bg-indigo-50/40 active:bg-indigo-50/80 transition-all duration-150 group";
+                        row.innerHTML = `
+                            <div class="min-w-0 pr-2">
+                                <span class="block text-[11px] font-medium text-slate-700 group-hover:text-indigo-600 transition-colors truncate">${link.displayName}</span>
+                                <span class="block text-[7.5px] font-mono text-slate-400 group-hover:text-slate-500 transition-colors truncate">${link.path}</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-2.5 h-2.5 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all shrink-0"></i>
+                        `;
+                        listWrapper.appendChild(row);
                     });
+
                     container.appendChild(section);
                 }
+
+                // Vẽ lại icon
+                lucide.createIcons();
+
             } catch (error) {
-                document.body.innerHTML += "<p style='color:red;'>Lỗi tải file. Vui lòng chạy qua Local Server.</p>";
+                document.getElementById('groups-container').innerHTML = `
+                    <div class="col-span-2 p-5 text-center bg-white border border-red-100 rounded-2xl shadow-sm">
+                        <span class="text-xs text-red-500 font-semibold">Không thể đồng bộ danh sách tệp từ list.txt</span>
+                    </div>
+                `;
             }
         }
 
-        loadAndGroupLinks();
+        fetchAndRenderLinks();
     </script>
 </body>
 </html>

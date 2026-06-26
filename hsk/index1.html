@@ -1,7 +1,5 @@
-
-
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +10,6 @@
     <script>
         // Tải các script hệ thống bất đồng bộ để tránh lỗi biên dịch tĩnh của Vite
         (function() {
-		    //'https://hsk-gilt.vercel.app/com/TTSClient.js',
             const scripts = ['https://hsk-gilt.vercel.app/com/assistive.js'];
             scripts.forEach(src => {
                 const script = document.createElement('script');
@@ -23,31 +20,33 @@
         })();
     </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --accent: #ef4444;
+            --primary: #1c1c1e;
+            --primary-hover: #2c2c2e;
+            --bg: #515154;
+            --card-bg: #828285;
+            --text-main: #1c1c1e;
+            --text-muted: #8e8e93;
+            --accent: #ffffff;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
             background-color: var(--bg);
-            color: var(--text-main);
+            color: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            padding: 10px;
+            padding: 15px;
             user-select: none;
             overflow-x: hidden;
             overscroll-behavior: none;
@@ -82,12 +81,13 @@
         }
 
         .top-row h1 {
-            color: var(--primary);
-            font-size: 1.35rem;
+            color: #ffffff;
+            font-size: 1.5rem;
             font-weight: 800;
             margin: 0;
             letter-spacing: -0.025em;
             line-height: 1;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
         }
 
         .top-actions {
@@ -99,20 +99,25 @@
         .select-box {
             padding: 4px 8px;
             border-radius: 12px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             font-size: 0.8rem;
             font-weight: 600;
-            background-color: white;
-            color: #334155;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
             cursor: pointer;
             outline: none;
             height: 32px;
             line-height: normal;
         }
 
+        .select-box option {
+            background-color: #1c1c1e;
+            color: #ffffff;
+        }
+
         .toggle-btn-icon {
-            background-color: white;
-            border: 1px solid #cbd5e1;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             width: 32px;
             height: 32px;
             border-radius: 50%;
@@ -122,21 +127,20 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            color: #334155;
+            color: #ffffff;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             outline: none;
         }
 
         .toggle-btn-icon:hover {
-            background-color: #f1f5f9;
-            border-color: #cbd5e1;
+            background-color: rgba(255, 255, 255, 0.3);
         }
 
         .toggle-btn-icon.active {
-            background-color: #22c55e;
+            background-color: #34c759;
             color: white;
-            border-color: #22c55e;
-            box-shadow: 0 2px 4px rgba(34, 197, 94, 0.15);
+            border-color: #34c759;
+            box-shadow: 0 2px 4px rgba(52, 199, 89, 0.15);
         }
 
         /* Row 2: Compact Inline Pagination */
@@ -145,10 +149,12 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            padding: 5px 10px;
-            background-color: #f1f5f9;
+            padding: 6px 12px;
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
             border-radius: 12px;
             gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .pagination-item {
@@ -160,7 +166,7 @@
         .pagination-item label {
             font-size: 0.75rem;
             font-weight: 600;
-            color: #64748b;
+            color: #eaeaea;
         }
 
         /* Row 3: Compact Progress */
@@ -174,13 +180,13 @@
 
         .progress {
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: #eaeaea;
             font-weight: 600;
         }
 
         .stats {
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: #eaeaea;
             font-weight: 500;
         }
 
@@ -188,10 +194,11 @@
         .flashcard-wrapper {
             perspective: 1000px;
             width: 100%;
-            height: 450px;
+            aspect-ratio: 1;
             cursor: pointer;
             position: relative;
             touch-action: none;
+            margin-bottom: 12px;
         }
 
         .flashcard {
@@ -200,8 +207,8 @@
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 24px;
         }
 
         .flashcard.flipped {
@@ -217,19 +224,19 @@
             width: 100%;
             height: 100%;
             backface-visibility: hidden;
-            border-radius: 20px;
+            border-radius: 24px;
             background: var(--card-bg);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 30px;
-            border: 1px solid #e2e8f0;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .card-back {
             transform: rotateY(180deg);
-            background-color: #f1f5f9;
+            background: var(--card-bg);
         }
 
         .flashcard.flipped-vertical .card-back {
@@ -322,167 +329,265 @@
         /* Action Buttons inside Card Corner */
         .card-action-corner {
             position: absolute;
-            top: 15px;
-            left: 15px;
+            top: 16px;
+            right: 16px;
+            left: auto;
             z-index: 10;
-            display: flex;
-            gap: 10px;
         }
 
-        /* Speaker Button in Bottom-Left Corner of Card */
+        /* Hide unrequested visual clutter inside the card face to keep it pure */
         .card-action-corner-bottom-left {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            z-index: 10;
-            display: flex;
-            gap: 10px;
+            display: none !important;
         }
 
         .action-icon-btn {
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.1rem;
             cursor: pointer;
             transition: all 0.2s ease;
+            color: #ffffff;
+            backdrop-filter: blur(5px);
+            outline: none;
         }
 
         .action-icon-btn:hover {
             transform: scale(1.05);
-            background: #e2e8f0;
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .action-icon-btn.status-mastered {
-            background: #dcfce7;
-            border-color: #86efac;
-            color: #15803d;
+            background: #34c759;
+            color: #ffffff;
         }
 
         /* Front Content */
         .word {
-            font-size: 6rem;
-            font-weight: bold;
-            color: var(--accent);
-            margin-bottom: 10px;
+            font-size: 4.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-align: center;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            word-break: break-all;
+            margin: 0;
         }
 
         .hint {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            border: 1px dashed var(--text-muted);
-            padding: 4px 12px;
-            border-radius: 12px;
-            margin-top: 15px;
+            display: none !important;
         }
 
         /* Back Content */
-        .pinyin {
-            font-size: 1.3rem;
-            color: var(--primary);
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .meaning {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--text-main);
-            margin-bottom: 25px;
-            text-align: center;
+        .pinyin, .meaning, .example-py, .example-vn {
+            display: none !important;
         }
 
         .example-box {
             width: 100%;
-            border-top: 1px solid #cbd5e1;
-            padding-top: 15px;
             text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .example-cn {
-            font-size: 2.8rem;
-            color: var(--accent);
-            margin-bottom: 4px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            line-height: 1.4;
+            margin: 0;
+            word-break: break-word;
         }
 
-        .example-py {
-            font-size: 1.3rem;
-            color: var(--text-muted);
-            font-style: italic;
-            margin-bottom: 4px;
-        }
-
-        .example-vn {
-            font-size: 1.3rem;
-            color: #475569;
-            font-weight: 500;
-        }
-
-        /* Controls */
-        .controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
+        /* iOS-like Lock Screen Player Widget */
+        .player-widget {
+            background-color: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 24px;
+            padding: 16px 20px;
             width: 100%;
-            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            margin-top: 5px;
+            color: #1c1c1e;
         }
 
-        .btn-icon {
-            width: 60px;
-            height: 60px;
+        .player-info {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .player-pinyin {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1c1c1e;
+            margin: 0;
+            line-height: 1.25;
+            word-break: break-word;
+        }
+
+        .player-meaning {
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #8e8e93;
+            margin: 0;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .player-hanviet {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #8e8e93;
+            margin: 0;
+            line-height: 1.2;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* Progress Bar style matching iOS precisely */
+        .player-progress-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        .player-slider-track {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(0, 0, 0, 0.08);
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .player-slider-fill {
+            height: 100%;
+            background-color: #1c1c1e;
+            border-radius: 2px;
+            width: 0%;
+            position: relative;
+            transition: width 0.1s linear;
+        }
+
+        /* Player Slider Knob */
+        .player-slider-knob {
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
+            background-color: #1c1c1e;
+            position: absolute;
+            top: 50%;
+            right: -4px;
+            transform: translateY(-50%);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .player-time-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #8e8e93;
+        }
+
+        /* Player Controls matching iOS Precisely */
+        .player-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0 2px;
+            margin-top: 4px;
+        }
+
+        .player-control-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            outline: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
-            font-weight: bold;
-            border: 1px solid #cbd5e1;
-            background-color: white;
-            color: #334155;
-            cursor: pointer;
+            color: #1c1c1e;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            outline: none;
+            padding: 6px;
+            border-radius: 50%;
         }
 
-        .btn-icon:hover {
-            transform: translateY(-2px);
-            background-color: #f1f5f9;
-            border-color: #94a3b8;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        .player-control-btn:active {
+            transform: scale(0.9);
+            opacity: 0.7;
         }
 
-        .btn-icon:active {
-            transform: translateY(1px);
+        .player-control-btn svg {
+            fill: currentColor;
         }
 
-        .btn-icon.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        .player-control-btn.navigation-btn svg {
+            width: 22px;
+            height: 22px;
         }
 
-        .btn-icon.active:hover {
-            background-color: var(--primary-hover);
+        .player-control-btn.play-btn {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+        }
+
+        .player-control-btn.play-btn:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .player-control-btn.play-btn svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .player-control-btn.secondary-btn {
+            width: 36px;
+            height: 36px;
+            background-color: rgba(0, 0, 0, 0.04);
+            color: #1c1c1e;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .player-control-btn.secondary-btn:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .player-mode-indicator {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #007aff;
         }
 
         /* Loading */
         .loading {
             font-size: 1.2rem;
-            color: var(--text-muted);
+            color: #ffffff;
             margin-top: 100px;
             font-weight: 500;
         }
 
         .error {
-            color: var(--accent);
+            color: #ff3b30;
             text-align: center;
             margin-top: 100px;
             font-weight: 500;
@@ -653,8 +758,8 @@
 
         .item-word-zh {
             font-size: 1.4rem;
-            font-weight: 500;
-            color: var(--accent);
+            font-weight: 750;
+            color: var(--primary);
             line-height: 1.2;
         }
 
@@ -860,7 +965,7 @@
                 <h1 id="sheet-title">HSK</h1>
                 <div class="top-actions">
                     <select id="hsk-level-select" class="select-box" onchange="changeHskLevel(event)">
-                        <option value="HSK10">⭐HSK10(2)</option>
+                        <option value="HSK100">⭐HSK100(2)</option>
                         <option value="HSK21">⭐HSK21(3)</option>
 						<option value="HSK22">☆ HSK22(4)</option>
                         <option value="HSK31">⭐HSK31(5)</option>
@@ -882,7 +987,7 @@
             </div>
             <div class="pagination-bar">
                 <div class="pagination-item">
-                    <label style="font-size: 0.75rem; font-weight: 600; color: #64748b;">Số dòng:</label>
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #eaeaea;">Số dòng:</label>
                     <select id="records-per-page-select" class="select-box" onchange="changeRecordsPerPage(event)">
                         <option value="10">10</option>
                         <option value="20">20</option>
@@ -893,7 +998,7 @@
                     </select>
                 </div>
                 <div class="pagination-item">
-                    <label id="page-select-label" style="font-size: 0.75rem; font-weight: 600; color: #64748b;">Trang:</label>
+                    <label id="page-select-label" style="font-size: 0.75rem; font-weight: 600; color: #eaeaea;">Trang:</label>
                     <select id="page-select" class="select-box" onchange="changePage(event)">
                     </select>
                 </div>
@@ -915,8 +1020,8 @@
                         <button class="action-icon-btn speak-card-btn" onclick="speakCurrentCardManual(event)" title="Phát âm thẻ">🔊</button>
                     </div>
                     <div class="word" id="front-word">...</div>
-                    <div id="front-hanviet" style="font-size: 1.4rem; font-weight: bold; color: #475569; margin-top: -5px; margin-bottom: 10px; text-transform: uppercase; display: none;"></div>
-                    <div class="pinyin" id="front-pinyin" style="margin-top: 15px;color:#ccc">...</div>
+                    <div id="front-hanviet" style="display: none;"></div>
+                    <div class="pinyin" id="front-pinyin" style="display: none;">...</div>
                 </div>
                 <div class="card-face card-back">
                     <div class="card-action-corner">
@@ -925,22 +1030,69 @@
                     <div class="card-action-corner-bottom-left">
                         <button class="action-icon-btn speak-card-btn" onclick="speakCurrentCardManual(event)" title="Phát âm thẻ">🔊</button>
                     </div>
-                    <div class="pinyin" id="back-pinyin">...</div>
-                    <div id="back-hanviet" style="font-size: 1.0rem; font-weight: bold; color: #475569; margin-bottom: 15px; text-transform: uppercase; display: none;"></div>
-                    <div class="meaning" id="back-meaning">...</div>
+                    <div class="pinyin" id="back-pinyin" style="display: none;">...</div>
+                    <div id="back-hanviet" style="display: none;"></div>
+                    <div class="meaning" id="back-meaning" style="display: none;">...</div>
                     <div class="example-box" id="example-box">
                         <div class="example-cn" id="ex-cn">...</div>
-                        <div class="example-py" id="ex-py">...</div>
-                        <div class="example-vn" id="ex-vn">...</div>
+                        <div class="example-py" id="ex-py" style="display: none;">...</div>
+                        <div class="example-vn" id="ex-vn" style="display: none;">...</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="controls">
-            <button id="word-list-toggle" class="btn-icon" onclick="toggleWordList(event)" title="Xem danh sách từ">📋</button>
-            <button id="auto-play-btn" class="btn-icon" onclick="toggleAutoPlay()" title="Tự động lật & đọc: TẮT">▶</button>
-            <button id="pinyin-modal-toggle" class="btn-icon" onclick="togglePinyinModal(event)" title="Học Pinyin">🔤</button>
+        <!-- Redesigned iOS Lock Screen Player Widget -->
+        <div class="player-widget">
+            <div class="player-info">
+                <div class="player-pinyin" id="player-pinyin">...</div>
+                <div class="player-meaning" id="player-meaning">...</div>
+                <div class="player-hanviet" id="player-hanviet">...</div>
+            </div>
+
+            <div class="player-progress-container">
+                <div class="player-slider-track" id="player-slider-track">
+                    <div class="player-slider-fill" id="player-progress-fill">
+                        <div class="player-slider-knob"></div>
+                    </div>
+                </div>
+                <div class="player-time-labels">
+                    <span id="player-time-current">0:00</span>
+                    <span id="player-time-remaining">-0:00</span>
+                </div>
+            </div>
+
+            <div class="player-controls">
+                <!-- Mở list -->
+                <button class="player-control-btn secondary-btn" id="player-list-btn" onclick="toggleWordList(event)" title="Danh sách từ">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                </button>
+
+                <!-- Chế độ đọc 1-2-3 -->
+                <button class="player-control-btn secondary-btn" id="player-mode-btn" onclick="cycleAutoPlayMode(event)" title="Chế độ tự động đọc (1, 2, 3)">
+                    <span id="player-mode-text" class="player-mode-indicator">❶</span>
+                </button>
+
+                <!-- Play/Pause (Tự động chạy) -->
+                <button class="player-control-btn play-btn" id="player-play-btn" onclick="toggleAutoPlay()" title="Tự động chạy">
+                    <svg viewBox="0 0 24 24" id="player-play-icon" width="28" height="28" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+
+                <!-- Mở cách đọc (Pinyin Modal) -->
+                <button class="player-control-btn secondary-btn" id="player-pinyin-btn" onclick="togglePinyinModal(event)" title="Học Pinyin">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1072,16 +1224,10 @@
 
             const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
             const spreadId = '105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
-            const apiUrl = `${API_GSHEET_URL}?sheet=${currentHskLevel}&act=read&spread=${spreadId}`;
+            const apiUrl = `${API_GSHEET_URL}?sheet=${currentHskLevel}&act=read&spread=${spreadId}&token=${sessionStorage.getItem('token')}`;
 
             try {
-                const response = await fetch(apiUrl, {
-				  method: 'GET',
-				  headers: {
-					'Content-Type': 'application/json'
-				  }
-				});
-
+                const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('Network response error');
                 
                 const data = await response.json();
@@ -1280,6 +1426,93 @@
             }
         }
 
+        // Đồng bộ hóa thông tin người phát (Player UI) tương tự như Lock Screen của iOS
+        function updatePlayerUI() {
+            if (paginatedFlashcards.length === 0) return;
+            const current = paginatedFlashcards[currentIndex];
+            if (!current) return;
+
+            const cardElement = document.getElementById('card');
+            const isFlipped = cardElement && cardElement.classList.contains('flipped-vertical');
+
+            const playerPinyin = document.getElementById('player-pinyin');
+            const playerMeaning = document.getElementById('player-meaning');
+            const playerHanviet = document.getElementById('player-hanviet');
+
+            const hanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(current.word) : '';
+            const hanVietStr = hanViet && hanViet.trim() !== '' ? `${hanViet.trim()}` : '';
+
+            if (!isFlipped) {
+                // Chế độ Từ vựng (mặt trước)
+                playerPinyin.innerText = current.pinyin || "";
+                playerMeaning.innerText = current.meaning || "";
+                playerHanviet.innerText = hanVietStr || "";
+            } else {
+                // Chế độ Ví dụ (mặt sau)
+                playerPinyin.innerText = current.exPy || current.pinyin || "";
+                playerMeaning.innerText = current.exVn || current.meaning || "";
+                playerHanviet.innerText = hanVietStr || "";
+            }
+
+            updatePlayerProgressBar();
+            updatePlayerControlsUI();
+        }
+
+        // Cập nhật thanh trượt thời gian chạy autoplay
+        function updatePlayerProgressBar() {
+            const fill = document.getElementById('player-progress-fill');
+            const currentLabel = document.getElementById('player-time-current');
+            const remainingLabel = document.getElementById('player-time-remaining');
+            
+            if (!fill || !currentLabel || !remainingLabel) return;
+
+            if (isAutoPlaying) {
+                const limit = autoPlayStateTimeLimit || 3000;
+                const elapsed = Math.min(autoPlayElapsedTime, limit);
+                const percent = (elapsed / limit) * 100;
+                fill.style.width = `${percent}%`;
+
+                const elapsedSeconds = Math.floor(elapsed / 1000);
+                const remainingSeconds = Math.ceil((limit - elapsed) / 1000);
+
+                currentLabel.innerText = `0:${elapsedSeconds.toString().padStart(2, '0')}`;
+                remainingLabel.innerText = `-0:${remainingSeconds.toString().padStart(2, '0')}`;
+            } else {
+                fill.style.width = `0%`;
+                currentLabel.innerText = `0:00`;
+                remainingLabel.innerText = `-0:00`;
+            }
+        }
+
+        // Điều khiển giao diện bật/tắt nút chơi tự động và nhãn hiển thị chế độ chạy
+        function updatePlayerControlsUI() {
+            const playBtn = document.getElementById('player-play-btn');
+            const playIcon = document.getElementById('player-play-icon');
+            const modeText = document.getElementById('player-mode-text');
+            
+            if (!playBtn || !playIcon || !modeText) return;
+
+            if (isAutoPlaying) {
+                playBtn.classList.add('active');
+                playIcon.innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`; // Icon Pause (⏸)
+            } else {
+                playBtn.classList.remove('active');
+                playIcon.innerHTML = `<path d="M8 5v14l11-7z"/>`; // Icon Play (▶)
+            }
+
+            // Đồng bộ hoá nhãn hiển thị chế độ đọc tự động 1, 2, 3
+            if (autoPlayMode === 1) {
+                modeText.innerText = "❶";
+                modeText.title = "Chế độ tự động đọc: 1 (Chỉ đọc mặt trước)";
+            } else if (autoPlayMode === 2) {
+                modeText.innerText = "❷";
+                modeText.title = "Chế độ tự động đọc: 2 (Đọc từ + Ví dụ Trung)";
+            } else if (autoPlayMode === 3) {
+                modeText.innerText = "❸";
+                modeText.title = "Chế độ tự động đọc: 3 (Đọc từ + Ví dụ Trung + Việt)";
+            }
+        }
+
         // Hiển thị nội dung thẻ hiện tại và điều khiển luồng phát âm thanh TTS
         function renderCard(preventSpeak = false) {
             const cardElement = document.getElementById('card');
@@ -1297,10 +1530,6 @@
             }
 
             const current = paginatedFlashcards[currentIndex];
-            window.currentWordInfo = {
-                ...current,
-                isFlipped: false
-            };
             
             document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${paginatedFlashcards.length}`;
             document.getElementById('front-word').innerText = current.word;
@@ -1308,23 +1537,18 @@
             document.getElementById('back-pinyin').innerText = current.pinyin;
             document.getElementById('back-meaning').innerText = current.meaning;
 
-            const hanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(current.word) : '';
             const frontHvEl = document.getElementById('front-hanviet');
             const backHvEl = document.getElementById('back-hanviet');
-            if (showListHanViet && hanViet && hanViet !== ' ') {
-                backHvEl.innerText = `[${hanViet}]`;
-                backHvEl.style.display = 'block';
-            } else {
-                backHvEl.style.display = 'none';
-            }
+            if (frontHvEl) frontHvEl.style.display = 'none';
+            if (backHvEl) backHvEl.style.display = 'none';
             
             if(current.exCn) {
                 document.getElementById('example-box').style.display = 'block';
                 
-                // Tô màu khác (primary) cho từ gốc có trong ví dụ chữ Hán (vốn có màu đỏ accent)
+                // Tô màu khác (primary) cho từ gốc có trong ví dụ chữ Hán
                 if (current.word && current.exCn.includes(current.word)) {
                     const regex = new RegExp(current.word, 'g');
-                    document.getElementById('ex-cn').innerHTML = current.exCn.replace(regex, `<span style="color: red;background: powderblue;">${current.word}</span>`);
+                    document.getElementById('ex-cn').innerHTML = current.exCn.replace(regex, `<span style="text-decoration: underline; font-weight: 800;">${current.word}</span>`);
                 } else {
                     document.getElementById('ex-cn').innerText = current.exCn;
                 }
@@ -1354,6 +1578,9 @@
                     speakUniversalText(current.word, false);
                 }
             }
+
+            // Đồng bộ với Player UI
+            updatePlayerUI();
         }
 
         // Hàm lật thẻ và đọc nội dung tương ứng
@@ -1376,6 +1603,9 @@
                     speakUniversalText(textToSpeak, false);
                 }
             }
+
+            // Đồng bộ với Player UI
+            updatePlayerUI();
         }
 
         let currentFlipDirection = 'normal';
@@ -1672,6 +1902,9 @@
                 autoPlayElapsedTime += delta;
             }
             
+            // Cập nhật thanh tiến trình chạy phát
+            updatePlayerProgressBar();
+            
             if (autoPlayElapsedTime >= autoPlayStateTimeLimit) {
                 autoPlayElapsedTime = 0;
                 advanceAutoPlayState();
@@ -1736,24 +1969,20 @@
                 }
                 speakUniversalText(current.word, false);
             }
+
+            // Đồng bộ hoá Player UI
+            updatePlayerUI();
         }
 
-        // Bật / Tắt chế độ tự động đọc chuyển từ tuần tự/ngẫu nhiên luân phiên 3 chế độ
+        // Bật / Tắt chế độ tự động đọc (Play/Pause)
         function toggleAutoPlay(forceOff = false) {
             if (paginatedFlashcards.length === 0) return;
-            const autoPlayBtn = document.getElementById('auto-play-btn');
             
             // Đảm bảo helper đã được khởi tạo qua tương tác người dùng
             initSilentAudioHelper();
             
-            if (forceOff) {
+            if (forceOff || isAutoPlaying) {
                 isAutoPlaying = false;
-                autoPlayMode = 1;
-                saveSetting('autoPlayMode', autoPlayMode);
-                
-                autoPlayBtn.innerHTML = "▶";
-                autoPlayBtn.title = "Tự động lật & đọc: TẮT";
-                autoPlayBtn.classList.remove('active');
                 
                 if (silentAudioHelper) {
                     silentAudioHelper.pause();
@@ -1766,13 +1995,8 @@
                     cardElement.classList.remove('flipped');
                     cardElement.classList.remove('flipped-vertical');
                 }
-                return;
-            }
-
-            if (!isAutoPlaying) {
+            } else {
                 isAutoPlaying = true;
-                autoPlayMode = 1;
-                saveSetting('autoPlayMode', autoPlayMode);
                 
                 if (!isTtsEnabled) {
                     isTtsEnabled = true;
@@ -1784,9 +2008,6 @@
                         ttsBtn.classList.add('active');
                     }
                 }
-                autoPlayBtn.innerHTML = "❶";
-                autoPlayBtn.title = "Tự động: 1 (Chỉ đọc mặt trước) - Bấm để đổi Chế độ 2";
-                autoPlayBtn.classList.add('active');
                 
                 // Chạy silent audio helper lặp tuần hoàn để giữ luồng background hoạt động
                 if (silentAudioHelper) {
@@ -1808,12 +2029,20 @@
                 if (current) {
                     speakUniversalText(current.word, false);
                 }
-            } else if (autoPlayMode === 1) {
-                autoPlayMode = 2;
-                saveSetting('autoPlayMode', autoPlayMode);
-                autoPlayBtn.innerHTML = "❷";
-                autoPlayBtn.title = "Tự động: 2 (Đọc từ + Ví dụ Trung) - Bấm để đổi Chế độ 3";
-                
+            }
+
+            // Đồng bộ hoá Player UI
+            updatePlayerUI();
+        }
+
+        // Chuyển đổi giữa Chế độ 1 -> 2 -> 3
+        function cycleAutoPlayMode(event) {
+            if (event) event.stopPropagation();
+            autoPlayMode = autoPlayMode === 1 ? 2 : (autoPlayMode === 2 ? 3 : 1);
+            saveSetting('autoPlayMode', autoPlayMode);
+            
+            // Nếu đang chạy tự động, quay lại state 0 để đọc từ đầu theo chế độ mới
+            if (isAutoPlaying) {
                 autoPlayState = 0;
                 autoPlayElapsedTime = 0;
                 lastTickTime = Date.now();
@@ -1827,48 +2056,10 @@
                 const current = paginatedFlashcards[currentIndex];
                 if (current) {
                     speakUniversalText(current.word, false);
-                }
-            } else if (autoPlayMode === 2) {
-                autoPlayMode = 3;
-                saveSetting('autoPlayMode', autoPlayMode);
-                autoPlayBtn.innerHTML = "❸";
-                autoPlayBtn.title = "Tự động: 3 (Đọc từ + Ví dụ Trung + Việt) - Bấm để TẮT";
-                
-                autoPlayState = 0;
-                autoPlayElapsedTime = 0;
-                lastTickTime = Date.now();
-                autoPlayStateTimeLimit = 3000;
-                
-                const cardElement = document.getElementById('card');
-                if (cardElement) {
-                    cardElement.classList.remove('flipped');
-                    cardElement.classList.remove('flipped-vertical');
-                }
-                const current = paginatedFlashcards[currentIndex];
-                if (current) {
-                    speakUniversalText(current.word, false);
-                }
-            } else {
-                isAutoPlaying = false;
-                autoPlayMode = 1;
-                saveSetting('autoPlayMode', autoPlayMode);
-                
-                autoPlayBtn.innerHTML = "▶";
-                autoPlayBtn.title = "Tự động lật & đọc: TẮT";
-                autoPlayBtn.classList.remove('active');
-                
-                if (silentAudioHelper) {
-                    silentAudioHelper.pause();
-                }
-                if (typeof window.stopSpeak === 'function') {
-                    window.stopSpeak();
-                }
-                const cardElement = document.getElementById('card');
-                if (cardElement) {
-                    cardElement.classList.remove('flipped');
-                    cardElement.classList.remove('flipped-vertical');
                 }
             }
+            
+            updatePlayerUI();
         }
 
         // Chuyển thẻ tự động trong quá trình lặp Autoplay
@@ -2009,6 +2200,11 @@
                 isMastered ? '1' : '0'
             ];
 
+            let token = sessionStorage.getItem('token');
+            if (!token || token === 'null') {
+                token = null;
+            }
+
             try {
                 const response = await fetch(API_GSHEET_URL, {
                     method: 'POST',
@@ -2023,6 +2219,7 @@
                         sheet: currentHskLevel,
                         spread: spreadId,
                         data: JSON.stringify(rowData),
+                        token: token
                     })
                 });
 
@@ -2394,11 +2591,6 @@
             if (!text) return;
             const voice = isVietnamese ? "vi-VN-NamMinhNeural" : "zh-CN-XiaoxiaoNeural";
 
-            if (window.currentWordInfo) {
-                const cardElement = document.getElementById('card');
-                window.currentWordInfo.isFlipped = !!(cardElement && cardElement.classList.contains('flipped-vertical'));
-            }
-
             if (typeof window.speakCommon === 'function') {
                 window.speakCommon({ text: text, voice: voice });
             } else {
@@ -2407,15 +2599,9 @@
         }
 
         // Phát âm từ vựng trực tiếp từ danh mục của word list
-        function speakWordFromList(event, word, item) {
+        function speakWordFromList(event, word) {
             if (event && typeof event.stopPropagation === 'function') {
                 event.stopPropagation();
-            }
-            if (item) {
-                window.currentWordInfo = {
-                    ...item,
-                    isFlipped: (listContentMode === 'example')
-                };
             }
             speakUniversalText(word, false);
         }
@@ -2442,7 +2628,7 @@
             
             const query = filterText.toLowerCase().trim();
             
-            // Toàn bộ các từ và ví dụ khớp với từ khóa tìm kiếm (để tính tổng số lượng của từng trạng thái)
+            // Toàn bộ các từ khớp với từ khóa tìm kiếm (để tính tổng số lượng của từng trạng thái)
             const queryMatched = rawFlashcards.filter(item => {
                 if (!query) return true;
                 const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') 
@@ -2451,10 +2637,7 @@
                 return (item.word && item.word.toLowerCase().includes(query)) ||
                        (item.pinyin && item.pinyin.toLowerCase().includes(query)) ||
                        (item.meaning && item.meaning.toLowerCase().includes(query)) ||
-                       (wordHanViet && wordHanViet.toLowerCase().includes(query)) ||
-                       (item.exCn && item.exCn.toLowerCase().includes(query)) ||
-                       (item.exPy && item.exPy.toLowerCase().includes(query)) ||
-                       (item.exVn && item.exVn.toLowerCase().includes(query));
+                       (wordHanViet && wordHanViet.toLowerCase().includes(query));
             });
 
             const totalCount = queryMatched.length;
@@ -2516,7 +2699,7 @@
                 
                 // Khi nhấp dòng, phát âm thanh và nhảy thẳng đến thẻ đó
                 itemDiv.onclick = () => {
-                    speakWordFromList(null, targetText, item);
+                    speakWordFromList(null, targetText);
                     selectWordFromList(item.stt, true);
                 };
 
@@ -2526,7 +2709,7 @@
                     let exCnHtml = item.exCn || item.word;
                     if (item.word && item.exCn && item.exCn.includes(item.word)) {
                         const regex = new RegExp(item.word, 'g');
-                        exCnHtml = item.exCn.replace(regex, `<span style="color: red; background: powderblue;">${item.word}</span>`);
+                        exCnHtml = item.exCn.replace(regex, `<span style="color: red; background: powderblue; font-weight: bold;">${item.word}</span>`);
                     }
                     itemDiv.innerHTML = `
                         <div class="item-index">${idx + 1}</div>
@@ -2970,7 +3153,7 @@
             </div>
             <div class="word-list-search-box">
                 <div style="position: relative; width: 100%;">
-                    <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa, ví dụ..." oninput="filterWordListItems()">
+                    <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa..." oninput="filterWordListItems()">
                     <button id="word-search-clear" onclick="clearWordSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #cbd5e1; border: none; font-size: 0.75rem; color: #475569; cursor: pointer; display: none; padding: 0; border-radius: 50%; width: 20px; height: 20px; align-items: center; justify-content: center; line-height: 1; font-weight: bold; transition: all 0.2s;">✕</button>
                 </div>
                 <div style="display: flex; gap: 12px; margin: 8px 4px 10px; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: #475569; flex-wrap: nowrap; width: calc(100% - 8px); overflow-x: auto;">

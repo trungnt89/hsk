@@ -70,7 +70,7 @@ export default async function handler(req, res) {
 	rawData[3] = pPart; // Cập nhật vào cột 4 (index 3)
 	rawData[4] = cPart; // Cập nhật vào cột 5 (index 4)
 	rawData[7] = '=GOOGLETRANSLATE(INDIRECT("D"&ROW()),"ja","vi")'; // Cập nhật vào cột 8 (index 7)
-	rawData[8] = '=GOOGLETRANSLATE(INDIRECT("E"&ROW()),"ja","vi")'; // Cập nhật vào cột 9 (index 8)
+	rawData[8] = '=GOOGLETRANSLATE(INDIRECT("E"&ROW()),"zh","vi")'; // Cập nhật vào cột 9 (index 8)
     
 	
 	

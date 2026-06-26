@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách Link</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        ul { list-style-type: none; }
+        li { margin-bottom: 8px; }
+        a { text-decoration: none; color: #007bff; font-size: 18px; }
+        a:hover { text-decoration: underline; color: #0056b3; }
+    </style>
+</head>
+<body>
+
+    <h1>Danh sách các trang web</h1>
+    <ul id="link-container"></ul>
+
+    <script>
+        async function loadLinks() {
+            try {
+                // Đọc file list.txt
+                const response = await fetch('list.txt');
+                const text = await response.text();
+                
+                // Tách file thành mảng theo dòng
+                const lines = text.split('\n');
+                const container = document.getElementById('link-container');
+
+                lines.forEach(line => {
+                    const cleanLine = line.trim();
+                    if (cleanLine) { // Bỏ qua dòng trống
+                        const li = document.createElement('li');
+                        const a = document.createElement('a');
+                        a.href = cleanLine;
+                        a.textContent = cleanLine;
+                        li.appendChild(a);
+                        container.appendChild(li);
+                    }
+                });
+            } catch (error) {
+                console.error("Lỗi khi đọc file:", error);
+                document.body.innerHTML += "<p style='color:red;'>Không thể tải file list.txt. Hãy chắc chắn bạn đang chạy qua một Local Server.</p>";
+            }
+        }
+
+        loadLinks();
+    </script>
+</body>
+</html>

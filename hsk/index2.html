@@ -525,7 +525,6 @@
             box-shadow: none;
             transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
         }
 
         .word-list-modal.open .word-list-content {
@@ -599,137 +598,6 @@
             flex-direction: column;
             gap: 8px;
             -webkit-overflow-scrolling: touch;
-        }
-
-        /* Đảm bảo thanh cuộn luôn hiển thị rõ ràng trên mọi thiết bị */
-        .word-list-body::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-            display: block !important;
-        }
-        .word-list-body::-webkit-scrollbar-track {
-            background: #f8fafc;
-            border-radius: 4px;
-        }
-        .word-list-body::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        .word-list-body::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-
-        /* Word List Table and Responsive Layout */
-        .word-list-table-container {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-            margin-bottom: 8px;
-        }
-
-        .word-list-table-container::-webkit-scrollbar {
-            height: 6px;
-            display: block !important;
-        }
-        .word-list-table-container::-webkit-scrollbar-track {
-            background: #f8fafc;
-            border-radius: 3px;
-        }
-        .word-list-table-container::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-        .word-list-table-container::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-
-        .word-list-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            text-align: left;
-            table-layout: fixed;
-        }
-
-        .word-list-table th, .word-list-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #e2e8f0;
-            vertical-align: middle;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-
-        .word-list-table th {
-            background-color: #f8fafc;
-            color: #475569;
-            font-weight: 700;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .word-list-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .grid-cell {
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .grid-cell:not(.empty-cell):hover {
-            background-color: #f1f5f9 !important;
-            transform: scale(1.02);
-            z-index: 10;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .grid-cell.active-word {
-            border: 2.5px solid var(--primary) !important;
-        }
-
-        .grid-cell.active-word:not(.item-mastered) {
-            background-color: #f5f3ff !important;
-            color: var(--primary) !important;
-        }
-
-        .grid-cell.active-word.item-mastered {
-            background-color: #ecfdf5 !important;
-            color: #15803d !important;
-        }
-
-        /* Column Widths */
-        .col-stt { width: 45px; text-align: center; }
-        .col-word { width: 90px; font-weight: 700; color: var(--accent); font-size: 1.15rem; }
-        .col-hanviet { width: 90px; font-weight: 700; text-transform: uppercase; color: #475569; font-size: 0.95rem; }
-        .col-pinyin { width: 100px; font-weight: 600; color: var(--primary); }
-        .col-meaning { width: auto; font-weight: 500; color: var(--text-main); }
-        .col-action { width: 45px; text-align: center; }
-
-        /* Mobile Responsive (Relationsite) */
-        @media (max-width: 480px) {
-            .word-list-table {
-                font-size: 0.75rem;
-            }
-            .word-list-table th, .word-list-table td {
-                padding: 8px 4px;
-            }
-            .col-stt { width: 32px; }
-            .col-word { width: 60px; font-size: 0.95rem; }
-            .col-hanviet { width: 65px; font-size: 0.75rem; }
-            .col-pinyin { width: 70px; font-size: 0.75rem; }
-            .col-action { width: 35px; }
-            
-            .item-action-btn {
-                width: 28px !important;
-                height: 28px !important;
-                font-size: 0.8rem !important;
-            }
         }
 
         .word-list-item {
@@ -946,7 +814,6 @@
             box-shadow: none;
             transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
         }
 
         .pinyin-modal.open .pinyin-content {
@@ -2226,7 +2093,7 @@
         function navigateWordList(direction) {
             const container = document.getElementById('word-list-items-container');
             if (!container) return;
-            const items = Array.from(container.querySelectorAll('.grid-cell:not(.empty-cell)'));
+            const items = Array.from(container.querySelectorAll('.word-list-item'));
             if (items.length === 0) return;
 
             let activeIdx = items.findIndex(el => el.classList.contains('active-word'));
@@ -2569,24 +2436,14 @@
             speakUniversalText(textToSpeak, false);
         }
 
-        // Xử lý khi nhấn vào ô lưới từ: chọn từ, đổi trạng thái thuộc/chưa thuộc, phát âm, và đổi màu
-        function onGridCellClick(event, stt, escapedTargetText) {
-            // 1. Đồng bộ chọn từ và chuyển trang chính (đặt trạng thái active)
-            selectWordFromList(stt, true);
-            // 2. Thay đổi trạng thái thuộc/chưa thuộc của từ và lưu trữ, tự động kích hoạt render lại màu mới
-            toggleMasteredFromList(event, stt);
-            // 3. Phát âm từ đó
-            speakWordFromList(null, escapedTargetText, rawFlashcards.find(x => String(x.stt) === String(stt)));
-        }
-
-        // Hiển thị danh sách từ dưới dạng 1 bảng duy nhất gồm 5 cột và 20 dòng, không phân trang, hiển thị 1 nội dung tương ứng chế độ
+        // Hiển thị danh sách từ dạng HTML, hỗ trợ tô đậm từ đang xem và đánh dấu thuộc/chưa thuộc trực tiếp
         function renderWordListItems(filterText = '') {
             const container = document.getElementById('word-list-items-container');
             container.innerHTML = '';
             
             const query = filterText.toLowerCase().trim();
             
-            // Toàn bộ các từ và ví dụ khớp với từ khóa tìm kiếm
+            // Toàn bộ các từ và ví dụ khớp với từ khóa tìm kiếm (để tính tổng số lượng của từng trạng thái)
             const queryMatched = rawFlashcards.filter(item => {
                 if (!query) return true;
                 const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') 
@@ -2605,7 +2462,7 @@
             const masteredCount = queryMatched.filter(item => masteredIds.includes(currentHskLevel + '_' + item.stt)).length;
             const unmasteredCount = totalCount - masteredCount;
 
-            // Cập nhật số đếm trực tiếp vào các tab lọc
+            // Cập nhật số đếm trực tiếp vào các tab lọc để người dùng dễ theo dõi (dạng icon nén gọn không bị tràn 2 dòng)
             const tabAll = document.getElementById('list-filter-all');
             const tabMastered = document.getElementById('list-filter-mastered');
             const tabUnmastered = document.getElementById('list-filter-unmastered');
@@ -2633,83 +2490,82 @@
                 return true;
             });
 
+            if (filtered.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.style.textAlign = 'center';
+                emptyMsg.style.padding = '40px 10px';
+                emptyMsg.style.color = 'var(--text-muted)';
+                emptyMsg.style.fontWeight = '500';
+                emptyMsg.innerText = 'Không tìm thấy từ nào phù hợp.';
+                container.appendChild(emptyMsg);
+                return;
+            }
+
             // Lấy từ đang hiển thị ở thẻ chính để bôi đậm
             const currentItem = paginatedFlashcards[currentIndex];
 
-            // Xây dựng Table HTML gồm đúng 5 cột và 20 dòng
-            let tableHtml = `
-                <div class="word-list-table-container" style="width: 100%;">
-                    <table class="word-list-table" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0;">
-                        <tbody>
-            `;
+            filtered.forEach((item, idx) => {
+                const isMastered = masteredIds.includes(currentHskLevel + '_' + item.stt);
+                const isActive = currentItem && currentItem.stt === item.stt;
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `word-list-item ${isActive ? 'active-word' : ''}`;
+                itemDiv.setAttribute('data-stt', item.stt);
+                
+                // Xác định nội dung phát âm tương ứng với chế độ hiện tại ngay tại thời điểm tạo dòng
+                const targetText = (listContentMode === 'example') ? (item.exCn || item.word) : item.word;
+                
+                // Khi nhấp dòng, phát âm thanh và nhảy thẳng đến thẻ đó
+                itemDiv.onclick = () => {
+                    speakWordFromList(null, targetText, item);
+                    selectWordFromList(item.stt, true);
+                };
 
-            for (let row = 0; row < 20; row++) {
-                tableHtml += `<tr>`;
-                for (let col = 0; col < 5; col++) {
-                    const index = row * 5 + col;
-                    const item = filtered[index];
+                const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
 
-                    if (item) {
-                        const isMastered = masteredIds.includes(currentHskLevel + '_' + item.stt);
-                        const isActive = currentItem && currentItem.stt === item.stt;
-                        
-                        const targetText = (listContentMode === 'example') ? (item.exCn || item.word) : item.word;
-                        const escapedTargetText = targetText.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-                        const clickHandler = `onGridCellClick(event, '${item.stt}', '${escapedTargetText}');`;
-
-                        const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
-                        const tooltipText = `${item.word} [${wordHanViet}]\n${item.pinyin}\nNghĩa: ${item.meaning}\nVí dụ: ${item.exCn || ''}\nDịch: ${item.exVn || ''}`;
-
-                        // Màu sắc cho ô dựa trên trạng thái
-                        let cellBg = '#ffffff';
-                        let cellTextColor = 'var(--text-main)';
-                        let cellBorder = '1px solid #e2e8f0';
-                        
-                        if (isMastered) {
-                            cellBg = '#dcfce7'; // Màu xanh lá nhẹ nhàng thể hiện đã thuộc
-                            cellTextColor = '#15803d';
-                        }
-                        
-                        if (isActive) {
-                            cellBorder = '2.5px solid var(--primary)'; // Đường viền đậm màu tím khi chọn từ
-                            if (isMastered) {
-                                cellBg = '#ecfdf5'; // Màu xanh lá cực nhạt khi vừa chọn vừa thuộc
-                            } else {
-                                cellBg = '#f5f3ff'; // Màu tím nhạt khi chọn nhưng chưa thuộc
-                                cellTextColor = 'var(--primary)';
-                            }
-                        }
-
-                        tableHtml += `
-                            <td class="grid-cell ${isActive ? 'active-word' : ''} ${isMastered ? 'item-mastered' : ''}" 
-                                onclick="${clickHandler}" 
-                                data-stt="${item.stt}"
-                                title="${tooltipText.replace(/"/g, '&quot;')}"
-                                style="border: ${cellBorder}; height: 60px; text-align: center; vertical-align: middle; position: relative; cursor: pointer; padding: 12px 4px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: all 0.2s; font-size: 0.95rem; background-color: ${cellBg}; color: ${cellTextColor}; font-weight: 600;">
-                                <span style="position: absolute; top: 2px; left: 4px; font-size: 0.65rem; color: #94a3b8; font-weight: bold; line-height: 1;">${item.stt}</span>
-                                <span class="cell-text">${targetText}</span>
-                            </td>
-                        `;
-                    } else {
-                        // Ô trống để đủ 5 cột và 20 dòng
-                        tableHtml += `
-                            <td class="grid-cell empty-cell" 
-                                style="border: 1px dashed #e2e8f0; height: 60px; background-color: #f8fafc; cursor: default; pointer-events: none;">
-                                &nbsp;
-                            </td>
-                        `;
+                if (listContentMode === 'example') {
+                    let exCnHtml = item.exCn || item.word;
+                    if (item.word && item.exCn && item.exCn.includes(item.word)) {
+                        const regex = new RegExp(item.word, 'g');
+                        exCnHtml = item.exCn.replace(regex, `<span style="color: red; background: powderblue;">${item.word}</span>`);
                     }
+                    itemDiv.innerHTML = `
+                        <div class="item-index">${idx + 1}</div>
+                        <div class="item-word-info">
+                            <div class="item-word-zh" style="font-size: 1.15rem; line-height: 1.4; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${exCnHtml}</div>
+                            <div class="item-word-py" style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; ${showListPinyin ? '' : 'display: none;'}">${item.exPy || ''}</div>
+                            <div class="item-word-meaning" contenteditable="true" style="font-size: 0.85rem; font-weight: 500; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; ${showListMeaning ? '' : 'display: none;'}" onclick="event.stopPropagation();" onblur="saveExVnFromList(event, '${item.stt}')" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.target.blur(); }">${item.exVn || 'Chưa cập nhật ví dụ'}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
+                            <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
+                                    onclick="toggleMasteredFromList(event, '${item.stt}')" 
+                                    title="${isMastered ? 'Bỏ thuộc' : 'Đánh dấu thuộc'}">
+                                ✓
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    itemDiv.innerHTML = `
+                        <div class="item-index">${idx + 1}</div>
+                        <div class="item-word-info">
+                            <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap;">
+                                <div class="item-word-zh" style="flex-shrink: 0; white-space: nowrap;">${item.word}</div>
+                                ${wordHanViet ? `<span class="item-word-hv" style="color: #475569; font-size: 1.0rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${showListHanViet ? '' : 'display: none;'}">[${wordHanViet}]</span>` : ''}
+                            </div>
+                            <div class="item-word-py" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${showListPinyin ? '' : 'display: none;'}">${item.pinyin}</div>
+                            <div class="item-word-meaning" contenteditable="true" style="${showListMeaning ? '' : 'display: none;'}" onclick="event.stopPropagation();" onblur="saveMeaningFromList(event, '${item.stt}')" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.target.blur(); }">${item.meaning}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
+                            <button class="item-action-btn ${isMastered ? 'item-mastered' : ''}" 
+                                    onclick="toggleMasteredFromList(event, '${item.stt}')" 
+                                    title="${isMastered ? 'Bỏ thuộc' : 'Đánh dấu thuộc'}">
+                                ✓
+                            </button>
+                        </div>
+                    `;
                 }
-                tableHtml += `</tr>`;
-            }
-
-            tableHtml += `
-                        </tbody>
-                    </table>
-                </div>
-            `;
-
-            container.innerHTML = tableHtml;
+                container.appendChild(itemDiv);
+            });
         }
 
         // Chuyển đổi trạng thái bộ lọc của danh sách từ
@@ -2783,30 +2639,34 @@
             listContentMode = mode;
             saveSetting('listContentMode', mode);
             
-            // Cập nhật giao diện nút tab của danh sách từ
-            const wordBtn = document.getElementById('list-mode-word');
-            const exBtn = document.getElementById('list-mode-example');
-            if (wordBtn && exBtn) {
-                if (mode === 'example') {
-                    exBtn.style.background = 'white';
-                    exBtn.style.color = '#334155';
-                    exBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
-                    wordBtn.style.background = 'transparent';
-                    wordBtn.style.color = '#475569';
-                    wordBtn.style.boxShadow = 'none';
-                } else {
-                    wordBtn.style.background = 'white';
-                    wordBtn.style.color = '#334155';
-                    wordBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
-                    exBtn.style.background = 'transparent';
-                    exBtn.style.color = '#475569';
-                    exBtn.style.boxShadow = 'none';
-                }
+            const toggleCheckbox = document.getElementById('iphone-toggle-checkbox');
+            if (toggleCheckbox) {
+                toggleCheckbox.checked = (mode === 'example');
             }
+            updateIphoneToggleStyle(mode === 'example');
             
             const queryInput = document.getElementById('word-search');
             const query = queryInput ? queryInput.value : '';
             renderWordListItems(query);
+        }
+
+        function updateIphoneToggleStyle(isChecked) {
+            const bg = document.getElementById('iphone-toggle-bg');
+            const dot = document.getElementById('iphone-toggle-dot');
+            if (bg && dot) {
+                if (isChecked) {
+                    bg.style.backgroundColor = '#22c55e'; // Green iOS
+                    dot.style.transform = 'translateX(18px)';
+                } else {
+                    bg.style.backgroundColor = '#cbd5e1';
+                    dot.style.transform = 'translateX(0)';
+                }
+            }
+        }
+
+        function toggleIphoneListMode(chk) {
+            const mode = chk.checked ? 'example' : 'word';
+            setListContentMode(mode);
         }
 
         // Đồng bộ chuyển trang/vị trí thẻ khi click chọn từ từ danh sách
@@ -2899,7 +2759,7 @@
             // Cập nhật trạng thái hiển thị 'active' của các phần tử trong danh sách từ mà không cần đóng modal hay vẽ lại toàn bộ
             const container = document.getElementById('word-list-items-container');
             if (container) {
-                container.querySelectorAll('.grid-cell:not(.empty-cell)').forEach(el => {
+                container.querySelectorAll('.word-list-item').forEach(el => {
                     if (el.getAttribute('data-stt') === String(stt)) {
                         el.classList.add('active-word');
                     } else {
@@ -3047,8 +2907,18 @@
             document.getElementById('hsk-level-select').value = currentHskLevel;
             document.getElementById('records-per-page-select').value = recordsPerPage;
             
-            // Đồng bộ chế độ hiển thị bảng từ
-            setListContentMode(listContentMode);
+            const pinyinChk = document.getElementById('show-pinyin-setting');
+            if (pinyinChk) pinyinChk.checked = showListPinyin;
+            const meaningChk = document.getElementById('show-meaning-setting');
+            if (meaningChk) meaningChk.checked = showListMeaning;
+            const hanvietChk = document.getElementById('show-hanviet-setting');
+            if (hanvietChk) hanvietChk.checked = showListHanViet;
+
+            const toggleCheckbox = document.getElementById('iphone-toggle-checkbox');
+            if (toggleCheckbox) {
+                toggleCheckbox.checked = (listContentMode === 'example');
+            }
+            updateIphoneToggleStyle(listContentMode === 'example');
             
             const ttsBtn = document.getElementById('tts-toggle');
             if (isTtsEnabled) {
@@ -3104,12 +2974,25 @@
                     <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa, ví dụ..." oninput="filterWordListItems()">
                     <button id="word-search-clear" onclick="clearWordSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #cbd5e1; border: none; font-size: 0.75rem; color: #475569; cursor: pointer; display: none; padding: 0; border-radius: 50%; width: 20px; height: 20px; align-items: center; justify-content: center; line-height: 1; font-weight: bold; transition: all 0.2s;">✕</button>
                 </div>
-                <div style="display: flex; gap: 12px; margin: 8px 4px 10px; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: #475569; width: calc(100% - 8px);">
-                    <span style="color: #475569; font-size: 0.85rem; font-weight: 700;">Chế độ hiển thị:</span>
-                    <div style="display: flex; background-color: #cbd5e1; padding: 2px; border-radius: 8px; width: 180px; position: relative; user-select: none;">
-                        <button id="list-mode-word" onclick="setListContentMode('word')" style="flex: 1; border: none; padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: white; color: #334155; box-shadow: 0 1px 2px rgba(0,0,0,0.1); outline: none;">Từ vựng</button>
-                        <button id="list-mode-example" onclick="setListContentMode('example')" style="flex: 1; border: none; padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569; outline: none;">Ví dụ</button>
-                    </div>
+                <div style="display: flex; gap: 12px; margin: 8px 4px 10px; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: #475569; flex-wrap: nowrap; width: calc(100% - 8px); overflow-x: auto;">
+                    <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; flex-shrink: 0;">
+                        <div style="position: relative; width: 38px; height: 20px; background-color: #cbd5e1; border-radius: 9999px; transition: background-color 0.2s;" id="iphone-toggle-bg">
+                            <input type="checkbox" id="iphone-toggle-checkbox" onchange="toggleIphoneListMode(this)" style="position: absolute; width: 100%; height: 100%; top:0; left:0; opacity:0; cursor:pointer; margin:0; z-index: 10;">
+                            <div style="position: absolute; width: 16px; height: 16px; border-radius: 50%; background: white; top: 2px; left: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s; pointer-events: none;" id="iphone-toggle-dot"></div>
+                        </div>
+                    </label>
+					<label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; flex-shrink: 0;">
+                        <input type="checkbox" id="show-hanviet-setting" checked onchange="toggleListFormat('hanviet')" style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--primary);">
+                        Hán Việt
+                    </label>
+                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; flex-shrink: 0;">
+                        <input type="checkbox" id="show-pinyin-setting" checked onchange="toggleListFormat('pinyin')" style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--primary);">
+                        Pinyin
+                    </label>
+                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; flex-shrink: 0;">
+                        <input type="checkbox" id="show-meaning-setting" checked onchange="toggleListFormat('meaning')" style="cursor: pointer; width: 15px; height: 15px; accent-color: var(--primary);">
+                        Nghĩa
+                    </label>
                 </div>
                 <div class="list-filter-tabs">
                     <button id="list-filter-all" class="list-filter-btn active" onclick="changeListFilter('all')" title="Tất cả">🗂️ <b>-</b></button>

@@ -2441,12 +2441,11 @@
             
             renderWordListItems();
             
-            // Đồng bộ hiển thị chi tiết ví dụ của từ hiện tại nếu đang ở chế độ ví dụ
+            // Đồng bộ hiển thị chi tiết của từ hiện tại
             const detailDisplay = document.getElementById('example-detail-display');
             if (detailDisplay) {
                 const currentItem = paginatedFlashcards[currentIndex];
-                if (listContentMode === 'example' && currentItem) {
-                    // Sẽ định nghĩa hàm showExampleDetail sau
+                if (currentItem) {
                     setTimeout(() => showExampleDetail(currentItem.stt), 50);
                 } else {
                     detailDisplay.style.display = 'none';
@@ -2577,7 +2576,7 @@
             if (item) {
                 window.currentWordInfo = {
                     ...item,
-                    isFlipped: (listContentMode === 'example')
+                    isFlipped: false
                 };
             }
             speakUniversalText(word, false);
@@ -2598,19 +2597,14 @@
             speakUniversalText(textToSpeak, false);
         }
 
-        // Xử lý khi nhấn vào ô lưới từ: chọn từ, đổi trạng thái thuộc/chưa thuộc, phát âm, và đổi màu
+        // Xử lý khi nhấn vào ô lưới từ: chọn từ, phát âm từ đó, và hiển thị phần nghĩa và câu ví dụ
         function onGridCellClick(event, stt, escapedTargetText) {
             // 1. Đồng bộ chọn từ và chuyển trang chính (đặt trạng thái active)
             selectWordFromList(stt, true);
-            // 2. Thay đổi trạng thái thuộc/chưa thuộc của từ và lưu trữ, tự động kích hoạt render lại màu mới
-            toggleMasteredFromList(event, stt);
-            // 3. Phát âm từ đó
+            // 2. Phát âm từ đó
             speakWordFromList(null, escapedTargetText, rawFlashcards.find(x => String(x.stt) === String(stt)));
-            
-            // 4. Hiển thị thông tin chi tiết ví dụ nếu đang ở chế độ câu ví dụ
-            if (listContentMode === 'example') {
-                showExampleDetail(stt);
-            }
+            // 3. Hiển thị thông tin chi tiết ví dụ và nghĩa
+            showExampleDetail(stt);
         }
 
         // Hiển thị chi tiết câu ví dụ đầy đủ lên phía trên cùng dưới các nút lọc
@@ -2619,15 +2613,29 @@
             const displayEl = document.getElementById('example-detail-display');
             if (!item || !displayEl) return;
 
+            displayEl.setAttribute('data-stt', stt);
+
+            const isMastered = masteredIds.includes(currentHskLevel + '_' + item.stt);
+            const masteredStatusBtn = `
+                <button onclick="toggleMasteredFromDetail(event, '${item.stt}')" 
+                        style="background: ${isMastered ? '#dcfce7' : 'white'}; border: 1px solid ${isMastered ? '#86efac' : '#cbd5e1'}; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: pointer; color: ${isMastered ? '#15803d' : '#475569'};" 
+                        title="${isMastered ? 'Đã thuộc' : 'Đánh dấu thuộc'}">
+                    ${isMastered ? '✅' : '⏳'}
+                </button>
+            `;
+
             const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
             const hanVietSpan = wordHanViet ? ` <span style="color: #475569; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">[${wordHanViet}]</span>` : '';
 
             displayEl.innerHTML = `
-                <button onclick="hideExampleDetail(event)" style="position: absolute; top: 8px; right: 8px; background: #cbd5e1; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.75rem; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; line-height: 1; transition: all 0.2s;">✕</button>
+                <button onclick="hideExampleDetail(event)" style="position: absolute; top: 8px; right: 8px; background: #cbd5e1; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.75rem; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; line-height: 1; transition: all 0.2s; z-index: 20;">✕</button>
                 <div style="padding-right: 22px; display: flex; flex-direction: column; gap: 4px;">
                     <div style="font-size: 0.75rem; color: #64748b; font-weight: bold; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
                         <span>Từ #${item.stt}: <b style="font-size: 0.9rem; color: var(--accent);">${item.word}</b>${hanVietSpan} <span style="color: var(--primary);">[${item.pinyin}]</span> - <span style="color: var(--text-main); font-weight: 500;">${item.meaning}</span></span>
-                        <button onclick="speakUniversalText('${item.exCn.replace(/'/g, "\\'")}', false); event.stopPropagation();" style="background: white; border: 1px solid #cbd5e1; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: pointer;" title="Đọc câu ví dụ">🔊</button>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            ${masteredStatusBtn}
+                            <button onclick="speakUniversalText('${item.exCn.replace(/'/g, "\\'")}', false); event.stopPropagation();" style="background: white; border: 1px solid #cbd5e1; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: pointer;" title="Đọc câu ví dụ">🔊</button>
+                        </div>
                     </div>
                     <div style="font-size: 1.15rem; font-weight: bold; color: var(--accent); line-height: 1.3; word-break: break-all; white-space: normal;">${item.exCn || ''}</div>
                     <div style="font-size: 0.85rem; color: var(--primary); font-weight: 600; font-style: italic; word-break: break-all; white-space: normal;">${item.exPy || ''}</div>
@@ -2635,6 +2643,28 @@
                 </div>
             `;
             displayEl.style.display = 'block';
+        }
+
+        // Đánh dấu thuộc nhanh trực tiếp từ chi tiết câu ví dụ
+        function toggleMasteredFromDetail(event, stt) {
+            if (event) event.stopPropagation();
+            toggleMasteredFromList(event, stt);
+            showExampleDetail(stt);
+        }
+
+        // Khi click vào vùng hiển thị nghĩa và câu ví dụ thì đọc câu ví dụ
+        function speakExampleFromDetail(event) {
+            if (event.target.tagName === 'BUTTON' || event.target.closest('button')) {
+                return;
+            }
+            const displayEl = document.getElementById('example-detail-display');
+            if (!displayEl) return;
+            const stt = displayEl.getAttribute('data-stt');
+            if (!stt) return;
+            const item = rawFlashcards.find(x => String(x.stt) === String(stt));
+            if (item && item.exCn) {
+                speakUniversalText(item.exCn, false);
+            }
         }
 
         // Ẩn chi tiết câu ví dụ
@@ -2724,18 +2754,20 @@
                         const isMastered = masteredIds.includes(currentHskLevel + '_' + item.stt);
                         const isActive = currentItem && currentItem.stt === item.stt;
                         
-                        const targetText = (listContentMode === 'example') ? (item.exCn || item.word) : item.word;
+                        const targetText = item.word;
                         const escapedTargetText = targetText.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                         const clickHandler = `onGridCellClick(event, '${item.stt}', '${escapedTargetText}');`;
+                        const dblClickHandler = `toggleMasteredFromList(event, '${item.stt}');`;
 
                         const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
                         const tooltipText = `${item.word} [${wordHanViet}]\n${item.pinyin}\nNghĩa: ${item.meaning}\nVí dụ: ${item.exCn || ''}\nDịch: ${item.exVn || ''}`;
 
-                        const cellFontSize = (listContentMode === 'example') ? '0.75rem' : '1.3rem';
+                        const cellFontSize = '1.3rem';
 
                         tableHtml += `
                             <td class="grid-cell ${isActive ? 'active-word' : ''} ${isMastered ? 'item-mastered' : ''}" 
                                 onclick="${clickHandler}" 
+                                ondblclick="${dblClickHandler}"
                                 data-stt="${item.stt}"
                                 title="${tooltipText.replace(/"/g, '&quot;')}"
                                 style="font-size: ${cellFontSize};">
@@ -2840,42 +2872,17 @@
             renderWordListItems(query);
         }
 
-        // Chuyển đổi giữa chế độ chỉ hiển thị Từ / hiển thị Câu ví dụ làm nội dung chính
+        // Chuyển đổi giữa chế độ hiển thị Từ (mặc định luôn hiển thị từ)
         function setListContentMode(mode) {
-            listContentMode = mode;
-            saveSetting('listContentMode', mode);
+            listContentMode = 'word';
+            saveSetting('listContentMode', 'word');
             
-            // Cập nhật giao diện nút tab của danh sách từ
-            const wordBtn = document.getElementById('list-mode-word');
-            const exBtn = document.getElementById('list-mode-example');
-            if (wordBtn && exBtn) {
-                if (mode === 'example') {
-                    exBtn.style.background = 'white';
-                    exBtn.style.color = '#334155';
-                    exBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
-                    wordBtn.style.background = 'transparent';
-                    wordBtn.style.color = '#475569';
-                    wordBtn.style.boxShadow = 'none';
-                } else {
-                    wordBtn.style.background = 'white';
-                    wordBtn.style.color = '#334155';
-                    wordBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
-                    exBtn.style.background = 'transparent';
-                    exBtn.style.color = '#475569';
-                    exBtn.style.boxShadow = 'none';
-                }
-            }
-            
-            // Đồng bộ hiển thị chi tiết ví dụ của từ hiện tại nếu đang ở chế độ ví dụ
+            // Đồng bộ hiển thị chi tiết nghĩa và câu ví dụ của từ hiện tại
             const detailDisplay = document.getElementById('example-detail-display');
             if (detailDisplay) {
-                if (mode === 'example') {
-                    const currentItem = paginatedFlashcards[currentIndex];
-                    if (currentItem) {
-                        showExampleDetail(currentItem.stt);
-                    } else {
-                        detailDisplay.style.display = 'none';
-                    }
+                const currentItem = paginatedFlashcards[currentIndex];
+                if (currentItem) {
+                    showExampleDetail(currentItem.stt);
                 } else {
                     detailDisplay.style.display = 'none';
                 }
@@ -3216,19 +3223,12 @@
                     <input type="text" id="word-search" class="search-input" placeholder="Tìm kiếm chữ Hán, Pinyin, nghĩa, ví dụ..." oninput="filterWordListItems()">
                     <button id="word-search-clear" onclick="clearWordSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #cbd5e1; border: none; font-size: 0.75rem; color: #475569; cursor: pointer; display: none; padding: 0; border-radius: 50%; width: 20px; height: 20px; align-items: center; justify-content: center; line-height: 1; font-weight: bold; transition: all 0.2s;">✕</button>
                 </div>
-                <div style="display: flex; gap: 12px; margin: 8px 4px 10px; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: #475569; width: calc(100% - 8px);">
-                    <span style="color: #475569; font-size: 0.85rem; font-weight: 700;">Chế độ hiển thị:</span>
-                    <div style="display: flex; background-color: #cbd5e1; padding: 2px; border-radius: 8px; width: 180px; position: relative; user-select: none;">
-                        <button id="list-mode-word" onclick="setListContentMode('word')" style="flex: 1; border: none; padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: white; color: #334155; box-shadow: 0 1px 2px rgba(0,0,0,0.1); outline: none;">Từ vựng</button>
-                        <button id="list-mode-example" onclick="setListContentMode('example')" style="flex: 1; border: none; padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569; outline: none;">Ví dụ</button>
-                    </div>
-                </div>
-                <div class="list-filter-tabs">
+                <div class="list-filter-tabs" style="margin-top: 6px;">
                     <button id="list-filter-all" class="list-filter-btn active" onclick="changeListFilter('all')" title="Tất cả">🗂️ <b>-</b></button>
                     <button id="list-filter-mastered" class="list-filter-btn" onclick="changeListFilter('mastered')" title="Đã thuộc">✅ <b>-</b></button>
                     <button id="list-filter-unmastered" class="list-filter-btn" onclick="changeListFilter('unmastered')" title="Chưa thuộc">⏳ <b>-</b></button>
                 </div>
-                <div id="example-detail-display" style="display: none; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 10px 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative; text-align: left;">
+                <div id="example-detail-display" onclick="speakExampleFromDetail(event)" style="display: none; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 10px 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative; text-align: left; cursor: pointer;" title="Nhấn vào đây để nghe phát âm câu ví dụ">
                     <!-- Content will be inserted dynamically -->
                 </div>
             </div>

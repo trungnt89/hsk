@@ -2597,13 +2597,15 @@
             speakUniversalText(textToSpeak, false);
         }
 
-        // Xử lý khi nhấn vào ô lưới từ: chọn từ, phát âm từ đó, và hiển thị phần nghĩa và câu ví dụ
+        // Xử lý khi nhấn vào ô lưới từ: chọn từ, đổi trạng thái thuộc/chưa thuộc, phát âm, và hiển thị phần nghĩa và câu ví dụ
         function onGridCellClick(event, stt, escapedTargetText) {
             // 1. Đồng bộ chọn từ và chuyển trang chính (đặt trạng thái active)
             selectWordFromList(stt, true);
-            // 2. Phát âm từ đó
+            // 2. Thay đổi trạng thái thuộc/chưa thuộc của từ và lưu trữ, tự động cập nhật màu mới
+            toggleMasteredFromList(event, stt);
+            // 3. Phát âm từ đó
             speakWordFromList(null, escapedTargetText, rawFlashcards.find(x => String(x.stt) === String(stt)));
-            // 3. Hiển thị thông tin chi tiết ví dụ và nghĩa
+            // 4. Hiển thị thông tin chi tiết ví dụ và nghĩa (sau khi đã cập nhật trạng thái thuộc)
             showExampleDetail(stt);
         }
 
@@ -2757,7 +2759,6 @@
                         const targetText = item.word;
                         const escapedTargetText = targetText.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                         const clickHandler = `onGridCellClick(event, '${item.stt}', '${escapedTargetText}');`;
-                        const dblClickHandler = `toggleMasteredFromList(event, '${item.stt}');`;
 
                         const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
                         const tooltipText = `${item.word} [${wordHanViet}]\n${item.pinyin}\nNghĩa: ${item.meaning}\nVí dụ: ${item.exCn || ''}\nDịch: ${item.exVn || ''}`;
@@ -2767,7 +2768,6 @@
                         tableHtml += `
                             <td class="grid-cell ${isActive ? 'active-word' : ''} ${isMastered ? 'item-mastered' : ''}" 
                                 onclick="${clickHandler}" 
-                                ondblclick="${dblClickHandler}"
                                 data-stt="${item.stt}"
                                 title="${tooltipText.replace(/"/g, '&quot;')}"
                                 style="font-size: ${cellFontSize};">

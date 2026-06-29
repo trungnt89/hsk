@@ -2441,6 +2441,18 @@
             
             renderWordListItems();
             
+            // Đồng bộ hiển thị chi tiết ví dụ của từ hiện tại nếu đang ở chế độ ví dụ
+            const detailDisplay = document.getElementById('example-detail-display');
+            if (detailDisplay) {
+                const currentItem = paginatedFlashcards[currentIndex];
+                if (listContentMode === 'example' && currentItem) {
+                    // Sẽ định nghĩa hàm showExampleDetail sau
+                    setTimeout(() => showExampleDetail(currentItem.stt), 50);
+                } else {
+                    detailDisplay.style.display = 'none';
+                }
+            }
+            
             modal.classList.add('open');
             document.body.style.overflow = 'hidden'; // Khóa cuộn trang nền
 
@@ -2594,6 +2606,44 @@
             toggleMasteredFromList(event, stt);
             // 3. Phát âm từ đó
             speakWordFromList(null, escapedTargetText, rawFlashcards.find(x => String(x.stt) === String(stt)));
+            
+            // 4. Hiển thị thông tin chi tiết ví dụ nếu đang ở chế độ câu ví dụ
+            if (listContentMode === 'example') {
+                showExampleDetail(stt);
+            }
+        }
+
+        // Hiển thị chi tiết câu ví dụ đầy đủ lên phía trên cùng dưới các nút lọc
+        function showExampleDetail(stt) {
+            const item = rawFlashcards.find(x => String(x.stt) === String(stt));
+            const displayEl = document.getElementById('example-detail-display');
+            if (!item || !displayEl) return;
+
+            const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
+            const hanVietSpan = wordHanViet ? ` <span style="color: #475569; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">[${wordHanViet}]</span>` : '';
+
+            displayEl.innerHTML = `
+                <button onclick="hideExampleDetail(event)" style="position: absolute; top: 8px; right: 8px; background: #cbd5e1; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.75rem; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; line-height: 1; transition: all 0.2s;">✕</button>
+                <div style="padding-right: 22px; display: flex; flex-direction: column; gap: 4px;">
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: bold; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>Từ #${item.stt}: <b style="font-size: 0.9rem; color: var(--accent);">${item.word}</b>${hanVietSpan} <span style="color: var(--primary);">[${item.pinyin}]</span> - <span style="color: var(--text-main); font-weight: 500;">${item.meaning}</span></span>
+                        <button onclick="speakUniversalText('${item.exCn.replace(/'/g, "\\'")}', false); event.stopPropagation();" style="background: white; border: 1px solid #cbd5e1; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: pointer;" title="Đọc câu ví dụ">🔊</button>
+                    </div>
+                    <div style="font-size: 1.15rem; font-weight: bold; color: var(--accent); line-height: 1.3; word-break: break-all; white-space: normal;">${item.exCn || ''}</div>
+                    <div style="font-size: 0.85rem; color: var(--primary); font-weight: 600; font-style: italic; word-break: break-all; white-space: normal;">${item.exPy || ''}</div>
+                    <div style="font-size: 0.85rem; color: #475569; font-weight: 500; word-break: break-all; white-space: normal;">${item.exVn || ''}</div>
+                </div>
+            `;
+            displayEl.style.display = 'block';
+        }
+
+        // Ẩn chi tiết câu ví dụ
+        function hideExampleDetail(event) {
+            if (event) event.stopPropagation();
+            const displayEl = document.getElementById('example-detail-display');
+            if (displayEl) {
+                displayEl.style.display = 'none';
+            }
         }
 
         // Hiển thị danh sách từ dưới dạng 1 bảng duy nhất gồm 5 cột và 20 dòng, không phân trang, hiển thị 1 nội dung tương ứng chế độ
@@ -2813,6 +2863,21 @@
                     exBtn.style.background = 'transparent';
                     exBtn.style.color = '#475569';
                     exBtn.style.boxShadow = 'none';
+                }
+            }
+            
+            // Đồng bộ hiển thị chi tiết ví dụ của từ hiện tại nếu đang ở chế độ ví dụ
+            const detailDisplay = document.getElementById('example-detail-display');
+            if (detailDisplay) {
+                if (mode === 'example') {
+                    const currentItem = paginatedFlashcards[currentIndex];
+                    if (currentItem) {
+                        showExampleDetail(currentItem.stt);
+                    } else {
+                        detailDisplay.style.display = 'none';
+                    }
+                } else {
+                    detailDisplay.style.display = 'none';
                 }
             }
             
@@ -3162,6 +3227,9 @@
                     <button id="list-filter-all" class="list-filter-btn active" onclick="changeListFilter('all')" title="Tất cả">🗂️ <b>-</b></button>
                     <button id="list-filter-mastered" class="list-filter-btn" onclick="changeListFilter('mastered')" title="Đã thuộc">✅ <b>-</b></button>
                     <button id="list-filter-unmastered" class="list-filter-btn" onclick="changeListFilter('unmastered')" title="Chưa thuộc">⏳ <b>-</b></button>
+                </div>
+                <div id="example-detail-display" style="display: none; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 10px 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative; text-align: left;">
+                    <!-- Content will be inserted dynamically -->
                 </div>
             </div>
             <div class="word-list-body" id="word-list-items-container">

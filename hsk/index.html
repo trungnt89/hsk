@@ -680,6 +680,23 @@
         .grid-cell {
             cursor: pointer;
             transition: all 0.2s ease;
+            background-color: #ffffff;
+            color: var(--text-main);
+            border: 1px solid #e2e8f0;
+            height: 60px;
+            text-align: center;
+            vertical-align: middle;
+            position: relative;
+            padding: 12px 4px 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .grid-cell.item-mastered {
+            background-color: #dcfce7 !important;
+            color: #15803d !important;
         }
 
         .grid-cell:not(.empty-cell):hover {
@@ -2582,6 +2599,10 @@
         // Hiển thị danh sách từ dưới dạng 1 bảng duy nhất gồm 5 cột và 20 dòng, không phân trang, hiển thị 1 nội dung tương ứng chế độ
         function renderWordListItems(filterText = '') {
             const container = document.getElementById('word-list-items-container');
+            const savedScrollTop = container ? container.scrollTop : 0;
+            const tableContainerBefore = container ? container.querySelector('.word-list-table-container') : null;
+            const savedScrollLeft = tableContainerBefore ? tableContainerBefore.scrollLeft : 0;
+
             container.innerHTML = '';
             
             const query = filterText.toLowerCase().trim();
@@ -2660,32 +2681,14 @@
                         const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
                         const tooltipText = `${item.word} [${wordHanViet}]\n${item.pinyin}\nNghĩa: ${item.meaning}\nVí dụ: ${item.exCn || ''}\nDịch: ${item.exVn || ''}`;
 
-                        // Màu sắc cho ô dựa trên trạng thái
-                        let cellBg = '#ffffff';
-                        let cellTextColor = 'var(--text-main)';
-                        let cellBorder = '1px solid #e2e8f0';
-                        
-                        if (isMastered) {
-                            cellBg = '#dcfce7'; // Màu xanh lá nhẹ nhàng thể hiện đã thuộc
-                            cellTextColor = '#15803d';
-                        }
-                        
-                        if (isActive) {
-                            cellBorder = '2.5px solid var(--primary)'; // Đường viền đậm màu tím khi chọn từ
-                            if (isMastered) {
-                                cellBg = '#ecfdf5'; // Màu xanh lá cực nhạt khi vừa chọn vừa thuộc
-                            } else {
-                                cellBg = '#f5f3ff'; // Màu tím nhạt khi chọn nhưng chưa thuộc
-                                cellTextColor = 'var(--primary)';
-                            }
-                        }
+                        const cellFontSize = (listContentMode === 'example') ? '0.75rem' : '1.3rem';
 
                         tableHtml += `
                             <td class="grid-cell ${isActive ? 'active-word' : ''} ${isMastered ? 'item-mastered' : ''}" 
                                 onclick="${clickHandler}" 
                                 data-stt="${item.stt}"
                                 title="${tooltipText.replace(/"/g, '&quot;')}"
-                                style="border: ${cellBorder}; height: 60px; text-align: center; vertical-align: middle; position: relative; cursor: pointer; padding: 12px 4px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: all 0.2s; font-size: 0.95rem; background-color: ${cellBg}; color: ${cellTextColor}; font-weight: 600;">
+                                style="font-size: ${cellFontSize};">
                                 <span style="position: absolute; top: 2px; left: 4px; font-size: 0.65rem; color: #94a3b8; font-weight: bold; line-height: 1;">${item.stt}</span>
                                 <span class="cell-text">${targetText}</span>
                             </td>
@@ -2710,6 +2713,15 @@
             `;
 
             container.innerHTML = tableHtml;
+
+            // Khôi phục lại vị trí cuộn dọc và cuộn ngang
+            if (container) {
+                container.scrollTop = savedScrollTop;
+                const tableContainerAfter = container.querySelector('.word-list-table-container');
+                if (tableContainerAfter) {
+                    tableContainerAfter.scrollLeft = savedScrollLeft;
+                }
+            }
         }
 
         // Chuyển đổi trạng thái bộ lọc của danh sách từ
@@ -2936,9 +2948,44 @@
             const unmasteredCount = rawFlashcards.length - masteredCount;
             document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
 
-            // Vẽ lại danh sách từ để cập nhật trạng thái icon tick ✓
-            const query = document.getElementById('word-search').value;
-            renderWordListItems(query);
+            // Cập nhật CSS class của ô được click trực tiếp để không bị vẽ lại, không làm nhảy scroll
+            const container = document.getElementById('word-list-items-container');
+            if (container) {
+                const cellEl = container.querySelector(`.grid-cell[data-stt="${stt}"]`);
+                if (cellEl) {
+                    if (isNowMastered) {
+                        cellEl.classList.add('item-mastered');
+                    } else {
+                        cellEl.classList.remove('item-mastered');
+                    }
+                }
+            }
+
+            // Đồng bộ bộ đếm trên các tab bộ lọc
+            const queryVal = document.getElementById('word-search').value.toLowerCase().trim();
+            const queryMatched = rawFlashcards.filter(item => {
+                if (!queryVal) return true;
+                const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') 
+                    ? window.getHanVietForWord(item.word) 
+                    : '';
+                return (item.word && item.word.toLowerCase().includes(queryVal)) ||
+                       (item.pinyin && item.pinyin.toLowerCase().includes(queryVal)) ||
+                       (item.meaning && item.meaning.toLowerCase().includes(queryVal)) ||
+                       (wordHanViet && wordHanViet.toLowerCase().includes(queryVal)) ||
+                       (item.exCn && item.exCn.toLowerCase().includes(queryVal)) ||
+                       (item.exPy && item.exPy.toLowerCase().includes(queryVal)) ||
+                       (item.exVn && item.exVn.toLowerCase().includes(queryVal));
+            });
+            const qTotalCount = queryMatched.length;
+            const qMasteredCount = queryMatched.filter(item => masteredIds.includes(currentHskLevel + '_' + item.stt)).length;
+            const qUnunmasteredCount = qTotalCount - qMasteredCount;
+
+            const tabAll = document.getElementById('list-filter-all');
+            const tabMastered = document.getElementById('list-filter-mastered');
+            const tabUnmastered = document.getElementById('list-filter-unmastered');
+            if (tabAll) tabAll.innerHTML = `🗂️ <b>${qTotalCount}</b>`;
+            if (tabMastered) tabMastered.innerHTML = `✅ <b>${qMasteredCount}</b>`;
+            if (tabUnmastered) tabUnmastered.innerHTML = `⏳ <b>${qUnunmasteredCount}</b>`;
 
             // Cập nhật nút bôi đỏ/xanh mặt thẻ nếu thẻ hiện tại trùng từ vừa tick
             const currentItem = paginatedFlashcards[currentIndex];

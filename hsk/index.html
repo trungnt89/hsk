@@ -700,15 +700,7 @@
             color: #15803d !important;
         }
 
-        .grid-cell:not(.empty-cell):hover {
-            background-color: #f1f5f9 !important;
-            transform: scale(1.02);
-            z-index: 10;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
         .grid-cell.active-word {
-            border: 2.5px solid #f97316 !important;
             background-color: #ffedd5 !important;
             color: #ea580c !important;
         }
@@ -2773,16 +2765,12 @@
                         const escapedTargetText = targetText.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                         const clickHandler = `onGridCellClick(event, '${item.stt}', '${escapedTargetText}');`;
 
-                        const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(item.word) : '';
-                        const tooltipText = `${item.word} [${wordHanViet}]\n${item.pinyin}\nNghĩa: ${item.meaning}\nVí dụ: ${item.exCn || ''}\nDịch: ${item.exVn || ''}`;
-
                         const cellFontSize = '1.3rem';
 
                         tableHtml += `
                             <td class="grid-cell ${isActive ? 'active-word' : ''} ${isMastered ? 'item-mastered' : ''}" 
                                 onclick="${clickHandler}" 
                                 data-stt="${item.stt}"
-                                title="${tooltipText.replace(/"/g, '&quot;')}"
                                 style="font-size: ${cellFontSize};">
                                 <span style="position: absolute; top: 2px; left: 4px; font-size: 0.65rem; color: #94a3b8; font-weight: bold; line-height: 1;">${item.stt}</span>
                                 <span class="cell-text">${targetText}</span>

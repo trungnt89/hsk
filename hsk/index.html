@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1054,20 +1055,29 @@
                     <div id="front-hanviet" style="font-size: 1.4rem; font-weight: bold; color: #475569; margin-top: -5px; margin-bottom: 10px; text-transform: uppercase; display: none;"></div>
                     <div class="pinyin" id="front-pinyin" style="margin-top: 15px;color:#ccc">...</div>
                 </div>
-                <div class="card-face card-back">
+                <div class="card-face card-back" style="padding: 20px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center;">
                     <div class="card-action-corner">
                         <button id="mark-btn-back" class="action-icon-btn" onclick="toggleMastered(event)" title="Đánh dấu thuộc">✓</button>
                     </div>
                     <div class="card-action-corner-bottom-left">
                         <button class="action-icon-btn speak-card-btn" onclick="speakCurrentCardManual(event)" title="Phát âm thẻ">🔊</button>
                     </div>
-                    <div class="pinyin" id="back-pinyin">...</div>
-                    <div id="back-hanviet" style="font-size: 1.0rem; font-weight: bold; color: #475569; margin-bottom: 15px; text-transform: uppercase; display: none;"></div>
-                    <div class="meaning" id="back-meaning">...</div>
-                    <div class="example-box" id="example-box">
-                        <div class="example-cn" id="ex-cn">...</div>
-                        <div class="example-py" id="ex-py">...</div>
-                        <div class="example-vn" id="ex-vn">...</div>
+                    
+                    <!-- Phần từ siêu nhỏ gọn -->
+                    <div class="back-word-header" style="width: 100%; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; text-align: center; display: flex; flex-direction: column; gap: 2px; align-items: center; flex-shrink: 0;">
+                        <div style="font-size: 0.85rem; color: #64748b; font-weight: bold; display: flex; align-items: baseline; gap: 4px; justify-content: center;">
+                            Từ <span id="back-stt">#1</span>: <b id="back-word-text" style="font-size: 1.15rem; color: var(--accent);"></b> <span id="back-hanviet" style="color: #475569; font-size: 0.95rem; text-transform: uppercase; font-weight: bold; display: none;"></span>
+                        </div>
+                        <div style="font-size: 0.8rem; font-weight: 500; display: flex; align-items: baseline; gap: 4px; justify-content: center; flex-wrap: wrap;">
+                            <span class="pinyin" id="back-pinyin" style="color: var(--primary); font-weight: 600; font-size: 0.85rem; margin-bottom: 0;"></span> - <span class="meaning" id="back-meaning" style="color: var(--text-main); font-weight: 500; font-size: 0.85rem; margin-bottom: 0;"></span>
+                        </div>
+                    </div>
+
+                    <!-- Phần ví dụ cực kỳ nổi bật, chiếm phần lớn diện tích -->
+                    <div class="example-box" id="example-box" style="width: 100%; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fffdfa; border: 1.5px solid #fed7aa; border-radius: 16px; padding: 20px 15px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08); text-align: center; gap: 12px;">
+                        <div class="example-cn" id="ex-cn" style="font-size: 2.3rem; font-weight: bold; color: #1e293b; line-height: 1.35; word-break: break-all; white-space: normal;">...</div>
+                        <div class="example-py" id="ex-py" style="font-size: 1.2rem; color: var(--primary); font-weight: 600; font-style: italic; line-height: 1.3; word-break: break-all; white-space: normal;">...</div>
+                        <div class="example-vn" id="ex-vn" style="font-size: 1.2rem; color: #475569; font-weight: 500; line-height: 1.3; word-break: break-all; white-space: normal;">...</div>
                     </div>
                 </div>
             </div>
@@ -1429,6 +1439,10 @@
                 document.getElementById('back-meaning').innerText = "Không có thẻ nào trong danh mục này";
                 document.getElementById('example-box').style.display = 'none';
                 document.getElementById('progress-text').innerText = "0 / 0";
+                const backSttEl = document.getElementById('back-stt');
+                const backWordTextEl = document.getElementById('back-word-text');
+                if (backSttEl) backSttEl.innerText = "";
+                if (backWordTextEl) backWordTextEl.innerText = "";
                 return;
             }
 
@@ -1461,6 +1475,13 @@
             document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${paginatedFlashcards.length}`;
             document.getElementById('front-word').innerText = current.word;
             document.getElementById('front-pinyin').innerText = current.pinyin;
+
+            // Thiết lập thông tin tiêu đề mặt sau giống với chi tiết danh sách
+            const backSttEl = document.getElementById('back-stt');
+            const backWordTextEl = document.getElementById('back-word-text');
+            if (backSttEl) backSttEl.innerText = `#${current.stt}`;
+            if (backWordTextEl) backWordTextEl.innerText = current.word;
+
             document.getElementById('back-pinyin').innerText = current.pinyin;
             document.getElementById('back-meaning').innerText = current.meaning;
 

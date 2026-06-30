@@ -416,9 +416,16 @@
 
     // --- LOGIC KIỂM TRA SESSION & POPUP ---
 
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+        return null;
+    }
+
     function checkAuth() {
-        // Kiểm tra Token từ sessionStorage
-        const token = sessionStorage.getItem('token');
+        // Kiểm tra Token từ cookie thay vì sessionStorage
+        const token = getCookie('token');
 
         const mainContent = document.getElementById('mainContentWrapper');
         const backdrop = document.getElementById('loginBackdrop');
@@ -478,13 +485,8 @@
             if (response.ok && data.success) {
                 showToast('Xác thực thành công! Đang mở khóa...', 'success');
                 
-                // Lưu vào sessionStorage
-                sessionStorage.setItem('token', val);
-
-                // Đồng bộ lưu thêm vào cả Cookie để các cuộc gọi đến gSheet.js backend (CORS) 
-                // vẫn tự động nhận diện cookie PASWORD nếu server được cấu hình CORS Credentials.
-                document.cookie = `PASWORD=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=None; Secure`;
-                document.cookie = `PASSWORD=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=None; Secure`;
+                // Lưu vào cookie với thời gian sống 7 ngày (7 * 24 * 60 * 60 = 604800 giây)
+                document.cookie = `token=${encodeURIComponent(val)}; path=/; max-age=604800; SameSite=Lax; Secure`;
                 
                 input.value = ''; // xóa text
                 setTimeout(() => {
@@ -514,12 +516,8 @@
 
     function logout() {
         if (confirm('Bạn có chắc chắn muốn đăng xuất và hủy session hiện tại?')) {
-            // Xóa sessionStorage
-            sessionStorage.removeItem('token');
-
-            // Xóa cookies tương ứng
-            document.cookie = "PASWORD=; path=/; max-age=-1; SameSite=None; Secure";
-            document.cookie = "PASSWORD=; path=/; max-age=-1; SameSite=None; Secure";
+            // Xóa cookies bằng cách đặt max-age=-1
+            document.cookie = "token=; path=/; max-age=-1; SameSite=Lax; Secure";
             
             showToast('Đã đăng xuất và hủy session thành công!', 'warning');
             checkAuth();

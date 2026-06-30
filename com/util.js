@@ -91,7 +91,8 @@ window.fetch = async function (...args) {
   options.headers = options.headers || {};
 
   // 3. Lấy token từ sessionStorage (hoặc nơi bạn lưu trữ)
-  const token = sessionStorage.getItem('token');
+  // const token = sessionStorage.getItem('token');
+	const token = document.cookie.match(/(?:^|; )token=([^;]*)/)?.[1];
 
   // 4. Nếu có token, tự động thêm vào Header (Ví dụ: Bearer Token)
   if (token) {

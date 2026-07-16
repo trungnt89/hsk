@@ -274,8 +274,6 @@
         }
 
         // 2. Gọi API TTS
-		//${sessionStorage.getItem('token')}
-		const token = document.cookie.match(/(?:^|; )token=([^;]*)/)?.[1];
         const url = `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}&token=${token}`;
         try {
             console.log("[TTS Log] Fetching from API...");

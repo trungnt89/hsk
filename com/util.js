@@ -1,4 +1,5 @@
 const DB_NAME = 'TodoAppDB';
+let token = new URLSearchParams(window.location.search).get('token') || document.cookie.match(/(?:^|; )token=([^;]*)/)?.[1];
 
 function openDB(storeName) {
     return new Promise((resolve, reject) => {
@@ -92,8 +93,6 @@ window.fetch = async function (...args) {
 
   // 3. Lấy token từ sessionStorage (hoặc nơi bạn lưu trữ)
   // const token = sessionStorage.getItem('token');
-	const token = document.cookie.match(/(?:^|; )token=([^;]*)/)?.[1];
-
   // 4. Nếu có token, tự động thêm vào Header (Ví dụ: Bearer Token)
   if (token) {
     // Nếu options.headers là một đối tượng Headers thuần của Fetch API

@@ -2314,31 +2314,40 @@
 
             // Tránh kích hoạt hotkeys khi đang gõ vào ô nhập liệu hoặc ô tìm kiếm ngoại trừ điều hướng danh sách từ
             if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) {
-                if (isModalOpen) {
-                    if (event.key === 'Escape') {
-                        event.preventDefault();
-                        closeWordList();
+                if (event.target.id === 'typing-input') {
+                    // Cho phép các phím mũi tên điều hướng đi qua để lật/chuyển thẻ
+                    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                        // Đi tiếp tới xử lý phím mũi tên điều hướng thẻ
+                    } else {
                         return;
                     }
-                    if (event.key === 'ArrowDown') {
-                        event.preventDefault();
-                        navigateWordList('next');
-                        return;
+                } else {
+                    if (isModalOpen) {
+                        if (event.key === 'Escape') {
+                            event.preventDefault();
+                            closeWordList();
+                            return;
+                        }
+                        if (event.key === 'ArrowDown') {
+                            event.preventDefault();
+                            navigateWordList('next');
+                            return;
+                        }
+                        if (event.key === 'ArrowUp') {
+                            event.preventDefault();
+                            navigateWordList('prev');
+                            return;
+                        }
                     }
-                    if (event.key === 'ArrowUp') {
-                        event.preventDefault();
-                        navigateWordList('prev');
-                        return;
+                    if (isPinyinModalOpen) {
+                        if (event.key === 'Escape') {
+                            event.preventDefault();
+                            closePinyinModal();
+                            return;
+                        }
                     }
+                    return;
                 }
-                if (isPinyinModalOpen) {
-                    if (event.key === 'Escape') {
-                        event.preventDefault();
-                        closePinyinModal();
-                        return;
-                    }
-                }
-                return;
             }
 
             if (isPinyinModalOpen) {

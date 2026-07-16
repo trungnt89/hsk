@@ -212,12 +212,33 @@
 
         const header = document.querySelector('.header');
         const controls = document.querySelector('.controls');
+        const wrapper = document.querySelector('.flashcard-wrapper');
 
         if (active) {
             if (header) header.style.display = 'none';
             if (controls) controls.style.display = 'none';
 
-            if (container) container.style.display = 'flex';
+            if (container) {
+                container.style.display = 'flex';
+                container.style.position = 'fixed';
+                container.style.bottom = '10px';
+                container.style.left = '50%';
+                container.style.transform = 'translateX(-50%)';
+                container.style.width = 'calc(100% - 20px)';
+                container.style.maxWidth = '500px';
+                container.style.zIndex = '1000';
+                container.style.margin = '0';
+            }
+            if (wrapper) {
+                wrapper.style.position = 'fixed';
+                wrapper.style.top = '10px';
+                wrapper.style.left = '50%';
+                wrapper.style.transform = 'translateX(-50%)';
+                wrapper.style.width = 'calc(100% - 20px)';
+                wrapper.style.maxWidth = '500px';
+                wrapper.style.height = '240px';
+                wrapper.style.zIndex = '1000';
+            }
             if (input) {
                 input.value = '';
                 input.className = '';
@@ -242,7 +263,27 @@
             if (header) header.style.display = '';
             if (controls) controls.style.display = '';
 
-            if (container) container.style.display = 'none';
+            if (container) {
+                container.style.display = 'none';
+                container.style.position = '';
+                container.style.bottom = '';
+                container.style.left = '';
+                container.style.transform = '';
+                container.style.width = '';
+                container.style.maxWidth = '';
+                container.style.zIndex = '';
+                container.style.margin = '';
+            }
+            if (wrapper) {
+                wrapper.style.position = '';
+                wrapper.style.top = '';
+                wrapper.style.left = '';
+                wrapper.style.transform = '';
+                wrapper.style.width = '';
+                wrapper.style.maxWidth = '';
+                wrapper.style.height = '';
+                wrapper.style.zIndex = '';
+            }
             if (toggleBtn) {
                 toggleBtn.classList.remove('active');
                 toggleBtn.title = "Chế độ gõ chữ (Typing): TẮT";

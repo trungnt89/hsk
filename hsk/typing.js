@@ -242,9 +242,10 @@
 
             // Pin container to top of viewport to prevent scrolling away on keyboard open
             document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
             if (mainContainer) {
                 mainContainer.style.position = 'fixed';
-                mainContainer.style.top = '10px';
+                mainContainer.style.top = '0px';
                 mainContainer.style.left = '50%';
                 mainContainer.style.transform = 'translateX(-50%)';
                 mainContainer.style.width = 'calc(100% - 20px)';
@@ -269,6 +270,7 @@
 
             // Restore styles
             document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
             if (mainContainer) {
                 mainContainer.style.position = '';
                 mainContainer.style.top = '';

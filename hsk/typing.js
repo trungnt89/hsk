@@ -102,8 +102,40 @@
                 }
             });
 
+            const exitBtn = document.createElement('button');
+            exitBtn.id = 'typing-exit';
+            exitBtn.textContent = '✕';
+            exitBtn.style.padding = '12px 18px';
+            exitBtn.style.border = '2px solid #cbd5e1';
+            exitBtn.style.borderRadius = '16px';
+            exitBtn.style.fontSize = '1.1rem';
+            exitBtn.style.fontWeight = 'bold';
+            exitBtn.style.backgroundColor = '#f8fafc';
+            exitBtn.style.color = '#64748b';
+            exitBtn.style.cursor = 'pointer';
+            exitBtn.style.transition = 'all 0.2s ease-in-out';
+            exitBtn.style.boxSizing = 'border-box';
+            exitBtn.title = 'Thoát chế độ gõ';
+
+            // Hover effects for exit button
+            exitBtn.addEventListener('mouseenter', () => {
+                exitBtn.style.backgroundColor = '#fee2e2';
+                exitBtn.style.color = '#ef4444';
+                exitBtn.style.borderColor = '#fca5a5';
+            });
+            exitBtn.addEventListener('mouseleave', () => {
+                exitBtn.style.backgroundColor = '#f8fafc';
+                exitBtn.style.color = '#64748b';
+                exitBtn.style.borderColor = '#cbd5e1';
+            });
+            exitBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setTypingActive(false);
+            });
+
             typingContainer.appendChild(input);
             typingContainer.appendChild(submitBtn);
+            typingContainer.appendChild(exitBtn);
             
             // Insert after controls
             if (controls && controls.parentNode) {
@@ -178,7 +210,13 @@
         const frontPinyin = document.getElementById('front-pinyin');
         const backPinyin = document.getElementById('back-pinyin');
 
+        const header = document.querySelector('.header');
+        const controls = document.querySelector('.controls');
+
         if (active) {
+            if (header) header.style.display = 'none';
+            if (controls) controls.style.display = 'none';
+
             if (container) container.style.display = 'flex';
             if (input) {
                 input.value = '';
@@ -201,6 +239,9 @@
             if (frontPinyin) frontPinyin.style.display = 'none';
             if (backPinyin) backPinyin.style.display = '';
         } else {
+            if (header) header.style.display = '';
+            if (controls) controls.style.display = '';
+
             if (container) container.style.display = 'none';
             if (toggleBtn) {
                 toggleBtn.classList.remove('active');

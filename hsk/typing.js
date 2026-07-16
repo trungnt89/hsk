@@ -213,22 +213,12 @@
         const header = document.querySelector('.header');
         const controls = document.querySelector('.controls');
         const wrapper = document.querySelector('.flashcard-wrapper');
+        const frontWord = document.getElementById('front-word');
 
         if (active) {
             if (header) header.style.display = 'none';
             if (controls) controls.style.display = 'none';
 
-            if (container) {
-                container.style.display = 'flex';
-                container.style.position = 'fixed';
-                container.style.bottom = '10px';
-                container.style.left = '50%';
-                container.style.transform = 'translateX(-50%)';
-                container.style.width = 'calc(100% - 20px)';
-                container.style.maxWidth = '500px';
-                container.style.zIndex = '1000';
-                container.style.margin = '0';
-            }
             if (wrapper) {
                 wrapper.style.position = 'fixed';
                 wrapper.style.top = '10px';
@@ -239,6 +229,23 @@
                 wrapper.style.height = '240px';
                 wrapper.style.zIndex = '1000';
             }
+
+            if (container) {
+                container.style.display = 'flex';
+                container.style.position = 'fixed';
+                container.style.top = '260px';
+                container.style.left = '50%';
+                container.style.transform = 'translateX(-50%)';
+                container.style.width = 'calc(100% - 20px)';
+                container.style.maxWidth = '500px';
+                container.style.zIndex = '1000';
+                container.style.margin = '0';
+            }
+
+            if (frontWord) {
+                frontWord.style.fontSize = '4.5rem';
+            }
+
             if (input) {
                 input.value = '';
                 input.className = '';
@@ -263,17 +270,6 @@
             if (header) header.style.display = '';
             if (controls) controls.style.display = '';
 
-            if (container) {
-                container.style.display = 'none';
-                container.style.position = '';
-                container.style.bottom = '';
-                container.style.left = '';
-                container.style.transform = '';
-                container.style.width = '';
-                container.style.maxWidth = '';
-                container.style.zIndex = '';
-                container.style.margin = '';
-            }
             if (wrapper) {
                 wrapper.style.position = '';
                 wrapper.style.top = '';
@@ -284,6 +280,23 @@
                 wrapper.style.height = '';
                 wrapper.style.zIndex = '';
             }
+
+            if (container) {
+                container.style.display = 'none';
+                container.style.position = '';
+                container.style.top = '';
+                container.style.left = '';
+                container.style.transform = '';
+                container.style.width = '';
+                container.style.maxWidth = '';
+                container.style.zIndex = '';
+                container.style.margin = '';
+            }
+
+            if (frontWord) {
+                frontWord.style.fontSize = '';
+            }
+
             if (toggleBtn) {
                 toggleBtn.classList.remove('active');
                 toggleBtn.title = "Chế độ gõ chữ (Typing): TẮT";

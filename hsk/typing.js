@@ -228,7 +228,9 @@
                 input.value = '';
                 input.className = '';
                 input.disabled = false;
-                setTimeout(() => input.focus(), 100);
+                input.readOnly = false;
+                input.focus();
+                setTimeout(() => input.focus(), 50);
             }
             if (submitBtn) {
                 submitBtn.className = '';
@@ -353,7 +355,7 @@
             isTransitioningWord = true;
             input.classList.remove('incorrect');
             input.classList.add('correct');
-            input.disabled = true;
+            input.readOnly = true;
 
             if (submitBtn) {
                 submitBtn.classList.remove('incorrect');
@@ -364,7 +366,7 @@
             // Success feedback and transition
             setTimeout(() => {
                 input.className = '';
-                input.disabled = false;
+                input.readOnly = false;
                 input.value = '';
                 
                 if (submitBtn) {
@@ -380,6 +382,7 @@
                 }
                 
                 // Re-focus
+                input.focus();
                 setTimeout(() => input.focus(), 50);
             }, 600);
         } else {
@@ -427,6 +430,8 @@
                 input.value = '';
                 input.className = '';
                 input.disabled = false;
+                input.readOnly = false;
+                input.focus();
                 setTimeout(() => input.focus(), 50);
             }
         } else {

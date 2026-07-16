@@ -212,40 +212,13 @@
 
         const header = document.querySelector('.header');
         const controls = document.querySelector('.controls');
-        const wrapper = document.querySelector('.flashcard-wrapper');
-        const frontWord = document.getElementById('front-word');
+        const mainContainer = document.querySelector('.container');
 
         if (active) {
             if (header) header.style.display = 'none';
             if (controls) controls.style.display = 'none';
 
-            if (wrapper) {
-                wrapper.style.position = 'fixed';
-                wrapper.style.top = '10px';
-                wrapper.style.left = '50%';
-                wrapper.style.transform = 'translateX(-50%)';
-                wrapper.style.width = 'calc(100% - 20px)';
-                wrapper.style.maxWidth = '500px';
-                wrapper.style.height = '240px';
-                wrapper.style.zIndex = '1000';
-            }
-
-            if (container) {
-                container.style.display = 'flex';
-                container.style.position = 'fixed';
-                container.style.top = '260px';
-                container.style.left = '50%';
-                container.style.transform = 'translateX(-50%)';
-                container.style.width = 'calc(100% - 20px)';
-                container.style.maxWidth = '500px';
-                container.style.zIndex = '1000';
-                container.style.margin = '0';
-            }
-
-            if (frontWord) {
-                frontWord.style.fontSize = '4.5rem';
-            }
-
+            if (container) container.style.display = 'flex';
             if (input) {
                 input.value = '';
                 input.className = '';
@@ -266,37 +239,24 @@
             // Hide pinyin on card front only
             if (frontPinyin) frontPinyin.style.display = 'none';
             if (backPinyin) backPinyin.style.display = '';
+
+            // Pin container to top of viewport to prevent scrolling away on keyboard open
+            document.body.style.overflow = 'hidden';
+            if (mainContainer) {
+                mainContainer.style.position = 'fixed';
+                mainContainer.style.top = '10px';
+                mainContainer.style.left = '50%';
+                mainContainer.style.transform = 'translateX(-50%)';
+                mainContainer.style.width = 'calc(100% - 20px)';
+                mainContainer.style.maxWidth = '500px';
+                mainContainer.style.zIndex = '1000';
+                mainContainer.style.margin = '0';
+            }
         } else {
             if (header) header.style.display = '';
             if (controls) controls.style.display = '';
 
-            if (wrapper) {
-                wrapper.style.position = '';
-                wrapper.style.top = '';
-                wrapper.style.left = '';
-                wrapper.style.transform = '';
-                wrapper.style.width = '';
-                wrapper.style.maxWidth = '';
-                wrapper.style.height = '';
-                wrapper.style.zIndex = '';
-            }
-
-            if (container) {
-                container.style.display = 'none';
-                container.style.position = '';
-                container.style.top = '';
-                container.style.left = '';
-                container.style.transform = '';
-                container.style.width = '';
-                container.style.maxWidth = '';
-                container.style.zIndex = '';
-                container.style.margin = '';
-            }
-
-            if (frontWord) {
-                frontWord.style.fontSize = '';
-            }
-
+            if (container) container.style.display = 'none';
             if (toggleBtn) {
                 toggleBtn.classList.remove('active');
                 toggleBtn.title = "Chế độ gõ chữ (Typing): TẮT";
@@ -306,6 +266,19 @@
             // Show pinyin on card
             if (frontPinyin) frontPinyin.style.display = '';
             if (backPinyin) backPinyin.style.display = '';
+
+            // Restore styles
+            document.body.style.overflow = '';
+            if (mainContainer) {
+                mainContainer.style.position = '';
+                mainContainer.style.top = '';
+                mainContainer.style.left = '';
+                mainContainer.style.transform = '';
+                mainContainer.style.width = '';
+                mainContainer.style.maxWidth = '';
+                mainContainer.style.zIndex = '';
+                mainContainer.style.margin = '';
+            }
         }
     }
 

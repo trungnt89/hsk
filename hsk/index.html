@@ -17,7 +17,7 @@
         // Tải các script hệ thống bất đồng bộ để tránh lỗi biên dịch tĩnh của Vite
         (function() {
 		    //'https://hsk-gilt.vercel.app/com/TTSClient.js',
-            const scripts = ['https://hsk-gilt.vercel.app/com/assistive.js'];
+            const scripts = ['../com/assistive.js'];
             scripts.forEach(src => {
                 const script = document.createElement('script');
                 script.src = src;
@@ -486,6 +486,80 @@
             }
             .controls {
                 gap: 8px;
+            }
+
+            /* Tối ưu hóa khi chế độ gõ chữ được BẬT trên di động */
+            body.typing-mode-on .flashcard-wrapper {
+                height: 300px;
+            }
+            body.typing-mode-on .word {
+                font-size: 3.8rem;
+                margin-bottom: 5px;
+            }
+            body.typing-mode-on .card-face {
+                padding: 15px;
+            }
+            body.typing-mode-on .pinyin {
+                font-size: 1.1rem;
+                margin-bottom: 5px;
+            }
+            body.typing-mode-on .meaning {
+                font-size: 1.2rem;
+                margin-bottom: 10px;
+            }
+            body.typing-mode-on .example-box {
+                padding-top: 10px;
+                height: 140px;
+                overflow-y: auto;
+            }
+            body.typing-mode-on .example-cn {
+                font-size: 1.6rem;
+            }
+            body.typing-mode-on .example-py, body.typing-mode-on .example-vn {
+                font-size: 1rem;
+            }
+
+            /* Tối ưu hóa MẠNH MẼ khi bàn phím đang mở (focus ô gõ) trên di động */
+            body.typing-active .header {
+                display: none !important;
+            }
+            body.typing-active .container {
+                padding-top: 5px !important;
+                padding-bottom: 5px !important;
+                gap: 5px !important;
+            }
+            body.typing-active .flashcard-wrapper {
+                height: 220px !important;
+            }
+            body.typing-active .word {
+                font-size: 3rem !important;
+                margin-bottom: 2px !important;
+            }
+            body.typing-active .hint {
+                font-size: 0.75rem !important;
+                margin-top: 5px !important;
+                padding: 2px 6px !important;
+            }
+            body.typing-active .card-action-corner,
+            body.typing-active .card-action-corner-bottom-left {
+                display: none !important;
+            }
+            body.typing-active .controls {
+                display: none !important;
+            }
+            body.typing-active #typing-container {
+                margin-top: 4px !important;
+                margin-bottom: 4px !important;
+            }
+            body.typing-active #typing-input {
+                padding: 10px 12px !important;
+                font-size: 1rem !important;
+                border-radius: 12px !important;
+            }
+            body.typing-active #typing-submit {
+                padding: 10px 18px !important;
+                font-size: 1rem !important;
+                border-radius: 12px !important;
             }
         }
 
@@ -1502,11 +1576,18 @@
             const hanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(current.word) : '';
             const frontHvEl = document.getElementById('front-hanviet');
             const backHvEl = document.getElementById('back-hanviet');
-            if (hanViet && hanViet !== ' ') {
-                backHvEl.innerText = `[${hanViet}]`;
-                backHvEl.style.display = 'inline-block';
+            if (hanViet && hanViet !== ' ' && showListHanViet) {
+                if (frontHvEl) {
+                    frontHvEl.innerText = `[${hanViet}]`;
+                    frontHvEl.style.display = 'block';
+                }
+                if (backHvEl) {
+                    backHvEl.innerText = `[${hanViet}]`;
+                    backHvEl.style.display = 'inline-block';
+                }
             } else {
-                backHvEl.style.display = 'none';
+                if (frontHvEl) frontHvEl.style.display = 'none';
+                if (backHvEl) backHvEl.style.display = 'none';
             }
             
             if(current.exCn) {
@@ -2896,33 +2977,7 @@
             filterWordListItems();
         }
 
-        // Thay đổi hiển thị pinyin/nghĩa/hán việt trong danh sách từ và thẻ học
-        function toggleListFormat(type) {
-            if (type === 'pinyin') {
-                const pinyinChk = document.getElementById('show-pinyin-setting');
-                if (pinyinChk) {
-                    showListPinyin = pinyinChk.checked;
-                    saveSetting('showListPinyin', showListPinyin);
-                }
-            } else if (type === 'meaning') {
-                const meaningChk = document.getElementById('show-meaning-setting');
-                if (meaningChk) {
-                    showListMeaning = meaningChk.checked;
-                    saveSetting('showListMeaning', showListMeaning);
-                }
-            } else if (type === 'hanviet') {
-                const hanvietChk = document.getElementById('show-hanviet-setting');
-                if (hanvietChk) {
-                    showListHanViet = hanvietChk.checked;
-                    saveSetting('showListHanViet', showListHanViet);
-                    // Cập nhật lại giao diện thẻ chính ngay lập tức để ẩn/hiện Hán Việt trên thẻ
-                    renderCard();
-                }
-            }
-            const queryInput = document.getElementById('word-search');
-            const query = queryInput ? queryInput.value : '';
-            renderWordListItems(query);
-        }
+
 
         // Chuyển đổi giữa chế độ hiển thị Từ (mặc định luôn hiển thị từ)
         function setListContentMode(mode) {

@@ -115,6 +115,15 @@
             // Bind events
             input.addEventListener('input', handleTypingInput);
             input.addEventListener('keydown', handleKeyDown);
+            input.addEventListener('focus', () => {
+                document.body.classList.add('typing-active');
+            });
+            input.addEventListener('blur', () => {
+                // Delay a bit to allow submitBtn click event to trigger first
+                setTimeout(() => {
+                    document.body.classList.remove('typing-active');
+                }, 100);
+            });
             submitBtn.addEventListener('click', checkAnswer);
         }
 
@@ -179,6 +188,7 @@
         const backPinyin = document.getElementById('back-pinyin');
 
         if (active) {
+            document.body.classList.add('typing-mode-on');
             if (container) container.style.display = 'flex';
             if (input) {
                 input.value = '';
@@ -201,6 +211,8 @@
             if (frontPinyin) frontPinyin.style.display = 'none';
             if (backPinyin) backPinyin.style.display = '';
         } else {
+            document.body.classList.remove('typing-mode-on');
+            document.body.classList.remove('typing-active');
             if (container) container.style.display = 'none';
             if (toggleBtn) {
                 toggleBtn.classList.remove('active');

@@ -8,6 +8,11 @@
     let isTypingActive = false;
     let isTransitioningWord = false;
 
+    // Helper to completely lock scrolling in typing mode
+    function preventScrollForce() {
+        window.scrollTo(0, 0);
+    }
+
     // Normalize Pinyin for comparison
     function normalizePinyin(str) {
         if (!str) return '';
@@ -242,6 +247,11 @@
 
             // Pin container to top of viewport to prevent scrolling away on keyboard open
             document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.top = '0px';
+            document.body.style.left = '0px';
+            document.body.style.width = '100%';
+            document.body.style.height = '100%';
             document.documentElement.style.overflow = 'hidden';
             if (mainContainer) {
                 mainContainer.style.position = 'fixed';
@@ -253,6 +263,7 @@
                 mainContainer.style.zIndex = '1000';
                 mainContainer.style.margin = '0';
             }
+            window.addEventListener('scroll', preventScrollForce);
         } else {
             if (header) header.style.display = '';
             if (controls) controls.style.display = '';
@@ -270,6 +281,11 @@
 
             // Restore styles
             document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.width = '';
+            document.body.style.height = '';
             document.documentElement.style.overflow = '';
             if (mainContainer) {
                 mainContainer.style.position = '';
@@ -281,6 +297,7 @@
                 mainContainer.style.zIndex = '';
                 mainContainer.style.margin = '';
             }
+            window.removeEventListener('scroll', preventScrollForce);
         }
     }
 

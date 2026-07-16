@@ -49,9 +49,9 @@ async function ControlSendMessage() {
         const newTimeJST = getJSTTime();
         rowData[6] = newTimeJST;
         let text = `【ID: ${rowData[0]}】\n${rowData[2]}`;
-
+		let referURL = rowData[4];
         let res;
-        res = await tg.SendMessage(text);
+        res = await tg.SendMessage(text,referURL);
         if (res) {
             await UpdateTask(SHEET_1, id, rowData);			
 			if (text.includes("HSK")) {

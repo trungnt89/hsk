@@ -5,20 +5,25 @@ const getTelegramConfig = () => ({
     chatId: "8536107228"
 });
 
-export async function SendMessage(msgData) {
+export async function SendMessage(msgData,referURL) {
     const config = getTelegramConfig();
     try {
         const url = `https://api.telegram.org/bot${config.token}/sendMessage`;
         const cleanText = msgData.replace(/[*_`\[\]]/g, '');
 
+		let data = { 
+                chat_id: String(config.chatId).trim(), 
+				text: cleanText
+        }
+		
+		if(referURL){
+			data.reply_markup = { inline_keyboard: [[{ text: "📊 Mở Dashboard", url: referURL }]] }	
+		}
+		
         const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                chat_id: String(config.chatId).trim(), 
-                //reply_markup: { inline_keyboard: [[{ text: "📊 Mở Dashboard", url: "https://hsk-gilt.vercel.app/task/" }]] }
-				text: cleanText
-            })
+            body: JSON.stringify(data)
         });
 
         const resContent = await response.text();

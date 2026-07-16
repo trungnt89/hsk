@@ -212,9 +212,6 @@
 
         const header = document.querySelector('.header');
         const controls = document.querySelector('.controls');
-        const wrapper = document.querySelector('.flashcard-wrapper');
-        const frontWord = document.getElementById('front-word');
-        const mainContainer = document.querySelector('.container');
 
         if (active) {
             if (header) header.style.display = 'none';
@@ -241,16 +238,6 @@
             // Hide pinyin on card front only
             if (frontPinyin) frontPinyin.style.display = 'none';
             if (backPinyin) backPinyin.style.display = '';
-
-            // Fit screen beautifully and eliminate empty bottom scroll area on mobile
-            document.body.style.overflow = 'hidden';
-            document.body.style.height = '100dvh';
-            if (mainContainer) {
-                mainContainer.style.height = '100dvh';
-                mainContainer.style.justifyContent = 'space-around';
-            }
-            if (wrapper) wrapper.style.height = '240px';
-            if (frontWord) frontWord.style.fontSize = '4.5rem';
         } else {
             if (header) header.style.display = '';
             if (controls) controls.style.display = '';
@@ -265,16 +252,6 @@
             // Show pinyin on card
             if (frontPinyin) frontPinyin.style.display = '';
             if (backPinyin) backPinyin.style.display = '';
-
-            // Restore defaults
-            document.body.style.overflow = '';
-            document.body.style.height = '';
-            if (mainContainer) {
-                mainContainer.style.height = '';
-                mainContainer.style.justifyContent = '';
-            }
-            if (wrapper) wrapper.style.height = '';
-            if (frontWord) frontWord.style.fontSize = '';
         }
     }
 

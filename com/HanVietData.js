@@ -615,7 +615,7 @@ window.hanVietData = {
   "鸟": "ĐIỂU",
   "鸡": "KÊ",
   "黄": "HOÀNG",
-  "黑": "HẮC"
+  "黑": "HẮC",
   "========":"====HSK4=====",
   "一": "NHẤT",
   "万": "VẠN",
@@ -1350,6 +1350,7 @@ window.getHanVietForWord = function(word) {
       result.push("");
     }
   }
+  console.log(word+"="+ result.join(" "));
   // Nếu toàn dấu "?" thì có thể xem như chưa có data đầy đủ cho chữ này
   if (result.every(x => x === "")) {
     return "";

@@ -105,9 +105,9 @@
             typingContainer.appendChild(input);
             typingContainer.appendChild(submitBtn);
             
-            // Insert before controls
+            // Insert after controls
             if (controls && controls.parentNode) {
-                controls.parentNode.insertBefore(typingContainer, controls);
+                controls.parentNode.insertBefore(typingContainer, controls.nextSibling);
             } else if (container) {
                 container.appendChild(typingContainer);
             }

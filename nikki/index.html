@@ -52,14 +52,15 @@
         .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
         .diary-item.selected { border-left-color: #e67e22 !important; background-color1: #fff3e0 !important; outline1: 3px solid #ffcc80; outline-offset: -3px; }
          
-        .ai-box-container { display: flex; background: var(--card-bg); border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0; align-items: stretch; height: auto; width: 100%; }
+        .ai-box-container { display: flex; background: var(--card-bg); border-radius: 10px; margin-top: 4px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0; align-items: stretch; height: auto; width: 100%; }
         .ai-left-bar { width: 34px; min-width: 34px; background-color: var(--ai-color); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; user-select: none; padding: 6px 0; transition: all 0.2s ease; position: relative; flex-shrink: 0; align-self: stretch; }
         .ai-left-bar:hover { filter: brightness(0.92); }
         .ai-left-bar:active { filter: brightness(0.82); }
         .ai-left-bar.conversation-bar { background-color: #e67e22; }
         .ai-left-bar .lang-icon { font-size: 12px; line-height: 1; }
         .ai-left-bar .lang-badge { color: white; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); text-shadow: 0 1px 2px rgba(0,0,0,0.25); }
-        .ai-content-body { flex: 1; padding: 12px 14px; line-height: 1.65; font-size: 1.05rem; white-space: pre-wrap; color: #2c3e50; user-select: text; cursor: text; height: auto; }
+        .ai-content-body { flex: 1; padding: 8px 12px; color: #2c3e50; user-select: text; cursor: text; height: auto; }
+        .ai-text-view { font-size: 1.05rem; line-height: 1.65; white-space: pre-wrap; margin: 0; padding: 0; }
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.7; font-size: 1rem; white-space: pre-wrap; margin-bottom: 10px; border-left: 4px solid var(--ai-color); color: #2c3e50; }
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
@@ -321,54 +322,26 @@
         function updateAIView() {
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
             if (!item) return;
-            const pContent = item.paragraph;
-            const cContent = item.conversation;
-            const pTrans = item.paragraph_trans;
-            const cTrans = item.conversation_trans;
+            const pContent = (item.paragraph || '').trim();
+            const cContent = (item.conversation || '').trim();
+            const pTrans = (item.paragraph_trans || '').trim();
+            const cTrans = (item.conversation_trans || '').trim();
              
             let pHTML = '';
             if (pContent || pTrans) {
                 const showJp = !!pContent;
-                pHTML += `
-                <div class="ai-box-container">
-                    <div class="ai-left-bar" onclick="event.stopPropagation(); toggleContentLang('p')" title="Nhấn vào thanh này để chuyển đổi Tiếng Nhật / Tiếng Việt">
-                        <span class="lang-icon">🌐</span>
-                        <span class="lang-badge" id="p-lang-badge">${showJp ? 'JA' : 'VI'}</span>
-                    </div>
-                    <div class="ai-content-body">
-                        <div id="p-jp-view" style="display: ${showJp ? 'block' : 'none'};">
-                            <div id="p-content">${pContent || ''}</div>
-                        </div>
-                        <div id="p-vi-view" style="display: ${showJp ? 'none' : 'block'}; color: #2c3e50;">
-                            ${pTrans || 'Chưa có bản dịch.'}
-                        </div>
-                    </div>
-                </div>`;
+                pHTML = `<div class="ai-box-container"><div class="ai-left-bar" onclick="event.stopPropagation(); toggleContentLang('p')" title="Nhấn vào thanh này để chuyển đổi Tiếng Nhật / Tiếng Việt"><span class="lang-icon">🌐</span><span class="lang-badge" id="p-lang-badge">${showJp ? 'JA' : 'VI'}</span></div><div class="ai-content-body"><div id="p-jp-view" style="display: ${showJp ? 'block' : 'none'};"><div id="p-content" class="ai-text-view">${pContent}</div></div><div id="p-vi-view" style="display: ${showJp ? 'none' : 'block'}; color: #2c3e50;"><div class="ai-text-view">${pTrans || 'Chưa có bản dịch.'}</div></div></div></div>`;
             } else {
-                pHTML += `<p class="loading-text">Chưa có nội dung AI.</p>`;
+                pHTML = `<p class="loading-text">Chưa có nội dung AI.</p>`;
             }
             document.getElementById('paragraphContainer').innerHTML = pHTML;
 
             let cHTML = '';
             if (cContent || cTrans) {
                 const showJp = !!cContent;
-                cHTML += `
-                <div class="ai-box-container">
-                    <div class="ai-left-bar conversation-bar" onclick="event.stopPropagation(); toggleContentLang('c')" title="Nhấn vào thanh này để chuyển đổi Tiếng Nhật / Tiếng Việt">
-                        <span class="lang-icon">💬</span>
-                        <span class="lang-badge" id="c-lang-badge">${showJp ? 'JA' : 'VI'}</span>
-                    </div>
-                    <div class="ai-content-body">
-                        <div id="c-jp-view" style="display: ${showJp ? 'block' : 'none'};">
-                            <div id="c-content">${cContent || ''}</div>
-                        </div>
-                        <div id="c-vi-view" style="display: ${showJp ? 'none' : 'block'}; color: #2c3e50;">
-                            ${cTrans || 'Chưa có bản dịch.'}
-                        </div>
-                    </div>
-                </div>`;
+                cHTML = `<div class="ai-box-container"><div class="ai-left-bar conversation-bar" onclick="event.stopPropagation(); toggleContentLang('c')" title="Nhấn vào thanh này để chuyển đổi Tiếng Nhật / Tiếng Việt"><span class="lang-icon">💬</span><span class="lang-badge" id="c-lang-badge">${showJp ? 'JA' : 'VI'}</span></div><div class="ai-content-body"><div id="c-jp-view" style="display: ${showJp ? 'block' : 'none'};"><div id="c-content" class="ai-text-view">${cContent}</div></div><div id="c-vi-view" style="display: ${showJp ? 'none' : 'block'}; color: #2c3e50;"><div class="ai-text-view">${cTrans || 'Chưa có bản dịch.'}</div></div></div></div>`;
             } else {
-                cHTML += `<p class="loading-text">Chưa có nội dung AI.</p>`;
+                cHTML = `<p class="loading-text">Chưa có nội dung AI.</p>`;
             }
             document.getElementById('conversationContainer').innerHTML = cHTML;
 

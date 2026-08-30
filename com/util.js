@@ -91,8 +91,19 @@ window.fetch = async function (...args) {
   // 2. Khởi tạo đối tượng headers nếu chưa có
   options.headers = options.headers || {};
 
-  // 3. Lấy token từ sessionStorage (hoặc nơi bạn lưu trữ)
-  // const token = sessionStorage.getItem('token');
+  // 3. Lấy token từ sessionStorage, localStorage, cookie hoặc URL
+  let token = sessionStorage.getItem('token') || 
+              localStorage.getItem('token') || 
+              document.cookie.match(/(?:^|; )token=([^;]*)/)?.[1];
+
+  if (!token && typeof window !== 'undefined' && window.location) {
+    const urlParams = new URLSearchParams(window.location.search);
+    token = urlParams.get('token') || urlParams.get('access_token');
+    if (token) {
+      sessionStorage.setItem('token', token);
+    }
+  }
+
   // 4. Nếu có token, tự động thêm vào Header (Ví dụ: Bearer Token)
   if (token) {
     // Nếu options.headers là một đối tượng Headers thuần của Fetch API

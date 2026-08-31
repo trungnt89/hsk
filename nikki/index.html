@@ -60,7 +60,7 @@
         .ai-left-bar .lang-icon { font-size: 12px; line-height: 1; }
         .ai-left-bar .lang-badge { color: white; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); text-shadow: 0 1px 2px rgba(0,0,0,0.25); }
         .ai-content-body { flex: 1; padding: 8px 12px; color: #2c3e50; user-select: text; cursor: text; height: auto; }
-        .ai-text-view { line-height: 1.65; white-space: pre-wrap; margin: 0; padding: 0; }
+        .ai-text-view { font-size: 1.05rem; line-height: 1.65; white-space: pre-wrap; margin: 0; padding: 0; }
         .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.7; font-size: 1rem; white-space: pre-wrap; margin-bottom: 10px; border-left: 4px solid var(--ai-color); color: #2c3e50; }
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
@@ -163,11 +163,23 @@
     <script>
         let currentDiaries = [];
         let editingId = null;
-        let urlId = new URLSearchParams(window.location.search).get('id');
+        const urlParams = new URLSearchParams(window.location.search);
+        let urlId = urlParams.get('id');
         let selectedDiaryId = urlId || localStorage.getItem("diary_selected_id") || null;
         if (urlId && urlId !== localStorage.getItem("diary_selected_id")) localStorage.setItem("diary_selected_id", urlId);
         let isRepeating = localStorage.getItem("diary_repeat") === "true";
-        let currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0;
+        
+        let urlTab = urlParams.get('tab');
+        let currentTabIndex = 0;
+        if (urlTab === '1') {
+            currentTabIndex = 0; // Tab 1: Nhật ký
+        } else if (urlTab === '2') {
+            currentTabIndex = 1; // Tab 2: Đoạn văn
+        } else if (urlTab === '3') {
+            currentTabIndex = 2; // Tab 3: Hội thoại
+        } else if (localStorage.getItem("diary_current_tab") !== null) {
+            currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0;
+        }
         let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -280,6 +292,9 @@
         function switchTab(index) {
             currentTabIndex = index;
             localStorage.setItem("diary_current_tab", index);
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('tab', index + 1);
+            window.history.replaceState({}, '', newUrl);
             document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
             document.querySelectorAll('.tab-btn').forEach((btn, i) => {
                 btn.classList.toggle('active', i === index);
@@ -373,32 +388,48 @@
         }
 
         async function speakText(elId, btnId) {
-            const el = document.getElementById(elId), btn = document.getElementById(btnId);
-            if(!el || !window.speakCommon) return;
-            btn.classList.add("playing"); btn.innerHTML = '⏹ Dừng';
-             
-            let voiceValue = document.getElementById("voiceSelect").value;
-            if (elId === 'p-vi-view' || elId === 'c-vi-view') {
-                if(voiceValue == 'ja-JP-KeitaNeural'){
-                    voiceValue = 'vi-VN-NamMinhNeural'; 
-                };
-                if(voiceValue == 'ja-JP-NanamiNeural'){
-                    voiceValue = 'vi-VN-HoaiMyNeural'; 
+            const el = document.getElementById(elId);
+            const btn = document.getElementById(btnId);
+            if (!el || !window.speakCommon) return;
+
+            const textToSpeak = (el.innerText || '').trim();
+            if (!textToSpeak) {
+                console.warn("[TTS] Không có nội dung văn bản để đọc.");
+                return;
+            }
+
+            if (btn) {
+                btn.classList.add("playing");
+                btn.innerHTML = '⏹ Dừng';
+            }
+
+            // Xác định giọng đọc dựa theo tùy chọn và ngôn ngữ của khối văn bản
+            let voiceValue = document.getElementById("voiceSelect")?.value || 'ja-JP-KeitaNeural';
+            const isVietnameseView = (elId === 'p-vi-view' || elId === 'c-vi-view');
+
+            if (isVietnameseView) {
+                // Tự động chuyển sang giọng Tiếng Việt tương ứng theo giới tính (Nam/Nữ)
+                const isMale = voiceValue.includes('Keita') || voiceValue.includes('Nam');
+                voiceValue = isMale ? 'vi-VN-NamMinhNeural' : 'vi-VN-HoaiMyNeural';
+            }
+
+            const rateValue = document.getElementById("rateSelect")?.value || "0.70";
+
+            try {
+                await window.speakCommon({
+                    text: textToSpeak,
+                    voice: voiceValue,
+                    rate: rateValue,
+                    filename: `Diary_AI_${selectedDiaryId || 'default'}`,
+                    loop: isRepeating
+                });
+            } catch (error) {
+                console.error("[TTS Error]", error);
+            } finally {
+                if (!isRepeating) {
+                    resetSpeakBtns();
                 }
             }
-			 if (elId === 'c-content') {
-				//voiceValue = 'zh-CN-XiaoxiaoNeural'; 
-			 }
-			
-             
-            await window.speakCommon({ 
-                text: el.innerText, 
-                voice: voiceValue, 
-                rate: document.getElementById("rateSelect").value, 
-                filename: `Diary_AI_${selectedDiaryId}`,
-                loop: isRepeating 
-            });
-            if (!isRepeating) resetSpeakBtns();
         }
 
         function handleGlobalSpeak() {

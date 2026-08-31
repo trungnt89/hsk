@@ -17,6 +17,7 @@ export async function SendMessage(msgData,referURL) {
         }
 		
 		if(referURL){
+			referURL = referURL+"&token="+process.env.PWTOKEN;
 			data.reply_markup = { inline_keyboard: [[{ text: "📊 Mở Dashboard", url: referURL }]] }	
 		}
 		

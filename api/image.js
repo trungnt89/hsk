@@ -7,6 +7,7 @@ import FormData from 'form-data';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || "8019068142:AAEyOi2cg-TBIr-XPfkHP4iqMw_rj9XLw1s";
 const CHAT_ID = "8536107228";
 const TARGET_URL = "https://m.lophoctiengnhat.com/free-moi-ngay-mot-bai-dokkai-n1.html";
+// EX : https://hsk-gilt.vercel.app/api/image?url=https:/hsk-gilt.vercel.app/nikki/index.html
 
 export default async function handler(req, res) {
   // Cấu hình CORS để cho phép gọi từ giao diện web

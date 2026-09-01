@@ -347,14 +347,17 @@
             }
         }
 
-        let isJapanesePlaying = false;
+        let currentPlayingTarget = null; // 'paragraph' | 'conversation' | 'p-vi-view' | 'c-vi-view' | null
+
+        function getTargetFromElId(elId) {
+            if (elId === 'p-content') return 'paragraph';
+            if (elId === 'c-content') return 'conversation';
+            if (elId === 'p-vi-view') return 'p-vi-view';
+            if (elId === 'c-vi-view') return 'c-vi-view';
+            return elId;
+        }
 
         function switchAISubTab(subTab) {
-            const wasPlayingJapanese = isJapanesePlaying;
-            if (wasPlayingJapanese && window.stopSpeak) {
-                window.stopSpeak();
-            }
-
             currentAISubTab = subTab;
             localStorage.setItem("diary_sub_tab", subTab);
             
@@ -372,25 +375,6 @@
             window.history.replaceState({}, '', newUrl);
 
             updateAIView();
-
-            if (wasPlayingJapanese) {
-                isJapanesePlaying = true;
-                const newElId = (currentAISubTab === 'paragraph') ? 'p-content' : 'c-content';
-                const newBtnId = (currentAISubTab === 'paragraph') ? 'btn-speak-p' : 'btn-speak-c';
-                const newBtn = document.getElementById(newBtnId);
-                if (newBtn) {
-                    newBtn.classList.add("playing");
-                    newBtn.innerHTML = '⏹ Dừng';
-                }
-                const btnMain = document.getElementById('btnMainSpeak');
-                if (btnMain) {
-                    btnMain.classList.add("playing");
-                    btnMain.innerHTML = '⏹ Dừng';
-                }
-                setTimeout(() => {
-                    speakText(newElId, newBtnId);
-                }, 60);
-            }
         }
 
         function toggleAISubTab() {
@@ -406,6 +390,10 @@
         }
 
         function selectRecord(id, scroll = true) {
+            if (selectedDiaryId !== id && currentPlayingTarget) {
+                if (window.stopSpeak) window.stopSpeak();
+                currentPlayingTarget = null;
+            }
             selectedDiaryId = id; 
             localStorage.setItem("diary_selected_id", id);
             const newUrl = new URL(window.location);
@@ -444,6 +432,10 @@
             }
 
             const isParagraph = (currentAISubTab === 'paragraph');
+            const isN3Playing = (currentPlayingTarget === 'paragraph');
+            const isN2Playing = (currentPlayingTarget === 'conversation');
+            const isPViPlaying = (currentPlayingTarget === 'p-vi-view');
+            const isCViPlaying = (currentPlayingTarget === 'c-vi-view');
 
             let bodyHTML = '';
             if (isParagraph) {
@@ -451,8 +443,8 @@
                     bodyHTML = `
                         <div class="ai-header-bar">
                             <span class="ai-type-badge p-badge">📖 Trình độ N3</span>
-                            <button class="btn-speak-inline ${isJapanesePlaying ? 'playing' : ''}" id="btn-speak-p" onclick="handleInlineSpeak('p-content', 'btn-speak-p')">
-                                ${isJapanesePlaying ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật'}
+                            <button class="btn-speak-inline ${isN3Playing ? 'playing' : ''}" id="btn-speak-p" onclick="handleInlineSpeak('p-content', 'btn-speak-p')">
+                                ${isN3Playing ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật'}
                             </button>
                         </div>
                         <div id="p-content" class="ai-ja-section">${pContent || '(Chưa có văn bản tiếng Nhật)'}</div>
@@ -463,8 +455,8 @@
                                 </div>
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     ${showViTrans ? `
-                                        <button class="btn-speak-inline" id="btn-speak-p-vi" onclick="event.stopPropagation(); handleInlineSpeak('p-vi-view', 'btn-speak-p-vi')">
-                                            🔊 Đọc dịch
+                                        <button class="btn-speak-inline ${isPViPlaying ? 'playing' : ''}" id="btn-speak-p-vi" onclick="event.stopPropagation(); handleInlineSpeak('p-vi-view', 'btn-speak-p-vi')">
+                                            ${isPViPlaying ? '⏹ Dừng' : '🔊 Đọc dịch'}
                                         </button>
                                     ` : ''}
                                     <button class="vi-toggle-btn" type="button">
@@ -492,20 +484,20 @@
                     bodyHTML = `
                         <div class="ai-header-bar">
                             <span class="ai-type-badge c-badge">💬 Trình độ N2</span>
-                            <button class="btn-speak-inline ${isJapanesePlaying ? 'playing' : ''}" id="btn-speak-c" onclick="handleInlineSpeak('c-content', 'btn-speak-c')">
-                                ${isJapanesePlaying ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật'}
+                            <button class="btn-speak-inline ${isN2Playing ? 'playing' : ''}" id="btn-speak-c" onclick="handleInlineSpeak('c-content', 'btn-speak-c')">
+                                ${isN2Playing ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật'}
                             </button>
                         </div>
                         <div id="c-content" class="ai-ja-section">${cContent || '(Chưa có văn bản tiếng Nhật)'}</div>
                         <div class="ai-vi-section c-trans">
                             <div class="vi-header" onclick="toggleViTrans()">
                                 <div class="vi-title">
-                                    <span>🇻🇳</span>
+                                    <span>🇻🇳 Nghĩa Tiếng Việt</span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     ${showViTrans ? `
-                                        <button class="btn-speak-inline" id="btn-speak-c-vi" onclick="event.stopPropagation(); handleInlineSpeak('c-vi-view', 'btn-speak-c-vi')">
-                                            🔊 Đọc dịch
+                                        <button class="btn-speak-inline ${isCViPlaying ? 'playing' : ''}" id="btn-speak-c-vi" onclick="event.stopPropagation(); handleInlineSpeak('c-vi-view', 'btn-speak-c-vi')">
+                                            ${isCViPlaying ? '⏹ Dừng' : '🔊 Đọc dịch'}
                                         </button>
                                     ` : ''}
                                     <button class="vi-toggle-btn" type="button">
@@ -551,10 +543,9 @@
             if (btnSpeak) {
                 if (currentTopTab === 1) {
                     btnSpeak.disabled = isParagraph ? !hasP : !hasC;
-                    if (isJapanesePlaying) {
-                        btnSpeak.classList.add('playing');
-                        btnSpeak.innerHTML = '⏹ Dừng';
-                    }
+                    const isCurrentTabPlaying = (currentAISubTab === currentPlayingTarget);
+                    btnSpeak.classList.toggle('playing', isCurrentTabPlaying);
+                    btnSpeak.innerHTML = isCurrentTabPlaying ? '⏹ Dừng' : '🔊 Đọc';
                 } else {
                     btnSpeak.disabled = true;
                 }
@@ -601,49 +592,32 @@
         }
 
         function handleInlineSpeak(elId, btnId) {
-            const btn = document.getElementById(btnId);
-            if (btn && btn.classList.contains("playing")) {
+            const target = getTargetFromElId(elId);
+            if (currentPlayingTarget === target) {
                 if (window.stopSpeak) window.stopSpeak();
-                isJapanesePlaying = false;
+                currentPlayingTarget = null;
                 resetSpeakBtns();
                 return;
             }
-            const isJapanese = (elId === 'p-content' || elId === 'c-content');
-            if (isJapanese) {
-                isJapanesePlaying = true;
-            } else {
-                isJapanesePlaying = false;
-            }
-            speakText(elId, btnId);
+            if (window.stopSpeak) window.stopSpeak();
+            currentPlayingTarget = target;
+            speakText(elId, btnId, target);
         }
 
-        async function speakText(elId, btnId) {
+        async function speakText(elId, btnId, target) {
             const el = document.getElementById(elId);
-            const btn = document.getElementById(btnId);
             if (!el || !window.speakCommon) return;
 
             const textToSpeak = (el.innerText || '').trim();
             if (!textToSpeak) {
                 console.warn("[TTS] Không có nội dung văn bản để đọc.");
-                isJapanesePlaying = false;
+                currentPlayingTarget = null;
                 resetSpeakBtns();
                 return;
             }
 
-            const isJapanese = (elId === 'p-content' || elId === 'c-content');
-            if (isJapanese) {
-                isJapanesePlaying = true;
-            }
-
-            if (btn) {
-                btn.classList.add("playing");
-                btn.innerHTML = '⏹ Dừng';
-            }
-            const btnMain = document.getElementById('btnMainSpeak');
-            if (btnMain && isJapanese) {
-                btnMain.classList.add("playing");
-                btnMain.innerHTML = '⏹ Dừng';
-            }
+            currentPlayingTarget = target || getTargetFromElId(elId);
+            resetSpeakBtns();
 
             // Xác định giọng đọc dựa theo tùy chọn và ngôn ngữ của khối văn bản
             let voiceValue = document.getElementById("voiceSelect")?.value || 'ja-JP-KeitaNeural';
@@ -669,57 +643,70 @@
                 console.error("[TTS Error]", error);
             } finally {
                 if (!isRepeating) {
-                    isJapanesePlaying = false;
+                    currentPlayingTarget = null;
                     resetSpeakBtns();
                 }
             }
         }
 
         function handleGlobalSpeak() {
-            const btn = document.getElementById('btnMainSpeak');
-            if (btn.classList.contains("playing")) { 
-                if (window.stopSpeak) window.stopSpeak(); 
-                isJapanesePlaying = false;
-                resetSpeakBtns(); 
-                return; 
+            const currentTarget = (currentAISubTab === 'paragraph') ? 'paragraph' : 'conversation';
+            const elId = (currentAISubTab === 'paragraph') ? 'p-content' : 'c-content';
+            const btnId = (currentAISubTab === 'paragraph') ? 'btn-speak-p' : 'btn-speak-c';
+
+            if (currentPlayingTarget === currentTarget) {
+                if (window.stopSpeak) window.stopSpeak();
+                currentPlayingTarget = null;
+                resetSpeakBtns();
+                return;
             }
-            let tid = null;
-            let inlineBtnId = null;
-            if (currentTopTab === 1) {
-                if (currentAISubTab === 'paragraph') {
-                    tid = 'p-content';
-                    inlineBtnId = 'btn-speak-p';
-                } else {
-                    tid = 'c-content';
-                    inlineBtnId = 'btn-speak-c';
-                }
-            }
-            if (tid) {
-                isJapanesePlaying = true;
-                if (inlineBtnId) {
-                    const ib = document.getElementById(inlineBtnId);
-                    if (ib) {
-                        ib.classList.add('playing');
-                        ib.innerHTML = '⏹ Dừng';
-                    }
-                }
-                speakText(tid, 'btnMainSpeak');
-            }
+
+            if (window.stopSpeak) window.stopSpeak();
+            currentPlayingTarget = currentTarget;
+            speakText(elId, 'btnMainSpeak', currentTarget);
         }
 
         function resetSpeakBtns() { 
-            const b = document.getElementById('btnMainSpeak'); 
-            if (b) { b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
-            
-            const btnP = document.getElementById('btn-speak-p');
-            if (btnP) { btnP.classList.remove('playing'); btnP.innerHTML = '🔊 Đọc tiếng Nhật'; }
-            const btnPVi = document.getElementById('btn-speak-p-vi');
-            if (btnPVi) { btnPVi.classList.remove('playing'); btnPVi.innerHTML = '🔊 Đọc dịch'; }
+            const isN3Playing = (currentPlayingTarget === 'paragraph');
+            const isN2Playing = (currentPlayingTarget === 'conversation');
+            const isPViPlaying = (currentPlayingTarget === 'p-vi-view');
+            const isCViPlaying = (currentPlayingTarget === 'c-vi-view');
 
+            // Nút đọc N3
+            const btnP = document.getElementById('btn-speak-p');
+            if (btnP) {
+                btnP.classList.toggle('playing', isN3Playing);
+                btnP.innerHTML = isN3Playing ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật';
+            }
+
+            // Nút đọc N2
             const btnC = document.getElementById('btn-speak-c');
-            if (btnC) { btnC.classList.remove('playing'); btnC.innerHTML = '🔊 Đọc tiếng Nhật'; }
+            if (btnC) {
+                btnC.classList.toggle('playing', isN2Playing);
+                btnC.innerHTML = isN2Playing ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật';
+            }
+
+            // Nút dịch N3
+            const btnPVi = document.getElementById('btn-speak-p-vi');
+            if (btnPVi) {
+                btnPVi.classList.toggle('playing', isPViPlaying);
+                btnPVi.innerHTML = isPViPlaying ? '⏹ Dừng' : '🔊 Đọc dịch';
+            }
+
+            // Nút dịch N2
             const btnCVi = document.getElementById('btn-speak-c-vi');
-            if (btnCVi) { btnCVi.classList.remove('playing'); btnCVi.innerHTML = '🔊 Đọc dịch'; }
+            if (btnCVi) {
+                btnCVi.classList.toggle('playing', isCViPlaying);
+                btnCVi.innerHTML = isCViPlaying ? '⏹ Dừng' : '🔊 Đọc dịch';
+            }
+
+            // Nút Đọc tổng phía trên (Main Speak)
+            const btnMain = document.getElementById('btnMainSpeak');
+            if (btnMain) {
+                const isCurrentVisiblePlaying = (currentTopTab === 1 && currentAISubTab === currentPlayingTarget);
+                btnMain.classList.toggle('playing', isCurrentVisiblePlaying);
+                btnMain.innerHTML = isCurrentVisiblePlaying ? '⏹ Dừng' : '🔊 Đọc';
+            }
         }
         
         function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }

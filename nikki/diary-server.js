@@ -94,7 +94,10 @@ async function togglePin(id) {
 async function askAI(id, content) {
     selectRecord(id); switchTab(1);
     const pContainer = document.getElementById('paragraphContainer'), cContainer = document.getElementById('conversationContainer');
-    pContainer.innerHTML = cContainer.innerHTML = '<p class="loading-text">🤖 Đang biên soạn nội dung...</p>';
+    const mContainer = document.getElementById('aiMeaningContainer');
+    if (pContainer) pContainer.innerHTML = '<p class="loading-text">🤖 Đang biên soạn nội dung...</p>';
+    if (cContainer) cContainer.innerHTML = '<p class="loading-text">🤖 Đang biên soạn nội dung...</p>';
+    if (mContainer) mContainer.innerHTML = '<p class="loading-text">🤖 Đang biên soạn nội dung...</p>';
     try {
         const res = await callAPI({ content, lessionId: id },URL_AI_GENERATE);
         if (res.status === 'success') {

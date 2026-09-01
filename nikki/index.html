@@ -52,16 +52,34 @@
         .diary-item.pinned { border-left-color: #f1c40f; background-color: #fffdf0; }
         .diary-item.selected { border-left-color: #e67e22 !important; background-color1: #fff3e0 !important; outline1: 3px solid #ffcc80; outline-offset: -3px; }
          
-        .ai-box-container { display: flex; background: var(--card-bg); border-radius: 10px; margin-top: 4px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0; align-items: stretch; height: auto; width: 100%; }
-        .ai-left-bar { width: 34px; min-width: 34px; background-color: var(--ai-color); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; user-select: none; padding: 6px 0; transition: all 0.2s ease; position: relative; flex-shrink: 0; align-self: stretch; }
+        /* Khung hiển thị nội dung AI & Thanh chuyển bên trái liền khối */
+        .ai-box-container { display: flex; background: var(--card-bg); border-radius: 10px; margin-top: 4px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0; align-items: stretch; min-height: 240px; width: 100%; }
+        
+        .ai-left-bar { width: 38px; min-width: 38px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; user-select: none; padding: 16px 0; transition: all 0.25s ease; position: relative; flex-shrink: 0; align-self: stretch; }
+        .ai-left-bar.paragraph-bar { background: linear-gradient(180deg, #6c5ce7, #5a4bd4); }
+        .ai-left-bar.conversation-bar { background: linear-gradient(180deg, #e67e22, #d35400); }
         .ai-left-bar:hover { filter: brightness(0.92); }
         .ai-left-bar:active { filter: brightness(0.82); }
-        .ai-left-bar.conversation-bar { background-color: #e67e22; }
-        .ai-left-bar .lang-icon { font-size: 12px; line-height: 1; }
-        .ai-left-bar .lang-badge { color: white; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); text-shadow: 0 1px 2px rgba(0,0,0,0.25); }
-        .ai-content-body { flex: 1; padding: 8px 12px; color: #2c3e50; user-select: text; cursor: text; height: auto; }
-        .ai-text-view { line-height: 1.65; white-space: pre-wrap; margin: 0; padding: 0; }
-        .ai-content-box { background: var(--card-bg); padding: 15px; border-radius: 8px; line-height: 1.7; font-size: 1rem; white-space: pre-wrap; margin-bottom: 10px; border-left: 4px solid var(--ai-color); color: #2c3e50; }
+        .ai-left-bar .left-bar-icon { font-size: 16px; line-height: 1; }
+        .ai-left-bar .left-bar-text { color: white; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); text-shadow: 0 1px 2px rgba(0,0,0,0.25); }
+        .ai-left-bar .left-bar-switch-hint { color: rgba(255, 255, 255, 0.75); font-size: 13px; font-weight: bold; line-height: 1; margin-top: 2px; }
+        
+        .ai-content-body { flex: 1; padding: 12px 14px; color: #2c3e50; user-select: text; cursor: text; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .ai-header-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px dashed #e2e8f0; }
+        .ai-type-badge { font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+        .ai-type-badge.p-badge { background: #ede9fe; color: #6c5ce7; }
+        .ai-type-badge.c-badge { background: #ffedd5; color: #c2410c; }
+        
+        .btn-speak-inline { background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-speak-inline:hover { background: #e2e8f0; }
+        .btn-speak-inline.playing { background: var(--danger-color); color: white; border-color: var(--danger-color); }
+        
+        .ai-ja-section { font-size: 1.05rem; line-height: 1.65; color: #1e293b; white-space: pre-wrap; margin: 0; padding: 0; }
+        .ai-vi-section { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #6c5ce7; border-radius: 8px; padding: 10px 12px; margin-top: 4px; }
+        .ai-vi-section.c-trans { border-left-color: #e67e22; }
+        .ai-vi-section .vi-title { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+        .ai-vi-section .vi-content { font-size: 0.95rem; line-height: 1.6; color: #334155; white-space: pre-wrap; }
+
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
         select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
@@ -131,22 +149,26 @@
         </div>
 
         <div class="tabs">
-            <button class="tab-btn" id="tab-btn-0" onclick="switchTab(0)">
+            <button class="tab-btn active" id="tab-btn-0" onclick="switchTab(0)">
                 <span>📝 Nhật ký</span>
                 <div class="toggle-container" id="pinToggleWrapper" onclick="event.stopPropagation(); togglePinFilter()">
                     <span class="toggle-label" id="pinLabelText">Tất cả</span>
                     <div class="toggle-switch"></div>
                 </div>
             </button>
-            <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">📖 Đoạn văn</button>
-            <button class="tab-btn" id="tab-btn-2" onclick="switchTab(2)">💬 Hội thoại</button>
+            <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">
+                <span>🇻🇳 Nghĩa VN</span>
+            </button>
         </div>
 
-        <div id="tab-diary" class="tab-content">
+        <div id="tab-diary" class="tab-content active">
             <div id="diaryContainer"><p class="loading-text">Đang tải dữ liệu...</p></div>
         </div>
-        <div id="tab-paragraph" class="tab-content"><div id="paragraphContainer"></div></div>
-        <div id="tab-conversation" class="tab-content"><div id="conversationContainer"></div></div>
+        <div id="tab-meaning" class="tab-content">
+            <div id="aiMeaningContainer"></div>
+        </div>
+        <div id="paragraphContainer" style="display:none;"></div>
+        <div id="conversationContainer" style="display:none;"></div>
     </main>
 
     <div id="audioModal" class="audio-modal">
@@ -170,16 +192,9 @@
         let isRepeating = localStorage.getItem("diary_repeat") === "true";
         
         let urlTab = urlParams.get('tab');
-        let currentTabIndex = 0;
-        if (urlTab === '1') {
-            currentTabIndex = 0; // Tab 1: Nhật ký
-        } else if (urlTab === '2') {
-            currentTabIndex = 1; // Tab 2: Đoạn văn
-        } else if (urlTab === '3') {
-            currentTabIndex = 2; // Tab 3: Hội thoại
-        } else if (localStorage.getItem("diary_current_tab") !== null) {
-            currentTabIndex = parseInt(localStorage.getItem("diary_current_tab")) || 0;
-        }
+        let currentTopTab = 0; // 0 = Nhật ký, 1 = Nghĩa VN
+        let currentAISubTab = localStorage.getItem("diary_sub_tab") || 'paragraph'; // 'paragraph' | 'conversation'
+
         let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -211,7 +226,7 @@
             }
             displayData.forEach((item) => container.appendChild(createItemEl(item)));
             getLessonTotalScore(); 
-            if (currentTabIndex === 0 && selectedDiaryId) {
+            if (currentTopTab === 0 && selectedDiaryId) {
                 const el = document.getElementById(`item-${selectedDiaryId}`);
                 if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
             }
@@ -290,24 +305,72 @@
         }
 
         function switchTab(index) {
-            currentTabIndex = index;
-            localStorage.setItem("diary_current_tab", index);
+            if (index === 0) {
+                currentTopTab = 0;
+            } else if (index === 1) {
+                currentTopTab = 1;
+                currentAISubTab = 'paragraph';
+            } else if (index === 2) {
+                currentTopTab = 1;
+                currentAISubTab = 'conversation';
+            }
+
+            localStorage.setItem("diary_top_tab", currentTopTab);
+            localStorage.setItem("diary_sub_tab", currentAISubTab);
+
+            // Đồng bộ tham số URL: tab=1 (Nhật ký), tab=2 (Đoạn văn), tab=3 (Hội thoại)
+            const urlTabVal = currentTopTab === 0 ? 1 : (currentAISubTab === 'paragraph' ? 2 : 3);
             const newUrl = new URL(window.location);
-            newUrl.searchParams.set('tab', index + 1);
+            newUrl.searchParams.set('tab', urlTabVal);
             window.history.replaceState({}, '', newUrl);
-            document.querySelectorAll('.tab-content').forEach((tab, i) => tab.classList.toggle('active', i === index));
-            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-                btn.classList.toggle('active', i === index);
-            });
+
+            // Cập nhật trạng thái 2 tab phía trên
+            const btn0 = document.getElementById('tab-btn-0');
+            const btn1 = document.getElementById('tab-btn-1');
+            const tabDiary = document.getElementById('tab-diary');
+            const tabMeaning = document.getElementById('tab-meaning');
+
+            if (btn0) btn0.classList.toggle('active', currentTopTab === 0);
+            if (btn1) btn1.classList.toggle('active', currentTopTab === 1);
+            if (tabDiary) tabDiary.classList.toggle('active', currentTopTab === 0);
+            if (tabMeaning) tabMeaning.classList.toggle('active', currentTopTab === 1);
+
             updateAIView();
-            if (index === 0 && selectedDiaryId) {
+
+            if (currentTopTab === 0 && selectedDiaryId) {
                 const el = document.getElementById(`item-${selectedDiaryId}`);
                 if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
             }
         }
 
+        function switchAISubTab(subTab) {
+            currentAISubTab = subTab;
+            localStorage.setItem("diary_sub_tab", subTab);
+            
+            if (currentTopTab !== 1) {
+                currentTopTab = 1;
+                document.getElementById('tab-btn-0')?.classList.remove('active');
+                document.getElementById('tab-btn-1')?.classList.add('active');
+                document.getElementById('tab-diary')?.classList.remove('active');
+                document.getElementById('tab-meaning')?.classList.add('active');
+            }
+
+            const urlTabVal = (currentAISubTab === 'paragraph') ? 2 : 3;
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('tab', urlTabVal);
+            window.history.replaceState({}, '', newUrl);
+
+            updateAIView();
+        }
+
+        function toggleAISubTab() {
+            const nextTab = (currentAISubTab === 'paragraph') ? 'conversation' : 'paragraph';
+            switchAISubTab(nextTab);
+        }
+
         function selectRecord(id, scroll = true) {
-            selectedDiaryId = id; localStorage.setItem("diary_selected_id", id);
+            selectedDiaryId = id; 
+            localStorage.setItem("diary_selected_id", id);
             const newUrl = new URL(window.location);
             newUrl.searchParams.set('id', id);
             window.history.replaceState({}, '', newUrl); 
@@ -317,51 +380,118 @@
             updateAIView();
         }
 
-        function toggleContentLang(type) {
-            const jpEl = document.getElementById(`${type}-jp-view`);
-            const viEl = document.getElementById(`${type}-vi-view`);
-            const badgeEl = document.getElementById(`${type}-lang-badge`);
-            if (jpEl && viEl) {
-                if (viEl.style.display === 'none') {
-                    viEl.style.display = 'block';
-                    jpEl.style.display = 'none';
-                    if (badgeEl) badgeEl.innerText = 'VI';
-                } else {
-                    viEl.style.display = 'none';
-                    jpEl.style.display = 'block';
-                    if (badgeEl) badgeEl.innerText = 'JA';
-                }
-            }
-        }
-
         function updateAIView() {
+            const container = document.getElementById('aiMeaningContainer');
+            if (!container) return;
+
             const item = currentDiaries.find(d => d.id == selectedDiaryId);
-            if (!item) return;
+            if (!item) {
+                container.innerHTML = '<p class="loading-text">Vui lòng chọn một bài nhật ký từ danh sách.</p>';
+                const btnSpeak = document.getElementById('btnMainSpeak');
+                if (btnSpeak) btnSpeak.disabled = true;
+                return;
+            }
+
             const pContent = (item.paragraph || '').trim();
             const cContent = (item.conversation || '').trim();
             const pTrans = (item.paragraph_trans || '').trim();
             const cTrans = (item.conversation_trans || '').trim();
-             
-            let pHTML = '';
-            if (pContent || pTrans) {
-                const showJp = !!pContent;
-                pHTML = `<div class="ai-box-container"><div class="ai-left-bar" onclick="event.stopPropagation(); toggleContentLang('p')" title="Nhấn vào thanh này để chuyển đổi Tiếng Nhật / Tiếng Việt"><span class="lang-icon">🌐</span><span class="lang-badge" id="p-lang-badge">${showJp ? 'JA' : 'VI'}</span></div><div class="ai-content-body"><div id="p-jp-view" style="display: ${showJp ? 'block' : 'none'};"><div id="p-content" class="ai-text-view">${pContent}</div></div><div id="p-vi-view" style="display: ${showJp ? 'none' : 'block'}; color: #2c3e50;"><div class="ai-text-view">${pTrans || 'Chưa có bản dịch.'}</div></div></div></div>`;
-            } else {
-                pHTML = `<p class="loading-text">Chưa có nội dung AI.</p>`;
-            }
-            document.getElementById('paragraphContainer').innerHTML = pHTML;
 
-            let cHTML = '';
-            if (cContent || cTrans) {
-                const showJp = !!cContent;
-                cHTML = `<div class="ai-box-container"><div class="ai-left-bar conversation-bar" onclick="event.stopPropagation(); toggleContentLang('c')" title="Nhấn vào thanh này để chuyển đổi Tiếng Nhật / Tiếng Việt"><span class="lang-icon">💬</span><span class="lang-badge" id="c-lang-badge">${showJp ? 'JA' : 'VI'}</span></div><div class="ai-content-body"><div id="c-jp-view" style="display: ${showJp ? 'block' : 'none'};"><div id="c-content" class="ai-text-view">${cContent}</div></div><div id="c-vi-view" style="display: ${showJp ? 'none' : 'block'}; color: #2c3e50;"><div class="ai-text-view">${cTrans || 'Chưa có bản dịch.'}</div></div></div></div>`;
-            } else {
-                cHTML = `<p class="loading-text">Chưa có nội dung AI.</p>`;
+            const hasP = !!(pContent || pTrans);
+            const hasC = !!(cContent || cTrans);
+
+            if (currentAISubTab === 'paragraph' && !hasP && hasC) {
+                currentAISubTab = 'conversation';
+            } else if (currentAISubTab === 'conversation' && !hasC && hasP) {
+                currentAISubTab = 'paragraph';
             }
-            document.getElementById('conversationContainer').innerHTML = cHTML;
+
+            const isParagraph = (currentAISubTab === 'paragraph');
+
+            let bodyHTML = '';
+            if (isParagraph) {
+                if (hasP) {
+                    bodyHTML = `
+                        <div class="ai-header-bar">
+                            <span class="ai-type-badge p-badge">📖 Đoạn văn (N3)</span>
+                            <button class="btn-speak-inline" id="btn-speak-p" onclick="speakText('p-content', 'btn-speak-p')">
+                                🔊 Đọc tiếng Nhật
+                            </button>
+                        </div>
+                        <div id="p-content" class="ai-ja-section">${pContent || '(Chưa có văn bản tiếng Nhật)'}</div>
+                        <div class="ai-vi-section">
+                            <div class="vi-title">
+                                <span>🇻🇳 Nghĩa Tiếng Việt</span>
+                                <button class="btn-speak-inline" id="btn-speak-p-vi" onclick="speakText('p-vi-view', 'btn-speak-p-vi')">
+                                    🔊 Đọc dịch
+                                </button>
+                            </div>
+                            <div id="p-vi-view" class="vi-content">${pTrans || 'Chưa có bản dịch tiếng Việt.'}</div>
+                        </div>
+                    `;
+                } else {
+                    bodyHTML = `
+                        <div class="ai-header-bar">
+                            <span class="ai-type-badge p-badge">📖 Đoạn văn (N3)</span>
+                        </div>
+                        <p class="loading-text" style="padding: 20px 0;">Chưa có dữ liệu Đoạn văn.<br><button class="btn-save" style="margin-top: 8px;" onclick="askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ Tạo bằng AI</button></p>
+                    `;
+                }
+            } else {
+                if (hasC) {
+                    bodyHTML = `
+                        <div class="ai-header-bar">
+                            <span class="ai-type-badge c-badge">💬 Hội thoại (N3)</span>
+                            <button class="btn-speak-inline" id="btn-speak-c" onclick="speakText('c-content', 'btn-speak-c')">
+                                🔊 Đọc tiếng Nhật
+                            </button>
+                        </div>
+                        <div id="c-content" class="ai-ja-section">${cContent || '(Chưa có văn bản tiếng Nhật)'}</div>
+                        <div class="ai-vi-section c-trans">
+                            <div class="vi-title">
+                                <span>🇻🇳 Nghĩa Tiếng Việt</span>
+                                <button class="btn-speak-inline" id="btn-speak-c-vi" onclick="speakText('c-vi-view', 'btn-speak-c-vi')">
+                                    🔊 Đọc dịch
+                                </button>
+                            </div>
+                            <div id="c-vi-view" class="vi-content">${cTrans || 'Chưa có bản dịch tiếng Việt.'}</div>
+                        </div>
+                    `;
+                } else {
+                    bodyHTML = `
+                        <div class="ai-header-bar">
+                            <span class="ai-type-badge c-badge">💬 Hội thoại (N3)</span>
+                        </div>
+                        <p class="loading-text" style="padding: 20px 0;">Chưa có dữ liệu Hội thoại.<br><button class="btn-save" style="margin-top: 8px;" onclick="askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ Tạo bằng AI</button></p>
+                    `;
+                }
+            }
+
+            container.innerHTML = `
+                <div class="ai-box-container">
+                    <!-- Thanh chuyển hiển thị bên trái là 1 khối duy nhất: click để chuyển đổi giữa Đoạn văn và Hội thoại -->
+                    <div class="ai-left-bar ${isParagraph ? 'paragraph-bar' : 'conversation-bar'}" 
+                         onclick="event.stopPropagation(); toggleAISubTab()" 
+                         title="Nhấn vào thanh này để chuyển đổi giữa Đoạn văn và Hội thoại">
+                        <span class="left-bar-icon">${isParagraph ? '📖' : '💬'}</span>
+                        <span class="left-bar-text">${isParagraph ? 'ĐOẠN VĂN' : 'HỘI THOẠI'}</span>
+                        <span class="left-bar-switch-hint">⇄</span>
+                    </div>
+                    <!-- Khung nội dung bên phải -->
+                    <div class="ai-content-body">
+                        ${bodyHTML}
+                    </div>
+                </div>
+            `;
 
             const btnSpeak = document.getElementById('btnMainSpeak');
-            btnSpeak.disabled = (currentTabIndex === 1) ? !(pContent || pTrans) : (currentTabIndex === 2 ? !(cContent || cTrans) : true);
+            if (btnSpeak) {
+                if (currentTopTab === 1) {
+                    btnSpeak.disabled = isParagraph ? !hasP : !hasC;
+                } else {
+                    btnSpeak.disabled = true;
+                }
+            }
         }
 
         function loadTTSSettings() {
@@ -369,7 +499,23 @@
             if(v) document.getElementById("voiceSelect").value = v;
             if(r) document.getElementById("rateSelect").value = r;
             document.getElementById("btnRepeat").classList.toggle("active", isRepeating);
-            switchTab(currentTabIndex);
+            
+            // Xử lý mở tab ban đầu
+            if (urlTab === '1') {
+                switchTab(0);
+            } else if (urlTab === '2') {
+                switchTab(1);
+            } else if (urlTab === '3') {
+                switchTab(2);
+            } else {
+                const savedTop = parseInt(localStorage.getItem("diary_top_tab")) || 0;
+                const savedSub = localStorage.getItem("diary_sub_tab") || 'paragraph';
+                if (savedTop === 1) {
+                    switchTab(savedSub === 'conversation' ? 2 : 1);
+                } else {
+                    switchTab(0);
+                }
+            }
         }
 
         function saveTTSSettings() {
@@ -440,17 +586,31 @@
                 return; 
             }
             let tid = null;
-            if (currentTabIndex === 1) {
-                const viEl = document.getElementById('p-vi-view');
-                tid = (viEl && viEl.style.display !== 'none') ? 'p-vi-view' : 'p-content';
-            } else if (currentTabIndex === 2) {
-                const viEl = document.getElementById('c-vi-view');
-                tid = (viEl && viEl.style.display !== 'none') ? 'c-vi-view' : 'c-content';
+            if (currentTopTab === 1) {
+                if (currentAISubTab === 'paragraph') {
+                    tid = 'p-content';
+                } else {
+                    tid = 'c-content';
+                }
             }
             if (tid) speakText(tid, 'btnMainSpeak');
         }
 
-        function resetSpeakBtns() { const b = document.getElementById('btnMainSpeak'); b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
+        function resetSpeakBtns() { 
+            const b = document.getElementById('btnMainSpeak'); 
+            if (b) { b.classList.remove('playing'); b.innerHTML = '🔊 Đọc'; }
+            
+            const btnP = document.getElementById('btn-speak-p');
+            if (btnP) { btnP.classList.remove('playing'); btnP.innerHTML = '🔊 Đọc tiếng Nhật'; }
+            const btnPVi = document.getElementById('btn-speak-p-vi');
+            if (btnPVi) { btnPVi.classList.remove('playing'); btnPVi.innerHTML = '🔊 Đọc dịch'; }
+
+            const btnC = document.getElementById('btn-speak-c');
+            if (btnC) { btnC.classList.remove('playing'); btnC.innerHTML = '🔊 Đọc tiếng Nhật'; }
+            const btnCVi = document.getElementById('btn-speak-c-vi');
+            if (btnCVi) { btnCVi.classList.remove('playing'); btnCVi.innerHTML = '🔊 Đọc dịch'; }
+        }
+        
         function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
 
         async function resetAppData() {

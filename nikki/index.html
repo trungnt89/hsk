@@ -75,9 +75,13 @@
         .btn-speak-inline.playing { background: var(--danger-color); color: white; border-color: var(--danger-color); }
         
         .ai-ja-section {  line-height: 1.65; color: #1e293b; white-space: pre-wrap; margin: 0; padding: 0; }
-        .ai-vi-section { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #6c5ce7; border-radius: 8px; padding: 10px 12px; margin-top: 4px; }
+        .ai-vi-section { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #6c5ce7; border-radius: 8px; padding: 8px 12px; margin-top: 4px; transition: 0.2s; }
         .ai-vi-section.c-trans { border-left-color: #e67e22; }
-        .ai-vi-section .vi-title { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+        .ai-vi-section .vi-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; padding: 2px 0; }
+        .ai-vi-section .vi-title { font-size: 0.78rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; }
+        .ai-vi-section .vi-toggle-btn { font-size: 11px; font-weight: 600; color: #475569; background: #e2e8f0; border: none; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .ai-vi-section .vi-toggle-btn:hover { background: #cbd5e1; }
+        .ai-vi-section .vi-body { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e2e8f0; }
         .ai-vi-section .vi-content { font-size: 0.95rem; line-height: 1.6; color: #334155; white-space: pre-wrap; }
 
         .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
@@ -157,7 +161,7 @@
                 </div>
             </button>
             <button class="tab-btn" id="tab-btn-1" onclick="switchTab(1)">
-                <span>🇻🇳 Nghĩa VN</span>
+                <span>📖 Bài luận</span>
             </button>
         </div>
 
@@ -260,8 +264,8 @@
                 <div class="diary-content">${item.text}</div>
                 <div class="item-actions">
                     <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
-                    <div class="item-action-btn ${item.paragraph ? '' : 'disabled'}" style="color:var(--primary-color); font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Đoạn</div>
-                    <div class="item-action-btn ${item.conversation ? '' : 'disabled'}" style="color:#e67e22; font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Hội thoại</div>
+                    <div class="item-action-btn ${item.paragraph ? '' : 'disabled'}" style="color:var(--primary-color); font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Trình độ N3</div>
+                    <div class="item-action-btn ${item.conversation ? '' : 'disabled'}" style="color:#e67e22; font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Trình độ N2</div>
                     <div class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" style="font-size:0.75rem;" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
                 </div>
             `;
@@ -343,7 +347,14 @@
             }
         }
 
+        let isJapanesePlaying = false;
+
         function switchAISubTab(subTab) {
+            const wasPlayingJapanese = isJapanesePlaying;
+            if (wasPlayingJapanese && window.stopSpeak) {
+                window.stopSpeak();
+            }
+
             currentAISubTab = subTab;
             localStorage.setItem("diary_sub_tab", subTab);
             
@@ -361,11 +372,37 @@
             window.history.replaceState({}, '', newUrl);
 
             updateAIView();
+
+            if (wasPlayingJapanese) {
+                isJapanesePlaying = true;
+                const newElId = (currentAISubTab === 'paragraph') ? 'p-content' : 'c-content';
+                const newBtnId = (currentAISubTab === 'paragraph') ? 'btn-speak-p' : 'btn-speak-c';
+                const newBtn = document.getElementById(newBtnId);
+                if (newBtn) {
+                    newBtn.classList.add("playing");
+                    newBtn.innerHTML = '⏹ Dừng';
+                }
+                const btnMain = document.getElementById('btnMainSpeak');
+                if (btnMain) {
+                    btnMain.classList.add("playing");
+                    btnMain.innerHTML = '⏹ Dừng';
+                }
+                setTimeout(() => {
+                    speakText(newElId, newBtnId);
+                }, 60);
+            }
         }
 
         function toggleAISubTab() {
             const nextTab = (currentAISubTab === 'paragraph') ? 'conversation' : 'paragraph';
             switchAISubTab(nextTab);
+        }
+
+        let showViTrans = false;
+
+        function toggleViTrans() {
+            showViTrans = !showViTrans;
+            updateAIView();
         }
 
         function selectRecord(id, scroll = true) {
@@ -413,68 +450,94 @@
                 if (hasP) {
                     bodyHTML = `
                         <div class="ai-header-bar">
-                            <span class="ai-type-badge p-badge">📖 Đoạn văn (N3)</span>
-                            <button class="btn-speak-inline" id="btn-speak-p" onclick="speakText('p-content', 'btn-speak-p')">
-                                🔊 Đọc tiếng Nhật
+                            <span class="ai-type-badge p-badge">📖 Trình độ N3</span>
+                            <button class="btn-speak-inline ${isJapanesePlaying ? 'playing' : ''}" id="btn-speak-p" onclick="handleInlineSpeak('p-content', 'btn-speak-p')">
+                                ${isJapanesePlaying ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật'}
                             </button>
                         </div>
                         <div id="p-content" class="ai-ja-section">${pContent || '(Chưa có văn bản tiếng Nhật)'}</div>
                         <div class="ai-vi-section">
-                            <div class="vi-title">
-                                <span>🇻🇳 Nghĩa Tiếng Việt</span>
-                                <button class="btn-speak-inline" id="btn-speak-p-vi" onclick="speakText('p-vi-view', 'btn-speak-p-vi')">
-                                    🔊 Đọc dịch
-                                </button>
+                            <div class="vi-header" onclick="toggleViTrans()">
+                                <div class="vi-title">
+                                    <span>🇻🇳 Nghĩa Tiếng Việt</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    ${showViTrans ? `
+                                        <button class="btn-speak-inline" id="btn-speak-p-vi" onclick="event.stopPropagation(); handleInlineSpeak('p-vi-view', 'btn-speak-p-vi')">
+                                            🔊 Đọc dịch
+                                        </button>
+                                    ` : ''}
+                                    <button class="vi-toggle-btn" type="button">
+                                        ${showViTrans ? 'Ẩn nghĩa ▲' : '👁️ Xem nghĩa ▼'}
+                                    </button>
+                                </div>
                             </div>
-                            <div id="p-vi-view" class="vi-content">${pTrans || 'Chưa có bản dịch tiếng Việt.'}</div>
+                            ${showViTrans ? `
+                                <div class="vi-body">
+                                    <div id="p-vi-view" class="vi-content">${pTrans || 'Chưa có bản dịch tiếng Việt.'}</div>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 } else {
                     bodyHTML = `
                         <div class="ai-header-bar">
-                            <span class="ai-type-badge p-badge">📖 Đoạn văn (N3)</span>
+                            <span class="ai-type-badge p-badge">📖 Trình độ N3</span>
                         </div>
-                        <p class="loading-text" style="padding: 20px 0;">Chưa có dữ liệu Đoạn văn.<br><button class="btn-save" style="margin-top: 8px;" onclick="askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ Tạo bằng AI</button></p>
+                        <p class="loading-text" style="padding: 20px 0;">Chưa có dữ liệu Trình độ N3.<br><button class="btn-save" style="margin-top: 8px;" onclick="askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ Tạo bằng AI</button></p>
                     `;
                 }
             } else {
                 if (hasC) {
                     bodyHTML = `
                         <div class="ai-header-bar">
-                            <span class="ai-type-badge c-badge">💬 Hội thoại (N3)</span>
-                            <button class="btn-speak-inline" id="btn-speak-c" onclick="speakText('c-content', 'btn-speak-c')">
-                                🔊 Đọc tiếng Nhật
+                            <span class="ai-type-badge c-badge">💬 Trình độ N2</span>
+                            <button class="btn-speak-inline ${isJapanesePlaying ? 'playing' : ''}" id="btn-speak-c" onclick="handleInlineSpeak('c-content', 'btn-speak-c')">
+                                ${isJapanesePlaying ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật'}
                             </button>
                         </div>
                         <div id="c-content" class="ai-ja-section">${cContent || '(Chưa có văn bản tiếng Nhật)'}</div>
                         <div class="ai-vi-section c-trans">
-                            <div class="vi-title">
-                                <span>🇻🇳 Nghĩa Tiếng Việt</span>
-                                <button class="btn-speak-inline" id="btn-speak-c-vi" onclick="speakText('c-vi-view', 'btn-speak-c-vi')">
-                                    🔊 Đọc dịch
-                                </button>
+                            <div class="vi-header" onclick="toggleViTrans()">
+                                <div class="vi-title">
+                                    <span>🇻🇳 Nghĩa Tiếng Việt</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    ${showViTrans ? `
+                                        <button class="btn-speak-inline" id="btn-speak-c-vi" onclick="event.stopPropagation(); handleInlineSpeak('c-vi-view', 'btn-speak-c-vi')">
+                                            🔊 Đọc dịch
+                                        </button>
+                                    ` : ''}
+                                    <button class="vi-toggle-btn" type="button">
+                                        ${showViTrans ? 'Ẩn nghĩa ▲' : '👁️ Xem nghĩa ▼'}
+                                    </button>
+                                </div>
                             </div>
-                            <div id="c-vi-view" class="vi-content">${cTrans || 'Chưa có bản dịch tiếng Việt.'}</div>
+                            ${showViTrans ? `
+                                <div class="vi-body">
+                                    <div id="c-vi-view" class="vi-content">${cTrans || 'Chưa có bản dịch tiếng Việt.'}</div>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 } else {
                     bodyHTML = `
                         <div class="ai-header-bar">
-                            <span class="ai-type-badge c-badge">💬 Hội thoại (N3)</span>
+                            <span class="ai-type-badge c-badge">💬 Trình độ N2</span>
                         </div>
-                        <p class="loading-text" style="padding: 20px 0;">Chưa có dữ liệu Hội thoại.<br><button class="btn-save" style="margin-top: 8px;" onclick="askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ Tạo bằng AI</button></p>
+                        <p class="loading-text" style="padding: 20px 0;">Chưa có dữ liệu Trình độ N2.<br><button class="btn-save" style="margin-top: 8px;" onclick="askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ Tạo bằng AI</button></p>
                     `;
                 }
             }
 
             container.innerHTML = `
                 <div class="ai-box-container">
-                    <!-- Thanh chuyển hiển thị bên trái là 1 khối duy nhất: click để chuyển đổi giữa Đoạn văn và Hội thoại -->
+                    <!-- Thanh chuyển hiển thị bên trái là 1 khối duy nhất: click để chuyển đổi giữa Trình độ N3 và Trình độ N2 -->
                     <div class="ai-left-bar ${isParagraph ? 'paragraph-bar' : 'conversation-bar'}" 
                          onclick="event.stopPropagation(); toggleAISubTab()" 
-                         title="Nhấn vào thanh này để chuyển đổi giữa Đoạn văn và Hội thoại">
+                         title="Nhấn vào thanh này để chuyển đổi giữa Trình độ N3 và Trình độ N2">
                         <span class="left-bar-icon">${isParagraph ? '📖' : '💬'}</span>
-                        <span class="left-bar-text">${isParagraph ? 'ĐOẠN VĂN' : 'HỘI THOẠI'}</span>
+                        <span class="left-bar-text">${isParagraph ? 'TRÌNH ĐỘ N3' : 'TRÌNH ĐỘ N2'}</span>
                         <span class="left-bar-switch-hint">⇄</span>
                     </div>
                     <!-- Khung nội dung bên phải -->
@@ -488,6 +551,10 @@
             if (btnSpeak) {
                 if (currentTopTab === 1) {
                     btnSpeak.disabled = isParagraph ? !hasP : !hasC;
+                    if (isJapanesePlaying) {
+                        btnSpeak.classList.add('playing');
+                        btnSpeak.innerHTML = '⏹ Dừng';
+                    }
                 } else {
                     btnSpeak.disabled = true;
                 }
@@ -533,6 +600,23 @@
             }
         }
 
+        function handleInlineSpeak(elId, btnId) {
+            const btn = document.getElementById(btnId);
+            if (btn && btn.classList.contains("playing")) {
+                if (window.stopSpeak) window.stopSpeak();
+                isJapanesePlaying = false;
+                resetSpeakBtns();
+                return;
+            }
+            const isJapanese = (elId === 'p-content' || elId === 'c-content');
+            if (isJapanese) {
+                isJapanesePlaying = true;
+            } else {
+                isJapanesePlaying = false;
+            }
+            speakText(elId, btnId);
+        }
+
         async function speakText(elId, btnId) {
             const el = document.getElementById(elId);
             const btn = document.getElementById(btnId);
@@ -541,12 +625,24 @@
             const textToSpeak = (el.innerText || '').trim();
             if (!textToSpeak) {
                 console.warn("[TTS] Không có nội dung văn bản để đọc.");
+                isJapanesePlaying = false;
+                resetSpeakBtns();
                 return;
+            }
+
+            const isJapanese = (elId === 'p-content' || elId === 'c-content');
+            if (isJapanese) {
+                isJapanesePlaying = true;
             }
 
             if (btn) {
                 btn.classList.add("playing");
                 btn.innerHTML = '⏹ Dừng';
+            }
+            const btnMain = document.getElementById('btnMainSpeak');
+            if (btnMain && isJapanese) {
+                btnMain.classList.add("playing");
+                btnMain.innerHTML = '⏹ Dừng';
             }
 
             // Xác định giọng đọc dựa theo tùy chọn và ngôn ngữ của khối văn bản
@@ -573,6 +669,7 @@
                 console.error("[TTS Error]", error);
             } finally {
                 if (!isRepeating) {
+                    isJapanesePlaying = false;
                     resetSpeakBtns();
                 }
             }
@@ -582,18 +679,32 @@
             const btn = document.getElementById('btnMainSpeak');
             if (btn.classList.contains("playing")) { 
                 if (window.stopSpeak) window.stopSpeak(); 
+                isJapanesePlaying = false;
                 resetSpeakBtns(); 
                 return; 
             }
             let tid = null;
+            let inlineBtnId = null;
             if (currentTopTab === 1) {
                 if (currentAISubTab === 'paragraph') {
                     tid = 'p-content';
+                    inlineBtnId = 'btn-speak-p';
                 } else {
                     tid = 'c-content';
+                    inlineBtnId = 'btn-speak-c';
                 }
             }
-            if (tid) speakText(tid, 'btnMainSpeak');
+            if (tid) {
+                isJapanesePlaying = true;
+                if (inlineBtnId) {
+                    const ib = document.getElementById(inlineBtnId);
+                    if (ib) {
+                        ib.classList.add('playing');
+                        ib.innerHTML = '⏹ Dừng';
+                    }
+                }
+                speakText(tid, 'btnMainSpeak');
+            }
         }
 
         function resetSpeakBtns() { 

@@ -180,41 +180,47 @@ const JapaneseLookup = (() => {
     const Module = {
         init: async () => {
             createUI();
-            await loadKanjiDict();
-            try {
-                const db = await initDB();
-                // 1. Kiểm tra nếu có data danh sách từ vựng trong IndexedDB thì lấy luôn
-                let cachedData = await getDBData(db, "word_list_data");
-                
-                if (cachedData && cachedData.values) {
-                    console.log("[Log] Data initialized from IndexedDB cache.");
-                    cachedData.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
-                    dataLoaded = true;
-                    Module.applyHighlight();
-                } else {
-                    // Nếu chưa có cache thì mới gọi API từ Vercel
-                    console.log("[Log] Fetching data from API...");
-                    const res = await fetch(CONFIG.API_URL, {
-                        method: "POST",
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({sheet: CONFIG.sheet,spread: CONFIG.spread,act: "read",v: Date.now()})
-                    });
-                    const data = await res.json();
+            
+            // 1. Tải danh sách từ vựng từ IndexedDB ngay lập tức (song song, không chờ Kanji)
+            const loadWordsPromise = (async () => {
+                try {
+                    const db = await initDB();
+                    let cachedData = await getDBData(db, "word_list_data");
                     
-                    // Lưu dữ liệu lấy từ API vào IndexedDB
-                    if (data && data.values) {
-                        saveDBData(db, "word_list_data", data);
-                        data.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
+                    if (cachedData && cachedData.values) {
+                        console.log("[Log] Data initialized from IndexedDB cache.");
+                        cachedData.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
+                        dataLoaded = true;
+                        Module.applyHighlight();
+                        window.dispatchEvent(new CustomEvent('japaneseWordsLoaded', { detail: Array.from(savedWordsMap.keys()) }));
+                    } else {
+                        console.log("[Log] Fetching data from API...");
+                        const res = await fetch(CONFIG.API_URL, {
+                            method: "POST",
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({sheet: CONFIG.sheet,spread: CONFIG.spread,act: "read",v: Date.now()})
+                        });
+                        const data = await res.json();
+                        
+                        if (data && data.values) {
+                            saveDBData(db, "word_list_data", data);
+                            data.values.forEach(w => savedWordsMap.set(w[1], { meaning: w[3], romaji: w[2], googleMeaning: w[3] || "" }));
+                        }
+                        
+                        dataLoaded = true;
+                        Module.applyHighlight();
+                        window.dispatchEvent(new CustomEvent('japaneseWordsLoaded', { detail: Array.from(savedWordsMap.keys()) }));
+                        console.log("[Log] Data initialized from Vercel API và lưu vào cache.");
                     }
-                    
-                    dataLoaded = true;
-                    Module.applyHighlight();
-                    console.log("[Log] Data initialized from Vercel API và lưu vào cache.");
+                } catch (e) { 
+                    console.warn("[Log] API or DB load failed.");
+                    dataLoaded = true; 
                 }
-            } catch (e) { 
-                console.warn("[Log] API or DB load failed.");
-                dataLoaded = true; 
-            }
+            })();
+
+            // Tải Kanji song song
+            loadKanjiDict();
+            await loadWordsPromise;
 
             document.addEventListener('mousedown', (e) => {
                 if (e.target.closest('.ja-stored-highlight')) {
@@ -258,12 +264,16 @@ const JapaneseLookup = (() => {
             setInterval(() => { if(dataLoaded) Module.applyHighlight(); }, 3000);
         },
 
-        applyHighlight: () => {
+        getSavedWords: () => Array.from(savedWordsMap.keys()),
+        render: () => Module.applyHighlight(),
+
+        applyHighlight: (rootNode = document.body) => {
             if (savedWordsMap.size === 0 || isHighlighting) return;
             isHighlighting = true;
             const words = Array.from(savedWordsMap.keys()).sort((a, b) => b.length - a.length);
             const regex = new RegExp(`(${words.join('|')})`, 'g');
-            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+            const target = rootNode || document.body;
+            const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT, null, false);
             let node;
             while (node = walker.nextNode()) {
                 if (node.parentElement.closest('.ja-stored-highlight, .ja-lookup-popup, .ja-modal, SCRIPT, STYLE')) continue;

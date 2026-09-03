@@ -17,9 +17,9 @@ const JapaneseLookup = (() => {
     const style = document.createElement('style');
     style.textContent = `
         .ja-lookup-popup {
-            position: sticky; z-index: 2147483647; background: #fff; 
-            border-top: 3px solid #2563eb; bottom: 0; width: 100%; 
-            padding: 10px 15px 15px 15px; box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+            position: fixed; z-index: 2147483647; background: #fff; 
+            border-bottom: 3px solid #2563eb; top: 0; left: 0; width: 100%; 
+            padding: 10px 15px 12px 15px; box-shadow: 0 6px 24px rgba(0,0,0,0.18);
             font-family: -apple-system, system-ui, sans-serif; display: none; font-size: 15px;
             box-sizing: border-box; transition: transform 0.2s ease-out;
         }
@@ -119,7 +119,6 @@ const JapaneseLookup = (() => {
             Module.deleteFromList(word);
             popup.style.display = 'none';
         };
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
     async function lookupNew(text) {

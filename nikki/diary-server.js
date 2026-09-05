@@ -54,6 +54,7 @@ async function saveDiary() {
     currentDiaries.unshift(newItem);
     renderList(currentDiaries);
     document.getElementById('diaryInput').value = '';
+    if (typeof collapseWriteCard === 'function') collapseWriteCard();
     const rowData = [id, date, text, "", "", "false", 0, "", ""];
 
     await callAPI({ act: 'add', sheet: SHEET_DIARY, spread: SPREAD_DIARY, data: JSON.stringify(rowData) });

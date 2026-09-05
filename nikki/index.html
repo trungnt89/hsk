@@ -22,8 +22,46 @@
         .btn-reset:hover { background-color: rgba(255, 255, 255, 0.3); }
         main { flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
          
-        .write-card { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .write-card textarea { width: 100%; border: 1px solid #dfe6e9; border-radius: 8px; padding: 10px; font-size: 15px; resize: none; height: 120px; outline: none; display: block; }
+        .write-card { 
+            background: var(--card-bg); 
+            padding: 8px 10px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            flex-shrink: 0; 
+            transition: all 0.25s ease; 
+        }
+        .write-card textarea { 
+            width: 100%; 
+            border: 1px solid #dfe6e9; 
+            border-radius: 8px; 
+            padding: 7px 12px; 
+            font-size: 14px; 
+            resize: none; 
+            height: 36px; 
+            line-height: 20px; 
+            outline: none; 
+            display: block; 
+            overflow-y: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            background: #fafbfc;
+            transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .write-card textarea:hover {
+            border-color: #cbd5e1;
+            background: #ffffff;
+        }
+        .write-card.expanded textarea,
+        .write-card textarea.expanded { 
+            height: 120px; 
+            white-space: pre-wrap; 
+            overflow-y: auto; 
+            cursor: text; 
+            background: #ffffff;
+            border-color: var(--primary-color); 
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.12); 
+        }
          
         .action-area { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; gap: 5px; width: 100%; }
         .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 1; font-size: 13px; }
@@ -313,15 +351,71 @@
         // Kích hoạt nạp từ vựng từ IndexedDB ngay lập tức
         initWordHighlightFromDB();
 
+        function expandWriteCard() {
+            const card = document.querySelector('.write-card');
+            const input = document.getElementById('diaryInput');
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (card) card.classList.add('expanded');
+            if (input) input.classList.add('expanded');
+            if (!editingId && cancelBtn) {
+                cancelBtn.innerText = 'Thu gọn';
+                cancelBtn.style.display = 'inline-block';
+            }
+        }
+
+        function collapseWriteCard() {
+            const card = document.querySelector('.write-card');
+            const input = document.getElementById('diaryInput');
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (card) card.classList.remove('expanded');
+            if (input) {
+                input.classList.remove('expanded');
+                input.blur();
+            }
+            if (!editingId && cancelBtn) {
+                cancelBtn.style.display = 'none';
+            }
+        }
+
+        function handleCancelClick() {
+            if (editingId) {
+                clearEditMode();
+            } else {
+                collapseWriteCard();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             console.log("[System] App Initialized");
             initWordHighlightFromDB();
             initApp();
             loadTTSSettings();
-            document.getElementById('saveBtn').addEventListener('click', () => {
-                editingId ? updateDiary() : saveDiary();
+
+            const diaryInput = document.getElementById('diaryInput');
+            if (diaryInput) {
+                diaryInput.addEventListener('focus', expandWriteCard);
+                diaryInput.addEventListener('click', expandWriteCard);
+            }
+
+            // Tự động thu gọn khi click ra ngoài thẻ nhập liệu nếu ô trống và không trong chế độ sửa
+            document.addEventListener('click', (e) => {
+                const card = document.querySelector('.write-card');
+                if (card && !card.contains(e.target)) {
+                    if (!editingId && diaryInput && (!diaryInput.value || diaryInput.value.trim() === '')) {
+                        collapseWriteCard();
+                    }
+                }
             });
-            document.getElementById('cancelBtn').addEventListener('click', clearEditMode);
+
+            document.getElementById('saveBtn').addEventListener('click', async () => {
+                if (editingId) {
+                    await updateDiary();
+                } else {
+                    await saveDiary();
+                }
+                collapseWriteCard();
+            });
+            document.getElementById('cancelBtn').addEventListener('click', handleCancelClick);
         });
 
         async function initApp() {
@@ -411,7 +505,13 @@
             editingId = id;
             document.getElementById('diaryInput').value = text;
             document.getElementById('saveBtn').innerText = 'Cập nhật';
-            document.getElementById('cancelBtn').style.display = 'inline-block';
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (cancelBtn) {
+                cancelBtn.innerText = 'Hủy';
+                cancelBtn.style.display = 'inline-block';
+            }
+            expandWriteCard();
+            document.getElementById('diaryInput').focus();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -422,6 +522,10 @@
         }
 
         function switchTab(index) {
+            if (!editingId && (!document.getElementById('diaryInput')?.value?.trim())) {
+                collapseWriteCard();
+            }
+
             if (index === 0) {
                 currentTopTab = 0;
             } else if (index === 1) {
@@ -830,7 +934,17 @@
             }
         }
         
-        function clearEditMode() { editingId = null; document.getElementById('diaryInput').value = ''; document.getElementById('saveBtn').innerText = 'Lưu lại'; document.getElementById('cancelBtn').style.display = 'none'; }
+        function clearEditMode() { 
+            editingId = null; 
+            document.getElementById('diaryInput').value = ''; 
+            document.getElementById('saveBtn').innerText = 'Lưu lại'; 
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (cancelBtn) {
+                cancelBtn.innerText = 'Hủy';
+                cancelBtn.style.display = 'none';
+            }
+            collapseWriteCard();
+        }
 
         async function resetAppData() {
             if (confirm("Bạn có chắc chắn muốn reset toàn bộ dữ liệu nhật ký không?")) {

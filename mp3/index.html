@@ -2,15 +2,15 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <!-- CỰC KỲ QUAN TRỌNG: Sửa lỗi YouTube Error 153 do thiếu referrer policy -->
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>Báo Thức YouTube & Giọng Đọc TTS - Google Sheet</title>
+    <title>Báo Thức Thông Minh YouTube & TTS - Google Sheet</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20width=%22100%22%20height=%22100%22><text y=%22.9em%22 font-size=%2290%22>⏰</text></svg>">
     <!-- Thư viện kết nối Ajax & xác thực -->
     <script src="../com/util.js"></script>
     <style>
-        /* === BẢNG MÀU GIAO DIỆN SÁNG (LIGHT THEME) HIỆN ĐẠI, TRANG NHÃ === */
+        /* === BẢNG MÀU GIAO DIỆN SÁNG (LIGHT THEME) HIỆN ĐẠI, FULL MÀN HÌNH === */
         :root {
             --bg: #f8fafc;
             --surface: #ffffff;
@@ -48,6 +48,7 @@
             --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
             --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
             --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+            --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
         }
 
         * {
@@ -61,9 +62,12 @@
         html, body {
             width: 100%;
             min-height: 100vh;
+            min-height: 100dvh;
             background: var(--bg);
             color: var(--text-main);
             overflow-x: hidden;
+            margin: 0;
+            padding: 0;
         }
 
         body {
@@ -71,28 +75,29 @@
             flex-direction: column;
         }
 
-        /* KHUNG CHỨA TOÀN MÀN HÌNH */
+        /* KHUNG CHỨA TOÀN MÀN HÌNH: TỰ ĐỘNG THÍCH ỨNG IPHONE, IPAD, PC */
         .app-container {
             width: 100%;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            padding: 16px 20px 36px;
+            padding: env(safe-area-inset-top, 14px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 24px) env(safe-area-inset-left, 16px);
             box-sizing: border-box;
-            max-width: 960px;
             margin: 0 auto;
+            max-width: 100%;
         }
 
-        /* HEADER */
+        /* HEADER FULL MÀN HÌNH */
         .app-header {
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 14px;
+            gap: 12px;
             padding-bottom: 14px;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             border-bottom: 1px solid var(--border);
         }
 
@@ -100,10 +105,11 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .app-title {
-            font-size: 1.4rem;
+            font-size: 1.35rem;
             font-weight: 800;
             display: inline-flex;
             align-items: center;
@@ -114,12 +120,13 @@
 
         .tag-pill {
             font-size: 0.72rem;
-            padding: 3px 9px;
+            padding: 4px 9px;
             border-radius: 6px;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            white-space: nowrap;
         }
 
         .tag-pill.yt {
@@ -134,13 +141,6 @@
             border: 1px solid var(--accent-tts-border);
         }
 
-        .tag-pill.light-mode {
-            background: var(--surface-muted);
-            color: var(--text-sub);
-            border: 1px solid var(--border);
-        }
-
-        /* KHU VỰC THÔNG TIN TRẠNG THÁI GOOGLE SHEET TRÊN HEADER */
         .header-actions {
             display: flex;
             align-items: center;
@@ -152,7 +152,7 @@
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text-sub);
-            padding: 6px 14px;
+            padding: 7px 14px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
@@ -186,62 +186,44 @@
             height: 8px;
             border-radius: 50%;
             background: var(--text-muted);
+            flex-shrink: 0;
         }
         .status-dot.green { background: var(--success); }
         .status-dot.blue { background: var(--accent-blue); animation: pulse 1s infinite; }
         .status-dot.red { background: var(--primary); }
 
-        /* CHUYỂN ĐỔI MÀN HÌNH (DANH SÁCH MẶC ĐỊNH & MÀN HÌNH THÊM MỚI) */
-        #viewListView {
-            display: block;
-            width: 100%;
-        }
-
-        #viewFormView {
-            display: none;
-            width: 100%;
-        }
-
-        .view-nav-bar {
+        /* HỆ THỐNG GRID DASHBOARD CHO IPAD & PC */
+        .dashboard-grid {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 16px;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
         }
 
-        .btn-back {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 8px 16px;
-            border-radius: 10px;
-            font-size: 0.88rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.18s;
+        .dashboard-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
         }
 
-        .btn-back:hover {
-            border-color: var(--accent-blue-border);
-            color: var(--accent-blue);
-            background: var(--accent-blue-light);
+        .dashboard-main {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
         }
 
-        /* CARD GIAO DIỆN SÁNG */
+        /* CARD GIAO DIỆN SÁNG CHUNG */
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--card-radius);
-            padding: 20px;
+            padding: 18px 20px;
             box-shadow: var(--shadow-sm);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             transition: border-color 0.25s, box-shadow 0.25s;
         }
 
@@ -256,6 +238,7 @@
             padding-bottom: 12px;
             border-bottom: 1px solid var(--border);
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .card-title {
@@ -270,7 +253,7 @@
         /* ĐỒNG HỒ SỐ HIỆN TẠI (GIAO DIỆN SÁNG RỰC RỠ) */
         .clock-card {
             background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
-            border: 1px solid var(--accent-blue-border);
+            border: 1.5px solid var(--accent-blue-border);
             border-radius: var(--card-radius);
             padding: 18px 22px;
             display: flex;
@@ -282,7 +265,7 @@
         }
 
         .clock-time {
-            font-size: 3.2rem;
+            font-size: clamp(2.4rem, 6vw, 3.6rem);
             font-weight: 900;
             font-variant-numeric: tabular-nums;
             letter-spacing: 1px;
@@ -294,11 +277,11 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
-            margin-top: 4px;
+            margin-top: 6px;
         }
 
         .clock-date {
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: var(--text-sub);
             font-weight: 600;
         }
@@ -308,15 +291,48 @@
             color: var(--success);
             background: var(--success-light);
             border: 1px solid var(--success-border);
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 8px;
             display: inline-flex;
             align-items: center;
             gap: 6px;
             font-weight: 700;
+            white-space: nowrap;
         }
 
-        /* FORM INPUTS */
+        /* CÁC NÚT ĐIỀU HƯỚNG & HÀNH ĐỘNG */
+        .view-nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .btn-back {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.18s;
+            min-height: 44px;
+        }
+
+        .btn-back:hover {
+            border-color: var(--accent-blue-border);
+            color: var(--accent-blue);
+            background: var(--accent-blue-light);
+        }
+
+        /* FORM INPUTS & SELECTORS */
         .form-group {
             display: flex;
             flex-direction: column;
@@ -324,7 +340,7 @@
         }
 
         .form-label {
-            font-size: 0.85rem;
+            font-size: 0.86rem;
             font-weight: 700;
             color: var(--text-main);
             display: flex;
@@ -337,11 +353,12 @@
             background: var(--surface);
             border: 1px solid #cbd5e1;
             border-radius: 10px;
-            padding: 11px 14px;
+            padding: 12px 14px;
             color: var(--text-main);
             font-size: 0.95rem;
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
+            min-height: 44px;
         }
 
         .form-input:focus {
@@ -350,16 +367,17 @@
         }
 
         .form-time-input {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 800;
             text-align: center;
             letter-spacing: 3px;
-            padding: 8px 14px;
+            padding: 10px 14px;
             color: var(--accent-blue);
             background: #f8fafc;
+            min-height: 56px;
         }
 
-        /* CHỌN KIỂU BÁO THỨC (TYPE: YOUTUBE HOẶC TTS) */
+        /* CHỌN KIỂU BÁO THỨC (TYPE) */
         .type-selector-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -375,15 +393,16 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 10px 14px;
+            padding: 12px 14px;
             border-radius: 8px;
             border: 1px solid transparent;
-            font-size: 0.92rem;
+            font-size: 0.95rem;
             font-weight: 700;
             cursor: pointer;
             background: transparent;
             color: var(--text-sub);
             transition: all 0.2s ease;
+            min-height: 46px;
         }
 
         .type-btn.active.yt {
@@ -413,12 +432,16 @@
             background: var(--surface-muted);
             border: 1px solid var(--border);
             color: var(--text-sub);
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             font-weight: 600;
-            padding: 5px 10px;
-            border-radius: 6px;
+            padding: 8px 12px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.15s;
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .quick-time-btn:hover {
@@ -427,7 +450,11 @@
             background: var(--accent-blue-light);
         }
 
-        /* NÚT MẪU YOUTUBE HOẶC TTS */
+        .quick-time-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* PRESET PILLS */
         .preset-links-row {
             display: flex;
             align-items: center;
@@ -440,16 +467,17 @@
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text-sub);
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             font-weight: 600;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.15s ease;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             box-shadow: var(--shadow-sm);
+            min-height: 38px;
         }
 
         .preset-pill:hover {
@@ -467,43 +495,45 @@
         .checkbox-label {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
+            gap: 10px;
+            font-size: 0.88rem;
             color: var(--text-main);
             cursor: pointer;
             user-select: none;
+            min-height: 32px;
         }
 
         .checkbox-label input[type="checkbox"] {
             accent-color: var(--primary);
-            width: 17px;
-            height: 17px;
+            width: 20px;
+            height: 20px;
             cursor: pointer;
         }
 
-        /* NÚT HÀNH ĐỘNG FORM */
+        /* NÚT BẤM CHÍNH */
         .btn-row {
             display: flex;
             gap: 10px;
-            margin-top: 6px;
+            margin-top: 8px;
             flex-wrap: wrap;
         }
 
         .btn {
             flex: 1;
-            min-width: 120px;
-            padding: 11px 16px;
+            min-width: 140px;
+            padding: 12px 18px;
             border-radius: 10px;
             border: 1px solid transparent;
-            font-size: 0.92rem;
+            font-size: 0.94rem;
             font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
             transition: all 0.18s ease;
             box-shadow: var(--shadow-sm);
+            min-height: 46px;
         }
 
         .btn:active { transform: scale(0.98); }
@@ -514,7 +544,7 @@
         }
         .btn-primary:hover {
             background: var(--primary-hover);
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
         }
 
         .btn-tts {
@@ -523,7 +553,7 @@
         }
         .btn-tts:hover {
             background: var(--accent-tts-hover);
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+            box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
         }
 
         .btn-secondary {
@@ -542,116 +572,40 @@
         }
         .btn-accent:hover {
             background: var(--accent-blue-hover);
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
         }
 
-        /* KHUNG VIDEO MASTER YOUTUBE */
-        #ytMasterContainer {
+        /* KHUNG XEM TRƯỚC YOUTUBE TRONG FORM */
+        .form-yt-preview-card {
+            background: #0f172a;
             border-radius: 12px;
             overflow: hidden;
-            background: #000;
-            transition: all 0.2s ease;
+            margin-top: 10px;
+            box-shadow: var(--shadow-md);
         }
 
-        #ytMasterContainer.mode-preview {
-            display: block;
+        .form-preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #1e293b;
+            color: #cbd5e1;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .form-preview-frame {
             width: 100%;
             aspect-ratio: 16 / 9;
-            margin-top: 10px;
-            position: static;
+            background: #000000;
         }
 
-        #ytMasterContainer.mode-ringing {
+        .form-preview-frame iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
             display: block;
-            position: fixed;
-            top: 48%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: min(90vw, 560px);
-            aspect-ratio: 16 / 9;
-            z-index: 1000000;
-            box-shadow: 0 10px 40px rgba(220, 38, 38, 0.45);
-        }
-
-        #ytMasterContainer.mode-idle {
-            position: fixed;
-            bottom: -9999px;
-            left: -9999px;
-            width: 200px;
-            height: 112px;
-            opacity: 0.01;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .yt-preplay-banner {
-            background: var(--accent-blue-light);
-            border: 1px solid var(--accent-blue-border);
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 0.85rem;
-            color: var(--accent-blue-hover);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-weight: 600;
-        }
-
-        /* CARD QUẢN LÝ GOOGLE SHEET */
-        .sheet-info-card {
-            background: var(--surface-muted);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .sheet-info-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 0.82rem;
-            gap: 8px;
-        }
-
-        .sheet-id-badge {
-            font-family: monospace;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            padding: 3px 8px;
-            border-radius: 6px;
-            color: var(--accent-blue);
-            font-size: 0.78rem;
-            max-width: 260px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-weight: 600;
-        }
-
-        /* KHUNG HIỂN THỊ CẤU TRÚC SHEET MỚI */
-        .sheet-structure-banner {
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 12px;
-            font-size: 0.78rem;
-            color: var(--text-sub);
-            line-height: 1.5;
-        }
-
-        .sheet-col-badge {
-            display: inline-block;
-            background: var(--surface-muted);
-            border: 1px solid var(--border);
-            padding: 1px 6px;
-            border-radius: 4px;
-            font-weight: 700;
-            color: var(--text-main);
-            margin: 2px 2px;
-            font-size: 0.72rem;
         }
 
         /* DANH SÁCH MỐC BÁO THỨC */
@@ -694,7 +648,7 @@
         }
 
         .alarm-time {
-            font-size: 1.7rem;
+            font-size: 1.8rem;
             font-weight: 800;
             color: var(--text-main);
             letter-spacing: 1px;
@@ -703,7 +657,7 @@
         }
 
         .alarm-title {
-            font-size: 0.92rem;
+            font-size: 0.95rem;
             color: var(--text-main);
             font-weight: 600;
             white-space: nowrap;
@@ -712,7 +666,7 @@
         }
 
         .alarm-content-preview {
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             color: var(--text-muted);
             white-space: nowrap;
             overflow: hidden;
@@ -728,8 +682,8 @@
         }
 
         .badge-type {
-            font-size: 0.7rem;
-            padding: 2px 8px;
+            font-size: 0.72rem;
+            padding: 3px 8px;
             border-radius: 5px;
             font-weight: 700;
             text-transform: uppercase;
@@ -748,8 +702,8 @@
         }
 
         .badge-lang {
-            font-size: 0.7rem;
-            padding: 2px 7px;
+            font-size: 0.72rem;
+            padding: 3px 8px;
             border-radius: 5px;
             font-weight: 600;
             background: var(--accent-blue-light);
@@ -758,8 +712,8 @@
         }
 
         .badge-cloud {
-            font-size: 0.7rem;
-            padding: 2px 7px;
+            font-size: 0.72rem;
+            padding: 3px 8px;
             border-radius: 5px;
             font-weight: 600;
             background: var(--surface-muted);
@@ -771,13 +725,16 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-shrink: 0;
         }
 
-        /* TOGGLE SWITCH */
+        /* TOGGLE SWITCH CỠ CHUẨN MOBILE >= 44PX TARGET */
         .toggle-switch {
             position: relative;
-            width: 46px;
-            height: 25px;
+            width: 48px;
+            height: 28px;
+            display: inline-block;
+            cursor: pointer;
         }
 
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -788,37 +745,37 @@
             inset: 0;
             background-color: #cbd5e1;
             transition: .2s;
-            border-radius: 25px;
+            border-radius: 28px;
         }
 
         .toggle-slider:before {
             position: absolute;
             content: "";
-            height: 19px;
-            width: 19px;
+            height: 22px;
+            width: 22px;
             left: 3px;
             bottom: 3px;
             background-color: white;
             transition: .2s;
             border-radius: 50%;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
         }
 
         input:checked + .toggle-slider { background-color: var(--success); }
-        input:checked + .toggle-slider:before { transform: translateX(21px); }
+        input:checked + .toggle-slider:before { transform: translateX(20px); }
 
         .btn-icon {
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text-sub);
             border-radius: 8px;
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 1rem;
             transition: all 0.18s ease;
             box-shadow: var(--shadow-sm);
         }
@@ -837,86 +794,296 @@
             border-color: var(--accent-tts-border);
             background: var(--accent-tts-light);
         }
+        .btn-icon:active { transform: scale(0.94); }
 
-        /* OVERLAY KHI BÁO THỨC REO (TOÀN MÀN HÌNH NỔI BẬT) */
+        /* ==========================================================================
+           MÀN HÌNH CHẠY ÂM THANH / BÁO THỨC REO CÓ PLAYER YOUTUBE (FULL MÀN HÌNH)
+           ========================================================================== */
         .alarm-ringing-overlay {
             position: fixed;
             inset: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(15, 23, 42, 0.92);
-            backdrop-filter: blur(6px);
+            height: 100dvh;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(12px);
             z-index: 999999;
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding: 40px 20px 48px;
+            padding: env(safe-area-inset-top, 24px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 32px) env(safe-area-inset-left, 20px);
             text-align: center;
             box-sizing: border-box;
+            color: #ffffff;
+            overflow-y: auto;
+        }
+
+        .ring-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .ring-mode-badge {
+            font-size: 0.85rem;
+            font-weight: 800;
+            padding: 6px 16px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .ring-mode-badge.alarm {
+            background: #ef4444;
+            color: #ffffff;
+            animation: pulse 1s infinite;
+        }
+
+        .ring-mode-badge.preplay {
+            background: var(--accent-blue);
             color: #ffffff;
         }
 
         .ring-time {
-            font-size: 4.8rem;
+            font-size: clamp(3rem, 9vw, 5.2rem);
             font-weight: 900;
-            color: #fca5a5;
-            animation: pulse 1s infinite;
+            color: #fecaca;
             letter-spacing: 2px;
-            line-height: 1;
-            text-shadow: 0 0 24px rgba(239, 68, 68, 0.6);
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 30px rgba(239, 68, 68, 0.7);
         }
 
         .ring-title {
-            font-size: 1.4rem;
+            font-size: clamp(1.1rem, 3.5vw, 1.6rem);
             font-weight: 800;
             color: #ffffff;
-            margin: 12px 0 6px;
+            margin-top: 4px;
             max-width: 90%;
             word-break: break-word;
         }
 
         .ring-subtext {
-            font-size: 1.05rem;
+            font-size: 0.95rem;
             color: #cbd5e1;
-            max-width: 600px;
-            margin: 0 auto 16px;
-            font-style: italic;
-        }
-
-        .ring-video-placeholder {
-            width: min(90vw, 560px);
-            aspect-ratio: 16 / 9;
+            max-width: 650px;
             margin: 0 auto;
         }
 
-        .btn-stop-alarm {
-            background: var(--primary);
-            color: #ffffff;
-            font-size: 1.35rem;
+        /* KHUNG CHỨA YOUTUBE PLAYER TRÊN MÀN HÌNH CHẠY ÂM THANH */
+        .ring-player-wrapper {
+            width: 100%;
+            max-width: 760px;
+            margin: 12px auto;
+            background: #000000;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .ring-player-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: #111827;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .ring-player-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
+        .ring-countdown-badge {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
             font-weight: 800;
-            padding: 18px 48px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #ytMasterContainer {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000000;
+            position: relative;
+        }
+
+        #ytMasterContainer iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* THANH TIẾN ĐỘ CHO CHẾ ĐỘ PHÁT THỬ 10S */
+        .ring-progress-bar-wrap {
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ring-progress-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #38bdf8, #ef4444);
+            transition: width 1s linear;
+        }
+
+        .ring-player-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            flex-wrap: wrap;
+        }
+
+        .btn-player-control {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #f8fafc;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+
+        .btn-player-control:hover {
+            background: #334155;
+            color: #38bdf8;
+            border-color: #38bdf8;
+        }
+
+        .btn-player-control:active {
+            transform: scale(0.96);
+        }
+
+        /* KHUNG TTS VOICE TRÊN MÀN HÌNH CHUÔNG */
+        .ring-tts-wrapper {
+            width: 100%;
+            max-width: 650px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1.5px solid var(--accent-tts-border);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 16px auto;
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.25);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tts-waveform-icon {
+            font-size: 3.2rem;
+            animation: pulse 1.2s infinite;
+        }
+
+        .tts-voice-text {
+            font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+            font-weight: 700;
+            color: #f5f3ff;
+            line-height: 1.5;
+            max-width: 90%;
+        }
+
+        .tts-lang-badge {
+            background: var(--accent-tts);
+            color: #ffffff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* HÀNG NÚT ĐIỀU KHIỂN CHÍNH Ở ĐÁY OVERLAY */
+        .ring-actions-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            width: 100%;
+            max-width: 600px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-stop-alarm {
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 1.25rem;
+            font-weight: 900;
+            padding: 16px 36px;
             border-radius: 50px;
             border: 2px solid #ffffff;
             cursor: pointer;
-            box-shadow: 0 4px 30px rgba(220, 38, 38, 0.7);
+            box-shadow: 0 6px 30px rgba(239, 68, 68, 0.8);
             transition: transform 0.15s, background-color 0.2s;
-            z-index: 1000002;
+            min-height: 56px;
+            flex: 1;
+            min-width: 200px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .btn-stop-alarm:active { transform: scale(0.95); }
+        .btn-stop-alarm:active { transform: scale(0.96); }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.03); opacity: 0.88; }
+        .btn-snooze-alarm {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 14px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 56px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .btn-snooze-alarm:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: #ffffff;
         }
 
-        /* TOAST THÔNG BÁO */
+        /* TOAST THÔNG BÁO NHANH */
         #toastNotice {
             position: fixed;
             bottom: 24px;
@@ -929,11 +1096,12 @@
             box-shadow: var(--shadow-lg);
             font-size: 0.88rem;
             font-weight: 600;
-            z-index: 99999;
+            z-index: 9999999;
             display: none;
             align-items: center;
             gap: 8px;
             animation: slideUp 0.25s ease;
+            max-width: 90vw;
         }
 
         @keyframes slideUp {
@@ -941,89 +1109,206 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.03); opacity: 0.88; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #38bdf8;
+            display: inline-block;
+            animation: pulse 1s infinite;
+        }
+
         .empty-hint {
             text-align: center;
             color: var(--text-muted);
-            padding: 36px 16px;
+            padding: 40px 16px;
             font-size: 0.95rem;
+        }
+
+        /* ==========================================================================
+           RESPONSIVE DESIGN CHO IPHONE, IPAD VÀ PC (DESKTOP)
+           ========================================================================== */
+
+        /* 1. IPHONE & SMARTPHONE NHỎ (< 768px) */
+        @media (max-width: 767px) {
+            .app-container {
+                padding: env(safe-area-inset-top, 12px) 12px env(safe-area-inset-bottom, 20px) 12px;
+            }
+            .app-title {
+                font-size: 1.15rem;
+            }
+            .clock-card {
+                padding: 16px;
+            }
+            .clock-time {
+                font-size: 2.5rem;
+            }
+            .ring-player-wrapper {
+                max-width: 100%;
+                border-radius: 12px;
+            }
+            .ring-actions-row {
+                flex-direction: column;
+                width: 100%;
+            }
+            .btn-stop-alarm, .btn-snooze-alarm {
+                width: 100%;
+            }
+            .alarm-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .alarm-actions {
+                width: 100%;
+                justify-content: space-between;
+                border-top: 1px solid var(--border);
+                padding-top: 10px;
+            }
+        }
+
+        /* 2. IPAD & TABLET (768px - 1024px) */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .app-container {
+                padding: 20px 24px 36px;
+                max-width: 100%;
+            }
+            .dashboard-grid {
+                display: grid;
+                grid-template-columns: 360px 1fr;
+                gap: 20px;
+                align-items: start;
+            }
+            .ring-player-wrapper {
+                max-width: 640px;
+            }
+        }
+
+        /* 3. PC & MÀN HÌNH RỘNG (1025px+) */
+        @media (min-width: 1025px) {
+            .app-container {
+                padding: 24px 32px 40px;
+                max-width: 1560px;
+                margin: 0 auto;
+            }
+            .dashboard-grid {
+                display: grid;
+                grid-template-columns: 400px 1fr;
+                gap: 24px;
+                align-items: start;
+            }
+            .ring-player-wrapper {
+                max-width: 760px;
+            }
+            .form-two-col {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
         }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <!-- HEADER TRẢI DÀI -->
+    <!-- HEADER TRẢI DÀI TOÀN MÀN HÌNH -->
     <header class="app-header">
         <div class="header-brand">
             <div class="app-title">
                 <span>⏰ Báo Thức Thông Minh</span>
-                <span class="tag-pill yt">▶️ YouTube</span>
-                <span class="tag-pill tts">🗣️ Giọng Đọc TTS</span>
             </div>
         </div>
 
         <div class="header-actions">
-            <!-- Trạng thái kết nối Google Sheet ngầm -->
-            <div class="sheet-status-pill" id="sheetStatusPill" title="Đồng bộ tự động với Google Sheet">
-                <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Đang nạp từ Google Sheet...</span>
-            </div>
-
             <button type="button" class="preset-pill" onclick="loadAlarmsFromSheet(true)" title="Tải lại dữ liệu trực tiếp từ Google Sheet">
                 🔄 Tải lại Sheet
             </button>
         </div>
     </header>
 
-    <!-- 1. MÀN HÌNH MẶC ĐỊNH: DANH SÁCH BÁO THỨC ĐÃ CÀI ĐẶT -->
+    <!-- 1. MÀN HÌNH DANH SÁCH BÁO THỨC (MẶC ĐỊNH) -->
     <div id="viewListView">
-        <!-- ĐỒNG HỒ SỐ HIỆN TẠI (MÀU SÁNG) -->
-        <div class="clock-card" style="margin-bottom: 20px;">
-            <div>
-                <div class="clock-time" id="clockTime">00:00:00</div>
-                <div class="clock-meta">
-                    <div class="clock-date" id="clockDate">Đang tải ngày giờ...</div>
+        <div class="dashboard-grid">
+            <!-- CỘT TRÁI (HOẶC PHẦN TRÊN TRÊN MOBILE): ĐỒNG HỒ, THAO TÁC NHANH -->
+            <div class="dashboard-sidebar">
+                <!-- CARD ĐỒNG HỒ SỐ HIỆN TẠI -->
+                <div class="clock-card">
+                    <div>
+                        <div class="clock-time" id="clockTime">00:00:00</div>
+                        <div class="clock-meta">
+                            <div class="clock-date" id="clockDate">Đang tải ngày giờ...</div>
+                        </div>
+                    </div>
+                    <div class="active-alarms-badge" id="activeBadge">
+                        🔔 <span id="activeCountText">0 mốc đang bật</span>
+                    </div>
                 </div>
-            </div>
-            <div class="active-alarms-badge" id="activeBadge">
-                🔔 <span id="activeCountText">0 mốc đang bật</span>
-            </div>
-        </div>
 
-        <!-- THẺ DANH SÁCH MỐC BÁO THỨC -->
-        <div class="card">
-            <div class="card-header-bar" style="flex-wrap: wrap; gap: 12px;">
-                <div class="card-title">
-                    <span>📋 Danh sách mốc báo thức</span>
-                    <span id="alarmCountBadge" style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">(0 mốc)</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-primary" style="flex: none; min-width: auto; padding: 9px 18px; font-size: 0.88rem;" onclick="openCreateView()">
-                        <span>➕ Thêm báo thức mới</span>
-                    </button>
-                    <button type="button" class="preset-pill" style="font-size: 0.8rem; padding: 7px 12px;" onclick="loadSampleAlarms()" title="Thêm nhanh 2 mốc mẫu YouTube & TTS">
-                        <span>⚡ Thêm 2 mốc mẫu</span>
-                    </button>
+                <!-- CARD CÔNG CỤ THAO TÁC NHANH -->
+                <div class="card">
+                    <div class="card-header-bar">
+                        <div class="card-title">
+                            <span>⚡ Thao tác nhanh</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button type="button" class="btn btn-primary" onclick="openCreateView()">
+                            <span>➕ Thêm báo thức mới</span>
+                        </button>
+                        <button type="button" class="btn btn-accent" onclick="startQuickAudioTest()">
+                            <span>🔊 Thử khởi tạo âm thanh (10s)</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="loadSampleAlarms()" title="Thêm nhanh 2 mốc mẫu YouTube & TTS">
+                            <span>⚡ Nạp 2 mốc mẫu (YT & TTS)</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="alarm-list" id="alarmList">
-                <div style="text-align: center; padding: 36px 16px; color: var(--accent-blue);">
-                    <div style="font-size: 2rem; margin-bottom: 8px; animation: spin 1s infinite linear; display: inline-block;">🔄</div>
-                    <div>Đang tải dữ liệu trực tiếp từ Google Sheet...</div>
+            <!-- CỘT PHẢI: DANH SÁCH MỐC BÁO THỨC CHÍNH -->
+            <div class="dashboard-main">
+                <div class="card">
+                    <div class="card-header-bar">
+                        <div class="card-title">
+                            <span>📋 Danh sách mốc báo thức</span>
+                            <span id="alarmCountBadge" style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">(0 mốc)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" class="preset-pill" onclick="pushAllAlarmsToSheet()" title="Lưu toàn bộ biến hiện tại lên Sheet">
+                                ☁️ Đồng bộ lên Sheet
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="alarm-list" id="alarmList">
+                        <div style="text-align: center; padding: 36px 16px; color: var(--accent-blue);">
+                            <div style="font-size: 2rem; margin-bottom: 8px; animation: spin 1s infinite linear; display: inline-block;">🔄</div>
+                            <div>Đang tải dữ liệu trực tiếp từ Google Sheet...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 2. MÀN HÌNH THÊM MỚI / CHỈNH SỬA (MẶC ĐỊNH ẨN, CLICK VÀO THÊM MỚI MỚI HIỂN THỊ) -->
+    <!-- 2. MÀN HÌNH THÊM MỚI / CHỈNH SỬA (MẶC ĐỊNH ẨN) -->
     <div id="viewFormView" style="display: none;">
         <!-- THANH ĐIỀU HƯỚNG QUAY LẠI DANH SÁCH -->
         <div class="view-nav-bar">
             <button type="button" class="btn-back" onclick="showListView()">
                 <span>⬅️ Quay lại danh sách</span>
             </button>
-            <span id="editingModeBadge" style="display: none; font-size: 0.78rem; background: var(--warning-light); color: var(--warning); border: 1px solid #fde68a; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
+            <span id="editingModeBadge" style="display: none; font-size: 0.82rem; background: var(--warning-light); color: var(--warning); border: 1px solid #fde68a; font-weight: 700; padding: 6px 12px; border-radius: 8px;">
                 ✏️ ĐANG CHỈNH SỬA
             </span>
         </div>
@@ -1036,11 +1321,11 @@
                 </div>
             </div>
 
-            <!-- 1. CHỌN LOẠI BÁO THỨC: YOUTUBE HOẶC TTS -->
+            <!-- CHỌN LOẠI BÁO THỨC: YOUTUBE HOẶC TTS -->
             <div class="form-group">
                 <label class="form-label">
                     <span>Chọn hình thức báo thức:</span>
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">TYPE lưu trên Sheet</span>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">TYPE lưu trên Sheet</span>
                 </label>
                 <div class="type-selector-grid">
                     <button type="button" class="type-btn active yt" id="btnTypeYt" onclick="selectAlarmType('youtube')">
@@ -1052,120 +1337,123 @@
                 </div>
             </div>
 
-            <!-- 2. GIỜ BÁO THỨC (TIME) -->
-            <div class="form-group">
-                <label class="form-label" for="alarmTime">
-                    <span>Giờ báo thức (24h)</span>
-                    <span style="font-size: 0.75rem; color: var(--accent-blue);">Định dạng HH:mm</span>
-                </label>
-                <input type="time" id="alarmTime" class="form-input form-time-input" required>
-                
-                <div class="quick-time-row">
-                    <span style="font-size: 0.75rem; color: var(--text-sub); margin-right: 2px;">⚡ Chọn nhanh:</span>
-                    <button type="button" class="quick-time-btn" onclick="addMinutesToInput(2)">+2 phút</button>
-                    <button type="button" class="quick-time-btn" onclick="addMinutesToInput(5)">+5 phút</button>
-                    <button type="button" class="quick-time-btn" onclick="addMinutesToInput(15)">+15 phút</button>
-                    <button type="button" class="quick-time-btn" onclick="setTimeInput('06:00')">06:00</button>
-                    <button type="button" class="quick-time-btn" onclick="setTimeInput('06:30')">06:30</button>
-                    <button type="button" class="quick-time-btn" onclick="setTimeInput('07:00')">07:00</button>
-                </div>
-            </div>
+            <!-- NỘI DUNG FORM 2 CỘT CHO IPAD/PC HOẶC 1 CỘT CHO MOBILE -->
+            <div class="form-two-col">
+                <!-- CỘT 1: GIỜ & TIÊU ĐỀ -->
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div class="form-group">
+                        <label class="form-label" for="alarmTime">
+                            <span>Giờ báo thức (24h)</span>
+                            <span style="font-size: 0.78rem; color: var(--accent-blue);">Định dạng HH:mm</span>
+                        </label>
+                        <input type="time" id="alarmTime" class="form-input form-time-input" required>
+                        
+                        <div class="quick-time-row">
+                            <span style="font-size: 0.75rem; color: var(--text-sub); margin-right: 2px;">⚡ Chọn nhanh:</span>
+                            <button type="button" class="quick-time-btn" onclick="addMinutesToInput(2)">+2 phút</button>
+                            <button type="button" class="quick-time-btn" onclick="addMinutesToInput(5)">+5 phút</button>
+                            <button type="button" class="quick-time-btn" onclick="addMinutesToInput(15)">+15 phút</button>
+                            <button type="button" class="quick-time-btn" onclick="setTimeInput('06:00')">06:00</button>
+                            <button type="button" class="quick-time-btn" onclick="setTimeInput('06:30')">06:30</button>
+                            <button type="button" class="quick-time-btn" onclick="setTimeInput('07:00')">07:00</button>
+                        </div>
+                    </div>
 
-            <!-- 3. TIÊU ĐỀ BÁO THỨC (TITLE) -->
-            <div class="form-group">
-                <label class="form-label" for="alarmTitle">
-                    <span>Tiêu đề báo thức (TITLE)</span>
-                </label>
-                <input type="text" id="alarmTitle" class="form-input" placeholder="Ví dụ: Báo thức sáng dậy đi làm, Nhắc họp, Tập thể dục...">
-            </div>
-
-            <!-- 4A. KHU VỰC CẤU HÌNH YOUTUBE (HIỂN THỊ KHI TYPE = YOUTUBE) -->
-            <div id="youtubeConfigSection">
-                <div class="form-group">
-                    <label class="form-label" for="ytUrl">
-                        <span>Link YouTube hoặc Video ID (LINK YOUTUBE)</span>
-                    </label>
-                    <input type="text" id="ytUrl" class="form-input" placeholder="Dán link (https://www.youtube.com/watch?v=...) hoặc Video ID" oninput="onYtUrlChange()">
-                    
-                    <div class="preset-links-row">
-                        <span style="font-size: 0.75rem; color: var(--text-sub); font-weight: 600;">⚡ Nhạc mẫu:</span>
-                        <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=fuXfT4Rv_WM', 'Nhạc Báo Thức 1 (fuXfT4Rv_WM)')">
-                            🎵 Mẫu 1 (fuXfT4Rv_WM)
-                        </button>
-                        <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=o8GrqUSdzi0', 'Nhạc Báo Thức 2 (o8GrqUSdzi0)')">
-                            🎵 Mẫu 2 (o8GrqUSdzi0)
-                        </button>
+                    <div class="form-group">
+                        <label class="form-label" for="alarmTitle">
+                            <span>Tiêu đề báo thức (TITLE)</span>
+                        </label>
+                        <input type="text" id="alarmTitle" class="form-input" placeholder="Ví dụ: Báo thức sáng dậy đi làm, Nhắc họp, Tập thể dục...">
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0 6px;">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="preplay30s" checked>
-                        <span>⚡ Phát thử 30s rồi Pause khi lưu (đến giờ tự động Play)</span>
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="continuousLoop" checked>
-                        <span>🔁 Lặp lại liên tục cho đến khi bấm tắt</span>
-                    </label>
-                </div>
-            </div>
+                <!-- CỘT 2: CẤU HÌNH YOUTUBE HOẶC TTS -->
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <!-- KHU VỰC YOUTUBE -->
+                    <div id="youtubeConfigSection">
+                        <div class="form-group">
+                            <label class="form-label" for="ytUrl">
+                                <span>Link YouTube hoặc Video ID (LINK YOUTUBE)</span>
+                            </label>
+                            <input type="text" id="ytUrl" class="form-input" placeholder="Dán link (https://www.youtube.com/watch?v=...) hoặc Video ID" oninput="onYtUrlChange()">
+                            
+                            <div class="preset-links-row">
+                                <span style="font-size: 0.75rem; color: var(--text-sub); font-weight: 600;">⚡ Nhạc mẫu:</span>
+                                <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=fuXfT4Rv_WM', 'Nhạc Báo Thức 1 (fuXfT4Rv_WM)')">
+                                    🎵 Mẫu 1 (fuXfT4Rv_WM)
+                                </button>
+                                <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=o8GrqUSdzi0', 'Nhạc Báo Thức 2 (o8GrqUSdzi0)')">
+                                    🎵 Mẫu 2 (o8GrqUSdzi0)
+                                </button>
+                            </div>
+                        </div>
 
-            <!-- 4B. KHU VỰC CẤU HÌNH TTS (HIỂN THỊ KHI TYPE = TTS) -->
-            <div id="ttsConfigSection" style="display: none;">
-                <div class="form-group">
-                    <label class="form-label" for="ttsText">
-                        <span>Nội dung giọng đọc (TEXT TTS)</span>
-                        <span style="font-size: 0.75rem; color: var(--accent-tts);">Đọc tự động khi đến giờ</span>
-                    </label>
-                    <textarea id="ttsText" class="form-input" rows="3" placeholder="Nhập câu nhắc nhở hoặc lời thoại bạn muốn hệ thống đọc khi reo chuông..."></textarea>
-                    
-                    <div class="preset-links-row">
-                        <span style="font-size: 0.75rem; color: var(--text-sub); font-weight: 600;">⚡ Mẫu lời thoại:</span>
-                        <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Chào buổi sáng! Đã đến giờ thức dậy để bắt đầu ngày mới thật nhiều năng lượng rồi.')">
-                            ☀️ Chào buổi sáng
-                        </button>
-                        <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Đã đến giờ uống nước và vận động nhẹ nhàng thư giãn một chút bạn nhé!')">
-                            💧 Nhắc uống nước
-                        </button>
-                        <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Hết giờ làm việc rồi, hãy chuẩn bị đồ đạc và nghỉ ngơi thôi nào!')">
-                            🎒 Nhắc hết giờ
-                        </button>
+                        <!-- KHUNG XEM TRƯỚC VIDEO TRONG FORM -->
+                        <div id="formYtPreviewSection" style="display: none;" class="form-yt-preview-card">
+                            <div class="form-preview-header">
+                                <span>📺 Xem trước video YouTube</span>
+                                <button type="button" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.8rem;" onclick="closeFormYtPreview()">✕ Đóng</button>
+                            </div>
+                            <div class="form-preview-frame">
+                                <iframe id="formYtPreviewIframe"
+                                    referrerpolicy="strict-origin-when-cross-origin"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    playsinline="1">
+                                </iframe>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="preplay10s" checked>
+                                <span>⚡ <b>Phát thử 10s</b> rồi Pause khi lưu (đến giờ tự động Play)</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="continuousLoop" checked>
+                                <span>🔁 Lặp lại liên tục cho đến khi bấm tắt</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- KHU VỰC TTS -->
+                    <div id="ttsConfigSection" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label" for="ttsText">
+                                <span>Nội dung giọng đọc (TEXT TTS)</span>
+                                <span style="font-size: 0.75rem; color: var(--accent-tts);">Đọc tự động khi đến giờ</span>
+                            </label>
+                            <textarea id="ttsText" class="form-input" rows="3" placeholder="Nhập câu nhắc nhở hoặc lời thoại bạn muốn hệ thống đọc khi reo chuông..."></textarea>
+                            
+                            <div class="preset-links-row">
+                                <span style="font-size: 0.75rem; color: var(--text-sub); font-weight: 600;">⚡ Mẫu lời thoại:</span>
+                                <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Chào buổi sáng! Đã đến giờ thức dậy để bắt đầu ngày mới thật nhiều năng lượng rồi.')">
+                                    ☀️ Chào buổi sáng
+                                </button>
+                                <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Đã đến giờ uống nước và vận động nhẹ nhàng thư giãn một chút bạn nhé!')">
+                                    💧 Nhắc uống nước
+                                </button>
+                                <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Hết giờ làm việc rồi, hãy chuẩn bị đồ đạc và nghỉ ngơi thôi nào!')">
+                                    🎒 Nhắc hết giờ
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="ttsLanguage">
+                                <span>Ngôn ngữ giọng đọc (LANGUAGE)</span>
+                            </label>
+                            <select id="ttsLanguage" class="form-input">
+                                <option value="vi-VN" selected>🇻🇳 Tiếng Việt (vi-VN)</option>
+                                <option value="en-US">🇺🇸 Tiếng Anh (en-US)</option>
+                                <option value="ja-JP">🇯🇵 Tiếng Nhật (ja-JP)</option>
+                                <option value="ko-KR">🇰🇷 Tiếng Hàn (ko-KR)</option>
+                                <option value="zh-CN">🇨🇳 Tiếng Trung (zh-CN)</option>
+                                <option value="fr-FR">🇫🇷 Tiếng Pháp (fr-FR)</option>
+                                <option value="de-DE">🇩🇪 Tiếng Đức (de-DE)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-
-                <div class="form-group" style="margin-top: 8px;">
-                    <label class="form-label" for="ttsLanguage">
-                        <span>Ngôn ngữ giọng đọc (LANGUAGE)</span>
-                    </label>
-                    <select id="ttsLanguage" class="form-input">
-                        <option value="vi-VN" selected>🇻🇳 Tiếng Việt (vi-VN)</option>
-                        <option value="en-US">🇺🇸 Tiếng Anh (en-US)</option>
-                        <option value="ja-JP">🇯🇵 Tiếng Nhật (ja-JP)</option>
-                        <option value="ko-KR">🇰🇷 Tiếng Hàn (ko-KR)</option>
-                        <option value="zh-CN">🇨🇳 Tiếng Trung (zh-CN)</option>
-                        <option value="fr-FR">🇫🇷 Tiếng Pháp (fr-FR)</option>
-                        <option value="de-DE">🇩🇪 Tiếng Đức (de-DE)</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- KHUNG PHÁT YOUTUBE MASTER DUY NHẤT -->
-            <div id="ytMasterContainer" class="mode-idle">
-                <iframe id="ytIframe"
-                    title="YouTube Audio Alarm Engine"
-                    referrerpolicy="strict-origin-when-cross-origin"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    playsinline="1"
-                    webkit-playsinline="1"
-                    allowfullscreen
-                    style="width: 100%; height: 100%; border: none; display: block;">
-                </iframe>
-            </div>
-
-            <!-- BANNER PHÁT THỬ YOUTUBE 30S -->
-            <div id="preplayStatus" class="yt-preplay-banner" style="display: none;">
-                <span id="preplayText">Đang phát thử...</span>
-                <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; flex: none;" onclick="pausePreplay()">⏸️ Pause ngay</button>
             </div>
 
             <!-- CÁC NÚT HÀNH ĐỘNG FORM -->
@@ -1174,7 +1462,7 @@
                     <span>❌ Hủy / Quay lại</span>
                 </button>
                 <button type="button" class="btn btn-accent" id="btnTestCurrent" onclick="testCurrentConfig()">
-                    <span id="btnTestText">▶️ Thử 30s</span>
+                    <span id="btnTestText">▶️ Thử 10s</span>
                 </button>
                 <button type="button" class="btn btn-primary" id="btnSubmitForm" onclick="handleFormSubmit()">
                     <span>💾 Lưu trực tiếp vào Sheet</span>
@@ -1184,20 +1472,74 @@
     </div>
 </div>
 
-<!-- MÀN HÌNH BÁO THỨC CHUÔNG REO TOÀN MÀN HÌNH -->
+<!-- ==============================================================================
+     MÀN HÌNH CHẠY ÂM THANH / BÁO THỨC REO TOÀN MÀN HÌNH CÓ PLAYER YOUTUBE CHÍNH THỨC
+     Thích ứng hoàn hảo iPhone, iPad và PC
+     ============================================================================== -->
 <div class="alarm-ringing-overlay" id="ringOverlay">
-    <div>
-        <div class="ring-time" id="ringTime">00:00</div>
+    <div class="ring-header">
+        <div class="ring-mode-badge alarm" id="ringModeBadge">🔔 BÁO THỨC ĐANG REO</div>
+        <div class="ring-time" id="ringTime">00:00:00</div>
         <div class="ring-title" id="ringTitle">Báo thức đang reo!</div>
         <div class="ring-subtext" id="ringSubtext">...</div>
     </div>
     
-    <!-- Chỗ giữ vị trí cho video YouTube nếu là dạng YouTube -->
-    <div class="ring-video-placeholder"></div>
+    <!-- KHUNG PLAYER YOUTUBE TÍCH HỢP TRỰC TIẾP TRÊN MÀN HÌNH CHẠY ÂM THANH -->
+    <div class="ring-player-wrapper" id="ringPlayerWrapper">
+        <div class="ring-player-topbar">
+            <span class="ring-player-indicator">
+                <span class="pulse-dot"></span> <span id="ringPlayerTitleText">YouTube Audio Player</span>
+            </span>
+            <span class="ring-countdown-badge" id="ringCountdownBadge" style="display: none;">⏱️ Còn 10s</span>
+        </div>
 
-    <button type="button" class="btn-stop-alarm" onclick="stopAlarm()">
-        🔕 TẮT BÁO THỨC
-    </button>
+        <!-- Khung iframe YouTube Master duy nhất của hệ thống -->
+        <div id="ytMasterContainer">
+            <iframe id="ytIframe"
+                title="YouTube Audio Alarm Engine"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                playsinline="1"
+                webkit-playsinline="1"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <!-- Thanh tiến độ cho chế độ phát thử 10s -->
+        <div class="ring-progress-bar-wrap" id="ringProgressWrap" style="display: none;">
+            <div class="ring-progress-bar" id="ringProgressBar"></div>
+        </div>
+
+        <!-- Các nút điều khiển nhanh của Player -->
+        <div class="ring-player-controls" id="ringPlayerControls">
+            <button type="button" class="btn-player-control" onclick="boostVolume()" title="Bật âm lượng tối đa 100%">
+                🔊 100% Âm lượng
+            </button>
+            <button type="button" class="btn-player-control" onclick="sendYtCommand('playVideo')" title="Phát tiếp">
+                ▶️ Tiếp tục
+            </button>
+            <button type="button" class="btn-player-control" onclick="sendYtCommand('pauseVideo')" title="Tạm dừng">
+                ⏸️ Tạm dừng
+            </button>
+        </div>
+    </div>
+
+    <!-- KHUNG HIỂN THỊ KHI CHẠY ÂM THANH TTS -->
+    <div class="ring-tts-wrapper" id="ringTtsWrapper" style="display: none;">
+        <div class="tts-waveform-icon">🗣️</div>
+        <div class="tts-voice-text" id="ringTtsText">...</div>
+        <div class="tts-lang-badge" id="ringTtsLang">vi-VN</div>
+    </div>
+
+    <!-- HÀNG NÚT ĐIỀU KHIỂN CHÍNH Ở ĐÁY MÀN HÌNH -->
+    <div class="ring-actions-row">
+        <button type="button" class="btn-stop-alarm" id="btnStopAlarm" onclick="stopAlarm()">
+            🔕 TẮT BÁO THỨC
+        </button>
+        <button type="button" class="btn-snooze-alarm" id="btnSnoozeAlarm" onclick="snoozeAlarm(5)">
+            ⏰ Báo lại 5 phút
+        </button>
+    </div>
 </div>
 
 <!-- TOAST THÔNG BÁO NHANH -->
@@ -1215,7 +1557,7 @@
     // CỘT 4: LINK YOUTUBE
     // CỘT 5: TEXT TTS
     // CỘT 6: LANGUAGE
-    // (Cột 7 tùy chọn: ENABLED)
+    // (Cột 7: ENABLED)
 
     const URL_VERCEL_API = 'https://hsk-gilt.vercel.app/api/gSheet';
     const SPREAD_ALARM   = '1HNJrXP3JzAwH6AdDHKVSBv1izYSPCu8nksb1BFdNDuc';
@@ -1229,11 +1571,13 @@
     let editingAlarmId = null;
 
     let activeRingingAlarm = null;
+    let isPreplayMode = false;
     let preplayTimer = null;
     let preplayInterval = null;
     let audioCtx = null;
     let toastTimer = null;
     let ttsLoopInterval = null;
+    let snoozeTimer = null;
 
     // CÁC MẪU CẤU HÌNH SẴN
     const SAMPLE_PRESETS = [
@@ -1274,7 +1618,7 @@
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => {
             el.style.display = 'none';
-        }, 3200);
+        }, 3400);
     }
 
     // Cập nhật trạng thái hiển thị của Google Sheet
@@ -1282,7 +1626,6 @@
         const pill = document.getElementById('sheetStatusPill');
         const dot = document.getElementById('statusDot');
         const text = document.getElementById('statusText');
-        const detailEl = document.getElementById('sheetDetailStatus');
 
         if (!pill) return;
 
@@ -1291,7 +1634,6 @@
             dot.className = 'status-dot ' + (status === 'synced' ? 'green' : (status === 'syncing' ? 'blue' : 'red'));
         }
         if (text) text.innerText = detail;
-        if (detailEl) detailEl.innerText = detail;
     }
 
     // Đổi tên Sheet Tab
@@ -1303,7 +1645,7 @@
         loadAlarmsFromSheet(true);
     }
 
-    // GỌI API GOOGLE SHEET (TỰ ĐỘNG GẮN TOKEN)
+    // GỌI API GOOGLE SHEET (TỰ ĐỘNG GẮN TOKEN NẾU CÓ)
     async function callAPI(paramsObj) {
         if (typeof callAjax === 'function') {
             return await callAjax(URL_VERCEL_API, paramsObj);
@@ -1345,11 +1687,11 @@
             ytSec.style.display = 'block';
             ttsSec.style.display = 'none';
             testBtn.className = 'btn btn-accent';
-            testText.innerText = '▶️ Thử 30s YT';
+            testText.innerText = '▶️ Thử 10s YT';
         }
     }
 
-    // TẠO DÒNG DỮ LIỆU ĐỂ LƯU VÀO SHEET (THEO YÊU CẦU: ID - TIME - TYPE - TITLE - LINK YOUTUBE - TEXT TTS - LANGUAGE)
+    // TẠO DÒNG DỮ LIỆU ĐỂ LƯU VÀO SHEET (THEO YÊU CẦU: ID - TIME - TYPE - TITLE - LINK YOUTUBE - TEXT TTS - LANGUAGE - ENABLED)
     function createRowData(alarm) {
         return [
             alarm.id,
@@ -1396,7 +1738,6 @@
                     let enabled = true;
 
                     if (isNewSchema) {
-                        // CHUẨN MỚI: ID - TIME - TYPE - TITLE - LINK YOUTUBE - TEXT TTS - LANGUAGE
                         type = col2.toLowerCase() === 'tts' ? 'tts' : 'youtube';
                         title = String(r[3] || '');
                         youtubeUrl = String(r[4] || '');
@@ -1406,7 +1747,7 @@
                             enabled = String(r[7]) === '1' || String(r[7]).toLowerCase() === 'true';
                         }
                     } else {
-                        // TƯƠNG THÍCH NGƯỢC NẾU DỮ LIỆU CŨ TRÊN SHEET LÀ [id, time, url, vid, label, loop, aux, enabled]
+                        // Tương thích ngược schema cũ
                         type = 'youtube';
                         youtubeUrl = col2;
                         title = String(r[4] || `Báo thức (${r[3] || 'YouTube'})`);
@@ -1423,7 +1764,7 @@
                         id,
                         time,
                         type,
-                        title: title || (type === 'tts' ? 'Báo thức giọng đọc' : `YouTube (${vid})`),
+                        title: title || (type === 'tts' ? 'Báo thức giọng đọc' : `YouTube (${vid || 'Video'})`),
                         youtubeUrl,
                         vid,
                         ttsText,
@@ -1433,13 +1774,12 @@
                     };
                 });
 
-                // LƯU TRỰC TIẾP VÀO BIẾN TOÀN CỤC `alarms`
                 alarms = parsed;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
                 isLoadingFromSheet = false;
                 renderAlarms();
 
-                updateSheetStatus('synced', `Đã đồng bộ ${alarms.length} mốc từ Sheet`);
+                updateSheetStatus('synced', `Đã đồng bộ ${alarms.length} mốc`);
                 if (showFeedback) {
                     showToast(`✅ Đã nạp ${alarms.length} mốc từ Google Sheet thành công!`, 'success');
                 }
@@ -1493,7 +1833,8 @@
             }
         }
 
-        const preplay = document.getElementById('preplay30s').checked;
+        const preplayCheckbox = document.getElementById('preplay10s') || document.getElementById('preplay30s');
+        const preplay = preplayCheckbox ? preplayCheckbox.checked : true;
         const loop = document.getElementById('continuousLoop').checked;
 
         const submitBtn = document.getElementById('btnSubmitForm');
@@ -1502,7 +1843,7 @@
         submitBtn.innerHTML = `<span>⏳ Đang ghi vào Sheet...</span>`;
 
         if (editingAlarmId) {
-            // === SỬA MỐC HIỆN TẠI ===
+            // SỬA MỐC HIỆN TẠI
             const existing = alarms.find(a => a.id === editingAlarmId);
             const updatedAlarm = {
                 id: editingAlarmId,
@@ -1518,7 +1859,7 @@
             };
 
             const rowData = createRowData(updatedAlarm);
-            updateSheetStatus('syncing', `Đang cập nhật mốc ${updatedAlarm.time} lên Sheet...`);
+            updateSheetStatus('syncing', `Đang cập nhật mốc ${updatedAlarm.time}...`);
 
             try {
                 await callAPI({
@@ -1530,7 +1871,6 @@
                     data: JSON.stringify(rowData)
                 });
 
-                // Cập nhật biến bộ nhớ
                 const idx = alarms.findIndex(a => a.id === editingAlarmId);
                 if (idx !== -1) {
                     alarms[idx] = updatedAlarm;
@@ -1540,27 +1880,28 @@
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
                 renderAlarms();
 
-                updateSheetStatus('synced', `Đã cập nhật mốc ${updatedAlarm.time} lên Sheet`);
+                updateSheetStatus('synced', `Đã cập nhật mốc ${updatedAlarm.time}`);
                 showToast(`✅ Đã cập nhật mốc ${updatedAlarm.time} vào Google Sheet!`, 'success');
-                cancelEditAlarm();
+                showListView();
             } catch (err) {
                 console.error('[Update Sheet Error]:', err);
                 const idx = alarms.findIndex(a => a.id === editingAlarmId);
                 if (idx !== -1) alarms[idx] = updatedAlarm;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
                 renderAlarms();
-                updateSheetStatus('error', 'Lỗi cập nhật Sheet, đã lưu biến tạm');
-                showToast('⚠️ Lỗi kết nối Sheet! Đã lưu tạm vào biến.', 'error');
-                cancelEditAlarm();
+                updateSheetStatus('error', 'Lỗi cập nhật Sheet, đã lưu biến');
+                showToast('⚠️ Lỗi kết nối Sheet! Đã lưu tạm vào bộ nhớ.', 'error');
+                showListView();
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = `<span>💾 Lưu trực tiếp vào Sheet</span>`;
+                submitBtn.innerHTML = originalBtnText;
             }
 
-            if (typeVal === 'youtube' && preplay) startPreplay(30);
+            // SỬA TỪ 30S XUỐNG 10S MẶC ĐỊNH
+            if (typeVal === 'youtube' && preplay) startPreplay(10);
 
         } else {
-            // === THÊM MỐC MỚI ===
+            // THÊM MỐC MỚI
             const newAlarm = {
                 id: 'alarm_' + Date.now(),
                 time: timeVal,
@@ -1575,7 +1916,7 @@
             };
 
             const rowData = createRowData(newAlarm);
-            updateSheetStatus('syncing', `Đang thêm mốc ${newAlarm.time} vào Sheet...`);
+            updateSheetStatus('syncing', `Đang thêm mốc ${newAlarm.time}...`);
 
             try {
                 await callAPI({
@@ -1589,38 +1930,37 @@
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
                 renderAlarms();
 
-                updateSheetStatus('synced', `Đã thêm mốc ${newAlarm.time} vào Sheet`);
+                updateSheetStatus('synced', `Đã thêm mốc ${newAlarm.time}`);
                 showToast(`✅ Đã thêm mốc ${newAlarm.time} vào Google Sheet!`, 'success');
             } catch (err) {
                 console.error('[Add Sheet Error]:', err);
                 alarms.push(newAlarm);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
                 renderAlarms();
-                updateSheetStatus('error', 'Lỗi thêm Sheet, đã lưu biến tạm');
-                showToast('⚠️ Lỗi ghi Google Sheet! Đã lưu tạm vào biến.', 'error');
+                updateSheetStatus('error', 'Lỗi thêm Sheet, đã lưu biến');
+                showToast('⚠️ Lỗi ghi Google Sheet! Đã lưu tạm vào bộ nhớ.', 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
             }
 
+            // SỬA TỪ 30S XUỐNG 10S MẶC ĐỊNH
             if (typeVal === 'youtube') {
                 if (preplay) {
-                    startPreplay(30);
+                    startPreplay(10);
                 } else {
                     const iframe = document.getElementById('ytIframe');
                     iframe.src = buildYouTubeEmbedUrl(vid, 0, loop ? 1 : 0);
                 }
             } else if (typeVal === 'tts') {
-                // Đọc thử 1 lần ngắn để xác nhận âm thanh đã sẵn sàng
                 speakTts(ttsTextVal, langVal, false);
             }
 
-            // Tự động quay lại màn hình danh sách sau khi lưu xong
             showListView();
         }
     }
 
-    // --- CHUYỂN ĐỔI MÀN HÌNH (DANH SÁCH MẶC ĐỊNH & THÊM MỚI / SỬA) ---
+    // --- CHUYỂN ĐỔI MÀN HÌNH ---
     function showListView() {
         editingAlarmId = null;
         const listView = document.getElementById('viewListView');
@@ -1647,7 +1987,6 @@
         unlockAudio();
         editingAlarmId = null;
 
-        // Reset form về trạng thái thêm mới
         document.getElementById('formCardTitle').innerHTML = `<span>➕ Hẹn giờ báo thức mới</span>`;
         const badge = document.getElementById('editingModeBadge');
         if (badge) badge.style.display = 'none';
@@ -1657,14 +1996,12 @@
         document.getElementById('alarmTitle').value = '';
         document.getElementById('ytUrl').value = '';
         document.getElementById('ttsText').value = '';
-
-        const container = document.getElementById('ytMasterContainer');
-        if (container) container.className = 'mode-idle';
+        closeFormYtPreview();
 
         showFormView();
     }
 
-    // --- 3. BẬT/TẮT TRẠNG THÁI: UPDATE TRỰC TIẾP LÊN SHEET & BIẾN ALARMS ---
+    // BẬT / TẮT MỐC BÁO THỨC
     async function toggleAlarm(id) {
         unlockAudio();
         const item = alarms.find(a => a.id === id);
@@ -1675,7 +2012,7 @@
         renderAlarms();
 
         const rowData = createRowData(item);
-        updateSheetStatus('syncing', `Đang cập nhật mốc ${item.time} trên Sheet...`);
+        updateSheetStatus('syncing', `Đang cập nhật mốc ${item.time}...`);
 
         try {
             await callAPI({
@@ -1686,30 +2023,26 @@
                 spread: SPREAD_ALARM,
                 data: JSON.stringify(rowData)
             });
-            updateSheetStatus('synced', `Đã ${item.enabled ? 'bật' : 'tắt'} mốc ${item.time} trên Sheet`);
-            showToast(`Đã ${item.enabled ? 'bật' : 'tắt'} mốc ${item.time} trên Google Sheet!`, 'info');
+            updateSheetStatus('synced', `Đã ${item.enabled ? 'bật' : 'tắt'} mốc ${item.time}`);
+            showToast(`Đã ${item.enabled ? 'bật' : 'tắt'} mốc ${item.time}!`, 'info');
         } catch (e) {
             console.warn('[Toggle Sheet Error]', e);
-            updateSheetStatus('error', 'Lỗi cập nhật trạng thái lên Sheet');
+            updateSheetStatus('error', 'Lỗi cập nhật trạng thái');
         }
     }
 
-    // --- 4. SỬA MỐC: NẠP VÀO FORM VÀ CHUYỂN SANG MÀN HÌNH FORM ---
+    // CHỈNH SỬA MỐC
     function editAlarm(id) {
         unlockAudio();
         const item = alarms.find(a => a.id === id);
         if (!item) return;
 
         editingAlarmId = id;
-
-        // Chọn Type
         selectAlarmType(item.type || 'youtube');
 
-        // Điền giờ & tiêu đề
         document.getElementById('alarmTime').value = item.time;
         document.getElementById('alarmTitle').value = item.title || '';
 
-        // Điền theo Type
         if (item.type === 'tts') {
             document.getElementById('ttsText').value = item.ttsText || '';
             document.getElementById('ttsLanguage').value = item.language || 'vi-VN';
@@ -1718,22 +2051,16 @@
             onYtUrlChange();
         }
 
-        // Cập nhật giao diện form
         document.getElementById('formCardTitle').innerHTML = `<span>✏️ Chỉnh sửa mốc: <b style="color:var(--accent-blue);">${item.time}</b></span>`;
         const badge = document.getElementById('editingModeBadge');
         if (badge) badge.style.display = 'inline-block';
         document.getElementById('btnSubmitForm').innerHTML = `<span>💾 Cập nhật lên Sheet</span>`;
 
         showFormView();
-        showToast(`Đang chỉnh sửa mốc ${item.time}. Thay đổi xong hãy bấm Cập nhật!`, 'info');
+        showToast(`Đang chỉnh sửa mốc ${item.time}.`, 'info');
     }
 
-    function cancelEditAlarm() {
-        showListView();
-        showToast('Đã quay lại danh sách.', 'info');
-    }
-
-    // --- 5. XÓA MỐC: XÓA TRỰC TIẾP KHỎI SHEET & BIẾN ALARMS ---
+    // XÓA MỐC KHỎI SHEET
     async function deleteAlarm(id) {
         unlockAudio();
         const item = alarms.find(a => a.id === id);
@@ -1743,7 +2070,7 @@
             return;
         }
 
-        updateSheetStatus('syncing', `Đang xóa mốc ${item.time} khỏi Sheet...`);
+        updateSheetStatus('syncing', `Đang xóa mốc ${item.time}...`);
 
         try {
             await callAPI({
@@ -1758,9 +2085,9 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
             renderAlarms();
 
-            if (editingAlarmId === id) cancelEditAlarm();
+            if (editingAlarmId === id) showListView();
 
-            updateSheetStatus('synced', `Đã xóa mốc ${item.time} khỏi Sheet`);
+            updateSheetStatus('synced', `Đã xóa mốc ${item.time}`);
             showToast(`🗑️ Đã xóa mốc ${item.time} khỏi Google Sheet!`, 'info');
         } catch (err) {
             console.error('[Delete Sheet Error]:', err);
@@ -1772,7 +2099,7 @@
         }
     }
 
-    // --- 6. HIỂN THỊ DANH SÁCH BÁO THỨC TRÊN GIAO DIỆN SÁNG ---
+    // HIỂN THỊ DANH SÁCH BÁO THỨC TRÊN GIAO DIỆN SÁNG
     function renderAlarms() {
         const listEl = document.getElementById('alarmList');
         const badgeEl = document.getElementById('alarmCountBadge');
@@ -1786,8 +2113,7 @@
             listEl.innerHTML = `
                 <div style="text-align: center; padding: 40px 16px; color: var(--accent-blue);">
                     <div style="font-size: 2.2rem; margin-bottom: 10px; animation: spin 1s infinite linear; display: inline-block;">🔄</div>
-                    <div style="font-weight: 700; font-size: 1rem; color: var(--text-main);">Đang tải dữ liệu trực tiếp từ Google Sheet...</div>
-                    <div style="font-size: 0.8rem; color: var(--text-sub); margin-top: 6px;">Spreadsheet: 1HNJrXP3JzAwH6AdDHKVSBv1izYSPCu8nksb1BFdNDuc</div>
+                    <div style="font-weight: 700; font-size: 1rem; color: var(--text-main);">Đang nạp dữ liệu từ Google Sheet...</div>
                 </div>`;
             return;
         }
@@ -1799,7 +2125,7 @@
                     <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Chưa có mốc báo thức nào</div>
                     <div style="margin-top: 6px; font-size: 0.88rem; color: var(--text-sub);">Bấm vào nút bên dưới để tạo mốc báo thức mới hoặc nạp nhanh 2 mốc mẫu!</div>
                     <div style="display: flex; justify-content: center; gap: 10px; margin-top: 18px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-primary" style="flex: none; min-width: 170px;" onclick="openCreateView()">
+                        <button type="button" class="btn btn-primary" style="flex: none; min-width: 180px;" onclick="openCreateView()">
                             ➕ Thêm báo thức mới
                         </button>
                         <button type="button" class="preset-pill" style="font-weight: 700; padding: 10px 18px; font-size: 0.85rem;" onclick="loadSampleAlarms()">
@@ -1845,7 +2171,7 @@
                 </div>
                 <div class="alarm-actions">
                     <button type="button" class="btn-icon btn-edit" title="Sửa mốc này" onclick="editAlarm('${a.id}')">✏️</button>
-                    <button type="button" class="btn-icon btn-test" title="Phát thử mốc này" onclick="triggerAlarmNow('${a.id}')">▶️</button>
+                    <button type="button" class="btn-icon btn-test" title="Phát chuông mốc này ngay" onclick="triggerAlarmNow('${a.id}')">▶️</button>
                     <button type="button" class="btn-icon" title="Xóa khỏi Google Sheet" onclick="deleteAlarm('${a.id}')">🗑️</button>
                     <label class="toggle-switch" title="${a.enabled ? 'Đang bật - bấm để tắt' : 'Đang tắt - bấm để bật'}">
                         <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAlarm('${a.id}')">
@@ -1857,7 +2183,7 @@
         }).join('');
     }
 
-    // ĐẨY TẤT CẢ BIẾN ALARMS LÊN GOOGLE SHEET
+    // ĐẨY TOÀN BỘ ALARMS LÊN GOOGLE SHEET
     async function pushAllAlarmsToSheet() {
         if (!alarms || alarms.length === 0) {
             showToast('Chưa có mốc nào trong biến để đẩy lên Sheet!', 'info');
@@ -1879,11 +2205,11 @@
                 successCount++;
             } catch (e) {}
         }
-        updateSheetStatus('synced', `Đã đẩy thành công ${successCount}/${alarms.length} mốc`);
+        updateSheetStatus('synced', `Đã đồng bộ ${successCount}/${alarms.length} mốc`);
         showToast(`✅ Đã đồng bộ ${successCount} mốc lên Google Sheet thành công!`, 'success');
     }
 
-    // NẠP 2 MẪU TRỰC TIẾP LÊN SHEET (1 MẪU YOUTUBE + 1 MẪU TTS)
+    // NẠP 2 MẪU LÊN SHEET (1 YOUTUBE + 1 TTS)
     async function loadSampleAlarms() {
         unlockAudio();
         const now = new Date();
@@ -1896,7 +2222,6 @@
         const h2 = String(t2.getHours()).padStart(2, '0');
         const m2 = String(t2.getMinutes()).padStart(2, '0');
 
-        // Mẫu 1: YouTube Audio
         const sampleYt = {
             id: 'alarm_yt_' + Date.now(),
             time: `${h1}:${m1}`,
@@ -1910,7 +2235,6 @@
             loop: true
         };
 
-        // Mẫu 2: TTS Giọng đọc
         const sampleTts = {
             id: 'alarm_tts_' + (Date.now() + 1),
             time: `${h2}:${m2}`,
@@ -1928,7 +2252,6 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
         renderAlarms();
 
-        // Ghi trực tiếp lên Google Sheet
         updateSheetStatus('syncing', 'Đang nạp 2 mốc mẫu vào Google Sheet...');
         try {
             await callAPI({
@@ -1943,7 +2266,7 @@
                 spread: SPREAD_ALARM,
                 data: JSON.stringify(createRowData(sampleTts))
             });
-            updateSheetStatus('synced', `Đã lưu 2 mốc mẫu (YT & TTS) lên Sheet`);
+            updateSheetStatus('synced', `Đã lưu 2 mốc mẫu`);
             showToast('✅ Đã nạp 2 mốc mẫu (YouTube & TTS) lên Google Sheet!', 'success');
         } catch (e) {
             console.warn('[Sample Sheet Error]', e);
@@ -1959,7 +2282,8 @@
             speakTts(text, lang, false);
             showToast(`🗣️ Đang phát thử giọng đọc (${lang})...`, 'info');
         } else {
-            startPreplay(30);
+            // SỬA TỪ 30S XUỐNG 10S MẶC ĐỊNH
+            startPreplay(10);
         }
     }
 
@@ -1977,7 +2301,6 @@
         showToast('Đã chọn bài nhạc mẫu YouTube!', 'info');
     }
 
-    // Trợ giúp chỉnh giờ nhanh
     function addMinutesToInput(mins) {
         const input = document.getElementById('alarmTime');
         const now = new Date();
@@ -2002,7 +2325,7 @@
     }
     setDefaultTime();
 
-    // Trích xuất ID YouTube chuẩn xác
+    // TRÍCH XUẤT VIDEO ID YOUTUBE CHUẨN XÁC
     function extractYouTubeId(url) {
         if (!url) return '';
         url = url.trim();
@@ -2012,7 +2335,7 @@
         return (match && match[2].length === 11) ? match[2] : '';
     }
 
-    // Đảm bảo Web Audio không bị treo bởi chính sách trình duyệt
+    // KÍCH HOẠT WEB AUDIO & WAKE LOCK
     function unlockAudio() {
         if (!audioCtx) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -2039,7 +2362,7 @@
             osc.frequency.setValueAtTime(587.33, now); // D5
             osc.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
 
-            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.setValueAtTime(0.25, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
             osc.connect(gain);
@@ -2060,14 +2383,13 @@
             return;
         }
 
-        window.speechSynthesis.cancel(); // Dừng câu trước nếu có
+        window.speechSynthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = lang || 'vi-VN';
         utterance.rate = 0.95;
         utterance.pitch = 1.0;
 
-        // Chọn giọng phù hợp nếu có sẵn trong danh sách voices
         const voices = window.speechSynthesis.getVoices();
         const matchedVoice = voices.find(v => v.lang === lang || v.lang.replace('_', '-').startsWith(lang.slice(0, 2)));
         if (matchedVoice) {
@@ -2075,7 +2397,6 @@
         }
 
         utterance.onend = () => {
-            // Nếu là báo thức đang reo, lặp lại giọng đọc sau 1.5 giây cho đến khi tắt
             if (isLoopingAlarm && activeRingingAlarm && activeRingingAlarm.type === 'tts') {
                 ttsLoopInterval = setTimeout(() => {
                     if (activeRingingAlarm && activeRingingAlarm.type === 'tts') {
@@ -2088,7 +2409,6 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // DỪNG GIỌNG ĐỌC TTS
     function stopTts() {
         clearTimeout(ttsLoopInterval);
         if ('speechSynthesis' in window) {
@@ -2106,12 +2426,15 @@
         const clockEl = document.getElementById('clockTime');
         if (clockEl) clockEl.innerText = timeStr;
 
+        const ringTimeEl = document.getElementById('ringTime');
+        if (ringTimeEl && activeRingingAlarm) ringTimeEl.innerText = timeStr;
+
         const options = { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' };
         const dateEl = document.getElementById('clockDate');
         if (dateEl) dateEl.innerText = now.toLocaleDateString('vi-VN', options);
 
-        // QUÉT TỪ BIẾN ALARMS ĐỂ KÍCH HOẠT CHUÔNG BÁO THỨC
-        if (s === '00' && !activeRingingAlarm) {
+        // QUÉT TỪ BIẾN ALARMS ĐỂ KÍCH HOẠT CHUÔNG BÁO THỨC VÀO ĐÚNG GIÂY 00
+        if (s === '00' && !activeRingingAlarm && !isPreplayMode) {
             checkAlarms(`${h}:${m}`);
         }
     }
@@ -2119,7 +2442,7 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // EMBED YOUTUBE URL TRÁNH LỖI ERROR 153
+    // EMBED YOUTUBE URL CHUẨN XÁC, TRÁNH LỖI ERROR 153
     function buildYouTubeEmbedUrl(vid, autoplay = 0, loop = 0) {
         let url = `https://www.youtube.com/embed/${vid}?enablejsapi=1&playsinline=1&autoplay=${autoplay}&mute=0&controls=1&rel=0`;
         if (loop) {
@@ -2128,6 +2451,7 @@
         return url;
     }
 
+    // GỬI LỆNH ĐIỀU KHIỂN ĐẾN MASTER YOUTUBE IFRAME
     function sendYtCommand(func, args = []) {
         const iframe = document.getElementById('ytIframe');
         if (iframe && iframe.contentWindow) {
@@ -2139,42 +2463,89 @@
         }
     }
 
+    // TĂNG ÂM LƯỢNG TỐI ĐA VÀ BẬT TIẾNG
+    function boostVolume() {
+        unlockAudio();
+        sendYtCommand('unMute');
+        sendYtCommand('setVolume', 100);
+        showToast('🔊 Đã bật âm lượng tối đa 100%!', 'success');
+    }
+
+    // KHI THAY ĐỔI LINK TRONG FORM: XEM TRƯỚC TRỰC TIẾP
     function onYtUrlChange() {
         const url = document.getElementById('ytUrl').value;
         const vid = extractYouTubeId(url);
-        const container = document.getElementById('ytMasterContainer');
-        const iframe = document.getElementById('ytIframe');
+        const previewSec = document.getElementById('formYtPreviewSection');
+        const previewIframe = document.getElementById('formYtPreviewIframe');
 
         if (vid) {
-            container.className = 'mode-preview';
-            const targetSrc = buildYouTubeEmbedUrl(vid, 0, 0);
-            if (!iframe.src || !iframe.src.includes(vid)) {
-                iframe.src = targetSrc;
-            }
+            previewSec.style.display = 'block';
+            previewIframe.src = buildYouTubeEmbedUrl(vid, 0, 0);
+        } else {
+            previewSec.style.display = 'none';
+            previewIframe.src = '';
         }
     }
 
-    // Phát thử YouTube 30s rồi Pause
-    function startPreplay(seconds = 30) {
+    function closeFormYtPreview() {
+        const previewSec = document.getElementById('formYtPreviewSection');
+        const previewIframe = document.getElementById('formYtPreviewIframe');
+        if (previewSec) previewSec.style.display = 'none';
+        if (previewIframe) previewIframe.src = '';
+    }
+
+    // ==============================================================================
+    // 2. KHỞI TẠO ÂM THANH MẶC ĐỊNH: TỪ 30S XUỐNG 10S (CÓ PLAYER YOUTUBE HIỂN THỊ)
+    // ==============================================================================
+    function startPreplay(seconds = 10) {
         unlockAudio();
-        const url = document.getElementById('ytUrl').value;
-        const vid = extractYouTubeId(url);
+        const urlInput = document.getElementById('ytUrl');
+        const url = urlInput ? urlInput.value : '';
+        let vid = extractYouTubeId(url);
         if (!vid) {
-            alert('Vui lòng dán link hoặc Video ID YouTube hợp lệ!');
-            return;
+            // Dùng mẫu 1 nếu chưa nhập
+            vid = SAMPLE_PRESETS[0].vid;
+            if (urlInput) urlInput.value = SAMPLE_PRESETS[0].url;
         }
 
-        const container = document.getElementById('ytMasterContainer');
+        isPreplayMode = true;
+        activeRingingAlarm = null;
+
+        const overlay = document.getElementById('ringOverlay');
+        const ringModeBadge = document.getElementById('ringModeBadge');
+        const ringTime = document.getElementById('ringTime');
+        const ringTitle = document.getElementById('ringTitle');
+        const ringSubtext = document.getElementById('ringSubtext');
+        const playerWrapper = document.getElementById('ringPlayerWrapper');
+        const playerTitle = document.getElementById('ringPlayerTitleText');
+        const countdownBadge = document.getElementById('ringCountdownBadge');
+        const progressWrap = document.getElementById('ringProgressWrap');
+        const progressBar = document.getElementById('ringProgressBar');
+        const ttsWrapper = document.getElementById('ringTtsWrapper');
+        const stopBtn = document.getElementById('btnStopAlarm');
+        const snoozeBtn = document.getElementById('btnSnoozeAlarm');
         const iframe = document.getElementById('ytIframe');
-        const banner = document.getElementById('preplayStatus');
-        const preplayText = document.getElementById('preplayText');
 
-        container.className = 'mode-preview';
-        banner.style.display = 'flex';
+        // Cập nhật giao diện màn hình chạy âm thanh
+        ringModeBadge.className = 'ring-mode-badge preplay';
+        ringModeBadge.innerText = '⚡ KHỞI TẠO ÂM THANH YOUTUBE (10s)';
+        ringTime.innerText = `00:${String(seconds).padStart(2, '0')}`;
+        ringTitle.innerText = `🔊 Đang phát thử ${seconds}s để khởi tạo âm thanh`;
+        ringSubtext.innerText = `Trình duyệt cần khởi tạo âm thanh để sẵn sàng phát chuông tự động khi đến giờ hẹn.`;
 
-        const loop = document.getElementById('continuousLoop').checked ? 1 : 0;
-        const targetSrc = buildYouTubeEmbedUrl(vid, 1, loop);
+        playerWrapper.style.display = 'flex';
+        ttsWrapper.style.display = 'none';
+        playerTitle.innerText = `YouTube Audio Player (${vid})`;
+        countdownBadge.style.display = 'inline-block';
+        countdownBadge.innerText = `⏱️ Còn ${seconds}s`;
+        progressWrap.style.display = 'block';
+        progressBar.style.width = '100%';
 
+        stopBtn.innerText = '⏸️ Pause & Sẵn sàng ngay';
+        snoozeBtn.style.display = 'none';
+
+        // Nạp video vào Master Iframe & Phát
+        const targetSrc = buildYouTubeEmbedUrl(vid, 1, 0);
         if (!iframe.src || !iframe.src.includes(vid)) {
             iframe.src = targetSrc;
         }
@@ -2187,43 +2558,55 @@
         setTimeout(burstUnlock, 300);
         setTimeout(burstUnlock, 800);
 
-        let remain = seconds;
-        preplayText.innerText = `🔊 Đang phát thử YouTube: còn ${remain}s (sẽ tự Pause)...`;
+        overlay.style.display = 'flex';
 
+        let remain = seconds;
         clearInterval(preplayInterval);
         clearTimeout(preplayTimer);
 
         preplayInterval = setInterval(() => {
             remain--;
-            if (remain > 0) {
-                preplayText.innerText = `🔊 Đang phát thử YouTube: còn ${remain}s (sẽ tự Pause)...`;
-            } else {
-                pausePreplay();
+            ringTime.innerText = `00:${String(Math.max(0, remain)).padStart(2, '0')}`;
+            countdownBadge.innerText = `⏱️ Còn ${remain}s`;
+            if (progressBar) {
+                const percent = Math.max(0, (remain / seconds) * 100);
+                progressBar.style.width = `${percent}%`;
+            }
+
+            if (remain <= 0) {
+                finishPreplay();
             }
         }, 1000);
 
-        preplayTimer = setTimeout(pausePreplay, seconds * 1000);
+        preplayTimer = setTimeout(finishPreplay, seconds * 1000);
     }
 
-    function pausePreplay() {
+    // KẾT THÚC KHỞI TẠO ÂM THANH 10S
+    function finishPreplay() {
         clearInterval(preplayInterval);
         clearTimeout(preplayTimer);
+        isPreplayMode = false;
+
         sendYtCommand('pauseVideo');
 
-        const banner = document.getElementById('preplayStatus');
-        const preplayText = document.getElementById('preplayText');
-        const container = document.getElementById('ytMasterContainer');
+        const overlay = document.getElementById('ringOverlay');
+        overlay.style.display = 'none';
 
-        if (preplayText) preplayText.innerText = '⏸️ Đã Pause! Đến giờ hẹn sẽ tự động phát tiếp.';
-
-        setTimeout(() => {
-            if (banner) banner.style.display = 'none';
-            if (!activeRingingAlarm) {
-                container.className = 'mode-idle';
-            }
-        }, 1200);
+        showToast('✅ Đã khởi tạo âm thanh 10s thành công! Âm thanh đã sẵn sàng cho báo thức.', 'success');
     }
 
+    // THỬ NHANH KHỞI TẠO ÂM THANH TỪ DASHBOARD (10S)
+    function startQuickAudioTest() {
+        unlockAudio();
+        const activeAlarm = alarms.find(a => a.enabled && a.type === 'youtube');
+        if (activeAlarm && activeAlarm.vid) {
+            const urlInput = document.getElementById('ytUrl');
+            if (urlInput) urlInput.value = activeAlarm.youtubeUrl;
+        }
+        startPreplay(10);
+    }
+
+    // PHÁT THỬ NGAY MỘT MỐC TỪ DANH SÁCH
     function triggerAlarmNow(id) {
         unlockAudio();
         const item = alarms.find(a => a.id === id);
@@ -2242,32 +2625,61 @@
         }
     }
 
-    // KÍCH HOẠT REO BÁO THỨC (HỖ TRỢ CẢ YOUTUBE & TTS)
+    // ==============================================================================
+    // 3. MÀN HÌNH CHẠY ÂM THANH CÓ PLAYER CỦA YOUTUBE KHI BÁO THỨC REO
+    // ==============================================================================
     function triggerAlarm(alarm) {
         unlockAudio();
         activeRingingAlarm = alarm;
+        isPreplayMode = false;
 
         const overlay = document.getElementById('ringOverlay');
+        const ringModeBadge = document.getElementById('ringModeBadge');
         const ringTime = document.getElementById('ringTime');
         const ringTitle = document.getElementById('ringTitle');
         const ringSubtext = document.getElementById('ringSubtext');
-        const container = document.getElementById('ytMasterContainer');
+        const playerWrapper = document.getElementById('ringPlayerWrapper');
+        const playerTitle = document.getElementById('ringPlayerTitleText');
+        const countdownBadge = document.getElementById('ringCountdownBadge');
+        const progressWrap = document.getElementById('ringProgressWrap');
+        const ttsWrapper = document.getElementById('ringTtsWrapper');
+        const ttsTextEl = document.getElementById('ringTtsText');
+        const ttsLangEl = document.getElementById('ringTtsLang');
+        const stopBtn = document.getElementById('btnStopAlarm');
+        const snoozeBtn = document.getElementById('btnSnoozeAlarm');
         const iframe = document.getElementById('ytIframe');
 
-        ringTime.innerText = alarm.time;
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+
+        ringModeBadge.className = 'ring-mode-badge alarm';
+        ringModeBadge.innerText = '🔔 BÁO THỨC ĐANG REO';
+        ringTime.innerText = `${h}:${m}:${s}`;
         ringTitle.innerText = `${alarm.type === 'tts' ? '🗣️' : '🎵'} ${alarm.title || 'Báo thức'}`;
+        stopBtn.innerText = '🔕 TẮT BÁO THỨC';
+        snoozeBtn.style.display = 'inline-flex';
+        countdownBadge.style.display = 'none';
+        progressWrap.style.display = 'none';
 
         overlay.style.display = 'flex';
 
         if (alarm.type === 'tts') {
-            // === PHÁT BÁO THỨC BẰNG GIỌNG ĐỌC TTS ===
-            container.className = 'mode-idle';
-            ringSubtext.innerText = `💬 Lời thoại: "${alarm.ttsText || ''}" (${alarm.language || 'vi-VN'})`;
+            // BÁO THỨC GIỌNG ĐỌC TTS
+            playerWrapper.style.display = 'none';
+            ttsWrapper.style.display = 'flex';
+            ttsTextEl.innerText = `"${alarm.ttsText || 'Đã đến giờ hẹn rồi!'}"`;
+            ttsLangEl.innerText = alarm.language || 'vi-VN';
+            ringSubtext.innerText = `Đang đọc thông điệp TTS với ngôn ngữ ${alarm.language || 'vi-VN'}`;
+
             speakTts(alarm.ttsText || 'Đã đến giờ báo thức rồi! Xin mời thức dậy!', alarm.language || 'vi-VN', true);
         } else {
-            // === PHÁT BÁO THỨC BẰNG YOUTUBE ===
-            ringSubtext.innerText = `▶️ Video: ${alarm.vid || 'YouTube Audio'}`;
-            container.className = 'mode-ringing';
+            // BÁO THỨC PHÁT ÂM THANH YOUTUBE (CÓ PLAYER YOUTUBE TRỰC QUAN)
+            playerWrapper.style.display = 'flex';
+            ttsWrapper.style.display = 'none';
+            playerTitle.innerText = `YouTube Audio Player: ${alarm.title || alarm.vid}`;
+            ringSubtext.innerText = `▶️ Đang phát video YouTube (ID: ${alarm.vid || 'video'}). Bấm nút Tắt để dừng.`;
 
             const targetSrc = buildYouTubeEmbedUrl(alarm.vid, 1, alarm.loop ? 1 : 0);
             if (!iframe.src || !iframe.src.includes(alarm.vid)) {
@@ -2288,34 +2700,42 @@
 
     // TẮT CHUÔNG BÁO THỨC
     function stopAlarm() {
+        if (isPreplayMode) {
+            finishPreplay();
+            return;
+        }
+
         activeRingingAlarm = null;
         stopTts();
         sendYtCommand('pauseVideo');
 
         const overlay = document.getElementById('ringOverlay');
-        const container = document.getElementById('ytMasterContainer');
-
         overlay.style.display = 'none';
 
-        if (currentSelectedType === 'youtube') {
-            const currentInputVid = extractYouTubeId(document.getElementById('ytUrl').value);
-            if (currentInputVid) {
-                container.className = 'mode-preview';
-            } else {
-                container.className = 'mode-idle';
-            }
-        } else {
-            container.className = 'mode-idle';
+        showToast('🔕 Đã tắt báo thức! Chúc bạn một ngày mới tuyệt vời.', 'info');
+    }
+
+    // BÁO LẠI (SNOOZE) SAU X PHÚT
+    function snoozeAlarm(mins = 5) {
+        const currentAlarm = activeRingingAlarm;
+        stopAlarm();
+
+        if (currentAlarm) {
+            showToast(`⏰ Đã đặt báo lại sau ${mins} phút!`, 'info');
+            clearTimeout(snoozeTimer);
+            snoozeTimer = setTimeout(() => {
+                triggerAlarm(currentAlarm);
+            }, mins * 60 * 1000);
         }
     }
 
+    // MỞ KHÓA AUDIO KHI CHẠM VÀO TRÌNH DUYỆT LẦN ĐẦU
     ['click', 'touchstart'].forEach(evt => {
         document.addEventListener(evt, unlockAudio, { once: true, passive: true });
     });
 
-    // KHI MỞ TRANG: TỰ ĐỘNG TẢI DỮ LIỆU TRỰC TIẾP TỪ GOOGLE SHEET VÀO BIẾN `alarms`
+    // KHI MỞ TRANG: TỰ ĐỘNG TẢI DỮ LIỆU TỪ GOOGLE SHEET VÀO BIẾN `alarms`
     loadAlarmsFromSheet(false);
 </script>
 </body>
 </html>
-

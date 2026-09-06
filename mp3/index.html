@@ -533,6 +533,31 @@
             flex-wrap: wrap;
         }
 
+        /* 3 NÚT THAO TÁC NHANH TRÊN CÙNG 1 HÀNG */
+        .quick-actions-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            width: 100%;
+        }
+
+        .quick-actions-row .btn {
+            min-width: 0;
+            padding: 10px 6px;
+            font-size: clamp(0.74rem, 1.4vw, 0.85rem);
+            font-weight: 700;
+            white-space: nowrap;
+            gap: 5px;
+            min-height: 42px;
+            border-radius: 9px;
+        }
+
+        .quick-actions-row .btn span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .btn {
             flex: 1;
             min-width: 140px;
@@ -1341,15 +1366,15 @@
                             <span>⚡ Thao tác nhanh</span>
                         </div>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <button type="button" class="btn btn-primary" onclick="openCreateView()">
-                            <span>➕ Thêm báo thức mới</span>
+                    <div class="quick-actions-row">
+                        <button type="button" class="btn btn-primary" onclick="openCreateView()" title="Thêm báo thức mới">
+                            <span>➕ Thêm mới</span>
                         </button>
-                        <button type="button" class="btn btn-accent" onclick="startQuickAudioTest()">
-                            <span>🔊 Thử khởi tạo âm thanh (10s)</span>
+                        <button type="button" class="btn btn-accent" onclick="startQuickAudioTest()" title="Thử khởi tạo âm thanh (10s)">
+                            <span>🔊 Thử âm (10s)</span>
                         </button>
                         <button type="button" class="btn btn-secondary" onclick="loadSampleAlarms()" title="Thêm nhanh 2 mốc mẫu YouTube & TTS">
-                            <span>⚡ Nạp 2 mốc mẫu (YT & TTS)</span>
+                            <span>⚡ Nạp mẫu</span>
                         </button>
                     </div>
                 </div>

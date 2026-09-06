@@ -129,6 +129,161 @@
             background: #10b981;
         }
 
+        /* Language Selector Tabs */
+        .lang-selector-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .btn-lang {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border-color);
+            background: #ffffff;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-lang:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #f8fafc;
+        }
+
+        .btn-lang.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary);
+            box-shadow: 0 2px 5px rgba(16, 185, 129, 0.15);
+        }
+
+        .tts-sample-container {
+            margin-top: 6px;
+        }
+
+        .tts-sample-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tts-sample-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .sample-pill {
+            font-size: 0.73rem;
+            padding: 4px 9px;
+            border-radius: 14px;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.15s;
+            line-height: 1.2;
+            text-align: left;
+        }
+
+        .sample-pill:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .badge-lang-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            margin-right: 4px;
+        }
+        .badge-lang-tag.vi {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+        .badge-lang-tag.ja {
+            background: #e0e7ff;
+            color: #3730a3;
+            border: 1px solid #c7d2fe;
+        }
+        .badge-loop-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            margin-right: 4px;
+        }
+
+        .alarm-ring-loop-indicator {
+            font-size: 0.8rem;
+            color: #059669;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            animation: pulseText 1.6s infinite ease-in-out;
+        }
+
+        @keyframes pulseText {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.75; transform: scale(0.98); }
+        }
+
+        /* App Login Modal Backdrop */
+        .app-login-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .app-login-modal {
+            background: #ffffff;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            padding: 24px 20px;
+            box-shadow: 0 20px 30px -5px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            position: relative;
+            animation: fadeIn 0.25s ease-out;
+        }
+
         /* Next Alarm Banner */
         .next-alarm-banner {
             display: flex;
@@ -846,9 +1001,9 @@
             <div class="app-brand">
                 <h1>Audio & Alarm</h1>
                 <span>Light</span>
-                <button type="button" id="btnTokenStatus" class="token-status-pill" onclick="promptEditToken()" title="Quản lý Token xác thực Cloud API">
-                    <span id="tokenStatusDot" class="token-dot"></span>
-                    <span id="tokenStatusLabel">Token</span>
+                <button type="button" id="btnAppSession" class="token-status-pill" onclick="handleAppSessionClick()" title="Trạng thái phiên làm việc / Token hệ thống">
+                    <span id="appSessionDot" class="token-dot"></span>
+                    <span id="appSessionLabel">Đăng nhập App</span>
                 </button>
             </div>
             <div class="tab-nav">
@@ -943,9 +1098,26 @@
 
                 <!-- SECTION B: TTS SETTING -->
                 <div class="type-section" id="sectionTTS">
+                    <!-- Ngôn ngữ phát âm: Tiếng Việt hoặc Tiếng Nhật -->
+                    <div class="form-group">
+                        <label class="form-label">Ngôn ngữ đọc</label>
+                        <div class="lang-selector-tabs">
+                            <button type="button" class="btn-lang active" id="btnLangVi" onclick="setTtsLang('vi-VN')">
+                                <span>🇻🇳 Tiếng Việt</span>
+                            </button>
+                            <button type="button" class="btn-lang" id="btnLangJa" onclick="setTtsLang('ja-JP')">
+                                <span>🇯🇵 Tiếng Nhật (日本語)</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label class="form-label">Văn bản cần đọc (TTS)</label>
-                        <textarea id="formTtsText" class="form-textarea" rows="2" placeholder="Ví dụ: Chào buổi sáng! Đã đến giờ thức dậy học bài rồi."></textarea>
+                        <textarea id="formTtsText" class="form-textarea" rows="2" placeholder="Ví dụ: Chào buổi sáng! Đã đến giờ thức dậy rồi."></textarea>
+                        <div class="tts-sample-container">
+                            <div class="tts-sample-label">💡 Gợi ý mẫu câu nhanh:</div>
+                            <div id="ttsSamplePills" class="tts-sample-pills"></div>
+                        </div>
                     </div>
 
                     <div class="form-row">
@@ -953,19 +1125,9 @@
                             <label class="form-label">Nguồn giọng đọc</label>
                             <select id="formTtsEngine" class="form-select" onchange="handleTtsEngineChange()">
                                 <option value="device" selected>🔊 Trình duyệt (Web Speech API - Luôn chạy 100%, không cần mạng/Token)</option>
-                                <option value="auto">⚡ Tự động (Ưu tiên Cloud Neural, tự động dự phòng Web Speech)</option>
-                                <option value="cloud">🌐 Cloud Neural (Server HSK - Giọng AI truyền cảm, cần Token)</option>
+                                <option value="auto">⚡ Tự động (Ưu tiên Cloud AI, tự động dự phòng Web Speech)</option>
+                                <option value="cloud">🌐 Cloud Neural (Server HSK AI - Tự động liên kết theo App Login)</option>
                             </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row" id="rowCloudToken" style="display: none; background: #f8fafc; padding: 8px 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                        <div class="form-group">
-                            <label class="form-label" style="display: flex; justify-content: space-between;">
-                                <span>Mã Token Cloud API (PWTOKEN)</span>
-                                <span id="tokenStatusText" style="color: var(--primary); font-weight: 600; text-transform: none; font-size: 0.72rem;"></span>
-                            </label>
-                            <input type="text" id="formTtsToken" class="form-input" placeholder="Nhập mã token nếu chưa có..." oninput="setAuthToken(this.value); updateTokenStatusUI();">
                         </div>
                     </div>
 
@@ -973,26 +1135,10 @@
                         <div class="form-group">
                             <label class="form-label">Giọng đọc</label>
                             <select id="formTtsVoice" class="form-select">
-                                <optgroup label="Tiếng Việt">
-                                    <option value="vi-VN-NamMinhNeural" selected>Tiếng Việt - Nam (Nam Minh)</option>
-                                    <option value="vi-VN-HoaiMyNeural">Tiếng Việt - Nữ (Hoài My)</option>
-                                    <option value="vi-VN">Tiếng Việt - Mặc định thiết bị</option>
-                                </optgroup>
-                                <optgroup label="Tiếng Nhật">
-                                    <option value="ja-JP-KeitaNeural">Tiếng Nhật - Nam (Keita)</option>
-                                    <option value="ja-JP-NanamiNeural">Tiếng Nhật - Nữ (Nanami)</option>
-                                    <option value="ja-JP">Tiếng Nhật - Thiết bị</option>
-                                </optgroup>
-                                <optgroup label="Tiếng Trung">
-                                    <option value="zh-CN-XiaoxiaoNeural">Tiếng Trung - Nữ (Xiaoxiao)</option>
-                                    <option value="zh-CN-YunxiNeural">Tiếng Trung - Nam (Yunxi)</option>
-                                    <option value="zh-CN">Tiếng Trung - Thiết bị</option>
-                                </optgroup>
-                                <optgroup label="Tiếng Anh">
-                                    <option value="en-US-JennyNeural">Tiếng Anh - Nữ (Jenny)</option>
-                                    <option value="en-US-GuyNeural">Tiếng Anh - Nam (Guy)</option>
-                                    <option value="en-US">Tiếng Anh - Thiết bị</option>
-                                </optgroup>
+                                <!-- Options will be populated by setTtsLang -->
+                                <option value="vi-VN-NamMinhNeural" selected>Tiếng Việt - Nam (Nam Minh AI)</option>
+                                <option value="vi-VN-HoaiMyNeural">Tiếng Việt - Nữ (Hoài My AI)</option>
+                                <option value="vi-VN">Tiếng Việt - Mặc định thiết bị</option>
                             </select>
                         </div>
                         <div class="form-group" style="flex: 0 0 100px;">
@@ -1006,9 +1152,18 @@
                             </select>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+
+                    <!-- TÙY CHỌN LẶP LẠI TTS -->
+                    <div class="form-row" style="margin-top: 2px; background: #f8fafc; padding: 7px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.83rem; font-weight: 600; cursor: pointer; color: var(--text-main); margin: 0;">
+                            <input type="checkbox" id="formTtsLoop" checked>
+                            <span>🔁 Lặp lại lời đọc liên tục cho đến khi bấm tắt báo thức</span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
                         <span id="ttsPreviewStatus" style="font-size: 0.78rem; color: var(--text-sub);"></span>
-                        <button type="button" class="btn-test" onclick="testTtsPreview()">
+                        <button type="button" class="btn-test" id="btnTestTts" onclick="testTtsPreview()">
                             <span>🔊 Thử đọc văn bản</span>
                         </button>
                     </div>
@@ -1045,13 +1200,38 @@
 </div>
 
 <!-- ALARM RINGING MODAL OVERLAY -->
-<div class="alarm-ring-overlay" id="alarmRingOverlay">
+<div class="alarm-ring-overlay" id="alarmRingOverlay" style="display: none;">
     <div class="alarm-ring-box">
         <div class="alarm-ring-bell">🔔</div>
         <div class="alarm-ring-time" id="ringTime">07:00</div>
         <div class="alarm-ring-title" id="ringTitle">Báo thức</div>
         <div class="alarm-ring-sub" id="ringSub">Đang phát nội dung hẹn giờ...</div>
+        <div class="alarm-ring-loop-indicator" id="ringLoopBadge">🔁 Đang lặp lại phát âm cho đến khi tắt...</div>
         <button class="btn-dismiss-alarm" onclick="dismissCurrentAlarm()">⏹️ Tắt / Dừng Báo Thức</button>
+    </div>
+</div>
+
+<!-- APP LOGIN MODAL (Tự động lấy token hệ thống) -->
+<div class="app-login-backdrop" id="appLoginModal" style="display: none;">
+    <div class="app-login-modal">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">🔐</div>
+        <h3 style="margin: 0 0 6px 0; color: var(--text-main); font-size: 1.15rem;">Đăng nhập App Hệ thống</h3>
+        <p style="margin: 0 0 16px 0; color: var(--text-sub); font-size: 0.82rem; line-height: 1.4;">
+            Đăng nhập tài khoản để tự động lấy Token (PWTOKEN) cho toàn bộ ứng dụng và mở khóa giọng đọc AI Cloud.
+        </p>
+        <div style="margin-bottom: 14px; text-align: left;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-bottom: 4px;">MẬT KHẨU / TOKEN TRUY CẬP</label>
+            <input type="password" id="modalTokenInput" class="form-input" placeholder="Nhập mật khẩu / Token truy cập..." autocomplete="current-password" onkeydown="if(event.key==='Enter') submitAppModalLogin();">
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-save-alarm" id="btnModalSubmitLogin" onclick="submitAppModalLogin()" style="flex: 1; justify-content: center; padding: 10px; margin: 0;">
+                Đăng nhập
+            </button>
+            <button type="button" class="btn-cancel" onclick="closeAppLoginModal()" style="padding: 10px 14px; margin: 0;">
+                Đóng
+            </button>
+        </div>
+        <div id="modalLoginMsg" style="margin-top: 10px; font-size: 0.8rem; min-height: 18px;"></div>
     </div>
 </div>
 
@@ -1062,9 +1242,9 @@
     const STORE_NAME = "audioFiles";
 
     // ==========================================
-    // 0. TOKEN AUTH MANAGEMENT
+    // 0. TOKEN AUTH & APP SESSION MANAGEMENT
     // ==========================================
-    function getAuthToken() {
+    function getAppLoginToken() {
         const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]*)/);
         const cookieToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
         const sessionToken = sessionStorage.getItem('token') || '';
@@ -1075,11 +1255,14 @@
             window.token = found;
             if (!sessionToken) sessionStorage.setItem('token', found);
             if (!localToken) localStorage.setItem('token', found);
+            if (!cookieToken) {
+                document.cookie = `token=${encodeURIComponent(found)}; path=/; max-age=604800; SameSite=Lax`;
+            }
         }
         return found;
     }
 
-    function setAuthToken(val) {
+    function setAppLoginToken(val) {
         const cleaned = (val || '').trim();
         if (cleaned) {
             window.token = cleaned;
@@ -1092,51 +1275,171 @@
             localStorage.removeItem('token');
             document.cookie = "token=; path=/; max-age=-1; SameSite=Lax";
         }
-        updateTokenStatusUI();
+        updateAppSessionUI();
     }
 
-    function promptEditToken() {
-        const cur = getAuthToken();
-        const input = prompt("Nhập Token xác thực (PWTOKEN) để kết nối Cloud API:", cur || "");
-        if (input !== null) {
-            setAuthToken(input);
-            if (input.trim()) {
-                alert("Đã lưu Token thành công!");
-            } else {
-                alert("Đã xóa Token. Bạn có thể sử dụng nguồn giọng '🔊 Trình duyệt (Web Speech)' để đọc văn bản mà không cần token hay mạng!");
-            }
-        }
-    }
-
-    function updateTokenStatusUI() {
-        const t = getAuthToken();
-        const pill = document.getElementById('btnTokenStatus');
-        const label = document.getElementById('tokenStatusLabel');
-        const tokenInput = document.getElementById('formTtsToken');
-        const tokenStatusText = document.getElementById('tokenStatusText');
-
-        if (tokenInput && document.activeElement !== tokenInput) {
-            tokenInput.value = t || '';
-        }
+    function updateAppSessionUI() {
+        const t = getAppLoginToken();
+        const pill = document.getElementById('btnAppSession');
+        const label = document.getElementById('appSessionLabel');
+        if (!pill || !label) return;
 
         if (t) {
-            if (pill) pill.classList.add('active');
-            if (label) label.innerText = 'Token: OK';
-            if (tokenStatusText) tokenStatusText.innerText = '✅ Đã có Token';
+            pill.classList.add('active');
+            label.innerText = 'Đã đăng nhập App';
+            pill.title = 'Phiên học tập đã kết nối. Token tự động đồng bộ cho toàn bộ ứng dụng!';
         } else {
-            if (pill) pill.classList.remove('active');
-            if (label) label.innerText = 'Nhập Token';
-            if (tokenStatusText) tokenStatusText.innerText = '⚠️ Chưa có Token';
+            pill.classList.remove('active');
+            label.innerText = 'Đăng nhập App';
+            pill.title = 'Nhấn để đăng nhập vào tài khoản App hệ thống';
+        }
+    }
+
+    function handleAppSessionClick() {
+        const t = getAppLoginToken();
+        if (t) {
+            const confirmLogout = confirm('Bạn đang đăng nhập phiên học tập của App (Token tự động nhận diện từ hệ thống).\n\nBạn có muốn đăng xuất để đổi tài khoản khác không?');
+            if (confirmLogout) {
+                setAppLoginToken('');
+                alert('Đã đăng xuất phiên làm việc.');
+            }
+        } else {
+            openAppLoginModal();
+        }
+    }
+
+    function openAppLoginModal() {
+        const modal = document.getElementById('appLoginModal');
+        const input = document.getElementById('modalTokenInput');
+        const msg = document.getElementById('modalLoginMsg');
+        if (modal) modal.style.display = 'flex';
+        if (input) {
+            input.value = '';
+            setTimeout(() => input.focus(), 100);
+        }
+        if (msg) msg.innerHTML = '';
+    }
+
+    function closeAppLoginModal() {
+        const modal = document.getElementById('appLoginModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function submitAppModalLogin() {
+        const input = document.getElementById('modalTokenInput');
+        const msg = document.getElementById('modalLoginMsg');
+        const btn = document.getElementById('btnModalSubmitLogin');
+        const val = (input ? input.value : '').trim();
+
+        if (!val) {
+            if (msg) msg.innerHTML = '<span style="color: #ef4444;">Vui lòng nhập mật khẩu hoặc Token!</span>';
+            return;
+        }
+
+        if (btn) btn.disabled = true;
+        if (msg) msg.innerHTML = '<span style="color: var(--primary);">Đang kiểm tra đăng nhập...</span>';
+
+        try {
+            const res = await fetch('https://hsk-gilt.vercel.app/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: val })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setAppLoginToken(val);
+                closeAppLoginModal();
+                alert('Đăng nhập thành công! Token đã được tự động kết nối.');
+            } else {
+                if (msg) msg.innerHTML = `<span style="color: #ef4444;">Sai token: ${data.message || 'Không hợp lệ'}</span>`;
+            }
+        } catch (err) {
+            // Nếu offline hoặc mạng nội bộ, cho phép lưu trực tiếp token
+            setAppLoginToken(val);
+            closeAppLoginModal();
+            alert('Đã lưu Token đăng nhập!');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    // ==========================================
+    // LANGUAGE & VOICE CONFIGURATION (VI / JA)
+    // ==========================================
+    let currentTtsLang = 'vi-VN';
+
+    const TTS_VOICE_CONFIG = {
+        'vi-VN': [
+            { value: 'vi-VN-NamMinhNeural', label: 'Tiếng Việt - Nam (Nam Minh AI truyền cảm)' },
+            { value: 'vi-VN-HoaiMyNeural', label: 'Tiếng Việt - Nữ (Hoài My AI dịu dàng)' },
+            { value: 'vi-VN', label: 'Tiếng Việt - Mặc định thiết bị' }
+        ],
+        'ja-JP': [
+            { value: 'ja-JP-KeitaNeural', label: 'Tiếng Nhật - Nam (Keita AI chuẩn)' },
+            { value: 'ja-JP-NanamiNeural', label: 'Tiếng Nhật - Nữ (Nanami AI tự nhiên)' },
+            { value: 'ja-JP', label: 'Tiếng Nhật - Mặc định thiết bị' }
+        ]
+    };
+
+    const TTS_SAMPLES_BY_LANG = {
+        'vi-VN': [
+            '☀️ Chào buổi sáng! Đã đến giờ thức dậy rồi.',
+            '📖 Đã đến giờ học bài và ôn từ vựng!',
+            '💧 Hãy uống nước và bắt đầu ngày mới!',
+            '⏰ Báo thức nhắc nhở công việc quan trọng.'
+        ],
+        'ja-JP': [
+            '☀️ おはようございます！起きてください。',
+            '📖 勉強の時間です。今日も一日頑張りましょう！',
+            '⏰ 時間になりました。新しい一日を始めましょう！',
+            '🍵 お茶を飲んで、リフレッシュしてください。'
+        ]
+    };
+
+    function setTtsLang(lang) {
+        currentTtsLang = (lang === 'ja-JP') ? 'ja-JP' : 'vi-VN';
+
+        // Update Tab buttons
+        const btnVi = document.getElementById('btnLangVi');
+        const btnJa = document.getElementById('btnLangJa');
+        if (btnVi && btnJa) {
+            if (currentTtsLang === 'ja-JP') {
+                btnJa.classList.add('active');
+                btnVi.classList.remove('active');
+            } else {
+                btnVi.classList.add('active');
+                btnJa.classList.remove('active');
+            }
+        }
+
+        // Update Voices Dropdown
+        const voiceSelect = document.getElementById('formTtsVoice');
+        if (voiceSelect) {
+            const list = TTS_VOICE_CONFIG[currentTtsLang] || TTS_VOICE_CONFIG['vi-VN'];
+            voiceSelect.innerHTML = list.map(v => `<option value="${v.value}">${v.label}</option>`).join('');
+        }
+
+        // Update Sample Pills
+        const pillsContainer = document.getElementById('ttsSamplePills');
+        if (pillsContainer) {
+            const samples = TTS_SAMPLES_BY_LANG[currentTtsLang] || [];
+            pillsContainer.innerHTML = samples.map(text => 
+                `<button type="button" class="sample-pill" onclick="applySampleText('${escapeHtml(text)}')">${escapeHtml(text)}</button>`
+            ).join('');
+        }
+    }
+
+    function applySampleText(text) {
+        const textarea = document.getElementById('formTtsText');
+        if (textarea) {
+            textarea.value = text;
+            textarea.focus();
         }
     }
 
     function handleTtsEngineChange() {
-        const engine = document.getElementById('formTtsEngine')?.value || 'device';
-        const rowToken = document.getElementById('rowCloudToken');
-        if (rowToken) {
-            rowToken.style.display = (engine === 'cloud' || engine === 'auto') ? 'flex' : 'none';
-        }
-        updateTokenStatusUI();
+        // Tự động kiểm tra token khi chuyển sang Cloud
+        getAppLoginToken();
     }
 
     // Initialize token at startup
@@ -1165,7 +1468,8 @@
     };
     request.onsuccess = (e) => {
         db = e.target.result;
-        updateTokenStatusUI();
+        updateAppSessionUI();
+        setTtsLang('vi-VN');
         loadAlarmsData();
         loadPlaylist();
         startAlarmMonitor();
@@ -1342,6 +1646,9 @@
     // ==========================================
     // 3. TTS SPEECH ENGINE
     // ==========================================
+    let ttsLoopActive = false;
+    let ttsLoopTimer = null;
+
     if ('speechSynthesis' in window) {
         window.speechSynthesis.onvoiceschanged = () => {
             window.speechSynthesis.getVoices();
@@ -1349,10 +1656,14 @@
         window.speechSynthesis.getVoices();
     }
 
-    function speakWithSpeechSynthesis(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0') {
+    function speakWithSpeechSynthesis(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0', loop = false) {
         if (!('speechSynthesis' in window)) {
             console.warn("Trình duyệt không hỗ trợ Web Speech API.");
             return Promise.resolve();
+        }
+
+        if (loop) {
+            ttsLoopActive = true;
         }
 
         return new Promise((resolve) => {
@@ -1368,8 +1679,8 @@
                 utterance.volume = 1.0;
 
                 let targetLang = 'vi-VN';
-                if (voice.startsWith('vi')) targetLang = 'vi-VN';
-                else if (voice.startsWith('ja')) targetLang = 'ja-JP';
+                if (voice.startsWith('ja')) targetLang = 'ja-JP';
+                else if (voice.startsWith('vi')) targetLang = 'vi-VN';
                 else if (voice.startsWith('zh')) targetLang = 'zh-CN';
                 else if (voice.startsWith('en')) targetLang = 'en-US';
                 utterance.lang = targetLang;
@@ -1388,12 +1699,28 @@
 
                 utterance.onstart = () => console.log("[WebSpeech] Bắt đầu đọc:", text);
                 utterance.onend = () => {
-                    console.log("[WebSpeech] Hoàn tất đọc.");
+                    console.log("[WebSpeech] Hoàn tất lần đọc.");
                     resolve();
+                    if (ttsLoopActive) {
+                        clearTimeout(ttsLoopTimer);
+                        ttsLoopTimer = setTimeout(() => {
+                            if (ttsLoopActive) {
+                                speakWithSpeechSynthesis(text, voice, rate, true);
+                            }
+                        }, 1200);
+                    }
                 };
                 utterance.onerror = (e) => {
                     console.warn("[WebSpeech error]", e);
                     resolve();
+                    if (ttsLoopActive) {
+                        clearTimeout(ttsLoopTimer);
+                        ttsLoopTimer = setTimeout(() => {
+                            if (ttsLoopActive) {
+                                speakWithSpeechSynthesis(text, voice, rate, true);
+                            }
+                        }, 2000);
+                    }
                 };
 
                 window.speechSynthesis.speak(utterance);
@@ -1404,14 +1731,26 @@
         });
     }
 
-    async function speakTTS(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0', engine = 'device') {
+    async function speakTTS(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0', engine = 'device', loop = false) {
         if (!text) return;
-        const currentToken = getAuthToken();
-        console.log(`[TTS] Đọc văn bản: "${text}" | Nguồn: ${engine} | Giọng: ${voice} | Tốc độ: ${rate} | Có Token: ${!!currentToken}`);
+        const currentToken = getAppLoginToken();
+        if (loop) {
+            ttsLoopActive = true;
+        } else {
+            ttsLoopActive = false;
+        }
+
+        let targetLang = 'vi-VN';
+        if (voice.startsWith('ja')) targetLang = 'ja-JP';
+        else if (voice.startsWith('vi')) targetLang = 'vi-VN';
+        else if (voice.startsWith('zh')) targetLang = 'zh-CN';
+        else if (voice.startsWith('en')) targetLang = 'en-US';
+
+        console.log(`[TTS] Đọc văn bản: "${text}" | Nguồn: ${engine} | Giọng: ${voice} | Ngôn ngữ: ${targetLang} | Tốc độ: ${rate} | Lặp: ${loop} | Có Token: ${!!currentToken}`);
 
         // 1. Nếu chọn trực tiếp giọng thiết bị Web Speech (miễn phí, không cần mạng, không lỗi 401)
         if (engine === 'device') {
-            await speakWithSpeechSynthesis(text, voice, rate);
+            await speakWithSpeechSynthesis(text, voice, rate, loop);
             return;
         }
 
@@ -1422,24 +1761,31 @@
                 await window.speakCommon({
                     text: text,
                     voice: voice,
+                    lang: targetLang,
                     rate: rate,
+                    loop: loop,
                     filename: 'Alarm_TTS'
                 });
                 cloudSuccess = true;
                 return;
             } catch (err) {
-                console.warn("[Cloud TTS 401 hoặc lỗi kết nối, tự động chuyển sang Web Speech của thiết bị]:", err);
+                console.warn("[Cloud TTS báo lỗi hoặc chưa có token, tự động chuyển sang Web Speech của thiết bị]:", err);
             }
         }
 
-        // 3. Nếu Cloud TTS không thành công hoặc lỗi 401: Tự động dự phòng 100% bằng Web Speech
+        // 3. Nếu Cloud TTS không thành công hoặc lỗi 401: Tự động dự phòng 100% bằng Web Speech của thiết bị
         if (!cloudSuccess) {
             console.log("[TTS] Sử dụng Web Speech API của thiết bị để đọc...");
-            await speakWithSpeechSynthesis(text, voice, rate);
+            await speakWithSpeechSynthesis(text, voice, rate, loop);
         }
     }
 
     function stopCurrentSpeech() {
+        ttsLoopActive = false;
+        if (ttsLoopTimer) {
+            clearTimeout(ttsLoopTimer);
+            ttsLoopTimer = null;
+        }
         if (typeof window.stopSpeak === 'function') {
             window.stopSpeak();
         }
@@ -1510,9 +1856,13 @@
 
         listElem.innerHTML = sortedAlarms.map(a => {
             const isAudio = a.type === 'audio';
+            const isJa = (a.lang === 'ja-JP') || (a.voice && a.voice.startsWith('ja'));
+            const langBadge = isJa ? '<span class="badge-lang-tag ja">🇯🇵 Nhật</span>' : '<span class="badge-lang-tag vi">🇻🇳 Việt</span>';
+            const loopBadge = (a.continuousLoop !== false) ? '<span class="badge-loop-tag" title="Lặp lại liên tục cho đến khi tắt">🔁 Lặp lại</span>' : '';
+
             const detailText = isAudio
                 ? `🎵 <strong>Audio:</strong> ${escapeHtml(a.fileName || 'Chưa chọn bài')}`
-                : `🗣️ <strong>TTS (${a.engine === 'cloud' ? 'Cloud' : a.engine === 'auto' ? 'Auto' : 'Thiết bị'}):</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
+                : `🗣️ ${langBadge} ${loopBadge} <strong>TTS (${a.engine === 'cloud' ? 'Cloud' : a.engine === 'auto' ? 'Auto' : 'Thiết bị'}):</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
 
             return `
                 <div class="alarm-card ${a.enabled ? '' : 'disabled'}" id="alarm-card-${a.id}">
@@ -1598,7 +1948,9 @@
         document.getElementById('formAudioFile').value = '';
         document.getElementById('formTtsText').value = '';
         document.getElementById('formAlarmRepeat').checked = true;
+        document.getElementById('formTtsLoop').checked = true;
         document.getElementById('formTtsEngine').value = 'device';
+        setTtsLang('vi-VN');
         handleTtsEngineChange();
         setAlarmType('audio');
     }
@@ -1617,11 +1969,17 @@
         setAlarmType(alarm.type || 'audio');
 
         if (alarm.type === 'tts') {
+            const isJa = (alarm.lang === 'ja-JP') || (alarm.voice && alarm.voice.startsWith('ja'));
+            setTtsLang(isJa ? 'ja-JP' : 'vi-VN');
+
             document.getElementById('formTtsText').value = alarm.ttsText || '';
             document.getElementById('formTtsEngine').value = alarm.engine || 'device';
             handleTtsEngineChange();
-            document.getElementById('formTtsVoice').value = alarm.voice || 'vi-VN-NamMinhNeural';
+            if (alarm.voice) {
+                document.getElementById('formTtsVoice').value = alarm.voice;
+            }
             document.getElementById('formTtsRate').value = alarm.rate || '1.0';
+            document.getElementById('formTtsLoop').checked = (alarm.continuousLoop !== false);
         } else {
             document.getElementById('formAudioFile').value = alarm.fileId || '';
         }
@@ -1646,6 +2004,8 @@
         let engine = 'device';
         let voice = 'vi-VN-NamMinhNeural';
         let rate = '1.0';
+        let lang = currentTtsLang;
+        let continuousLoop = true;
 
         if (currentAlarmType === 'audio') {
             fileId = formAudioFileSelect.value;
@@ -1664,6 +2024,8 @@
             engine = document.getElementById('formTtsEngine').value || 'device';
             voice = document.getElementById('formTtsVoice').value;
             rate = document.getElementById('formTtsRate').value;
+            lang = currentTtsLang;
+            continuousLoop = document.getElementById('formTtsLoop').checked;
         }
 
         if (editId) {
@@ -1680,6 +2042,8 @@
                     engine,
                     voice,
                     rate,
+                    lang,
+                    continuousLoop,
                     label: labelVal,
                     repeat: repeatVal
                 };
@@ -1696,6 +2060,8 @@
                 engine,
                 voice,
                 rate,
+                lang,
+                continuousLoop,
                 label: labelVal,
                 enabled: true,
                 repeat: repeatVal
@@ -1732,7 +2098,21 @@
         playFile(fileId, name, true);
     }
 
+    let isPreviewSpeaking = false;
+
     async function testTtsPreview() {
+        const statusSpan = document.getElementById('ttsPreviewStatus');
+        const btnTest = document.getElementById('btnTestTts');
+
+        if (isPreviewSpeaking) {
+            stopCurrentSpeech();
+            isPreviewSpeaking = false;
+            if (statusSpan) statusSpan.innerText = '⏹ Đã dừng';
+            if (btnTest) btnTest.innerHTML = '<span>🔊 Thử đọc văn bản</span>';
+            setTimeout(() => { if (statusSpan && !isPreviewSpeaking) statusSpan.innerText = ''; }, 2000);
+            return;
+        }
+
         const text = document.getElementById('formTtsText').value.trim();
         if (!text) {
             alert('Hãy nhập nội dung văn bản để thử đọc!');
@@ -1741,13 +2121,20 @@
         const engine = document.getElementById('formTtsEngine')?.value || 'device';
         const voice = document.getElementById('formTtsVoice').value;
         const rate = document.getElementById('formTtsRate').value;
-        const statusSpan = document.getElementById('ttsPreviewStatus');
 
+        isPreviewSpeaking = true;
         if (statusSpan) statusSpan.innerText = '🔊 Đang đọc thử...';
-        await speakTTS(text, voice, rate, engine);
-        if (statusSpan) {
-            statusSpan.innerText = '✅ Đã phát âm';
-            setTimeout(() => { statusSpan.innerText = ''; }, 3500);
+        if (btnTest) btnTest.innerHTML = '<span>⏹ Dừng đọc</span>';
+
+        try {
+            await speakTTS(text, voice, rate, engine, false);
+            if (statusSpan && isPreviewSpeaking) statusSpan.innerText = '✅ Đã phát âm';
+        } catch (e) {
+            if (statusSpan) statusSpan.innerText = '⚠️ Lỗi phát âm';
+        } finally {
+            isPreviewSpeaking = false;
+            if (btnTest) btnTest.innerHTML = '<span>🔊 Thử đọc văn bản</span>';
+            setTimeout(() => { if (statusSpan && !isPreviewSpeaking) statusSpan.innerText = ''; }, 3000);
         }
     }
 
@@ -1795,15 +2182,25 @@
         const overlay = document.getElementById('alarmRingOverlay');
         document.getElementById('ringTime').innerText = alarm.time;
         document.getElementById('ringTitle').innerText = alarm.label || (alarm.type === 'audio' ? 'Báo thức Âm nhạc' : 'Báo thức Lời đọc');
+        const loopBadge = document.getElementById('ringLoopBadge');
         
         if (alarm.type === 'audio') {
+            if (loopBadge) loopBadge.style.display = 'none';
             document.getElementById('ringSub').innerText = `🎵 Bài hát: ${alarm.fileName || 'Âm thanh hẹn giờ'}`;
             overlay.style.display = 'flex';
             playFile(alarm.fileId, alarm.fileName || 'Báo thức', true);
         } else {
-            document.getElementById('ringSub').innerText = `🗣️ Lời đọc: "${alarm.ttsText}"`;
+            const isJa = (alarm.lang === 'ja-JP') || (alarm.voice && alarm.voice.startsWith('ja'));
+            const langLabel = isJa ? '🇯🇵 Tiếng Nhật' : '🇻🇳 Tiếng Việt';
+            document.getElementById('ringSub').innerText = `🗣️ Lời đọc (${langLabel}): "${alarm.ttsText}"`;
+            
+            const isLoop = (alarm.continuousLoop !== false);
+            if (loopBadge) {
+                loopBadge.style.display = isLoop ? 'inline-flex' : 'none';
+                loopBadge.innerText = isLoop ? '🔁 Đang lặp lại phát âm cho đến khi tắt...' : '🔊 Đang phát âm lời đọc...';
+            }
             overlay.style.display = 'flex';
-            speakTTS(alarm.ttsText, alarm.voice, alarm.rate, alarm.engine || 'device');
+            speakTTS(alarm.ttsText, alarm.voice, alarm.rate, alarm.engine || 'device', isLoop);
         }
     }
 

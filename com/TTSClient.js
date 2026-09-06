@@ -4,6 +4,7 @@
     const DB_STORE = "MP3";
     let ttsDb;
     let globalAudio = null;
+    let currentAudio = null;
 
     // Khởi tạo IndexedDB
     const ttsDbReq = indexedDB.open(DB_NAME, 2);
@@ -29,12 +30,13 @@
     function playAudio(url, audioControl, loop = false) {
         return new Promise(res => {
             console.log(`[TTS Log] Playing audio (loop: ${loop})...`);
+            currentAudio = audioControl;
             // Dừng mọi âm thanh đang phát trước khi chạy âm thanh mới
             audioControl.pause();
             audioControl.currentTime = 0;
             
             // Thiết lập chế độ lặp lại của HTML5 Audio
-            audioControl.loop = loop;
+            audioControl.loop = !!loop;
             
             audioControl.src = url;
             audioControl.onended = () => {
@@ -52,12 +54,17 @@
      * Hàm dừng âm thanh chủ động từ bên ngoài
      */
     window.stopSpeak = function() {
-        if (globalAudio) {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio.loop = false;
+        }
+        if (globalAudio && globalAudio !== currentAudio) {
             globalAudio.pause();
             globalAudio.currentTime = 0;
             globalAudio.loop = false; // Reset loop khi stop chủ động
-            console.log("[TTS Log] Audio stopped manually and loop disabled");
         }
+        console.log("[TTS Log] Audio stopped manually and loop disabled");
     };
 
     const artworkCache = new Map();
@@ -212,7 +219,7 @@
             loop = false // Nhận thêm tham số loop
         } = config;
         
-        const lang = config.lang || (voice.includes('-') ? voice.substring(0, 5) : "zh-CN");
+        const lang = config.lang || (voice.startsWith('vi') ? 'vi-VN' : voice.startsWith('ja') ? 'ja-JP' : voice.startsWith('zh') ? 'zh-CN' : (voice.includes('-') ? voice.substring(0, 5) : "zh-CN"));
 
         let audioControl = config.audioControl;
         
@@ -273,11 +280,13 @@
             return playAudio(URL.createObjectURL(cachedBlob), audioControl, loop);
         }
 
-        // 2. Gọi API TTS
+        // 2. Gọi API TTS - Tự động lấy token từ app session (cookie / localStorage / sessionStorage)
+        const cookieMatch = typeof document !== 'undefined' ? document.cookie.match(/(?:^|; )token=([^;]*)/) : null;
+        const cookieToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
         const authToken = (typeof window !== 'undefined' && (
             sessionStorage.getItem('token') || 
             localStorage.getItem('token') || 
-            (document.cookie.match(/(?:^|; )token=([^;]*)/)?.[1]) || 
+            cookieToken || 
             window.token || 
             ''
         )) || '';

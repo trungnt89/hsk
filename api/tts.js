@@ -28,15 +28,15 @@ export default async function handler(req, context) {
     const rate = searchParams.get('rate') || '1.0';
     const format = searchParams.get('format') || 'audio-16khz-32kbitrate-mono-mp3';
 
-	const authHeader = req.headers['authorization'];
-	const token  = searchParams.get('token');
+	const authHeader = (req.headers && typeof req.headers.get === 'function') ? req.headers.get('authorization') : (req.headers ? req.headers['authorization'] : null);
+	const token  = searchParams.get('token') || authHeader;
 	if(token != process.env.PWTOKEN){
 		return new Response(JSON.stringify({ error: "Auth Invalid token" }), { status: 401, headers });
 	}
 	
     const safeText = text
       .replace(/[\r\n]+/g, ' ')
-      .replace(/[^\w\s\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff]/gi, '')
+      .replace(/[^\p{L}\p{N}\s]/gu, '')
       .trim()
       .substring(0, 30);
 

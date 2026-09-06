@@ -3,859 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Audio & Alarm Pro</title>
-    <script src="../com/assistive.js"></script>
-    <script src="../com/TTSClient.js"></script>
+    <title>Báo Thức YouTube - Hẹn Giờ Nhạc YouTube</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20width=%22100%22%20height=%22100%22><text y=%22.9em%22 font-size=%2290%22>⏰</text></svg>">
     <style>
         :root {
-            --bg-page: #f1f5f9;
-            --bg-card: #ffffff;
-            --border-color: #e2e8f0;
-            --border-focus: #10b981;
-            --text-main: #0f172a;
-            --text-sub: #64748b;
-            --primary: #059669;
-            --primary-hover: #047857;
-            --primary-light: #ecfdf5;
-            --accent-blue: #2563eb;
-            --accent-blue-light: #eff6ff;
-            --danger: #ef4444;
-            --danger-light: #fef2f2;
-            --warning: #d97706;
-            --warning-light: #fffbeb;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.03);
-            --radius-md: 10px;
-            --radius-lg: 16px;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --primary: #ef4444;
+            --primary-hover: #dc2626;
+            --accent: #38bdf8;
+            --text: #f8fafc;
+            --text-sub: #94a3b8;
+            --border: #334155;
+            --card-radius: 16px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html {
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg-page);
-            color: var(--text-main);
-            overflow: hidden;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .app-container {
+        body {
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            max-width: 900px;
-            margin: auto;
-            background: var(--bg-card);
-            box-shadow: 0 0 25px rgba(0,0,0,0.06);
-            position: relative;
-        }
-
-        /* HEADER */
-        header {
-            background: #ffffff;
-            border-bottom: 1px solid var(--border-color);
-            padding: 12px 16px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            box-shadow: var(--shadow-sm);
-            z-index: 20;
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-        }
-
-        .app-brand {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .app-brand h1 {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--primary);
-            letter-spacing: -0.02em;
-        }
-
-        .app-brand span {
-            font-size: 0.75rem;
-            background: var(--primary-light);
-            color: var(--primary);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-weight: 700;
-        }
-
-        .token-status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            background: #f8fafc;
-            color: var(--text-sub);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .token-status-pill:hover {
-            background: #e2e8f0;
-            color: var(--text-main);
-        }
-
-        .token-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: #94a3b8;
-        }
-
-        .token-status-pill.active {
-            border-color: #a7f3d0;
-            background: #ecfdf5;
-            color: #065f46;
-        }
-
-        .token-status-pill.active .token-dot {
-            background: #10b981;
-        }
-
-        /* Language Selector Tabs */
-        .lang-selector-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 6px;
-        }
-
-        .btn-lang {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 8px 12px;
-            border-radius: 10px;
-            border: 1.5px solid var(--border-color);
-            background: #ffffff;
-            color: var(--text-sub);
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-lang:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: #f8fafc;
-        }
-
-        .btn-lang.active {
-            border-color: var(--primary);
-            background: var(--primary-light);
-            color: var(--primary);
-            box-shadow: 0 2px 5px rgba(16, 185, 129, 0.15);
-        }
-
-        .tts-sample-container {
-            margin-top: 6px;
-        }
-
-        .tts-sample-label {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--text-sub);
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .tts-sample-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-
-        .sample-pill {
-            font-size: 0.73rem;
-            padding: 4px 9px;
-            border-radius: 14px;
-            background: #f1f5f9;
-            color: #334155;
-            border: 1px solid #e2e8f0;
-            cursor: pointer;
-            transition: all 0.15s;
-            line-height: 1.2;
-            text-align: left;
-        }
-
-        .sample-pill:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-            border-color: #cbd5e1;
-            transform: translateY(-1px);
-        }
-
-        .badge-lang-tag {
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            gap: 2px;
-            margin-right: 4px;
-        }
-        .badge-lang-tag.vi {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fca5a5;
-        }
-        .badge-lang-tag.ja {
-            background: #e0e7ff;
-            color: #3730a3;
-            border: 1px solid #c7d2fe;
-        }
-        .badge-loop-tag {
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 6px;
-            background: #dcfce7;
-            color: #15803d;
-            border: 1px solid #86efac;
-            display: inline-flex;
-            align-items: center;
-            gap: 2px;
-            margin-right: 4px;
-        }
-
-        .alarm-ring-loop-indicator {
-            font-size: 0.8rem;
-            color: #059669;
-            background: #ecfdf5;
-            border: 1px solid #a7f3d0;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            animation: pulseText 1.6s infinite ease-in-out;
-        }
-
-        @keyframes pulseText {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.75; transform: scale(0.98); }
-        }
-
-        /* App Login Modal Backdrop */
-        .app-login-backdrop {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(4px);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .app-login-modal {
-            background: #ffffff;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 380px;
-            padding: 24px 20px;
-            box-shadow: 0 20px 30px -5px rgba(0, 0, 0, 0.25);
-            text-align: center;
-            position: relative;
-            animation: fadeIn 0.25s ease-out;
-        }
-
-        /* Next Alarm Banner */
-        .next-alarm-banner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: var(--primary-light);
-            border: 1px solid #a7f3d0;
-            border-radius: 10px;
-            padding: 8px 12px;
-            font-size: 0.85rem;
-            color: #065f46;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .next-alarm-banner:hover {
-            background: #d1fae5;
-        }
-
-        .next-alarm-info {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 600;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .next-alarm-countdown {
-            font-family: monospace;
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: var(--primary);
-            background: white;
-            padding: 2px 8px;
-            border-radius: 6px;
-            border: 1px solid #6ee7b7;
-            flex-shrink: 0;
-        }
-
-        /* NAV TABS */
-        .tab-nav {
-            display: flex;
-            background: #f1f5f9;
-            border-radius: 10px;
-            padding: 3px;
-            gap: 4px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 8px 12px;
-            border: none;
-            background: transparent;
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--text-sub);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tab-btn.active {
-            background: #ffffff;
-            color: var(--primary);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .tab-badge {
-            font-size: 0.7rem;
-            padding: 1px 6px;
-            border-radius: 10px;
-            background: #e2e8f0;
-            color: var(--text-sub);
-        }
-
-        .tab-btn.active .tab-badge {
-            background: var(--primary-light);
-            color: var(--primary);
-        }
-
-        /* MAIN CONTENT VIEWS */
-        .view-content {
-            flex: 1;
-            overflow-y: auto;
-            position: relative;
-            background: var(--bg-page);
-            display: none;
-        }
-
-        .view-content.active {
-            display: block;
-        }
-
-        /* PLAYLIST VIEW */
-        .playlist-header-bar {
-            padding: 10px 16px;
-            background: #ffffff;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            gap: 8px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .btn-yt-quick {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #fef2f2;
-            color: #dc2626;
-            border: 1px solid #fca5a5;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.82rem;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-
-        .btn-yt-quick:hover {
-            background: #fee2e2;
-            border-color: #f87171;
-            transform: translateY(-1px);
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 0.85rem;
-            outline: none;
-            background: #f8fafc;
-        }
-
-        .search-input:focus {
-            border-color: var(--border-focus);
-            background: #fff;
-        }
-
-        .playlist {
-            list-style: none;
-            padding: 8px 12px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .playlist li {
-            padding: 12px 14px;
-            border-radius: 10px;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.2s;
-        }
-
-        .playlist li:hover {
-            border-color: #cbd5e1;
-            background: #f8fafc;
-            transform: translateY(-1px);
-        }
-
-        .playlist li.active {
-            background: var(--primary-light);
-            border-color: #6ee7b7;
-            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.12);
-        }
-
-        .playlist li.pinned {
-            border-left: 4px solid #f59e0b;
-        }
-
-        .file-info {
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .file-name {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-main);
-            margin-bottom: 4px;
-            line-height: 1.35;
-        }
-
-        .playlist li.active .file-name {
-            color: var(--primary);
-        }
-
-        .file-meta {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .status-badge {
-            font-size: 0.68rem;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: #e2e8f0;
-            color: #475569;
-        }
-
-        .status-badge.cached {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .btn-pin {
-            background: transparent;
-            border: none;
-            font-size: 1.15rem;
-            cursor: pointer;
-            padding: 4px 6px;
-            border-radius: 6px;
-            opacity: 0.4;
-            transition: 0.2s;
-        }
-
-        .btn-pin:hover, .pinned .btn-pin {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        /* ALARMS VIEW */
-        .alarms-container {
-            padding: 14px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .alarms-top-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .alarms-heading {
-            font-size: 1rem;
-            font-weight: 800;
-            color: var(--text-main);
-        }
-
-        .btn-add-alarm {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
-            transition: background 0.2s;
-        }
-
-        .btn-add-alarm:hover {
-            background: var(--primary-hover);
-        }
-
-        /* ALARM FORM CARD (Add / Edit) */
-        .alarm-form-card {
-            background: #ffffff;
-            border: 1.5px solid #a7f3d0;
-            border-radius: var(--radius-lg);
             padding: 16px;
-            box-shadow: var(--shadow-md);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 540px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            animation: fadeIn 0.2s ease-out;
+            gap: 16px;
         }
 
-        .form-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
+        header {
+            text-align: center;
+            padding: 12px 0 4px;
         }
 
-        .form-title {
-            font-size: 0.95rem;
+        .app-title {
+            font-size: 1.5rem;
             font-weight: 800;
-            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #fff;
         }
 
-        .form-row {
+        .app-title span.yt-tag {
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Đồng hồ số hiện tại */
+        .clock-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--card-radius);
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+
+        .clock-time {
+            font-size: 2.8rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 1px;
+            color: #38bdf8;
+        }
+
+        .clock-date {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-top: 2px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--card-radius);
+            padding: 18px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 14px;
             display: flex;
-            gap: 10px;
             align-items: center;
+            gap: 8px;
         }
 
         .form-group {
-            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
+            margin-bottom: 12px;
         }
 
         .form-label {
-            font-size: 0.75rem;
-            font-weight: 700;
+            font-size: 0.82rem;
+            font-weight: 600;
             color: var(--text-sub);
-            text-transform: uppercase;
         }
 
-        .form-input, .form-select, .form-textarea {
-            padding: 8px 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 0.88rem;
-            outline: none;
-            background: #ffffff;
-            color: var(--text-main);
+        .form-input {
             width: 100%;
-        }
-
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
-        }
-
-        /* TYPE SELECTOR (AUDIO vs TTS) */
-        .type-selector {
-            display: flex;
-            gap: 8px;
-            background: #f1f5f9;
-            padding: 4px;
+            background: #0f172a;
+            border: 1px solid var(--border);
             border-radius: 10px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
         }
 
-        .type-btn {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            background: transparent;
-            font-size: 0.85rem;
+        .form-input:focus {
+            border-color: #38bdf8;
+        }
+
+        .form-time-input {
+            font-size: 1.5rem;
             font-weight: 700;
-            color: var(--text-sub);
-            border-radius: 8px;
-            cursor: pointer;
+            text-align: center;
+            letter-spacing: 2px;
+            padding: 8px;
+        }
+
+        .checkbox-label {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: 0.2s;
-        }
-
-        .type-btn.active {
-            background: #ffffff;
-            color: var(--primary);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .type-btn.active#typeBtnYoutube {
-            color: #dc2626;
-        }
-
-        .type-section {
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            background: #f8fafc;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .type-section.active {
-            display: flex;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
             gap: 8px;
-            margin-top: 4px;
-        }
-
-        .btn-cancel {
-            background: #f1f5f9;
-            color: var(--text-sub);
-            border: 1px solid var(--border-color);
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-weight: 600;
             font-size: 0.85rem;
+            color: var(--text);
             cursor: pointer;
+            user-select: none;
         }
 
-        .btn-save-alarm {
-            background: var(--primary);
-            color: white;
+        .checkbox-label input {
+            accent-color: #ef4444;
+            width: 17px;
+            height: 17px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 14px;
+            border-radius: 10px;
             border: none;
-            padding: 8px 18px;
-            border-radius: 8px;
+            font-size: 0.92rem;
             font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-
-        .btn-test {
-            background: #f1f5f9;
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
         }
 
-        .btn-test:hover {
-            background: #e2e8f0;
+        .btn:active {
+            transform: scale(0.98);
         }
 
-        /* ALARM CARD LIST */
+        .btn-primary {
+            background: #ef4444;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #dc2626; }
+
+        .btn-secondary {
+            background: #334155;
+            color: #f8fafc;
+        }
+        .btn-secondary:hover { background: #475569; }
+
+        .btn-accent {
+            background: #0284c7;
+            color: #fff;
+        }
+        .btn-accent:hover { background: #0369a1; }
+
+        /* Danh sách mốc báo thức */
         .alarm-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
-        .alarm-card {
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 14px 16px;
+        .alarm-item {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.2s;
+            justify-content: space-between;
             gap: 12px;
         }
 
-        .alarm-card:hover {
-            box-shadow: var(--shadow-md);
-            border-color: #cbd5e1;
+        .alarm-item.disabled {
+            opacity: 0.5;
         }
 
-        .alarm-card.disabled {
-            opacity: 0.6;
-            background: #f8fafc;
-        }
-
-        .alarm-main-info {
+        .alarm-info {
             display: flex;
             flex-direction: column;
             gap: 4px;
-            flex: 1;
             overflow: hidden;
         }
 
-        .alarm-time-row {
+        .alarm-time {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #38bdf8;
+            letter-spacing: 1px;
+        }
+
+        .alarm-title {
+            font-size: 0.82rem;
+            color: var(--text-sub);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .alarm-actions {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             gap: 8px;
         }
 
-        .alarm-time-text {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--text-main);
-            letter-spacing: -0.02em;
-            line-height: 1;
-        }
-
-        .alarm-label-tag {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--primary);
-            background: var(--primary-light);
-            padding: 2px 8px;
-            border-radius: 6px;
-            white-space: nowrap;
-        }
-
-        .alarm-detail-text {
-            font-size: 0.82rem;
-            color: var(--text-sub);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .alarm-detail-text strong {
-            color: var(--text-main);
-        }
-
-        .alarm-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        .alarm-icon-btn {
-            background: #f8fafc;
-            border: 1px solid var(--border-color);
-            color: var(--text-sub);
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: 0.2s;
-        }
-
-        .alarm-icon-btn:hover {
-            background: #e2e8f0;
-            color: var(--text-main);
-        }
-
-        .alarm-icon-btn.delete:hover {
-            background: var(--danger-light);
-            border-color: #fca5a5;
-            color: var(--danger);
-        }
-
-        /* TOGGLE SWITCH */
-        .switch {
+        .toggle-switch {
             position: relative;
-            display: inline-block;
             width: 44px;
             height: 24px;
         }
 
-        .switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
 
-        .slider {
+        .toggle-slider {
             position: absolute;
             cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #cbd5e1;
-            transition: .3s;
+            inset: 0;
+            background-color: #475569;
+            transition: .2s;
             border-radius: 24px;
         }
 
-        .slider:before {
+        .toggle-slider:before {
             position: absolute;
             content: "";
             height: 18px;
@@ -863,1928 +286,299 @@
             left: 3px;
             bottom: 3px;
             background-color: white;
-            transition: .3s;
+            transition: .2s;
             border-radius: 50%;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
-        input:checked + .slider {
-            background-color: var(--primary);
+        input:checked + .toggle-slider {
+            background-color: #22c55e;
         }
 
-        input:checked + .slider:before {
+        input:checked + .toggle-slider:before {
             transform: translateX(20px);
         }
 
-        /* EMPTY STATE */
-        .empty-alarms {
-            text-align: center;
-            padding: 40px 20px;
+        .btn-icon {
+            background: transparent;
+            border: 1px solid var(--border);
             color: var(--text-sub);
-            background: white;
-            border-radius: var(--radius-lg);
-            border: 1px dashed var(--border-color);
-        }
-
-        /* BOTTOM PLAYER BAR */
-        .player-bar {
-            padding: 12px 16px;
-            background: #ffffff;
-            border-top: 1px solid var(--border-color);
-            box-shadow: 0 -4px 15px rgba(0,0,0,0.04);
-            flex-shrink: 0;
-            z-index: 20;
-        }
-
-        #player-title-container {
-            width: 100%;
-            overflow: hidden;
-            margin-bottom: 6px;
-            background: #f8fafc;
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #f1f5f9;
-        }
-
-        #player-title {
-            color: var(--primary);
-            font-size: 0.85rem;
-            font-weight: 700;
-            white-space: nowrap;
-            display: inline-block;
-            animation: marquee 22s linear infinite;
-            padding-left: 100%;
-        }
-
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-
-        audio {
-            width: 100%;
-            height: 38px;
             border-radius: 8px;
-            outline: none;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-icon:hover {
+            color: #ef4444;
+            border-color: #ef4444;
         }
 
-        /* ALARM RINGING MODAL / OVERLAY */
-        .alarm-ring-overlay {
+        /* Khung phát YouTube duy trì trong DOM */
+        .yt-box {
+            margin-top: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+            aspect-ratio: 16 / 9;
+            width: 100%;
+            position: relative;
+        }
+
+        .yt-preplay-banner {
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #bfdbfe;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Overlay khi chuông reo */
+        .alarm-ringing-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(4px);
-            z-index: 9999;
+            background: rgba(15, 23, 42, 0.97);
+            z-index: 999999;
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 24px 16px;
             text-align: center;
-            color: white;
-            animation: fadeIn 0.25s ease-out;
         }
 
-        .alarm-ring-box {
-            background: white;
-            color: var(--text-main);
-            padding: 28px 24px;
-            border-radius: 20px;
-            max-width: 420px;
-            width: 100%;
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .alarm-ring-bell {
-            font-size: 3rem;
-            animation: ringBell 1s infinite;
-        }
-
-        @keyframes ringBell {
-            0%, 100% { transform: rotate(0); }
-            20% { transform: rotate(15deg); }
-            40% { transform: rotate(-15deg); }
-            60% { transform: rotate(10deg); }
-            80% { transform: rotate(-10deg); }
-        }
-
-        .alarm-ring-time {
-            font-size: 2.2rem;
+        .ring-time {
+            font-size: 3.6rem;
             font-weight: 900;
-            color: var(--primary);
-            line-height: 1;
+            color: #ef4444;
+            animation: pulse 1s infinite;
         }
 
-        .alarm-ring-title {
+        .ring-title {
             font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--text-main);
+            color: #f8fafc;
+            margin: 10px 0 20px;
+            max-width: 90%;
+            word-break: break-word;
         }
 
-        .alarm-ring-sub {
-            font-size: 0.9rem;
-            color: var(--text-sub);
-            max-height: 100px;
-            overflow-y: auto;
-            line-height: 1.4;
-            padding: 8px;
-            background: #f8fafc;
-            border-radius: 8px;
+        .ring-yt-wrapper {
             width: 100%;
-        }
-
-        .btn-dismiss-alarm {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-size: 1rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-            transition: transform 0.1s;
-            width: 100%;
-        }
-
-        .btn-dismiss-alarm:active {
-            transform: scale(0.97);
-        }
-
-        /* iOS YouTube Quick Touch & Pulsing Banner */
-        .btn-ring-yt-ios {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: #ffffff;
-            border: 2px solid #fecaca;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 0.92rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4);
-            animation: pulseBanner 1.6s infinite ease-in-out;
-            margin: 4px 0;
-            text-align: center;
-        }
-
-        .btn-ring-yt-ios:active {
-            transform: scale(0.98);
-        }
-
-        @keyframes pulseBanner {
-            0% { transform: scale(1); box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35); }
-            50% { transform: scale(1.02); box-shadow: 0 6px 20px rgba(220, 38, 38, 0.6); }
-            100% { transform: scale(1); box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35); }
-        }
-
-        .pulse-dot {
-            width: 10px;
-            height: 10px;
-            background-color: #ffffff;
-            border-radius: 50%;
-            display: inline-block;
-            animation: blinkDot 1s infinite;
-        }
-
-        @keyframes blinkDot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(0.8); }
-        }
-
-        .ios-tip-box {
-            background: #fffbeb;
-            border: 1px solid #fde68a;
-            border-radius: 8px;
-            padding: 9px 12px;
-            font-size: 0.78rem;
-            color: #92400e;
-            line-height: 1.45;
-            margin-top: 6px;
-        }
-
-        .wakelock-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.75rem;
-            background: #f1f5f9;
-            color: var(--text-sub);
-            padding: 4px 10px;
-            border-radius: 20px;
-            border: 1px solid #cbd5e1;
-            cursor: pointer;
-            user-select: none;
-            transition: all 0.2s;
-        }
-
-        .wakelock-pill.active {
-            background: #ecfdf5;
-            color: #047857;
-            border-color: #a7f3d0;
-            font-weight: 700;
-        }
-
-        /* App Toast Notification */
-        .app-toast-container {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 99999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: none;
-            width: calc(100% - 32px);
-            max-width: 440px;
-        }
-
-        .app-toast {
-            background: #0f172a;
-            color: #ffffff;
-            padding: 11px 16px;
-            border-radius: 12px;
-            font-size: 0.84rem;
-            font-weight: 600;
-            line-height: 1.4;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            animation: slideDownToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            transition: opacity 0.3s, transform 0.3s;
-        }
-
-        @keyframes slideDownToast {
-            from { opacity: 0; transform: translateY(-16px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Persistent Master YouTube Alarm Player (Pause ➔ Play Engine) */
-        .persistent-yt-wrapper {
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .persistent-yt-wrapper.yt-mode-idle {
-            position: fixed;
-            bottom: -9999px;
-            left: -9999px;
-            width: 320px;
-            height: 180px;
-            opacity: 0.001;
-            pointer-events: none;
-            z-index: -999;
-        }
-
-        .persistent-yt-wrapper.yt-mode-preplaying {
-            position: fixed;
-            bottom: 85px;
-            right: 16px;
-            width: 275px;
-            height: 165px;
-            border-radius: 14px;
-            overflow: hidden;
-            z-index: 99999;
-            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6);
-            border: 2px solid #3b82f6;
+            max-width: 480px;
+            aspect-ratio: 16 / 9;
             background: #000;
-            opacity: 1;
-            pointer-events: auto;
-            animation: slideUpPreplay 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .persistent-yt-wrapper.yt-mode-ringing {
-            position: fixed;
-            top: calc(50% + 20px);
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: calc(100% - 64px);
-            max-width: 370px;
-            aspect-ratio: 16/9;
-            height: auto;
-            border-radius: 14px;
+            border-radius: 12px;
             overflow: hidden;
-            z-index: 10001;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
-            background: #000;
-            opacity: 1;
-            pointer-events: auto;
-            animation: zoomInRing 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
         }
 
-        .persistent-yt-badge {
-            position: absolute;
-            top: 6px;
-            left: 6px;
-            right: 6px;
-            background: rgba(15, 23, 42, 0.94);
-            color: #38bdf8;
-            font-size: 0.74rem;
-            font-weight: 700;
-            padding: 6px 10px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
-            z-index: 10;
-            backdrop-filter: blur(6px);
-            border: 1px solid rgba(56, 189, 248, 0.4);
-        }
-
-        .badge-pause-btn {
-            background: #dc2626;
-            color: #ffffff;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.7rem;
+        .btn-stop-alarm {
+            background: #ef4444;
+            color: #fff;
+            font-size: 1.25rem;
             font-weight: 800;
-            padding: 3px 8px;
+            padding: 16px 36px;
+            border-radius: 50px;
+            border: none;
             cursor: pointer;
-            white-space: nowrap;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            transition: background 0.15s, transform 0.1s;
+            box-shadow: 0 4px 24px rgba(239, 68, 68, 0.6);
+            transition: transform 0.15s;
         }
 
-        .badge-pause-btn:hover {
-            background: #b91c1c;
-        }
-
-        .badge-pause-btn:active {
+        .btn-stop-alarm:active {
             transform: scale(0.95);
         }
 
-        .preplay-progress-track {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.25);
-            z-index: 10;
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.85; }
         }
 
-        .preplay-progress-fill {
-            height: 100%;
-            width: 0%;
-            background: #38bdf8;
-            transition: width 0.25s linear;
-        }
-
-        @keyframes slideUpPreplay {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes zoomInRing {
-            from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
-            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
+        .empty-hint {
+            text-align: center;
+            color: var(--text-sub);
+            padding: 20px 0;
+            font-size: 0.88rem;
         }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <!-- HEADER -->
+<div class="container">
     <header>
-        <div class="header-top">
-            <div class="app-brand">
-                <h1>Audio & Alarm</h1>
-                <span>Light</span>
-                <button type="button" id="btnAppSession" class="token-status-pill" onclick="handleAppSessionClick()" title="Trạng thái phiên làm việc / Token hệ thống">
-                    <span id="appSessionDot" class="token-dot"></span>
-                    <span id="appSessionLabel">Đăng nhập App</span>
-                </button>
-            </div>
-            <div class="tab-nav">
-                <button class="tab-btn active" id="tabBtnPlaylist" onclick="switchMainTab('playlist')">
-                    <span>📋 Bài hát</span>
-                    <span class="tab-badge" id="badgeSongsCount">0</span>
-                </button>
-                <button class="tab-btn" id="tabBtnAlarms" onclick="switchMainTab('alarms')">
-                    <span>⏰ Hẹn giờ</span>
-                    <span class="tab-badge" id="badgeAlarmsCount">0</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Next Alarm Status Banner -->
-        <div class="next-alarm-banner" id="nextAlarmBanner" onclick="switchMainTab('alarms')">
-            <div class="next-alarm-info">
-                <span>⏰</span>
-                <span id="nextAlarmDesc">Chưa có mốc hẹn giờ nào bật</span>
-            </div>
-            <div class="next-alarm-countdown" id="nextAlarmCountdown">--:--:--</div>
+        <div class="app-title">
+            <span>⏰ Báo Thức YouTube</span>
+            <span class="yt-tag">Auto Play</span>
         </div>
     </header>
 
-    <!-- VIEW 1: PLAYLIST -->
-    <div class="view-content active" id="viewPlaylist">
-        <div class="playlist-header-bar">
-            <input type="text" id="playlistSearch" class="search-input" placeholder="🔍 Tìm kiếm bài hát..." oninput="filterPlaylist()">
-            <button type="button" class="btn-yt-quick" onclick="openYoutubeDirectModal()" title="Phát nhạc từ link YouTube">
-                <span>▶️ YouTube</span>
+    <!-- ĐỒNG HỒ HIỆN TẠI -->
+    <div class="clock-card">
+        <div class="clock-time" id="clockTime">00:00:00</div>
+        <div class="clock-date" id="clockDate">Đang cập nhật...</div>
+    </div>
+
+    <!-- FORM THIẾT LẬP BÁO THỨC -->
+    <div class="card">
+        <div class="card-title">
+            <span>➕ Hẹn giờ báo thức mới</span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="alarmTime">Giờ báo thức (24h)</label>
+            <input type="time" id="alarmTime" class="form-input form-time-input" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="ytUrl">Link hoặc ID YouTube</label>
+            <input type="text" id="ytUrl" class="form-input" placeholder="Dán link YouTube (vd: https://youtu.be/...)" oninput="onYtUrlChange()">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="alarmLabel">Tên mốc hẹn (tùy chọn)</label>
+            <input type="text" id="alarmLabel" class="form-input" placeholder="Ví dụ: Báo thức buổi sáng, Tập thể dục...">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0;">
+            <label class="checkbox-label">
+                <input type="checkbox" id="preplay30s" checked>
+                <span>⚡ Phát thử 30s rồi Pause khi lưu (đến giờ tự động Play)</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="continuousLoop" checked>
+                <span>🔁 Lặp lại liên tục cho đến khi bấm tắt</span>
+            </label>
+        </div>
+
+        <!-- KHUNG PHÁT YOUTUBE MASTER DUY TRÌ LIÊN TỤC -->
+        <div id="ytContainer" class="yt-box" style="display: none;">
+            <iframe id="ytIframe" width="100%" height="100%" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:none;"></iframe>
+        </div>
+
+        <div id="preplayStatus" class="yt-preplay-banner" style="display: none;">
+            <span id="preplayText">Đang phát thử...</span>
+            <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; flex: none;" onclick="pausePreplay()">⏸️ Pause ngay</button>
+        </div>
+
+        <div class="btn-row">
+            <button type="button" class="btn btn-accent" id="btnTest" onclick="startPreplay(30)">
+                <span>▶️ Thử 30s</span>
+            </button>
+            <button type="button" class="btn btn-primary" onclick="saveAlarm()">
+                <span>💾 Lưu Báo Thức</span>
             </button>
         </div>
-        <ul class="playlist" id="playlist">
-            <li style="justify-content: center; color: var(--text-sub); border: none;">Đang tải danh sách bài hát...</li>
-        </ul>
     </div>
 
-    <!-- VIEW 2: ALARMS MANAGEMENT -->
-    <div class="view-content" id="viewAlarms">
-        <div class="alarms-container">
-            <div class="alarms-top-actions">
-                <div class="alarms-heading">Danh sách mốc hẹn giờ</div>
-                <button class="btn-add-alarm" id="btnToggleAddAlarm" onclick="toggleAddAlarmForm()">
-                    <span>➕ Thêm giờ hẹn</span>
-                </button>
-            </div>
-
-            <!-- ADD / EDIT ALARM CARD (Collapsible) -->
-            <div class="alarm-form-card" id="alarmFormCard" style="display: none;">
-                <div class="form-header">
-                    <span class="form-title" id="formCardTitle">Thêm mốc hẹn giờ mới</span>
-                    <button class="btn-cancel" style="padding: 2px 8px; font-size: 0.8rem;" onclick="toggleAddAlarmForm(false)">✕ Đóng</button>
-                </div>
-
-                <input type="hidden" id="formAlarmId">
-
-                <div class="form-row">
-                    <div class="form-group" style="flex: 0 0 120px;">
-                        <label class="form-label">Giờ hẹn</label>
-                        <input type="time" id="formAlarmTime" class="form-input" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Tên / Ghi chú</label>
-                        <input type="text" id="formAlarmLabel" class="form-input" placeholder="Ví dụ: Báo thức sáng, Học bài...">
-                    </div>
-                </div>
-
-                <!-- SELECTOR: AUDIO vs TTS vs YOUTUBE -->
-                <div class="form-group">
-                    <label class="form-label">Kiểu phát khi tới giờ</label>
-                    <div class="type-selector">
-                        <button type="button" class="type-btn active" id="typeBtnAudio" onclick="setAlarmType('audio')">
-                            <span>🎵 File Audio</span>
-                        </button>
-                        <button type="button" class="type-btn" id="typeBtnTTS" onclick="setAlarmType('tts')">
-                            <span>🗣️ Đọc TTS</span>
-                        </button>
-                        <button type="button" class="type-btn" id="typeBtnYoutube" onclick="setAlarmType('youtube')">
-                            <span>📺 Nhạc YouTube</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- SECTION A: AUDIO SETTING -->
-                <div class="type-section active" id="sectionAudio">
-                    <div class="form-group">
-                        <label class="form-label">Chọn bài hát từ kho Audio</label>
-                        <select id="formAudioFile" class="form-select">
-                            <option value="">-- Chọn bài hát --</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; justify-content: flex-end;">
-                        <button type="button" class="btn-test" onclick="testAudioPreview()">
-                            <span>▶️ Nghe thử bài hát</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- SECTION B: TTS SETTING -->
-                <div class="type-section" id="sectionTTS">
-                    <!-- Ngôn ngữ phát âm: Tiếng Việt hoặc Tiếng Nhật -->
-                    <div class="form-group">
-                        <label class="form-label">Ngôn ngữ đọc</label>
-                        <div class="lang-selector-tabs">
-                            <button type="button" class="btn-lang active" id="btnLangVi" onclick="setTtsLang('vi-VN')">
-                                <span>🇻🇳 Tiếng Việt</span>
-                            </button>
-                            <button type="button" class="btn-lang" id="btnLangJa" onclick="setTtsLang('ja-JP')">
-                                <span>🇯🇵 Tiếng Nhật (日本語)</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Văn bản cần đọc (TTS)</label>
-                        <textarea id="formTtsText" class="form-textarea" rows="2" placeholder="Ví dụ: Chào buổi sáng! Đã đến giờ thức dậy rồi."></textarea>
-                        <div class="tts-sample-container">
-                            <div class="tts-sample-label">💡 Gợi ý mẫu câu nhanh:</div>
-                            <div id="ttsSamplePills" class="tts-sample-pills"></div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Nguồn giọng đọc</label>
-                            <select id="formTtsEngine" class="form-select" onchange="handleTtsEngineChange()">
-                                <option value="device" selected>🔊 Trình duyệt (Web Speech API - Luôn chạy 100%, không cần mạng/Token)</option>
-                                <option value="auto">⚡ Tự động (Ưu tiên Cloud AI, tự động dự phòng Web Speech)</option>
-                                <option value="cloud">🌐 Cloud Neural (Server HSK AI - Tự động liên kết theo App Login)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Giọng đọc</label>
-                            <select id="formTtsVoice" class="form-select">
-                                <!-- Options will be populated by setTtsLang -->
-                                <option value="vi-VN-NamMinhNeural" selected>Tiếng Việt - Nam (Nam Minh AI)</option>
-                                <option value="vi-VN-HoaiMyNeural">Tiếng Việt - Nữ (Hoài My AI)</option>
-                                <option value="vi-VN">Tiếng Việt - Mặc định thiết bị</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="flex: 0 0 100px;">
-                            <label class="form-label">Tốc độ</label>
-                            <select id="formTtsRate" class="form-select">
-                                <option value="0.75">0.75x</option>
-                                <option value="0.90">0.90x</option>
-                                <option value="1.0" selected>1.0x</option>
-                                <option value="1.15">1.15x</option>
-                                <option value="1.25">1.25x</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- TÙY CHỌN LẶP LẠI TTS -->
-                    <div class="form-row" style="margin-top: 2px; background: #f8fafc; padding: 7px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.83rem; font-weight: 600; cursor: pointer; color: var(--text-main); margin: 0;">
-                            <input type="checkbox" id="formTtsLoop" checked>
-                            <span>🔁 Lặp lại lời đọc liên tục cho đến khi bấm tắt báo thức</span>
-                        </label>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-                        <span id="ttsPreviewStatus" style="font-size: 0.78rem; color: var(--text-sub);"></span>
-                        <button type="button" class="btn-test" id="btnTestTts" onclick="testTtsPreview()">
-                            <span>🔊 Thử đọc văn bản</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- SECTION C: YOUTUBE SETTING -->
-                <div class="type-section" id="sectionYoutube">
-                    <div class="form-group">
-                        <label class="form-label">Link video hoặc ID YouTube</label>
-                        <input type="text" id="formYoutubeUrl" class="form-input" placeholder="Ví dụ: https://www.youtube.com/watch?v=... hoặc https://youtu.be/..." oninput="onYoutubeUrlChange()">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Tên bài hát / Ghi chú video (tùy chọn)</label>
-                        <input type="text" id="formYoutubeTitle" class="form-input" placeholder="Ví dụ: Nhạc Lofi thư giãn buổi sáng, Piano đón ngày mới...">
-                    </div>
-
-                    <div class="tts-sample-container">
-                        <div class="tts-sample-label">💡 Gợi ý bài hát hay & báo thức nhẹ nhàng:</div>
-                        <div class="tts-sample-pills">
-                            <button type="button" class="sample-pill" onclick="applyYoutubeSample('https://www.youtube.com/watch?v=jfKfPfyJRdk', 'Lofi Hip Hop - Beats to Relax')">☕ Lofi Hip Hop</button>
-                            <button type="button" class="sample-pill" onclick="applyYoutubeSample('https://www.youtube.com/watch?v=5qap5aO4i9A', 'Lofi Báo thức buổi sáng')">🌅 Báo thức sáng</button>
-                            <button type="button" class="sample-pill" onclick="applyYoutubeSample('https://www.youtube.com/watch?v=4xDzrJKXOOY', 'Piano thư giãn đón ngày mới')">🎹 Piano thư giãn</button>
-                            <button type="button" class="sample-pill" onclick="applyYoutubeSample('https://www.youtube.com/watch?v=eKFTSSKCzWA', 'Tiếng suối & chim hót thiên nhiên')">🌿 Tiếng thiên nhiên</button>
-                        </div>
-                    </div>
-
-                    <!-- TÙY CHỌN LẶP LẠI YOUTUBE -->
-                    <div class="form-row" style="margin-top: 2px; background: #f8fafc; padding: 7px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.83rem; font-weight: 600; cursor: pointer; color: var(--text-main); margin: 0;">
-                            <input type="checkbox" id="formYoutubeLoop" checked>
-                            <span>🔁 Lặp lại video YouTube liên tục cho đến khi tắt báo thức</span>
-                        </label>
-                    </div>
-
-                    <!-- CÀI ĐẶT PHÁT THỬ 30S MỞ KHÓA PAUSE ➔ PLAY PHÁT TIẾP -->
-                    <div class="form-row" style="margin-top: 4px; background: #eff6ff; padding: 10px 12px; border-radius: 9px; border: 1px solid #bfdbfe;">
-                        <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; color: #1e40af; margin: 0; line-height: 1.4;">
-                            <input type="checkbox" id="formYoutubePreplay" checked style="margin-top: 2px;">
-                            <span>⚡ Phát thử khi lưu (Đến giờ hẹn tự chuyển Pause ➔ Play để phát tiếp, không cần chạm màn hình)</span>
-                        </label>
-
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #bfdbfe; font-size: 0.8rem; color: #1e3a8a; flex-wrap: wrap;">
-                            <span style="font-weight: 600;">⏱️ Thời gian phát thử:</span>
-                            <select id="formYoutubePreplayDuration" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; background: #fff; color: #1e40af; font-size: 0.8rem;" onchange="onPreplayDurationChange()">
-                                <option value="30" selected>30 giây (Mặc định theo yêu cầu)</option>
-                                <option value="15">15 giây</option>
-                                <option value="10">10 giây</option>
-                                <option value="45">45 giây</option>
-                                <option value="60">60 giây</option>
-                            </select>
-                        </div>
-
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 0.8rem; color: #1e3a8a; flex-wrap: wrap;">
-                            <span style="font-weight: 600;">🎯 Khi đến giờ báo thức:</span>
-                            <select id="formYoutubeResumeMode" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; background: #fff; color: #1e40af; font-size: 0.8rem;">
-                                <option value="continue" selected>⏩ Phát tiếp từ điểm đã dừng (Chuẩn)</option>
-                                <option value="start">🔁 Tua lại phát từ đầu (00:00)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; gap: 6px; flex-wrap: wrap;">
-                        <button type="button" class="btn-test" id="btnPreactYoutube" style="flex: 1; background: #ecfdf5; color: #047857; border-color: #6ee7b7; font-weight: 700; padding: 8px 12px;" onclick="manualTriggerPreplay()">
-                            <span id="preactBtnText">▶️ Phát thử 30s & Nạp Pause ➔ Play</span>
-                        </button>
-                    </div>
-                    <div id="youtubePreviewStatus" style="font-size: 0.78rem; color: var(--text-sub); margin-top: 4px;"></div>
-                    <div id="youtubeFormPreviewBox" style="display: none; margin-top: 8px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; aspect-ratio: 16/9; max-height: 200px; background: #000;"></div>
-
-                    <!-- GIẢI THÍCH CƠ CHẾ PHÁT THỬ 30S ➔ PAUSE ➔ PLAY PHÁT TIẾP -->
-                    <div class="ios-tip-box" id="iosYtNotice">
-                        <div style="font-weight: 700; display: flex; align-items: center; gap: 4px; margin-bottom: 3px; color: #1d4ed8;">
-                            <span>🍎 Cơ chế Phát thử 30s ➔ Pause ➔ Play phát tiếp (Tối ưu iPhone / Safari):</span>
-                        </div>
-                        <div style="color: #334155; line-height: 1.45;">
-                            Khi bạn bấm <strong>"💾 Lưu mốc hẹn giờ"</strong> hoặc nút <strong>"▶️ Phát thử 30s"</strong>, video YouTube sẽ <strong>phát có tiếng trong 30 giây</strong> (có thể bấm <em>"⏸️ Dừng ngay"</em> bất kỳ lúc nào). Trình duyệt cấp quyền âm thanh và video được <strong>Pause (tạm dừng)</strong> lại đúng vị trí đó. Đến đúng giờ hẹn, hệ thống chỉ việc <strong>đổi lệnh từ Pause sang Play</strong> để <strong>phát tiếp</strong> đoạn nhạc mà bạn không cần phải chạm vào màn hình!
-                        </div>
-                    </div>
-                </div>
-
-                <!-- REPEAT OPTION -->
-                <div class="form-row" style="margin-top: 4px;">
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
-                        <input type="checkbox" id="formAlarmRepeat" checked>
-                        <span>🔁 Lặp lại hàng ngày</span>
-                    </label>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-cancel" onclick="toggleAddAlarmForm(false)">Hủy</button>
-                    <button type="button" class="btn-save-alarm" onclick="saveAlarmItem()">💾 Lưu mốc hẹn giờ</button>
-                </div>
-            </div>
-
-            <!-- ALARM LIST -->
-            <div class="alarm-list" id="alarmList">
-                <!-- Dynamically Rendered -->
-            </div>
+    <!-- DANH SÁCH BÁO THỨC ĐÃ LƯU -->
+    <div class="card">
+        <div class="card-title">
+            <span>📋 Danh sách báo thức</span>
         </div>
-    </div>
-
-    <!-- BOTTOM PERSISTENT PLAYER -->
-    <div class="player-bar">
-        <div id="player-title-container">
-            <div id="player-title">Chưa phát bài nào</div>
-        </div>
-        <audio id="audio-player" controls></audio>
-    </div>
-</div>
-
-<!-- ALARM RINGING MODAL OVERLAY -->
-<div class="alarm-ring-overlay" id="alarmRingOverlay" style="display: none;">
-    <div class="alarm-ring-box">
-        <div class="alarm-ring-bell">🔔</div>
-        <div class="alarm-ring-time" id="ringTime">07:00</div>
-        <div class="alarm-ring-title" id="ringTitle">Báo thức</div>
-        <div class="alarm-ring-sub" id="ringSub">Đang phát nội dung hẹn giờ...</div>
-        <div class="alarm-ring-loop-indicator" id="ringLoopBadge">🔁 Đang lặp lại phát âm cho đến khi tắt...</div>
-        
-        <!-- NÚT CHẠM DỰ PHÒNG CHO IPHONE / SAFARI (CHỈ HIỂN THỊ NẾU CẦN) -->
-        <button type="button" id="btnRingYtIosPlay" class="btn-ring-yt-ios" style="display: none;" onclick="manualStartIosYoutube(event)">
-            <span class="pulse-dot"></span>
-            <span id="btnRingYtIosLabel">▶️ Chạm vào đây để phát tiếng YouTube</span>
-        </button>
-
-        <div id="ringYtSpacer" style="display: none; width: 100%; aspect-ratio: 16/9; max-height: 220px; border-radius: 12px; margin-top: 4px;"></div>
-        <button class="btn-dismiss-alarm" onclick="dismissCurrentAlarm()">⏹️ Tắt / Dừng Báo Thức</button>
-    </div>
-</div>
-
-<!-- PERSISTENT MASTER YOUTUBE PLAYER FOR ALARMS (NEVER DESTROYED TO PRESERVE IOS AUDIO PERMISSION) -->
-<div id="persistentYtWrapper" class="persistent-yt-wrapper yt-mode-idle">
-    <div id="persistentYtBadge" class="persistent-yt-badge" style="display: none;">
-        <span id="persistentYtBadgeText">🔊 Đang phát thử: còn 30s...</span>
-        <button type="button" id="btnBadgePauseNow" class="badge-pause-btn" onclick="pausePreplayNow(event)">⏸️ Dừng ngay</button>
-    </div>
-    <div id="preplayProgressBarTrack" class="preplay-progress-track" style="display: none;">
-        <div id="preplayProgressBar" class="preplay-progress-fill"></div>
-    </div>
-    <iframe id="persistentYtIframe" title="YouTube Background Alarm Engine" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; playsinline" playsinline="1" webkit-playsinline="1" allowfullscreen style="width: 100%; height: 100%; border: none;"></iframe>
-</div>
-
-<!-- YOUTUBE DIRECT PLAYER MODAL -->
-<div class="app-login-backdrop" id="youtubeDirectModal" style="display: none;">
-    <div class="app-login-modal" style="max-width: 440px; text-align: left;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.4rem;">▶️</span>
-                <h3 style="margin: 0; color: var(--text-main); font-size: 1.1rem; font-weight: 800;">Phát nhạc từ YouTube</h3>
-            </div>
-            <button type="button" class="btn-cancel" style="padding: 2px 8px; font-size: 0.85rem;" onclick="closeYoutubeDirectModal()">✕ Đóng</button>
-        </div>
-        <p style="margin: 0 0 12px 0; color: var(--text-sub); font-size: 0.82rem; line-height: 1.4;">
-            Dán link video YouTube bất kỳ để nghe nhạc trực tiếp trong ứng dụng mà không cần tải file về máy.
-        </p>
-        <div style="margin-bottom: 10px;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-bottom: 4px;">LINK HOẶC ID VIDEO YOUTUBE</label>
-            <div style="display: flex; gap: 6px;">
-                <input type="text" id="directYoutubeUrl" class="form-input" placeholder="https://www.youtube.com/watch?v=... hoặc youtu.be/..." style="flex: 1;" onkeydown="if(event.key==='Enter') playDirectYoutube();">
-                <button type="button" class="btn-save-alarm" style="padding: 8px 14px; background: #dc2626; margin: 0; white-space: nowrap;" onclick="playDirectYoutube()">Phát</button>
-            </div>
-        </div>
-        <div class="tts-sample-container" style="margin-bottom: 12px;">
-            <div class="tts-sample-label">💡 Gợi ý bài hát hay:</div>
-            <div class="tts-sample-pills">
-                <button type="button" class="sample-pill" onclick="applyDirectYoutubeSample('https://www.youtube.com/watch?v=jfKfPfyJRdk')">☕ Lofi Hip Hop</button>
-                <button type="button" class="sample-pill" onclick="applyDirectYoutubeSample('https://www.youtube.com/watch?v=5qap5aO4i9A')">🌅 Lofi Chill Sáng</button>
-                <button type="button" class="sample-pill" onclick="applyDirectYoutubeSample('https://www.youtube.com/watch?v=4xDzrJKXOOY')">🎹 Piano Thư Giãn</button>
-                <button type="button" class="sample-pill" onclick="applyDirectYoutubeSample('https://www.youtube.com/watch?v=eKFTSSKCzWA')">🌿 Thiên Nhiên</button>
-            </div>
-        </div>
-        <div id="directYoutubeFrameContainer" style="display: none; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 10px;"></div>
-        <div id="directYoutubeControls" style="display: none; justify-content: space-between; align-items: center;">
-            <span id="directYoutubeTitle" style="font-size: 0.8rem; font-weight: 700; color: var(--primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;"></span>
-            <button type="button" class="btn-cancel" style="padding: 4px 10px; font-size: 0.8rem; color: #dc2626; border-color: #fca5a5; background: #fef2f2;" onclick="stopDirectYoutube()">⏹ Dừng phát</button>
+        <div class="alarm-list" id="alarmList">
+            <div class="empty-hint">Chưa có mốc báo thức nào. Hãy thêm mốc ở trên!</div>
         </div>
     </div>
 </div>
 
-<!-- APP LOGIN MODAL (Tự động lấy token hệ thống) -->
-<div class="app-login-backdrop" id="appLoginModal" style="display: none;">
-    <div class="app-login-modal">
-        <form id="appLoginForm" onsubmit="event.preventDefault(); submitAppModalLogin();">
-            <div style="font-size: 2.2rem; margin-bottom: 8px;">🔐</div>
-            <h3 style="margin: 0 0 6px 0; color: var(--text-main); font-size: 1.15rem;">Đăng nhập App Hệ thống</h3>
-            <p style="margin: 0 0 16px 0; color: var(--text-sub); font-size: 0.82rem; line-height: 1.4;">
-                Đăng nhập tài khoản để tự động lấy Token (PWTOKEN) cho toàn bộ ứng dụng và mở khóa giọng đọc AI Cloud.
-            </p>
-            <div style="margin-bottom: 14px; text-align: left;">
-                <label for="modalTokenInput" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-bottom: 4px;">MẬT KHẨU / TOKEN TRUY CẬP</label>
-                <input type="password" id="modalTokenInput" class="form-input" placeholder="Nhập mật khẩu / Token truy cập..." autocomplete="current-password">
-            </div>
-            <div style="display: flex; gap: 8px;">
-                <button type="submit" class="btn-save-alarm" id="btnModalSubmitLogin" style="flex: 1; justify-content: center; padding: 10px; margin: 0;">
-                    Đăng nhập
-                </button>
-                <button type="button" class="btn-cancel" onclick="closeAppLoginModal()" style="padding: 10px 14px; margin: 0;">
-                    Đóng
-                </button>
-            </div>
-            <div id="modalLoginMsg" style="margin-top: 10px; font-size: 0.8rem; min-height: 18px;"></div>
-        </form>
+<!-- MÀN HÌNH BÁO THỨC CHUÔNG REO TOÀN MÀN HÌNH -->
+<div class="alarm-ringing-overlay" id="ringOverlay">
+    <div class="ring-time" id="ringTime">00:00</div>
+    <div class="ring-title" id="ringTitle">Báo thức YouTube đang phát!</div>
+    
+    <div class="ring-yt-wrapper" id="ringYtWrapper">
+        <!-- Iframe YouTube sẽ được chuyển vào đây khi reo -->
     </div>
+
+    <button type="button" class="btn-stop-alarm" onclick="stopAlarm()">
+        🔕 TẮT BÁO THỨC
+    </button>
 </div>
 
 <script>
-    const API_BASE = "https://hsk-gilt.vercel.app/api/gRecorder";
-    const FOLDER_ID = "1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm";
-    const DB_NAME = "AudioOfflineDB";
-    const STORE_NAME = "audioFiles";
-
-    // ==========================================
-    // 0. TOKEN AUTH & APP SESSION MANAGEMENT
-    // ==========================================
-    function getAppLoginToken() {
-        const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]*)/);
-        const cookieToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
-        const sessionToken = sessionStorage.getItem('token') || '';
-        const localToken = localStorage.getItem('token') || '';
-        const urlToken = new URLSearchParams(window.location.search).get('token') || '';
-        const found = (cookieToken || sessionToken || localToken || urlToken || '').trim();
-        if (found) {
-            window.token = found;
-            if (!sessionToken) sessionStorage.setItem('token', found);
-            if (!localToken) localStorage.setItem('token', found);
-            if (!cookieToken) {
-                document.cookie = `token=${encodeURIComponent(found)}; path=/; max-age=604800; SameSite=Lax`;
-            }
-        }
-        return found;
-    }
-
-    function setAppLoginToken(val) {
-        const cleaned = (val || '').trim();
-        if (cleaned) {
-            window.token = cleaned;
-            sessionStorage.setItem('token', cleaned);
-            localStorage.setItem('token', cleaned);
-            document.cookie = `token=${encodeURIComponent(cleaned)}; path=/; max-age=604800; SameSite=Lax`;
-        } else {
-            window.token = '';
-            sessionStorage.removeItem('token');
-            localStorage.removeItem('token');
-            document.cookie = "token=; path=/; max-age=-1; SameSite=Lax";
-        }
-        updateAppSessionUI();
-    }
-
-    // Tương thích ngược với các lệnh gọi cũ
-    const getAuthToken = getAppLoginToken;
-    const setAuthToken = setAppLoginToken;
-
-    function updateAppSessionUI() {
-        const t = getAppLoginToken();
-        const pill = document.getElementById('btnAppSession');
-        const label = document.getElementById('appSessionLabel');
-        if (!pill || !label) return;
-
-        if (t) {
-            pill.classList.add('active');
-            label.innerText = 'Đã đăng nhập App';
-            pill.title = 'Phiên học tập đã kết nối. Token tự động đồng bộ cho toàn bộ ứng dụng!';
-        } else {
-            pill.classList.remove('active');
-            label.innerText = 'Đăng nhập App';
-            pill.title = 'Nhấn để đăng nhập vào tài khoản App hệ thống';
-        }
-    }
-
-    function handleAppSessionClick() {
-        const t = getAppLoginToken();
-        if (t) {
-            const confirmLogout = confirm('Bạn đang đăng nhập phiên học tập của App (Token tự động nhận diện từ hệ thống).\n\nBạn có muốn đăng xuất để đổi tài khoản khác không?');
-            if (confirmLogout) {
-                setAppLoginToken('');
-                alert('Đã đăng xuất phiên làm việc.');
-            }
-        } else {
-            openAppLoginModal();
-        }
-    }
-
-    function openAppLoginModal() {
-        const modal = document.getElementById('appLoginModal');
-        const input = document.getElementById('modalTokenInput');
-        const msg = document.getElementById('modalLoginMsg');
-        if (modal) modal.style.display = 'flex';
-        if (input) {
-            input.value = '';
-            setTimeout(() => input.focus(), 100);
-        }
-        if (msg) msg.innerHTML = '';
-    }
-
-    function closeAppLoginModal() {
-        const modal = document.getElementById('appLoginModal');
-        if (modal) modal.style.display = 'none';
-    }
-
-    async function submitAppModalLogin() {
-        const input = document.getElementById('modalTokenInput');
-        const msg = document.getElementById('modalLoginMsg');
-        const btn = document.getElementById('btnModalSubmitLogin');
-        const val = (input ? input.value : '').trim();
-
-        if (!val) {
-            if (msg) msg.innerHTML = '<span style="color: #ef4444;">Vui lòng nhập mật khẩu hoặc Token!</span>';
-            return;
-        }
-
-        if (btn) btn.disabled = true;
-        if (msg) msg.innerHTML = '<span style="color: var(--primary);">Đang kiểm tra đăng nhập...</span>';
-
-        try {
-            const res = await fetch('https://hsk-gilt.vercel.app/api/auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: val })
-            });
-            const data = await res.json();
-            if (res.ok && data.success) {
-                setAppLoginToken(val);
-                closeAppLoginModal();
-                alert('Đăng nhập thành công! Token đã được tự động kết nối.');
-            } else {
-                if (msg) msg.innerHTML = `<span style="color: #ef4444;">Sai token: ${data.message || 'Không hợp lệ'}</span>`;
-            }
-        } catch (err) {
-            // Nếu offline hoặc mạng nội bộ, cho phép lưu trực tiếp token
-            setAppLoginToken(val);
-            closeAppLoginModal();
-            alert('Đã lưu Token đăng nhập!');
-        } finally {
-            if (btn) btn.disabled = false;
-        }
-    }
-
-    // ==========================================
-    // LANGUAGE & VOICE CONFIGURATION (VI / JA)
-    // ==========================================
-    let currentTtsLang = 'vi-VN';
-
-    const TTS_VOICE_CONFIG = {
-        'vi-VN': [
-            { value: 'vi-VN-NamMinhNeural', label: 'Tiếng Việt - Nam (Nam Minh AI truyền cảm)' },
-            { value: 'vi-VN-HoaiMyNeural', label: 'Tiếng Việt - Nữ (Hoài My AI dịu dàng)' },
-            { value: 'vi-VN', label: 'Tiếng Việt - Mặc định thiết bị' }
-        ],
-        'ja-JP': [
-            { value: 'ja-JP-KeitaNeural', label: 'Tiếng Nhật - Nam (Keita AI chuẩn)' },
-            { value: 'ja-JP-NanamiNeural', label: 'Tiếng Nhật - Nữ (Nanami AI tự nhiên)' },
-            { value: 'ja-JP', label: 'Tiếng Nhật - Mặc định thiết bị' }
-        ]
-    };
-
-    const TTS_SAMPLES_BY_LANG = {
-        'vi-VN': [
-            '☀️ Chào buổi sáng! Đã đến giờ thức dậy rồi.',
-            '📖 Đã đến giờ học bài và ôn từ vựng!',
-            '💧 Hãy uống nước và bắt đầu ngày mới!',
-            '⏰ Báo thức nhắc nhở công việc quan trọng.'
-        ],
-        'ja-JP': [
-            '☀️ おはようございます！起きてください。',
-            '📖 勉強の時間です。今日も一日頑張りましょう！',
-            '⏰ 時間になりました。新しい一日を始めましょう！',
-            '🍵 お茶を飲んで、リフレッシュしてください。'
-        ]
-    };
-
-    function setTtsLang(lang) {
-        currentTtsLang = (lang === 'ja-JP') ? 'ja-JP' : 'vi-VN';
-
-        // Update Tab buttons
-        const btnVi = document.getElementById('btnLangVi');
-        const btnJa = document.getElementById('btnLangJa');
-        if (btnVi && btnJa) {
-            if (currentTtsLang === 'ja-JP') {
-                btnJa.classList.add('active');
-                btnVi.classList.remove('active');
-            } else {
-                btnVi.classList.add('active');
-                btnJa.classList.remove('active');
-            }
-        }
-
-        // Update Voices Dropdown
-        const voiceSelect = document.getElementById('formTtsVoice');
-        if (voiceSelect) {
-            const list = TTS_VOICE_CONFIG[currentTtsLang] || TTS_VOICE_CONFIG['vi-VN'];
-            voiceSelect.innerHTML = list.map(v => `<option value="${v.value}">${v.label}</option>`).join('');
-        }
-
-        // Update Sample Pills
-        const pillsContainer = document.getElementById('ttsSamplePills');
-        if (pillsContainer) {
-            const samples = TTS_SAMPLES_BY_LANG[currentTtsLang] || [];
-            pillsContainer.innerHTML = samples.map(text => 
-                `<button type="button" class="sample-pill" onclick="applySampleText('${escapeHtml(text)}')">${escapeHtml(text)}</button>`
-            ).join('');
-        }
-    }
-
-    function applySampleText(text) {
-        const textarea = document.getElementById('formTtsText');
-        if (textarea) {
-            textarea.value = text;
-            textarea.focus();
-        }
-    }
-
-    function handleTtsEngineChange() {
-        // Tự động kiểm tra token khi chuyển sang Cloud
-        getAppLoginToken();
-    }
-
-    // Initialize token at startup
-    getAppLoginToken();
-
-    const player = document.getElementById('audio-player');
-    const playlistElem = document.getElementById('playlist');
-    const playerTitleElem = document.getElementById('player-title');
-    const formAudioFileSelect = document.getElementById('formAudioFile');
-
-    let db;
-    let allFiles = [];
+    // --- QUẢN LÝ DỮ LIỆU BÁO THỨC (LOCALSTORAGE) ---
+    const STORAGE_KEY = 'yt_alarms_simple_v1';
     let alarms = [];
-    let timerInterval = null;
-    let currentAlarmType = 'audio';
-    let isAudioActivated = false;
-    let lastTriggeredMinute = '';
+    let activeRingingAlarm = null;
+    let preplayTimer = null;
+    let preplayInterval = null;
+    let audioCtx = null;
 
-    // ==========================================
-    // 1. INIT & DATABASE SETUP
-    // ==========================================
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = (e) => {
-        db = e.target.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
-    };
-    request.onsuccess = (e) => {
-        db = e.target.result;
-        updateAppSessionUI();
-        setTtsLang('vi-VN');
-        loadAlarmsData();
-        loadPlaylist();
-        startAlarmMonitor();
-        activateAudio();
-    };
-
-    async function activateAudio() {
-        isAudioActivated = true;
-        try {
-            player.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-            await player.play();
-            console.log("[Audio Context] Kích hoạt thành công.");
-        } catch (err) {
-            console.warn("[Audio Context] Chờ tương tác người dùng.");
-        }
+    // Load dữ liệu khi mở trang
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (data) alarms = JSON.parse(data);
+    } catch (e) {
+        alarms = [];
     }
-    // Auto-unlock on first click anywhere
-    document.addEventListener('click', () => {
-        if (!isAudioActivated) activateAudio();
-    }, { once: true });
 
-    // ==========================================
-    // 2. PLAYLIST & OFFLINE CACHE
-    // ==========================================
-    async function loadPlaylist() {
-        try {
-            const response = await fetch(`${API_BASE}?action=byfolder&folderId=${FOLDER_ID}`);
-            allFiles = await response.json();
-            renderPlaylist();
-            populateAudioSelect();
-            document.getElementById('badgeSongsCount').innerText = allFiles.length;
-        } catch (error) {
-            console.error("[Playlist Error]", error);
-            playlistElem.innerHTML = `<li style="text-align: center; color: var(--danger); border: none;">Lỗi tải dữ liệu. Vui lòng kiểm tra kết nối mạng.</li>`;
+    // Trích xuất ID YouTube chuẩn xác
+    function extractYouTubeId(url) {
+        if (!url) return '';
+        url = url.trim();
+        if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : '';
+    }
+
+    // Đảm bảo Web Audio không ngủ gật trên Safari/iOS
+    function unlockAudio() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        if (navigator.wakeLock && navigator.wakeLock.request) {
+            navigator.wakeLock.request('screen').catch(() => {});
         }
     }
 
-    async function renderPlaylist(filterText = "") {
-        const pinnedIds = JSON.parse(localStorage.getItem('pinnedIds') || "[]");
-        let displayFiles = [...allFiles];
-        
-        if (filterText) {
-            const q = filterText.toLowerCase();
-            displayFiles = displayFiles.filter(f => f.name.toLowerCase().includes(q));
-        }
+    // Cập nhật đồng hồ thời gian thực
+    function updateClock() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        const timeStr = `${h}:${m}:${s}`;
+        document.getElementById('clockTime').innerText = timeStr;
 
-        displayFiles.sort((a, b) => (pinnedIds.includes(b.id) ? 1 : 0) - (pinnedIds.includes(a.id) ? 1 : 0));
-        playlistElem.innerHTML = "";
+        const options = { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' };
+        document.getElementById('clockDate').innerText = now.toLocaleDateString('vi-VN', options);
 
-        if (displayFiles.length === 0) {
-            playlistElem.innerHTML = `<li style="text-align: center; color: var(--text-sub); border: none; padding: 30px;">Không tìm thấy bài hát nào</li>`;
-            return;
-        }
-
-        const lastSelectedId = localStorage.getItem('lastSelectedId');
-
-        for (const file of displayFiles) {
-            const isCached = await checkCache(file.id);
-            const li = document.createElement('li');
-            li.id = `item-${file.id}`;
-            if (lastSelectedId === file.id) li.classList.add('active');
-            if (pinnedIds.includes(file.id)) li.classList.add('pinned');
-
-            li.innerHTML = `
-                <div class="file-info">
-                    <span class="file-name">${escapeHtml(file.name)}</span>
-                    <div class="file-meta">
-                        <span class="status-badge ${isCached ? 'cached' : ''}" id="status-${file.id}">
-                            ${isCached ? 'OFFLINE' : 'ONLINE'}
-                        </span>
-                    </div>
-                </div>
-                <button class="btn-pin" title="${pinnedIds.includes(file.id) ? 'Bỏ ghim' : 'Ghim bài'}" onclick="event.stopPropagation(); togglePin('${file.id}')">
-                    📌
-                </button>
-            `;
-            li.onclick = () => playFile(file.id, file.name);
-            playlistElem.appendChild(li);
+        // Kiểm tra báo thức tại giây 00
+        if (s === '00' && !activeRingingAlarm) {
+            checkAlarms(`${h}:${m}`);
         }
     }
 
-    function filterPlaylist() {
-        const text = document.getElementById('playlistSearch').value.trim();
-        renderPlaylist(text);
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Điền giờ mặc định vào ô nhập (hiện tại + 5 phút)
+    function setDefaultTime() {
+        const d = new Date();
+        d.setMinutes(d.getMinutes() + 5);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        const el = document.getElementById('alarmTime');
+        if (el && !el.value) el.value = `${hh}:${mm}`;
     }
-
-    function populateAudioSelect() {
-        formAudioFileSelect.innerHTML = `<option value="">-- Chọn bài hát từ kho --</option>`;
-        allFiles.forEach(file => {
-            const opt = document.createElement('option');
-            opt.value = file.id;
-            opt.dataset.name = file.name;
-            opt.textContent = file.name;
-            formAudioFileSelect.appendChild(opt);
-        });
-    }
-
-    function checkCache(id) {
-        return new Promise((r) => {
-            if (!db) return r(false);
-            const tx = db.transaction([STORE_NAME], "readonly");
-            const req = tx.objectStore(STORE_NAME).get(id);
-            req.onsuccess = () => r(!!req.result);
-            req.onerror = () => r(false);
-        });
-    }
-
-    function togglePin(id) {
-        let pinnedIds = JSON.parse(localStorage.getItem('pinnedIds') || "[]");
-        if (pinnedIds.includes(id)) {
-            pinnedIds = pinnedIds.filter(p => p !== id);
-        } else {
-            pinnedIds.push(id);
-        }
-        localStorage.setItem('pinnedIds', JSON.stringify(pinnedIds));
-        renderPlaylist(document.getElementById('playlistSearch').value.trim());
-    }
-
-    async function playFile(id, name, forceRestart = false) {
-        if (!isAudioActivated) isAudioActivated = true;
-        stopDirectYoutube();
-        stopCurrentSpeech();
-        localStorage.setItem('lastSelectedId', id);
-        document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
-        const activeItem = document.getElementById(`item-${id}`);
-        if (activeItem) activeItem.classList.add('active');
-
-        playerTitleElem.innerText = name;
-
-        const tx = db.transaction([STORE_NAME], "readonly");
-        const getRequest = tx.objectStore(STORE_NAME).get(id);
-
-        getRequest.onsuccess = async () => {
-            let sourceUrl;
-            if (getRequest.result) {
-                sourceUrl = URL.createObjectURL(getRequest.result);
-            } else {
-                try {
-                    const resp = await fetch(`${API_BASE}?action=audio&fileId=${id}`);
-                    const blob = await resp.blob();
-                    sourceUrl = URL.createObjectURL(blob);
-                    const saveTx = db.transaction([STORE_NAME], "readwrite");
-                    saveTx.objectStore(STORE_NAME).put(blob, id);
-                    saveTx.oncomplete = () => {
-                        const badge = document.getElementById(`status-${id}`);
-                        if (badge) {
-                            badge.innerText = "OFFLINE";
-                            badge.classList.add("cached");
-                        }
-                    };
-                } catch (e) {
-                    console.error("Lỗi phát audio:", e);
-                    alert("Không thể tải file audio!");
-                    return;
-                }
-            }
-
-            player.loop = false;
-            player.volume = 1.0;
-            player.src = sourceUrl;
-            player.load();
-            if (forceRestart) player.currentTime = 0;
-
-            player.play().then(() => {
-                const savedPos = localStorage.getItem('pos_' + id);
-                if (savedPos && !forceRestart) {
-                    player.currentTime = parseFloat(savedPos);
-                }
-                player.ontimeupdate = () => {
-                    if (player.currentTime > 0) localStorage.setItem('pos_' + id, player.currentTime);
-                };
-            }).catch(e => console.warn("Trình duyệt chặn autoplay:", e));
-        };
-    }
-
-    // ==========================================
-    // 3. TTS SPEECH ENGINE
-    // ==========================================
-    let ttsLoopActive = false;
-    let ttsLoopTimer = null;
-
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.getVoices();
-        };
-        window.speechSynthesis.getVoices();
-    }
-
-    function speakWithSpeechSynthesis(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0', loop = false) {
-        if (!('speechSynthesis' in window)) {
-            console.warn("Trình duyệt không hỗ trợ Web Speech API.");
-            return Promise.resolve();
-        }
-
-        if (loop) {
-            ttsLoopActive = true;
-        }
-
-        return new Promise((resolve) => {
-            try {
-                window.speechSynthesis.cancel();
-                if (window.speechSynthesis.paused) {
-                    window.speechSynthesis.resume();
-                }
-
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = Math.max(0.5, Math.min(2.0, parseFloat(rate) || 1.0));
-                utterance.pitch = 1.0;
-                utterance.volume = 1.0;
-
-                let targetLang = 'vi-VN';
-                if (voice.startsWith('ja')) targetLang = 'ja-JP';
-                else if (voice.startsWith('vi')) targetLang = 'vi-VN';
-                else if (voice.startsWith('zh')) targetLang = 'zh-CN';
-                else if (voice.startsWith('en')) targetLang = 'en-US';
-                utterance.lang = targetLang;
-
-                const allVoices = window.speechSynthesis.getVoices() || [];
-                if (allVoices.length > 0) {
-                    let matched = allVoices.find(v => (
-                        v.lang === targetLang || 
-                        v.lang.replace('_', '-') === targetLang
-                    ));
-                    if (!matched) {
-                        matched = allVoices.find(v => v.lang.startsWith(targetLang.substring(0, 2)));
-                    }
-                    if (matched) utterance.voice = matched;
-                }
-
-                utterance.onstart = () => console.log("[WebSpeech] Bắt đầu đọc:", text);
-                utterance.onend = () => {
-                    console.log("[WebSpeech] Hoàn tất lần đọc.");
-                    resolve();
-                    if (ttsLoopActive) {
-                        clearTimeout(ttsLoopTimer);
-                        ttsLoopTimer = setTimeout(() => {
-                            if (ttsLoopActive) {
-                                speakWithSpeechSynthesis(text, voice, rate, true);
-                            }
-                        }, 1200);
-                    }
-                };
-                utterance.onerror = (e) => {
-                    console.warn("[WebSpeech error]", e);
-                    resolve();
-                    if (ttsLoopActive) {
-                        clearTimeout(ttsLoopTimer);
-                        ttsLoopTimer = setTimeout(() => {
-                            if (ttsLoopActive) {
-                                speakWithSpeechSynthesis(text, voice, rate, true);
-                            }
-                        }, 2000);
-                    }
-                };
-
-                window.speechSynthesis.speak(utterance);
-            } catch (err) {
-                console.error("[WebSpeech Exception]", err);
-                resolve();
-            }
-        });
-    }
-
-    async function speakTTS(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0', engine = 'device', loop = false) {
-        if (!text) return;
-        const currentToken = getAppLoginToken();
-        if (loop) {
-            ttsLoopActive = true;
-        } else {
-            ttsLoopActive = false;
-        }
-
-        let targetLang = 'vi-VN';
-        if (voice.startsWith('ja')) targetLang = 'ja-JP';
-        else if (voice.startsWith('vi')) targetLang = 'vi-VN';
-        else if (voice.startsWith('zh')) targetLang = 'zh-CN';
-        else if (voice.startsWith('en')) targetLang = 'en-US';
-
-        console.log(`[TTS] Đọc văn bản: "${text}" | Nguồn: ${engine} | Giọng: ${voice} | Ngôn ngữ: ${targetLang} | Tốc độ: ${rate} | Lặp: ${loop} | Có Token: ${!!currentToken}`);
-
-        // 1. Nếu chọn trực tiếp giọng thiết bị Web Speech (miễn phí, không cần mạng, không lỗi 401)
-        if (engine === 'device') {
-            await speakWithSpeechSynthesis(text, voice, rate, loop);
-            return;
-        }
-
-        // 2. Nếu chọn Cloud Neural hoặc Auto: Thử gọi Cloud TTS trước
-        let cloudSuccess = false;
-        if (typeof window.speakCommon === 'function') {
-            try {
-                await window.speakCommon({
-                    text: text,
-                    voice: voice,
-                    lang: targetLang,
-                    rate: rate,
-                    loop: loop,
-                    filename: 'Alarm_TTS'
-                });
-                cloudSuccess = true;
-                return;
-            } catch (err) {
-                console.warn("[Cloud TTS báo lỗi hoặc chưa có token, tự động chuyển sang Web Speech của thiết bị]:", err);
-            }
-        }
-
-        // 3. Nếu Cloud TTS không thành công hoặc lỗi 401: Tự động dự phòng 100% bằng Web Speech của thiết bị
-        if (!cloudSuccess) {
-            console.log("[TTS] Sử dụng Web Speech API của thiết bị để đọc...");
-            await speakWithSpeechSynthesis(text, voice, rate, loop);
-        }
-    }
-
-    function stopCurrentSpeech() {
-        ttsLoopActive = false;
-        if (ttsLoopTimer) {
-            clearTimeout(ttsLoopTimer);
-            ttsLoopTimer = null;
-        }
-        if (typeof window.stopSpeak === 'function') {
-            window.stopSpeak();
-        }
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-        }
-    }
-
-    // ==========================================
-    // 4. MULTI-ALARMS MANAGEMENT
-    // ==========================================
-    function loadAlarmsData() {
-        const saved = localStorage.getItem('mp3_alarms');
-        if (saved) {
-            try {
-                alarms = JSON.parse(saved);
-            } catch (e) {
-                alarms = [];
-            }
-        } else {
-            // Migration from legacy single alarm
-            const legacyTime = localStorage.getItem('alarmTime');
-            const legacyFileId = localStorage.getItem('alarmFileId');
-            if (legacyTime) {
-                alarms = [{
-                    id: 'alarm_' + Date.now(),
-                    time: legacyTime,
-                    type: 'audio',
-                    fileId: legacyFileId || '',
-                    fileName: 'Bài hát hẹn trước',
-                    ttsText: '',
-                    voice: 'vi-VN-NamMinhNeural',
-                    rate: '1.0',
-                    label: 'Hẹn giờ chính',
-                    enabled: true,
-                    repeat: true
-                }];
-                saveAlarms();
-            }
-        }
-        renderAlarms();
-    }
-
-    function saveAlarms() {
-        localStorage.setItem('mp3_alarms', JSON.stringify(alarms));
-        renderAlarms();
-    }
-
-    function renderAlarms() {
-        const listElem = document.getElementById('alarmList');
-        const activeCount = alarms.filter(a => a.enabled).length;
-        document.getElementById('badgeAlarmsCount').innerText = `${activeCount}/${alarms.length}`;
-
-        if (alarms.length === 0) {
-            listElem.innerHTML = `
-                <div class="empty-alarms">
-                    <div style="font-size: 2.5rem; margin-bottom: 8px;">⏰</div>
-                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Chưa có mốc hẹn giờ nào</div>
-                    <div style="font-size: 0.85rem;">Nhấn nút <strong>"+ Thêm giờ hẹn"</strong> ở trên để tạo mốc báo thức âm thanh hoặc đọc văn bản TTS.</div>
-                </div>
-            `;
-            updateNextAlarmBanner();
-            return;
-        }
-
-        // Sort by time
-        const sortedAlarms = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
-
-        listElem.innerHTML = sortedAlarms.map(a => {
-            const isAudio = a.type === 'audio';
-            const isYt = a.type === 'youtube';
-            const isJa = (a.lang === 'ja-JP') || (a.voice && a.voice.startsWith('ja'));
-            const langBadge = isJa ? '<span class="badge-lang-tag ja">🇯🇵 Nhật</span>' : '<span class="badge-lang-tag vi">🇻🇳 Việt</span>';
-            const loopBadge = (a.continuousLoop !== false) ? '<span class="badge-loop-tag" title="Lặp lại liên tục cho đến khi tắt">🔁 Lặp lại</span>' : '';
-
-            let detailText = '';
-            if (isAudio) {
-                detailText = `🎵 <strong>Audio:</strong> ${escapeHtml(a.fileName || 'Chưa chọn bài')}`;
-            } else if (isYt) {
-                const ytBadge = '<span class="badge-lang-tag" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">📺 YouTube</span>';
-                const ytLoopBadge = (a.continuousLoop !== false) ? '<span class="badge-loop-tag" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5;" title="Lặp lại liên tục cho đến khi tắt">🔁 Lặp lại</span>' : '';
-                const preplayDur = a.preplayDuration || 30;
-                const resumeLabel = (a.resumeMode === 'start') ? 'Tua đầu' : 'Phát tiếp';
-                const autoBadge = `<span class="badge-loop-tag" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;" title="Phát thử ${preplayDur}s rồi Pause ➔ Tự đổi Pause sang Play để ${resumeLabel.toLowerCase()} không cần chạm">⚡ Pause➔${resumeLabel} (${preplayDur}s)</span>`;
-                detailText = `📺 ${ytBadge} ${ytLoopBadge} ${autoBadge} <strong>Nhạc:</strong> ${escapeHtml(a.youtubeTitle || a.youtubeUrl || 'Video YouTube')}`;
-            } else {
-                detailText = `🗣️ ${langBadge} ${loopBadge} <strong>TTS (${a.engine === 'cloud' ? 'Cloud' : a.engine === 'auto' ? 'Auto' : 'Thiết bị'}):</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
-            }
-
-            const preplayDur = a.preplayDuration || 30;
-            const resumeActionText = (a.resumeMode === 'start') ? 'tua đầu' : 'phát tiếp';
-
-            return `
-                <div class="alarm-card ${a.enabled ? '' : 'disabled'}" id="alarm-card-${a.id}">
-                    <div class="alarm-main-info" onclick="editAlarmItem('${a.id}')">
-                        <div class="alarm-time-row">
-                            <span class="alarm-time-text">${a.time}</span>
-                            ${a.label ? `<span class="alarm-label-tag">${escapeHtml(a.label)}</span>` : ''}
-                            <span style="font-size: 0.75rem; color: var(--text-sub);">${a.repeat ? '🔁 Hàng ngày' : '1️⃣ Một lần'}</span>
-                        </div>
-                        <div class="alarm-detail-text">
-                            ${detailText}
-                        </div>
-                    </div>
-                    <div class="alarm-controls">
-                        ${isYt ? `
-                        <button class="alarm-icon-btn" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.75rem; font-weight:800; width:auto; padding:0 8px;" title="Phát thử ${preplayDur}s để nạp sẵn Pause ➔ Play ${resumeActionText}" onclick="quickPreplayForAlarm('${a.id}', event)">
-                            ⚡ ${preplayDur}s
-                        </button>
-                        ` : ''}
-                        <button class="alarm-icon-btn" title="Thử phát mốc này" onclick="testTriggerAlarm('${a.id}')">
-                            ▶️
-                        </button>
-                        <button class="alarm-icon-btn" title="Chỉnh sửa" onclick="editAlarmItem('${a.id}')">
-                            ✏️
-                        </button>
-                        <label class="switch">
-                            <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAlarmEnabled('${a.id}', this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                        <button class="alarm-icon-btn delete" title="Xóa" onclick="deleteAlarmItem('${a.id}')">
-                            🗑️
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        updateNextAlarmBanner();
-    }
-
-    function toggleAddAlarmForm(show = null) {
-        const formCard = document.getElementById('alarmFormCard');
-        const btnToggle = document.getElementById('btnToggleAddAlarm');
-        const isVisible = formCard.style.display !== 'none';
-        const willShow = (show === null) ? !isVisible : show;
-
-        if (willShow) {
-            formCard.style.display = 'flex';
-            btnToggle.style.display = 'none';
-            // Default current time + 5 mins if empty
-            if (!document.getElementById('formAlarmTime').value) {
-                const d = new Date(Date.now() + 5 * 60000);
-                const h = String(d.getHours()).padStart(2, '0');
-                const m = String(d.getMinutes()).padStart(2, '0');
-                document.getElementById('formAlarmTime').value = `${h}:${m}`;
-            }
-        } else {
-            formCard.style.display = 'none';
-            btnToggle.style.display = 'inline-flex';
-            clearAlarmForm();
-        }
-    }
-
-    function setAlarmType(type) {
-        currentAlarmType = type;
-        const btnAudio = document.getElementById('typeBtnAudio');
-        const btnTTS = document.getElementById('typeBtnTTS');
-        const btnYoutube = document.getElementById('typeBtnYoutube');
-        const secAudio = document.getElementById('sectionAudio');
-        const secTTS = document.getElementById('sectionTTS');
-        const secYoutube = document.getElementById('sectionYoutube');
-
-        [btnAudio, btnTTS, btnYoutube].forEach(b => b?.classList.remove('active'));
-        [secAudio, secTTS, secYoutube].forEach(s => s?.classList.remove('active'));
-
-        if (type === 'audio') {
-            btnAudio?.classList.add('active');
-            secAudio?.classList.add('active');
-        } else if (type === 'youtube') {
-            btnYoutube?.classList.add('active');
-            secYoutube?.classList.add('active');
-        } else {
-            btnTTS?.classList.add('active');
-            secTTS?.classList.add('active');
-        }
-    }
-
-    function onPreplayDurationChange() {
-        const dur = document.getElementById('formYoutubePreplayDuration')?.value || '30';
-        const span = document.getElementById('preactBtnText');
-        if (span && !isPreplayingNow) {
-            span.innerHTML = `▶️ Phát thử ${dur}s & Nạp Pause ➔ Play`;
-        }
-    }
-
-    function clearAlarmForm() {
-        document.getElementById('formAlarmId').value = '';
-        document.getElementById('formCardTitle').innerText = 'Thêm mốc hẹn giờ mới';
-        document.getElementById('formAlarmLabel').value = '';
-        document.getElementById('formAudioFile').value = '';
-        document.getElementById('formTtsText').value = '';
-        document.getElementById('formYoutubeUrl').value = '';
-        document.getElementById('formYoutubeTitle').value = '';
-        document.getElementById('formYoutubeLoop').checked = true;
-        const preplayCheckbox = document.getElementById('formYoutubePreplay');
-        if (preplayCheckbox) preplayCheckbox.checked = true;
-        const preplayDurSelect = document.getElementById('formYoutubePreplayDuration');
-        if (preplayDurSelect) preplayDurSelect.value = '30';
-        const resumeModeSelect = document.getElementById('formYoutubeResumeMode');
-        if (resumeModeSelect) resumeModeSelect.value = 'continue';
-        onPreplayDurationChange();
-
-        const ytPreviewBox = document.getElementById('youtubeFormPreviewBox');
-        if (ytPreviewBox) {
-            ytPreviewBox.innerHTML = '';
-            ytPreviewBox.style.display = 'none';
-        }
-        document.getElementById('formAlarmRepeat').checked = true;
-        document.getElementById('formTtsLoop').checked = true;
-        document.getElementById('formTtsEngine').value = 'device';
-        setTtsLang('vi-VN');
-        handleTtsEngineChange();
-        setAlarmType('audio');
-    }
-
-    function editAlarmItem(id) {
-        const alarm = alarms.find(a => a.id === id);
-        if (!alarm) return;
-
-        toggleAddAlarmForm(true);
-        document.getElementById('formAlarmId').value = alarm.id;
-        document.getElementById('formCardTitle').innerText = 'Chỉnh sửa mốc hẹn giờ';
-        document.getElementById('formAlarmTime').value = alarm.time;
-        document.getElementById('formAlarmLabel').value = alarm.label || '';
-        document.getElementById('formAlarmRepeat').checked = alarm.repeat !== false;
-
-        setAlarmType(alarm.type || 'audio');
-
-        if (alarm.type === 'youtube') {
-            document.getElementById('formYoutubeUrl').value = alarm.youtubeUrl || '';
-            document.getElementById('formYoutubeTitle').value = alarm.youtubeTitle || '';
-            document.getElementById('formYoutubeLoop').checked = (alarm.continuousLoop !== false);
-            const preplayCheckbox = document.getElementById('formYoutubePreplay');
-            if (preplayCheckbox) preplayCheckbox.checked = (alarm.preplay !== false && alarm.preplay1s !== false);
-            const preplayDurSelect = document.getElementById('formYoutubePreplayDuration');
-            if (preplayDurSelect) preplayDurSelect.value = String(alarm.preplayDuration || '30');
-            const resumeModeSelect = document.getElementById('formYoutubeResumeMode');
-            if (resumeModeSelect) resumeModeSelect.value = alarm.resumeMode || 'continue';
-            onPreplayDurationChange();
-            onYoutubeUrlChange();
-        } else if (alarm.type === 'tts') {
-            const isJa = (alarm.lang === 'ja-JP') || (alarm.voice && alarm.voice.startsWith('ja'));
-            setTtsLang(isJa ? 'ja-JP' : 'vi-VN');
-
-            document.getElementById('formTtsText').value = alarm.ttsText || '';
-            document.getElementById('formTtsEngine').value = alarm.engine || 'device';
-            handleTtsEngineChange();
-            if (alarm.voice) {
-                document.getElementById('formTtsVoice').value = alarm.voice;
-            }
-            document.getElementById('formTtsRate').value = alarm.rate || '1.0';
-            document.getElementById('formTtsLoop').checked = (alarm.continuousLoop !== false);
-        } else {
-            document.getElementById('formAudioFile').value = alarm.fileId || '';
-        }
-
-        document.getElementById('alarmFormCard').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function saveAlarmItem() {
-        const timeVal = document.getElementById('formAlarmTime').value;
-        if (!timeVal) {
-            alert('Vui lòng chọn giờ hẹn!');
-            return;
-        }
-
-        const editId = document.getElementById('formAlarmId').value;
-        const labelVal = document.getElementById('formAlarmLabel').value.trim();
-        const repeatVal = document.getElementById('formAlarmRepeat').checked;
-
-        let fileId = '';
-        let fileName = '';
-        let ttsText = '';
-        let engine = 'device';
-        let voice = 'vi-VN-NamMinhNeural';
-        let rate = '1.0';
-        let lang = currentTtsLang;
-        let continuousLoop = true;
-        let youtubeUrl = '';
-        let youtubeTitle = '';
-        let youtubeVideoId = '';
-        let preplay = true;
-        let preplayDuration = 30;
-        let resumeMode = 'continue';
-
-        if (currentAlarmType === 'audio') {
-            fileId = formAudioFileSelect.value;
-            if (fileId && formAudioFileSelect.selectedIndex > -1) {
-                fileName = formAudioFileSelect.options[formAudioFileSelect.selectedIndex].dataset.name || 'File Audio';
-            } else if (allFiles.length > 0) {
-                fileId = allFiles[0].id;
-                fileName = allFiles[0].name;
-            }
-        } else if (currentAlarmType === 'youtube') {
-            youtubeUrl = document.getElementById('formYoutubeUrl').value.trim();
-            youtubeTitle = document.getElementById('formYoutubeTitle').value.trim();
-            youtubeVideoId = extractYouTubeId(youtubeUrl);
-            if (!youtubeVideoId) {
-                alert('Vui lòng nhập đường link hoặc ID video YouTube hợp lệ!\nVí dụ: https://www.youtube.com/watch?v=... hoặc https://youtu.be/...');
-                return;
-            }
-            if (!youtubeTitle) {
-                youtubeTitle = 'Nhạc YouTube (' + youtubeVideoId + ')';
-            }
-            continuousLoop = document.getElementById('formYoutubeLoop').checked;
-            preplay = document.getElementById('formYoutubePreplay')?.checked !== false;
-            preplayDuration = parseInt(document.getElementById('formYoutubePreplayDuration')?.value || '30', 10) || 30;
-            resumeMode = document.getElementById('formYoutubeResumeMode')?.value || 'continue';
-        } else {
-            ttsText = document.getElementById('formTtsText').value.trim();
-            if (!ttsText) {
-                alert('Vui lòng nhập nội dung văn bản cần đọc!');
-                return;
-            }
-            engine = document.getElementById('formTtsEngine').value || 'device';
-            voice = document.getElementById('formTtsVoice').value;
-            rate = document.getElementById('formTtsRate').value;
-            lang = currentTtsLang;
-            continuousLoop = document.getElementById('formTtsLoop').checked;
-        }
-
-        if (editId) {
-            // Update
-            const idx = alarms.findIndex(a => a.id === editId);
-            if (idx !== -1) {
-                alarms[idx] = {
-                    ...alarms[idx],
-                    time: timeVal,
-                    type: currentAlarmType,
-                    fileId,
-                    fileName,
-                    ttsText,
-                    engine,
-                    voice,
-                    rate,
-                    lang,
-                    continuousLoop,
-                    youtubeUrl,
-                    youtubeTitle,
-                    youtubeVideoId,
-                    preplay,
-                    preplayDuration,
-                    resumeMode,
-                    label: labelVal,
-                    repeat: repeatVal
-                };
-            }
-        } else {
-            // New
-            const newAlarm = {
-                id: 'alarm_' + Date.now(),
-                time: timeVal,
-                type: currentAlarmType,
-                fileId,
-                fileName,
-                ttsText,
-                engine,
-                voice,
-                rate,
-                lang,
-                continuousLoop,
-                youtubeUrl,
-                youtubeTitle,
-                youtubeVideoId,
-                preplay,
-                preplayDuration,
-                resumeMode,
-                label: labelVal,
-                enabled: true,
-                repeat: repeatVal
-            };
-            alarms.push(newAlarm);
-        }
-
-        saveAlarms();
-        toggleAddAlarmForm(false);
-        ensureAudioContext();
-        requestWakeLock();
-
-        // PHÁT THỬ 30S MỞ KHÓA PAUSE ➔ PLAY PHÁT TIẾP KHI CÀI ĐẶT BÁO THỨC YOUTUBE
-        if (currentAlarmType === 'youtube' && youtubeVideoId) {
-            if (preplay) {
-                startYoutubePreplay(youtubeVideoId, continuousLoop, youtubeTitle, true, preplayDuration);
-            }
-        }
-    }
-
-    function toggleAlarmEnabled(id, enabled) {
-        const item = alarms.find(a => a.id === id);
-        if (item) {
-            item.enabled = enabled;
-            saveAlarms();
-            if (enabled) {
-                ensureAudioContext();
-                requestWakeLock();
-                if (item.type === 'youtube') {
-                    const vid = extractYouTubeId(item.youtubeUrl || '') || item.youtubeVideoId;
-                    if (vid && item.preplay !== false && item.preplay1s !== false) {
-                        startYoutubePreplay(vid, item.continuousLoop !== false, item.youtubeTitle, true, item.preplayDuration || 30);
-                    }
-                }
-            }
-        }
-    }
-
-    function deleteAlarmItem(id) {
-        if (confirm('Xác nhận xóa mốc hẹn giờ này?')) {
-            alarms = alarms.filter(a => a.id !== id);
-            saveAlarms();
-        }
-    }
-
-    function testAudioPreview() {
-        const fileId = formAudioFileSelect.value;
-        if (!fileId) {
-            alert('Hãy chọn một bài hát để nghe thử!');
-            return;
-        }
-        const name = formAudioFileSelect.options[formAudioFileSelect.selectedIndex].dataset.name;
-        playFile(fileId, name, true);
-    }
-
-    let isPreviewSpeaking = false;
-
-    async function testTtsPreview() {
-        const statusSpan = document.getElementById('ttsPreviewStatus');
-        const btnTest = document.getElementById('btnTestTts');
-
-        if (isPreviewSpeaking) {
-            stopCurrentSpeech();
-            isPreviewSpeaking = false;
-            if (statusSpan) statusSpan.innerText = '⏹ Đã dừng';
-            if (btnTest) btnTest.innerHTML = '<span>🔊 Thử đọc văn bản</span>';
-            setTimeout(() => { if (statusSpan && !isPreviewSpeaking) statusSpan.innerText = ''; }, 2000);
-            return;
-        }
-
-        const text = document.getElementById('formTtsText').value.trim();
-        if (!text) {
-            alert('Hãy nhập nội dung văn bản để thử đọc!');
-            return;
-        }
-        const engine = document.getElementById('formTtsEngine')?.value || 'device';
-        const voice = document.getElementById('formTtsVoice').value;
-        const rate = document.getElementById('formTtsRate').value;
-
-        isPreviewSpeaking = true;
-        if (statusSpan) statusSpan.innerText = '🔊 Đang đọc thử...';
-        if (btnTest) btnTest.innerHTML = '<span>⏹ Dừng đọc</span>';
-
-        try {
-            await speakTTS(text, voice, rate, engine, false);
-            if (statusSpan && isPreviewSpeaking) statusSpan.innerText = '✅ Đã phát âm';
-        } catch (e) {
-            if (statusSpan) statusSpan.innerText = '⚠️ Lỗi phát âm';
-        } finally {
-            isPreviewSpeaking = false;
-            if (btnTest) btnTest.innerHTML = '<span>🔊 Thử đọc văn bản</span>';
-            setTimeout(() => { if (statusSpan && !isPreviewSpeaking) statusSpan.innerText = ''; }, 3000);
-        }
-    }
-
-    function testTriggerAlarm(id) {
-        const alarm = alarms.find(a => a.id === id);
-        if (alarm) {
-            triggerAlarm(alarm);
-        }
-    }
-
-    // ==========================================
-    // 4B. YOUTUBE MUSIC HELPERS & PAUSE ➔ PLAY PERSISTENT ENGINE (IOS OPTIMIZED)
-    // ==========================================
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-    // Chuông báo thức dự phòng Web Audio API (Đảm bảo iPhone không bao giờ bị im lặng nếu YouTube bị chặn)
-    let alarmAudioCtx = null;
-    let alarmChimeInterval = null;
-    let ytAlarmWatchdogTimeout = null;
-
-    function ensureAudioContext() {
-        try {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (!alarmAudioCtx && AudioContextClass) {
-                alarmAudioCtx = new AudioContextClass();
-            }
-            if (alarmAudioCtx && alarmAudioCtx.state === 'suspended') {
-                alarmAudioCtx.resume();
-            }
-        } catch (e) {
-            console.warn("[AudioContext] Lỗi khởi tạo:", e);
-        }
-    }
-
-    ['touchstart', 'touchend', 'click', 'keydown'].forEach(evt => {
-        document.addEventListener(evt, ensureAudioContext, { passive: true });
-    });
-
-    function startBackupAlarmChime() {
-        stopBackupAlarmChime();
-        ensureAudioContext();
-        if (!alarmAudioCtx) return;
-
-        function playBellNote(freq, startTime, duration, vol = 0.3) {
-            if (!alarmAudioCtx) return;
-            try {
-                const osc = alarmAudioCtx.createOscillator();
-                const gain = alarmAudioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, startTime);
-                gain.gain.setValueAtTime(vol, startTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-                osc.connect(gain);
-                gain.connect(alarmAudioCtx.destination);
-                osc.start(startTime);
-                osc.stop(startTime + duration);
-            } catch (e) {}
-        }
-
-        function ringChimeCycle() {
-            if (!alarmAudioCtx) return;
-            const now = alarmAudioCtx.currentTime;
-            // Giai điệu chuông báo thức trong trẻo: E5, G#5, B5, E6
-            playBellNote(659.25, now, 0.35, 0.28);
-            playBellNote(830.61, now + 0.12, 0.35, 0.28);
-            playBellNote(987.77, now + 0.24, 0.4, 0.32);
-            playBellNote(1318.51, now + 0.36, 0.75, 0.38);
-        }
-
-        ringChimeCycle();
-        alarmChimeInterval = setInterval(ringChimeCycle, 1500);
-    }
-
-    function stopBackupAlarmChime() {
-        if (alarmChimeInterval) {
-            clearInterval(alarmChimeInterval);
-            alarmChimeInterval = null;
-        }
-        if (ytAlarmWatchdogTimeout) {
-            clearTimeout(ytAlarmWatchdogTimeout);
-            ytAlarmWatchdogTimeout = null;
-        }
-    }
-
-    // ==========================================
-    // CƠ CHẾ PHÁT 1S MỞ KHÓA ➔ TỰ CHUYỂN PAUSE SANG PLAY (IPHONE / SAFARI)
-    // ==========================================
-    let currentPersistentVid = null;
-    let isPersistentYtPreplayed = false;
-    let preplayStateTimer = null;
-    let preplaySafetyTimer = null;
-    let silentAudioElement = null;
-
-    // Duy trì phiên âm thanh ngầm để Safari không thu hồi quyền Audio Context
-    function startSilentAudioSession() {
-        try {
-            if (!silentAudioElement) {
-                // Buffer âm thanh câm chuẩn WAV 0.1s
-                silentAudioElement = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
-                silentAudioElement.loop = true;
-                silentAudioElement.volume = 0.001;
-            }
-            silentAudioElement.play().catch(() => {});
-        } catch (e) {}
-    }
-
-    // Hiển thị thông báo Toast nhanh trên màn hình
-    function showAppToast(msg, icon = '⚡') {
-        let container = document.getElementById('appToastContainer');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'appToastContainer';
-            container.className = 'app-toast-container';
-            document.body.appendChild(container);
-        }
-        const toast = document.createElement('div');
-        toast.className = 'app-toast';
-        toast.innerHTML = `<span>${icon}</span><span>${escapeHtml(msg)}</span>`;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(-12px)';
-            setTimeout(() => toast.remove(), 320);
-        }, 4200);
-    }
-
-    // Gửi lệnh qua postMessage đến Persistent Master YouTube Player
-    function sendPersistentYtCommand(func, args = '') {
-        const iframe = document.getElementById('persistentYtIframe');
+    setDefaultTime();
+
+    // Điều khiển iframe YouTube
+    function sendYtCommand(func, args = []) {
+        const iframe = document.getElementById('ytIframe');
         if (iframe && iframe.contentWindow) {
             iframe.contentWindow.postMessage(JSON.stringify({
                 event: 'command',
@@ -2794,668 +588,252 @@
         }
     }
 
-    // Giữ hàm sendYtCommand tương thích
-    function sendYtCommand(func, args = '') {
-        sendPersistentYtCommand(func, args);
-    }
-
-    let isPreplayingNow = false;
-    let preplayCountdownInterval = null;
-    let preplaySecondsRemaining = 0;
-
-    // Khởi động phát thử (mặc định 30s) trong lúc người dùng chạm để mở khóa Audio Safari, sau đó Pause để đến giờ hẹn phát tiếp
-    function startYoutubePreplay(videoId, isLoop = true, title = '', notify = true, durationSec = 30) {
-        if (!videoId) return;
-        ensureAudioContext();
-        startSilentAudioSession();
-        requestWakeLock();
-
-        const wrapper = document.getElementById('persistentYtWrapper');
-        const iframe = document.getElementById('persistentYtIframe');
-        const badge = document.getElementById('persistentYtBadge');
-        const badgeText = document.getElementById('persistentYtBadgeText');
-        const btnPause = document.getElementById('btnBadgePauseNow');
-        const track = document.getElementById('preplayProgressBarTrack');
-        const bar = document.getElementById('preplayProgressBar');
-        const formBtnSpan = document.getElementById('preactBtnText');
-
-        if (!wrapper || !iframe) return;
-
-        // Xóa các timer trước đó nếu có
-        if (preplayCountdownInterval) {
-            clearInterval(preplayCountdownInterval);
-            preplayCountdownInterval = null;
-        }
-        if (preplayStateTimer) {
-            clearTimeout(preplayStateTimer);
-            preplayStateTimer = null;
-        }
-        if (preplaySafetyTimer) {
-            clearTimeout(preplaySafetyTimer);
-            preplaySafetyTimer = null;
-        }
-
-        const dur = Math.max(1, parseInt(durationSec, 10) || 30);
-        preplaySecondsRemaining = dur;
-        isPreplayingNow = true;
-
-        const originParam = encodeURIComponent(window.location.origin);
-        const targetSrc = `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&playsinline=1&autoplay=1&mute=0&controls=1&loop=${isLoop ? 1 : 0}&playlist=${videoId}&origin=${originParam}`;
-
-        // Đưa khung phát lên góc dưới màn hình và hiển thị huy hiệu đếm ngược
-        wrapper.className = 'persistent-yt-wrapper yt-mode-preplaying';
-        if (badge) {
-            badge.style.display = 'flex';
-            if (badgeText) badgeText.innerHTML = `🔊 Đang phát thử: còn <strong id="preplaySecCount">${preplaySecondsRemaining}</strong>s...`;
-        }
-        if (btnPause) {
-            btnPause.style.display = 'inline-flex';
-            btnPause.innerHTML = '⏸️ Dừng ngay';
-        }
-        if (track) track.style.display = 'block';
-        if (bar) bar.style.width = '0%';
-        if (formBtnSpan) formBtnSpan.innerHTML = '⏸️ Dừng phát thử ngay';
-
-        currentPersistentVid = videoId;
-        isPersistentYtPreplayed = false;
-
-        // Nạp video nếu chưa nạp hoặc đổi video khác
-        if (!iframe.src || !iframe.src.includes(videoId)) {
-            iframe.src = targetSrc;
-        }
-
-        // Liên tục bắn lệnh mở tiếng và play trong luồng user gesture
-        const burstUnlock = () => {
-            sendPersistentYtCommand('unMute');
-            sendPersistentYtCommand('setVolume', 100);
-            sendPersistentYtCommand('playVideo');
-        };
-        burstUnlock();
-        setTimeout(burstUnlock, 300);
-        setTimeout(burstUnlock, 700);
-
-        if (notify) {
-            showAppToast(`Đang phát thử ${dur}s để mở khóa quyền âm thanh YouTube [${videoId}]...`, '🔊');
-        }
-
-        // Bắt đầu đếm ngược từng giây
-        preplayCountdownInterval = setInterval(() => {
-            preplaySecondsRemaining--;
-            const secCountEl = document.getElementById('preplaySecCount');
-            if (secCountEl) secCountEl.innerText = preplaySecondsRemaining;
-            if (bar) {
-                const pct = Math.min(100, Math.max(0, ((dur - preplaySecondsRemaining) / dur) * 100));
-                bar.style.width = pct + '%';
-            }
-
-            if (preplaySecondsRemaining <= 0) {
-                pausePreplayNow();
-            }
-        }, 1000);
-
-        // Safety watchdog: tối đa thêm 5s luôn đảm bảo dừng
-        preplaySafetyTimer = setTimeout(() => {
-            if (isPreplayingNow) {
-                pausePreplayNow();
-            }
-        }, (dur + 5) * 1000);
-    }
-
-    // Tạm dừng phát thử, giữ nguyên vị trí video để đến giờ hẹn PHÁT TIẾP
-    function pausePreplayNow(event) {
-        if (event) event.stopPropagation();
-        if (preplayCountdownInterval) {
-            clearInterval(preplayCountdownInterval);
-            preplayCountdownInterval = null;
-        }
-        if (preplaySafetyTimer) {
-            clearTimeout(preplaySafetyTimer);
-            preplaySafetyTimer = null;
-        }
-
-        const wrapper = document.getElementById('persistentYtWrapper');
-        const badge = document.getElementById('persistentYtBadge');
-        const badgeText = document.getElementById('persistentYtBadgeText');
-        const btnPause = document.getElementById('btnBadgePauseNow');
-        const track = document.getElementById('preplayProgressBarTrack');
-        const formBtnSpan = document.getElementById('preactBtnText');
-
-        isPreplayingNow = false;
-        isPersistentYtPreplayed = true;
-
-        // GỬI LỆNH PAUSE VIDEO (KHÔNG SEEK VỀ 00:00 ĐỂ ĐẾN GIỜ HẸN PHÁT TIẾP TỪ ĐIỂM NÀY!)
-        sendPersistentYtCommand('pauseVideo');
-
-        if (btnPause) btnPause.style.display = 'none';
-        if (track) track.style.display = 'none';
-
-        if (badgeText) {
-            badgeText.innerHTML = '⏸️ Đã Pause! Đến giờ hẹn sẽ tự động phát tiếp.';
-        }
-
-        if (formBtnSpan) {
-            formBtnSpan.innerHTML = '✅ Đã Pause sẵn sàng!';
-            setTimeout(() => {
-                const currentDur = document.getElementById('formYoutubePreplayDuration')?.value || '30';
-                if (formBtnSpan && !isPreplayingNow) {
-                    formBtnSpan.innerHTML = `▶️ Phát thử ${currentDur}s & Nạp Pause ➔ Play`;
-                }
-            }, 3200);
-        }
-
-        showAppToast('Đã phát thử và tạm dừng! Đến đúng giờ hẹn sẽ tự chuyển Pause ➔ Play phát tiếp không cần chạm.', '✅');
-
-        // Thu nhỏ và ẩn xuống dưới nền sau 1.2s
-        setTimeout(() => {
-            if (wrapper && wrapper.classList.contains('yt-mode-preplaying')) {
-                wrapper.className = 'persistent-yt-wrapper yt-mode-idle';
-                if (badge) badge.style.display = 'none';
-            }
-        }, 1200);
-    }
-
-    // Giữ hàm startYoutube1sPreplay tương thích
-    function startYoutube1sPreplay(videoId, isLoop = true, title = '', notify = true) {
-        startYoutubePreplay(videoId, isLoop, title, notify, 1);
-    }
-
-    // Nút thủ công khởi động phát thử trong form
-    function manualTriggerPreplay() {
-        if (isPreplayingNow) {
-            pausePreplayNow();
-            return;
-        }
-
-        const url = document.getElementById('formYoutubeUrl')?.value.trim() || '';
-        const title = document.getElementById('formYoutubeTitle')?.value.trim() || '';
+    function onYtUrlChange() {
+        const url = document.getElementById('ytUrl').value;
         const vid = extractYouTubeId(url);
-        const isLoop = document.getElementById('formYoutubeLoop')?.checked !== false;
-        const dur = parseInt(document.getElementById('formYoutubePreplayDuration')?.value || '30', 10) || 30;
+        const box = document.getElementById('ytContainer');
+        const iframe = document.getElementById('ytIframe');
 
-        if (!vid) {
-            alert('Vui lòng dán link YouTube hoặc nhập ID video trước khi phát thử!');
-            return;
-        }
-
-        startYoutubePreplay(vid, isLoop, title, true, dur);
-    }
-
-    function manualTriggerPreplay1s() {
-        manualTriggerPreplay();
-    }
-
-    // Khởi động phát thử nhanh trực tiếp từ thẻ báo thức ở danh sách
-    function quickPreplayForAlarm(id, event) {
-        if (event) event.stopPropagation();
-        const alarm = alarms.find(a => a.id === id);
-        if (alarm && alarm.type === 'youtube') {
-            const vid = extractYouTubeId(alarm.youtubeUrl || '') || alarm.youtubeVideoId;
-            const dur = alarm.preplayDuration || 30;
-            if (vid) {
-                startYoutubePreplay(vid, alarm.continuousLoop !== false, alarm.youtubeTitle, true, dur);
-            }
-        }
-    }
-
-    // Xử lý chạm mở tiếng dự phòng cho iPhone / Safari (nếu cần)
-    function manualStartIosYoutube(event) {
-        if (event) event.stopPropagation();
-        ensureAudioContext();
-        startSilentAudioSession();
-        sendPersistentYtCommand('unMute');
-        sendPersistentYtCommand('setVolume', 100);
-        sendPersistentYtCommand('playVideo');
-        stopBackupAlarmChime();
-
-        const btnIos = document.getElementById('btnRingYtIosPlay');
-        if (btnIos) {
-            btnIos.style.background = 'linear-gradient(135deg, #059669, #047857)';
-            btnIos.style.borderColor = '#a7f3d0';
-            btnIos.innerHTML = '<span>✅ Đang phát nhạc YouTube</span>';
-            setTimeout(() => {
-                if (btnIos) btnIos.style.display = 'none';
-            }, 1800);
-        }
-    }
-
-    // Tự động kích hoạt nạp trước cho báo thức YouTube đang bật khi người dùng chạm bất kỳ đâu vào trang
-    ['touchstart', 'touchend', 'click', 'keydown'].forEach(evt => {
-        document.addEventListener(evt, () => {
-            ensureAudioContext();
-            startSilentAudioSession();
-            if (!isPersistentYtPreplayed && alarms && !isPreplayingNow) {
-                const activeYt = alarms.find(a => a.enabled && a.type === 'youtube');
-                if (activeYt) {
-                    const vid = extractYouTubeId(activeYt.youtubeUrl || '') || activeYt.youtubeVideoId;
-                    if (vid && currentPersistentVid !== vid) {
-                        startYoutubePreplay(vid, activeYt.continuousLoop !== false, activeYt.youtubeTitle, false, activeYt.preplayDuration || 30);
-                    }
-                }
-            }
-        }, { passive: true, once: false });
-    });
-
-    // Lắng nghe sự kiện YouTube API trả về qua window postMessage
-    window.addEventListener('message', (event) => {
-        try {
-            const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-            if (data && data.event === 'infoDelivery' && data.info) {
-                // playerState 1 = Đang phát
-                if (data.info.playerState === 1) {
-                    // Nếu đang trong trạng thái báo thức reo, ngừng chuông dự phòng
-                    const overlay = document.getElementById('alarmRingOverlay');
-                    if (overlay && overlay.style.display !== 'none') {
-                        stopBackupAlarmChime();
-                        const btnIos = document.getElementById('btnRingYtIosPlay');
-                        if (btnIos) btnIos.style.display = 'none';
-                    }
-                }
-            }
-        } catch (e) {}
-    });
-
-    // Screen Wake Lock API (Giúp màn hình sáng, báo thức reo chuẩn xác không bị iOS ngắt)
-    let wakeLockObj = null;
-    async function requestWakeLock() {
-        if ('wakeLock' in navigator && !wakeLockObj) {
-            try {
-                wakeLockObj = await navigator.wakeLock.request('screen');
-                wakeLockObj.addEventListener('release', () => {
-                    wakeLockObj = null;
-                });
-                console.log('[WakeLock] Đã kích hoạt giữ sáng màn hình cho báo thức');
-            } catch (err) {
-                console.warn('[WakeLock] Không thể yêu cầu:', err);
-            }
-        }
-    }
-
-    function releaseWakeLock() {
-        if (wakeLockObj) {
-            wakeLockObj.release().catch(() => {});
-            wakeLockObj = null;
-        }
-    }
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            const hasActiveAlarms = alarms && alarms.some(a => a.enabled);
-            if (hasActiveAlarms) requestWakeLock();
-        }
-    });
-
-    function extractYouTubeId(url) {
-        if (!url) return '';
-        const clean = String(url).trim();
-        if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) return clean;
-        const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([\w-]{11})/i);
-        return match ? match[1] : '';
-    }
-
-    function applyYoutubeSample(url, title) {
-        document.getElementById('formYoutubeUrl').value = url;
-        document.getElementById('formYoutubeTitle').value = title;
-        onYoutubeUrlChange();
-    }
-
-    function onYoutubeUrlChange() {
-        const url = document.getElementById('formYoutubeUrl').value.trim();
-        const vid = extractYouTubeId(url);
-        const statusSpan = document.getElementById('youtubePreviewStatus');
         if (vid) {
-            if (statusSpan) statusSpan.innerHTML = `✅ Nhận diện Video ID: <strong>${vid}</strong>`;
-        } else if (url) {
-            if (statusSpan) statusSpan.innerText = '⚠️ Link chưa đúng định dạng YouTube';
-        } else {
-            if (statusSpan) statusSpan.innerText = '';
-        }
-    }
-
-    let isYoutubeTesting = false;
-    function testYoutubePreview() {
-        const url = document.getElementById('formYoutubeUrl').value.trim();
-        const vid = extractYouTubeId(url);
-        const statusSpan = document.getElementById('youtubePreviewStatus');
-        const btnTest = document.getElementById('btnTestYoutube');
-        const previewBox = document.getElementById('youtubeFormPreviewBox');
-
-        if (isYoutubeTesting) {
-            if (previewBox) {
-                previewBox.innerHTML = '';
-                previewBox.style.display = 'none';
+            box.style.display = 'block';
+            const origin = encodeURIComponent(window.location.origin);
+            const src = `https://www.youtube-nocookie.com/embed/${vid}?enablejsapi=1&playsinline=1&autoplay=0&origin=${origin}`;
+            if (!iframe.src || !iframe.src.includes(vid)) {
+                iframe.src = src;
             }
-            isYoutubeTesting = false;
-            if (btnTest) btnTest.innerHTML = '<span>▶️ Nghe thử YouTube</span>';
-            if (statusSpan) statusSpan.innerText = '⏹ Đã dừng nghe thử';
-            setTimeout(() => { if (statusSpan && !isYoutubeTesting) statusSpan.innerText = ''; }, 2000);
-            return;
-        }
-
-        if (!vid) {
-            alert('Vui lòng nhập link YouTube hợp lệ trước khi nghe thử!');
-            return;
-        }
-
-        if (player) player.pause();
-        stopCurrentSpeech();
-
-        isYoutubeTesting = true;
-        if (btnTest) btnTest.innerHTML = '<span>⏹ Dừng nghe thử</span>';
-        if (statusSpan) statusSpan.innerText = '▶️ Đang phát thử video...';
-
-        if (previewBox) {
-            previewBox.style.display = 'block';
-            const originParam = encodeURIComponent(window.location.origin);
-            previewBox.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&playsinline=1&enablejsapi=1&origin=${originParam}" title="YouTube video preview" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; playsinline" playsinline="1" webkit-playsinline="1" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>`;
         }
     }
 
-    // Modal phát nhạc nhanh từ link YouTube (Trực tiếp từ thanh bài hát)
-    function openYoutubeDirectModal() {
-        document.getElementById('youtubeDirectModal').style.display = 'flex';
-        setTimeout(() => {
-            const input = document.getElementById('directYoutubeUrl');
-            if (input) input.focus();
-        }, 100);
-    }
-
-    function closeYoutubeDirectModal() {
-        document.getElementById('youtubeDirectModal').style.display = 'none';
-    }
-
-    function applyDirectYoutubeSample(url) {
-        document.getElementById('directYoutubeUrl').value = url;
-        playDirectYoutube();
-    }
-
-    let isDirectYoutubePlaying = false;
-    function playDirectYoutube() {
-        const input = document.getElementById('directYoutubeUrl');
-        const url = input.value.trim();
+    // Phát thử 30s rồi Pause
+    function startPreplay(seconds = 30) {
+        unlockAudio();
+        const url = document.getElementById('ytUrl').value;
         const vid = extractYouTubeId(url);
         if (!vid) {
-            alert('Vui lòng nhập link YouTube hợp lệ!');
+            alert('Vui lòng dán link YouTube hợp lệ!');
             return;
         }
 
-        // Dừng nhạc offline và TTS đang phát
-        if (player) player.pause();
-        stopCurrentSpeech();
+        const box = document.getElementById('ytContainer');
+        const iframe = document.getElementById('ytIframe');
+        const banner = document.getElementById('preplayStatus');
+        const preplayText = document.getElementById('preplayText');
 
-        const container = document.getElementById('directYoutubeFrameContainer');
-        const controls = document.getElementById('directYoutubeControls');
-        const titleEl = document.getElementById('directYoutubeTitle');
+        box.style.display = 'block';
+        banner.style.display = 'flex';
 
-        container.style.display = 'block';
-        const originParam = encodeURIComponent(window.location.origin);
-        container.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&playsinline=1&enablejsapi=1&origin=${originParam}" title="YouTube direct player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; playsinline" playsinline="1" webkit-playsinline="1" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>`;
+        const origin = encodeURIComponent(window.location.origin);
+        const loop = document.getElementById('continuousLoop').checked ? 1 : 0;
+        iframe.src = `https://www.youtube-nocookie.com/embed/${vid}?enablejsapi=1&playsinline=1&autoplay=1&mute=0&controls=1&loop=${loop}&playlist=${vid}&origin=${origin}`;
 
-        if (controls) controls.style.display = 'flex';
-        if (titleEl) titleEl.innerText = `▶️ Đang phát YouTube [${vid}]`;
+        let remain = seconds;
+        preplayText.innerText = `🔊 Đang phát thử: còn ${remain}s (sẽ tự Pause)...`;
 
-        isDirectYoutubePlaying = true;
-        playerTitleElem.innerText = `▶️ Đang phát YouTube: [${vid}]`;
-    }
+        clearInterval(preplayInterval);
+        clearTimeout(preplayTimer);
 
-    function stopDirectYoutube() {
-        const container = document.getElementById('directYoutubeFrameContainer');
-        const controls = document.getElementById('directYoutubeControls');
-        if (container) {
-            container.innerHTML = '';
-            container.style.display = 'none';
-        }
-        if (controls) controls.style.display = 'none';
-        isDirectYoutubePlaying = false;
-    }
-
-    // ==========================================
-    // 5. ALARM MONITORING & TRIGGERING
-    // ==========================================
-    function startAlarmMonitor() {
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            const now = new Date();
-            const curH = String(now.getHours()).padStart(2, '0');
-            const curM = String(now.getMinutes()).padStart(2, '0');
-            const curTime = `${curH}:${curM}`;
-            const curDateMinuteKey = `${now.toDateString()} ${curTime}`;
-
-            // Check if any alarm should ring right now
-            if (curDateMinuteKey !== lastTriggeredMinute) {
-                const matchedAlarms = alarms.filter(a => a.enabled && a.time === curTime);
-                if (matchedAlarms.length > 0) {
-                    lastTriggeredMinute = curDateMinuteKey;
-                    // Trigger the first matched alarm
-                    triggerAlarm(matchedAlarms[0]);
-
-                    // Handle repeat setting
-                    matchedAlarms.forEach(a => {
-                        if (a.repeat === false) {
-                            a.enabled = false;
-                        }
-                    });
-                    saveAlarms();
-                }
+        preplayInterval = setInterval(() => {
+            remain--;
+            if (remain > 0) {
+                preplayText.innerText = `🔊 Đang phát thử: còn ${remain}s (sẽ tự Pause)...`;
+            } else {
+                pausePreplay();
             }
-
-            updateNextAlarmBanner();
         }, 1000);
+
+        preplayTimer = setTimeout(pausePreplay, seconds * 1000);
     }
 
-    function triggerAlarm(alarm) {
-        console.log("[ALARM TRIGGERED]", alarm);
-        const overlay = document.getElementById('alarmRingOverlay');
-        document.getElementById('ringTime').innerText = alarm.time;
-        document.getElementById('ringTitle').innerText = alarm.label || (
-            alarm.type === 'audio' ? 'Báo thức Âm nhạc' :
-            alarm.type === 'youtube' ? 'Báo thức YouTube' : 'Báo thức Lời đọc'
-        );
-        const loopBadge = document.getElementById('ringLoopBadge');
-        const ringSpacer = document.getElementById('ringYtSpacer');
-        const persistentWrapper = document.getElementById('persistentYtWrapper');
-        const persistentIframe = document.getElementById('persistentYtIframe');
-        const btnIos = document.getElementById('btnRingYtIosPlay');
-
-        // Stop any running sound
-        if (player) player.pause();
-        stopCurrentSpeech();
-        stopDirectYoutube();
-        stopBackupAlarmChime();
-
-        if (ringSpacer) ringSpacer.style.display = 'none';
-        if (btnIos) btnIos.style.display = 'none';
-
-        if (alarm.type === 'audio') {
-            if (persistentWrapper) persistentWrapper.className = 'persistent-yt-wrapper yt-mode-idle';
-            if (loopBadge) loopBadge.style.display = 'none';
-            document.getElementById('ringSub').innerText = `🎵 Bài hát: ${alarm.fileName || 'Âm thanh hẹn giờ'}`;
-            overlay.style.display = 'flex';
-            playFile(alarm.fileId, alarm.fileName || 'Báo thức', true);
-        } else if (alarm.type === 'youtube') {
-            const vid = extractYouTubeId(alarm.youtubeUrl || '') || alarm.youtubeVideoId;
-            const isLoop = (alarm.continuousLoop !== false);
-            document.getElementById('ringSub').innerText = `📺 Nhạc YouTube: "${escapeHtml(alarm.youtubeTitle || 'Video YouTube')}"`;
-
-            if (loopBadge) {
-                loopBadge.style.display = isLoop ? 'inline-flex' : 'none';
-                loopBadge.innerText = isLoop ? '🔁 Đang lặp lại phát nhạc YouTube cho đến khi tắt...' : '▶️ Đang phát nhạc YouTube...';
-            }
-
-            if (ringSpacer) ringSpacer.style.display = 'block';
-
-            // Chuyển Persistent Master YouTube Player sang chế độ Ringing (chính giữa màn hình báo thức)
-            if (persistentWrapper && persistentIframe && vid) {
-                const originParam = encodeURIComponent(window.location.origin);
-                const targetSrc = `https://www.youtube-nocookie.com/embed/${vid}?enablejsapi=1&playsinline=1&autoplay=1&mute=0&controls=1&loop=${isLoop ? 1 : 0}&playlist=${vid}&origin=${originParam}`;
-
-                persistentWrapper.className = 'persistent-yt-wrapper yt-mode-ringing';
-
-                if (!persistentIframe.src || !persistentIframe.src.includes(vid)) {
-                    persistentIframe.src = targetSrc;
-                }
-
-                // Chuyển trạng thái từ PAUSE sang PLAY ngay lập tức (không cần tải lại DOM)
-                const burstPlay = () => {
-                    if (alarm.resumeMode === 'start') {
-                        sendPersistentYtCommand('seekTo', [0, true]);
-                    }
-                    sendPersistentYtCommand('unMute');
-                    sendPersistentYtCommand('setVolume', 100);
-                    sendPersistentYtCommand('playVideo');
-                };
-                burstPlay();
-                setTimeout(burstPlay, 200);
-                setTimeout(burstPlay, 600);
-            }
-
-            // Watchdog dự phòng an toàn: nếu sau 3.5s YouTube chưa phát hoặc bị iOS tạm chặn, bật chuông dự phòng + nút chạm
-            if (ytAlarmWatchdogTimeout) clearTimeout(ytAlarmWatchdogTimeout);
-            ytAlarmWatchdogTimeout = setTimeout(() => {
-                startBackupAlarmChime();
-                if (btnIos) {
-                    btnIos.style.display = 'flex';
-                    btnIos.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-                    btnIos.style.borderColor = '#fecaca';
-                    btnIos.innerHTML = `<span class="pulse-dot"></span><span>▶️ Chạm vào đây để phát tiếng YouTube ${isIOS ? '(iPhone)' : ''}</span>`;
-                }
-            }, 3500);
-
-            overlay.style.display = 'flex';
-
-            // Nếu người dùng chạm bất kỳ đâu trên màn hình, cũng kích hoạt unMute/playVideo
-            const onOverlayTap = () => {
-                manualStartIosYoutube();
-                overlay.removeEventListener('click', onOverlayTap);
-                overlay.removeEventListener('touchstart', onOverlayTap);
-            };
-            overlay.addEventListener('click', onOverlayTap, { once: true });
-            overlay.addEventListener('touchstart', onOverlayTap, { once: true, passive: true });
-        } else {
-            if (persistentWrapper) persistentWrapper.className = 'persistent-yt-wrapper yt-mode-idle';
-            const isJa = (alarm.lang === 'ja-JP') || (alarm.voice && alarm.voice.startsWith('ja'));
-            const langLabel = isJa ? '🇯🇵 Tiếng Nhật' : '🇻🇳 Tiếng Việt';
-            document.getElementById('ringSub').innerText = `🗣️ Lời đọc (${langLabel}): "${alarm.ttsText}"`;
-
-            const isLoop = (alarm.continuousLoop !== false);
-            if (loopBadge) {
-                loopBadge.style.display = isLoop ? 'inline-flex' : 'none';
-                loopBadge.innerText = isLoop ? '🔁 Đang lặp lại phát âm cho đến khi tắt...' : '🔊 Đang phát âm lời đọc...';
-            }
-            overlay.style.display = 'flex';
-            speakTTS(alarm.ttsText, alarm.voice, alarm.rate, alarm.engine || 'device', isLoop);
-        }
+    // Tạm dừng phát thử
+    function pausePreplay() {
+        clearInterval(preplayInterval);
+        clearTimeout(preplayTimer);
+        sendYtCommand('pauseVideo');
+        const banner = document.getElementById('preplayStatus');
+        const preplayText = document.getElementById('preplayText');
+        if (preplayText) preplayText.innerText = '⏸️ Đã Pause! Đến giờ hẹn sẽ tự động phát tiếp.';
+        setTimeout(() => {
+            if (banner) banner.style.display = 'none';
+        }, 1500);
     }
 
-    function dismissCurrentAlarm() {
-        document.getElementById('alarmRingOverlay').style.display = 'none';
-        if (player) player.pause();
-        stopCurrentSpeech();
-        stopBackupAlarmChime();
+    // Lưu mốc báo thức
+    function saveAlarm() {
+        unlockAudio();
+        const timeVal = document.getElementById('alarmTime').value;
+        const urlVal = document.getElementById('ytUrl').value;
+        const labelVal = document.getElementById('alarmLabel').value.trim();
+        const preplay = document.getElementById('preplay30s').checked;
+        const loop = document.getElementById('continuousLoop').checked;
 
-        // Pause YouTube, chuyển wrapper về idle
-        sendPersistentYtCommand('pauseVideo');
-
-        const persistentWrapper = document.getElementById('persistentYtWrapper');
-        if (persistentWrapper) {
-            persistentWrapper.className = 'persistent-yt-wrapper yt-mode-idle';
+        if (!timeVal) {
+            alert('Vui lòng chọn giờ báo thức!');
+            return;
         }
-
-        const ringSpacer = document.getElementById('ringYtSpacer');
-        if (ringSpacer) ringSpacer.style.display = 'none';
-
-        const btnIos = document.getElementById('btnRingYtIosPlay');
-        if (btnIos) btnIos.style.display = 'none';
-
-        // Nạp sẵn mốc hẹn giờ YouTube tiếp theo nếu còn
-        const nextYtAlarm = alarms.find(a => a.enabled && a.type === 'youtube');
-        if (nextYtAlarm) {
-            const nextVid = extractYouTubeId(nextYtAlarm.youtubeUrl || '') || nextYtAlarm.youtubeVideoId;
-            if (nextVid && nextYtAlarm.preplay !== false && nextYtAlarm.preplay1s !== false) {
-                startYoutubePreplay(nextVid, nextYtAlarm.continuousLoop !== false, nextYtAlarm.youtubeTitle, false, nextYtAlarm.preplayDuration || 30);
-            }
-        }
-    }
-
-    function updateNextAlarmBanner() {
-        const enabledAlarms = alarms.filter(a => a.enabled);
-        const bannerDesc = document.getElementById('nextAlarmDesc');
-        const bannerCountdown = document.getElementById('nextAlarmCountdown');
-
-        if (enabledAlarms.length === 0) {
-            bannerDesc.innerText = 'Chưa có mốc hẹn giờ nào bật';
-            bannerCountdown.innerText = '--:--:--';
+        const vid = extractYouTubeId(urlVal);
+        if (!vid) {
+            alert('Vui lòng dán link YouTube hợp lệ!');
             return;
         }
 
-        const now = new Date();
-        let closestAlarm = null;
-        let minDiff = Infinity;
+        const newAlarm = {
+            id: Date.now().toString(),
+            time: timeVal,
+            url: urlVal,
+            vid: vid,
+            label: labelVal || `YouTube (${vid})`,
+            loop: loop,
+            enabled: true
+        };
 
-        enabledAlarms.forEach(a => {
-            const [h, m] = a.time.split(':').map(Number);
-            let target = new Date(now);
-            target.setHours(h, m, 0, 0);
-            if (target <= now) {
-                target.setDate(target.getDate() + 1);
-            }
-            const diff = target - now;
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestAlarm = a;
-            }
-        });
+        alarms.push(newAlarm);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+        renderAlarms();
 
-        if (closestAlarm) {
-            const hours = Math.floor(minDiff / 3600000);
-            const minutes = Math.floor((minDiff % 3600000) / 60000);
-            const seconds = Math.floor((minDiff % 60000) / 1000);
-
-            const hh = String(hours).padStart(2, '0');
-            const mm = String(minutes).padStart(2, '0');
-            const ss = String(seconds).padStart(2, '0');
-
-            const typeIcon = closestAlarm.type === 'audio' ? '🎵' : (closestAlarm.type === 'youtube' ? '📺' : '🗣️');
-            const titleOrName = closestAlarm.label || (
-                closestAlarm.type === 'audio' ? closestAlarm.fileName :
-                closestAlarm.type === 'youtube' ? (closestAlarm.youtubeTitle || 'Nhạc YouTube') : 'Lời đọc TTS'
-            );
-            bannerDesc.innerHTML = `<strong>${closestAlarm.time}</strong> ${typeIcon} ${escapeHtml(titleOrName)}`;
-            bannerCountdown.innerText = `${hh}:${mm}:${ss}`;
+        if (preplay) {
+            startPreplay(30);
+        } else {
+            alert(`Đã lưu báo thức ${timeVal}!`);
         }
     }
 
-    // ==========================================
-    // 6. NAVIGATION & TABS
-    // ==========================================
-    function switchMainTab(tab) {
-        const tabBtnPlaylist = document.getElementById('tabBtnPlaylist');
-        const tabBtnAlarms = document.getElementById('tabBtnAlarms');
-        const viewPlaylist = document.getElementById('viewPlaylist');
-        const viewAlarms = document.getElementById('viewAlarms');
-
-        if (tab === 'playlist') {
-            tabBtnPlaylist.classList.add('active');
-            tabBtnAlarms.classList.remove('active');
-            viewPlaylist.classList.add('active');
-            viewAlarms.classList.remove('active');
-        } else {
-            tabBtnAlarms.classList.add('active');
-            tabBtnPlaylist.classList.remove('active');
-            viewAlarms.classList.add('active');
-            viewPlaylist.classList.remove('active');
+    // Bật/Tắt mốc báo thức
+    function toggleAlarm(id) {
+        unlockAudio();
+        const item = alarms.find(a => a.id === id);
+        if (item) {
+            item.enabled = !item.enabled;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+            renderAlarms();
+            // Nếu bật, nạp sẵn video vào player
+            if (item.enabled) {
+                document.getElementById('ytUrl').value = item.url;
+                onYtUrlChange();
+            }
         }
+    }
+
+    // Xóa mốc báo thức
+    function deleteAlarm(id) {
+        if (!confirm('Bạn có chắc muốn xóa mốc báo thức này?')) return;
+        alarms = alarms.filter(a => a.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+        renderAlarms();
+    }
+
+    // Thử báo thức ngay lập tức
+    function triggerAlarmNow(id) {
+        unlockAudio();
+        const item = alarms.find(a => a.id === id);
+        if (item) triggerAlarm(item);
+    }
+
+    // Hiển thị danh sách
+    function renderAlarms() {
+        const listEl = document.getElementById('alarmList');
+        if (!alarms || alarms.length === 0) {
+            listEl.innerHTML = '<div class="empty-hint">Chưa có mốc báo thức nào. Hãy thêm mốc ở trên!</div>';
+            return;
+        }
+
+        // Sắp xếp theo giờ tăng dần
+        alarms.sort((a, b) => a.time.localeCompare(b.time));
+
+        listEl.innerHTML = alarms.map(a => `
+            <div class="alarm-item ${a.enabled ? '' : 'disabled'}">
+                <div class="alarm-info">
+                    <div class="alarm-time">${a.time}</div>
+                    <div class="alarm-title">🎵 ${escapeHtml(a.label)}</div>
+                </div>
+                <div class="alarm-actions">
+                    <button type="button" class="btn-icon" title="Thử phát ngay" onclick="triggerAlarmNow('${a.id}')">▶️</button>
+                    <button type="button" class="btn-icon" title="Xóa" onclick="deleteAlarm('${a.id}')">🗑️</button>
+                    <label class="toggle-switch">
+                        <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAlarm('${a.id}')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        `).join('');
     }
 
     function escapeHtml(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+        return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
     }
-</script>
 
+    // Kiểm tra giờ hẹn
+    function checkAlarms(currentHHMM) {
+        const match = alarms.find(a => a.enabled && a.time === currentHHMM);
+        if (match) {
+            triggerAlarm(match);
+        }
+    }
+
+    // Kích hoạt chuông reo báo thức
+    function triggerAlarm(alarm) {
+        unlockAudio();
+        activeRingingAlarm = alarm;
+
+        const overlay = document.getElementById('ringOverlay');
+        const ringTime = document.getElementById('ringTime');
+        const ringTitle = document.getElementById('ringTitle');
+        const ringYtWrapper = document.getElementById('ringYtWrapper');
+        const iframe = document.getElementById('ytIframe');
+        const ytBox = document.getElementById('ytContainer');
+
+        ringTime.innerText = alarm.time;
+        ringTitle.innerText = `🎵 ${alarm.label || 'Báo thức YouTube'}`;
+
+        // Chuyển iframe vào modal chuông reo
+        ytBox.style.display = 'none';
+        ringYtWrapper.innerHTML = '';
+        ringYtWrapper.appendChild(iframe);
+
+        overlay.style.display = 'flex';
+
+        // Lệnh phát video YouTube âm lượng tối đa
+        const origin = encodeURIComponent(window.location.origin);
+        const loop = alarm.loop ? 1 : 0;
+        const targetSrc = `https://www.youtube-nocookie.com/embed/${alarm.vid}?enablejsapi=1&playsinline=1&autoplay=1&mute=0&controls=1&loop=${loop}&playlist=${alarm.vid}&origin=${origin}`;
+
+        if (!iframe.src || !iframe.src.includes(alarm.vid)) {
+            iframe.src = targetSrc;
+        }
+
+        const burstPlay = () => {
+            sendYtCommand('unMute');
+            sendYtCommand('setVolume', 100);
+            sendYtCommand('playVideo');
+        };
+        burstPlay();
+        setTimeout(burstPlay, 300);
+        setTimeout(burstPlay, 800);
+    }
+
+    // Tắt chuông báo thức
+    function stopAlarm() {
+        activeRingingAlarm = null;
+        sendYtCommand('pauseVideo');
+
+        const overlay = document.getElementById('ringOverlay');
+        const ringYtWrapper = document.getElementById('ringYtWrapper');
+        const ytBox = document.getElementById('ytContainer');
+        const iframe = document.getElementById('ytIframe');
+
+        overlay.style.display = 'none';
+
+        // Trả iframe về lại container ban đầu
+        ringYtWrapper.innerHTML = '';
+        ytBox.appendChild(iframe);
+        ytBox.style.display = 'none';
+    }
+
+    // Mở khóa âm thanh lần đầu khi người dùng chạm bất kỳ đâu
+    ['click', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, unlockAudio, { once: true, passive: true });
+    });
+
+    renderAlarms();
+</script>
 </body>
 </html>

@@ -537,21 +537,6 @@
             </label>
         </div>
 
-        <!-- TÙY CHỌN ÂM THANH PHỤ TRỢ: TẮT HOÀN TOÀN (MẶC ĐỊNH) HOẶC ÂM THANH TRẮNG -->
-        <div class="form-group" style="margin-top: 4px;">
-            <label class="form-label">🔊 Âm thanh phụ trợ khi báo thức reo:</label>
-            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px; background: #0f172a; border: 1px solid var(--border); padding: 10px 12px; border-radius: 10px;">
-                <label class="checkbox-label" style="cursor: pointer;">
-                    <input type="radio" name="auxAudioOption" value="none" checked>
-                    <span>🚫 <b>Tắt hoàn toàn</b> (Chỉ phát nhạc YouTube thuần túy, không lẫn tạp âm)</span>
-                </label>
-                <label class="checkbox-label" style="cursor: pointer;">
-                    <input type="radio" name="auxAudioOption" value="white_noise">
-                    <span>🌧️ <b>Âm thanh trắng (White Noise)</b> (Tiếng mưa rào dịu êm giữ sóng âm)</span>
-                </label>
-            </div>
-        </div>
-
         <!-- KHUNG PHÁT YOUTUBE MASTER DUY NHẤT (CỐ ĐỊNH, KHÔNG BAO GIỜ DI CHUYỂN DOM) -->
         <div id="ytMasterContainer" class="mode-idle">
             <iframe id="ytIframe"
@@ -617,8 +602,9 @@
     let preplayTimer = null;
     let preplayInterval = null;
     let audioCtx = null;
-    let whiteNoiseSource = null;
-    let whiteNoiseGain = null;
+    let backupOscillator = null;
+    let backupGain = null;
+    let backupChimeInterval = null;
 
     // CÁC MẪU CẤU HÌNH YOUTUBE CÓ SẴN
     const SAMPLE_PRESETS = [
@@ -681,7 +667,6 @@
             vid: SAMPLE_PRESETS[0].vid,
             label: SAMPLE_PRESETS[0].label,
             loop: true,
-            auxSound: 'none',
             enabled: true
         };
 
@@ -692,7 +677,6 @@
             vid: SAMPLE_PRESETS[1].vid,
             label: SAMPLE_PRESETS[1].label,
             loop: true,
-            auxSound: 'none',
             enabled: true
         };
 
@@ -728,51 +712,44 @@
         }
     }
 
-    // ÂM THANH TRẮNG (WHITE NOISE) ÊM DỊU: Dành cho ai thích có tiếng sóng âm/mưa rào nhẹ nền
-    function startWhiteNoise() {
+    // Chuông phụ dự phòng (Web Audio Chime) đề phòng trường hợp video bị gỡ bản quyền hoặc lỗi mạng
+    function startBackupAlarmChime() {
         unlockAudio();
-        stopWhiteNoise();
+        stopBackupAlarmChime();
         if (!audioCtx) return;
 
-        try {
-            const bufferSize = audioCtx.sampleRate * 2;
-            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const output = noiseBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                output[i] = (Math.random() * 2 - 1) * 0.5;
+        let noteIndex = 0;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+
+        backupChimeInterval = setInterval(() => {
+            if (!activeRingingAlarm) {
+                stopBackupAlarmChime();
+                return;
             }
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(notes[noteIndex % notes.length], audioCtx.currentTime);
+                noteIndex++;
 
-            whiteNoiseSource = audioCtx.createBufferSource();
-            whiteNoiseSource.buffer = noiseBuffer;
-            whiteNoiseSource.loop = true;
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
 
-            // Bộ lọc Lowpass tạo tiếng mưa rào / gió thổi êm dịu, loại bỏ tiếng chói gắt
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(500, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
 
-            whiteNoiseGain = audioCtx.createGain();
-            whiteNoiseGain.gain.setValueAtTime(0.04, audioCtx.currentTime); // Rất nhỏ, dịu nhẹ
-
-            whiteNoiseSource.connect(filter);
-            filter.connect(whiteNoiseGain);
-            whiteNoiseGain.connect(audioCtx.destination);
-
-            whiteNoiseSource.start();
-        } catch (e) {
-            console.warn('Lỗi phát âm thanh trắng:', e);
-        }
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.36);
+            } catch (e) {}
+        }, 400);
     }
 
-    function stopWhiteNoise() {
-        if (whiteNoiseSource) {
-            try {
-                whiteNoiseSource.stop();
-                whiteNoiseSource.disconnect();
-            } catch (e) {}
-            whiteNoiseSource = null;
+    function stopBackupAlarmChime() {
+        if (backupChimeInterval) {
+            clearInterval(backupChimeInterval);
+            backupChimeInterval = null;
         }
-        whiteNoiseGain = null;
     }
 
     // Cập nhật đồng hồ thời gian thực
@@ -926,8 +903,6 @@
         const labelVal = document.getElementById('alarmLabel').value.trim();
         const preplay = document.getElementById('preplay30s').checked;
         const loop = document.getElementById('continuousLoop').checked;
-        const auxRadio = document.querySelector('input[name="auxAudioOption"]:checked');
-        const auxSound = auxRadio ? auxRadio.value : 'none';
 
         if (!timeVal) {
             alert('Vui lòng chọn giờ báo thức!');
@@ -946,7 +921,6 @@
             vid: vid,
             label: labelVal || `YouTube (${vid})`,
             loop: loop,
-            auxSound: auxSound,
             enabled: true
         };
 
@@ -1011,15 +985,11 @@
         // Sắp xếp theo giờ tăng dần
         alarms.sort((a, b) => a.time.localeCompare(b.time));
 
-        listEl.innerHTML = alarms.map(a => {
-            const auxTag = a.auxSound === 'white_noise' 
-                ? '<span style="display: inline-block; font-size: 0.7rem; color: #38bdf8; background: #0c4a6e; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">🌧️ White Noise</span>' 
-                : '';
-            return `
+        listEl.innerHTML = alarms.map(a => `
             <div class="alarm-item ${a.enabled ? '' : 'disabled'}">
                 <div class="alarm-info">
                     <div class="alarm-time">${a.time}</div>
-                    <div class="alarm-title">🎵 ${escapeHtml(a.label)}${auxTag}</div>
+                    <div class="alarm-title">🎵 ${escapeHtml(a.label)}</div>
                 </div>
                 <div class="alarm-actions">
                     <button type="button" class="btn-icon" title="Thử phát ngay" onclick="triggerAlarmNow('${a.id}')">▶️</button>
@@ -1030,8 +1000,7 @@
                     </label>
                 </div>
             </div>
-        `;
-        }).join('');
+        `).join('');
     }
 
     function escapeHtml(str) {
@@ -1083,18 +1052,18 @@
         setTimeout(burstPlay, 1000);
         setTimeout(burstPlay, 2000);
 
-        // NẾU NGƯỜI DÙNG BẬT ÂM THANH TRẮNG -> PHÁT WHITE NOISE ÊM DỊU; NẾU KHÔNG -> TUYỆT ĐỐI KHÔNG PHÁT ÂM PHỤ NÀO
-        if (alarm.auxSound === 'white_noise') {
-            startWhiteNoise();
-        } else {
-            stopWhiteNoise();
-        }
+        // Chuông phụ dự phòng: Nếu sau 3.5 giây video không thể phát (do bản quyền hoặc mạng), chuông chimes dự phòng sẽ kêu
+        setTimeout(() => {
+            if (activeRingingAlarm) {
+                startBackupAlarmChime();
+            }
+        }, 3500);
     }
 
     // Tắt chuông báo thức
     function stopAlarm() {
         activeRingingAlarm = null;
-        stopWhiteNoise();
+        stopBackupAlarmChime();
         sendYtCommand('pauseVideo');
 
         const overlay = document.getElementById('ringOverlay');
@@ -1110,6 +1079,16 @@
             container.className = 'mode-idle';
         }
     }
+
+    // Lắng nghe thông điệp từ YouTube API để tắt chuông phụ khi video phát thành công
+    window.addEventListener('message', (event) => {
+        try {
+            const data = (typeof event.data === 'string') ? JSON.parse(event.data) : event.data;
+            if (data && data.event === 'onStateChange' && data.info === 1) { // 1 = YT.PlayerState.PLAYING
+                stopBackupAlarmChime();
+            }
+        } catch (e) {}
+    });
 
     // Mở khóa âm thanh lần đầu khi người dùng chạm bất kỳ đâu
     ['click', 'touchstart'].forEach(evt => {

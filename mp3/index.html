@@ -1127,6 +1127,87 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Persistent Master YouTube Alarm Player (Pause ➔ Play Engine) */
+        .persistent-yt-wrapper {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .persistent-yt-wrapper.yt-mode-idle {
+            position: fixed;
+            bottom: -9999px;
+            left: -9999px;
+            width: 320px;
+            height: 180px;
+            opacity: 0.001;
+            pointer-events: none;
+            z-index: -999;
+        }
+
+        .persistent-yt-wrapper.yt-mode-preplaying {
+            position: fixed;
+            bottom: 85px;
+            right: 16px;
+            width: 250px;
+            height: 140px;
+            border-radius: 12px;
+            overflow: hidden;
+            z-index: 99999;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            border: 2px solid #3b82f6;
+            background: #000;
+            opacity: 1;
+            pointer-events: auto;
+            animation: slideUpPreplay 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .persistent-yt-wrapper.yt-mode-ringing {
+            position: fixed;
+            top: calc(50% + 20px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - 64px);
+            max-width: 370px;
+            aspect-ratio: 16/9;
+            height: auto;
+            border-radius: 14px;
+            overflow: hidden;
+            z-index: 10001;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+            background: #000;
+            opacity: 1;
+            pointer-events: auto;
+            animation: zoomInRing 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .persistent-yt-badge {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            right: 6px;
+            background: rgba(15, 23, 42, 0.9);
+            color: #38bdf8;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 5px 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+        }
+
+        @keyframes slideUpPreplay {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes zoomInRing {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
@@ -1345,32 +1426,32 @@
                         </label>
                     </div>
 
-                    <!-- TỰ ĐỘNG KÍCH HOẠT SẴN YOUTUBE KHI THIẾT LẬP BÁO THỨC -->
-                    <div class="form-row" style="margin-top: 4px; background: #eff6ff; padding: 8px 10px; border-radius: 8px; border: 1px solid #bfdbfe;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; color: #1e40af; margin: 0;">
-                            <input type="checkbox" id="formYoutubeAutoPreactivate" checked>
-                            <span>⚡ Tự động kích hoạt YouTube khi thiết lập báo thức (Tối ưu iPhone/Safari)</span>
+                    <!-- CÀI ĐẶT PHÁT THỬ 1S MỞ KHÓA PAUSE ➔ PLAY -->
+                    <div class="form-row" style="margin-top: 4px; background: #eff6ff; padding: 9px 12px; border-radius: 9px; border: 1px solid #bfdbfe;">
+                        <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; color: #1e40af; margin: 0; line-height: 1.4;">
+                            <input type="checkbox" id="formYoutubePreplay1s" checked style="margin-top: 2px;">
+                            <span>⚡ Khởi động phát trước 1s khi lưu (Đến giờ hẹn tự chuyển Pause ➔ Play, không cần chạm màn hình)</span>
                         </label>
                     </div>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; gap: 6px; flex-wrap: wrap;">
                         <button type="button" class="btn-test" id="btnTestYoutube" onclick="testYoutubePreview()">
-                            <span>▶️ Nghe thử YouTube</span>
+                            <span>▶️ Nghe thử</span>
                         </button>
-                        <button type="button" class="btn-test" id="btnPreactYoutube" style="background: #f0fdf4; color: #15803d; border-color: #86efac;" onclick="manualPreactivateCurrentForm()">
-                            <span id="preactBtnText">⚡ Kích hoạt quyền phát ngay</span>
+                        <button type="button" class="btn-test" id="btnPreactYoutube" style="background: #ecfdf5; color: #047857; border-color: #6ee7b7; font-weight: 700;" onclick="manualTriggerPreplay1s()">
+                            <span id="preactBtnText">⚡ Khởi động phát 1s ngay</span>
                         </button>
                     </div>
                     <div id="youtubePreviewStatus" style="font-size: 0.78rem; color: var(--text-sub); margin-top: 4px;"></div>
                     <div id="youtubeFormPreviewBox" style="display: none; margin-top: 8px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; aspect-ratio: 16/9; max-height: 200px; background: #000;"></div>
 
-                    <!-- LƯU Ý DÀNH CHO IPHONE / IPAD -->
+                    <!-- GIẢI THÍCH CƠ CHẾ PAUSE ➔ PLAY -->
                     <div class="ios-tip-box" id="iosYtNotice">
-                        <div style="font-weight: 700; display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
-                            <span>🍎 Tự động kích hoạt YouTube cho iPhone / iPad:</span>
+                        <div style="font-weight: 700; display: flex; align-items: center; gap: 4px; margin-bottom: 3px; color: #1d4ed8;">
+                            <span>🍎 Cơ chế Pause ➔ Play tự động (Tối ưu iPhone / iPad Safari):</span>
                         </div>
-                        <div>
-                            Khi bạn bấm <strong>"💾 Lưu mốc hẹn giờ"</strong> hoặc bật mốc hẹn giờ, ứng dụng sẽ <strong>tự động kích hoạt trước quyền phát YouTube</strong> và duy trì phiên âm thanh ngầm. Video YouTube sẽ sẵn sàng tự động vang lên ngay khi chuông reo mà không bị Safari chặn!
+                        <div style="color: #334155; line-height: 1.45;">
+                            Khi bạn bấm <strong>"💾 Lưu mốc hẹn giờ"</strong> hoặc nút <strong>"⚡ Khởi động phát 1s ngay"</strong>, video YouTube sẽ <strong>phát có tiếng trong 1 giây</strong> ngay trên thao tác của bạn để Safari mở khóa âm thanh, sau đó tự động <strong>Pause (tạm dừng)</strong> lại ở 00:00. Đến đúng giờ hẹn, hệ thống chỉ việc <strong>đổi lệnh từ Pause sang Play</strong> là nhạc sẽ tự động vang lên ngay lập tức mà không cần phải chạm vào màn hình!
                         </div>
                     </div>
                 </div>
@@ -1414,15 +1495,23 @@
         <div class="alarm-ring-sub" id="ringSub">Đang phát nội dung hẹn giờ...</div>
         <div class="alarm-ring-loop-indicator" id="ringLoopBadge">🔁 Đang lặp lại phát âm cho đến khi tắt...</div>
         
-        <!-- NÚT CHẠM PHÁT NHANH YOUTUBE (ĐẶC BIỆT DÀNH CHO IPHONE / SAFARI) -->
+        <!-- NÚT CHẠM DỰ PHÒNG CHO IPHONE / SAFARI (CHỈ HIỂN THỊ NẾU CẦN) -->
         <button type="button" id="btnRingYtIosPlay" class="btn-ring-yt-ios" style="display: none;" onclick="manualStartIosYoutube(event)">
             <span class="pulse-dot"></span>
-            <span id="btnRingYtIosLabel">▶️ Chạm vào đây để phát tiếng YouTube (iPhone)</span>
+            <span id="btnRingYtIosLabel">▶️ Chạm vào đây để phát tiếng YouTube</span>
         </button>
 
-        <div id="ringYoutubeContainer" style="display: none; width: 100%; aspect-ratio: 16/9; max-height: 220px; border-radius: 12px; overflow: hidden; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: #000;"></div>
+        <div id="ringYtSpacer" style="display: none; width: 100%; aspect-ratio: 16/9; max-height: 220px; border-radius: 12px; margin-top: 4px;"></div>
         <button class="btn-dismiss-alarm" onclick="dismissCurrentAlarm()">⏹️ Tắt / Dừng Báo Thức</button>
     </div>
+</div>
+
+<!-- PERSISTENT MASTER YOUTUBE PLAYER FOR ALARMS (NEVER DESTROYED TO PRESERVE IOS AUDIO PERMISSION) -->
+<div id="persistentYtWrapper" class="persistent-yt-wrapper yt-mode-idle">
+    <div id="persistentYtBadge" class="persistent-yt-badge" style="display: none;">
+        <span id="persistentYtBadgeText">🔊 Đang phát 1s để mở khóa âm thanh Safari...</span>
+    </div>
+    <iframe id="persistentYtIframe" title="YouTube Background Alarm Engine" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; playsinline" playsinline="1" webkit-playsinline="1" allowfullscreen style="width: 100%; height: 100%; border: none;"></iframe>
 </div>
 
 <!-- YOUTUBE DIRECT PLAYER MODAL -->
@@ -2126,7 +2215,7 @@
             } else if (isYt) {
                 const ytBadge = '<span class="badge-lang-tag" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">📺 YouTube</span>';
                 const ytLoopBadge = (a.continuousLoop !== false) ? '<span class="badge-loop-tag" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5;" title="Lặp lại liên tục cho đến khi tắt">🔁 Lặp lại</span>' : '';
-                const autoBadge = '<span class="badge-loop-tag" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;" title="Tự động kích hoạt sẵn quyền phát YouTube">⚡ Tự kích hoạt</span>';
+                const autoBadge = '<span class="badge-loop-tag" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;" title="Cơ chế phát 1s ➔ Tự đổi Pause sang Play không cần chạm">⚡ Pause➔Play</span>';
                 detailText = `📺 ${ytBadge} ${ytLoopBadge} ${autoBadge} <strong>Nhạc:</strong> ${escapeHtml(a.youtubeTitle || a.youtubeUrl || 'Video YouTube')}`;
             } else {
                 detailText = `🗣️ ${langBadge} ${loopBadge} <strong>TTS (${a.engine === 'cloud' ? 'Cloud' : a.engine === 'auto' ? 'Auto' : 'Thiết bị'}):</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
@@ -2145,6 +2234,11 @@
                         </div>
                     </div>
                     <div class="alarm-controls">
+                        ${isYt ? `
+                        <button class="alarm-icon-btn" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.75rem; font-weight:800; width:auto; padding:0 8px;" title="Phát thử 1s để nạp sẵn Pause➔Play" onclick="quickPreplayForAlarm('${a.id}', event)">
+                            ⚡ 1s
+                        </button>
+                        ` : ''}
                         <button class="alarm-icon-btn" title="Thử phát mốc này" onclick="testTriggerAlarm('${a.id}')">
                             ▶️
                         </button>
@@ -2315,6 +2409,7 @@
                 youtubeTitle = 'Nhạc YouTube (' + youtubeVideoId + ')';
             }
             continuousLoop = document.getElementById('formYoutubeLoop').checked;
+            preplay1s = document.getElementById('formYoutubePreplay1s')?.checked !== false;
         } else {
             ttsText = document.getElementById('formTtsText').value.trim();
             if (!ttsText) {
@@ -2347,6 +2442,7 @@
                     youtubeUrl,
                     youtubeTitle,
                     youtubeVideoId,
+                    preplay1s,
                     label: labelVal,
                     repeat: repeatVal
                 };
@@ -2368,6 +2464,7 @@
                 youtubeUrl,
                 youtubeTitle,
                 youtubeVideoId,
+                preplay1s,
                 label: labelVal,
                 enabled: true,
                 repeat: repeatVal
@@ -2380,11 +2477,10 @@
         ensureAudioContext();
         requestWakeLock();
 
-        // TỰ ĐỘNG KÍCH HOẠT YOUTUBE KHI THIẾT LẬP BÁO THỨC
+        // KHỞI ĐỘNG PHÁT 1S MỞ KHÓA PAUSE ➔ PLAY KHI THIẾT LẬP BÁO THỨC
         if (currentAlarmType === 'youtube' && youtubeVideoId) {
-            const autoPreact = document.getElementById('formYoutubeAutoPreactivate')?.checked !== false;
-            if (autoPreact) {
-                preactivateYoutubeForAlarm(youtubeVideoId, youtubeTitle, true);
+            if (preplay1s) {
+                startYoutube1sPreplay(youtubeVideoId, continuousLoop, youtubeTitle, true);
             }
         }
     }
@@ -2399,8 +2495,8 @@
                 requestWakeLock();
                 if (item.type === 'youtube') {
                     const vid = extractYouTubeId(item.youtubeUrl || '') || item.youtubeVideoId;
-                    if (vid) {
-                        preactivateYoutubeForAlarm(vid, item.youtubeTitle, true);
+                    if (vid && item.preplay1s !== false) {
+                        startYoutube1sPreplay(vid, item.continuousLoop !== false, item.youtubeTitle, true);
                     }
                 }
             }
@@ -2467,22 +2563,19 @@
     function testTriggerAlarm(id) {
         const alarm = alarms.find(a => a.id === id);
         if (alarm) {
-            if (alarm.type === 'youtube') {
-                const vid = extractYouTubeId(alarm.youtubeUrl || '') || alarm.youtubeVideoId;
-                if (vid) preactivateYoutubeForAlarm(vid, alarm.youtubeTitle, false);
-            }
             triggerAlarm(alarm);
         }
     }
 
     // ==========================================
-    // 4B. YOUTUBE MUSIC HELPERS & DIRECT PLAYER (IOS OPTIMIZED)
+    // 4B. YOUTUBE MUSIC HELPERS & PAUSE ➔ PLAY PERSISTENT ENGINE (IOS OPTIMIZED)
     // ==========================================
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    // Chuông báo thức dự phòng Web Audio API (Đảm bảo iPhone không bao giờ bị im lặng nếu YouTube bị chặn autoplay)
+    // Chuông báo thức dự phòng Web Audio API (Đảm bảo iPhone không bao giờ bị im lặng nếu YouTube bị chặn)
     let alarmAudioCtx = null;
     let alarmChimeInterval = null;
+    let ytAlarmWatchdogTimeout = null;
 
     function ensureAudioContext() {
         try {
@@ -2542,16 +2635,22 @@
             clearInterval(alarmChimeInterval);
             alarmChimeInterval = null;
         }
+        if (ytAlarmWatchdogTimeout) {
+            clearTimeout(ytAlarmWatchdogTimeout);
+            ytAlarmWatchdogTimeout = null;
+        }
     }
 
     // ==========================================
-    // CƠ CHẾ TỰ ĐỘNG KÍCH HOẠT SẴN YOUTUBE (IOS / SAFARI AUTO-ACTIVATION)
+    // CƠ CHẾ PHÁT 1S MỞ KHÓA ➔ TỰ CHUYỂN PAUSE SANG PLAY (IPHONE / SAFARI)
     // ==========================================
-    let preactivatedYtVideoId = null;
-    let isYtPreactivated = false;
+    let currentPersistentVid = null;
+    let isPersistentYtPreplayed = false;
+    let preplayStateTimer = null;
+    let preplaySafetyTimer = null;
     let silentAudioElement = null;
 
-    // Duy trì phiên âm thanh ngầm để WebKit Safari không thu hồi quyền Audio Context
+    // Duy trì phiên âm thanh ngầm để Safari không thu hồi quyền Audio Context
     function startSilentAudioSession() {
         try {
             if (!silentAudioElement) {
@@ -2564,8 +2663,8 @@
         } catch (e) {}
     }
 
-    // Hiển thị thông báo nhanh trên màn hình
-    function showAppToast(msg) {
+    // Hiển thị thông báo Toast nhanh trên màn hình
+    function showAppToast(msg, icon = '⚡') {
         let container = document.getElementById('appToastContainer');
         if (!container) {
             container = document.createElement('div');
@@ -2575,100 +2674,162 @@
         }
         const toast = document.createElement('div');
         toast.className = 'app-toast';
-        toast.innerHTML = `<span>⚡</span><span>${escapeHtml(msg)}</span>`;
+        toast.innerHTML = `<span>${icon}</span><span>${escapeHtml(msg)}</span>`;
         container.appendChild(toast);
         setTimeout(() => {
             toast.style.opacity = '0';
             toast.style.transform = 'translateY(-12px)';
             setTimeout(() => toast.remove(), 320);
-        }, 3800);
+        }, 4200);
     }
 
-    // Tự động kích hoạt trước YouTube Player ngay trong thao tác người dùng (User Gesture)
-    function preactivateYoutubeForAlarm(videoId, title = '', notify = true) {
+    // Gửi lệnh qua postMessage đến Persistent Master YouTube Player
+    function sendPersistentYtCommand(func, args = '') {
+        const iframe = document.getElementById('persistentYtIframe');
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(JSON.stringify({
+                event: 'command',
+                func: func,
+                args: args
+            }), '*');
+        }
+    }
+
+    // Giữ hàm sendYtCommand tương thích
+    function sendYtCommand(func, args = '') {
+        sendPersistentYtCommand(func, args);
+    }
+
+    // Khởi động phát 1s trong lúc người dùng chạm (User Interaction) để mở khóa Audio Safari, sau đó Pause ở 00:00
+    function startYoutube1sPreplay(videoId, isLoop = true, title = '', notify = true) {
         if (!videoId) return;
         ensureAudioContext();
         startSilentAudioSession();
         requestWakeLock();
 
-        preactivatedYtVideoId = videoId;
-        isYtPreactivated = true;
+        const wrapper = document.getElementById('persistentYtWrapper');
+        const iframe = document.getElementById('persistentYtIframe');
+        const badge = document.getElementById('persistentYtBadge');
+        const badgeText = document.getElementById('persistentYtBadgeText');
 
-        // Container standby player trong DOM (vô hình nhưng kích hoạt engine audio của browser)
-        let standbyContainer = document.getElementById('standbyYoutubeContainer');
-        if (!standbyContainer) {
-            standbyContainer = document.createElement('div');
-            standbyContainer.id = 'standbyYoutubeContainer';
-            standbyContainer.style.cssText = 'position:fixed; bottom:0; right:0; width:1px; height:1px; opacity:0.01; pointer-events:none; z-index:-999; overflow:hidden;';
-            document.body.appendChild(standbyContainer);
-        }
+        if (!wrapper || !iframe) return;
+
+        // Xóa các timer trước đó nếu có
+        if (preplayStateTimer) clearTimeout(preplayStateTimer);
+        if (preplaySafetyTimer) clearTimeout(preplaySafetyTimer);
 
         const originParam = encodeURIComponent(window.location.origin);
-        // Nhúng iframe vào DOM ngay trong thao tác chạm (User Interaction) để iOS cấp quyền Autoplay
-        standbyContainer.innerHTML = `<iframe id="standbyYtIframe" width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&enablejsapi=1&loop=1&playlist=${videoId}&origin=${originParam}" title="YouTube preactivated player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; playsinline" playsinline="1" webkit-playsinline="1" style="width:100%; height:100%; border:none;"></iframe>`;
+        const targetSrc = `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&playsinline=1&autoplay=1&mute=0&controls=1&loop=${isLoop ? 1 : 0}&playlist=${videoId}&origin=${originParam}`;
 
-        // Sau 1.2s khi iframe kết nối và Safari cấp quyền media, tạm dừng video để chờ đến giờ hẹn
-        setTimeout(() => {
-            sendYtCommand('pauseVideo');
-        }, 1200);
-
-        if (notify) {
-            showAppToast(`Đã tự động kích hoạt YouTube [${videoId}]! Video sẵn sàng tự phát khi chuông reo.`);
+        // Đưa khung phát lên góc dưới màn hình và hiển thị huy hiệu mở khóa
+        wrapper.className = 'persistent-yt-wrapper yt-mode-preplaying';
+        if (badge) {
+            badge.style.display = 'flex';
+            if (badgeText) badgeText.innerText = '🔊 Đang phát 1s mở khóa âm thanh Safari...';
         }
 
-        console.log(`[YouTube] Đã tự động kích hoạt trước video ID: ${videoId}`);
+        currentPersistentVid = videoId;
+        isPersistentYtPreplayed = false;
+
+        // Nạp video nếu chưa nạp hoặc đổi video khác
+        if (!iframe.src || !iframe.src.includes(videoId)) {
+            iframe.src = targetSrc;
+        }
+
+        // Liên tục bắn lệnh mở tiếng và play trong luồng user gesture
+        const burstUnlock = () => {
+            sendPersistentYtCommand('unMute');
+            sendPersistentYtCommand('setVolume', 100);
+            sendPersistentYtCommand('playVideo');
+        };
+        burstUnlock();
+        setTimeout(burstUnlock, 300);
+        setTimeout(burstUnlock, 700);
+
+        if (notify) {
+            showAppToast(`Đang phát thử 1s để nạp quyền âm thanh YouTube [${videoId}]...`, '🔊');
+        }
+
+        // Sau 1.3 giây phát có tiếng, tự động Pause (tạm dừng) và tua về 00:00
+        const executePauseAtZero = () => {
+            if (isPersistentYtPreplayed) return;
+            isPersistentYtPreplayed = true;
+
+            sendPersistentYtCommand('pauseVideo');
+            sendPersistentYtCommand('seekTo', [0, true]);
+
+            if (badgeText) {
+                badgeText.innerText = '⏸️ Đã Pause ở 00:00! Sẵn sàng tự phát.';
+            }
+
+            if (notify) {
+                showAppToast(`Đã mở khóa & tạm dừng ở 00:00! Đến giờ hẹn chỉ cần đổi Pause ➔ Play tự động không cần chạm.`, '✅');
+            }
+
+            // Thu nhỏ và ẩn xuống dưới nền sau 800ms
+            setTimeout(() => {
+                if (wrapper.classList.contains('yt-mode-preplaying')) {
+                    wrapper.className = 'persistent-yt-wrapper yt-mode-idle';
+                    if (badge) badge.style.display = 'none';
+                }
+            }, 800);
+        };
+
+        preplayStateTimer = setTimeout(executePauseAtZero, 1400);
+
+        // Safety watchdog: tối đa 4s luôn đảm bảo pause và ẩn đi
+        preplaySafetyTimer = setTimeout(() => {
+            executePauseAtZero();
+        }, 4000);
     }
 
-    // Nút thủ công kích hoạt quyền trong form thêm/sửa
-    function manualPreactivateCurrentForm() {
+    // Nút thủ công khởi động phát 1s trong form
+    function manualTriggerPreplay1s() {
         const url = document.getElementById('formYoutubeUrl')?.value.trim() || '';
         const title = document.getElementById('formYoutubeTitle')?.value.trim() || '';
         const vid = extractYouTubeId(url);
+        const isLoop = document.getElementById('formYoutubeLoop')?.checked !== false;
+
         if (!vid) {
-            alert('Vui lòng dán link YouTube hoặc nhập ID video trước khi kích hoạt!');
+            alert('Vui lòng dán link YouTube hoặc nhập ID video trước khi khởi động!');
             return;
         }
-        preactivateYoutubeForAlarm(vid, title, true);
+
         const btn = document.getElementById('btnPreactYoutube');
         const span = document.getElementById('preactBtnText');
-        if (btn && span) {
-            btn.style.background = '#ecfdf5';
-            btn.style.borderColor = '#34d399';
-            span.innerHTML = '✅ Đã kích hoạt quyền YouTube!';
+        if (span) span.innerHTML = '🔊 Đang phát 1s...';
+
+        startYoutube1sPreplay(vid, isLoop, title, true);
+
+        setTimeout(() => {
+            if (span) span.innerHTML = '✅ Đã Pause sẵn sàng!';
             setTimeout(() => {
-                btn.style.background = '#f0fdf4';
-                btn.style.borderColor = '#86efac';
-                span.innerHTML = '⚡ Kích hoạt quyền phát ngay';
+                if (span) span.innerHTML = '⚡ Khởi động phát 1s ngay';
             }, 3000);
+        }, 1600);
+    }
+
+    // Khởi động phát 1s nhanh trực tiếp từ thẻ báo thức ở danh sách
+    function quickPreplayForAlarm(id, event) {
+        if (event) event.stopPropagation();
+        const alarm = alarms.find(a => a.id === id);
+        if (alarm && alarm.type === 'youtube') {
+            const vid = extractYouTubeId(alarm.youtubeUrl || '') || alarm.youtubeVideoId;
+            if (vid) {
+                startYoutube1sPreplay(vid, alarm.continuousLoop !== false, alarm.youtubeTitle, true);
+            }
         }
     }
 
-    // Gửi lệnh qua postMessage đến tất cả YouTube iframes (cả hiển thị lẫn standby)
-    function sendYtCommand(func, args = '') {
-        const iframes = [
-            document.getElementById('ringYtIframe'),
-            document.getElementById('standbyYtIframe')
-        ].filter(Boolean);
-
-        iframes.forEach(iframe => {
-            if (iframe.contentWindow) {
-                iframe.contentWindow.postMessage(JSON.stringify({
-                    event: 'command',
-                    func: func,
-                    args: args
-                }), '*');
-            }
-        });
-    }
-
-    // Xử lý chạm mở tiếng YouTube cho iPhone / Safari
+    // Xử lý chạm mở tiếng dự phòng cho iPhone / Safari (nếu cần)
     function manualStartIosYoutube(event) {
         if (event) event.stopPropagation();
         ensureAudioContext();
         startSilentAudioSession();
-        sendYtCommand('unMute');
-        sendYtCommand('setVolume', 100);
-        sendYtCommand('playVideo');
+        sendPersistentYtCommand('seekTo', [0, true]);
+        sendPersistentYtCommand('unMute');
+        sendPersistentYtCommand('setVolume', 100);
+        sendPersistentYtCommand('playVideo');
         stopBackupAlarmChime();
 
         const btnIos = document.getElementById('btnRingYtIosPlay');
@@ -2682,31 +2843,37 @@
         }
     }
 
-    // Tự động kích hoạt YouTube cho báo thức đang bật ngay khi người dùng chạm bất kỳ đâu vào trang
+    // Tự động kích hoạt nạp trước cho báo thức YouTube đang bật khi người dùng chạm bất kỳ đâu vào trang
     ['touchstart', 'touchend', 'click', 'keydown'].forEach(evt => {
         document.addEventListener(evt, () => {
             ensureAudioContext();
             startSilentAudioSession();
-            if (!isYtPreactivated && alarms) {
+            if (!isPersistentYtPreplayed && alarms) {
                 const activeYt = alarms.find(a => a.enabled && a.type === 'youtube');
                 if (activeYt) {
                     const vid = extractYouTubeId(activeYt.youtubeUrl || '') || activeYt.youtubeVideoId;
-                    if (vid) preactivateYoutubeForAlarm(vid, activeYt.youtubeTitle, false);
+                    if (vid && currentPersistentVid !== vid) {
+                        startYoutube1sPreplay(vid, activeYt.continuousLoop !== false, activeYt.youtubeTitle, false);
+                    }
                 }
             }
         }, { passive: true, once: false });
     });
 
-    // Lắng nghe sự kiện YouTube API trả về
+    // Lắng nghe sự kiện YouTube API trả về qua window postMessage
     window.addEventListener('message', (event) => {
         try {
             const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
             if (data && data.event === 'infoDelivery' && data.info) {
                 // playerState 1 = Đang phát
-                if (data.info.playerState === 1 && data.info.muted === false) {
-                    stopBackupAlarmChime();
-                    const btnIos = document.getElementById('btnRingYtIosPlay');
-                    if (btnIos) btnIos.style.display = 'none';
+                if (data.info.playerState === 1) {
+                    // Nếu đang trong trạng thái báo thức reo, ngừng chuông dự phòng
+                    const overlay = document.getElementById('alarmRingOverlay');
+                    if (overlay && overlay.style.display !== 'none') {
+                        stopBackupAlarmChime();
+                        const btnIos = document.getElementById('btnRingYtIosPlay');
+                        if (btnIos) btnIos.style.display = 'none';
+                    }
                 }
             }
         } catch (e) {}
@@ -2909,7 +3076,9 @@
             alarm.type === 'youtube' ? 'Báo thức YouTube' : 'Báo thức Lời đọc'
         );
         const loopBadge = document.getElementById('ringLoopBadge');
-        const ringYtContainer = document.getElementById('ringYoutubeContainer');
+        const ringSpacer = document.getElementById('ringYtSpacer');
+        const persistentWrapper = document.getElementById('persistentYtWrapper');
+        const persistentIframe = document.getElementById('persistentYtIframe');
         const btnIos = document.getElementById('btnRingYtIosPlay');
 
         // Stop any running sound
@@ -2918,13 +3087,11 @@
         stopDirectYoutube();
         stopBackupAlarmChime();
 
-        if (ringYtContainer) {
-            ringYtContainer.innerHTML = '';
-            ringYtContainer.style.display = 'none';
-        }
+        if (ringSpacer) ringSpacer.style.display = 'none';
         if (btnIos) btnIos.style.display = 'none';
 
         if (alarm.type === 'audio') {
+            if (persistentWrapper) persistentWrapper.className = 'persistent-yt-wrapper yt-mode-idle';
             if (loopBadge) loopBadge.style.display = 'none';
             document.getElementById('ringSub').innerText = `🎵 Bài hát: ${alarm.fileName || 'Âm thanh hẹn giờ'}`;
             overlay.style.display = 'flex';
@@ -2939,42 +3106,46 @@
                 loopBadge.innerText = isLoop ? '🔁 Đang lặp lại phát nhạc YouTube cho đến khi tắt...' : '▶️ Đang phát nhạc YouTube...';
             }
 
-            // Kích hoạt chuông báo thức dự phòng để đảm bảo iPhone reo chuông ngay cả khi iOS chặn video YouTube
-            startBackupAlarmChime();
+            if (ringSpacer) ringSpacer.style.display = 'block';
 
-            // Hiển thị nút chạm mở tiếng tức thì cho iPhone / Safari
-            if (btnIos) {
-                btnIos.style.display = 'flex';
-                btnIos.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-                btnIos.style.borderColor = '#fecaca';
-                btnIos.innerHTML = `<span class="pulse-dot"></span><span>▶️ Chạm vào đây để phát tiếng YouTube ${isIOS ? '(iPhone/Safari)' : ''}</span>`;
-            }
-
-            if (ringYtContainer && vid) {
-                ringYtContainer.style.display = 'block';
+            // Chuyển Persistent Master YouTube Player sang chế độ Ringing (chính giữa màn hình báo thức)
+            if (persistentWrapper && persistentIframe && vid) {
                 const originParam = encodeURIComponent(window.location.origin);
-                const standbyFrame = document.getElementById('standbyYtIframe');
+                const targetSrc = `https://www.youtube-nocookie.com/embed/${vid}?enablejsapi=1&playsinline=1&autoplay=1&mute=0&controls=1&loop=${isLoop ? 1 : 0}&playlist=${vid}&origin=${originParam}`;
 
-                // Nếu video đã được kích hoạt trước (pre-activated) thành công
-                if (standbyFrame && preactivatedYtVideoId === vid) {
-                    ringYtContainer.innerHTML = '';
-                    ringYtContainer.appendChild(standbyFrame);
-                    standbyFrame.id = 'ringYtIframe';
-                    // Đánh thức, mở âm lượng tối đa và bắt đầu phát
-                    setTimeout(() => {
-                        sendYtCommand('seekTo', [0, true]);
-                        sendYtCommand('unMute');
-                        sendYtCommand('setVolume', 100);
-                        sendYtCommand('playVideo');
-                    }, 80);
-                } else {
-                    // Các tham số tối ưu tuyệt đối cho iOS WebKit
-                    ringYtContainer.innerHTML = `<iframe id="ringYtIframe" width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&playsinline=1&enablejsapi=1&loop=${isLoop ? 1 : 0}&playlist=${vid}&origin=${originParam}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; playsinline" playsinline="1" webkit-playsinline="1" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>`;
+                persistentWrapper.className = 'persistent-yt-wrapper yt-mode-ringing';
+
+                if (!persistentIframe.src || !persistentIframe.src.includes(vid)) {
+                    persistentIframe.src = targetSrc;
                 }
+
+                // Chuyển trạng thái từ PAUSE sang PLAY ngay lập tức (không cần tải lại DOM)
+                const burstPlay = () => {
+                    sendPersistentYtCommand('seekTo', [0, true]);
+                    sendPersistentYtCommand('unMute');
+                    sendPersistentYtCommand('setVolume', 100);
+                    sendPersistentYtCommand('playVideo');
+                };
+                burstPlay();
+                setTimeout(burstPlay, 200);
+                setTimeout(burstPlay, 600);
             }
+
+            // Watchdog dự phòng an toàn: nếu sau 3.5s YouTube chưa phát hoặc bị iOS tạm chặn, bật chuông dự phòng + nút chạm
+            if (ytAlarmWatchdogTimeout) clearTimeout(ytAlarmWatchdogTimeout);
+            ytAlarmWatchdogTimeout = setTimeout(() => {
+                startBackupAlarmChime();
+                if (btnIos) {
+                    btnIos.style.display = 'flex';
+                    btnIos.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                    btnIos.style.borderColor = '#fecaca';
+                    btnIos.innerHTML = `<span class="pulse-dot"></span><span>▶️ Chạm vào đây để phát tiếng YouTube ${isIOS ? '(iPhone)' : ''}</span>`;
+                }
+            }, 3500);
+
             overlay.style.display = 'flex';
 
-            // Chạm bất kỳ đâu trên màn hình báo thức cũng sẽ mở tiếng YouTube ngay lập tức
+            // Nếu người dùng chạm bất kỳ đâu trên màn hình, cũng kích hoạt unMute/playVideo
             const onOverlayTap = () => {
                 manualStartIosYoutube();
                 overlay.removeEventListener('click', onOverlayTap);
@@ -2983,6 +3154,7 @@
             overlay.addEventListener('click', onOverlayTap, { once: true });
             overlay.addEventListener('touchstart', onOverlayTap, { once: true, passive: true });
         } else {
+            if (persistentWrapper) persistentWrapper.className = 'persistent-yt-wrapper yt-mode-idle';
             const isJa = (alarm.lang === 'ja-JP') || (alarm.voice && alarm.voice.startsWith('ja'));
             const langLabel = isJa ? '🇯🇵 Tiếng Nhật' : '🇻🇳 Tiếng Việt';
             document.getElementById('ringSub').innerText = `🗣️ Lời đọc (${langLabel}): "${alarm.ttsText}"`;
@@ -3002,21 +3174,29 @@
         if (player) player.pause();
         stopCurrentSpeech();
         stopBackupAlarmChime();
-        sendYtCommand('pauseVideo');
+
+        // Pause YouTube và đưa về 00:00, chuyển wrapper về idle
+        sendPersistentYtCommand('pauseVideo');
+        sendPersistentYtCommand('seekTo', [0, true]);
+
+        const persistentWrapper = document.getElementById('persistentYtWrapper');
+        if (persistentWrapper) {
+            persistentWrapper.className = 'persistent-yt-wrapper yt-mode-idle';
+        }
+
+        const ringSpacer = document.getElementById('ringYtSpacer');
+        if (ringSpacer) ringSpacer.style.display = 'none';
 
         const btnIos = document.getElementById('btnRingYtIosPlay');
         if (btnIos) btnIos.style.display = 'none';
-        const ringYtContainer = document.getElementById('ringYoutubeContainer');
-        if (ringYtContainer) {
-            ringYtContainer.innerHTML = '';
-            ringYtContainer.style.display = 'none';
-        }
 
-        // Tự động kích hoạt trước cho mốc hẹn giờ YouTube tiếp theo nếu còn
+        // Nạp sẵn mốc hẹn giờ YouTube tiếp theo nếu còn
         const nextYtAlarm = alarms.find(a => a.enabled && a.type === 'youtube');
         if (nextYtAlarm) {
             const nextVid = extractYouTubeId(nextYtAlarm.youtubeUrl || '') || nextYtAlarm.youtubeVideoId;
-            if (nextVid) preactivateYoutubeForAlarm(nextVid, nextYtAlarm.youtubeTitle, false);
+            if (nextVid && nextYtAlarm.preplay1s !== false) {
+                startYoutube1sPreplay(nextVid, nextYtAlarm.continuousLoop !== false, nextYtAlarm.youtubeTitle, false);
+            }
         }
     }
 

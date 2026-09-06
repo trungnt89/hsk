@@ -636,16 +636,23 @@
         }
 
         .form-preview-frame {
+            position: relative;
             width: 100%;
             aspect-ratio: 16 / 9;
             background: #000000;
+            overflow: hidden;
         }
 
         .form-preview-frame iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-width: 100% !important;
+            min-height: 100% !important;
+            border: none !important;
+            display: block !important;
         }
 
         /* DANH SÁCH MỐC BÁO THỨC */
@@ -893,29 +900,30 @@
             width: 100vw;
             height: 100vh;
             height: 100dvh;
-            background: rgba(10, 15, 29, 0.96);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(8, 12, 22, 0.97);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 999999;
             display: none;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: env(safe-area-inset-top, 14px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px);
+            justify-content: space-between;
+            padding: env(safe-area-inset-top, 10px) env(safe-area-inset-right, 14px) env(safe-area-inset-bottom, 12px) env(safe-area-inset-left, 14px);
             text-align: center;
             box-sizing: border-box;
             color: #ffffff;
             overflow-y: auto;
-            gap: 10px;
+            overflow-x: hidden;
+            gap: 8px;
         }
 
         .ring-header {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             width: 100%;
-            max-width: min(96vw, 1360px);
+            max-width: 1400px;
             flex-shrink: 0;
         }
 
@@ -928,9 +936,9 @@
         }
 
         .ring-mode-badge {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 800;
-            padding: 5px 16px;
+            padding: 4px 14px;
             border-radius: 20px;
             display: inline-flex;
             align-items: center;
@@ -952,20 +960,20 @@
         }
 
         .ring-time {
-            font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+            font-size: clamp(1.6rem, 3.8vw, 2.4rem);
             font-weight: 900;
             color: #fecaca;
             letter-spacing: 2px;
             line-height: 1.1;
             font-variant-numeric: tabular-nums;
-            text-shadow: 0 0 24px rgba(239, 68, 68, 0.7);
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.7);
         }
 
         .ring-title {
-            font-size: clamp(1rem, 2.5vw, 1.35rem);
+            font-size: clamp(0.95rem, 2vw, 1.25rem);
             font-weight: 700;
             color: #ffffff;
-            max-width: 90%;
+            max-width: 92%;
             word-break: break-word;
             white-space: nowrap;
             overflow: hidden;
@@ -973,26 +981,36 @@
         }
 
         .ring-subtext {
-            font-size: 0.86rem;
+            font-size: 0.8rem;
             color: #94a3b8;
             max-width: 650px;
             margin: 0 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        /* KHUNG CHỨA YOUTUBE PLAYER: HIỂN THỊ TO CHÍNH GIỮA FULL MÀN HÌNH */
+        /* KHUNG CHỨA YOUTUBE PLAYER: HIỂN THỊ TO CHÍNH GIỮA MÀN HÌNH THEO TỶ LỆ 16:9 CHUẨN XÁC */
         .ring-player-wrapper {
             width: 100%;
-            max-width: min(96vw, 1360px);
-            margin: 0 auto;
+            /* Chiều rộng tối đa tự động co dãn hoàn hảo để video 16:9 luôn to nhất có thể mà không bị tràn màn hình */
+            max-width: min(98vw, calc((100dvh - 165px) * 16 / 9), 1400px);
+            margin: auto;
             background: #000000;
             border-radius: 16px;
             overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.18);
+            border: 2px solid rgba(255, 255, 255, 0.22);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(220, 38, 38, 0.35);
             display: flex;
             flex-direction: column;
-            transition: all 0.3s ease;
-            flex-shrink: 1;
+            transition: max-width 0.25s ease, border-radius 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        /* Chế độ Rạp phim / Phóng to toàn màn hình */
+        .ring-player-wrapper.expanded {
+            max-width: 99vw !important;
+            border-radius: 8px !important;
         }
 
         .ring-player-topbar {
@@ -1005,6 +1023,7 @@
             font-size: 0.82rem;
             font-weight: 600;
             color: #94a3b8;
+            flex-shrink: 0;
         }
 
         .ring-player-indicator {
@@ -1027,19 +1046,26 @@
         }
 
         #ytMasterContainer {
+            position: relative;
             width: 100%;
             aspect-ratio: 16 / 9;
-            max-height: calc(100dvh - 210px);
             background: #000000;
-            position: relative;
             margin: 0 auto;
+            overflow: hidden;
         }
 
-        #ytMasterContainer iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
+        /* ĐẶC TRỊ WEBKIT / IPAD / SAFARI: Bắt buộc absolute 100% để iframe không bao giờ bị thu nhỏ thành 300x150 */
+        #ytMasterContainer iframe,
+        #ytIframe {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-width: 100% !important;
+            min-height: 100% !important;
+            border: none !important;
+            display: block !important;
         }
 
         /* THANH TIẾN ĐỘ CHO CHẾ ĐỘ PHÁT THỬ 10S */
@@ -1137,9 +1163,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 14px;
+            gap: 12px;
             width: 100%;
-            max-width: min(96vw, 680px);
+            max-width: min(96vw, 640px);
             margin-top: 2px;
             flex-wrap: wrap;
             flex-shrink: 0;
@@ -1148,17 +1174,17 @@
         .btn-stop-alarm {
             background: #ef4444;
             color: #ffffff;
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 900;
-            padding: 14px 36px;
+            padding: 12px 32px;
             border-radius: 50px;
             border: 2px solid #ffffff;
             cursor: pointer;
             box-shadow: 0 6px 30px rgba(239, 68, 68, 0.8);
             transition: transform 0.15s, background-color 0.2s;
-            min-height: 54px;
+            min-height: 48px;
             flex: 1;
-            min-width: 200px;
+            min-width: 180px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1171,13 +1197,13 @@
             background: rgba(255, 255, 255, 0.15);
             color: #ffffff;
             border: 1px solid rgba(255, 255, 255, 0.3);
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             font-weight: 700;
-            padding: 12px 24px;
+            padding: 10px 22px;
             border-radius: 50px;
             cursor: pointer;
             transition: all 0.2s;
-            min-height: 54px;
+            min-height: 48px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1311,7 +1337,7 @@
                 gap: 16px;
             }
             .ring-player-wrapper {
-                max-width: 100%;
+                max-width: min(98vw, calc((100dvh - 165px) * 16 / 9));
             }
         }
 
@@ -1335,7 +1361,7 @@
                 gap: 20px;
             }
             .ring-player-wrapper {
-                max-width: min(96vw, 1200px);
+                max-width: min(98vw, calc((100dvh - 165px) * 16 / 9), 1200px);
             }
         }
 
@@ -1355,7 +1381,7 @@
                 width: 100%;
             }
             .ring-player-wrapper {
-                max-width: min(96vw, 1360px);
+                max-width: min(98vw, calc((100dvh - 165px) * 16 / 9), 1400px);
             }
             .form-two-col {
                 display: grid;
@@ -1680,6 +1706,8 @@
         <!-- Khung iframe YouTube Master duy nhất của hệ thống -->
         <div id="ytMasterContainer">
             <iframe id="ytIframe"
+                width="100%"
+                height="100%"
                 title="YouTube Audio Alarm Engine"
                 referrerpolicy="strict-origin-when-cross-origin"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -2745,19 +2773,24 @@
     function togglePlayerFullscreen() {
         const wrap = document.getElementById('ringPlayerWrapper');
         if (!wrap) return;
+
+        // Bật/tắt class phóng to mở rộng tối đa (đặc biệt hữu ích trên iPad / WebKit)
+        const isExpanded = wrap.classList.toggle('expanded');
+
         if (document.fullscreenElement || document.webkitFullscreenElement) {
             if (document.exitFullscreen) {
                 document.exitFullscreen().catch(() => {});
             } else if (document.webkitExitFullscreen) {
                 document.webkitExitFullscreen();
             }
-        } else {
+        } else if (isExpanded) {
             if (wrap.requestFullscreen) {
                 wrap.requestFullscreen().catch(() => {});
             } else if (wrap.webkitRequestFullscreen) {
                 wrap.webkitRequestFullscreen();
             }
         }
+        showToast(isExpanded ? '⛶ Đã mở rộng tối đa màn hình Player!' : 'Đã trở về kích thước chuẩn', 'info');
     }
 
     // KHI THAY ĐỔI LINK TRONG FORM: XEM TRƯỚC TRỰC TIẾP
@@ -2877,6 +2910,9 @@
         isPreplayMode = false;
 
         sendYtCommand('pauseVideo');
+
+        const wrap = document.getElementById('ringPlayerWrapper');
+        if (wrap) wrap.classList.remove('expanded');
 
         const overlay = document.getElementById('ringOverlay');
         overlay.style.display = 'none';
@@ -3003,6 +3039,9 @@
         activeRingingAlarm = null;
         stopTts();
         sendYtCommand('pauseVideo');
+
+        const wrap = document.getElementById('ringPlayerWrapper');
+        if (wrap) wrap.classList.remove('expanded');
 
         const overlay = document.getElementById('ringOverlay');
         overlay.style.display = 'none';

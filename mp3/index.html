@@ -1147,12 +1147,12 @@
             position: fixed;
             bottom: 85px;
             right: 16px;
-            width: 250px;
-            height: 140px;
-            border-radius: 12px;
+            width: 275px;
+            height: 165px;
+            border-radius: 14px;
             overflow: hidden;
             z-index: 99999;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6);
             border: 2px solid #3b82f6;
             background: #000;
             opacity: 1;
@@ -1184,18 +1184,60 @@
             top: 6px;
             left: 6px;
             right: 6px;
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(15, 23, 42, 0.94);
             color: #38bdf8;
             font-size: 0.74rem;
             font-weight: 700;
-            padding: 5px 8px;
-            border-radius: 6px;
+            padding: 6px 10px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 6px;
             z-index: 10;
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(56, 189, 248, 0.35);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+        }
+
+        .badge-pause-btn {
+            background: #dc2626;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .badge-pause-btn:hover {
+            background: #b91c1c;
+        }
+
+        .badge-pause-btn:active {
+            transform: scale(0.95);
+        }
+
+        .preplay-progress-track {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.25);
+            z-index: 10;
+        }
+
+        .preplay-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #38bdf8;
+            transition: width 0.25s linear;
         }
 
         @keyframes slideUpPreplay {
@@ -1426,32 +1468,48 @@
                         </label>
                     </div>
 
-                    <!-- CÀI ĐẶT PHÁT THỬ 1S MỞ KHÓA PAUSE ➔ PLAY -->
-                    <div class="form-row" style="margin-top: 4px; background: #eff6ff; padding: 9px 12px; border-radius: 9px; border: 1px solid #bfdbfe;">
+                    <!-- CÀI ĐẶT PHÁT THỬ 30S MỞ KHÓA PAUSE ➔ PLAY PHÁT TIẾP -->
+                    <div class="form-row" style="margin-top: 4px; background: #eff6ff; padding: 10px 12px; border-radius: 9px; border: 1px solid #bfdbfe;">
                         <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; color: #1e40af; margin: 0; line-height: 1.4;">
-                            <input type="checkbox" id="formYoutubePreplay1s" checked style="margin-top: 2px;">
-                            <span>⚡ Khởi động phát trước 1s khi lưu (Đến giờ hẹn tự chuyển Pause ➔ Play, không cần chạm màn hình)</span>
+                            <input type="checkbox" id="formYoutubePreplay" checked style="margin-top: 2px;">
+                            <span>⚡ Phát thử khi lưu (Đến giờ hẹn tự chuyển Pause ➔ Play để phát tiếp, không cần chạm màn hình)</span>
                         </label>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #bfdbfe; font-size: 0.8rem; color: #1e3a8a; flex-wrap: wrap;">
+                            <span style="font-weight: 600;">⏱️ Thời gian phát thử:</span>
+                            <select id="formYoutubePreplayDuration" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; background: #fff; color: #1e40af; font-size: 0.8rem;" onchange="onPreplayDurationChange()">
+                                <option value="30" selected>30 giây (Mặc định theo yêu cầu)</option>
+                                <option value="15">15 giây</option>
+                                <option value="10">10 giây</option>
+                                <option value="45">45 giây</option>
+                                <option value="60">60 giây</option>
+                            </select>
+                        </div>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 0.8rem; color: #1e3a8a; flex-wrap: wrap;">
+                            <span style="font-weight: 600;">🎯 Khi đến giờ báo thức:</span>
+                            <select id="formYoutubeResumeMode" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #93c5fd; font-weight: 700; background: #fff; color: #1e40af; font-size: 0.8rem;">
+                                <option value="continue" selected>⏩ Phát tiếp từ điểm đã dừng (Chuẩn)</option>
+                                <option value="start">🔁 Tua lại phát từ đầu (00:00)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; gap: 6px; flex-wrap: wrap;">
-                        <button type="button" class="btn-test" id="btnTestYoutube" onclick="testYoutubePreview()">
-                            <span>▶️ Nghe thử</span>
-                        </button>
-                        <button type="button" class="btn-test" id="btnPreactYoutube" style="background: #ecfdf5; color: #047857; border-color: #6ee7b7; font-weight: 700;" onclick="manualTriggerPreplay1s()">
-                            <span id="preactBtnText">⚡ Khởi động phát 1s ngay</span>
+                        <button type="button" class="btn-test" id="btnPreactYoutube" style="flex: 1; background: #ecfdf5; color: #047857; border-color: #6ee7b7; font-weight: 700; padding: 8px 12px;" onclick="manualTriggerPreplay()">
+                            <span id="preactBtnText">▶️ Phát thử 30s & Nạp Pause ➔ Play</span>
                         </button>
                     </div>
                     <div id="youtubePreviewStatus" style="font-size: 0.78rem; color: var(--text-sub); margin-top: 4px;"></div>
                     <div id="youtubeFormPreviewBox" style="display: none; margin-top: 8px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; aspect-ratio: 16/9; max-height: 200px; background: #000;"></div>
 
-                    <!-- GIẢI THÍCH CƠ CHẾ PAUSE ➔ PLAY -->
+                    <!-- GIẢI THÍCH CƠ CHẾ PHÁT THỬ 30S ➔ PAUSE ➔ PLAY PHÁT TIẾP -->
                     <div class="ios-tip-box" id="iosYtNotice">
                         <div style="font-weight: 700; display: flex; align-items: center; gap: 4px; margin-bottom: 3px; color: #1d4ed8;">
-                            <span>🍎 Cơ chế Pause ➔ Play tự động (Tối ưu iPhone / iPad Safari):</span>
+                            <span>🍎 Cơ chế Phát thử 30s ➔ Pause ➔ Play phát tiếp (Tối ưu iPhone / Safari):</span>
                         </div>
                         <div style="color: #334155; line-height: 1.45;">
-                            Khi bạn bấm <strong>"💾 Lưu mốc hẹn giờ"</strong> hoặc nút <strong>"⚡ Khởi động phát 1s ngay"</strong>, video YouTube sẽ <strong>phát có tiếng trong 1 giây</strong> ngay trên thao tác của bạn để Safari mở khóa âm thanh, sau đó tự động <strong>Pause (tạm dừng)</strong> lại ở 00:00. Đến đúng giờ hẹn, hệ thống chỉ việc <strong>đổi lệnh từ Pause sang Play</strong> là nhạc sẽ tự động vang lên ngay lập tức mà không cần phải chạm vào màn hình!
+                            Khi bạn bấm <strong>"💾 Lưu mốc hẹn giờ"</strong> hoặc nút <strong>"▶️ Phát thử 30s"</strong>, video YouTube sẽ <strong>phát có tiếng trong 30 giây</strong> (có thể bấm <em>"⏸️ Dừng ngay"</em> bất kỳ lúc nào). Trình duyệt cấp quyền âm thanh và video được <strong>Pause (tạm dừng)</strong> lại đúng vị trí đó. Đến đúng giờ hẹn, hệ thống chỉ việc <strong>đổi lệnh từ Pause sang Play</strong> để <strong>phát tiếp</strong> đoạn nhạc mà bạn không cần phải chạm vào màn hình!
                         </div>
                     </div>
                 </div>
@@ -1509,7 +1567,11 @@
 <!-- PERSISTENT MASTER YOUTUBE PLAYER FOR ALARMS (NEVER DESTROYED TO PRESERVE IOS AUDIO PERMISSION) -->
 <div id="persistentYtWrapper" class="persistent-yt-wrapper yt-mode-idle">
     <div id="persistentYtBadge" class="persistent-yt-badge" style="display: none;">
-        <span id="persistentYtBadgeText">🔊 Đang phát 1s để mở khóa âm thanh Safari...</span>
+        <span id="persistentYtBadgeText">🔊 Đang phát thử: còn 30s...</span>
+        <button type="button" id="btnBadgePauseNow" class="badge-pause-btn" onclick="pausePreplayNow(event)">⏸️ Dừng ngay</button>
+    </div>
+    <div id="preplayProgressBarTrack" class="preplay-progress-track" style="display: none;">
+        <div id="preplayProgressBar" class="preplay-progress-fill"></div>
     </div>
     <iframe id="persistentYtIframe" title="YouTube Background Alarm Engine" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; playsinline" playsinline="1" webkit-playsinline="1" allowfullscreen style="width: 100%; height: 100%; border: none;"></iframe>
 </div>
@@ -2215,11 +2277,16 @@
             } else if (isYt) {
                 const ytBadge = '<span class="badge-lang-tag" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">📺 YouTube</span>';
                 const ytLoopBadge = (a.continuousLoop !== false) ? '<span class="badge-loop-tag" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5;" title="Lặp lại liên tục cho đến khi tắt">🔁 Lặp lại</span>' : '';
-                const autoBadge = '<span class="badge-loop-tag" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;" title="Cơ chế phát 1s ➔ Tự đổi Pause sang Play không cần chạm">⚡ Pause➔Play</span>';
+                const preplayDur = a.preplayDuration || 30;
+                const resumeLabel = (a.resumeMode === 'start') ? 'Tua đầu' : 'Phát tiếp';
+                const autoBadge = `<span class="badge-loop-tag" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;" title="Phát thử ${preplayDur}s rồi Pause ➔ Tự đổi Pause sang Play để ${resumeLabel.toLowerCase()} không cần chạm">⚡ Pause➔${resumeLabel} (${preplayDur}s)</span>`;
                 detailText = `📺 ${ytBadge} ${ytLoopBadge} ${autoBadge} <strong>Nhạc:</strong> ${escapeHtml(a.youtubeTitle || a.youtubeUrl || 'Video YouTube')}`;
             } else {
                 detailText = `🗣️ ${langBadge} ${loopBadge} <strong>TTS (${a.engine === 'cloud' ? 'Cloud' : a.engine === 'auto' ? 'Auto' : 'Thiết bị'}):</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
             }
+
+            const preplayDur = a.preplayDuration || 30;
+            const resumeActionText = (a.resumeMode === 'start') ? 'tua đầu' : 'phát tiếp';
 
             return `
                 <div class="alarm-card ${a.enabled ? '' : 'disabled'}" id="alarm-card-${a.id}">
@@ -2235,8 +2302,8 @@
                     </div>
                     <div class="alarm-controls">
                         ${isYt ? `
-                        <button class="alarm-icon-btn" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.75rem; font-weight:800; width:auto; padding:0 8px;" title="Phát thử 1s để nạp sẵn Pause➔Play" onclick="quickPreplayForAlarm('${a.id}', event)">
-                            ⚡ 1s
+                        <button class="alarm-icon-btn" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.75rem; font-weight:800; width:auto; padding:0 8px;" title="Phát thử ${preplayDur}s để nạp sẵn Pause ➔ Play ${resumeActionText}" onclick="quickPreplayForAlarm('${a.id}', event)">
+                            ⚡ ${preplayDur}s
                         </button>
                         ` : ''}
                         <button class="alarm-icon-btn" title="Thử phát mốc này" onclick="testTriggerAlarm('${a.id}')">
@@ -2307,6 +2374,14 @@
         }
     }
 
+    function onPreplayDurationChange() {
+        const dur = document.getElementById('formYoutubePreplayDuration')?.value || '30';
+        const span = document.getElementById('preactBtnText');
+        if (span && !isPreplayingNow) {
+            span.innerHTML = `▶️ Phát thử ${dur}s & Nạp Pause ➔ Play`;
+        }
+    }
+
     function clearAlarmForm() {
         document.getElementById('formAlarmId').value = '';
         document.getElementById('formCardTitle').innerText = 'Thêm mốc hẹn giờ mới';
@@ -2316,6 +2391,14 @@
         document.getElementById('formYoutubeUrl').value = '';
         document.getElementById('formYoutubeTitle').value = '';
         document.getElementById('formYoutubeLoop').checked = true;
+        const preplayCheckbox = document.getElementById('formYoutubePreplay');
+        if (preplayCheckbox) preplayCheckbox.checked = true;
+        const preplayDurSelect = document.getElementById('formYoutubePreplayDuration');
+        if (preplayDurSelect) preplayDurSelect.value = '30';
+        const resumeModeSelect = document.getElementById('formYoutubeResumeMode');
+        if (resumeModeSelect) resumeModeSelect.value = 'continue';
+        onPreplayDurationChange();
+
         const ytPreviewBox = document.getElementById('youtubeFormPreviewBox');
         if (ytPreviewBox) {
             ytPreviewBox.innerHTML = '';
@@ -2346,6 +2429,13 @@
             document.getElementById('formYoutubeUrl').value = alarm.youtubeUrl || '';
             document.getElementById('formYoutubeTitle').value = alarm.youtubeTitle || '';
             document.getElementById('formYoutubeLoop').checked = (alarm.continuousLoop !== false);
+            const preplayCheckbox = document.getElementById('formYoutubePreplay');
+            if (preplayCheckbox) preplayCheckbox.checked = (alarm.preplay !== false && alarm.preplay1s !== false);
+            const preplayDurSelect = document.getElementById('formYoutubePreplayDuration');
+            if (preplayDurSelect) preplayDurSelect.value = String(alarm.preplayDuration || '30');
+            const resumeModeSelect = document.getElementById('formYoutubeResumeMode');
+            if (resumeModeSelect) resumeModeSelect.value = alarm.resumeMode || 'continue';
+            onPreplayDurationChange();
             onYoutubeUrlChange();
         } else if (alarm.type === 'tts') {
             const isJa = (alarm.lang === 'ja-JP') || (alarm.voice && alarm.voice.startsWith('ja'));
@@ -2388,6 +2478,9 @@
         let youtubeUrl = '';
         let youtubeTitle = '';
         let youtubeVideoId = '';
+        let preplay = true;
+        let preplayDuration = 30;
+        let resumeMode = 'continue';
 
         if (currentAlarmType === 'audio') {
             fileId = formAudioFileSelect.value;
@@ -2409,7 +2502,9 @@
                 youtubeTitle = 'Nhạc YouTube (' + youtubeVideoId + ')';
             }
             continuousLoop = document.getElementById('formYoutubeLoop').checked;
-            preplay1s = document.getElementById('formYoutubePreplay1s')?.checked !== false;
+            preplay = document.getElementById('formYoutubePreplay')?.checked !== false;
+            preplayDuration = parseInt(document.getElementById('formYoutubePreplayDuration')?.value || '30', 10) || 30;
+            resumeMode = document.getElementById('formYoutubeResumeMode')?.value || 'continue';
         } else {
             ttsText = document.getElementById('formTtsText').value.trim();
             if (!ttsText) {
@@ -2442,7 +2537,9 @@
                     youtubeUrl,
                     youtubeTitle,
                     youtubeVideoId,
-                    preplay1s,
+                    preplay,
+                    preplayDuration,
+                    resumeMode,
                     label: labelVal,
                     repeat: repeatVal
                 };
@@ -2464,7 +2561,9 @@
                 youtubeUrl,
                 youtubeTitle,
                 youtubeVideoId,
-                preplay1s,
+                preplay,
+                preplayDuration,
+                resumeMode,
                 label: labelVal,
                 enabled: true,
                 repeat: repeatVal
@@ -2477,10 +2576,10 @@
         ensureAudioContext();
         requestWakeLock();
 
-        // KHỞI ĐỘNG PHÁT 1S MỞ KHÓA PAUSE ➔ PLAY KHI THIẾT LẬP BÁO THỨC
+        // PHÁT THỬ 30S MỞ KHÓA PAUSE ➔ PLAY PHÁT TIẾP KHI CÀI ĐẶT BÁO THỨC YOUTUBE
         if (currentAlarmType === 'youtube' && youtubeVideoId) {
-            if (preplay1s) {
-                startYoutube1sPreplay(youtubeVideoId, continuousLoop, youtubeTitle, true);
+            if (preplay) {
+                startYoutubePreplay(youtubeVideoId, continuousLoop, youtubeTitle, true, preplayDuration);
             }
         }
     }
@@ -2495,8 +2594,8 @@
                 requestWakeLock();
                 if (item.type === 'youtube') {
                     const vid = extractYouTubeId(item.youtubeUrl || '') || item.youtubeVideoId;
-                    if (vid && item.preplay1s !== false) {
-                        startYoutube1sPreplay(vid, item.continuousLoop !== false, item.youtubeTitle, true);
+                    if (vid && item.preplay !== false && item.preplay1s !== false) {
+                        startYoutubePreplay(vid, item.continuousLoop !== false, item.youtubeTitle, true, item.preplayDuration || 30);
                     }
                 }
             }
@@ -2700,8 +2799,12 @@
         sendPersistentYtCommand(func, args);
     }
 
-    // Khởi động phát 1s trong lúc người dùng chạm (User Interaction) để mở khóa Audio Safari, sau đó Pause ở 00:00
-    function startYoutube1sPreplay(videoId, isLoop = true, title = '', notify = true) {
+    let isPreplayingNow = false;
+    let preplayCountdownInterval = null;
+    let preplaySecondsRemaining = 0;
+
+    // Khởi động phát thử (mặc định 30s) trong lúc người dùng chạm để mở khóa Audio Safari, sau đó Pause để đến giờ hẹn phát tiếp
+    function startYoutubePreplay(videoId, isLoop = true, title = '', notify = true, durationSec = 30) {
         if (!videoId) return;
         ensureAudioContext();
         startSilentAudioSession();
@@ -2711,22 +2814,47 @@
         const iframe = document.getElementById('persistentYtIframe');
         const badge = document.getElementById('persistentYtBadge');
         const badgeText = document.getElementById('persistentYtBadgeText');
+        const btnPause = document.getElementById('btnBadgePauseNow');
+        const track = document.getElementById('preplayProgressBarTrack');
+        const bar = document.getElementById('preplayProgressBar');
+        const formBtnSpan = document.getElementById('preactBtnText');
 
         if (!wrapper || !iframe) return;
 
         // Xóa các timer trước đó nếu có
-        if (preplayStateTimer) clearTimeout(preplayStateTimer);
-        if (preplaySafetyTimer) clearTimeout(preplaySafetyTimer);
+        if (preplayCountdownInterval) {
+            clearInterval(preplayCountdownInterval);
+            preplayCountdownInterval = null;
+        }
+        if (preplayStateTimer) {
+            clearTimeout(preplayStateTimer);
+            preplayStateTimer = null;
+        }
+        if (preplaySafetyTimer) {
+            clearTimeout(preplaySafetyTimer);
+            preplaySafetyTimer = null;
+        }
+
+        const dur = Math.max(1, parseInt(durationSec, 10) || 30);
+        preplaySecondsRemaining = dur;
+        isPreplayingNow = true;
 
         const originParam = encodeURIComponent(window.location.origin);
         const targetSrc = `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&playsinline=1&autoplay=1&mute=0&controls=1&loop=${isLoop ? 1 : 0}&playlist=${videoId}&origin=${originParam}`;
 
-        // Đưa khung phát lên góc dưới màn hình và hiển thị huy hiệu mở khóa
+        // Đưa khung phát lên góc dưới màn hình và hiển thị huy hiệu đếm ngược
         wrapper.className = 'persistent-yt-wrapper yt-mode-preplaying';
         if (badge) {
             badge.style.display = 'flex';
-            if (badgeText) badgeText.innerText = '🔊 Đang phát 1s mở khóa âm thanh Safari...';
+            if (badgeText) badgeText.innerHTML = `🔊 Đang phát thử: còn <strong id="preplaySecCount">${preplaySecondsRemaining}</strong>s...`;
         }
+        if (btnPause) {
+            btnPause.style.display = 'inline-flex';
+            btnPause.innerHTML = '⏸️ Dừng ngay';
+        }
+        if (track) track.style.display = 'block';
+        if (bar) bar.style.width = '0%';
+        if (formBtnSpan) formBtnSpan.innerHTML = '⏸️ Dừng phát thử ngay';
 
         currentPersistentVid = videoId;
         isPersistentYtPreplayed = false;
@@ -2747,76 +2875,124 @@
         setTimeout(burstUnlock, 700);
 
         if (notify) {
-            showAppToast(`Đang phát thử 1s để nạp quyền âm thanh YouTube [${videoId}]...`, '🔊');
+            showAppToast(`Đang phát thử ${dur}s để mở khóa quyền âm thanh YouTube [${videoId}]...`, '🔊');
         }
 
-        // Sau 1.3 giây phát có tiếng, tự động Pause (tạm dừng) và tua về 00:00
-        const executePauseAtZero = () => {
-            if (isPersistentYtPreplayed) return;
-            isPersistentYtPreplayed = true;
-
-            sendPersistentYtCommand('pauseVideo');
-            sendPersistentYtCommand('seekTo', [0, true]);
-
-            if (badgeText) {
-                badgeText.innerText = '⏸️ Đã Pause ở 00:00! Sẵn sàng tự phát.';
+        // Bắt đầu đếm ngược từng giây
+        preplayCountdownInterval = setInterval(() => {
+            preplaySecondsRemaining--;
+            const secCountEl = document.getElementById('preplaySecCount');
+            if (secCountEl) secCountEl.innerText = preplaySecondsRemaining;
+            if (bar) {
+                const pct = Math.min(100, Math.max(0, ((dur - preplaySecondsRemaining) / dur) * 100));
+                bar.style.width = pct + '%';
             }
 
-            if (notify) {
-                showAppToast(`Đã mở khóa & tạm dừng ở 00:00! Đến giờ hẹn chỉ cần đổi Pause ➔ Play tự động không cần chạm.`, '✅');
+            if (preplaySecondsRemaining <= 0) {
+                pausePreplayNow();
             }
+        }, 1000);
 
-            // Thu nhỏ và ẩn xuống dưới nền sau 800ms
-            setTimeout(() => {
-                if (wrapper.classList.contains('yt-mode-preplaying')) {
-                    wrapper.className = 'persistent-yt-wrapper yt-mode-idle';
-                    if (badge) badge.style.display = 'none';
-                }
-            }, 800);
-        };
-
-        preplayStateTimer = setTimeout(executePauseAtZero, 1400);
-
-        // Safety watchdog: tối đa 4s luôn đảm bảo pause và ẩn đi
+        // Safety watchdog: tối đa thêm 5s luôn đảm bảo dừng
         preplaySafetyTimer = setTimeout(() => {
-            executePauseAtZero();
-        }, 4000);
+            if (isPreplayingNow) {
+                pausePreplayNow();
+            }
+        }, (dur + 5) * 1000);
     }
 
-    // Nút thủ công khởi động phát 1s trong form
-    function manualTriggerPreplay1s() {
+    // Tạm dừng phát thử, giữ nguyên vị trí video để đến giờ hẹn PHÁT TIẾP
+    function pausePreplayNow(event) {
+        if (event) event.stopPropagation();
+        if (preplayCountdownInterval) {
+            clearInterval(preplayCountdownInterval);
+            preplayCountdownInterval = null;
+        }
+        if (preplaySafetyTimer) {
+            clearTimeout(preplaySafetyTimer);
+            preplaySafetyTimer = null;
+        }
+
+        const wrapper = document.getElementById('persistentYtWrapper');
+        const badge = document.getElementById('persistentYtBadge');
+        const badgeText = document.getElementById('persistentYtBadgeText');
+        const btnPause = document.getElementById('btnBadgePauseNow');
+        const track = document.getElementById('preplayProgressBarTrack');
+        const formBtnSpan = document.getElementById('preactBtnText');
+
+        isPreplayingNow = false;
+        isPersistentYtPreplayed = true;
+
+        // GỬI LỆNH PAUSE VIDEO (KHÔNG SEEK VỀ 00:00 ĐỂ ĐẾN GIỜ HẸN PHÁT TIẾP TỪ ĐIỂM NÀY!)
+        sendPersistentYtCommand('pauseVideo');
+
+        if (btnPause) btnPause.style.display = 'none';
+        if (track) track.style.display = 'none';
+
+        if (badgeText) {
+            badgeText.innerHTML = '⏸️ Đã Pause! Đến giờ hẹn sẽ tự động phát tiếp.';
+        }
+
+        if (formBtnSpan) {
+            formBtnSpan.innerHTML = '✅ Đã Pause sẵn sàng!';
+            setTimeout(() => {
+                const currentDur = document.getElementById('formYoutubePreplayDuration')?.value || '30';
+                if (formBtnSpan && !isPreplayingNow) {
+                    formBtnSpan.innerHTML = `▶️ Phát thử ${currentDur}s & Nạp Pause ➔ Play`;
+                }
+            }, 3200);
+        }
+
+        showAppToast('Đã phát thử và tạm dừng! Đến đúng giờ hẹn sẽ tự chuyển Pause ➔ Play phát tiếp không cần chạm.', '✅');
+
+        // Thu nhỏ và ẩn xuống dưới nền sau 1.2s
+        setTimeout(() => {
+            if (wrapper && wrapper.classList.contains('yt-mode-preplaying')) {
+                wrapper.className = 'persistent-yt-wrapper yt-mode-idle';
+                if (badge) badge.style.display = 'none';
+            }
+        }, 1200);
+    }
+
+    // Giữ hàm startYoutube1sPreplay tương thích
+    function startYoutube1sPreplay(videoId, isLoop = true, title = '', notify = true) {
+        startYoutubePreplay(videoId, isLoop, title, notify, 1);
+    }
+
+    // Nút thủ công khởi động phát thử trong form
+    function manualTriggerPreplay() {
+        if (isPreplayingNow) {
+            pausePreplayNow();
+            return;
+        }
+
         const url = document.getElementById('formYoutubeUrl')?.value.trim() || '';
         const title = document.getElementById('formYoutubeTitle')?.value.trim() || '';
         const vid = extractYouTubeId(url);
         const isLoop = document.getElementById('formYoutubeLoop')?.checked !== false;
+        const dur = parseInt(document.getElementById('formYoutubePreplayDuration')?.value || '30', 10) || 30;
 
         if (!vid) {
-            alert('Vui lòng dán link YouTube hoặc nhập ID video trước khi khởi động!');
+            alert('Vui lòng dán link YouTube hoặc nhập ID video trước khi phát thử!');
             return;
         }
 
-        const btn = document.getElementById('btnPreactYoutube');
-        const span = document.getElementById('preactBtnText');
-        if (span) span.innerHTML = '🔊 Đang phát 1s...';
-
-        startYoutube1sPreplay(vid, isLoop, title, true);
-
-        setTimeout(() => {
-            if (span) span.innerHTML = '✅ Đã Pause sẵn sàng!';
-            setTimeout(() => {
-                if (span) span.innerHTML = '⚡ Khởi động phát 1s ngay';
-            }, 3000);
-        }, 1600);
+        startYoutubePreplay(vid, isLoop, title, true, dur);
     }
 
-    // Khởi động phát 1s nhanh trực tiếp từ thẻ báo thức ở danh sách
+    function manualTriggerPreplay1s() {
+        manualTriggerPreplay();
+    }
+
+    // Khởi động phát thử nhanh trực tiếp từ thẻ báo thức ở danh sách
     function quickPreplayForAlarm(id, event) {
         if (event) event.stopPropagation();
         const alarm = alarms.find(a => a.id === id);
         if (alarm && alarm.type === 'youtube') {
             const vid = extractYouTubeId(alarm.youtubeUrl || '') || alarm.youtubeVideoId;
+            const dur = alarm.preplayDuration || 30;
             if (vid) {
-                startYoutube1sPreplay(vid, alarm.continuousLoop !== false, alarm.youtubeTitle, true);
+                startYoutubePreplay(vid, alarm.continuousLoop !== false, alarm.youtubeTitle, true, dur);
             }
         }
     }
@@ -2826,7 +3002,6 @@
         if (event) event.stopPropagation();
         ensureAudioContext();
         startSilentAudioSession();
-        sendPersistentYtCommand('seekTo', [0, true]);
         sendPersistentYtCommand('unMute');
         sendPersistentYtCommand('setVolume', 100);
         sendPersistentYtCommand('playVideo');
@@ -2848,12 +3023,12 @@
         document.addEventListener(evt, () => {
             ensureAudioContext();
             startSilentAudioSession();
-            if (!isPersistentYtPreplayed && alarms) {
+            if (!isPersistentYtPreplayed && alarms && !isPreplayingNow) {
                 const activeYt = alarms.find(a => a.enabled && a.type === 'youtube');
                 if (activeYt) {
                     const vid = extractYouTubeId(activeYt.youtubeUrl || '') || activeYt.youtubeVideoId;
                     if (vid && currentPersistentVid !== vid) {
-                        startYoutube1sPreplay(vid, activeYt.continuousLoop !== false, activeYt.youtubeTitle, false);
+                        startYoutubePreplay(vid, activeYt.continuousLoop !== false, activeYt.youtubeTitle, false, activeYt.preplayDuration || 30);
                     }
                 }
             }
@@ -3121,7 +3296,9 @@
 
                 // Chuyển trạng thái từ PAUSE sang PLAY ngay lập tức (không cần tải lại DOM)
                 const burstPlay = () => {
-                    sendPersistentYtCommand('seekTo', [0, true]);
+                    if (alarm.resumeMode === 'start') {
+                        sendPersistentYtCommand('seekTo', [0, true]);
+                    }
                     sendPersistentYtCommand('unMute');
                     sendPersistentYtCommand('setVolume', 100);
                     sendPersistentYtCommand('playVideo');
@@ -3175,9 +3352,8 @@
         stopCurrentSpeech();
         stopBackupAlarmChime();
 
-        // Pause YouTube và đưa về 00:00, chuyển wrapper về idle
+        // Pause YouTube, chuyển wrapper về idle
         sendPersistentYtCommand('pauseVideo');
-        sendPersistentYtCommand('seekTo', [0, true]);
 
         const persistentWrapper = document.getElementById('persistentYtWrapper');
         if (persistentWrapper) {
@@ -3194,8 +3370,8 @@
         const nextYtAlarm = alarms.find(a => a.enabled && a.type === 'youtube');
         if (nextYtAlarm) {
             const nextVid = extractYouTubeId(nextYtAlarm.youtubeUrl || '') || nextYtAlarm.youtubeVideoId;
-            if (nextVid && nextYtAlarm.preplay1s !== false) {
-                startYoutube1sPreplay(nextVid, nextYtAlarm.continuousLoop !== false, nextYtAlarm.youtubeTitle, false);
+            if (nextVid && nextYtAlarm.preplay !== false && nextYtAlarm.preplay1s !== false) {
+                startYoutubePreplay(nextVid, nextYtAlarm.continuousLoop !== false, nextYtAlarm.youtubeTitle, false, nextYtAlarm.preplayDuration || 30);
             }
         }
     }

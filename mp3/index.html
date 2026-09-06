@@ -77,9 +77,9 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 16px 24px 36px;
+            padding: 16px 20px 36px;
             box-sizing: border-box;
-            max-width: 1600px;
+            max-width: 960px;
             margin: 0 auto;
         }
 
@@ -191,23 +191,45 @@
         .status-dot.blue { background: var(--accent-blue); animation: pulse 1s infinite; }
         .status-dot.red { background: var(--primary); }
 
-        /* BỐ CỤC DASHBOARD 2 CỘT RỘNG */
-        .dashboard-grid {
+        /* CHUYỂN ĐỔI MÀN HÌNH (DANH SÁCH MẶC ĐỊNH & MÀN HÌNH THÊM MỚI) */
+        #viewListView {
+            display: block;
             width: 100%;
-            display: grid;
-            grid-template-columns: minmax(380px, 1fr) minmax(440px, 1.25fr);
-            gap: 20px;
-            align-items: start;
-            flex: 1;
         }
 
-        @media (max-width: 980px) {
-            .app-container {
-                padding: 12px 14px 24px;
-            }
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
+        #viewFormView {
+            display: none;
+            width: 100%;
+        }
+
+        .view-nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .btn-back {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.18s;
+        }
+
+        .btn-back:hover {
+            border-color: var(--accent-blue-border);
+            color: var(--accent-blue);
+            background: var(--accent-blue-light);
         }
 
         /* CARD GIAO DIỆN SÁNG */
@@ -937,266 +959,226 @@
                 <span>⏰ Báo Thức Thông Minh</span>
                 <span class="tag-pill yt">▶️ YouTube</span>
                 <span class="tag-pill tts">🗣️ Giọng Đọc TTS</span>
-                <span class="tag-pill light-mode">☀️ UI Sáng</span>
             </div>
         </div>
 
         <div class="header-actions">
-            <!-- Trạng thái kết nối Google Sheet -->
-            <div class="sheet-status-pill" id="sheetStatusPill" title="Spreadsheet ID: 1HNJrXP3JzAwH6AdDHKVSBv1izYSPCu8nksb1BFdNDuc">
+            <!-- Trạng thái kết nối Google Sheet ngầm -->
+            <div class="sheet-status-pill" id="sheetStatusPill" title="Đồng bộ tự động với Google Sheet">
                 <span class="status-dot" id="statusDot"></span>
                 <span id="statusText">Đang nạp từ Google Sheet...</span>
             </div>
 
-            <button type="button" class="preset-pill" onclick="loadAlarmsFromSheet(true)">
+            <button type="button" class="preset-pill" onclick="loadAlarmsFromSheet(true)" title="Tải lại dữ liệu trực tiếp từ Google Sheet">
                 🔄 Tải lại Sheet
-            </button>
-            <button type="button" class="preset-pill" onclick="loadSampleAlarms()">
-                ⚡ Nạp 2 mẫu (YT & TTS)
             </button>
         </div>
     </header>
 
-    <!-- DASHBOARD GRID 2 CỘT RỘNG -->
-    <div class="dashboard-grid">
-        <!-- CỘT BÊN TRÁI: ĐỒNG HỒ & FORM THIẾT LẬP (YOUTUBE HOẶC TTS) -->
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            <!-- ĐỒNG HỒ HIỆN TẠI (MÀU SÁNG) -->
-            <div class="clock-card">
-                <div>
-                    <div class="clock-time" id="clockTime">00:00:00</div>
-                    <div class="clock-meta">
-                        <div class="clock-date" id="clockDate">Đang tải ngày giờ...</div>
-                    </div>
-                </div>
-                <div class="active-alarms-badge" id="activeBadge">
-                    🔔 <span id="activeCountText">0 mốc đang bật</span>
+    <!-- 1. MÀN HÌNH MẶC ĐỊNH: DANH SÁCH BÁO THỨC ĐÃ CÀI ĐẶT -->
+    <div id="viewListView">
+        <!-- ĐỒNG HỒ SỐ HIỆN TẠI (MÀU SÁNG) -->
+        <div class="clock-card" style="margin-bottom: 20px;">
+            <div>
+                <div class="clock-time" id="clockTime">00:00:00</div>
+                <div class="clock-meta">
+                    <div class="clock-date" id="clockDate">Đang tải ngày giờ...</div>
                 </div>
             </div>
-
-            <!-- FORM THIẾT LẬP / SỬA BÁO THỨC -->
-            <div class="card" id="alarmFormCard">
-                <div class="card-header-bar">
-                    <div class="card-title" id="formCardTitle">
-                        <span>➕ Hẹn giờ báo thức mới</span>
-                    </div>
-                    <span id="editingModeBadge" style="display: none; font-size: 0.75rem; background: var(--warning-light); color: var(--warning); border: 1px solid #fde68a; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
-                        ✏️ ĐANG CHỈNH SỬA
-                    </span>
-                </div>
-
-                <!-- 1. CHỌN LOẠI BÁO THỨC: YOUTUBE HOẶC TTS -->
-                <div class="form-group">
-                    <label class="form-label">
-                        <span>Chọn hình thức báo thức:</span>
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">TYPE lưu trên Sheet</span>
-                    </label>
-                    <div class="type-selector-grid">
-                        <button type="button" class="type-btn active yt" id="btnTypeYt" onclick="selectAlarmType('youtube')">
-                            <span>▶️ YouTube Audio</span>
-                        </button>
-                        <button type="button" class="type-btn tts" id="btnTypeTts" onclick="selectAlarmType('tts')">
-                            <span>🗣️ Giọng Đọc TTS</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 2. GIỜ BÁO THỨC (TIME) -->
-                <div class="form-group">
-                    <label class="form-label" for="alarmTime">
-                        <span>Giờ báo thức (24h)</span>
-                        <span style="font-size: 0.75rem; color: var(--accent-blue);">Định dạng HH:mm</span>
-                    </label>
-                    <input type="time" id="alarmTime" class="form-input form-time-input" required>
-                    
-                    <div class="quick-time-row">
-                        <span style="font-size: 0.75rem; color: var(--text-sub); margin-right: 2px;">⚡ Chọn nhanh:</span>
-                        <button type="button" class="quick-time-btn" onclick="addMinutesToInput(2)">+2 phút</button>
-                        <button type="button" class="quick-time-btn" onclick="addMinutesToInput(5)">+5 phút</button>
-                        <button type="button" class="quick-time-btn" onclick="addMinutesToInput(15)">+15 phút</button>
-                        <button type="button" class="quick-time-btn" onclick="setTimeInput('06:00')">06:00</button>
-                        <button type="button" class="quick-time-btn" onclick="setTimeInput('06:30')">06:30</button>
-                        <button type="button" class="quick-time-btn" onclick="setTimeInput('07:00')">07:00</button>
-                    </div>
-                </div>
-
-                <!-- 3. TIÊU ĐỀ BÁO THỨC (TITLE) -->
-                <div class="form-group">
-                    <label class="form-label" for="alarmTitle">
-                        <span>Tiêu đề báo thức (TITLE)</span>
-                    </label>
-                    <input type="text" id="alarmTitle" class="form-input" placeholder="Ví dụ: Báo thức sáng dậy đi làm, Nhắc họp, Tập thể dục...">
-                </div>
-
-                <!-- 4A. KHU VỰC CẤU HÌNH YOUTUBE (HIỂN THỊ KHI TYPE = YOUTUBE) -->
-                <div id="youtubeConfigSection">
-                    <div class="form-group">
-                        <label class="form-label" for="ytUrl">
-                            <span>Link YouTube hoặc Video ID (LINK YOUTUBE)</span>
-                        </label>
-                        <input type="text" id="ytUrl" class="form-input" placeholder="Dán link (https://www.youtube.com/watch?v=...) hoặc Video ID" oninput="onYtUrlChange()">
-                        
-                        <div class="preset-links-row">
-                            <span style="font-size: 0.75rem; color: var(--text-sub); font-weight: 600;">⚡ Nhạc mẫu:</span>
-                            <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=fuXfT4Rv_WM', 'Nhạc Báo Thức 1 (fuXfT4Rv_WM)')">
-                                🎵 Mẫu 1 (fuXfT4Rv_WM)
-                            </button>
-                            <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=o8GrqUSdzi0', 'Nhạc Báo Thức 2 (o8GrqUSdzi0)')">
-                                🎵 Mẫu 2 (o8GrqUSdzi0)
-                            </button>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0 6px;">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="preplay30s" checked>
-                            <span>⚡ Phát thử 30s rồi Pause khi lưu (đến giờ tự động Play)</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="continuousLoop" checked>
-                            <span>🔁 Lặp lại liên tục cho đến khi bấm tắt</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 4B. KHU VỰC CẤU HÌNH TTS (HIỂN THỊ KHI TYPE = TTS) -->
-                <div id="ttsConfigSection" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label" for="ttsText">
-                            <span>Nội dung giọng đọc (TEXT TTS)</span>
-                            <span style="font-size: 0.75rem; color: var(--accent-tts);">Đọc tự động khi đến giờ</span>
-                        </label>
-                        <textarea id="ttsText" class="form-input" rows="3" placeholder="Nhập câu nhắc nhở hoặc lời thoại bạn muốn hệ thống đọc khi reo chuông..."></textarea>
-                        
-                        <div class="preset-links-row">
-                            <span style="font-size: 0.75rem; color: var(--text-sub); font-weight: 600;">⚡ Mẫu lời thoại:</span>
-                            <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Chào buổi sáng! Đã đến giờ thức dậy để bắt đầu ngày mới thật nhiều năng lượng rồi.')">
-                                ☀️ Chào buổi sáng
-                            </button>
-                            <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Đã đến giờ uống nước và vận động nhẹ nhàng thư giãn một chút bạn nhé!')">
-                                💧 Nhắc uống nước
-                            </button>
-                            <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Hết giờ làm việc rồi, hãy chuẩn bị đồ đạc và nghỉ ngơi thôi nào!')">
-                                🎒 Nhắc hết giờ
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 8px;">
-                        <label class="form-label" for="ttsLanguage">
-                            <span>Ngôn ngữ giọng đọc (LANGUAGE)</span>
-                        </label>
-                        <select id="ttsLanguage" class="form-input">
-                            <option value="vi-VN" selected>🇻🇳 Tiếng Việt (vi-VN)</option>
-                            <option value="en-US">🇺🇸 Tiếng Anh (en-US)</option>
-                            <option value="ja-JP">🇯🇵 Tiếng Nhật (ja-JP)</option>
-                            <option value="ko-KR">🇰🇷 Tiếng Hàn (ko-KR)</option>
-                            <option value="zh-CN">🇨🇳 Tiếng Trung (zh-CN)</option>
-                            <option value="fr-FR">🇫🇷 Tiếng Pháp (fr-FR)</option>
-                            <option value="de-DE">🇩🇪 Tiếng Đức (de-DE)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- KHUNG PHÁT YOUTUBE MASTER DUY NHẤT -->
-                <div id="ytMasterContainer" class="mode-idle">
-                    <iframe id="ytIframe"
-                        title="YouTube Audio Alarm Engine"
-                        referrerpolicy="strict-origin-when-cross-origin"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        playsinline="1"
-                        webkit-playsinline="1"
-                        allowfullscreen
-                        style="width: 100%; height: 100%; border: none; display: block;">
-                    </iframe>
-                </div>
-
-                <!-- BANNER PHÁT THỬ YOUTUBE 30S -->
-                <div id="preplayStatus" class="yt-preplay-banner" style="display: none;">
-                    <span id="preplayText">Đang phát thử...</span>
-                    <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; flex: none;" onclick="pausePreplay()">⏸️ Pause ngay</button>
-                </div>
-
-                <!-- CÁC NÚT HÀNH ĐỘNG FORM -->
-                <div class="btn-row">
-                    <button type="button" class="btn btn-secondary" id="btnCancelEdit" style="display: none;" onclick="cancelEditAlarm()">
-                        <span>❌ Hủy sửa</span>
-                    </button>
-                    <button type="button" class="btn btn-accent" id="btnTestCurrent" onclick="testCurrentConfig()">
-                        <span id="btnTestText">▶️ Thử 30s</span>
-                    </button>
-                    <button type="button" class="btn btn-primary" id="btnSubmitForm" onclick="handleFormSubmit()">
-                        <span>💾 Lưu trực tiếp vào Sheet</span>
-                    </button>
-                </div>
+            <div class="active-alarms-badge" id="activeBadge">
+                🔔 <span id="activeCountText">0 mốc đang bật</span>
             </div>
         </div>
 
-        <!-- CỘT BÊN PHẢI: QUẢN LÝ SHEET & DANH SÁCH MỐC BÁO THỨC -->
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            <!-- CARD QUẢN LÝ GOOGLE SHEET & CẤU TRÚC LƯU MỚI -->
-            <div class="card">
-                <div class="card-header-bar">
-                    <div class="card-title">
-                        <span>☁️ Kết nối Google Sheet</span>
-                    </div>
-                    <span class="sheet-id-badge" title="Spreadsheet ID">1HNJrXP3JzAwH6AdDHKVSBv1izYSPCu8nksb1BFdNDuc</span>
+        <!-- THẺ DANH SÁCH MỐC BÁO THỨC -->
+        <div class="card">
+            <div class="card-header-bar" style="flex-wrap: wrap; gap: 12px;">
+                <div class="card-title">
+                    <span>📋 Danh sách mốc báo thức</span>
+                    <span id="alarmCountBadge" style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">(0 mốc)</span>
                 </div>
-
-                <div class="sheet-info-card">
-                    <div class="sheet-info-row">
-                        <span style="color: var(--text-sub); font-weight: 600;">Cột Sheet lưu:</span>
-                        <div class="sheet-structure-banner">
-                            <span class="sheet-col-badge">Col 0: ID</span>
-                            <span class="sheet-col-badge">Col 1: TIME</span>
-                            <span class="sheet-col-badge" style="color: var(--primary);">Col 2: TYPE (youtube/TTS)</span>
-                            <span class="sheet-col-badge">Col 3: TITLE</span>
-                            <span class="sheet-col-badge">Col 4: LINK YOUTUBE</span>
-                            <span class="sheet-col-badge" style="color: var(--accent-tts);">Col 5: TEXT TTS</span>
-                            <span class="sheet-col-badge" style="color: var(--accent-blue);">Col 6: LANGUAGE</span>
-                        </div>
-                    </div>
-                    <div class="sheet-info-row">
-                        <span style="color: var(--text-sub); font-weight: 600;">Tên Tab Sheet:</span>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <input type="text" id="sheetTabInput" class="form-input" style="padding: 4px 8px; font-size: 0.8rem; width: 110px;" value="Sheet1" onchange="changeSheetTab(this.value)">
-                            <button type="button" class="preset-pill" style="padding: 4px 8px; font-size: 0.75rem;" onclick="loadAlarmsFromSheet(true)">Áp dụng</button>
-                        </div>
-                    </div>
-                    <div class="sheet-info-row">
-                        <span style="color: var(--text-sub); font-weight: 600;">Trạng thái xử lý:</span>
-                        <span id="sheetDetailStatus" style="font-weight: 700; color: var(--accent-blue);">Đang kết nối...</span>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-secondary" style="font-size: 0.82rem; padding: 9px 12px;" onclick="loadAlarmsFromSheet(true)">
-                        <span>⬇️ Tải lại dữ liệu từ Sheet</span>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-primary" style="flex: none; min-width: auto; padding: 9px 18px; font-size: 0.88rem;" onclick="openCreateView()">
+                        <span>➕ Thêm báo thức mới</span>
                     </button>
-                    <button type="button" class="btn btn-secondary" style="font-size: 0.82rem; padding: 9px 12px;" onclick="pushAllAlarmsToSheet()">
-                        <span>⬆️ Đẩy đồng bộ tất cả lên Sheet</span>
+                    <button type="button" class="preset-pill" style="font-size: 0.8rem; padding: 7px 12px;" onclick="loadSampleAlarms()" title="Thêm nhanh 2 mốc mẫu YouTube & TTS">
+                        <span>⚡ Thêm 2 mốc mẫu</span>
                     </button>
                 </div>
             </div>
 
-            <!-- DANH SÁCH BÁO THỨC ĐÃ LƯU TRỰC TIẾP TỪ SHEET -->
-            <div class="card">
-                <div class="card-header-bar">
-                    <div class="card-title">
-                        <span>📋 Danh sách mốc báo thức</span>
-                        <span id="alarmCountBadge" style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">(0 mốc)</span>
-                    </div>
-                    <button type="button" class="preset-pill" style="font-size: 0.75rem; padding: 4px 10px;" onclick="loadSampleAlarms()">
-                        ➕ Thêm 2 mốc mẫu
+            <div class="alarm-list" id="alarmList">
+                <div style="text-align: center; padding: 36px 16px; color: var(--accent-blue);">
+                    <div style="font-size: 2rem; margin-bottom: 8px; animation: spin 1s infinite linear; display: inline-block;">🔄</div>
+                    <div>Đang tải dữ liệu trực tiếp từ Google Sheet...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MÀN HÌNH THÊM MỚI / CHỈNH SỬA (MẶC ĐỊNH ẨN, CLICK VÀO THÊM MỚI MỚI HIỂN THỊ) -->
+    <div id="viewFormView" style="display: none;">
+        <!-- THANH ĐIỀU HƯỚNG QUAY LẠI DANH SÁCH -->
+        <div class="view-nav-bar">
+            <button type="button" class="btn-back" onclick="showListView()">
+                <span>⬅️ Quay lại danh sách</span>
+            </button>
+            <span id="editingModeBadge" style="display: none; font-size: 0.78rem; background: var(--warning-light); color: var(--warning); border: 1px solid #fde68a; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
+                ✏️ ĐANG CHỈNH SỬA
+            </span>
+        </div>
+
+        <!-- FORM THIẾT LẬP / SỬA BÁO THỨC -->
+        <div class="card" id="alarmFormCard">
+            <div class="card-header-bar">
+                <div class="card-title" id="formCardTitle">
+                    <span>➕ Hẹn giờ báo thức mới</span>
+                </div>
+            </div>
+
+            <!-- 1. CHỌN LOẠI BÁO THỨC: YOUTUBE HOẶC TTS -->
+            <div class="form-group">
+                <label class="form-label">
+                    <span>Chọn hình thức báo thức:</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">TYPE lưu trên Sheet</span>
+                </label>
+                <div class="type-selector-grid">
+                    <button type="button" class="type-btn active yt" id="btnTypeYt" onclick="selectAlarmType('youtube')">
+                        <span>▶️ YouTube Audio</span>
+                    </button>
+                    <button type="button" class="type-btn tts" id="btnTypeTts" onclick="selectAlarmType('tts')">
+                        <span>🗣️ Giọng Đọc TTS</span>
                     </button>
                 </div>
+            </div>
 
-                <div class="alarm-list" id="alarmList">
-                    <div style="text-align: center; padding: 30px; color: var(--accent-blue);">
-                        <div style="font-size: 1.8rem; margin-bottom: 8px; animation: spin 1s infinite linear; display: inline-block;">🔄</div>
-                        <div>Đang tải dữ liệu trực tiếp từ Google Sheet...</div>
+            <!-- 2. GIỜ BÁO THỨC (TIME) -->
+            <div class="form-group">
+                <label class="form-label" for="alarmTime">
+                    <span>Giờ báo thức (24h)</span>
+                    <span style="font-size: 0.75rem; color: var(--accent-blue);">Định dạng HH:mm</span>
+                </label>
+                <input type="time" id="alarmTime" class="form-input form-time-input" required>
+                
+                <div class="quick-time-row">
+                    <span style="font-size: 0.75rem; color: var(--text-sub); margin-right: 2px;">⚡ Chọn nhanh:</span>
+                    <button type="button" class="quick-time-btn" onclick="addMinutesToInput(2)">+2 phút</button>
+                    <button type="button" class="quick-time-btn" onclick="addMinutesToInput(5)">+5 phút</button>
+                    <button type="button" class="quick-time-btn" onclick="addMinutesToInput(15)">+15 phút</button>
+                    <button type="button" class="quick-time-btn" onclick="setTimeInput('06:00')">06:00</button>
+                    <button type="button" class="quick-time-btn" onclick="setTimeInput('06:30')">06:30</button>
+                    <button type="button" class="quick-time-btn" onclick="setTimeInput('07:00')">07:00</button>
+                </div>
+            </div>
+
+            <!-- 3. TIÊU ĐỀ BÁO THỨC (TITLE) -->
+            <div class="form-group">
+                <label class="form-label" for="alarmTitle">
+                    <span>Tiêu đề báo thức (TITLE)</span>
+                </label>
+                <input type="text" id="alarmTitle" class="form-input" placeholder="Ví dụ: Báo thức sáng dậy đi làm, Nhắc họp, Tập thể dục...">
+            </div>
+
+            <!-- 4A. KHU VỰC CẤU HÌNH YOUTUBE (HIỂN THỊ KHI TYPE = YOUTUBE) -->
+            <div id="youtubeConfigSection">
+                <div class="form-group">
+                    <label class="form-label" for="ytUrl">
+                        <span>Link YouTube hoặc Video ID (LINK YOUTUBE)</span>
+                    </label>
+                    <input type="text" id="ytUrl" class="form-input" placeholder="Dán link (https://www.youtube.com/watch?v=...) hoặc Video ID" oninput="onYtUrlChange()">
+                    
+                    <div class="preset-links-row">
+                        <span style="font-size: 0.75rem; color: var(--text-sub); font-weight: 600;">⚡ Nhạc mẫu:</span>
+                        <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=fuXfT4Rv_WM', 'Nhạc Báo Thức 1 (fuXfT4Rv_WM)')">
+                            🎵 Mẫu 1 (fuXfT4Rv_WM)
+                        </button>
+                        <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=o8GrqUSdzi0', 'Nhạc Báo Thức 2 (o8GrqUSdzi0)')">
+                            🎵 Mẫu 2 (o8GrqUSdzi0)
+                        </button>
                     </div>
                 </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0 6px;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="preplay30s" checked>
+                        <span>⚡ Phát thử 30s rồi Pause khi lưu (đến giờ tự động Play)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="continuousLoop" checked>
+                        <span>🔁 Lặp lại liên tục cho đến khi bấm tắt</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 4B. KHU VỰC CẤU HÌNH TTS (HIỂN THỊ KHI TYPE = TTS) -->
+            <div id="ttsConfigSection" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label" for="ttsText">
+                        <span>Nội dung giọng đọc (TEXT TTS)</span>
+                        <span style="font-size: 0.75rem; color: var(--accent-tts);">Đọc tự động khi đến giờ</span>
+                    </label>
+                    <textarea id="ttsText" class="form-input" rows="3" placeholder="Nhập câu nhắc nhở hoặc lời thoại bạn muốn hệ thống đọc khi reo chuông..."></textarea>
+                    
+                    <div class="preset-links-row">
+                        <span style="font-size: 0.75rem; color: var(--text-sub); font-weight: 600;">⚡ Mẫu lời thoại:</span>
+                        <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Chào buổi sáng! Đã đến giờ thức dậy để bắt đầu ngày mới thật nhiều năng lượng rồi.')">
+                            ☀️ Chào buổi sáng
+                        </button>
+                        <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Đã đến giờ uống nước và vận động nhẹ nhàng thư giãn một chút bạn nhé!')">
+                            💧 Nhắc uống nước
+                        </button>
+                        <button type="button" class="preset-pill tts-pill" onclick="setTtsSample('Hết giờ làm việc rồi, hãy chuẩn bị đồ đạc và nghỉ ngơi thôi nào!')">
+                            🎒 Nhắc hết giờ
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 8px;">
+                    <label class="form-label" for="ttsLanguage">
+                        <span>Ngôn ngữ giọng đọc (LANGUAGE)</span>
+                    </label>
+                    <select id="ttsLanguage" class="form-input">
+                        <option value="vi-VN" selected>🇻🇳 Tiếng Việt (vi-VN)</option>
+                        <option value="en-US">🇺🇸 Tiếng Anh (en-US)</option>
+                        <option value="ja-JP">🇯🇵 Tiếng Nhật (ja-JP)</option>
+                        <option value="ko-KR">🇰🇷 Tiếng Hàn (ko-KR)</option>
+                        <option value="zh-CN">🇨🇳 Tiếng Trung (zh-CN)</option>
+                        <option value="fr-FR">🇫🇷 Tiếng Pháp (fr-FR)</option>
+                        <option value="de-DE">🇩🇪 Tiếng Đức (de-DE)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- KHUNG PHÁT YOUTUBE MASTER DUY NHẤT -->
+            <div id="ytMasterContainer" class="mode-idle">
+                <iframe id="ytIframe"
+                    title="YouTube Audio Alarm Engine"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    playsinline="1"
+                    webkit-playsinline="1"
+                    allowfullscreen
+                    style="width: 100%; height: 100%; border: none; display: block;">
+                </iframe>
+            </div>
+
+            <!-- BANNER PHÁT THỬ YOUTUBE 30S -->
+            <div id="preplayStatus" class="yt-preplay-banner" style="display: none;">
+                <span id="preplayText">Đang phát thử...</span>
+                <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; flex: none;" onclick="pausePreplay()">⏸️ Pause ngay</button>
+            </div>
+
+            <!-- CÁC NÚT HÀNH ĐỘNG FORM -->
+            <div class="btn-row">
+                <button type="button" class="btn btn-secondary" onclick="showListView()">
+                    <span>❌ Hủy / Quay lại</span>
+                </button>
+                <button type="button" class="btn btn-accent" id="btnTestCurrent" onclick="testCurrentConfig()">
+                    <span id="btnTestText">▶️ Thử 30s</span>
+                </button>
+                <button type="button" class="btn btn-primary" id="btnSubmitForm" onclick="handleFormSubmit()">
+                    <span>💾 Lưu trực tiếp vào Sheet</span>
+                </button>
             </div>
         </div>
     </div>
@@ -1632,7 +1614,54 @@
                 // Đọc thử 1 lần ngắn để xác nhận âm thanh đã sẵn sàng
                 speakTts(ttsTextVal, langVal, false);
             }
+
+            // Tự động quay lại màn hình danh sách sau khi lưu xong
+            showListView();
         }
+    }
+
+    // --- CHUYỂN ĐỔI MÀN HÌNH (DANH SÁCH MẶC ĐỊNH & THÊM MỚI / SỬA) ---
+    function showListView() {
+        editingAlarmId = null;
+        const listView = document.getElementById('viewListView');
+        const formView = document.getElementById('viewFormView');
+        if (listView) listView.style.display = 'block';
+        if (formView) formView.style.display = 'none';
+
+        const badge = document.getElementById('editingModeBadge');
+        if (badge) badge.style.display = 'none';
+
+        renderAlarms();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showFormView() {
+        const listView = document.getElementById('viewListView');
+        const formView = document.getElementById('viewFormView');
+        if (listView) listView.style.display = 'none';
+        if (formView) formView.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function openCreateView() {
+        unlockAudio();
+        editingAlarmId = null;
+
+        // Reset form về trạng thái thêm mới
+        document.getElementById('formCardTitle').innerHTML = `<span>➕ Hẹn giờ báo thức mới</span>`;
+        const badge = document.getElementById('editingModeBadge');
+        if (badge) badge.style.display = 'none';
+        document.getElementById('btnSubmitForm').innerHTML = `<span>💾 Lưu trực tiếp vào Sheet</span>`;
+
+        setDefaultTime();
+        document.getElementById('alarmTitle').value = '';
+        document.getElementById('ytUrl').value = '';
+        document.getElementById('ttsText').value = '';
+
+        const container = document.getElementById('ytMasterContainer');
+        if (container) container.className = 'mode-idle';
+
+        showFormView();
     }
 
     // --- 3. BẬT/TẮT TRẠNG THÁI: UPDATE TRỰC TIẾP LÊN SHEET & BIẾN ALARMS ---
@@ -1665,7 +1694,7 @@
         }
     }
 
-    // --- 4. SỬA MỐC: NẠP VÀO FORM ---
+    // --- 4. SỬA MỐC: NẠP VÀO FORM VÀ CHUYỂN SANG MÀN HÌNH FORM ---
     function editAlarm(id) {
         unlockAudio();
         const item = alarms.find(a => a.id === id);
@@ -1691,36 +1720,17 @@
 
         // Cập nhật giao diện form
         document.getElementById('formCardTitle').innerHTML = `<span>✏️ Chỉnh sửa mốc: <b style="color:var(--accent-blue);">${item.time}</b></span>`;
-        document.getElementById('editingModeBadge').style.display = 'inline-block';
-        document.getElementById('btnCancelEdit').style.display = 'inline-flex';
+        const badge = document.getElementById('editingModeBadge');
+        if (badge) badge.style.display = 'inline-block';
         document.getElementById('btnSubmitForm').innerHTML = `<span>💾 Cập nhật lên Sheet</span>`;
 
-        const formCard = document.getElementById('alarmFormCard');
-        if (formCard) {
-            formCard.style.borderColor = 'var(--accent-blue)';
-            formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        renderAlarms();
+        showFormView();
         showToast(`Đang chỉnh sửa mốc ${item.time}. Thay đổi xong hãy bấm Cập nhật!`, 'info');
     }
 
     function cancelEditAlarm() {
-        editingAlarmId = null;
-        document.getElementById('formCardTitle').innerHTML = `<span>➕ Hẹn giờ báo thức mới</span>`;
-        document.getElementById('editingModeBadge').style.display = 'none';
-        document.getElementById('btnCancelEdit').style.display = 'none';
-        document.getElementById('btnSubmitForm').innerHTML = `<span>💾 Lưu trực tiếp vào Sheet</span>`;
-
-        const formCard = document.getElementById('alarmFormCard');
-        if (formCard) {
-            formCard.style.borderColor = '';
-        }
-
-        setDefaultTime();
-        document.getElementById('alarmTitle').value = '';
-        renderAlarms();
-        showToast('Đã thoát chế độ chỉnh sửa.', 'info');
+        showListView();
+        showToast('Đã quay lại danh sách.', 'info');
     }
 
     // --- 5. XÓA MỐC: XÓA TRỰC TIẾP KHỎI SHEET & BIẾN ALARMS ---
@@ -1785,12 +1795,17 @@
         if (!alarms || alarms.length === 0) {
             listEl.innerHTML = `
                 <div class="empty-hint">
-                    <div style="font-size: 2.4rem; margin-bottom: 10px;">📭</div>
-                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">Chưa có mốc báo thức nào trong Sheet.</div>
-                    <div style="margin-top: 6px; font-size: 0.85rem;">Hãy tạo mốc mới ở bên trái hoặc bấm nạp 2 mẫu bên dưới!</div>
-                    <button type="button" class="preset-pill" style="margin-top: 14px; font-weight: 700;" onclick="loadSampleAlarms()">
-                        ⚡ Nạp 2 mốc mẫu (YouTube & TTS) lên Sheet
-                    </button>
+                    <div style="font-size: 2.5rem; margin-bottom: 12px;">⏰</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Chưa có mốc báo thức nào</div>
+                    <div style="margin-top: 6px; font-size: 0.88rem; color: var(--text-sub);">Bấm vào nút bên dưới để tạo mốc báo thức mới hoặc nạp nhanh 2 mốc mẫu!</div>
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 18px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-primary" style="flex: none; min-width: 170px;" onclick="openCreateView()">
+                            ➕ Thêm báo thức mới
+                        </button>
+                        <button type="button" class="preset-pill" style="font-weight: 700; padding: 10px 18px; font-size: 0.85rem;" onclick="loadSampleAlarms()">
+                            ⚡ Nạp 2 mốc mẫu (YT & TTS)
+                        </button>
+                    </div>
                 </div>`;
             return;
         }
@@ -2303,3 +2318,4 @@
 </script>
 </body>
 </html>
+

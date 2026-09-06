@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- CỰC KỲ QUAN TRỌNG: Sửa lỗi YouTube Error 153 (Video player configuration error) do thiếu referrer policy -->
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>Báo Thức YouTube - Hẹn Giờ Nhạc YouTube</title>
+    <title>Báo Thức YouTube - Đồng Bộ Google Sheet</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20width=%22100%22%20height=%22100%22><text y=%22.9em%22 font-size=%2290%22>⏰</text></svg>">
     <!-- Tham khảo thư viện kết nối Ajax & xác thực từ nikki/index.html -->
     <script src="../com/util.js"></script>
@@ -120,13 +120,13 @@
             background: #0f172a;
             border: 1px solid var(--border);
             color: var(--text-sub);
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 0.78rem;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
             transition: all 0.2s;
         }
 
@@ -187,6 +187,7 @@
             display: flex;
             flex-direction: column;
             gap: 14px;
+            transition: border-color 0.25s, box-shadow 0.25s;
         }
 
         .card-header-bar {
@@ -195,6 +196,7 @@
             justify-content: space-between;
             padding-bottom: 12px;
             border-bottom: 1px solid var(--border);
+            gap: 10px;
         }
 
         .card-title {
@@ -246,12 +248,13 @@
             color: #10b981;
             background: rgba(16, 185, 129, 0.15);
             border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 6px;
             display: inline-flex;
             align-items: center;
             gap: 5px;
             width: fit-content;
+            font-weight: 600;
         }
 
         /* FORM INPUTS */
@@ -377,10 +380,12 @@
             display: flex;
             gap: 10px;
             margin-top: 6px;
+            flex-wrap: wrap;
         }
 
         .btn {
             flex: 1;
+            min-width: 120px;
             padding: 12px 16px;
             border-radius: 10px;
             border: none;
@@ -504,7 +509,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 16px;
-            transition: border-color 0.2s, transform 0.15s;
+            transition: all 0.2s ease;
         }
 
         .alarm-item:hover {
@@ -530,6 +535,7 @@
             color: #38bdf8;
             letter-spacing: 1px;
             font-variant-numeric: tabular-nums;
+            line-height: 1.1;
         }
 
         .alarm-title {
@@ -562,7 +568,7 @@
         .alarm-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .toggle-switch {
@@ -612,6 +618,7 @@
             transition: all 0.2s;
         }
         .btn-icon:hover { color: #ef4444; border-color: #ef4444; background: #221c2c; }
+        .btn-icon.btn-edit:hover { color: #38bdf8; border-color: #38bdf8; background: #0c4a6e; }
 
         /* OVERLAY KHI CHUÔNG REO TOÀN MÀN HÌNH */
         .alarm-ringing-overlay {
@@ -674,6 +681,11 @@
             50% { transform: scale(1.04); opacity: 0.88; }
         }
 
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         /* TOAST THÔNG BÁO NHANH */
         #toastNotice {
             position: fixed;
@@ -702,7 +714,7 @@
         .empty-hint {
             text-align: center;
             color: var(--text-sub);
-            padding: 30px 0;
+            padding: 30px 16px;
             font-size: 0.95rem;
         }
     </style>
@@ -722,23 +734,23 @@
 
         <div class="header-actions">
             <!-- Trạng thái kết nối Google Sheet -->
-            <div class="sheet-status-pill" id="sheetStatusPill" title="Trạng thái kết nối Google Sheet: 1HNJrXP3JzAwH6AdDHKVSBv1izYSPCu8nksb1BFdNDuc">
+            <div class="sheet-status-pill" id="sheetStatusPill" title="Spreadsheet ID: 1HNJrXP3JzAwH6AdDHKVSBv1izYSPCu8nksb1BFdNDuc">
                 <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Đang kiểm tra Google Sheet...</span>
+                <span id="statusText">Đang kết nối Google Sheet...</span>
             </div>
 
             <button type="button" class="preset-pill" onclick="loadAlarmsFromSheet(true)">
-                🔄 Đồng bộ Sheet
+                🔄 Tải lại từ Sheet
             </button>
             <button type="button" class="preset-pill" onclick="loadSampleAlarms()">
-                ⚡ Nạp 2 mẫu
+                ⚡ Nạp 2 mẫu lên Sheet
             </button>
         </div>
     </header>
 
     <!-- DASHBOARD GRID 2 CỘT 100% FULL WIDTH -->
     <div class="dashboard-grid">
-        <!-- CỘT BÊN TRÁI: ĐỒNG HỒ & THIẾT LẬP BÁO THỨC MỚI -->
+        <!-- CỘT BÊN TRÁI: ĐỒNG HỒ & THIẾT LẬP BÁO THỨC MỚI / CHỈNH SỬA -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
             <!-- ĐỒNG HỒ HIỆN TẠI -->
             <div class="clock-card">
@@ -753,12 +765,15 @@
                 </div>
             </div>
 
-            <!-- FORM THIẾT LẬP BÁO THỨC -->
-            <div class="card">
+            <!-- FORM THIẾT LẬP / CHỈNH SỬA BÁO THỨC -->
+            <div class="card" id="alarmFormCard">
                 <div class="card-header-bar">
-                    <div class="card-title">
+                    <div class="card-title" id="formCardTitle">
                         <span>➕ Hẹn giờ báo thức mới</span>
                     </div>
+                    <span id="editingModeBadge" style="display: none; font-size: 0.72rem; background: #f59e0b; color: #000; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                        ✏️ ĐANG CHỈNH SỬA
+                    </span>
                 </div>
 
                 <div class="form-group">
@@ -843,11 +858,14 @@
                 </div>
 
                 <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" id="btnCancelEdit" style="display: none;" onclick="cancelEditAlarm()">
+                        <span>❌ Hủy sửa</span>
+                    </button>
                     <button type="button" class="btn btn-accent" id="btnTest" onclick="startPreplay(30)">
                         <span>▶️ Thử 30s</span>
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="saveAlarm()">
-                        <span>💾 Lưu & Đồng bộ Sheet</span>
+                    <button type="button" class="btn btn-primary" id="btnSubmitForm" onclick="handleFormSubmit()">
+                        <span>💾 Lưu trực tiếp vào Sheet</span>
                     </button>
                 </div>
             </div>
@@ -859,7 +877,7 @@
             <div class="card">
                 <div class="card-header-bar">
                     <div class="card-title">
-                        <span>☁️ Lưu trữ Google Sheet</span>
+                        <span>☁️ Kết nối Google Sheet</span>
                     </div>
                     <span class="sheet-id-badge" title="Spreadsheet ID">ID: 1HNJrXP3JzAwH6AdDHKVSBv1izYSPCu8nksb1BFdNDuc</span>
                 </div>
@@ -877,35 +895,38 @@
                         </div>
                     </div>
                     <div class="sheet-info-row">
-                        <span style="color: var(--text-sub);">Trạng thái đồng bộ:</span>
-                        <span id="sheetDetailStatus" style="font-weight: 600; color: #38bdf8;">Đang sẵn sàng</span>
+                        <span style="color: var(--text-sub);">Trạng thái xử lý:</span>
+                        <span id="sheetDetailStatus" style="font-weight: 600; color: #38bdf8;">Đang kết nối...</span>
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button type="button" class="btn btn-secondary" style="font-size: 0.82rem; padding: 9px 12px;" onclick="loadAlarmsFromSheet(true)">
-                        <span>⬇️ Tải lại từ Google Sheet</span>
+                        <span>⬇️ Tải lại dữ liệu từ Sheet</span>
                     </button>
                     <button type="button" class="btn btn-secondary" style="font-size: 0.82rem; padding: 9px 12px;" onclick="pushAllAlarmsToSheet()">
-                        <span>⬆️ Đẩy tất cả lên Google Sheet</span>
+                        <span>⬆️ Đẩy đồng bộ tất cả lên Sheet</span>
                     </button>
                 </div>
             </div>
 
-            <!-- DANH SÁCH BÁO THỨC ĐÃ LƯU -->
+            <!-- DANH SÁCH BÁO THỨC ĐÃ LƯU TRỰC TIẾP TỪ SHEET VÀ BIẾN -->
             <div class="card">
                 <div class="card-header-bar">
                     <div class="card-title">
-                        <span>📋 Danh sách mốc báo thức</span>
+                        <span>📋 Danh sách mốc báo thức (từ Sheet)</span>
                         <span id="alarmCountBadge" style="font-size: 0.78rem; color: var(--text-sub); font-weight: normal;">(0 mốc)</span>
                     </div>
                     <button type="button" class="preset-pill" style="font-size: 0.74rem; padding: 4px 10px;" onclick="loadSampleAlarms()">
-                        ➕ Nạp 2 mốc mẫu
+                        ➕ Thêm 2 mẫu
                     </button>
                 </div>
 
                 <div class="alarm-list" id="alarmList">
-                    <div class="empty-hint">Chưa có mốc báo thức nào. Hãy thêm mốc ở bên trái!</div>
+                    <div style="text-align: center; padding: 30px; color: #38bdf8;">
+                        <div style="font-size: 1.8rem; margin-bottom: 8px; animation: spin 1s infinite linear; display: inline-block;">🔄</div>
+                        <div>Đang tải dữ liệu trực tiếp từ Google Sheet...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -934,13 +955,17 @@
 </div>
 
 <script>
-    // --- CẤU HÌNH GOOGLE SHEET THEO NIKKI/INDEX.HTML & NIKKI/DIARY-SERVER.JS ---
+    // --- CẤU HÌNH GOOGLE SHEET THEO NIKKI/INDEX.HTML & TASK/INDEX.HTML ---
     const URL_VERCEL_API = 'https://hsk-gilt.vercel.app/api/gSheet';
     const SPREAD_ALARM   = '1HNJrXP3JzAwH6AdDHKVSBv1izYSPCu8nksb1BFdNDuc';
     let SHEET_ALARM      = localStorage.getItem('yt_alarm_sheet_tab') || 'Sheet1';
     const STORAGE_KEY    = 'yt_alarms_simple_v1';
 
+    // BIẾN LƯU DỮ LIỆU ĐỂ XỬ LÝ TOÀN CỤC TRONG BỘ NHỚ
     let alarms = [];
+    let isLoadingFromSheet = true;
+    let editingAlarmId = null;
+
     let activeRingingAlarm = null;
     let preplayTimer = null;
     let preplayInterval = null;
@@ -967,10 +992,10 @@
     const sheetTabInputEl = document.getElementById('sheetTabInput');
     if (sheetTabInputEl) sheetTabInputEl.value = SHEET_ALARM;
 
-    // Load dữ liệu ban đầu từ LocalStorage
+    // Khởi tạo biến từ LocalStorage dự phòng ban đầu
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        if (data) alarms = JSON.parse(data);
+        const cached = localStorage.getItem(STORAGE_KEY);
+        if (cached) alarms = JSON.parse(cached);
     } catch (e) {
         alarms = [];
     }
@@ -988,7 +1013,7 @@
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => {
             el.style.display = 'none';
-        }, 3000);
+        }, 3200);
     }
 
     // Cập nhật trạng thái hiển thị của Google Sheet
@@ -1017,7 +1042,7 @@
         loadAlarmsFromSheet(true);
     }
 
-    // GỌI API GOOGLE SHEET (THAM KHẢO CHUẨN NIKKI/DIARY-SERVER.JS)
+    // GỌI API GOOGLE SHEET (DÙNG CALLAJAX TỰ ĐỘNG GẮN TOKEN)
     async function callAPI(paramsObj) {
         if (typeof callAjax === 'function') {
             return await callAjax(URL_VERCEL_API, paramsObj);
@@ -1035,9 +1060,27 @@
         }
     }
 
-    // ĐỌC BÁO THỨC TỪ GOOGLE SHEET
+    // TẠO DÒNG DỮ LIỆU ĐỂ LƯU VÀO SHEET
+    function createRowData(alarm) {
+        return [
+            alarm.id,
+            alarm.time,
+            alarm.url,
+            alarm.vid,
+            alarm.label,
+            alarm.loop ? '1' : '0',
+            alarm.auxSound || 'none',
+            alarm.enabled ? '1' : '0',
+            alarm.updatedAt || new Date().toLocaleString('vi-VN')
+        ];
+    }
+
+    // --- 1. LOAD DỮ LIỆU TRỰC TIẾP TỪ SHEET VÀ LƯU VÀO BIẾN ALARMS KHI LOAD TRANG ---
     async function loadAlarmsFromSheet(showFeedback = false) {
-        updateSheetStatus('syncing', 'Đang tải từ Sheet...');
+        isLoadingFromSheet = true;
+        updateSheetStatus('syncing', 'Đang tải trực tiếp từ Sheet...');
+        renderAlarms();
+
         try {
             const res = await callAPI({
                 sheet: SHEET_ALARM,
@@ -1047,121 +1090,390 @@
 
             if (res && res.values && Array.isArray(res.values)) {
                 // Bỏ qua dòng tiêu đề nếu có
-                const rows = res.values.filter(r => r && r[0] && r[0] !== 'ID' && r[1] !== 'TIME');
-                if (rows.length > 0) {
-                    const parsed = rows.map(r => ({
-                        id: String(r[0]),
-                        time: String(r[1] || '07:00'),
-                        url: String(r[2] || ''),
-                        vid: String(r[3] || extractYouTubeId(r[2])),
-                        label: String(r[4] || ''),
-                        loop: String(r[5]).toLowerCase() === 'true',
-                        auxSound: String(r[6] || 'none'),
-                        enabled: String(r[7]).toLowerCase() !== 'false',
-                        synced: true,
-                        updatedAt: r[8] || ''
-                    }));
+                const rows = res.values.filter(r => r && r[0] && String(r[0]).trim() !== '' && String(r[0]).toUpperCase() !== 'ID' && String(r[1]).toUpperCase() !== 'TIME');
+                
+                const parsed = rows.map(r => ({
+                    id: String(r[0]),
+                    time: String(r[1] || '07:00'),
+                    url: String(r[2] || ''),
+                    vid: String(r[3] || extractYouTubeId(r[2])),
+                    label: String(r[4] || ''),
+                    loop: String(r[5]) === '1' || String(r[5]).toLowerCase() === 'true',
+                    auxSound: String(r[6] || 'none'),
+                    enabled: String(r[7]) === '1' || String(r[7]).toLowerCase() === 'true',
+                    updatedAt: r[8] || ''
+                }));
 
-                    alarms = parsed;
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
-                    renderAlarms();
-                    updateSheetStatus('synced', `Đã đồng bộ ${parsed.length} mốc từ Sheet`);
-                    if (showFeedback) showToast(`Đã nạp ${parsed.length} mốc từ Google Sheet!`, 'success');
-                    return;
-                } else {
-                    updateSheetStatus('synced', 'Sheet trống hoặc chưa có dữ liệu');
-                    if (showFeedback) showToast('Google Sheet hiện chưa có mốc nào.', 'info');
+                // LƯU TRỰC TIẾP VÀO BIẾN TOÀN CỤC `alarms` ĐỂ XỬ LÝ
+                alarms = parsed;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+                isLoadingFromSheet = false;
+                renderAlarms();
+
+                updateSheetStatus('synced', `Đã đồng bộ ${alarms.length} mốc từ Sheet`);
+                if (showFeedback) {
+                    showToast(`✅ Đã nạp ${alarms.length} mốc trực tiếp từ Google Sheet!`, 'success');
                 }
+                return;
             } else {
-                const errMsg = (res && res.error) ? res.error : 'Không có phản hồi từ Sheet';
-                updateSheetStatus('error', 'Chưa kết nối: ' + errMsg);
-                if (showFeedback) showToast('Lỗi tải Sheet: ' + errMsg, 'error');
+                const errMsg = (res && res.error) ? res.error : 'Sheet trống hoặc chưa có dữ liệu';
+                isLoadingFromSheet = false;
+                renderAlarms();
+                updateSheetStatus('synced', errMsg);
+                if (showFeedback) showToast(errMsg, 'info');
             }
         } catch (err) {
             console.warn('[Sync Sheet Error]', err);
-            updateSheetStatus('error', 'Ngoại tuyến / Lỗi kết nối');
+            isLoadingFromSheet = false;
+            renderAlarms();
+            updateSheetStatus('error', 'Lỗi kết nối tới Sheet');
             if (showFeedback) showToast('Không thể kết nối tới Google Sheet', 'error');
         }
     }
 
-    // ĐỒNG BỘ 1 MỐC LÊN GOOGLE SHEET (THÊM HOẶC CẬP NHẬT)
-    async function syncAlarmToSheet(alarm) {
-        updateSheetStatus('syncing', 'Đang lưu lên Google Sheet...');
-        const rowData = [
-            alarm.id,
-            alarm.time,
-            alarm.url,
-            alarm.vid,
-            alarm.label,
-            String(alarm.loop),
-            alarm.auxSound,
-            String(alarm.enabled),
-            new Date().toLocaleString('vi-VN')
-        ];
+    // --- 2. THÊM HOẶC SỬA MỐC TRỰC TIẾP VÀO GOOGLE SHEET & CẬP NHẬT BIẾN ALARMS ---
+    async function handleFormSubmit() {
+        unlockAudio();
+        const timeVal = document.getElementById('alarmTime').value;
+        const urlVal = document.getElementById('ytUrl').value;
+        const labelVal = document.getElementById('alarmLabel').value.trim();
+        const preplay = document.getElementById('preplay30s').checked;
+        const loop = document.getElementById('continuousLoop').checked;
+        const auxRadio = document.querySelector('input[name="auxAudioOption"]:checked');
+        const auxSound = auxRadio ? auxRadio.value : 'none';
+
+        if (!timeVal) {
+            alert('Vui lòng chọn giờ báo thức!');
+            return;
+        }
+        const vid = extractYouTubeId(urlVal);
+        if (!vid) {
+            alert('Vui lòng dán link hoặc ID YouTube hợp lệ!');
+            return;
+        }
+
+        const submitBtn = document.getElementById('btnSubmitForm');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>⏳ Đang ghi vào Sheet...</span>`;
+
+        if (editingAlarmId) {
+            // === CHẾ ĐỘ SỬA MỐC: UPDATE TRỰC TIẾP VÀO SHEET ===
+            const existing = alarms.find(a => a.id === editingAlarmId);
+            const updatedAlarm = {
+                id: editingAlarmId,
+                time: timeVal,
+                url: urlVal,
+                vid: vid,
+                label: labelVal || `YouTube (${vid})`,
+                loop: loop,
+                auxSound: auxSound,
+                enabled: existing ? existing.enabled : true,
+                updatedAt: new Date().toLocaleString('vi-VN')
+            };
+
+            const rowData = createRowData(updatedAlarm);
+            updateSheetStatus('syncing', `Đang cập nhật mốc ${updatedAlarm.time} lên Sheet...`);
+
+            try {
+                await callAPI({
+                    act: 'updateByPosVal',
+                    pos: 0,
+                    val: updatedAlarm.id,
+                    sheet: SHEET_ALARM,
+                    spread: SPREAD_ALARM,
+                    data: JSON.stringify(rowData)
+                });
+
+                // CẬP NHẬT TRỰC TIẾP VÀO BIẾN `alarms`
+                const idx = alarms.findIndex(a => a.id === editingAlarmId);
+                if (idx !== -1) {
+                    alarms[idx] = updatedAlarm;
+                } else {
+                    alarms.push(updatedAlarm);
+                }
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+                renderAlarms();
+
+                updateSheetStatus('synced', `Đã cập nhật mốc ${updatedAlarm.time} lên Sheet`);
+                showToast(`✅ Đã cập nhật mốc ${updatedAlarm.time} trực tiếp vào Google Sheet!`, 'success');
+                cancelEditAlarm();
+            } catch (err) {
+                console.error('[Update Sheet Error]:', err);
+                const idx = alarms.findIndex(a => a.id === editingAlarmId);
+                if (idx !== -1) alarms[idx] = updatedAlarm;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+                renderAlarms();
+                updateSheetStatus('error', 'Lỗi cập nhật Sheet, đã lưu biến tạm');
+                showToast('⚠️ Lỗi ghi Google Sheet! Đã lưu tạm vào bộ nhớ.', 'error');
+                cancelEditAlarm();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<span>💾 Lưu trực tiếp vào Sheet</span>`;
+            }
+
+            if (preplay) startPreplay(30);
+
+        } else {
+            // === CHẾ ĐỘ THÊM MỐC: THÊM TRỰC TIẾP VÀO SHEET ===
+            const newAlarm = {
+                id: 'alarm_' + Date.now(),
+                time: timeVal,
+                url: urlVal,
+                vid: vid,
+                label: labelVal || `YouTube (${vid})`,
+                loop: loop,
+                auxSound: auxSound,
+                enabled: true,
+                updatedAt: new Date().toLocaleString('vi-VN')
+            };
+
+            const rowData = createRowData(newAlarm);
+            updateSheetStatus('syncing', `Đang thêm mốc ${newAlarm.time} vào Sheet...`);
+
+            try {
+                await callAPI({
+                    act: 'add',
+                    sheet: SHEET_ALARM,
+                    spread: SPREAD_ALARM,
+                    data: JSON.stringify(rowData)
+                });
+
+                // LƯU TRỰC TIẾP VÀO BIẾN `alarms`
+                alarms.push(newAlarm);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+                renderAlarms();
+
+                updateSheetStatus('synced', `Đã thêm mốc ${newAlarm.time} vào Sheet`);
+                showToast(`✅ Đã thêm mốc ${newAlarm.time} trực tiếp vào Google Sheet!`, 'success');
+            } catch (err) {
+                console.error('[Add Sheet Error]:', err);
+                alarms.push(newAlarm);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+                renderAlarms();
+                updateSheetStatus('error', 'Lỗi thêm Sheet, đã lưu biến tạm');
+                showToast('⚠️ Lỗi kết nối Sheet! Đã lưu tạm vào biến.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+
+            if (preplay) {
+                startPreplay(30);
+            } else {
+                const iframe = document.getElementById('ytIframe');
+                iframe.src = buildYouTubeEmbedUrl(vid, 0, loop ? 1 : 0);
+            }
+        }
+    }
+
+    // --- 3. BẬT/TẮT TRẠNG THÁI: UPDATE TRỰC TIẾP VÀO SHEET & BIẾN ALARMS ---
+    async function toggleAlarm(id) {
+        unlockAudio();
+        const item = alarms.find(a => a.id === id);
+        if (!item) return;
+
+        // Cập nhật biến bộ nhớ ngay lập tức để giao diện mượt mà
+        item.enabled = !item.enabled;
+        item.updatedAt = new Date().toLocaleString('vi-VN');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+        renderAlarms();
+
+        const rowData = createRowData(item);
+        updateSheetStatus('syncing', `Đang cập nhật mốc ${item.time} trên Sheet...`);
 
         try {
-            const res = await callAPI({
+            await callAPI({
                 act: 'updateByPosVal',
                 pos: 0,
-                val: alarm.id,
+                val: item.id,
                 sheet: SHEET_ALARM,
                 spread: SPREAD_ALARM,
                 data: JSON.stringify(rowData)
             });
-
-            if (res && (res.success || res.action)) {
-                updateSheetStatus('synced', `Đã lưu mốc ${alarm.time} lên Sheet`);
-                showToast(`Đã lưu mốc ${alarm.time} lên Google Sheet!`, 'success');
-            } else {
-                const err = (res && res.error) ? res.error : 'Lỗi lưu';
-                updateSheetStatus('error', err);
-                showToast(`Lưu nội bộ OK. Cảnh báo Sheet: ${err}`, 'error');
-            }
+            updateSheetStatus('synced', `Đã ${item.enabled ? 'bật' : 'tắt'} mốc ${item.time} trên Sheet`);
+            showToast(`Đã ${item.enabled ? 'bật' : 'tắt'} mốc ${item.time} trực tiếp trên Google Sheet!`, 'info');
         } catch (e) {
-            console.error('[Sync Single Error]', e);
-            updateSheetStatus('error', 'Lỗi kết nối');
+            console.warn('[Toggle Sheet Error]', e);
+            updateSheetStatus('error', 'Lỗi cập nhật trạng thái lên Sheet');
         }
     }
 
-    // XÓA MỐC KHỎI GOOGLE SHEET
-    async function deleteAlarmFromSheet(id) {
-        updateSheetStatus('syncing', 'Đang xóa khỏi Sheet...');
+    // --- 4. SỬA MỐC BÁO THỨC: NẠP DỮ LIỆU TỪ BIẾN VÀO FORM ---
+    function editAlarm(id) {
+        unlockAudio();
+        const item = alarms.find(a => a.id === id);
+        if (!item) return;
+
+        editingAlarmId = id;
+
+        // Điền dữ liệu vào form
+        document.getElementById('alarmTime').value = item.time;
+        document.getElementById('ytUrl').value = item.url;
+        document.getElementById('alarmLabel').value = item.label;
+        document.getElementById('continuousLoop').checked = !!item.loop;
+
+        const auxRadios = document.querySelectorAll('input[name="auxAudioOption"]');
+        auxRadios.forEach(r => {
+            r.checked = (r.value === item.auxSound);
+        });
+
+        onYtUrlChange();
+
+        // Cập nhật giao diện form sang trạng thái sửa
+        document.getElementById('formCardTitle').innerHTML = `<span>✏️ Chỉnh sửa mốc báo thức: <b style="color:#38bdf8;">${item.time}</b></span>`;
+        document.getElementById('editingModeBadge').style.display = 'inline-block';
+        document.getElementById('btnCancelEdit').style.display = 'inline-flex';
+        document.getElementById('btnSubmitForm').innerHTML = `<span>💾 Cập nhật trực tiếp lên Sheet</span>`;
+
+        const formCard = document.getElementById('alarmFormCard');
+        if (formCard) {
+            formCard.style.borderColor = '#38bdf8';
+            formCard.style.boxShadow = '0 0 20px rgba(56, 189, 248, 0.3)';
+            formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        renderAlarms();
+        showToast(`Đang chỉnh sửa mốc ${item.time}. Thay đổi xong hãy bấm Cập nhật!`, 'info');
+    }
+
+    function cancelEditAlarm() {
+        editingAlarmId = null;
+        document.getElementById('formCardTitle').innerHTML = `<span>➕ Hẹn giờ báo thức mới</span>`;
+        document.getElementById('editingModeBadge').style.display = 'none';
+        document.getElementById('btnCancelEdit').style.display = 'none';
+        document.getElementById('btnSubmitForm').innerHTML = `<span>💾 Lưu trực tiếp vào Sheet</span>`;
+
+        const formCard = document.getElementById('alarmFormCard');
+        if (formCard) {
+            formCard.style.borderColor = '';
+            formCard.style.boxShadow = '';
+        }
+
+        setDefaultTime();
+        document.getElementById('alarmLabel').value = '';
+        renderAlarms();
+        showToast('Đã thoát chế độ chỉnh sửa.', 'info');
+    }
+
+    // --- 5. XÓA MỐC: XÓA TRỰC TIẾP KHỎI SHEET & XÓA KHỎI BIẾN ALARMS ---
+    async function deleteAlarm(id) {
+        unlockAudio();
+        const item = alarms.find(a => a.id === id);
+        if (!item) return;
+
+        if (!confirm(`Bạn có chắc muốn xóa mốc báo thức ${item.time} (${item.label}) trực tiếp khỏi Google Sheet?`)) {
+            return;
+        }
+
+        updateSheetStatus('syncing', `Đang xóa mốc ${item.time} khỏi Sheet...`);
+
         try {
-            const res = await callAPI({
+            await callAPI({
                 act: 'deleteByPosVal',
                 pos: 0,
                 val: id,
                 sheet: SHEET_ALARM,
                 spread: SPREAD_ALARM
             });
-            if (res && res.success) {
-                updateSheetStatus('synced', 'Đã xóa khỏi Google Sheet');
-            }
-        } catch (e) {
-            console.warn('[Delete Sheet Error]', e);
+
+            // XÓA KHỎI BIẾN `alarms`
+            alarms = alarms.filter(a => a.id !== id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+            renderAlarms();
+
+            if (editingAlarmId === id) cancelEditAlarm();
+
+            updateSheetStatus('synced', `Đã xóa mốc ${item.time} khỏi Sheet`);
+            showToast(`🗑️ Đã xóa mốc ${item.time} trực tiếp khỏi Google Sheet!`, 'info');
+        } catch (err) {
+            console.error('[Delete Sheet Error]:', err);
+            alarms = alarms.filter(a => a.id !== id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+            renderAlarms();
+            updateSheetStatus('error', 'Lỗi xóa khỏi Sheet');
+            showToast('⚠️ Lỗi xóa khỏi Google Sheet!', 'error');
         }
     }
 
-    // ĐẨY TẤT CẢ MỐC LOCALSTORAGE LÊN GOOGLE SHEET
+    // --- 6. HIỂN THỊ DANH SÁCH TỪ BIẾN ALARMS ---
+    function renderAlarms() {
+        const listEl = document.getElementById('alarmList');
+        const badgeEl = document.getElementById('alarmCountBadge');
+        const activeCountEl = document.getElementById('activeCountText');
+
+        const activeCount = alarms.filter(a => a.enabled).length;
+        if (badgeEl) badgeEl.innerText = `(${alarms.length} mốc)`;
+        if (activeCountEl) activeCountEl.innerText = `${activeCount} mốc đang bật`;
+
+        if (isLoadingFromSheet) {
+            listEl.innerHTML = `
+                <div style="text-align: center; padding: 40px 16px; color: #38bdf8;">
+                    <div style="font-size: 2.2rem; margin-bottom: 10px; animation: spin 1s infinite linear; display: inline-block;">🔄</div>
+                    <div style="font-weight: 700; font-size: 1rem;">Đang tải dữ liệu trực tiếp từ Google Sheet...</div>
+                    <div style="font-size: 0.78rem; color: var(--text-sub); margin-top: 6px;">Spreadsheet ID: 1HNJrXP3JzAwH6AdDHKVSBv1izYSPCu8nksb1BFdNDuc</div>
+                </div>`;
+            return;
+        }
+
+        if (!alarms || alarms.length === 0) {
+            listEl.innerHTML = `
+                <div class="empty-hint">
+                    <div style="font-size: 2.4rem; margin-bottom: 10px;">📭</div>
+                    <div style="font-size: 1.05rem; font-weight: 600; color: #fff;">Chưa có mốc báo thức nào trong Sheet.</div>
+                    <div style="margin-top: 6px; font-size: 0.82rem;">Hãy tạo mốc mới ở bên trái hoặc nạp 2 bài nhạc mẫu!</div>
+                    <button type="button" class="preset-pill" style="margin-top: 14px;" onclick="loadSampleAlarms()">
+                        ⚡ Nạp 2 mốc mẫu trực tiếp lên Sheet
+                    </button>
+                </div>`;
+            return;
+        }
+
+        alarms.sort((a, b) => a.time.localeCompare(b.time));
+
+        listEl.innerHTML = alarms.map(a => {
+            const auxTag = a.auxSound === 'white_noise'
+                ? '<span class="tag-badge rain">🌧️ White Noise</span>'
+                : '';
+            const isEditingThis = (editingAlarmId === a.id);
+            return `
+            <div class="alarm-item ${a.enabled ? '' : 'disabled'}" style="${isEditingThis ? 'border-color: #38bdf8; background: #1a2a47; box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);' : ''}">
+                <div class="alarm-info">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="alarm-time">${a.time}</div>
+                        ${isEditingThis ? '<span style="font-size: 0.72rem; background: #f59e0b; color: #000; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Đang sửa</span>' : ''}
+                    </div>
+                    <div class="alarm-title">🎵 ${escapeHtml(a.label)}</div>
+                    <div class="alarm-badges">
+                        <span class="tag-badge yt">▶️ ${a.vid}</span>
+                        ${auxTag}
+                        <span class="tag-badge cloud" title="ID trên Sheet: ${escapeHtml(a.id)}">☁️ Sheet ID: ${escapeHtml(a.id.slice(-8))}</span>
+                    </div>
+                </div>
+                <div class="alarm-actions">
+                    <button type="button" class="btn-icon btn-edit" title="Sửa mốc này" onclick="editAlarm('${a.id}')">✏️</button>
+                    <button type="button" class="btn-icon" title="Thử phát ngay" onclick="triggerAlarmNow('${a.id}')">▶️</button>
+                    <button type="button" class="btn-icon" title="Xóa khỏi Google Sheet" onclick="deleteAlarm('${a.id}')">🗑️</button>
+                    <label class="toggle-switch" title="${a.enabled ? 'Đang bật - bấm để tắt' : 'Đang tắt - bấm để bật'}">
+                        <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAlarm('${a.id}')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
+
+    // ĐẨY TẤT CẢ BIẾN ALARMS LÊN SHEET
     async function pushAllAlarmsToSheet() {
         if (!alarms || alarms.length === 0) {
-            showToast('Chưa có mốc nào để đẩy lên Sheet!', 'info');
+            showToast('Chưa có mốc nào trong biến để đẩy lên Sheet!', 'info');
             return;
         }
         updateSheetStatus('syncing', `Đang đẩy ${alarms.length} mốc lên Sheet...`);
         let successCount = 0;
         for (const a of alarms) {
-            const rowData = [
-                a.id,
-                a.time,
-                a.url,
-                a.vid,
-                a.label,
-                String(a.loop),
-                a.auxSound,
-                String(a.enabled),
-                new Date().toLocaleString('vi-VN')
-            ];
+            const rowData = createRowData(a);
             try {
                 await callAPI({
                     act: 'updateByPosVal',
@@ -1175,27 +1487,11 @@
             } catch (e) {}
         }
         updateSheetStatus('synced', `Đã đẩy thành công ${successCount}/${alarms.length} mốc`);
-        showToast(`Đã đẩy ${successCount} mốc lên Google Sheet thành công!`, 'success');
+        showToast(`✅ Đã đồng bộ ${successCount} mốc lên Google Sheet thành công!`, 'success');
     }
 
-    // Áp dụng bài mẫu vào form
-    function applySamplePreset(url, label) {
-        unlockAudio();
-        document.getElementById('ytUrl').value = url;
-        document.getElementById('alarmLabel').value = label;
-        onYtUrlChange();
-
-        document.querySelectorAll('.preset-pill').forEach(pill => {
-            if (pill.innerText.includes(extractYouTubeId(url))) {
-                pill.classList.add('active');
-            } else {
-                pill.classList.remove('active');
-            }
-        });
-    }
-
-    // Nạp sẵn 2 mốc báo thức mẫu
-    function loadSampleAlarms() {
+    // Nạp sẵn 2 mốc báo thức mẫu trực tiếp lên Google Sheet
+    async function loadSampleAlarms() {
         unlockAudio();
         const now = new Date();
 
@@ -1215,18 +1511,20 @@
             label: SAMPLE_PRESETS[0].label,
             loop: true,
             auxSound: 'none',
-            enabled: true
+            enabled: true,
+            updatedAt: new Date().toLocaleString('vi-VN')
         };
 
         const sample2 = {
-            id: 'sample_2_' + Date.now(),
+            id: 'sample_2_' + (Date.now() + 1),
             time: `${h2}:${m2}`,
             url: SAMPLE_PRESETS[1].url,
             vid: SAMPLE_PRESETS[1].vid,
             label: SAMPLE_PRESETS[1].label,
             loop: true,
             auxSound: 'none',
-            enabled: true
+            enabled: true,
+            updatedAt: new Date().toLocaleString('vi-VN')
         };
 
         alarms.push(sample1, sample2);
@@ -1235,9 +1533,42 @@
 
         applySamplePreset(SAMPLE_PRESETS[0].url, SAMPLE_PRESETS[0].label);
 
-        // Đồng bộ mẫu lên Sheet
-        syncAlarmToSheet(sample1);
-        syncAlarmToSheet(sample2);
+        // ĐẨY TRỰC TIẾP VÀO SHEET
+        updateSheetStatus('syncing', 'Đang nạp 2 mốc mẫu vào Google Sheet...');
+        try {
+            await callAPI({
+                act: 'add',
+                sheet: SHEET_ALARM,
+                spread: SPREAD_ALARM,
+                data: JSON.stringify(createRowData(sample1))
+            });
+            await callAPI({
+                act: 'add',
+                sheet: SHEET_ALARM,
+                spread: SPREAD_ALARM,
+                data: JSON.stringify(createRowData(sample2))
+            });
+            updateSheetStatus('synced', `Đã lưu 2 mốc mẫu trực tiếp lên Sheet`);
+            showToast('✅ Đã nạp 2 mốc mẫu trực tiếp lên Google Sheet!', 'success');
+        } catch (e) {
+            console.warn('[Sample Sheet Error]', e);
+        }
+    }
+
+    // Áp dụng bài mẫu vào form
+    function applySamplePreset(url, label) {
+        unlockAudio();
+        document.getElementById('ytUrl').value = url;
+        document.getElementById('alarmLabel').value = label;
+        onYtUrlChange();
+
+        document.querySelectorAll('.preset-pill').forEach(pill => {
+            if (pill.innerText.includes(extractYouTubeId(url))) {
+                pill.classList.add('active');
+            } else {
+                pill.classList.remove('active');
+            }
+        });
     }
 
     // Trợ giúp chỉnh giờ nhanh
@@ -1265,7 +1596,7 @@
         return (match && match[2].length === 11) ? match[2] : '';
     }
 
-    // Đảm bảo Web Audio không ngủ gật trên Safari/iOS
+    // Đảm bảo Web Audio không bị treo
     function unlockAudio() {
         if (!audioCtx) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -1325,7 +1656,7 @@
         whiteNoiseGain = null;
     }
 
-    // Cập nhật đồng hồ thời gian thực
+    // CẬP NHẬT ĐỒNG HỒ THỜI GIAN THỰC & QUÉT TỪ BIẾN ALARMS
     function updateClock() {
         const now = new Date();
         const h = String(now.getHours()).padStart(2, '0');
@@ -1339,6 +1670,7 @@
         const dateEl = document.getElementById('clockDate');
         if (dateEl) dateEl.innerText = now.toLocaleDateString('vi-VN', options);
 
+        // QUÉT TỪ BIẾN ALARMS ĐỂ KÍCH HOẠT CHUÔNG BÁO THỨC
         if (s === '00' && !activeRingingAlarm) {
             checkAlarms(`${h}:${m}`);
         }
@@ -1353,7 +1685,7 @@
         const hh = String(d.getHours()).padStart(2, '0');
         const mm = String(d.getMinutes()).padStart(2, '0');
         const el = document.getElementById('alarmTime');
-        if (el && !el.value) el.value = `${hh}:${mm}`;
+        if (el) el.value = `${hh}:${mm}`;
     }
     setDefaultTime();
 
@@ -1462,145 +1794,17 @@
         }, 1200);
     }
 
-    // LƯU MỐC BÁO THỨC & ĐỒNG BỘ GOOGLE SHEET
-    function saveAlarm() {
-        unlockAudio();
-        const timeVal = document.getElementById('alarmTime').value;
-        const urlVal = document.getElementById('ytUrl').value;
-        const labelVal = document.getElementById('alarmLabel').value.trim();
-        const preplay = document.getElementById('preplay30s').checked;
-        const loop = document.getElementById('continuousLoop').checked;
-        const auxRadio = document.querySelector('input[name="auxAudioOption"]:checked');
-        const auxSound = auxRadio ? auxRadio.value : 'none';
-
-        if (!timeVal) {
-            alert('Vui lòng chọn giờ báo thức!');
-            return;
-        }
-        const vid = extractYouTubeId(urlVal);
-        if (!vid) {
-            alert('Vui lòng dán link YouTube hợp lệ!');
-            return;
-        }
-
-        const newAlarm = {
-            id: Date.now().toString(),
-            time: timeVal,
-            url: urlVal,
-            vid: vid,
-            label: labelVal || `YouTube (${vid})`,
-            loop: loop,
-            auxSound: auxSound,
-            enabled: true,
-            updatedAt: new Date().toLocaleString('vi-VN')
-        };
-
-        alarms.push(newAlarm);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
-        renderAlarms();
-
-        // Đồng bộ tức thì lên Google Sheet
-        syncAlarmToSheet(newAlarm);
-
-        if (preplay) {
-            startPreplay(30);
-        } else {
-            const iframe = document.getElementById('ytIframe');
-            iframe.src = buildYouTubeEmbedUrl(vid, 0, loop ? 1 : 0);
-            showToast(`Đã lưu báo thức ${timeVal}!`, 'success');
-        }
-    }
-
-    // Bật/Tắt mốc báo thức
-    function toggleAlarm(id) {
-        unlockAudio();
-        const item = alarms.find(a => a.id === id);
-        if (item) {
-            item.enabled = !item.enabled;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
-            renderAlarms();
-            syncAlarmToSheet(item);
-
-            if (item.enabled) {
-                document.getElementById('ytUrl').value = item.url;
-                onYtUrlChange();
-            }
-        }
-    }
-
-    // Xóa mốc báo thức
-    function deleteAlarm(id) {
-        if (!confirm('Bạn có chắc muốn xóa mốc báo thức này?')) return;
-        alarms = alarms.filter(a => a.id !== id);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
-        renderAlarms();
-
-        // Xóa khỏi Google Sheet
-        deleteAlarmFromSheet(id);
-        showToast('Đã xóa mốc báo thức!', 'info');
-    }
-
     function triggerAlarmNow(id) {
         unlockAudio();
         const item = alarms.find(a => a.id === id);
         if (item) triggerAlarm(item);
     }
 
-    // HIỂN THỊ DANH SÁCH MỐC BÁO THỨC
-    function renderAlarms() {
-        const listEl = document.getElementById('alarmList');
-        const badgeEl = document.getElementById('alarmCountBadge');
-        const activeCountEl = document.getElementById('activeCountText');
-
-        const activeCount = alarms.filter(a => a.enabled).length;
-        if (badgeEl) badgeEl.innerText = `(${alarms.length} mốc)`;
-        if (activeCountEl) activeCountEl.innerText = `${activeCount} mốc đang bật`;
-
-        if (!alarms || alarms.length === 0) {
-            listEl.innerHTML = `
-                <div class="empty-hint">
-                    Chưa có mốc báo thức nào.<br>
-                    <button type="button" class="preset-pill" style="margin-top: 10px;" onclick="loadSampleAlarms()">
-                        ⚡ Nạp 2 mốc mẫu ngay
-                    </button>
-                </div>`;
-            return;
-        }
-
-        alarms.sort((a, b) => a.time.localeCompare(b.time));
-
-        listEl.innerHTML = alarms.map(a => {
-            const auxTag = a.auxSound === 'white_noise'
-                ? '<span class="tag-badge rain">🌧️ White Noise</span>'
-                : '';
-            return `
-            <div class="alarm-item ${a.enabled ? '' : 'disabled'}">
-                <div class="alarm-info">
-                    <div class="alarm-time">${a.time}</div>
-                    <div class="alarm-title">🎵 ${escapeHtml(a.label)}</div>
-                    <div class="alarm-badges">
-                        <span class="tag-badge yt">▶️ ${a.vid}</span>
-                        ${auxTag}
-                        <span class="tag-badge cloud">☁️ Sheet Sync</span>
-                    </div>
-                </div>
-                <div class="alarm-actions">
-                    <button type="button" class="btn-icon" title="Thử phát ngay" onclick="triggerAlarmNow('${a.id}')">▶️</button>
-                    <button type="button" class="btn-icon" title="Xóa" onclick="deleteAlarm('${a.id}')">🗑️</button>
-                    <label class="toggle-switch">
-                        <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAlarm('${a.id}')">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-            `;
-        }).join('');
-    }
-
     function escapeHtml(str) {
         return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
     }
 
+    // QUÉT TỪ BIẾN ALARMS ĐỂ KÍCH HOẠT BÁO THỨC
     function checkAlarms(currentHHMM) {
         const match = alarms.find(a => a.enabled && a.time === currentHHMM);
         if (match) {
@@ -1608,7 +1812,7 @@
         }
     }
 
-    // KÍCH HOẠT REO CHUÔNG BÁO THỨC (KHÔNG THÁO RÁP DOM IFRAME)
+    // KÍCH HOẠT REO CHUÔNG BÁO THỨC
     function triggerAlarm(alarm) {
         unlockAudio();
         activeRingingAlarm = alarm;
@@ -1647,7 +1851,7 @@
         }
     }
 
-    // Tắt chuông báo thức
+    // TẮT CHUÔNG BÁO THỨC
     function stopAlarm() {
         activeRingingAlarm = null;
         stopWhiteNoise();
@@ -1670,10 +1874,7 @@
         document.addEventListener(evt, unlockAudio, { once: true, passive: true });
     });
 
-    // Render dữ liệu ban đầu
-    renderAlarms();
-
-    // Tự động kiểm tra đồng bộ với Google Sheet khi mở trang (tham khảo nikki/diary-server.js)
+    // KHI MỞ TRANG: TỰ ĐỘNG TẢI DỮ LIỆU TRỰC TIẾP TỪ GOOGLE SHEET VÀO BIẾN `alarms`
     loadAlarmsFromSheet(false);
 </script>
 </body>

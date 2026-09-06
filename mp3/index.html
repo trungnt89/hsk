@@ -395,6 +395,28 @@
             z-index: 10;
         }
 
+        .btn-yt-quick {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .btn-yt-quick:hover {
+            background: #fee2e2;
+            border-color: #f87171;
+            transform: translateY(-1px);
+        }
+
         .search-input {
             flex: 1;
             padding: 8px 12px;
@@ -637,6 +659,10 @@
             background: #ffffff;
             color: var(--primary);
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .type-btn.active#typeBtnYoutube {
+            color: #dc2626;
         }
 
         .type-section {
@@ -1032,6 +1058,9 @@
     <div class="view-content active" id="viewPlaylist">
         <div class="playlist-header-bar">
             <input type="text" id="playlistSearch" class="search-input" placeholder="🔍 Tìm kiếm bài hát..." oninput="filterPlaylist()">
+            <button type="button" class="btn-yt-quick" onclick="openYoutubeDirectModal()" title="Phát nhạc từ link YouTube">
+                <span>▶️ YouTube</span>
+            </button>
         </div>
         <ul class="playlist" id="playlist">
             <li style="justify-content: center; color: var(--text-sub); border: none;">Đang tải danh sách bài hát...</li>
@@ -1068,15 +1097,18 @@
                     </div>
                 </div>
 
-                <!-- SELECTOR: AUDIO vs TTS -->
+                <!-- SELECTOR: AUDIO vs TTS vs YOUTUBE -->
                 <div class="form-group">
                     <label class="form-label">Kiểu phát khi tới giờ</label>
                     <div class="type-selector">
                         <button type="button" class="type-btn active" id="typeBtnAudio" onclick="setAlarmType('audio')">
-                            <span>🎵 Phát File Audio</span>
+                            <span>🎵 File Audio</span>
                         </button>
                         <button type="button" class="type-btn" id="typeBtnTTS" onclick="setAlarmType('tts')">
-                            <span>🗣️ Đọc Văn Bản TTS</span>
+                            <span>🗣️ Đọc TTS</span>
+                        </button>
+                        <button type="button" class="type-btn" id="typeBtnYoutube" onclick="setAlarmType('youtube')">
+                            <span>📺 Nhạc YouTube</span>
                         </button>
                     </div>
                 </div>
@@ -1169,6 +1201,44 @@
                     </div>
                 </div>
 
+                <!-- SECTION C: YOUTUBE SETTING -->
+                <div class="type-section" id="sectionYoutube">
+                    <div class="form-group">
+                        <label class="form-label">Link video hoặc ID YouTube</label>
+                        <input type="text" id="formYoutubeUrl" class="form-input" placeholder="Ví dụ: https://www.youtube.com/watch?v=... hoặc https://youtu.be/..." oninput="onYoutubeUrlChange()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tên bài hát / Ghi chú video (tùy chọn)</label>
+                        <input type="text" id="formYoutubeTitle" class="form-input" placeholder="Ví dụ: Nhạc Lofi thư giãn buổi sáng, Piano đón ngày mới...">
+                    </div>
+
+                    <div class="tts-sample-container">
+                        <div class="tts-sample-label">💡 Gợi ý bài hát hay & báo thức nhẹ nhàng:</div>
+                        <div class="tts-sample-pills">
+                            <button type="button" class="sample-pill" onclick="applyYoutubeSample('https://www.youtube.com/watch?v=jfKfPfyJRdk', 'Lofi Hip Hop - Beats to Relax')">☕ Lofi Hip Hop</button>
+                            <button type="button" class="sample-pill" onclick="applyYoutubeSample('https://www.youtube.com/watch?v=5qap5aO4i9A', 'Lofi Báo thức buổi sáng')">🌅 Báo thức sáng</button>
+                            <button type="button" class="sample-pill" onclick="applyYoutubeSample('https://www.youtube.com/watch?v=4xDzrJKXOOY', 'Piano thư giãn đón ngày mới')">🎹 Piano thư giãn</button>
+                            <button type="button" class="sample-pill" onclick="applyYoutubeSample('https://www.youtube.com/watch?v=eKFTSSKCzWA', 'Tiếng suối & chim hót thiên nhiên')">🌿 Tiếng thiên nhiên</button>
+                        </div>
+                    </div>
+
+                    <!-- TÙY CHỌN LẶP LẠI YOUTUBE -->
+                    <div class="form-row" style="margin-top: 2px; background: #f8fafc; padding: 7px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.83rem; font-weight: 600; cursor: pointer; color: var(--text-main); margin: 0;">
+                            <input type="checkbox" id="formYoutubeLoop" checked>
+                            <span>🔁 Lặp lại video YouTube liên tục cho đến khi tắt báo thức</span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                        <span id="youtubePreviewStatus" style="font-size: 0.78rem; color: var(--text-sub);"></span>
+                        <button type="button" class="btn-test" id="btnTestYoutube" onclick="testYoutubePreview()">
+                            <span>▶️ Nghe thử YouTube</span>
+                        </button>
+                    </div>
+                    <div id="youtubeFormPreviewBox" style="display: none; margin-top: 8px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; aspect-ratio: 16/9; max-height: 200px; background: #000;"></div>
+                </div>
+
                 <!-- REPEAT OPTION -->
                 <div class="form-row" style="margin-top: 4px;">
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
@@ -1207,7 +1277,45 @@
         <div class="alarm-ring-title" id="ringTitle">Báo thức</div>
         <div class="alarm-ring-sub" id="ringSub">Đang phát nội dung hẹn giờ...</div>
         <div class="alarm-ring-loop-indicator" id="ringLoopBadge">🔁 Đang lặp lại phát âm cho đến khi tắt...</div>
+        <div id="ringYoutubeContainer" style="display: none; width: 100%; aspect-ratio: 16/9; max-height: 220px; border-radius: 12px; overflow: hidden; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: #000;"></div>
         <button class="btn-dismiss-alarm" onclick="dismissCurrentAlarm()">⏹️ Tắt / Dừng Báo Thức</button>
+    </div>
+</div>
+
+<!-- YOUTUBE DIRECT PLAYER MODAL -->
+<div class="app-login-backdrop" id="youtubeDirectModal" style="display: none;">
+    <div class="app-login-modal" style="max-width: 440px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.4rem;">▶️</span>
+                <h3 style="margin: 0; color: var(--text-main); font-size: 1.1rem; font-weight: 800;">Phát nhạc từ YouTube</h3>
+            </div>
+            <button type="button" class="btn-cancel" style="padding: 2px 8px; font-size: 0.85rem;" onclick="closeYoutubeDirectModal()">✕ Đóng</button>
+        </div>
+        <p style="margin: 0 0 12px 0; color: var(--text-sub); font-size: 0.82rem; line-height: 1.4;">
+            Dán link video YouTube bất kỳ để nghe nhạc trực tiếp trong ứng dụng mà không cần tải file về máy.
+        </p>
+        <div style="margin-bottom: 10px;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-bottom: 4px;">LINK HOẶC ID VIDEO YOUTUBE</label>
+            <div style="display: flex; gap: 6px;">
+                <input type="text" id="directYoutubeUrl" class="form-input" placeholder="https://www.youtube.com/watch?v=... hoặc youtu.be/..." style="flex: 1;" onkeydown="if(event.key==='Enter') playDirectYoutube();">
+                <button type="button" class="btn-save-alarm" style="padding: 8px 14px; background: #dc2626; margin: 0; white-space: nowrap;" onclick="playDirectYoutube()">Phát</button>
+            </div>
+        </div>
+        <div class="tts-sample-container" style="margin-bottom: 12px;">
+            <div class="tts-sample-label">💡 Gợi ý bài hát hay:</div>
+            <div class="tts-sample-pills">
+                <button type="button" class="sample-pill" onclick="applyDirectYoutubeSample('https://www.youtube.com/watch?v=jfKfPfyJRdk')">☕ Lofi Hip Hop</button>
+                <button type="button" class="sample-pill" onclick="applyDirectYoutubeSample('https://www.youtube.com/watch?v=5qap5aO4i9A')">🌅 Lofi Chill Sáng</button>
+                <button type="button" class="sample-pill" onclick="applyDirectYoutubeSample('https://www.youtube.com/watch?v=4xDzrJKXOOY')">🎹 Piano Thư Giãn</button>
+                <button type="button" class="sample-pill" onclick="applyDirectYoutubeSample('https://www.youtube.com/watch?v=eKFTSSKCzWA')">🌿 Thiên Nhiên</button>
+            </div>
+        </div>
+        <div id="directYoutubeFrameContainer" style="display: none; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 10px;"></div>
+        <div id="directYoutubeControls" style="display: none; justify-content: space-between; align-items: center;">
+            <span id="directYoutubeTitle" style="font-size: 0.8rem; font-weight: 700; color: var(--primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;"></span>
+            <button type="button" class="btn-cancel" style="padding: 4px 10px; font-size: 0.8rem; color: #dc2626; border-color: #fca5a5; background: #fef2f2;" onclick="stopDirectYoutube()">⏹ Dừng phát</button>
+        </div>
     </div>
 </div>
 
@@ -1596,6 +1704,8 @@
 
     async function playFile(id, name, forceRestart = false) {
         if (!isAudioActivated) isAudioActivated = true;
+        stopDirectYoutube();
+        stopCurrentSpeech();
         localStorage.setItem('lastSelectedId', id);
         document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
         const activeItem = document.getElementById(`item-${id}`);
@@ -1862,13 +1972,21 @@
 
         listElem.innerHTML = sortedAlarms.map(a => {
             const isAudio = a.type === 'audio';
+            const isYt = a.type === 'youtube';
             const isJa = (a.lang === 'ja-JP') || (a.voice && a.voice.startsWith('ja'));
             const langBadge = isJa ? '<span class="badge-lang-tag ja">🇯🇵 Nhật</span>' : '<span class="badge-lang-tag vi">🇻🇳 Việt</span>';
             const loopBadge = (a.continuousLoop !== false) ? '<span class="badge-loop-tag" title="Lặp lại liên tục cho đến khi tắt">🔁 Lặp lại</span>' : '';
 
-            const detailText = isAudio
-                ? `🎵 <strong>Audio:</strong> ${escapeHtml(a.fileName || 'Chưa chọn bài')}`
-                : `🗣️ ${langBadge} ${loopBadge} <strong>TTS (${a.engine === 'cloud' ? 'Cloud' : a.engine === 'auto' ? 'Auto' : 'Thiết bị'}):</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
+            let detailText = '';
+            if (isAudio) {
+                detailText = `🎵 <strong>Audio:</strong> ${escapeHtml(a.fileName || 'Chưa chọn bài')}`;
+            } else if (isYt) {
+                const ytBadge = '<span class="badge-lang-tag" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">📺 YouTube</span>';
+                const ytLoopBadge = (a.continuousLoop !== false) ? '<span class="badge-loop-tag" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5;" title="Lặp lại liên tục cho đến khi tắt">🔁 Lặp lại</span>' : '';
+                detailText = `📺 ${ytBadge} ${ytLoopBadge} <strong>Nhạc:</strong> ${escapeHtml(a.youtubeTitle || a.youtubeUrl || 'Video YouTube')}`;
+            } else {
+                detailText = `🗣️ ${langBadge} ${loopBadge} <strong>TTS (${a.engine === 'cloud' ? 'Cloud' : a.engine === 'auto' ? 'Auto' : 'Thiết bị'}):</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
+            }
 
             return `
                 <div class="alarm-card ${a.enabled ? '' : 'disabled'}" id="alarm-card-${a.id}">
@@ -1931,19 +2049,23 @@
         currentAlarmType = type;
         const btnAudio = document.getElementById('typeBtnAudio');
         const btnTTS = document.getElementById('typeBtnTTS');
+        const btnYoutube = document.getElementById('typeBtnYoutube');
         const secAudio = document.getElementById('sectionAudio');
         const secTTS = document.getElementById('sectionTTS');
+        const secYoutube = document.getElementById('sectionYoutube');
+
+        [btnAudio, btnTTS, btnYoutube].forEach(b => b?.classList.remove('active'));
+        [secAudio, secTTS, secYoutube].forEach(s => s?.classList.remove('active'));
 
         if (type === 'audio') {
-            btnAudio.classList.add('active');
-            btnTTS.classList.remove('active');
-            secAudio.classList.add('active');
-            secTTS.classList.remove('active');
+            btnAudio?.classList.add('active');
+            secAudio?.classList.add('active');
+        } else if (type === 'youtube') {
+            btnYoutube?.classList.add('active');
+            secYoutube?.classList.add('active');
         } else {
-            btnTTS.classList.add('active');
-            btnAudio.classList.remove('active');
-            secTTS.classList.add('active');
-            secAudio.classList.remove('active');
+            btnTTS?.classList.add('active');
+            secTTS?.classList.add('active');
         }
     }
 
@@ -1953,6 +2075,14 @@
         document.getElementById('formAlarmLabel').value = '';
         document.getElementById('formAudioFile').value = '';
         document.getElementById('formTtsText').value = '';
+        document.getElementById('formYoutubeUrl').value = '';
+        document.getElementById('formYoutubeTitle').value = '';
+        document.getElementById('formYoutubeLoop').checked = true;
+        const ytPreviewBox = document.getElementById('youtubeFormPreviewBox');
+        if (ytPreviewBox) {
+            ytPreviewBox.innerHTML = '';
+            ytPreviewBox.style.display = 'none';
+        }
         document.getElementById('formAlarmRepeat').checked = true;
         document.getElementById('formTtsLoop').checked = true;
         document.getElementById('formTtsEngine').value = 'device';
@@ -1974,7 +2104,12 @@
 
         setAlarmType(alarm.type || 'audio');
 
-        if (alarm.type === 'tts') {
+        if (alarm.type === 'youtube') {
+            document.getElementById('formYoutubeUrl').value = alarm.youtubeUrl || '';
+            document.getElementById('formYoutubeTitle').value = alarm.youtubeTitle || '';
+            document.getElementById('formYoutubeLoop').checked = (alarm.continuousLoop !== false);
+            onYoutubeUrlChange();
+        } else if (alarm.type === 'tts') {
             const isJa = (alarm.lang === 'ja-JP') || (alarm.voice && alarm.voice.startsWith('ja'));
             setTtsLang(isJa ? 'ja-JP' : 'vi-VN');
 
@@ -2012,6 +2147,9 @@
         let rate = '1.0';
         let lang = currentTtsLang;
         let continuousLoop = true;
+        let youtubeUrl = '';
+        let youtubeTitle = '';
+        let youtubeVideoId = '';
 
         if (currentAlarmType === 'audio') {
             fileId = formAudioFileSelect.value;
@@ -2021,6 +2159,18 @@
                 fileId = allFiles[0].id;
                 fileName = allFiles[0].name;
             }
+        } else if (currentAlarmType === 'youtube') {
+            youtubeUrl = document.getElementById('formYoutubeUrl').value.trim();
+            youtubeTitle = document.getElementById('formYoutubeTitle').value.trim();
+            youtubeVideoId = extractYouTubeId(youtubeUrl);
+            if (!youtubeVideoId) {
+                alert('Vui lòng nhập đường link hoặc ID video YouTube hợp lệ!\nVí dụ: https://www.youtube.com/watch?v=... hoặc https://youtu.be/...');
+                return;
+            }
+            if (!youtubeTitle) {
+                youtubeTitle = 'Nhạc YouTube (' + youtubeVideoId + ')';
+            }
+            continuousLoop = document.getElementById('formYoutubeLoop').checked;
         } else {
             ttsText = document.getElementById('formTtsText').value.trim();
             if (!ttsText) {
@@ -2050,6 +2200,9 @@
                     rate,
                     lang,
                     continuousLoop,
+                    youtubeUrl,
+                    youtubeTitle,
+                    youtubeVideoId,
                     label: labelVal,
                     repeat: repeatVal
                 };
@@ -2068,6 +2221,9 @@
                 rate,
                 lang,
                 continuousLoop,
+                youtubeUrl,
+                youtubeTitle,
+                youtubeVideoId,
                 label: labelVal,
                 enabled: true,
                 repeat: repeatVal
@@ -2150,6 +2306,131 @@
     }
 
     // ==========================================
+    // 4B. YOUTUBE MUSIC HELPERS & DIRECT PLAYER
+    // ==========================================
+    function extractYouTubeId(url) {
+        if (!url) return '';
+        const clean = String(url).trim();
+        if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) return clean;
+        const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([\w-]{11})/i);
+        return match ? match[1] : '';
+    }
+
+    function applyYoutubeSample(url, title) {
+        document.getElementById('formYoutubeUrl').value = url;
+        document.getElementById('formYoutubeTitle').value = title;
+        onYoutubeUrlChange();
+    }
+
+    function onYoutubeUrlChange() {
+        const url = document.getElementById('formYoutubeUrl').value.trim();
+        const vid = extractYouTubeId(url);
+        const statusSpan = document.getElementById('youtubePreviewStatus');
+        if (vid) {
+            if (statusSpan) statusSpan.innerHTML = `✅ Nhận diện Video ID: <strong>${vid}</strong>`;
+        } else if (url) {
+            if (statusSpan) statusSpan.innerText = '⚠️ Link chưa đúng định dạng YouTube';
+        } else {
+            if (statusSpan) statusSpan.innerText = '';
+        }
+    }
+
+    let isYoutubeTesting = false;
+    function testYoutubePreview() {
+        const url = document.getElementById('formYoutubeUrl').value.trim();
+        const vid = extractYouTubeId(url);
+        const statusSpan = document.getElementById('youtubePreviewStatus');
+        const btnTest = document.getElementById('btnTestYoutube');
+        const previewBox = document.getElementById('youtubeFormPreviewBox');
+
+        if (isYoutubeTesting) {
+            if (previewBox) {
+                previewBox.innerHTML = '';
+                previewBox.style.display = 'none';
+            }
+            isYoutubeTesting = false;
+            if (btnTest) btnTest.innerHTML = '<span>▶️ Nghe thử YouTube</span>';
+            if (statusSpan) statusSpan.innerText = '⏹ Đã dừng nghe thử';
+            setTimeout(() => { if (statusSpan && !isYoutubeTesting) statusSpan.innerText = ''; }, 2000);
+            return;
+        }
+
+        if (!vid) {
+            alert('Vui lòng nhập link YouTube hợp lệ trước khi nghe thử!');
+            return;
+        }
+
+        if (player) player.pause();
+        stopCurrentSpeech();
+
+        isYoutubeTesting = true;
+        if (btnTest) btnTest.innerHTML = '<span>⏹ Dừng nghe thử</span>';
+        if (statusSpan) statusSpan.innerText = '▶️ Đang phát thử video...';
+
+        if (previewBox) {
+            previewBox.style.display = 'block';
+            previewBox.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&enablejsapi=1" title="YouTube video preview" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>`;
+        }
+    }
+
+    // Modal phát nhạc nhanh từ link YouTube (Trực tiếp từ thanh bài hát)
+    function openYoutubeDirectModal() {
+        document.getElementById('youtubeDirectModal').style.display = 'flex';
+        setTimeout(() => {
+            const input = document.getElementById('directYoutubeUrl');
+            if (input) input.focus();
+        }, 100);
+    }
+
+    function closeYoutubeDirectModal() {
+        document.getElementById('youtubeDirectModal').style.display = 'none';
+    }
+
+    function applyDirectYoutubeSample(url) {
+        document.getElementById('directYoutubeUrl').value = url;
+        playDirectYoutube();
+    }
+
+    let isDirectYoutubePlaying = false;
+    function playDirectYoutube() {
+        const input = document.getElementById('directYoutubeUrl');
+        const url = input.value.trim();
+        const vid = extractYouTubeId(url);
+        if (!vid) {
+            alert('Vui lòng nhập link YouTube hợp lệ!');
+            return;
+        }
+
+        // Dừng nhạc offline và TTS đang phát
+        if (player) player.pause();
+        stopCurrentSpeech();
+
+        const container = document.getElementById('directYoutubeFrameContainer');
+        const controls = document.getElementById('directYoutubeControls');
+        const titleEl = document.getElementById('directYoutubeTitle');
+
+        container.style.display = 'block';
+        container.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&enablejsapi=1" title="YouTube direct player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>`;
+
+        if (controls) controls.style.display = 'flex';
+        if (titleEl) titleEl.innerText = `▶️ Đang phát YouTube [${vid}]`;
+
+        isDirectYoutubePlaying = true;
+        playerTitleElem.innerText = `▶️ Đang phát YouTube: [${vid}]`;
+    }
+
+    function stopDirectYoutube() {
+        const container = document.getElementById('directYoutubeFrameContainer');
+        const controls = document.getElementById('directYoutubeControls');
+        if (container) {
+            container.innerHTML = '';
+            container.style.display = 'none';
+        }
+        if (controls) controls.style.display = 'none';
+        isDirectYoutubePlaying = false;
+    }
+
+    // ==========================================
     // 5. ALARM MONITORING & TRIGGERING
     // ==========================================
     function startAlarmMonitor() {
@@ -2187,19 +2468,47 @@
         console.log("[ALARM TRIGGERED]", alarm);
         const overlay = document.getElementById('alarmRingOverlay');
         document.getElementById('ringTime').innerText = alarm.time;
-        document.getElementById('ringTitle').innerText = alarm.label || (alarm.type === 'audio' ? 'Báo thức Âm nhạc' : 'Báo thức Lời đọc');
+        document.getElementById('ringTitle').innerText = alarm.label || (
+            alarm.type === 'audio' ? 'Báo thức Âm nhạc' :
+            alarm.type === 'youtube' ? 'Báo thức YouTube' : 'Báo thức Lời đọc'
+        );
         const loopBadge = document.getElementById('ringLoopBadge');
-        
+        const ringYtContainer = document.getElementById('ringYoutubeContainer');
+
+        // Stop any running sound
+        if (player) player.pause();
+        stopCurrentSpeech();
+        stopDirectYoutube();
+        if (ringYtContainer) {
+            ringYtContainer.innerHTML = '';
+            ringYtContainer.style.display = 'none';
+        }
+
         if (alarm.type === 'audio') {
             if (loopBadge) loopBadge.style.display = 'none';
             document.getElementById('ringSub').innerText = `🎵 Bài hát: ${alarm.fileName || 'Âm thanh hẹn giờ'}`;
             overlay.style.display = 'flex';
             playFile(alarm.fileId, alarm.fileName || 'Báo thức', true);
+        } else if (alarm.type === 'youtube') {
+            const vid = extractYouTubeId(alarm.youtubeUrl || '') || alarm.youtubeVideoId;
+            const isLoop = (alarm.continuousLoop !== false);
+            document.getElementById('ringSub').innerText = `📺 Nhạc YouTube: "${escapeHtml(alarm.youtubeTitle || 'Video YouTube')}"`;
+
+            if (loopBadge) {
+                loopBadge.style.display = isLoop ? 'inline-flex' : 'none';
+                loopBadge.innerText = isLoop ? '🔁 Đang lặp lại phát nhạc YouTube cho đến khi tắt...' : '▶️ Đang phát nhạc YouTube...';
+            }
+
+            if (ringYtContainer && vid) {
+                ringYtContainer.style.display = 'block';
+                ringYtContainer.innerHTML = `<iframe id="ringYtIframe" width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&enablejsapi=1&loop=${isLoop ? 1 : 0}&playlist=${vid}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>`;
+            }
+            overlay.style.display = 'flex';
         } else {
             const isJa = (alarm.lang === 'ja-JP') || (alarm.voice && alarm.voice.startsWith('ja'));
             const langLabel = isJa ? '🇯🇵 Tiếng Nhật' : '🇻🇳 Tiếng Việt';
             document.getElementById('ringSub').innerText = `🗣️ Lời đọc (${langLabel}): "${alarm.ttsText}"`;
-            
+
             const isLoop = (alarm.continuousLoop !== false);
             if (loopBadge) {
                 loopBadge.style.display = isLoop ? 'inline-flex' : 'none';
@@ -2212,8 +2521,13 @@
 
     function dismissCurrentAlarm() {
         document.getElementById('alarmRingOverlay').style.display = 'none';
-        player.pause();
+        if (player) player.pause();
         stopCurrentSpeech();
+        const ringYtContainer = document.getElementById('ringYoutubeContainer');
+        if (ringYtContainer) {
+            ringYtContainer.innerHTML = '';
+            ringYtContainer.style.display = 'none';
+        }
     }
 
     function updateNextAlarmBanner() {
@@ -2254,8 +2568,11 @@
             const mm = String(minutes).padStart(2, '0');
             const ss = String(seconds).padStart(2, '0');
 
-            const typeIcon = closestAlarm.type === 'audio' ? '🎵' : '🗣️';
-            const titleOrName = closestAlarm.label || (closestAlarm.type === 'audio' ? closestAlarm.fileName : 'Lời đọc TTS');
+            const typeIcon = closestAlarm.type === 'audio' ? '🎵' : (closestAlarm.type === 'youtube' ? '📺' : '🗣️');
+            const titleOrName = closestAlarm.label || (
+                closestAlarm.type === 'audio' ? closestAlarm.fileName :
+                closestAlarm.type === 'youtube' ? (closestAlarm.youtubeTitle || 'Nhạc YouTube') : 'Lời đọc TTS'
+            );
             bannerDesc.innerHTML = `<strong>${closestAlarm.time}</strong> ${typeIcon} ${escapeHtml(titleOrName)}`;
             bannerCountdown.innerText = `${hh}:${mm}:${ss}`;
         }

@@ -2,82 +2,1006 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Player Pro</title>
-	<script src="../com/assistive.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Audio & Alarm Pro</title>
+    <script src="../com/assistive.js"></script>
+    <script src="../com/TTSClient.js"></script>
     <style>
+        :root {
+            --bg-page: #f1f5f9;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            --border-focus: #10b981;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --primary: #059669;
+            --primary-hover: #047857;
+            --primary-light: #ecfdf5;
+            --accent-blue: #2563eb;
+            --accent-blue-light: #eff6ff;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --warning: #d97706;
+            --warning-light: #fffbeb;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.03);
+            --radius-md: 10px;
+            --radius-lg: 16px;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; overflow: hidden; }
-        .app-container { display: flex; flex-direction: column; height: 100vh; max-width: 1000px; margin: auto; border-left: 1px solid #333; border-right: 1px solid #333; }
-        header { padding: 20px; background: #1f1f1f; text-align: center; border-bottom: 1px solid #333; }
-        header h2 { font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1db954; margin-bottom: 10px; }
-        .settings-panel { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; background: #282828; padding: 10px; border-radius: 8px; font-size: 0.85rem; }
-        .settings-panel input, .settings-panel select { background: #333; color: white; border: 1px solid #444; padding: 5px; border-radius: 4px; max-width: 140px; }
-        #timer-display { color: #1db954; font-weight: bold; min-width: 80px; }
-        .player-controls { padding: 20px; background: #1f1f1f; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
-        audio { width: 100%; filter: invert(100%); }
-        .playlist-container { flex: 1; overflow-y: auto; background: #121212; }
-        .playlist { list-style: none; display: flex; flex-direction: column; }
-        .playlist li { padding: 15px 20px; border-bottom: 1px solid #222; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #121212; }
-        .playlist li.active { background: #333; border-left: 4px solid #1db954; }
-        .playlist li.pinned { background: #2a2a10; border-left: 4px solid #f1c40f; position: sticky; top: 0; z-index: 10; }
-        .pin-btn { margin-left: 15px; font-size: 1.1rem; filter: grayscale(1); transition: 0.2s; } .pinned .pin-btn { filter: grayscale(0); }
-        .file-info { flex: 1; overflow: hidden; }
-        .file-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; font-size: 0.95rem; }
-        .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #444; color: #bbb; }
-        .status-badge.cached { background: #1db954; color: white; }
-        #player-title-container { width: 100%; overflow: hidden; margin-bottom: 8px; }
-        #player-title { color: #1db954; font-size: 0.85rem; white-space: nowrap; display: inline-block; animation: marquee 20s linear infinite; padding-left: 100%; }
+        body, html {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-main);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 900px;
+            margin: auto;
+            background: var(--bg-card);
+            box-shadow: 0 0 25px rgba(0,0,0,0.06);
+            position: relative;
+        }
+
+        /* HEADER */
+        header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
+            z-index: 20;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .app-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .app-brand h1 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+        }
+
+        .app-brand span {
+            font-size: 0.75rem;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        /* Next Alarm Banner */
+        .next-alarm-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--primary-light);
+            border: 1px solid #a7f3d0;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            color: #065f46;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .next-alarm-banner:hover {
+            background: #d1fae5;
+        }
+
+        .next-alarm-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .next-alarm-countdown {
+            font-family: monospace;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--primary);
+            background: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid #6ee7b7;
+            flex-shrink: 0;
+        }
+
+        /* NAV TABS */
+        .tab-nav {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 10px;
+            padding: 3px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .tab-badge {
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background: #e2e8f0;
+            color: var(--text-sub);
+        }
+
+        .tab-btn.active .tab-badge {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        /* MAIN CONTENT VIEWS */
+        .view-content {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            background: var(--bg-page);
+            display: none;
+        }
+
+        .view-content.active {
+            display: block;
+        }
+
+        /* PLAYLIST VIEW */
+        .playlist-header-bar {
+            padding: 10px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+            background: #f8fafc;
+        }
+
+        .search-input:focus {
+            border-color: var(--border-focus);
+            background: #fff;
+        }
+
+        .playlist {
+            list-style: none;
+            padding: 8px 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .playlist li {
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .playlist li:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .playlist li.active {
+            background: var(--primary-light);
+            border-color: #6ee7b7;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.12);
+        }
+
+        .playlist li.pinned {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .file-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .file-name {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            line-height: 1.35;
+        }
+
+        .playlist li.active .file-name {
+            color: var(--primary);
+        }
+
+        .file-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .status-badge.cached {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .btn-pin {
+            background: transparent;
+            border: none;
+            font-size: 1.15rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            opacity: 0.4;
+            transition: 0.2s;
+        }
+
+        .btn-pin:hover, .pinned .btn-pin {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* ALARMS VIEW */
+        .alarms-container {
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .alarms-top-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .alarms-heading {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .btn-add-alarm {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+            transition: background 0.2s;
+        }
+
+        .btn-add-alarm:hover {
+            background: var(--primary-hover);
+        }
+
+        /* ALARM FORM CARD (Add / Edit) */
+        .alarm-form-card {
+            background: #ffffff;
+            border: 1.5px solid #a7f3d0;
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .form-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            text-transform: uppercase;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.88rem;
+            outline: none;
+            background: #ffffff;
+            color: var(--text-main);
+            width: 100%;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+        }
+
+        /* TYPE SELECTOR (AUDIO vs TTS) */
+        .type-selector {
+            display: flex;
+            gap: 8px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+
+        .type-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .type-section {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .type-section.active {
+            display: flex;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .btn-cancel {
+            background: #f1f5f9;
+            color: var(--text-sub);
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .btn-save-alarm {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .btn-test {
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-test:hover {
+            background: #e2e8f0;
+        }
+
+        /* ALARM CARD LIST */
+        .alarm-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .alarm-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+            gap: 12px;
+        }
+
+        .alarm-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: #cbd5e1;
+        }
+
+        .alarm-card.disabled {
+            opacity: 0.6;
+            background: #f8fafc;
+        }
+
+        .alarm-main-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .alarm-time-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .alarm-time-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .alarm-label-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .alarm-detail-text {
+            font-size: 0.82rem;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .alarm-detail-text strong {
+            color: var(--text-main);
+        }
+
+        .alarm-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .alarm-icon-btn {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            color: var(--text-sub);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+
+        .alarm-icon-btn:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        .alarm-icon-btn.delete:hover {
+            background: var(--danger-light);
+            border-color: #fca5a5;
+            color: var(--danger);
+        }
+
+        /* TOGGLE SWITCH */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* EMPTY STATE */
+        .empty-alarms {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-sub);
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px dashed var(--border-color);
+        }
+
+        /* BOTTOM PLAYER BAR */
+        .player-bar {
+            padding: 12px 16px;
+            background: #ffffff;
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.04);
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        #player-title-container {
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 6px;
+            background: #f8fafc;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #f1f5f9;
+        }
+
+        #player-title {
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 700;
+            white-space: nowrap;
+            display: inline-block;
+            animation: marquee 22s linear infinite;
+            padding-left: 100%;
+        }
+
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        audio {
+            width: 100%;
+            height: 38px;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        /* ALARM RINGING MODAL / OVERLAY */
+        .alarm-ring-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+            color: white;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        .alarm-ring-box {
+            background: white;
+            color: var(--text-main);
+            padding: 28px 24px;
+            border-radius: 20px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .alarm-ring-bell {
+            font-size: 3rem;
+            animation: ringBell 1s infinite;
+        }
+
+        @keyframes ringBell {
+            0%, 100% { transform: rotate(0); }
+            20% { transform: rotate(15deg); }
+            40% { transform: rotate(-15deg); }
+            60% { transform: rotate(10deg); }
+            80% { transform: rotate(-10deg); }
+        }
+
+        .alarm-ring-time {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .alarm-ring-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .alarm-ring-sub {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            max-height: 100px;
+            overflow-y: auto;
+            line-height: 1.4;
+            padding: 8px;
+            background: #f8fafc;
+            border-radius: 8px;
+            width: 100%;
+        }
+
+        .btn-dismiss-alarm {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            transition: transform 0.1s;
+            width: 100%;
+        }
+
+        .btn-dismiss-alarm:active {
+            transform: scale(0.97);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
 
 <div class="app-container">
+    <!-- HEADER -->
     <header>
-        <h2 id="current-title">Sẵn sàng</h2>
-        <div class="settings-panel">
-            <span>Hẹn giờ:</span>
-            <input type="time" id="alarm-time">
-            <select id="alarm-file-select"><option value="">-- Chọn bài --</option></select>
-            <span id="timer-display">00:00:00</span>
+        <div class="header-top">
+            <div class="app-brand">
+                <h1>Audio & Alarm</h1>
+                <span>Light</span>
+            </div>
+            <div class="tab-nav">
+                <button class="tab-btn active" id="tabBtnPlaylist" onclick="switchMainTab('playlist')">
+                    <span>📋 Bài hát</span>
+                    <span class="tab-badge" id="badgeSongsCount">0</span>
+                </button>
+                <button class="tab-btn" id="tabBtnAlarms" onclick="switchMainTab('alarms')">
+                    <span>⏰ Hẹn giờ</span>
+                    <span class="tab-badge" id="badgeAlarmsCount">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Next Alarm Status Banner -->
+        <div class="next-alarm-banner" id="nextAlarmBanner" onclick="switchMainTab('alarms')">
+            <div class="next-alarm-info">
+                <span>⏰</span>
+                <span id="nextAlarmDesc">Chưa có mốc hẹn giờ nào bật</span>
+            </div>
+            <div class="next-alarm-countdown" id="nextAlarmCountdown">--:--:--</div>
         </div>
     </header>
-    <div class="playlist-container"><ul class="playlist" id="playlist"></ul></div>
-    <div class="player-controls">
-        <div id="player-title-container"><div id="player-title"></div></div>
+
+    <!-- VIEW 1: PLAYLIST -->
+    <div class="view-content active" id="viewPlaylist">
+        <div class="playlist-header-bar">
+            <input type="text" id="playlistSearch" class="search-input" placeholder="🔍 Tìm kiếm bài hát..." oninput="filterPlaylist()">
+        </div>
+        <ul class="playlist" id="playlist">
+            <li style="justify-content: center; color: var(--text-sub); border: none;">Đang tải danh sách bài hát...</li>
+        </ul>
+    </div>
+
+    <!-- VIEW 2: ALARMS MANAGEMENT -->
+    <div class="view-content" id="viewAlarms">
+        <div class="alarms-container">
+            <div class="alarms-top-actions">
+                <div class="alarms-heading">Danh sách mốc hẹn giờ</div>
+                <button class="btn-add-alarm" id="btnToggleAddAlarm" onclick="toggleAddAlarmForm()">
+                    <span>➕ Thêm giờ hẹn</span>
+                </button>
+            </div>
+
+            <!-- ADD / EDIT ALARM CARD (Collapsible) -->
+            <div class="alarm-form-card" id="alarmFormCard" style="display: none;">
+                <div class="form-header">
+                    <span class="form-title" id="formCardTitle">Thêm mốc hẹn giờ mới</span>
+                    <button class="btn-cancel" style="padding: 2px 8px; font-size: 0.8rem;" onclick="toggleAddAlarmForm(false)">✕ Đóng</button>
+                </div>
+
+                <input type="hidden" id="formAlarmId">
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 0 0 120px;">
+                        <label class="form-label">Giờ hẹn</label>
+                        <input type="time" id="formAlarmTime" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tên / Ghi chú</label>
+                        <input type="text" id="formAlarmLabel" class="form-input" placeholder="Ví dụ: Báo thức sáng, Học bài...">
+                    </div>
+                </div>
+
+                <!-- SELECTOR: AUDIO vs TTS -->
+                <div class="form-group">
+                    <label class="form-label">Kiểu phát khi tới giờ</label>
+                    <div class="type-selector">
+                        <button type="button" class="type-btn active" id="typeBtnAudio" onclick="setAlarmType('audio')">
+                            <span>🎵 Phát File Audio</span>
+                        </button>
+                        <button type="button" class="type-btn" id="typeBtnTTS" onclick="setAlarmType('tts')">
+                            <span>🗣️ Đọc Văn Bản TTS</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECTION A: AUDIO SETTING -->
+                <div class="type-section active" id="sectionAudio">
+                    <div class="form-group">
+                        <label class="form-label">Chọn bài hát từ kho Audio</label>
+                        <select id="formAudioFile" class="form-select">
+                            <option value="">-- Chọn bài hát --</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="button" class="btn-test" onclick="testAudioPreview()">
+                            <span>▶️ Nghe thử bài hát</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECTION B: TTS SETTING -->
+                <div class="type-section" id="sectionTTS">
+                    <div class="form-group">
+                        <label class="form-label">Văn bản cần đọc (TTS)</label>
+                        <textarea id="formTtsText" class="form-textarea" rows="2" placeholder="Ví dụ: Chào buổi sáng! Đã đến giờ thức dậy học bài rồi."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Giọng đọc</label>
+                            <select id="formTtsVoice" class="form-select">
+                                <option value="vi-VN-NamMinhNeural">Tiếng Việt - Nam (Nam Minh)</option>
+                                <option value="vi-VN-HoaiMyNeural">Tiếng Việt - Nữ (Hoài My)</option>
+                                <option value="ja-JP-KeitaNeural">Tiếng Nhật - Nam (Keita)</option>
+                                <option value="ja-JP-NanamiNeural">Tiếng Nhật - Nữ (Nanami)</option>
+                                <option value="zh-CN-XiaoxiaoNeural">Tiếng Trung - Nữ (Xiaoxiao)</option>
+                                <option value="zh-CN-YunxiNeural">Tiếng Trung - Nam (Yunxi)</option>
+                                <option value="en-US-JennyNeural">Tiếng Anh - Nữ (Jenny)</option>
+                                <option value="en-US-GuyNeural">Tiếng Anh - Nam (Guy)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 0 0 100px;">
+                            <label class="form-label">Tốc độ</label>
+                            <select id="formTtsRate" class="form-select">
+                                <option value="0.75">0.75x</option>
+                                <option value="0.90">0.90x</option>
+                                <option value="1.0" selected>1.0x</option>
+                                <option value="1.15">1.15x</option>
+                                <option value="1.25">1.25x</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="button" class="btn-test" onclick="testTtsPreview()">
+                            <span>🔊 Thử đọc văn bản</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- REPEAT OPTION -->
+                <div class="form-row" style="margin-top: 4px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" id="formAlarmRepeat" checked>
+                        <span>🔁 Lặp lại hàng ngày</span>
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="toggleAddAlarmForm(false)">Hủy</button>
+                    <button type="button" class="btn-save-alarm" onclick="saveAlarmItem()">💾 Lưu mốc hẹn giờ</button>
+                </div>
+            </div>
+
+            <!-- ALARM LIST -->
+            <div class="alarm-list" id="alarmList">
+                <!-- Dynamically Rendered -->
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM PERSISTENT PLAYER -->
+    <div class="player-bar">
+        <div id="player-title-container">
+            <div id="player-title">Chưa phát bài nào</div>
+        </div>
         <audio id="audio-player" controls></audio>
     </div>
 </div>
 
+<!-- ALARM RINGING MODAL OVERLAY -->
+<div class="alarm-ring-overlay" id="alarmRingOverlay">
+    <div class="alarm-ring-box">
+        <div class="alarm-ring-bell">🔔</div>
+        <div class="alarm-ring-time" id="ringTime">07:00</div>
+        <div class="alarm-ring-title" id="ringTitle">Báo thức</div>
+        <div class="alarm-ring-sub" id="ringSub">Đang phát nội dung hẹn giờ...</div>
+        <button class="btn-dismiss-alarm" onclick="dismissCurrentAlarm()">⏹️ Tắt / Dừng Báo Thức</button>
+    </div>
+</div>
+
 <script>
+    window.token = window.token || '';
     const API_BASE = "https://hsk-gilt.vercel.app/api/gRecorder";
     const FOLDER_ID = "1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm";
     const DB_NAME = "AudioOfflineDB";
     const STORE_NAME = "audioFiles";
+
     const player = document.getElementById('audio-player');
     const playlistElem = document.getElementById('playlist');
-    const titleElem = document.getElementById('current-title');
     const playerTitleElem = document.getElementById('player-title');
-    const alarmTimeInput = document.getElementById('alarm-time');
-    const alarmSelect = document.getElementById('alarm-file-select');
-    const timerDisplay = document.getElementById('timer-display');
+    const formAudioFileSelect = document.getElementById('formAudioFile');
 
-    let db, alarmInterval, isAudioActivated = false;
+    let db;
+    let allFiles = [];
+    let alarms = [];
+    let timerInterval = null;
+    let currentAlarmType = 'audio';
+    let isAudioActivated = false;
+    let lastTriggeredMinute = '';
 
-    async function activateAudio() {
-        console.log("[LOG] Hệ thống đang tự động kích hoạt Audio Context...");
-        isAudioActivated = true;
-        
-        try {
-            player.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-            await player.play();
-            console.log("[LOG] Audio Context đã được cấp quyền tự động.");
-        } catch (err) {
-            console.warn("[LOG] Tự động phát bị chặn, sẽ chờ tương tác người dùng.");
-        }
-    }
-
+    // ==========================================
+    // 1. INIT & DATABASE SETUP
+    // ==========================================
     const request = indexedDB.open(DB_NAME, 1);
     request.onupgradeneeded = (e) => {
         db = e.target.result;
@@ -85,44 +1009,110 @@
     };
     request.onsuccess = (e) => {
         db = e.target.result;
+        loadAlarmsData();
         loadPlaylist();
-        initSettings();
+        startAlarmMonitor();
         activateAudio();
     };
 
+    async function activateAudio() {
+        isAudioActivated = true;
+        try {
+            player.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+            await player.play();
+            console.log("[Audio Context] Kích hoạt thành công.");
+        } catch (err) {
+            console.warn("[Audio Context] Chờ tương tác người dùng.");
+        }
+    }
+    // Auto-unlock on first click anywhere
+    document.addEventListener('click', () => {
+        if (!isAudioActivated) activateAudio();
+    }, { once: true });
+
+    // ==========================================
+    // 2. PLAYLIST & OFFLINE CACHE
+    // ==========================================
     async function loadPlaylist() {
         try {
             const response = await fetch(`${API_BASE}?action=byfolder&folderId=${FOLDER_ID}`);
-            let files = await response.json();
-            const pinnedIds = JSON.parse(localStorage.getItem('pinnedIds') || "[]");
-            files.sort((a, b) => (pinnedIds.includes(b.id) ? 1 : 0) - (pinnedIds.includes(a.id) ? 1 : 0));
-            playlistElem.innerHTML = "";
-            const lastSelectedId = localStorage.getItem('lastSelectedId');
-            for (const file of files) {
-                const isCached = await checkCache(file.id);
-                const li = document.createElement('li');
-                li.id = `item-${file.id}`;
-                if (lastSelectedId === file.id) li.classList.add('active');
-                if (pinnedIds.includes(file.id)) li.classList.add('pinned');
-                li.innerHTML = `<div class="file-info"><span class="file-name">${file.name}</span><span class="status-badge ${isCached ? 'cached' : ''}" id="status-${file.id}">${isCached ? 'OFFLINE' : 'ONLINE'}</span></div><span class="pin-btn">📌</span>`;
-                li.querySelector('.pin-btn').onclick = (e) => { e.stopPropagation(); togglePin(file.id); };
-                li.onclick = () => playFile(file.id, file.name);
-                playlistElem.appendChild(li);
-                const opt = document.createElement('option');
-                opt.value = file.id; opt.dataset.name = file.name; opt.textContent = file.name;
-                alarmSelect.appendChild(opt);
-            }
-            alarmSelect.value = localStorage.getItem('alarmFileId') || "";
+            allFiles = await response.json();
+            renderPlaylist();
+            populateAudioSelect();
+            document.getElementById('badgeSongsCount').innerText = allFiles.length;
         } catch (error) {
-            console.error("[ERROR]", error);
+            console.error("[Playlist Error]", error);
+            playlistElem.innerHTML = `<li style="text-align: center; color: var(--danger); border: none;">Lỗi tải dữ liệu. Vui lòng kiểm tra kết nối mạng.</li>`;
         }
+    }
+
+    async function renderPlaylist(filterText = "") {
+        const pinnedIds = JSON.parse(localStorage.getItem('pinnedIds') || "[]");
+        let displayFiles = [...allFiles];
+        
+        if (filterText) {
+            const q = filterText.toLowerCase();
+            displayFiles = displayFiles.filter(f => f.name.toLowerCase().includes(q));
+        }
+
+        displayFiles.sort((a, b) => (pinnedIds.includes(b.id) ? 1 : 0) - (pinnedIds.includes(a.id) ? 1 : 0));
+        playlistElem.innerHTML = "";
+
+        if (displayFiles.length === 0) {
+            playlistElem.innerHTML = `<li style="text-align: center; color: var(--text-sub); border: none; padding: 30px;">Không tìm thấy bài hát nào</li>`;
+            return;
+        }
+
+        const lastSelectedId = localStorage.getItem('lastSelectedId');
+
+        for (const file of displayFiles) {
+            const isCached = await checkCache(file.id);
+            const li = document.createElement('li');
+            li.id = `item-${file.id}`;
+            if (lastSelectedId === file.id) li.classList.add('active');
+            if (pinnedIds.includes(file.id)) li.classList.add('pinned');
+
+            li.innerHTML = `
+                <div class="file-info">
+                    <span class="file-name">${escapeHtml(file.name)}</span>
+                    <div class="file-meta">
+                        <span class="status-badge ${isCached ? 'cached' : ''}" id="status-${file.id}">
+                            ${isCached ? 'OFFLINE' : 'ONLINE'}
+                        </span>
+                    </div>
+                </div>
+                <button class="btn-pin" title="${pinnedIds.includes(file.id) ? 'Bỏ ghim' : 'Ghim bài'}" onclick="event.stopPropagation(); togglePin('${file.id}')">
+                    📌
+                </button>
+            `;
+            li.onclick = () => playFile(file.id, file.name);
+            playlistElem.appendChild(li);
+        }
+    }
+
+    function filterPlaylist() {
+        const text = document.getElementById('playlistSearch').value.trim();
+        renderPlaylist(text);
+    }
+
+    function populateAudioSelect() {
+        formAudioFileSelect.innerHTML = `<option value="">-- Chọn bài hát từ kho --</option>`;
+        allFiles.forEach(file => {
+            const opt = document.createElement('option');
+            opt.value = file.id;
+            opt.dataset.name = file.name;
+            opt.textContent = file.name;
+            formAudioFileSelect.appendChild(opt);
+        });
     }
 
     function checkCache(id) {
         return new Promise((r) => {
+            if (!db) return r(false);
             const tx = db.transaction([STORE_NAME], "readonly");
             const req = tx.objectStore(STORE_NAME).get(id);
             req.onsuccess = () => r(!!req.result);
+            req.onerror = () => r(false);
         });
     }
 
@@ -130,102 +1120,543 @@
         let pinnedIds = JSON.parse(localStorage.getItem('pinnedIds') || "[]");
         if (pinnedIds.includes(id)) {
             pinnedIds = pinnedIds.filter(p => p !== id);
-            console.log(`[LOG] Bỏ ghim: ${id}`);
         } else {
             pinnedIds.push(id);
-            console.log(`[LOG] Đã ghim: ${id}`);
         }
         localStorage.setItem('pinnedIds', JSON.stringify(pinnedIds));
-        loadPlaylist();
+        renderPlaylist(document.getElementById('playlistSearch').value.trim());
     }
 
     async function playFile(id, name, forceRestart = false) {
-        // Đảm bảo kích hoạt lại nếu trước đó bị browser chặn
-        if (!isAudioActivated) isAudioActivated = true; 
-        
+        if (!isAudioActivated) isAudioActivated = true;
         localStorage.setItem('lastSelectedId', id);
         document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
         const activeItem = document.getElementById(`item-${id}`);
         if (activeItem) activeItem.classList.add('active');
-        
-        console.log(`[LOG] Yêu cầu phát: ${name}`);
+
+        playerTitleElem.innerText = name;
+
         const tx = db.transaction([STORE_NAME], "readonly");
         const getRequest = tx.objectStore(STORE_NAME).get(id);
 
         getRequest.onsuccess = async () => {
             let sourceUrl;
             if (getRequest.result) {
-                console.log(`[LOG] Phát từ Cache: ${name}`);
                 sourceUrl = URL.createObjectURL(getRequest.result);
             } else {
-                console.log(`[LOG] Đang tải ngầm từ Server: ${name}`);
-                const resp = await fetch(`${API_BASE}?action=audio&fileId=${id}`);
-                const blob = await resp.blob();
-                sourceUrl = URL.createObjectURL(blob);
-                
-                const saveTx = db.transaction([STORE_NAME], "readwrite");
-                saveTx.objectStore(STORE_NAME).put(blob, id);
-                saveTx.oncomplete = () => {
-                    console.log(`[LOG] Đã lưu offline bài: ${name}`);
-                    const badge = document.getElementById(`status-${id}`);
-                    if (badge) {
-                        badge.innerText = "OFFLINE";
-                        badge.classList.add("cached");
-                    }
-                };
+                try {
+                    const resp = await fetch(`${API_BASE}?action=audio&fileId=${id}`);
+                    const blob = await resp.blob();
+                    sourceUrl = URL.createObjectURL(blob);
+                    const saveTx = db.transaction([STORE_NAME], "readwrite");
+                    saveTx.objectStore(STORE_NAME).put(blob, id);
+                    saveTx.oncomplete = () => {
+                        const badge = document.getElementById(`status-${id}`);
+                        if (badge) {
+                            badge.innerText = "OFFLINE";
+                            badge.classList.add("cached");
+                        }
+                    };
+                } catch (e) {
+                    console.error("Lỗi phát audio:", e);
+                    alert("Không thể tải file audio!");
+                    return;
+                }
             }
+
             player.loop = false;
             player.volume = 1.0;
             player.src = sourceUrl;
             player.load();
             if (forceRestart) player.currentTime = 0;
+
             player.play().then(() => {
-                playerTitleElem.innerText = name;
                 const savedPos = localStorage.getItem('pos_' + id);
-                if(savedPos && !forceRestart) {
+                if (savedPos && !forceRestart) {
                     player.currentTime = parseFloat(savedPos);
-                    console.log("[LOG] Tiếp tục phát từ: " + savedPos + "s");
                 }
                 player.ontimeupdate = () => {
                     if (player.currentTime > 0) localStorage.setItem('pos_' + id, player.currentTime);
                 };
-            }).catch(e => console.error("[LOG ERROR] Chặn phát:", e));
+            }).catch(e => console.warn("Trình duyệt chặn autoplay:", e));
         };
     }
 
-    function initSettings() {
-        alarmTimeInput.value = localStorage.getItem('alarmTime') || "";
-        alarmTimeInput.onchange = (e) => localStorage.setItem('alarmTime', e.target.value);
-        alarmSelect.onchange = (e) => localStorage.setItem('alarmFileId', e.target.value);
-        startTimer();
+    // ==========================================
+    // 3. TTS SPEECH ENGINE
+    // ==========================================
+    async function speakTTS(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0') {
+        if (!text) return;
+        window.token = window.token || '';
+        console.log(`[TTS] Đọc văn bản: "${text}" | Giọng: ${voice} | Tốc độ: ${rate}`);
+
+        // Try com/TTSClient.js first
+        if (typeof window.speakCommon === 'function') {
+            try {
+                await window.speakCommon({
+                    text: text,
+                    voice: voice,
+                    rate: rate,
+                    filename: 'Alarm_TTS'
+                });
+                return;
+            } catch (err) {
+                console.warn("[TTSClient error, switching to SpeechSynthesis]", err);
+            }
+        }
+
+        // Native Web Speech API Fallback
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = parseFloat(rate) || 1.0;
+
+            if (voice.startsWith('vi')) utterance.lang = 'vi-VN';
+            else if (voice.startsWith('ja')) utterance.lang = 'ja-JP';
+            else if (voice.startsWith('zh')) utterance.lang = 'zh-CN';
+            else if (voice.startsWith('en')) utterance.lang = 'en-US';
+
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn("Trình duyệt không hỗ trợ Web Speech API.");
+        }
     }
 
-    function startTimer() {
-        if (alarmInterval) clearInterval(alarmInterval);
-        alarmInterval = setInterval(() => {
+    function stopCurrentSpeech() {
+        if (typeof window.stopSpeak === 'function') {
+            window.stopSpeak();
+        }
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+    }
+
+    // ==========================================
+    // 4. MULTI-ALARMS MANAGEMENT
+    // ==========================================
+    function loadAlarmsData() {
+        const saved = localStorage.getItem('mp3_alarms');
+        if (saved) {
+            try {
+                alarms = JSON.parse(saved);
+            } catch (e) {
+                alarms = [];
+            }
+        } else {
+            // Migration from legacy single alarm
+            const legacyTime = localStorage.getItem('alarmTime');
+            const legacyFileId = localStorage.getItem('alarmFileId');
+            if (legacyTime) {
+                alarms = [{
+                    id: 'alarm_' + Date.now(),
+                    time: legacyTime,
+                    type: 'audio',
+                    fileId: legacyFileId || '',
+                    fileName: 'Bài hát hẹn trước',
+                    ttsText: '',
+                    voice: 'vi-VN-NamMinhNeural',
+                    rate: '1.0',
+                    label: 'Hẹn giờ chính',
+                    enabled: true,
+                    repeat: true
+                }];
+                saveAlarms();
+            }
+        }
+        renderAlarms();
+    }
+
+    function saveAlarms() {
+        localStorage.setItem('mp3_alarms', JSON.stringify(alarms));
+        renderAlarms();
+    }
+
+    function renderAlarms() {
+        const listElem = document.getElementById('alarmList');
+        const activeCount = alarms.filter(a => a.enabled).length;
+        document.getElementById('badgeAlarmsCount').innerText = `${activeCount}/${alarms.length}`;
+
+        if (alarms.length === 0) {
+            listElem.innerHTML = `
+                <div class="empty-alarms">
+                    <div style="font-size: 2.5rem; margin-bottom: 8px;">⏰</div>
+                    <div style="font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Chưa có mốc hẹn giờ nào</div>
+                    <div style="font-size: 0.85rem;">Nhấn nút <strong>"+ Thêm giờ hẹn"</strong> ở trên để tạo mốc báo thức âm thanh hoặc đọc văn bản TTS.</div>
+                </div>
+            `;
+            updateNextAlarmBanner();
+            return;
+        }
+
+        // Sort by time
+        const sortedAlarms = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
+
+        listElem.innerHTML = sortedAlarms.map(a => {
+            const isAudio = a.type === 'audio';
+            const detailText = isAudio
+                ? `🎵 <strong>Audio:</strong> ${escapeHtml(a.fileName || 'Chưa chọn bài')}`
+                : `🗣️ <strong>TTS:</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
+
+            return `
+                <div class="alarm-card ${a.enabled ? '' : 'disabled'}" id="alarm-card-${a.id}">
+                    <div class="alarm-main-info" onclick="editAlarmItem('${a.id}')">
+                        <div class="alarm-time-row">
+                            <span class="alarm-time-text">${a.time}</span>
+                            ${a.label ? `<span class="alarm-label-tag">${escapeHtml(a.label)}</span>` : ''}
+                            <span style="font-size: 0.75rem; color: var(--text-sub);">${a.repeat ? '🔁 Hàng ngày' : '1️⃣ Một lần'}</span>
+                        </div>
+                        <div class="alarm-detail-text">
+                            ${detailText}
+                        </div>
+                    </div>
+                    <div class="alarm-controls">
+                        <button class="alarm-icon-btn" title="Thử phát mốc này" onclick="testTriggerAlarm('${a.id}')">
+                            ▶️
+                        </button>
+                        <button class="alarm-icon-btn" title="Chỉnh sửa" onclick="editAlarmItem('${a.id}')">
+                            ✏️
+                        </button>
+                        <label class="switch">
+                            <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAlarmEnabled('${a.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                        <button class="alarm-icon-btn delete" title="Xóa" onclick="deleteAlarmItem('${a.id}')">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        updateNextAlarmBanner();
+    }
+
+    function toggleAddAlarmForm(show = null) {
+        const formCard = document.getElementById('alarmFormCard');
+        const btnToggle = document.getElementById('btnToggleAddAlarm');
+        const isVisible = formCard.style.display !== 'none';
+        const willShow = (show === null) ? !isVisible : show;
+
+        if (willShow) {
+            formCard.style.display = 'flex';
+            btnToggle.style.display = 'none';
+            // Default current time + 5 mins if empty
+            if (!document.getElementById('formAlarmTime').value) {
+                const d = new Date(Date.now() + 5 * 60000);
+                const h = String(d.getHours()).padStart(2, '0');
+                const m = String(d.getMinutes()).padStart(2, '0');
+                document.getElementById('formAlarmTime').value = `${h}:${m}`;
+            }
+        } else {
+            formCard.style.display = 'none';
+            btnToggle.style.display = 'inline-flex';
+            clearAlarmForm();
+        }
+    }
+
+    function setAlarmType(type) {
+        currentAlarmType = type;
+        const btnAudio = document.getElementById('typeBtnAudio');
+        const btnTTS = document.getElementById('typeBtnTTS');
+        const secAudio = document.getElementById('sectionAudio');
+        const secTTS = document.getElementById('sectionTTS');
+
+        if (type === 'audio') {
+            btnAudio.classList.add('active');
+            btnTTS.classList.remove('active');
+            secAudio.classList.add('active');
+            secTTS.classList.remove('active');
+        } else {
+            btnTTS.classList.add('active');
+            btnAudio.classList.remove('active');
+            secTTS.classList.add('active');
+            secAudio.classList.remove('active');
+        }
+    }
+
+    function clearAlarmForm() {
+        document.getElementById('formAlarmId').value = '';
+        document.getElementById('formCardTitle').innerText = 'Thêm mốc hẹn giờ mới';
+        document.getElementById('formAlarmLabel').value = '';
+        document.getElementById('formAudioFile').value = '';
+        document.getElementById('formTtsText').value = '';
+        document.getElementById('formAlarmRepeat').checked = true;
+        setAlarmType('audio');
+    }
+
+    function editAlarmItem(id) {
+        const alarm = alarms.find(a => a.id === id);
+        if (!alarm) return;
+
+        toggleAddAlarmForm(true);
+        document.getElementById('formAlarmId').value = alarm.id;
+        document.getElementById('formCardTitle').innerText = 'Chỉnh sửa mốc hẹn giờ';
+        document.getElementById('formAlarmTime').value = alarm.time;
+        document.getElementById('formAlarmLabel').value = alarm.label || '';
+        document.getElementById('formAlarmRepeat').checked = alarm.repeat !== false;
+
+        setAlarmType(alarm.type || 'audio');
+
+        if (alarm.type === 'tts') {
+            document.getElementById('formTtsText').value = alarm.ttsText || '';
+            document.getElementById('formTtsVoice').value = alarm.voice || 'vi-VN-NamMinhNeural';
+            document.getElementById('formTtsRate').value = alarm.rate || '1.0';
+        } else {
+            document.getElementById('formAudioFile').value = alarm.fileId || '';
+        }
+
+        document.getElementById('alarmFormCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function saveAlarmItem() {
+        const timeVal = document.getElementById('formAlarmTime').value;
+        if (!timeVal) {
+            alert('Vui lòng chọn giờ hẹn!');
+            return;
+        }
+
+        const editId = document.getElementById('formAlarmId').value;
+        const labelVal = document.getElementById('formAlarmLabel').value.trim();
+        const repeatVal = document.getElementById('formAlarmRepeat').checked;
+
+        let fileId = '';
+        let fileName = '';
+        let ttsText = '';
+        let voice = 'vi-VN-NamMinhNeural';
+        let rate = '1.0';
+
+        if (currentAlarmType === 'audio') {
+            fileId = formAudioFileSelect.value;
+            if (fileId && formAudioFileSelect.selectedIndex > -1) {
+                fileName = formAudioFileSelect.options[formAudioFileSelect.selectedIndex].dataset.name || 'File Audio';
+            } else if (allFiles.length > 0) {
+                fileId = allFiles[0].id;
+                fileName = allFiles[0].name;
+            }
+        } else {
+            ttsText = document.getElementById('formTtsText').value.trim();
+            if (!ttsText) {
+                alert('Vui lòng nhập nội dung văn bản cần đọc!');
+                return;
+            }
+            voice = document.getElementById('formTtsVoice').value;
+            rate = document.getElementById('formTtsRate').value;
+        }
+
+        if (editId) {
+            // Update
+            const idx = alarms.findIndex(a => a.id === editId);
+            if (idx !== -1) {
+                alarms[idx] = {
+                    ...alarms[idx],
+                    time: timeVal,
+                    type: currentAlarmType,
+                    fileId,
+                    fileName,
+                    ttsText,
+                    voice,
+                    rate,
+                    label: labelVal,
+                    repeat: repeatVal
+                };
+            }
+        } else {
+            // New
+            const newAlarm = {
+                id: 'alarm_' + Date.now(),
+                time: timeVal,
+                type: currentAlarmType,
+                fileId,
+                fileName,
+                ttsText,
+                voice,
+                rate,
+                label: labelVal,
+                enabled: true,
+                repeat: repeatVal
+            };
+            alarms.push(newAlarm);
+        }
+
+        saveAlarms();
+        toggleAddAlarmForm(false);
+    }
+
+    function toggleAlarmEnabled(id, enabled) {
+        const item = alarms.find(a => a.id === id);
+        if (item) {
+            item.enabled = enabled;
+            saveAlarms();
+        }
+    }
+
+    function deleteAlarmItem(id) {
+        if (confirm('Xác nhận xóa mốc hẹn giờ này?')) {
+            alarms = alarms.filter(a => a.id !== id);
+            saveAlarms();
+        }
+    }
+
+    function testAudioPreview() {
+        const fileId = formAudioFileSelect.value;
+        if (!fileId) {
+            alert('Hãy chọn một bài hát để nghe thử!');
+            return;
+        }
+        const name = formAudioFileSelect.options[formAudioFileSelect.selectedIndex].dataset.name;
+        playFile(fileId, name, true);
+    }
+
+    function testTtsPreview() {
+        const text = document.getElementById('formTtsText').value.trim();
+        if (!text) {
+            alert('Hãy nhập nội dung văn bản để thử đọc!');
+            return;
+        }
+        const voice = document.getElementById('formTtsVoice').value;
+        const rate = document.getElementById('formTtsRate').value;
+        speakTTS(text, voice, rate);
+    }
+
+    function testTriggerAlarm(id) {
+        const alarm = alarms.find(a => a.id === id);
+        if (alarm) triggerAlarm(alarm);
+    }
+
+    // ==========================================
+    // 5. ALARM MONITORING & TRIGGERING
+    // ==========================================
+    function startAlarmMonitor() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
             const now = new Date();
-            const curTime = now.toTimeString().slice(0, 5);
-            const setTime = alarmTimeInput.value;
-            const fileId = alarmSelect.value;
+            const curH = String(now.getHours()).padStart(2, '0');
+            const curM = String(now.getMinutes()).padStart(2, '0');
+            const curTime = `${curH}:${curM}`;
+            const curDateMinuteKey = `${now.toDateString()} ${curTime}`;
 
-            if (setTime && fileId) {
-                const [ah, am] = setTime.split(':');
-                let target = new Date(); target.setHours(ah, am, 0, 0);
-                if (target < now) target.setDate(target.getDate() + 1);
-                const diff = target - now;
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                timerDisplay.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            // Check if any alarm should ring right now
+            if (curDateMinuteKey !== lastTriggeredMinute) {
+                const matchedAlarms = alarms.filter(a => a.enabled && a.time === curTime);
+                if (matchedAlarms.length > 0) {
+                    lastTriggeredMinute = curDateMinuteKey;
+                    // Trigger the first matched alarm
+                    triggerAlarm(matchedAlarms[0]);
 
-                if (curTime === setTime && now.getSeconds() === 0) {
-                    const name = alarmSelect.options[alarmSelect.selectedIndex].dataset.name;
-                    playFile(fileId, name, true);
+                    // Handle repeat setting
+                    matchedAlarms.forEach(a => {
+                        if (a.repeat === false) {
+                            a.enabled = false;
+                        }
+                    });
+                    saveAlarms();
                 }
             }
-            if (now.getSeconds() % 30 === 0) console.log(`[LOG] Heartbeat: ${curTime}`);
+
+            updateNextAlarmBanner();
         }, 1000);
     }
+
+    function triggerAlarm(alarm) {
+        console.log("[ALARM TRIGGERED]", alarm);
+        const overlay = document.getElementById('alarmRingOverlay');
+        document.getElementById('ringTime').innerText = alarm.time;
+        document.getElementById('ringTitle').innerText = alarm.label || (alarm.type === 'audio' ? 'Báo thức Âm nhạc' : 'Báo thức Lời đọc');
+        
+        if (alarm.type === 'audio') {
+            document.getElementById('ringSub').innerText = `🎵 Bài hát: ${alarm.fileName || 'Âm thanh hẹn giờ'}`;
+            overlay.style.display = 'flex';
+            playFile(alarm.fileId, alarm.fileName || 'Báo thức', true);
+        } else {
+            document.getElementById('ringSub').innerText = `🗣️ Lời đọc: "${alarm.ttsText}"`;
+            overlay.style.display = 'flex';
+            speakTTS(alarm.ttsText, alarm.voice, alarm.rate);
+        }
+    }
+
+    function dismissCurrentAlarm() {
+        document.getElementById('alarmRingOverlay').style.display = 'none';
+        player.pause();
+        stopCurrentSpeech();
+    }
+
+    function updateNextAlarmBanner() {
+        const enabledAlarms = alarms.filter(a => a.enabled);
+        const bannerDesc = document.getElementById('nextAlarmDesc');
+        const bannerCountdown = document.getElementById('nextAlarmCountdown');
+
+        if (enabledAlarms.length === 0) {
+            bannerDesc.innerText = 'Chưa có mốc hẹn giờ nào bật';
+            bannerCountdown.innerText = '--:--:--';
+            return;
+        }
+
+        const now = new Date();
+        let closestAlarm = null;
+        let minDiff = Infinity;
+
+        enabledAlarms.forEach(a => {
+            const [h, m] = a.time.split(':').map(Number);
+            let target = new Date(now);
+            target.setHours(h, m, 0, 0);
+            if (target <= now) {
+                target.setDate(target.getDate() + 1);
+            }
+            const diff = target - now;
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestAlarm = a;
+            }
+        });
+
+        if (closestAlarm) {
+            const hours = Math.floor(minDiff / 3600000);
+            const minutes = Math.floor((minDiff % 3600000) / 60000);
+            const seconds = Math.floor((minDiff % 60000) / 1000);
+
+            const hh = String(hours).padStart(2, '0');
+            const mm = String(minutes).padStart(2, '0');
+            const ss = String(seconds).padStart(2, '0');
+
+            const typeIcon = closestAlarm.type === 'audio' ? '🎵' : '🗣️';
+            const titleOrName = closestAlarm.label || (closestAlarm.type === 'audio' ? closestAlarm.fileName : 'Lời đọc TTS');
+            bannerDesc.innerHTML = `<strong>${closestAlarm.time}</strong> ${typeIcon} ${escapeHtml(titleOrName)}`;
+            bannerCountdown.innerText = `${hh}:${mm}:${ss}`;
+        }
+    }
+
+    // ==========================================
+    // 6. NAVIGATION & TABS
+    // ==========================================
+    function switchMainTab(tab) {
+        const tabBtnPlaylist = document.getElementById('tabBtnPlaylist');
+        const tabBtnAlarms = document.getElementById('tabBtnAlarms');
+        const viewPlaylist = document.getElementById('viewPlaylist');
+        const viewAlarms = document.getElementById('viewAlarms');
+
+        if (tab === 'playlist') {
+            tabBtnPlaylist.classList.add('active');
+            tabBtnAlarms.classList.remove('active');
+            viewPlaylist.classList.add('active');
+            viewAlarms.classList.remove('active');
+        } else {
+            tabBtnAlarms.classList.add('active');
+            tabBtnPlaylist.classList.remove('active');
+            viewAlarms.classList.add('active');
+            viewPlaylist.classList.remove('active');
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 </script>
+
 </body>
 </html>

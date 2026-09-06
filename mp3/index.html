@@ -92,6 +92,43 @@
             font-weight: 700;
         }
 
+        .token-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: #f8fafc;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .token-status-pill:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        .token-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+
+        .token-status-pill.active {
+            border-color: #a7f3d0;
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .token-status-pill.active .token-dot {
+            background: #10b981;
+        }
+
         /* Next Alarm Banner */
         .next-alarm-banner {
             display: flex;
@@ -809,6 +846,10 @@
             <div class="app-brand">
                 <h1>Audio & Alarm</h1>
                 <span>Light</span>
+                <button type="button" id="btnTokenStatus" class="token-status-pill" onclick="promptEditToken()" title="Quản lý Token xác thực Cloud API">
+                    <span id="tokenStatusDot" class="token-dot"></span>
+                    <span id="tokenStatusLabel">Token</span>
+                </button>
             </div>
             <div class="tab-nav">
                 <button class="tab-btn active" id="tabBtnPlaylist" onclick="switchMainTab('playlist')">
@@ -906,18 +947,52 @@
                         <label class="form-label">Văn bản cần đọc (TTS)</label>
                         <textarea id="formTtsText" class="form-textarea" rows="2" placeholder="Ví dụ: Chào buổi sáng! Đã đến giờ thức dậy học bài rồi."></textarea>
                     </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Nguồn giọng đọc</label>
+                            <select id="formTtsEngine" class="form-select" onchange="handleTtsEngineChange()">
+                                <option value="device" selected>🔊 Trình duyệt (Web Speech API - Luôn chạy 100%, không cần mạng/Token)</option>
+                                <option value="auto">⚡ Tự động (Ưu tiên Cloud Neural, tự động dự phòng Web Speech)</option>
+                                <option value="cloud">🌐 Cloud Neural (Server HSK - Giọng AI truyền cảm, cần Token)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="rowCloudToken" style="display: none; background: #f8fafc; padding: 8px 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                        <div class="form-group">
+                            <label class="form-label" style="display: flex; justify-content: space-between;">
+                                <span>Mã Token Cloud API (PWTOKEN)</span>
+                                <span id="tokenStatusText" style="color: var(--primary); font-weight: 600; text-transform: none; font-size: 0.72rem;"></span>
+                            </label>
+                            <input type="text" id="formTtsToken" class="form-input" placeholder="Nhập mã token nếu chưa có..." oninput="setAuthToken(this.value); updateTokenStatusUI();">
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Giọng đọc</label>
                             <select id="formTtsVoice" class="form-select">
-                                <option value="vi-VN-NamMinhNeural">Tiếng Việt - Nam (Nam Minh)</option>
-                                <option value="vi-VN-HoaiMyNeural">Tiếng Việt - Nữ (Hoài My)</option>
-                                <option value="ja-JP-KeitaNeural">Tiếng Nhật - Nam (Keita)</option>
-                                <option value="ja-JP-NanamiNeural">Tiếng Nhật - Nữ (Nanami)</option>
-                                <option value="zh-CN-XiaoxiaoNeural">Tiếng Trung - Nữ (Xiaoxiao)</option>
-                                <option value="zh-CN-YunxiNeural">Tiếng Trung - Nam (Yunxi)</option>
-                                <option value="en-US-JennyNeural">Tiếng Anh - Nữ (Jenny)</option>
-                                <option value="en-US-GuyNeural">Tiếng Anh - Nam (Guy)</option>
+                                <optgroup label="Tiếng Việt">
+                                    <option value="vi-VN-NamMinhNeural" selected>Tiếng Việt - Nam (Nam Minh)</option>
+                                    <option value="vi-VN-HoaiMyNeural">Tiếng Việt - Nữ (Hoài My)</option>
+                                    <option value="vi-VN">Tiếng Việt - Mặc định thiết bị</option>
+                                </optgroup>
+                                <optgroup label="Tiếng Nhật">
+                                    <option value="ja-JP-KeitaNeural">Tiếng Nhật - Nam (Keita)</option>
+                                    <option value="ja-JP-NanamiNeural">Tiếng Nhật - Nữ (Nanami)</option>
+                                    <option value="ja-JP">Tiếng Nhật - Thiết bị</option>
+                                </optgroup>
+                                <optgroup label="Tiếng Trung">
+                                    <option value="zh-CN-XiaoxiaoNeural">Tiếng Trung - Nữ (Xiaoxiao)</option>
+                                    <option value="zh-CN-YunxiNeural">Tiếng Trung - Nam (Yunxi)</option>
+                                    <option value="zh-CN">Tiếng Trung - Thiết bị</option>
+                                </optgroup>
+                                <optgroup label="Tiếng Anh">
+                                    <option value="en-US-JennyNeural">Tiếng Anh - Nữ (Jenny)</option>
+                                    <option value="en-US-GuyNeural">Tiếng Anh - Nam (Guy)</option>
+                                    <option value="en-US">Tiếng Anh - Thiết bị</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="form-group" style="flex: 0 0 100px;">
@@ -931,7 +1006,8 @@
                             </select>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: flex-end;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span id="ttsPreviewStatus" style="font-size: 0.78rem; color: var(--text-sub);"></span>
                         <button type="button" class="btn-test" onclick="testTtsPreview()">
                             <span>🔊 Thử đọc văn bản</span>
                         </button>
@@ -980,11 +1056,91 @@
 </div>
 
 <script>
-    window.token = window.token || '';
     const API_BASE = "https://hsk-gilt.vercel.app/api/gRecorder";
     const FOLDER_ID = "1KCfoWrPS5RtDzsFFWINH3_Xq8MApjXlm";
     const DB_NAME = "AudioOfflineDB";
     const STORE_NAME = "audioFiles";
+
+    // ==========================================
+    // 0. TOKEN AUTH MANAGEMENT
+    // ==========================================
+    function getAuthToken() {
+        const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]*)/);
+        const cookieToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
+        const sessionToken = sessionStorage.getItem('token') || '';
+        const localToken = localStorage.getItem('token') || '';
+        const urlToken = new URLSearchParams(window.location.search).get('token') || '';
+        const found = (cookieToken || sessionToken || localToken || urlToken || '').trim();
+        if (found) {
+            window.token = found;
+            if (!sessionToken) sessionStorage.setItem('token', found);
+            if (!localToken) localStorage.setItem('token', found);
+        }
+        return found;
+    }
+
+    function setAuthToken(val) {
+        const cleaned = (val || '').trim();
+        if (cleaned) {
+            window.token = cleaned;
+            sessionStorage.setItem('token', cleaned);
+            localStorage.setItem('token', cleaned);
+            document.cookie = `token=${encodeURIComponent(cleaned)}; path=/; max-age=604800; SameSite=Lax`;
+        } else {
+            window.token = '';
+            sessionStorage.removeItem('token');
+            localStorage.removeItem('token');
+            document.cookie = "token=; path=/; max-age=-1; SameSite=Lax";
+        }
+        updateTokenStatusUI();
+    }
+
+    function promptEditToken() {
+        const cur = getAuthToken();
+        const input = prompt("Nhập Token xác thực (PWTOKEN) để kết nối Cloud API:", cur || "");
+        if (input !== null) {
+            setAuthToken(input);
+            if (input.trim()) {
+                alert("Đã lưu Token thành công!");
+            } else {
+                alert("Đã xóa Token. Bạn có thể sử dụng nguồn giọng '🔊 Trình duyệt (Web Speech)' để đọc văn bản mà không cần token hay mạng!");
+            }
+        }
+    }
+
+    function updateTokenStatusUI() {
+        const t = getAuthToken();
+        const pill = document.getElementById('btnTokenStatus');
+        const label = document.getElementById('tokenStatusLabel');
+        const tokenInput = document.getElementById('formTtsToken');
+        const tokenStatusText = document.getElementById('tokenStatusText');
+
+        if (tokenInput && document.activeElement !== tokenInput) {
+            tokenInput.value = t || '';
+        }
+
+        if (t) {
+            if (pill) pill.classList.add('active');
+            if (label) label.innerText = 'Token: OK';
+            if (tokenStatusText) tokenStatusText.innerText = '✅ Đã có Token';
+        } else {
+            if (pill) pill.classList.remove('active');
+            if (label) label.innerText = 'Nhập Token';
+            if (tokenStatusText) tokenStatusText.innerText = '⚠️ Chưa có Token';
+        }
+    }
+
+    function handleTtsEngineChange() {
+        const engine = document.getElementById('formTtsEngine')?.value || 'device';
+        const rowToken = document.getElementById('rowCloudToken');
+        if (rowToken) {
+            rowToken.style.display = (engine === 'cloud' || engine === 'auto') ? 'flex' : 'none';
+        }
+        updateTokenStatusUI();
+    }
+
+    // Initialize token at startup
+    getAuthToken();
 
     const player = document.getElementById('audio-player');
     const playlistElem = document.getElementById('playlist');
@@ -1009,6 +1165,7 @@
     };
     request.onsuccess = (e) => {
         db = e.target.result;
+        updateTokenStatusUI();
         loadAlarmsData();
         loadPlaylist();
         startAlarmMonitor();
@@ -1185,12 +1342,81 @@
     // ==========================================
     // 3. TTS SPEECH ENGINE
     // ==========================================
-    async function speakTTS(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0') {
-        if (!text) return;
-        window.token = window.token || '';
-        console.log(`[TTS] Đọc văn bản: "${text}" | Giọng: ${voice} | Tốc độ: ${rate}`);
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.getVoices();
+        };
+        window.speechSynthesis.getVoices();
+    }
 
-        // Try com/TTSClient.js first
+    function speakWithSpeechSynthesis(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0') {
+        if (!('speechSynthesis' in window)) {
+            console.warn("Trình duyệt không hỗ trợ Web Speech API.");
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve) => {
+            try {
+                window.speechSynthesis.cancel();
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                }
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = Math.max(0.5, Math.min(2.0, parseFloat(rate) || 1.0));
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+
+                let targetLang = 'vi-VN';
+                if (voice.startsWith('vi')) targetLang = 'vi-VN';
+                else if (voice.startsWith('ja')) targetLang = 'ja-JP';
+                else if (voice.startsWith('zh')) targetLang = 'zh-CN';
+                else if (voice.startsWith('en')) targetLang = 'en-US';
+                utterance.lang = targetLang;
+
+                const allVoices = window.speechSynthesis.getVoices() || [];
+                if (allVoices.length > 0) {
+                    let matched = allVoices.find(v => (
+                        v.lang === targetLang || 
+                        v.lang.replace('_', '-') === targetLang
+                    ));
+                    if (!matched) {
+                        matched = allVoices.find(v => v.lang.startsWith(targetLang.substring(0, 2)));
+                    }
+                    if (matched) utterance.voice = matched;
+                }
+
+                utterance.onstart = () => console.log("[WebSpeech] Bắt đầu đọc:", text);
+                utterance.onend = () => {
+                    console.log("[WebSpeech] Hoàn tất đọc.");
+                    resolve();
+                };
+                utterance.onerror = (e) => {
+                    console.warn("[WebSpeech error]", e);
+                    resolve();
+                };
+
+                window.speechSynthesis.speak(utterance);
+            } catch (err) {
+                console.error("[WebSpeech Exception]", err);
+                resolve();
+            }
+        });
+    }
+
+    async function speakTTS(text, voice = 'vi-VN-NamMinhNeural', rate = '1.0', engine = 'device') {
+        if (!text) return;
+        const currentToken = getAuthToken();
+        console.log(`[TTS] Đọc văn bản: "${text}" | Nguồn: ${engine} | Giọng: ${voice} | Tốc độ: ${rate} | Có Token: ${!!currentToken}`);
+
+        // 1. Nếu chọn trực tiếp giọng thiết bị Web Speech (miễn phí, không cần mạng, không lỗi 401)
+        if (engine === 'device') {
+            await speakWithSpeechSynthesis(text, voice, rate);
+            return;
+        }
+
+        // 2. Nếu chọn Cloud Neural hoặc Auto: Thử gọi Cloud TTS trước
+        let cloudSuccess = false;
         if (typeof window.speakCommon === 'function') {
             try {
                 await window.speakCommon({
@@ -1199,26 +1425,17 @@
                     rate: rate,
                     filename: 'Alarm_TTS'
                 });
+                cloudSuccess = true;
                 return;
             } catch (err) {
-                console.warn("[TTSClient error, switching to SpeechSynthesis]", err);
+                console.warn("[Cloud TTS 401 hoặc lỗi kết nối, tự động chuyển sang Web Speech của thiết bị]:", err);
             }
         }
 
-        // Native Web Speech API Fallback
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = parseFloat(rate) || 1.0;
-
-            if (voice.startsWith('vi')) utterance.lang = 'vi-VN';
-            else if (voice.startsWith('ja')) utterance.lang = 'ja-JP';
-            else if (voice.startsWith('zh')) utterance.lang = 'zh-CN';
-            else if (voice.startsWith('en')) utterance.lang = 'en-US';
-
-            window.speechSynthesis.speak(utterance);
-        } else {
-            console.warn("Trình duyệt không hỗ trợ Web Speech API.");
+        // 3. Nếu Cloud TTS không thành công hoặc lỗi 401: Tự động dự phòng 100% bằng Web Speech
+        if (!cloudSuccess) {
+            console.log("[TTS] Sử dụng Web Speech API của thiết bị để đọc...");
+            await speakWithSpeechSynthesis(text, voice, rate);
         }
     }
 
@@ -1295,7 +1512,7 @@
             const isAudio = a.type === 'audio';
             const detailText = isAudio
                 ? `🎵 <strong>Audio:</strong> ${escapeHtml(a.fileName || 'Chưa chọn bài')}`
-                : `🗣️ <strong>TTS:</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
+                : `🗣️ <strong>TTS (${a.engine === 'cloud' ? 'Cloud' : a.engine === 'auto' ? 'Auto' : 'Thiết bị'}):</strong> "${escapeHtml(a.ttsText || 'Chưa nhập nội dung')}"`;
 
             return `
                 <div class="alarm-card ${a.enabled ? '' : 'disabled'}" id="alarm-card-${a.id}">
@@ -1381,6 +1598,8 @@
         document.getElementById('formAudioFile').value = '';
         document.getElementById('formTtsText').value = '';
         document.getElementById('formAlarmRepeat').checked = true;
+        document.getElementById('formTtsEngine').value = 'device';
+        handleTtsEngineChange();
         setAlarmType('audio');
     }
 
@@ -1399,6 +1618,8 @@
 
         if (alarm.type === 'tts') {
             document.getElementById('formTtsText').value = alarm.ttsText || '';
+            document.getElementById('formTtsEngine').value = alarm.engine || 'device';
+            handleTtsEngineChange();
             document.getElementById('formTtsVoice').value = alarm.voice || 'vi-VN-NamMinhNeural';
             document.getElementById('formTtsRate').value = alarm.rate || '1.0';
         } else {
@@ -1422,6 +1643,7 @@
         let fileId = '';
         let fileName = '';
         let ttsText = '';
+        let engine = 'device';
         let voice = 'vi-VN-NamMinhNeural';
         let rate = '1.0';
 
@@ -1439,6 +1661,7 @@
                 alert('Vui lòng nhập nội dung văn bản cần đọc!');
                 return;
             }
+            engine = document.getElementById('formTtsEngine').value || 'device';
             voice = document.getElementById('formTtsVoice').value;
             rate = document.getElementById('formTtsRate').value;
         }
@@ -1454,6 +1677,7 @@
                     fileId,
                     fileName,
                     ttsText,
+                    engine,
                     voice,
                     rate,
                     label: labelVal,
@@ -1469,6 +1693,7 @@
                 fileId,
                 fileName,
                 ttsText,
+                engine,
                 voice,
                 rate,
                 label: labelVal,
@@ -1507,15 +1732,23 @@
         playFile(fileId, name, true);
     }
 
-    function testTtsPreview() {
+    async function testTtsPreview() {
         const text = document.getElementById('formTtsText').value.trim();
         if (!text) {
             alert('Hãy nhập nội dung văn bản để thử đọc!');
             return;
         }
+        const engine = document.getElementById('formTtsEngine')?.value || 'device';
         const voice = document.getElementById('formTtsVoice').value;
         const rate = document.getElementById('formTtsRate').value;
-        speakTTS(text, voice, rate);
+        const statusSpan = document.getElementById('ttsPreviewStatus');
+
+        if (statusSpan) statusSpan.innerText = '🔊 Đang đọc thử...';
+        await speakTTS(text, voice, rate, engine);
+        if (statusSpan) {
+            statusSpan.innerText = '✅ Đã phát âm';
+            setTimeout(() => { statusSpan.innerText = ''; }, 3500);
+        }
     }
 
     function testTriggerAlarm(id) {
@@ -1570,7 +1803,7 @@
         } else {
             document.getElementById('ringSub').innerText = `🗣️ Lời đọc: "${alarm.ttsText}"`;
             overlay.style.display = 'flex';
-            speakTTS(alarm.ttsText, alarm.voice, alarm.rate);
+            speakTTS(alarm.ttsText, alarm.voice, alarm.rate, alarm.engine || 'device');
         }
     }
 

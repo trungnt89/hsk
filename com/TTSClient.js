@@ -274,15 +274,25 @@
         }
 
         // 2. Gọi API TTS
-        const url = `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}&token=${token}`;
+        const authToken = (typeof window !== 'undefined' && (
+            sessionStorage.getItem('token') || 
+            localStorage.getItem('token') || 
+            (document.cookie.match(/(?:^|; )token=([^;]*)/)?.[1]) || 
+            window.token || 
+            ''
+        )) || '';
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) {
+            headers['Authorization'] = authToken;
+        }
+
+        const url = `https://hsk-gilt.vercel.app/api/tts?text=${encodeURIComponent(text)}&lang=${lang}&voice=${voice}&rate=${rate}&token=${encodeURIComponent(authToken)}`;
         try {
             console.log("[TTS Log] Fetching from API...");
 			const res = await fetch(url, {
 			  method: 'GET',
-			  headers: {
-				'Content-Type': 'application/json',
-				'Authorization':  sessionStorage.getItem('token')
-			  }
+			  headers: headers
 			});
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             
@@ -291,6 +301,7 @@
             return playAudio(URL.createObjectURL(blob), audioControl, loop);
         } catch (e) {
             console.error("[TTS API Error]", e);
+            throw e;
         }
     };
 })();

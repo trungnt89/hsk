@@ -774,24 +774,52 @@
             flex-shrink: 0;
         }
 
-        /* TOGGLE SWITCH CỠ CHUẨN MOBILE >= 44PX TARGET */
+        /* TOGGLE SWITCH CỠ CHUẨN MOBILE & IPAD (HIỂN THỊ XANH LÁ RÕ NÉT TRÊN MỌI TRÌNH DUYỆT) */
         .toggle-switch {
             position: relative;
-            width: 48px;
+            width: 50px;
             height: 28px;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            flex-shrink: 0;
         }
 
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-switch input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            margin: 0;
+            padding: 0;
+            cursor: pointer;
+            z-index: 2;
+            pointer-events: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
 
         .toggle-slider {
             position: absolute;
             cursor: pointer;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
             background-color: #cbd5e1;
-            transition: .2s;
+            -webkit-transition: background-color 0.22s ease-in-out, border-color 0.22s ease-in-out;
+            transition: background-color 0.22s ease-in-out, border-color 0.22s ease-in-out;
             border-radius: 28px;
+            -webkit-border-radius: 28px;
+            box-sizing: border-box;
         }
 
         .toggle-slider:before {
@@ -801,14 +829,28 @@
             width: 22px;
             left: 3px;
             bottom: 3px;
-            background-color: white;
-            transition: .2s;
+            background-color: #ffffff;
+            -webkit-transition: -webkit-transform 0.22s ease-in-out;
+            transition: transform 0.22s ease-in-out;
             border-radius: 50%;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            -webkit-border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
         }
 
-        input:checked + .toggle-slider { background-color: var(--success); }
-        input:checked + .toggle-slider:before { transform: translateX(20px); }
+        /* TRẠNG THÁI BẬT: HIỂN THỊ MÀU XANH LÁ CHUẨN (#16a34a) TRÊN TẤT CẢ PHIÊN BẢN IPAD / SAFARI / CHROME */
+        .toggle-switch.is-active .toggle-slider,
+        .toggle-slider.active,
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #16a34a !important;
+            background: #16a34a !important;
+        }
+
+        .toggle-switch.is-active .toggle-slider:before,
+        .toggle-slider.active:before,
+        .toggle-switch input:checked + .toggle-slider:before {
+            -webkit-transform: translateX(22px) !important;
+            transform: translateX(22px) !important;
+        }
 
         .btn-icon {
             background: var(--surface);
@@ -1888,8 +1930,9 @@
                         youtubeUrl = String(r[4] || '');
                         ttsText = String(r[5] || '');
                         language = String(r[6] || 'vi-VN');
-                        if (r[7] !== undefined && r[7] !== '') {
-                            enabled = String(r[7]) === '1' || String(r[7]).toLowerCase() === 'true';
+                        if (r[7] !== undefined && r[7] !== null && String(r[7]).trim() !== '') {
+                            const rawE = String(r[7]).trim().toLowerCase();
+                            enabled = (rawE === '1' || rawE === 'true' || rawE === 'on' || rawE === 'bật');
                         }
                     } else {
                         // Tương thích ngược schema cũ
@@ -1898,8 +1941,9 @@
                         title = String(r[4] || `Báo thức (${r[3] || 'YouTube'})`);
                         ttsText = '';
                         language = 'vi-VN';
-                        if (r[7] !== undefined && r[7] !== '') {
-                            enabled = String(r[7]) === '1' || String(r[7]).toLowerCase() === 'true';
+                        if (r[7] !== undefined && r[7] !== null && String(r[7]).trim() !== '') {
+                            const rawE = String(r[7]).trim().toLowerCase();
+                            enabled = (rawE === '1' || rawE === 'true' || rawE === 'on' || rawE === 'bật');
                         }
                     }
 
@@ -2146,13 +2190,23 @@
         showFormView();
     }
 
+    // XỬ LÝ CHẠM / CLICK NÚT TOGGLE CHUẨN XÁC TRÊN CẢ IPAD & PC
+    function handleToggleAlarm(event, id) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        toggleAlarm(id);
+    }
+
     // BẬT / TẮT MỐC BÁO THỨC
     async function toggleAlarm(id) {
         unlockAudio();
         const item = alarms.find(a => a.id === id);
         if (!item) return;
 
-        item.enabled = !item.enabled;
+        const isCurrentlyEnabled = (item.enabled === true || item.enabled === 1 || String(item.enabled).trim().toLowerCase() === '1' || String(item.enabled).trim().toLowerCase() === 'true');
+        item.enabled = !isCurrentlyEnabled;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
         renderAlarms();
 
@@ -2250,7 +2304,7 @@
         const badgeEl = document.getElementById('alarmCountBadge');
         const activeCountEl = document.getElementById('activeCountText');
 
-        const activeCount = alarms.filter(a => a.enabled).length;
+        const activeCount = alarms.filter(a => (a.enabled === true || a.enabled === 1 || String(a.enabled).trim().toLowerCase() === '1' || String(a.enabled).trim().toLowerCase() === 'true')).length;
         if (badgeEl) badgeEl.innerText = `(${alarms.length} mốc)`;
         if (activeCountEl) activeCountEl.innerText = `${activeCount} mốc đang bật`;
 
@@ -2285,6 +2339,7 @@
 
         listEl.innerHTML = alarms.map(a => {
             const isTts = (a.type === 'tts');
+            const isEnabled = (a.enabled === true || a.enabled === 1 || String(a.enabled).trim().toLowerCase() === '1' || String(a.enabled).trim().toLowerCase() === 'true');
             const typeBadge = isTts
                 ? `<span class="badge-type tts">🗣️ TTS</span>`
                 : `<span class="badge-type yt">▶️ YouTube</span>`;
@@ -2300,7 +2355,7 @@
             const isEditingThis = (editingAlarmId === a.id);
 
             return `
-            <div class="alarm-item ${a.enabled ? '' : 'disabled'}" style="${isEditingThis ? 'border-color: var(--accent-blue); background: var(--accent-blue-light); box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);' : ''}">
+            <div class="alarm-item ${isEnabled ? '' : 'disabled'}" style="${isEditingThis ? 'border-color: var(--accent-blue); background: var(--accent-blue-light); box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);' : ''}">
                 <div class="alarm-info">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div class="alarm-time">${a.time}</div>
@@ -2318,9 +2373,11 @@
                     <button type="button" class="btn-icon btn-edit" title="Sửa mốc này" onclick="editAlarm('${a.id}')">✏️</button>
                     <button type="button" class="btn-icon btn-test" title="Phát chuông mốc này ngay" onclick="triggerAlarmNow('${a.id}')">▶️</button>
                     <button type="button" class="btn-icon" title="Xóa khỏi Google Sheet" onclick="deleteAlarm('${a.id}')">🗑️</button>
-                    <label class="toggle-switch" title="${a.enabled ? 'Đang bật - bấm để tắt' : 'Đang tắt - bấm để bật'}">
-                        <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAlarm('${a.id}')">
-                        <span class="toggle-slider"></span>
+                    <label class="toggle-switch ${isEnabled ? 'is-active' : ''}" 
+                           title="${isEnabled ? 'Đang bật - bấm để tắt' : 'Đang tắt - bấm để bật'}" 
+                           onclick="handleToggleAlarm(event, '${a.id}')">
+                        <input type="checkbox" ${isEnabled ? 'checked' : ''} tabindex="-1">
+                        <span class="toggle-slider ${isEnabled ? 'active' : ''}"></span>
                     </label>
                 </div>
             </div>
@@ -2830,7 +2887,10 @@
     // THỬ NHANH KHỞI TẠO ÂM THANH TỪ DASHBOARD (10S)
     function startQuickAudioTest() {
         unlockAudio();
-        const activeAlarm = alarms.find(a => a.enabled && a.type === 'youtube');
+        const activeAlarm = alarms.find(a => {
+            const isEnabled = (a.enabled === true || a.enabled === 1 || String(a.enabled).trim().toLowerCase() === '1' || String(a.enabled).trim().toLowerCase() === 'true');
+            return isEnabled && a.type === 'youtube';
+        });
         if (activeAlarm && activeAlarm.vid) {
             const urlInput = document.getElementById('ytUrl');
             if (urlInput) urlInput.value = activeAlarm.youtubeUrl;
@@ -2851,7 +2911,10 @@
 
     // QUÉT TỪ BIẾN ALARMS ĐỂ KÍCH HOẠT BÁO THỨC
     function checkAlarms(currentHHMM) {
-        const match = alarms.find(a => a.enabled && a.time === currentHHMM);
+        const match = alarms.find(a => {
+            const isEnabled = (a.enabled === true || a.enabled === 1 || String(a.enabled).trim().toLowerCase() === '1' || String(a.enabled).trim().toLowerCase() === 'true');
+            return isEnabled && a.time === currentHHMM;
+        });
         if (match) {
             triggerAlarm(match);
         }

@@ -1214,24 +1214,26 @@
 <!-- APP LOGIN MODAL (Tự động lấy token hệ thống) -->
 <div class="app-login-backdrop" id="appLoginModal" style="display: none;">
     <div class="app-login-modal">
-        <div style="font-size: 2.2rem; margin-bottom: 8px;">🔐</div>
-        <h3 style="margin: 0 0 6px 0; color: var(--text-main); font-size: 1.15rem;">Đăng nhập App Hệ thống</h3>
-        <p style="margin: 0 0 16px 0; color: var(--text-sub); font-size: 0.82rem; line-height: 1.4;">
-            Đăng nhập tài khoản để tự động lấy Token (PWTOKEN) cho toàn bộ ứng dụng và mở khóa giọng đọc AI Cloud.
-        </p>
-        <div style="margin-bottom: 14px; text-align: left;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-bottom: 4px;">MẬT KHẨU / TOKEN TRUY CẬP</label>
-            <input type="password" id="modalTokenInput" class="form-input" placeholder="Nhập mật khẩu / Token truy cập..." autocomplete="current-password" onkeydown="if(event.key==='Enter') submitAppModalLogin();">
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn-save-alarm" id="btnModalSubmitLogin" onclick="submitAppModalLogin()" style="flex: 1; justify-content: center; padding: 10px; margin: 0;">
-                Đăng nhập
-            </button>
-            <button type="button" class="btn-cancel" onclick="closeAppLoginModal()" style="padding: 10px 14px; margin: 0;">
-                Đóng
-            </button>
-        </div>
-        <div id="modalLoginMsg" style="margin-top: 10px; font-size: 0.8rem; min-height: 18px;"></div>
+        <form id="appLoginForm" onsubmit="event.preventDefault(); submitAppModalLogin();">
+            <div style="font-size: 2.2rem; margin-bottom: 8px;">🔐</div>
+            <h3 style="margin: 0 0 6px 0; color: var(--text-main); font-size: 1.15rem;">Đăng nhập App Hệ thống</h3>
+            <p style="margin: 0 0 16px 0; color: var(--text-sub); font-size: 0.82rem; line-height: 1.4;">
+                Đăng nhập tài khoản để tự động lấy Token (PWTOKEN) cho toàn bộ ứng dụng và mở khóa giọng đọc AI Cloud.
+            </p>
+            <div style="margin-bottom: 14px; text-align: left;">
+                <label for="modalTokenInput" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-bottom: 4px;">MẬT KHẨU / TOKEN TRUY CẬP</label>
+                <input type="password" id="modalTokenInput" class="form-input" placeholder="Nhập mật khẩu / Token truy cập..." autocomplete="current-password">
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn-save-alarm" id="btnModalSubmitLogin" style="flex: 1; justify-content: center; padding: 10px; margin: 0;">
+                    Đăng nhập
+                </button>
+                <button type="button" class="btn-cancel" onclick="closeAppLoginModal()" style="padding: 10px 14px; margin: 0;">
+                    Đóng
+                </button>
+            </div>
+            <div id="modalLoginMsg" style="margin-top: 10px; font-size: 0.8rem; min-height: 18px;"></div>
+        </form>
     </div>
 </div>
 
@@ -1277,6 +1279,10 @@
         }
         updateAppSessionUI();
     }
+
+    // Tương thích ngược với các lệnh gọi cũ
+    const getAuthToken = getAppLoginToken;
+    const setAuthToken = setAppLoginToken;
 
     function updateAppSessionUI() {
         const t = getAppLoginToken();
@@ -1443,7 +1449,7 @@
     }
 
     // Initialize token at startup
-    getAuthToken();
+    getAppLoginToken();
 
     const player = document.getElementById('audio-player');
     const playlistElem = document.getElementById('playlist');

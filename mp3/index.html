@@ -209,6 +209,43 @@
         }
         .btn-accent:hover { background: #0369a1; }
 
+        /* Nút mẫu gợi ý YouTube */
+        .preset-links-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .preset-label {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        .preset-pill {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: #38bdf8;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .preset-pill:hover, .preset-pill.active {
+            background: #1e293b;
+            border-color: #38bdf8;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+        }
+
         /* Danh sách mốc báo thức */
         .alarm-list {
             display: flex;
@@ -473,6 +510,15 @@
         <div class="form-group">
             <label class="form-label" for="ytUrl">Link hoặc ID YouTube</label>
             <input type="text" id="ytUrl" class="form-input" placeholder="Dán link YouTube (vd: https://youtu.be/... hoặc ID)" oninput="onYtUrlChange()">
+            <div class="preset-links-row">
+                <span class="preset-label">⚡ Nhạc mẫu:</span>
+                <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=fuXfT4Rv_WM', 'Nhạc Báo Thức 1 (fuXfT4Rv_WM)')">
+                    🎵 Mẫu 1 (fuXfT4Rv_WM)
+                </button>
+                <button type="button" class="preset-pill" onclick="applySamplePreset('https://www.youtube.com/watch?v=o8GrqUSdzi0', 'Nhạc Báo Thức 2 (o8GrqUSdzi0)')">
+                    🎵 Mẫu 2 (o8GrqUSdzi0)
+                </button>
+            </div>
         </div>
 
         <div class="form-group">
@@ -521,8 +567,11 @@
 
     <!-- DANH SÁCH BÁO THỨC ĐÃ LƯU -->
     <div class="card">
-        <div class="card-title">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
             <span>📋 Danh sách báo thức</span>
+            <button type="button" class="preset-pill" style="font-size: 0.74rem; padding: 4px 10px;" onclick="loadSampleAlarms()">
+                ➕ Nạp 2 mốc mẫu
+            </button>
         </div>
         <div class="alarm-list" id="alarmList">
             <div class="empty-hint">Chưa có mốc báo thức nào. Hãy thêm mốc ở trên!</div>
@@ -557,12 +606,86 @@
     let backupGain = null;
     let backupChimeInterval = null;
 
+    // CÁC MẪU CẤU HÌNH YOUTUBE CÓ SẴN
+    const SAMPLE_PRESETS = [
+        {
+            url: 'https://www.youtube.com/watch?v=fuXfT4Rv_WM',
+            vid: 'fuXfT4Rv_WM',
+            label: 'Nhạc Báo Thức 1 (fuXfT4Rv_WM)'
+        },
+        {
+            url: 'https://www.youtube.com/watch?v=o8GrqUSdzi0',
+            vid: 'o8GrqUSdzi0',
+            label: 'Nhạc Báo Thức 2 (o8GrqUSdzi0)'
+        }
+    ];
+
     // Load dữ liệu khi mở trang
     try {
         const data = localStorage.getItem(STORAGE_KEY);
         if (data) alarms = JSON.parse(data);
     } catch (e) {
         alarms = [];
+    }
+
+    // Áp dụng bài mẫu vào form
+    function applySamplePreset(url, label) {
+        unlockAudio();
+        document.getElementById('ytUrl').value = url;
+        document.getElementById('alarmLabel').value = label;
+        onYtUrlChange();
+
+        // Cập nhật trạng thái active của nút mẫu
+        document.querySelectorAll('.preset-pill').forEach(pill => {
+            if (pill.innerText.includes(extractYouTubeId(url))) {
+                pill.classList.add('active');
+            } else {
+                pill.classList.remove('active');
+            }
+        });
+    }
+
+    // Nạp sẵn 2 mốc báo thức mẫu vào danh sách
+    function loadSampleAlarms() {
+        unlockAudio();
+        const now = new Date();
+
+        // Mốc 1: Sau 2 phút
+        const t1 = new Date(now.getTime() + 2 * 60000);
+        const h1 = String(t1.getHours()).padStart(2, '0');
+        const m1 = String(t1.getMinutes()).padStart(2, '0');
+
+        // Mốc 2: Sau 5 phút
+        const t2 = new Date(now.getTime() + 5 * 60000);
+        const h2 = String(t2.getHours()).padStart(2, '0');
+        const m2 = String(t2.getMinutes()).padStart(2, '0');
+
+        const sample1 = {
+            id: 'sample_1_' + Date.now(),
+            time: `${h1}:${m1}`,
+            url: SAMPLE_PRESETS[0].url,
+            vid: SAMPLE_PRESETS[0].vid,
+            label: SAMPLE_PRESETS[0].label,
+            loop: true,
+            enabled: true
+        };
+
+        const sample2 = {
+            id: 'sample_2_' + Date.now(),
+            time: `${h2}:${m2}`,
+            url: SAMPLE_PRESETS[1].url,
+            vid: SAMPLE_PRESETS[1].vid,
+            label: SAMPLE_PRESETS[1].label,
+            loop: true,
+            enabled: true
+        };
+
+        alarms.push(sample1, sample2);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
+        renderAlarms();
+
+        // Nạp mẫu 1 vào khung player
+        applySamplePreset(SAMPLE_PRESETS[0].url, SAMPLE_PRESETS[0].label);
     }
 
     // Trích xuất ID YouTube chuẩn xác
@@ -849,7 +972,13 @@
     function renderAlarms() {
         const listEl = document.getElementById('alarmList');
         if (!alarms || alarms.length === 0) {
-            listEl.innerHTML = '<div class="empty-hint">Chưa có mốc báo thức nào. Hãy thêm mốc ở trên!</div>';
+            listEl.innerHTML = `
+                <div class="empty-hint">
+                    Chưa có mốc báo thức nào.<br>
+                    <button type="button" class="preset-pill" style="margin-top: 8px;" onclick="loadSampleAlarms()">
+                        ⚡ Nạp 2 mốc mẫu ngay
+                    </button>
+                </div>`;
             return;
         }
 

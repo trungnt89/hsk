@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- CỰC KỲ QUAN TRỌNG: Sửa lỗi YouTube Error 153 (Video player configuration error) do thiếu referrer policy -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Báo Thức YouTube - Hẹn Giờ Nhạc YouTube</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20width=%22100%22%20height=%22100%22><text y=%22.9em%22 font-size=%2290%22>⏰</text></svg>">
     <style>
@@ -47,11 +49,11 @@
 
         header {
             text-align: center;
-            padding: 12px 0 4px;
+            padding: 10px 0 2px;
         }
 
         .app-title {
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             font-weight: 800;
             display: flex;
             align-items: center;
@@ -63,7 +65,7 @@
         .app-title span.yt-tag {
             background: #ef4444;
             color: #fff;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             padding: 2px 8px;
             border-radius: 6px;
             text-transform: uppercase;
@@ -316,15 +318,47 @@
             border-color: #ef4444;
         }
 
-        /* Khung phát YouTube duy trì trong DOM */
-        .yt-box {
-            margin-top: 10px;
-            border-radius: 10px;
+        /* KHUNG PHÁT YOUTUBE MASTER DUY TRÌ LIÊN TỤC TRONG DOM (KHÔNG BAO GIỜ BỊ XÓA HAY APPEND LẠI) */
+        #ytMasterContainer {
+            border-radius: 12px;
             overflow: hidden;
             background: #000;
-            aspect-ratio: 16 / 9;
+            transition: all 0.2s ease;
+        }
+
+        /* 1. Trạng thái xem thử trong Form */
+        #ytMasterContainer.mode-preview {
+            display: block;
             width: 100%;
-            position: relative;
+            aspect-ratio: 16 / 9;
+            margin-top: 10px;
+            position: static;
+        }
+
+        /* 2. Trạng thái reo chuông báo thức toàn màn hình */
+        #ytMasterContainer.mode-ringing {
+            display: block;
+            position: fixed;
+            top: 48%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - 32px);
+            max-width: 480px;
+            aspect-ratio: 16 / 9;
+            z-index: 1000000;
+            box-shadow: 0 8px 36px rgba(239, 68, 68, 0.45);
+        }
+
+        /* 3. Trạng thái chờ ngầm (không tháo DOM để giữ Audio session) */
+        #ytMasterContainer.mode-idle {
+            position: fixed;
+            bottom: -9999px;
+            left: -9999px;
+            width: 200px;
+            height: 112px;
+            opacity: 0.01;
+            pointer-events: none;
+            z-index: -1;
         }
 
         .yt-preplay-banner {
@@ -344,40 +378,38 @@
         .alarm-ringing-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.97);
+            background: rgba(15, 23, 42, 0.98);
             z-index: 999999;
             display: none;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 24px 16px;
+            justify-content: space-between;
+            padding: 40px 16px 48px;
             text-align: center;
         }
 
         .ring-time {
-            font-size: 3.6rem;
+            font-size: 3.8rem;
             font-weight: 900;
             color: #ef4444;
             animation: pulse 1s infinite;
+            letter-spacing: 1px;
         }
 
         .ring-title {
             font-size: 1.1rem;
             color: #f8fafc;
-            margin: 10px 0 20px;
+            margin: 6px 0 16px;
             max-width: 90%;
             word-break: break-word;
         }
 
-        .ring-yt-wrapper {
+        /* Chỗ trống giữ chỗ layout cho video đang reo ở giữa */
+        .ring-video-placeholder {
             width: 100%;
             max-width: 480px;
             aspect-ratio: 16 / 9;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
+            margin: 0 auto;
         }
 
         .btn-stop-alarm {
@@ -385,12 +417,13 @@
             color: #fff;
             font-size: 1.25rem;
             font-weight: 800;
-            padding: 16px 36px;
+            padding: 16px 40px;
             border-radius: 50px;
             border: none;
             cursor: pointer;
             box-shadow: 0 4px 24px rgba(239, 68, 68, 0.6);
             transition: transform 0.15s;
+            z-index: 1000002;
         }
 
         .btn-stop-alarm:active {
@@ -399,7 +432,7 @@
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.85; }
+            50% { transform: scale(1.04); opacity: 0.88; }
         }
 
         .empty-hint {
@@ -416,7 +449,7 @@
     <header>
         <div class="app-title">
             <span>⏰ Báo Thức YouTube</span>
-            <span class="yt-tag">Auto Play</span>
+            <span class="yt-tag">Fix Error 153</span>
         </div>
     </header>
 
@@ -439,7 +472,7 @@
 
         <div class="form-group">
             <label class="form-label" for="ytUrl">Link hoặc ID YouTube</label>
-            <input type="text" id="ytUrl" class="form-input" placeholder="Dán link YouTube (vd: https://youtu.be/...)" oninput="onYtUrlChange()">
+            <input type="text" id="ytUrl" class="form-input" placeholder="Dán link YouTube (vd: https://youtu.be/... hoặc ID)" oninput="onYtUrlChange()">
         </div>
 
         <div class="form-group">
@@ -458,9 +491,17 @@
             </label>
         </div>
 
-        <!-- KHUNG PHÁT YOUTUBE MASTER DUY TRÌ LIÊN TỤC -->
-        <div id="ytContainer" class="yt-box" style="display: none;">
-            <iframe id="ytIframe" width="100%" height="100%" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:none;"></iframe>
+        <!-- KHUNG PHÁT YOUTUBE MASTER DUY NHẤT (CỐ ĐỊNH, KHÔNG BAO GIỜ DI CHUYỂN DOM) -->
+        <div id="ytMasterContainer" class="mode-idle">
+            <iframe id="ytIframe"
+                title="YouTube Background Alarm Engine"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                playsinline="1"
+                webkit-playsinline="1"
+                allowfullscreen
+                style="width: 100%; height: 100%; border: none; display: block;">
+            </iframe>
         </div>
 
         <div id="preplayStatus" class="yt-preplay-banner" style="display: none;">
@@ -491,12 +532,13 @@
 
 <!-- MÀN HÌNH BÁO THỨC CHUÔNG REO TOÀN MÀN HÌNH -->
 <div class="alarm-ringing-overlay" id="ringOverlay">
-    <div class="ring-time" id="ringTime">00:00</div>
-    <div class="ring-title" id="ringTitle">Báo thức YouTube đang phát!</div>
-    
-    <div class="ring-yt-wrapper" id="ringYtWrapper">
-        <!-- Iframe YouTube sẽ được chuyển vào đây khi reo -->
+    <div>
+        <div class="ring-time" id="ringTime">00:00</div>
+        <div class="ring-title" id="ringTitle">Báo thức YouTube đang phát!</div>
     </div>
+    
+    <!-- Chỗ trống giữ vị trí cho video reo ở giữa -->
+    <div class="ring-video-placeholder"></div>
 
     <button type="button" class="btn-stop-alarm" onclick="stopAlarm()">
         🔕 TẮT BÁO THỨC
@@ -511,6 +553,9 @@
     let preplayTimer = null;
     let preplayInterval = null;
     let audioCtx = null;
+    let backupOscillator = null;
+    let backupGain = null;
+    let backupChimeInterval = null;
 
     // Load dữ liệu khi mở trang
     try {
@@ -541,6 +586,46 @@
         }
         if (navigator.wakeLock && navigator.wakeLock.request) {
             navigator.wakeLock.request('screen').catch(() => {});
+        }
+    }
+
+    // Chuông phụ dự phòng (Web Audio Chime) đề phòng trường hợp video bị gỡ bản quyền hoặc lỗi mạng
+    function startBackupAlarmChime() {
+        unlockAudio();
+        stopBackupAlarmChime();
+        if (!audioCtx) return;
+
+        let noteIndex = 0;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+
+        backupChimeInterval = setInterval(() => {
+            if (!activeRingingAlarm) {
+                stopBackupAlarmChime();
+                return;
+            }
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(notes[noteIndex % notes.length], audioCtx.currentTime);
+                noteIndex++;
+
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.36);
+            } catch (e) {}
+        }, 400);
+    }
+
+    function stopBackupAlarmChime() {
+        if (backupChimeInterval) {
+            clearInterval(backupChimeInterval);
+            backupChimeInterval = null;
         }
     }
 
@@ -576,7 +661,18 @@
     }
     setDefaultTime();
 
-    // Điều khiển iframe YouTube
+    // XÂY DỰNG LINK EMBED YOUTUBE CHUẨN (KHÔNG LỖI ERROR 153)
+    // Lưu ý: Không dùng youtube-nocookie.com vì gây ra Error 153 trên trình duyệt có referrer check
+    function buildYouTubeEmbedUrl(vid, autoplay = 0, loop = 0) {
+        // Dùng www.youtube.com chuẩn
+        let url = `https://www.youtube.com/embed/${vid}?enablejsapi=1&playsinline=1&autoplay=${autoplay}&mute=0&controls=1&rel=0`;
+        if (loop) {
+            url += `&loop=1&playlist=${vid}`;
+        }
+        return url;
+    }
+
+    // Điều khiển iframe YouTube qua postMessage
     function sendYtCommand(func, args = []) {
         const iframe = document.getElementById('ytIframe');
         if (iframe && iframe.contentWindow) {
@@ -591,15 +687,14 @@
     function onYtUrlChange() {
         const url = document.getElementById('ytUrl').value;
         const vid = extractYouTubeId(url);
-        const box = document.getElementById('ytContainer');
+        const container = document.getElementById('ytMasterContainer');
         const iframe = document.getElementById('ytIframe');
 
         if (vid) {
-            box.style.display = 'block';
-            const origin = encodeURIComponent(window.location.origin);
-            const src = `https://www.youtube-nocookie.com/embed/${vid}?enablejsapi=1&playsinline=1&autoplay=0&origin=${origin}`;
+            container.className = 'mode-preview';
+            const targetSrc = buildYouTubeEmbedUrl(vid, 0, 0);
             if (!iframe.src || !iframe.src.includes(vid)) {
-                iframe.src = src;
+                iframe.src = targetSrc;
             }
         }
     }
@@ -610,21 +705,33 @@
         const url = document.getElementById('ytUrl').value;
         const vid = extractYouTubeId(url);
         if (!vid) {
-            alert('Vui lòng dán link YouTube hợp lệ!');
+            alert('Vui lòng dán link hoặc mã ID YouTube hợp lệ!');
             return;
         }
 
-        const box = document.getElementById('ytContainer');
+        const container = document.getElementById('ytMasterContainer');
         const iframe = document.getElementById('ytIframe');
         const banner = document.getElementById('preplayStatus');
         const preplayText = document.getElementById('preplayText');
 
-        box.style.display = 'block';
+        container.className = 'mode-preview';
         banner.style.display = 'flex';
 
-        const origin = encodeURIComponent(window.location.origin);
         const loop = document.getElementById('continuousLoop').checked ? 1 : 0;
-        iframe.src = `https://www.youtube-nocookie.com/embed/${vid}?enablejsapi=1&playsinline=1&autoplay=1&mute=0&controls=1&loop=${loop}&playlist=${vid}&origin=${origin}`;
+        const targetSrc = buildYouTubeEmbedUrl(vid, 1, loop);
+
+        if (!iframe.src || !iframe.src.includes(vid)) {
+            iframe.src = targetSrc;
+        }
+
+        // Kích hoạt phát âm thanh tối đa
+        const burstUnlock = () => {
+            sendYtCommand('unMute');
+            sendYtCommand('setVolume', 100);
+            sendYtCommand('playVideo');
+        };
+        setTimeout(burstUnlock, 300);
+        setTimeout(burstUnlock, 800);
 
         let remain = seconds;
         preplayText.innerText = `🔊 Đang phát thử: còn ${remain}s (sẽ tự Pause)...`;
@@ -644,17 +751,25 @@
         preplayTimer = setTimeout(pausePreplay, seconds * 1000);
     }
 
-    // Tạm dừng phát thử
+    // Tạm dừng phát thử & chuyển sang trạng thái chờ ngầm (mode-idle)
     function pausePreplay() {
         clearInterval(preplayInterval);
         clearTimeout(preplayTimer);
         sendYtCommand('pauseVideo');
+
         const banner = document.getElementById('preplayStatus');
         const preplayText = document.getElementById('preplayText');
+        const container = document.getElementById('ytMasterContainer');
+
         if (preplayText) preplayText.innerText = '⏸️ Đã Pause! Đến giờ hẹn sẽ tự động phát tiếp.';
+
         setTimeout(() => {
             if (banner) banner.style.display = 'none';
-        }, 1500);
+            // Chuyển container về chế độ chờ ngầm nhưng KHÔNG tháo iframe khỏi DOM
+            if (!activeRingingAlarm) {
+                container.className = 'mode-idle';
+            }
+        }, 1200);
     }
 
     // Lưu mốc báo thức
@@ -693,6 +808,9 @@
         if (preplay) {
             startPreplay(30);
         } else {
+            // Nạp trước video vào iframe ở trạng thái dừng
+            const iframe = document.getElementById('ytIframe');
+            iframe.src = buildYouTubeEmbedUrl(vid, 0, loop ? 1 : 0);
             alert(`Đã lưu báo thức ${timeVal}!`);
         }
     }
@@ -705,7 +823,6 @@
             item.enabled = !item.enabled;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
             renderAlarms();
-            // Nếu bật, nạp sẵn video vào player
             if (item.enabled) {
                 document.getElementById('ytUrl').value = item.url;
                 onYtUrlChange();
@@ -769,7 +886,7 @@
         }
     }
 
-    // Kích hoạt chuông reo báo thức
+    // Kích hoạt chuông reo báo thức (KHÔNG THÁO RÁP DOM IFRAME)
     function triggerAlarm(alarm) {
         unlockAudio();
         activeRingingAlarm = alarm;
@@ -777,56 +894,72 @@
         const overlay = document.getElementById('ringOverlay');
         const ringTime = document.getElementById('ringTime');
         const ringTitle = document.getElementById('ringTitle');
-        const ringYtWrapper = document.getElementById('ringYtWrapper');
+        const container = document.getElementById('ytMasterContainer');
         const iframe = document.getElementById('ytIframe');
-        const ytBox = document.getElementById('ytContainer');
 
         ringTime.innerText = alarm.time;
         ringTitle.innerText = `🎵 ${alarm.label || 'Báo thức YouTube'}`;
 
-        // Chuyển iframe vào modal chuông reo
-        ytBox.style.display = 'none';
-        ringYtWrapper.innerHTML = '';
-        ringYtWrapper.appendChild(iframe);
-
+        // Hiển thị modal reo chuông
         overlay.style.display = 'flex';
 
-        // Lệnh phát video YouTube âm lượng tối đa
-        const origin = encodeURIComponent(window.location.origin);
-        const loop = alarm.loop ? 1 : 0;
-        const targetSrc = `https://www.youtube-nocookie.com/embed/${alarm.vid}?enablejsapi=1&playsinline=1&autoplay=1&mute=0&controls=1&loop=${loop}&playlist=${alarm.vid}&origin=${origin}`;
+        // CHUYỂN CLASS CONTAINER SANG MODE RINGING (NỔI LÊN GIỮA MÀN HÌNH MÀ KHÔNG THÁO DOM!)
+        container.className = 'mode-ringing';
 
+        // Đảm bảo iframe có src đúng video
+        const targetSrc = buildYouTubeEmbedUrl(alarm.vid, 1, alarm.loop ? 1 : 0);
         if (!iframe.src || !iframe.src.includes(alarm.vid)) {
             iframe.src = targetSrc;
         }
 
+        // Lệnh phát âm thanh liên tục
         const burstPlay = () => {
             sendYtCommand('unMute');
             sendYtCommand('setVolume', 100);
             sendYtCommand('playVideo');
         };
         burstPlay();
-        setTimeout(burstPlay, 300);
-        setTimeout(burstPlay, 800);
+        setTimeout(burstPlay, 400);
+        setTimeout(burstPlay, 1000);
+        setTimeout(burstPlay, 2000);
+
+        // Chuông phụ dự phòng: Nếu sau 3.5 giây video không thể phát (do bản quyền hoặc mạng), chuông chimes dự phòng sẽ kêu
+        setTimeout(() => {
+            if (activeRingingAlarm) {
+                startBackupAlarmChime();
+            }
+        }, 3500);
     }
 
     // Tắt chuông báo thức
     function stopAlarm() {
         activeRingingAlarm = null;
+        stopBackupAlarmChime();
         sendYtCommand('pauseVideo');
 
         const overlay = document.getElementById('ringOverlay');
-        const ringYtWrapper = document.getElementById('ringYtWrapper');
-        const ytBox = document.getElementById('ytContainer');
-        const iframe = document.getElementById('ytIframe');
+        const container = document.getElementById('ytMasterContainer');
 
         overlay.style.display = 'none';
 
-        // Trả iframe về lại container ban đầu
-        ringYtWrapper.innerHTML = '';
-        ytBox.appendChild(iframe);
-        ytBox.style.display = 'none';
+        // Đưa container về chế độ ngầm hoặc preview
+        const currentInputVid = extractYouTubeId(document.getElementById('ytUrl').value);
+        if (currentInputVid) {
+            container.className = 'mode-preview';
+        } else {
+            container.className = 'mode-idle';
+        }
     }
+
+    // Lắng nghe thông điệp từ YouTube API để tắt chuông phụ khi video phát thành công
+    window.addEventListener('message', (event) => {
+        try {
+            const data = (typeof event.data === 'string') ? JSON.parse(event.data) : event.data;
+            if (data && data.event === 'onStateChange' && data.info === 1) { // 1 = YT.PlayerState.PLAYING
+                stopBackupAlarmChime();
+            }
+        } catch (e) {}
+    });
 
     // Mở khóa âm thanh lần đầu khi người dùng chạm bất kỳ đâu
     ['click', 'touchstart'].forEach(evt => {

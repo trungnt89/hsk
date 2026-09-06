@@ -9,6 +9,8 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20width=%22100%22%20height=%22100%22><text y=%22.9em%22 font-size=%2290%22>⏰</text></svg>">
     <!-- Thư viện kết nối Ajax & xác thực -->
     <script src="../com/util.js"></script>
+    <!-- Thư viện TTS chuẩn từ hệ thống (sử dụng trong nikki/index.html) -->
+    <script src="../com/TTSClient.js"></script>
     <style>
         /* === BẢNG MÀU GIAO DIỆN SÁNG (LIGHT THEME) HIỆN ĐẠI, FULL MÀN HÌNH === */
         :root {
@@ -1440,16 +1442,51 @@
 
                         <div class="form-group">
                             <label class="form-label" for="ttsLanguage">
-                                <span>Ngôn ngữ giọng đọc (LANGUAGE)</span>
+                                <span>Ngôn ngữ & Giọng đọc (LANGUAGE / VOICE)</span>
+                                <span style="font-size: 0.75rem; color: var(--accent-tts);">Azure Neural Voice chuẩn</span>
                             </label>
                             <select id="ttsLanguage" class="form-input">
-                                <option value="vi-VN" selected>🇻🇳 Tiếng Việt (vi-VN)</option>
-                                <option value="en-US">🇺🇸 Tiếng Anh (en-US)</option>
-                                <option value="ja-JP">🇯🇵 Tiếng Nhật (ja-JP)</option>
-                                <option value="ko-KR">🇰🇷 Tiếng Hàn (ko-KR)</option>
-                                <option value="zh-CN">🇨🇳 Tiếng Trung (zh-CN)</option>
-                                <option value="fr-FR">🇫🇷 Tiếng Pháp (fr-FR)</option>
-                                <option value="de-DE">🇩🇪 Tiếng Đức (de-DE)</option>
+                                <optgroup label="🇻🇳 Tiếng Việt (Vietnamese)">
+                                    <option value="vi-VN-HoaiMyNeural" selected>🇻🇳 Tiếng Việt - Hoài My (Nữ)</option>
+                                    <option value="vi-VN-NamMinhNeural">🇻🇳 Tiếng Việt - Nam Minh (Nam)</option>
+                                </optgroup>
+                                <optgroup label="🇯🇵 Tiếng Nhật (Japanese)">
+                                    <option value="ja-JP-NanamiNeural">🇯🇵 Tiếng Nhật - Nanami (Nữ)</option>
+                                    <option value="ja-JP-KeitaNeural">🇯🇵 Tiếng Nhật - Keita (Nam)</option>
+                                </optgroup>
+                                <optgroup label="🇺🇸 Tiếng Anh (English)">
+                                    <option value="en-US-JennyNeural">🇺🇸 Tiếng Anh - Jenny (Nữ)</option>
+                                    <option value="en-US-GuyNeural">🇺🇸 Tiếng Anh - Guy (Nam)</option>
+                                </optgroup>
+                                <optgroup label="🇨🇳 Tiếng Trung (Chinese)">
+                                    <option value="zh-CN-XiaoxiaoNeural">🇨🇳 Tiếng Trung - Xiaoxiao (Nữ)</option>
+                                    <option value="zh-CN-YunxiNeural">🇨🇳 Tiếng Trung - Yunxi (Nam)</option>
+                                </optgroup>
+                                <optgroup label="🇰🇷 Tiếng Hàn (Korean)">
+                                    <option value="ko-KR-SunHiNeural">🇰🇷 Tiếng Hàn - SunHi (Nữ)</option>
+                                    <option value="ko-KR-InJoonNeural">🇰🇷 Tiếng Hàn - InJoon (Nam)</option>
+                                </optgroup>
+                                <optgroup label="🇫🇷 Tiếng Pháp (French)">
+                                    <option value="fr-FR-DeniseNeural">🇫🇷 Tiếng Pháp - Denise (Nữ)</option>
+                                    <option value="fr-FR-HenriNeural">🇫🇷 Tiếng Pháp - Henri (Nam)</option>
+                                </optgroup>
+                                <optgroup label="🇩🇪 Tiếng Đức (German)">
+                                    <option value="de-DE-KatjaNeural">🇩🇪 Tiếng Đức - Katja (Nữ)</option>
+                                    <option value="de-DE-ConradNeural">🇩🇪 Tiếng Đức - Conrad (Nam)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="ttsRate">
+                                <span>Tốc độ đọc (TTS RATE)</span>
+                            </label>
+                            <select id="ttsRate" class="form-input">
+                                <option value="0.70">0.70x (Chậm)</option>
+                                <option value="0.80">0.80x (Hơi chậm)</option>
+                                <option value="0.95" selected>0.95x (Tự nhiên - Khuyến nghị)</option>
+                                <option value="1.0">1.0x (Chuẩn)</option>
+                                <option value="1.10">1.10x (Nhanh)</option>
                             </select>
                         </div>
                     </div>
@@ -2045,7 +2082,7 @@
 
         if (item.type === 'tts') {
             document.getElementById('ttsText').value = item.ttsText || '';
-            document.getElementById('ttsLanguage').value = item.language || 'vi-VN';
+            setTtsSelectVoice(item.language || 'vi-VN-HoaiMyNeural');
         } else {
             document.getElementById('ytUrl').value = item.youtubeUrl || '';
             onYtUrlChange();
@@ -2145,7 +2182,7 @@
                 : `<span class="badge-type yt">▶️ YouTube</span>`;
             
             const detailBadge = isTts
-                ? `<span class="badge-lang">${a.language || 'vi-VN'}</span>`
+                ? `<span class="badge-lang">${formatLangDisplay(a.language)}</span>`
                 : `<span class="badge-cloud">${a.vid ? a.vid : 'Video'}</span>`;
 
             const previewText = isTts
@@ -2243,7 +2280,7 @@
             youtubeUrl: '',
             vid: '',
             ttsText: 'Chào bạn, đã đến giờ hẹn báo thức rồi! Chúc bạn một ngày mới ngập tràn năng lượng và làm việc thật hiệu quả.',
-            language: 'vi-VN',
+            language: 'vi-VN-HoaiMyNeural',
             enabled: true,
             loop: true
         };
@@ -2278,9 +2315,9 @@
         unlockAudio();
         if (currentSelectedType === 'tts') {
             const text = document.getElementById('ttsText').value.trim() || 'Chào bạn, đây là âm thanh giọng đọc thử nghiệm của báo thức!';
-            const lang = document.getElementById('ttsLanguage').value || 'vi-VN';
-            speakTts(text, lang, false);
-            showToast(`🗣️ Đang phát thử giọng đọc (${lang})...`, 'info');
+            const voice = document.getElementById('ttsLanguage').value || 'vi-VN-HoaiMyNeural';
+            speakTts(text, voice, false);
+            showToast(`🗣️ Đang phát thử giọng đọc (${formatLangDisplay(voice)})...`, 'info');
         } else {
             // SỬA TỪ 30S XUỐNG 10S MẶC ĐỊNH
             startPreplay(10);
@@ -2373,47 +2410,115 @@
         } catch (e) {}
     }
 
-    // PHÁT GIỌNG ĐỌC TTS (WEB SPEECH API)
-    function speakTts(text, lang = 'vi-VN', isLoopingAlarm = false) {
+    // HELPER XÁC ĐỊNH GIỌNG NEURAL CHUẨN TỪ MÃ NGÔN NGỮ HOẶC TÊN VOICE
+    function resolveNeuralVoice(langOrVoice) {
+        if (!langOrVoice) return 'vi-VN-HoaiMyNeural';
+        if (langOrVoice.includes('Neural')) return langOrVoice;
+        const lower = langOrVoice.toLowerCase();
+        if (lower.startsWith('vi')) return 'vi-VN-HoaiMyNeural';
+        if (lower.startsWith('ja')) return 'ja-JP-NanamiNeural';
+        if (lower.startsWith('en')) return 'en-US-JennyNeural';
+        if (lower.startsWith('zh')) return 'zh-CN-XiaoxiaoNeural';
+        if (lower.startsWith('ko')) return 'ko-KR-SunHiNeural';
+        if (lower.startsWith('fr')) return 'fr-FR-DeniseNeural';
+        if (lower.startsWith('de')) return 'de-DE-KatjaNeural';
+        return 'vi-VN-HoaiMyNeural';
+    }
+
+    // HELPER HIỂN THỊ TÊN NGÔN NGỮ ĐẸP MẮT TRÊN BADGE VÀ MÀN HÌNH CHUÔNG
+    function formatLangDisplay(langOrVoice) {
+        const v = langOrVoice || 'vi-VN-HoaiMyNeural';
+        if (v.includes('vi') || v.includes('HoaiMy') || v.includes('NamMinh')) return '🇻🇳 Tiếng Việt';
+        if (v.includes('ja') || v.includes('Nanami') || v.includes('Keita')) return '🇯🇵 Tiếng Nhật';
+        if (v.includes('en') || v.includes('Jenny') || v.includes('Guy')) return '🇺🇸 Tiếng Anh';
+        if (v.includes('zh') || v.includes('Xiaoxiao') || v.includes('Yunxi')) return '🇨🇳 Tiếng Trung';
+        if (v.includes('ko') || v.includes('SunHi') || v.includes('InJoon')) return '🇰🇷 Tiếng Hàn';
+        if (v.includes('fr') || v.includes('Denise') || v.includes('Henri')) return '🇫🇷 Tiếng Pháp';
+        if (v.includes('de') || v.includes('Katja') || v.includes('Conrad')) return '🇩🇪 Tiếng Đức';
+        return v;
+    }
+
+    // GÁN GIÁ TRỊ VÀO DROPDOWN GIỌNG ĐỌC TRÊN FORM CHỈNH SỬA
+    function setTtsSelectVoice(langOrVoice) {
+        const sel = document.getElementById('ttsLanguage');
+        if (!sel) return;
+        const target = langOrVoice || 'vi-VN-HoaiMyNeural';
+        // 1. Thử match chính xác
+        for (let opt of sel.options) {
+            if (opt.value === target) {
+                sel.value = target;
+                return;
+            }
+        }
+        // 2. Thử match theo tiền tố ngôn ngữ (vd: vi-VN -> vi-VN-HoaiMyNeural)
+        const prefix = target.toLowerCase().slice(0, 2);
+        for (let opt of sel.options) {
+            if (opt.value.toLowerCase().startsWith(prefix)) {
+                sel.value = opt.value;
+                return;
+            }
+        }
+        sel.value = 'vi-VN-HoaiMyNeural';
+    }
+
+    // PHÁT GIỌNG ĐỌC TTS CHUẨN TỪ NIKKI/INDEX.HTML (TTSCLIENT - AZURE NEURAL VOICE + CACHE INDEXEDDB)
+    async function speakTts(text, langOrVoice = 'vi-VN-HoaiMyNeural', isLoopingAlarm = false) {
         unlockAudio();
         playChime();
 
-        if (!('speechSynthesis' in window)) {
-            alert('Trình duyệt của bạn không hỗ trợ tính năng Web Speech API TTS.');
+        if (!text || !text.trim()) {
+            console.warn('[TTS] Không có nội dung để phát giọng đọc.');
             return;
         }
 
-        window.speechSynthesis.cancel();
+        const voice = resolveNeuralVoice(langOrVoice);
+        const rate = document.getElementById('ttsRate')?.value || '0.95';
+        const lang = voice.startsWith('vi') ? 'vi-VN' : (voice.startsWith('ja') ? 'ja-JP' : (voice.startsWith('zh') ? 'zh-CN' : (voice.includes('-') ? voice.substring(0, 5) : 'vi-VN')));
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = lang || 'vi-VN';
-        utterance.rate = 0.95;
-        utterance.pitch = 1.0;
+        // Dừng mọi âm thanh TTS đang phát trước đó
+        stopTts();
 
-        const voices = window.speechSynthesis.getVoices();
-        const matchedVoice = voices.find(v => v.lang === lang || v.lang.replace('_', '-').startsWith(lang.slice(0, 2)));
-        if (matchedVoice) {
-            utterance.voice = matchedVoice;
-        }
-
-        utterance.onend = () => {
-            if (isLoopingAlarm && activeRingingAlarm && activeRingingAlarm.type === 'tts') {
-                ttsLoopInterval = setTimeout(() => {
-                    if (activeRingingAlarm && activeRingingAlarm.type === 'tts') {
-                        speakTts(text, lang, true);
-                    }
-                }, 1500);
+        try {
+            if (typeof window.speakCommon === 'function') {
+                console.log(`[TTS Log] Phát giọng đọc chuẩn qua speakCommon (Voice: ${voice}, Lang: ${lang}, Rate: ${rate}, Loop: ${isLoopingAlarm})`);
+                await window.speakCommon({
+                    text: text.trim(),
+                    voice: voice,
+                    lang: lang,
+                    rate: rate,
+                    filename: `Alarm_TTS_${Date.now()}`,
+                    loop: !!isLoopingAlarm
+                });
+            } else {
+                console.warn('[TTS] window.speakCommon chưa sẵn sàng, kích hoạt Web Speech API dự phòng');
+                fallbackWebSpeech(text, voice);
             }
-        };
-
-        window.speechSynthesis.speak(utterance);
+        } catch (error) {
+            console.error('[TTS Client Error - Web Speech Fallback]:', error);
+            fallbackWebSpeech(text, voice);
+        }
     }
 
+    // DỪNG GIỌNG ĐỌC TTS VÀ TẮT CHẾ ĐỘ LẶP
     function stopTts() {
         clearTimeout(ttsLoopInterval);
+        if (typeof window.stopSpeak === 'function') {
+            window.stopSpeak();
+        }
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
         }
+    }
+
+    // DỰ PHÒNG KHI KHÔNG CÓ KẾT NỐI MẠNG HOẶC API LỖI
+    function fallbackWebSpeech(text, voiceOrLang) {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        const langCode = voiceOrLang.includes('-') ? voiceOrLang.split('-').slice(0, 2).join('-') : 'vi-VN';
+        utterance.lang = langCode;
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
     }
 
     // ĐỒNG HỒ THỜI GIAN THỰC & QUÉT MỐC BÁO THỨC TỪ BIẾN ALARMS
@@ -2666,14 +2771,14 @@
         overlay.style.display = 'flex';
 
         if (alarm.type === 'tts') {
-            // BÁO THỨC GIỌNG ĐỌC TTS
+            // BÁO THỨC GIỌNG ĐỌC TTS CHUẨN TỪ NIKKI/INDEX.HTML (TTSCLIENT - AZURE NEURAL)
             playerWrapper.style.display = 'none';
             ttsWrapper.style.display = 'flex';
             ttsTextEl.innerText = `"${alarm.ttsText || 'Đã đến giờ hẹn rồi!'}"`;
-            ttsLangEl.innerText = alarm.language || 'vi-VN';
-            ringSubtext.innerText = `Đang đọc thông điệp TTS với ngôn ngữ ${alarm.language || 'vi-VN'}`;
+            ttsLangEl.innerText = formatLangDisplay(alarm.language);
+            ringSubtext.innerText = `Đang đọc thông điệp báo thức bằng giọng đọc chuẩn (${formatLangDisplay(alarm.language)})`;
 
-            speakTts(alarm.ttsText || 'Đã đến giờ báo thức rồi! Xin mời thức dậy!', alarm.language || 'vi-VN', true);
+            speakTts(alarm.ttsText || 'Đã đến giờ báo thức rồi! Xin mời thức dậy!', alarm.language || 'vi-VN-HoaiMyNeural', alarm.loop !== false);
         } else {
             // BÁO THỨC PHÁT ÂM THANH YOUTUBE (CÓ PLAYER YOUTUBE TRỰC QUAN)
             playerWrapper.style.display = 'flex';

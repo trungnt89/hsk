@@ -63,36 +63,140 @@
             box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.12); 
         }
          
-        .action-area { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; gap: 5px; width: 100%; }
-        .btn-save { background-color: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 1; font-size: 13px; }
-        .btn-save:disabled { background-color: #ccc; cursor: not-allowed; }
-        .btn-cancel { background-color: #eee; color: #333; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; flex-shrink: 1; font-size: 13px; }
-        .btn-prompt-setting { 
-            background-color: #f1f2f6; 
-            color: #475569; 
-            border: 1px solid #e2e8f0; 
-            padding: 7px 10px; 
-            border-radius: 8px; 
-            font-weight: 600; 
+        .action-area { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-top: 5px; 
+            gap: 4px; 
+            width: 100%; 
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .action-area::-webkit-scrollbar { display: none; }
+        .btn-save { 
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 7px; 
+            font-size: 15px; 
             cursor: pointer; 
             white-space: nowrap; 
             flex-shrink: 0; 
-            font-size: 13px; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .btn-save:hover { background-color: #5b4bc4; }
+        .btn-save:active { transform: scale(0.95); }
+        .btn-save:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        .btn-cancel { 
+            background-color: #fef2f2; 
+            color: #dc2626; 
+            border: 1px solid #fca5a5; 
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 7px; 
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer; 
+            white-space: nowrap; 
+            flex-shrink: 0; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .btn-cancel:hover { background-color: #fee2e2; }
+        .btn-cancel:active { transform: scale(0.95); }
+
+        .btn-prompt-setting { 
+            background-color: #f1f2f6; 
+            color: #475569; 
+            border: 1px solid #cbd5e1; 
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 7px; 
+            font-size: 15px; 
+            cursor: pointer; 
+            white-space: nowrap; 
+            flex-shrink: 0; 
             text-decoration: none; 
             display: inline-flex; 
             align-items: center; 
-            gap: 4px; 
+            justify-content: center;
             transition: all 0.2s ease; 
         }
         .btn-prompt-setting:hover { 
             background-color: #e2e8f0; 
             color: var(--primary-color); 
-            border-color: #cbd5e1; 
+            border-color: #94a3b8; 
         }
-        .tts-controls { display: flex; align-items: center; gap: 4px; margin-left: auto; flex: 1; justify-content: flex-end; overflow: hidden; }
-        .btn-main-speak { background: var(--ai-color); color: white; border: none; padding: 6px 8px; border-radius: 20px; cursor: pointer; font-size: 0.75rem; font-weight: bold; min-width: 65px; transition: 0.3s; flex-shrink: 1; }
+        .btn-prompt-setting:active { transform: scale(0.95); }
+
+        .tts-controls { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; justify-content: flex-end; }
+        .btn-main-speak { 
+            background: var(--ai-color); 
+            color: white; 
+            border: none; 
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 7px; 
+            cursor: pointer; 
+            font-size: 15px; 
+            transition: 0.2s; 
+            flex-shrink: 0; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-main-speak:hover:not(:disabled) { background: #e07116; }
+        .btn-main-speak:active:not(:disabled) { transform: scale(0.95); }
         .btn-main-speak:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
         .btn-main-speak.playing { background: var(--danger-color); }
+        
+        .btn-repeat { 
+            background: #f1f2f6; 
+            border: 1px solid #cbd5e1; 
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 7px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            flex-shrink: 0; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .btn-repeat:hover { background-color: #e2e8f0; }
+        .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
+        .btn-repeat:active { transform: scale(0.95); }
+
+        select.tts-select { 
+            height: 32px;
+            padding: 0 4px; 
+            border-radius: 7px; 
+            border: 1px solid #cbd5e1; 
+            font-size: 11.5px; 
+            font-weight: 500;
+            flex-shrink: 0; 
+            background: #ffffff;
+            color: #334155;
+            outline: none;
+        }
          
         .tabs { display: flex; background: #eee; border-radius: 8px; padding: 4px; margin-top: 5px; flex-shrink: 0; }
         .tab-btn { flex: 1; border: none; padding: 10px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-light); transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 4px; }
@@ -144,9 +248,6 @@
         .ai-vi-section .vi-body { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e2e8f0; }
         .ai-vi-section .vi-content { font-size: 0.95rem; line-height: 1.6; color: #334155; white-space: pre-wrap; }
 
-        .btn-repeat { background: #eee; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-        .btn-repeat.active { background: #dbeafe; border-color: var(--primary-color); color: var(--primary-color); }
-        select.tts-select { padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
         .diary-date { font-size: 0.75rem; color: var(--text-light); margin-bottom: 5px; font-weight: 600; }
         .diary-content { font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
          
@@ -187,21 +288,28 @@
         }
 
         /* Nút thao tác ảnh & Camera */
-        .action-left-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+        .action-left-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 4px; 
+            flex-wrap: nowrap; 
+            flex-shrink: 0; 
+        }
         .btn-img-action {
             background-color: #f1f2f6;
             color: #334155;
             border: 1px solid #cbd5e1;
-            padding: 7px 10px;
-            border-radius: 8px;
-            font-weight: 600;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 7px;
+            font-size: 15px;
             cursor: pointer;
             white-space: nowrap;
             flex-shrink: 0;
-            font-size: 13px;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
             transition: all 0.2s ease;
             user-select: none;
         }
@@ -211,7 +319,54 @@
             border-color: #94a3b8;
         }
         .btn-img-action:active {
-            transform: scale(0.97);
+            transform: scale(0.95);
+        }
+
+        /* Tối ưu các nút trên cùng của write-card để luôn hiển thị vừa vặn 1 dòng trên Mobile */
+        @media (max-width: 640px) {
+            main:nth-of-type(1) > div:nth-of-type(1),
+            .write-card {
+                padding: 6px 8px;
+            }
+            .action-area {
+                gap: 3px;
+                margin-top: 4px;
+            }
+            .action-left-group {
+                gap: 3px;
+            }
+            .tts-controls {
+                gap: 3px;
+            }
+            .btn-save, .btn-cancel, .btn-img-action, .btn-prompt-setting, .btn-main-speak, .btn-repeat {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
+                border-radius: 6px;
+            }
+            select.tts-select {
+                height: 30px;
+                padding: 0 3px;
+                font-size: 11px;
+                border-radius: 6px;
+                max-width: 50px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .btn-save, .btn-cancel, .btn-img-action, .btn-prompt-setting, .btn-main-speak, .btn-repeat {
+                width: 28px;
+                height: 28px;
+                font-size: 13px;
+                border-radius: 5px;
+            }
+            select.tts-select {
+                height: 28px;
+                max-width: 44px;
+                font-size: 10px;
+                padding: 0 2px;
+                border-radius: 5px;
+            }
         }
 
         /* Khung xem trước ảnh trong write-card */
@@ -523,17 +678,17 @@
 
             <div class="action-area">
                 <div class="action-left-group">
-                    <button id="cancelBtn" class="btn-cancel" style="display:none;">Hủy</button>
-                    <button id="saveBtn" class="btn-save">Lưu lại</button>
-                    <button type="button" id="btnCamera" class="btn-img-action" onclick="handleCameraClick()" title="Chụp ảnh từ camera">📷 Chụp ảnh</button>
-                    <button type="button" id="btnGallery" class="btn-img-action" onclick="handleGalleryClick()" title="Chọn ảnh từ bộ sưu tập">🖼️ Bộ sưu tập</button>
+                    <button id="cancelBtn" class="btn-cancel" style="display:none;" title="Hủy">✕</button>
+                    <button id="saveBtn" class="btn-save" title="Lưu lại">💾</button>
+                    <button type="button" id="btnCamera" class="btn-img-action" onclick="handleCameraClick()" title="Chụp ảnh từ camera">📷</button>
+                    <button type="button" id="btnGallery" class="btn-img-action" onclick="handleGalleryClick()" title="Chọn ảnh từ bộ sưu tập">🖼️</button>
                     <input type="file" id="imageInputGallery" accept="image/*" style="display:none;" onchange="handleImageFileSelect(this)">
                     <input type="file" id="imageInputCamera" accept="image/*" capture="environment" style="display:none;" onchange="handleImageFileSelect(this)">
-                    <a href="./promt.html" id="settingPromptBtn" class="btn-prompt-setting" title="Cài đặt Prompt">⚙️ Prompt</a>
+                    <a href="./promt.html" id="settingPromptBtn" class="btn-prompt-setting" title="Cài đặt Prompt">⚙️</a>
                 </div>
                 <div class="tts-controls">
-                    <button id="btnMainSpeak" class="btn-main-speak" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
-                    <button id="btnRepeat" class="btn-repeat" onclick="toggleRepeat()">🔂</button>
+                    <button id="btnMainSpeak" class="btn-main-speak" onclick="handleGlobalSpeak()" disabled title="Đọc">🔊</button>
+                    <button id="btnRepeat" class="btn-repeat" onclick="toggleRepeat()" title="Lặp lại">🔂</button>
                     <select id="voiceSelect" class="tts-select" onchange="saveTTSSettings()">
                         <option value="ja-JP-KeitaNeural" selected>Nam</option>
                         <option value="ja-JP-NanamiNeural" >Nữ</option>
@@ -1176,11 +1331,16 @@
         function startEdit(id, text) {
             editingId = id;
             document.getElementById('diaryInput').value = text;
-            document.getElementById('saveBtn').innerText = 'Cập nhật';
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) {
+                saveBtn.innerHTML = '💾';
+                saveBtn.title = 'Cập nhật';
+            }
             const cancelBtn = document.getElementById('cancelBtn');
             if (cancelBtn) {
-                cancelBtn.innerText = 'Hủy';
-                cancelBtn.style.display = 'inline-block';
+                cancelBtn.innerHTML = '✕';
+                cancelBtn.title = 'Hủy';
+                cancelBtn.style.display = 'inline-flex';
             }
             const item = currentDiaries.find(d => String(d.id) === String(id));
             if (item && item.image) {
@@ -1446,9 +1606,11 @@
                     btnSpeak.disabled = isParagraph ? !hasP : !hasC;
                     const isCurrentTabPlaying = (currentAISubTab === currentPlayingTarget);
                     btnSpeak.classList.toggle('playing', isCurrentTabPlaying);
-                    btnSpeak.innerHTML = isCurrentTabPlaying ? '⏹ Dừng' : '🔊 Đọc';
+                    btnSpeak.innerHTML = isCurrentTabPlaying ? '⏹' : '🔊';
+                    btnSpeak.title = isCurrentTabPlaying ? 'Dừng đọc' : 'Đọc';
                 } else {
                     btnSpeak.disabled = true;
+                    btnSpeak.title = 'Đọc';
                 }
             }
 
@@ -1608,17 +1770,23 @@
             if (btnMain) {
                 const isCurrentVisiblePlaying = (currentTopTab === 1 && currentAISubTab === currentPlayingTarget);
                 btnMain.classList.toggle('playing', isCurrentVisiblePlaying);
-                btnMain.innerHTML = isCurrentVisiblePlaying ? '⏹ Dừng' : '🔊 Đọc';
+                btnMain.innerHTML = isCurrentVisiblePlaying ? '⏹' : '🔊';
+                btnMain.title = isCurrentVisiblePlaying ? 'Dừng đọc' : 'Đọc';
             }
         }
         
         function clearEditMode() { 
             editingId = null; 
             document.getElementById('diaryInput').value = ''; 
-            document.getElementById('saveBtn').innerText = 'Lưu lại'; 
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) {
+                saveBtn.innerHTML = '💾';
+                saveBtn.title = 'Lưu lại';
+            }
             const cancelBtn = document.getElementById('cancelBtn');
             if (cancelBtn) {
-                cancelBtn.innerText = 'Hủy';
+                cancelBtn.innerHTML = '✕';
+                cancelBtn.title = 'Hủy';
                 cancelBtn.style.display = 'none';
             }
             removeAttachedImage();

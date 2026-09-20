@@ -842,6 +842,8 @@
     <script src="../com/assistive.js"></script>
 	<script src="../com/util.js"></script>
     <script src="../com/TTSClient.js"></script>
+    <script src="./diary-server.js"></script>
+    <script src="./image-handler.js"></script>
 
     <header>
         <h1>Diary & AI</h1>
@@ -960,13 +962,766 @@
         </div>
     </div>
 
-    <!-- Các module JavaScript chuyên biệt -->
-    <script src="./image-handler.js"></script>
-    <script src="./highlight-handler.js"></script>
-    <script src="./voice-handler.js"></script>
-    <script src="./text-ai-handler.js"></script>
-    <script src="./crud.js"></script>
-    <script src="./diary-handler.js"></script>
-    <script src="./app.js"></script>
+    <script>
+        let currentDiaries = [];
+        let editingId = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        let urlId = urlParams.get('id');
+        let selectedDiaryId = urlId || localStorage.getItem("diary_selected_id") || null;
+        if (urlId && urlId !== localStorage.getItem("diary_selected_id")) localStorage.setItem("diary_selected_id", urlId);
+        let isRepeating = localStorage.getItem("diary_repeat") === "true";
+        
+        let urlTab = urlParams.get('tab');
+        let currentTopTab = 0; // 0 = Nhật ký, 1 = Nghĩa VN
+        let currentAISubTab = localStorage.getItem("diary_sub_tab") || 'paragraph'; // 'paragraph' | 'conversation'
+
+        let showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
+
+        // Quản lý từ vựng từ IndexedDB MAZII để tô màu tức thì khi mở bài luận
+        let cachedHighlightWords = [];
+        let cachedHighlightRegex = null;
+
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function updateHighlightRegex(words) {
+            if (!words || !words.length) return;
+            const uniqueWords = Array.from(new Set(words.map(w => String(w).trim()).filter(Boolean)))
+                .sort((a, b) => b.length - a.length);
+            if (!uniqueWords.length) return;
+            cachedHighlightWords = uniqueWords;
+            const pattern = uniqueWords.map(escapeRegex).join('|');
+            cachedHighlightRegex = new RegExp(`(${pattern})`, 'g');
+        }
+
+        function formatJapaneseHighlight(text) {
+            if (!text) return '';
+            // Nếu chưa có regex, kiểm tra xem window.JapaneseLookup đã nạp từ chưa
+            if (!cachedHighlightRegex && window.JapaneseLookup && typeof window.JapaneseLookup.getSavedWords === 'function') {
+                const words = window.JapaneseLookup.getSavedWords();
+                if (words && words.length > 0) updateHighlightRegex(words);
+            }
+            if (!cachedHighlightRegex) return text;
+            return text.replace(cachedHighlightRegex, '<span class="ja-stored-highlight">$1</span>');
+        }
+
+        function applyImmediateHighlight() {
+            ['p-content', 'c-content'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && cachedHighlightRegex) {
+                    if (!el.querySelector('.ja-stored-highlight')) {
+                        const rawText = el.innerText || el.textContent || '';
+                        if (rawText && rawText !== '(Chưa có văn bản tiếng Nhật)') {
+                            el.innerHTML = formatJapaneseHighlight(rawText);
+                        }
+                    }
+                }
+            });
+            if (window.JapaneseLookup && typeof window.JapaneseLookup.applyHighlight === 'function') {
+                const container = document.getElementById('aiMeaningContainer');
+                window.JapaneseLookup.applyHighlight(container || document.body);
+            }
+        }
+
+        async function initWordHighlightFromDB() {
+            // 1. Lắng nghe event khi JapaneseLookup nạp xong từ vựng
+            window.addEventListener('japaneseWordsLoaded', (e) => {
+                if (e.detail && Array.isArray(e.detail)) {
+                    updateHighlightRegex(e.detail);
+                    if (currentTopTab === 1) applyImmediateHighlight();
+                }
+            });
+
+            // 2. Nếu JapaneseLookup đã có danh sách từ
+            if (window.JapaneseLookup && typeof window.JapaneseLookup.getSavedWords === 'function') {
+                const words = window.JapaneseLookup.getSavedWords();
+                if (words && words.length > 0) {
+                    updateHighlightRegex(words);
+                    return;
+                }
+            }
+
+            // 3. Đọc trực tiếp từ IndexedDB MAZII -> WORDS -> word_list_data
+            try {
+                const req = indexedDB.open("MAZII", 1);
+                req.onupgradeneeded = () => req.result.createObjectStore("WORDS");
+                req.onsuccess = () => {
+                    const db = req.result;
+                    try {
+                        const tx = db.transaction("WORDS", "readonly");
+                        const store = tx.objectStore("WORDS");
+                        const getReq = store.get("word_list_data");
+                        getReq.onsuccess = () => {
+                            const data = getReq.result;
+                            if (data && data.values && Array.isArray(data.values)) {
+                                const words = data.values.map(row => row && row[1]).filter(Boolean);
+                                updateHighlightRegex(words);
+                                if (currentTopTab === 1) {
+                                    applyImmediateHighlight();
+                                }
+                            }
+                        };
+                    } catch (e) {
+                        console.warn("[Highlight DB] Error reading WORDS store:", e);
+                    }
+                };
+            } catch (e) {
+                console.warn("[Highlight DB] Error opening MAZII:", e);
+            }
+        }
+
+        // Kích hoạt nạp từ vựng từ IndexedDB ngay lập tức
+        initWordHighlightFromDB();
+
+        // Xử lý hình ảnh & upload API đã được chuyển sang image-handler.js
+
+        function expandWriteCard() {
+            const card = document.querySelector('.write-card');
+            const input = document.getElementById('diaryInput');
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (card) card.classList.add('expanded');
+            if (input) input.classList.add('expanded');
+            if (!editingId && cancelBtn) {
+                cancelBtn.innerText = 'Thu gọn';
+                cancelBtn.style.display = 'inline-block';
+            }
+        }
+
+        function collapseWriteCard() {
+            if (currentAttachedImage) return; // Không tự động thu gọn nếu đang có ảnh đính kèm
+            const card = document.querySelector('.write-card');
+            const input = document.getElementById('diaryInput');
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (card) card.classList.remove('expanded');
+            if (input) {
+                input.classList.remove('expanded');
+                input.blur();
+            }
+            if (!editingId && cancelBtn) {
+                cancelBtn.style.display = 'none';
+            }
+        }
+
+        function handleCancelClick() {
+            if (editingId) {
+                clearEditMode();
+            } else {
+                removeAttachedImage();
+                collapseWriteCard();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("[System] App Initialized");
+            initWordHighlightFromDB();
+            initApp();
+            loadTTSSettings();
+            initImageDropAndPaste();
+
+            const diaryInput = document.getElementById('diaryInput');
+            if (diaryInput) {
+                diaryInput.addEventListener('focus', expandWriteCard);
+                diaryInput.addEventListener('click', expandWriteCard);
+            }
+
+            // Tự động thu gọn khi click ra ngoài thẻ nhập liệu nếu ô trống, không có ảnh và không trong chế độ sửa
+            document.addEventListener('click', (e) => {
+                const card = document.querySelector('.write-card');
+                const camModal = document.getElementById('cameraModal');
+                const lbModal = document.getElementById('imageLightboxModal');
+                if (camModal && camModal.classList.contains('active')) return;
+                if (lbModal && lbModal.classList.contains('active')) return;
+                if (card && !card.contains(e.target)) {
+                    if (!editingId && !currentAttachedImage && diaryInput && (!diaryInput.value || diaryInput.value.trim() === '')) {
+                        collapseWriteCard();
+                    }
+                }
+            });
+
+            document.getElementById('saveBtn').addEventListener('click', async () => {
+                if (typeof isUploadingImage !== 'undefined' && isUploadingImage) {
+                    const saveBtn = document.getElementById('saveBtn');
+                    const origHtml = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '⏳';
+                    saveBtn.disabled = true;
+                    if (typeof waitForImageUpload === 'function') {
+                        await waitForImageUpload();
+                    }
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = origHtml;
+                }
+                if (editingId) {
+                    await updateDiary();
+                } else {
+                    await saveDiary();
+                }
+                collapseWriteCard();
+            });
+            document.getElementById('cancelBtn').addEventListener('click', handleCancelClick);
+        });
+
+        async function initApp() {
+            loadDiaries();
+        }
+         
+        function renderList(diaries) {
+            const container = document.getElementById('diaryContainer');
+            container.innerHTML = '';
+            const toggleWrapper = document.getElementById('pinToggleWrapper');
+            const pinLabel = document.getElementById('pinLabelText');
+            if(toggleWrapper) {
+                toggleWrapper.classList.toggle('toggle-active', showPinnedOnly);
+                if(pinLabel) pinLabel.innerText = showPinnedOnly ? "Ghim" : "Tất cả";
+            }
+            let displayData = diaries;
+            if (showPinnedOnly) {
+                displayData = diaries.filter(d => d.pinned);
+            }
+            displayData.forEach((item) => container.appendChild(createItemEl(item)));
+            getLessonTotalScore(); 
+            if (currentTopTab === 0 && selectedDiaryId) {
+                const el = document.getElementById(`item-${selectedDiaryId}`);
+                if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+            }
+        }
+
+        function createItemEl(item) {
+            const isGen = !!(item.paragraph || item.conversation);
+            const div = document.createElement('div');
+            div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
+            div.id = `item-${item.id}`;
+            div.onclick = (e) => {
+                if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger') && !e.target.closest('.diary-image-wrapper') && !e.target.closest('.diary-gallery-container')) {
+                    selectRecord(item.id);
+                }
+            };
+            const imageHtml = typeof renderDiaryImagesHtml === 'function' ? renderDiaryImagesHtml(item.image) : '';
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div class="diary-date" style="margin-bottom:0;">
+                        ${item.date} - ${item.id}
+                        <span class="count-trigger" 
+                              onclick="event.stopPropagation(); handleRecordBadgeClick('${item.id}')" 
+                              style="margin-left:8px; color:white; background:${item.voiceCount > 0 ? '#e67e22' : '#ccc'}; padding:2px 8px; border-radius:10px; font-size:0.7rem; cursor:pointer; font-weight:bold; display:inline-block;">
+                            🎙️ ${item.voiceCount || 0}
+                        </span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="item-action-btn edit-btn" onclick="event.stopPropagation(); startEdit('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✏️ Sửa</div>
+                        <div class="item-action-btn delete-btn" onclick="event.stopPropagation(); deleteDiary('${item.id}')">🗑️ Xóa</div>
+                    </div>
+                </div>
+                <div class="diary-content">${item.text}</div>
+                ${imageHtml}
+                <div class="item-actions">
+                    <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
+                    <div class="item-action-btn ${item.paragraph ? '' : 'disabled'}" style="color:var(--primary-color); font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Trình độ N3</div>
+                    <div class="item-action-btn ${item.conversation ? '' : 'disabled'}" style="color:#e67e22; font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(2)">💬 Trình độ N2</div>
+                    <div class="item-action-btn ai-btn ${isGen ? 'generated' : ''}" style="font-size:0.75rem;" onclick="event.stopPropagation(); askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">${isGen ? '✅ AI' : '✨ AI'}</div>
+                </div>
+            `;
+            return div;
+        }
+
+        function handleRecordBadgeClick(id) {
+            selectRecord(id);
+            const modal = document.getElementById('audioModal');
+            document.getElementById('audioFrame').src = `./recorder.html?lessionId=${id}&tab=1`;
+            modal.style.display = 'block';
+        }
+
+        function closeAudioModal() {
+            document.getElementById('audioFrame').src = "";
+            document.getElementById('audioModal').style.display = 'none';
+        }
+
+        function backAudioModal() {
+            const iframe = document.getElementById('audioFrame');
+            if (iframe.contentWindow) iframe.contentWindow.history.back();
+        }
+
+        function reloadAudioModal() {
+            const iframe = document.getElementById('audioFrame');
+            if (iframe.src) iframe.src = iframe.src;
+        }
+
+        function startEdit(id, text) {
+            editingId = id;
+            document.getElementById('diaryInput').value = text;
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) {
+                saveBtn.innerHTML = '💾';
+                saveBtn.title = 'Cập nhật';
+            }
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (cancelBtn) {
+                cancelBtn.innerHTML = '✕';
+                cancelBtn.title = 'Hủy';
+                cancelBtn.style.display = 'inline-flex';
+            }
+            const item = currentDiaries.find(d => String(d.id) === String(id));
+            if (item && item.image) {
+                setAttachedImage(item.image);
+            } else {
+                removeAttachedImage();
+            }
+            expandWriteCard();
+            document.getElementById('diaryInput').focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function togglePinFilter() {
+            showPinnedOnly = !showPinnedOnly;
+            localStorage.setItem("diary_show_pinned_only", showPinnedOnly);
+            renderList(currentDiaries);
+        }
+
+        function switchTab(index) {
+            if (!editingId && (!document.getElementById('diaryInput')?.value?.trim())) {
+                collapseWriteCard();
+            }
+
+            if (index === 0) {
+                currentTopTab = 0;
+            } else if (index === 1) {
+                currentTopTab = 1;
+                currentAISubTab = 'paragraph';
+            } else if (index === 2) {
+                currentTopTab = 1;
+                currentAISubTab = 'conversation';
+            }
+
+            localStorage.setItem("diary_top_tab", currentTopTab);
+            localStorage.setItem("diary_sub_tab", currentAISubTab);
+
+            // Đồng bộ tham số URL: tab=1 (Nhật ký), tab=2 (Đoạn văn), tab=3 (Hội thoại)
+            const urlTabVal = currentTopTab === 0 ? 1 : (currentAISubTab === 'paragraph' ? 2 : 3);
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('tab', urlTabVal);
+            window.history.replaceState({}, '', newUrl);
+
+            // Cập nhật trạng thái 2 tab phía trên
+            const btn0 = document.getElementById('tab-btn-0');
+            const btn1 = document.getElementById('tab-btn-1');
+            const tabDiary = document.getElementById('tab-diary');
+            const tabMeaning = document.getElementById('tab-meaning');
+
+            if (btn0) btn0.classList.toggle('active', currentTopTab === 0);
+            if (btn1) btn1.classList.toggle('active', currentTopTab === 1);
+            if (tabDiary) tabDiary.classList.toggle('active', currentTopTab === 0);
+            if (tabMeaning) tabMeaning.classList.toggle('active', currentTopTab === 1);
+
+            updateAIView();
+            applyImmediateHighlight();
+
+            if (currentTopTab === 0 && selectedDiaryId) {
+                const el = document.getElementById(`item-${selectedDiaryId}`);
+                if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+            }
+        }
+
+        let currentPlayingTarget = null; // 'paragraph' | 'conversation' | 'p-vi-view' | 'c-vi-view' | null
+
+        function getTargetFromElId(elId) {
+            if (elId === 'p-content') return 'paragraph';
+            if (elId === 'c-content') return 'conversation';
+            if (elId === 'p-vi-view') return 'p-vi-view';
+            if (elId === 'c-vi-view') return 'c-vi-view';
+            return elId;
+        }
+
+        function switchAISubTab(subTab) {
+            currentAISubTab = subTab;
+            localStorage.setItem("diary_sub_tab", subTab);
+            
+            if (currentTopTab !== 1) {
+                currentTopTab = 1;
+                document.getElementById('tab-btn-0')?.classList.remove('active');
+                document.getElementById('tab-btn-1')?.classList.add('active');
+                document.getElementById('tab-diary')?.classList.remove('active');
+                document.getElementById('tab-meaning')?.classList.add('active');
+            }
+
+            const urlTabVal = (currentAISubTab === 'paragraph') ? 2 : 3;
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('tab', urlTabVal);
+            window.history.replaceState({}, '', newUrl);
+
+            updateAIView();
+            applyImmediateHighlight();
+        }
+
+        function toggleAISubTab() {
+            const nextTab = (currentAISubTab === 'paragraph') ? 'conversation' : 'paragraph';
+            switchAISubTab(nextTab);
+        }
+
+        let showViTrans = false;
+
+        function toggleViTrans() {
+            showViTrans = !showViTrans;
+            updateAIView();
+        }
+
+        function selectRecord(id, scroll = true) {
+            if (selectedDiaryId !== id && currentPlayingTarget) {
+                if (window.stopSpeak) window.stopSpeak();
+                currentPlayingTarget = null;
+            }
+            selectedDiaryId = id; 
+            localStorage.setItem("diary_selected_id", id);
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('id', id);
+            window.history.replaceState({}, '', newUrl); 
+            document.querySelectorAll('.diary-item').forEach(el => el.classList.remove('selected'));
+            const el = document.getElementById(`item-${id}`);
+            if (el) { el.classList.add('selected'); if (scroll) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }
+            updateAIView();
+            applyImmediateHighlight();
+        }
+
+        function updateAIView() {
+            const container = document.getElementById('aiMeaningContainer');
+            if (!container) return;
+
+            const item = currentDiaries.find(d => d.id == selectedDiaryId);
+            if (!item) {
+                container.innerHTML = '<p class="loading-text">Vui lòng chọn một bài nhật ký từ danh sách.</p>';
+                const btnSpeak = document.getElementById('btnMainSpeak');
+                if (btnSpeak) btnSpeak.disabled = true;
+                return;
+            }
+
+            const pContent = (item.paragraph || '').trim();
+            const cContent = (item.conversation || '').trim();
+            const pTrans = (item.paragraph_trans || '').trim();
+            const cTrans = (item.conversation_trans || '').trim();
+
+            const hasP = !!(pContent || pTrans);
+            const hasC = !!(cContent || cTrans);
+
+            const highlightedP = pContent ? formatJapaneseHighlight(pContent) : '';
+            const highlightedC = cContent ? formatJapaneseHighlight(cContent) : '';
+
+            if (currentAISubTab === 'paragraph' && !hasP && hasC) {
+                currentAISubTab = 'conversation';
+            } else if (currentAISubTab === 'conversation' && !hasC && hasP) {
+                currentAISubTab = 'paragraph';
+            }
+
+            const isParagraph = (currentAISubTab === 'paragraph');
+            const isN3Playing = (currentPlayingTarget === 'paragraph');
+            const isN2Playing = (currentPlayingTarget === 'conversation');
+            const isPViPlaying = (currentPlayingTarget === 'p-vi-view');
+            const isCViPlaying = (currentPlayingTarget === 'c-vi-view');
+
+            let bodyHTML = '';
+            if (isParagraph) {
+                if (hasP) {
+                    bodyHTML = `
+                        <div class="ai-header-bar">
+                            <span class="ai-type-badge p-badge">📖 Trình độ N3</span>
+                            <button class="btn-speak-inline ${isN3Playing ? 'playing' : ''}" id="btn-speak-p" onclick="handleInlineSpeak('p-content', 'btn-speak-p')">
+                                ${isN3Playing ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật'}
+                            </button>
+                        </div>
+                        <div id="p-content" class="ai-ja-section">${highlightedP || '(Chưa có văn bản tiếng Nhật)'}</div>
+                        <div class="ai-vi-section">
+                            <div class="vi-header" onclick="toggleViTrans()">
+                                <div class="vi-title">
+                                    <span>🇻🇳</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    ${showViTrans ? `
+                                        <button class="btn-speak-inline ${isPViPlaying ? 'playing' : ''}" id="btn-speak-p-vi" onclick="event.stopPropagation(); handleInlineSpeak('p-vi-view', 'btn-speak-p-vi')">
+                                            ${isPViPlaying ? '⏹ Dừng' : '🔊 Đọc dịch'}
+                                        </button>
+                                    ` : ''}
+                                    <button class="vi-toggle-btn" type="button">
+                                        ${showViTrans ? 'Ẩn nghĩa ▲' : '👁️ Xem nghĩa ▼'}
+                                    </button>
+                                </div>
+                            </div>
+                            ${showViTrans ? `
+                                <div class="vi-body">
+                                    <div id="p-vi-view" class="vi-content">${pTrans || 'Chưa có bản dịch tiếng Việt.'}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    bodyHTML = `
+                        <div class="ai-header-bar">
+                            <span class="ai-type-badge p-badge">📖 Trình độ N3</span>
+                        </div>
+                        <p class="loading-text" style="padding: 20px 0;">Chưa có dữ liệu Trình độ N3.<br><button class="btn-save" style="margin-top: 8px;" onclick="askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ Tạo bằng AI</button></p>
+                    `;
+                }
+            } else {
+                if (hasC) {
+                    bodyHTML = `
+                        <div class="ai-header-bar">
+                            <span class="ai-type-badge c-badge">💬 Trình độ N2</span>
+                            <button class="btn-speak-inline ${isN2Playing ? 'playing' : ''}" id="btn-speak-c" onclick="handleInlineSpeak('c-content', 'btn-speak-c')">
+                                ${isN2Playing ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật'}
+                            </button>
+                        </div>
+                        <div id="c-content" class="ai-ja-section">${highlightedC || '(Chưa có văn bản tiếng Nhật)'}</div>
+                        <div class="ai-vi-section c-trans">
+                            <div class="vi-header" onclick="toggleViTrans()">
+                                <div class="vi-title">
+                                    <span>🇻🇳</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    ${showViTrans ? `
+                                        <button class="btn-speak-inline ${isCViPlaying ? 'playing' : ''}" id="btn-speak-c-vi" onclick="event.stopPropagation(); handleInlineSpeak('c-vi-view', 'btn-speak-c-vi')">
+                                            ${isCViPlaying ? '⏹ Dừng' : '🔊 Đọc dịch'}
+                                        </button>
+                                    ` : ''}
+                                    <button class="vi-toggle-btn" type="button">
+                                        ${showViTrans ? 'Ẩn nghĩa ▲' : '👁️ Xem nghĩa ▼'}
+                                    </button>
+                                </div>
+                            </div>
+                            ${showViTrans ? `
+                                <div class="vi-body">
+                                    <div id="c-vi-view" class="vi-content">${cTrans || 'Chưa có bản dịch tiếng Việt.'}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    bodyHTML = `
+                        <div class="ai-header-bar">
+                            <span class="ai-type-badge c-badge">💬 Trình độ N2</span>
+                        </div>
+                        <p class="loading-text" style="padding: 20px 0;">Chưa có dữ liệu Trình độ N2.<br><button class="btn-save" style="margin-top: 8px;" onclick="askAI('${item.id}', \`${item.text.replace(/`/g, '\\`')}\`)">✨ Tạo bằng AI</button></p>
+                    `;
+                }
+            }
+
+            container.innerHTML = `
+                <div class="ai-box-container">
+                    <!-- Thanh chuyển hiển thị bên trái là 1 khối duy nhất: click để chuyển đổi giữa Trình độ N3 và Trình độ N2 -->
+                    <div class="ai-left-bar ${isParagraph ? 'paragraph-bar' : 'conversation-bar'}" 
+                         onclick="event.stopPropagation(); toggleAISubTab()" 
+                         title="Nhấn vào thanh này để chuyển đổi giữa Trình độ N3 và Trình độ N2">
+                        <span class="left-bar-icon">${isParagraph ? '📖' : '💬'}</span>
+                        <span class="left-bar-text">${isParagraph ? 'TRÌNH ĐỘ N3' : 'TRÌNH ĐỘ N2'}</span>
+                        <span class="left-bar-switch-hint">⇄</span>
+                    </div>
+                    <!-- Khung nội dung bên phải -->
+                    <div class="ai-content-body">
+                        ${bodyHTML}
+                    </div>
+                </div>
+            `;
+
+            const btnSpeak = document.getElementById('btnMainSpeak');
+            if (btnSpeak) {
+                if (currentTopTab === 1) {
+                    btnSpeak.disabled = isParagraph ? !hasP : !hasC;
+                    const isCurrentTabPlaying = (currentAISubTab === currentPlayingTarget);
+                    btnSpeak.classList.toggle('playing', isCurrentTabPlaying);
+                    btnSpeak.innerHTML = isCurrentTabPlaying ? '⏹' : '🔊';
+                    btnSpeak.title = isCurrentTabPlaying ? 'Dừng đọc' : 'Đọc';
+                } else {
+                    btnSpeak.disabled = true;
+                    btnSpeak.title = 'Đọc';
+                }
+            }
+
+            applyImmediateHighlight();
+        }
+
+        function loadTTSSettings() {
+            const v = localStorage.getItem("diary_voice"), r = localStorage.getItem("diary_rate");
+            if(v) document.getElementById("voiceSelect").value = v;
+            if(r) document.getElementById("rateSelect").value = r;
+            document.getElementById("btnRepeat").classList.toggle("active", isRepeating);
+            
+            // Xử lý mở tab ban đầu
+            if (urlTab === '1') {
+                switchTab(0);
+            } else if (urlTab === '2') {
+                switchTab(1);
+            } else if (urlTab === '3') {
+                switchTab(2);
+            } else {
+                const savedTop = parseInt(localStorage.getItem("diary_top_tab")) || 0;
+                const savedSub = localStorage.getItem("diary_sub_tab") || 'paragraph';
+                if (savedTop === 1) {
+                    switchTab(savedSub === 'conversation' ? 2 : 1);
+                } else {
+                    switchTab(0);
+                }
+            }
+        }
+
+        function saveTTSSettings() {
+            localStorage.setItem("diary_voice", document.getElementById("voiceSelect").value);
+            localStorage.setItem("diary_rate", document.getElementById("rateSelect").value);
+            localStorage.setItem("diary_repeat", isRepeating);
+        }
+
+        function toggleRepeat() { 
+            isRepeating = !isRepeating; 
+            document.getElementById("btnRepeat").classList.toggle("active", isRepeating); 
+            saveTTSSettings(); 
+            if (document.getElementById('btnMainSpeak').classList.contains("playing")) {
+                handleGlobalSpeak(); handleGlobalSpeak(); 
+            }
+        }
+
+        function handleInlineSpeak(elId, btnId) {
+            const target = getTargetFromElId(elId);
+            if (currentPlayingTarget === target) {
+                if (window.stopSpeak) window.stopSpeak();
+                currentPlayingTarget = null;
+                resetSpeakBtns();
+                return;
+            }
+            if (window.stopSpeak) window.stopSpeak();
+            currentPlayingTarget = target;
+            speakText(elId, btnId, target);
+        }
+
+        async function speakText(elId, btnId, target) {
+            const el = document.getElementById(elId);
+            if (!el || !window.speakCommon) return;
+
+            const textToSpeak = (el.innerText || '').trim();
+            if (!textToSpeak) {
+                console.warn("[TTS] Không có nội dung văn bản để đọc.");
+                currentPlayingTarget = null;
+                resetSpeakBtns();
+                return;
+            }
+
+            currentPlayingTarget = target || getTargetFromElId(elId);
+            resetSpeakBtns();
+
+            // Xác định giọng đọc dựa theo tùy chọn và ngôn ngữ của khối văn bản
+            let voiceValue = document.getElementById("voiceSelect")?.value || 'ja-JP-KeitaNeural';
+            const isVietnameseView = (elId === 'p-vi-view' || elId === 'c-vi-view');
+
+            if (isVietnameseView) {
+                // Tự động chuyển sang giọng Tiếng Việt tương ứng theo giới tính (Nam/Nữ)
+                const isMale = voiceValue.includes('Keita') || voiceValue.includes('Nam');
+                voiceValue = isMale ? 'vi-VN-NamMinhNeural' : 'vi-VN-HoaiMyNeural';
+            }
+
+            const rateValue = document.getElementById("rateSelect")?.value || "0.70";
+
+            try {
+                await window.speakCommon({
+                    text: textToSpeak,
+                    voice: voiceValue,
+                    rate: rateValue,
+                    filename: `Diary_AI_${selectedDiaryId || 'default'}`,
+                    loop: isRepeating
+                });
+            } catch (error) {
+                console.error("[TTS Error]", error);
+            } finally {
+                if (!isRepeating) {
+                    currentPlayingTarget = null;
+                    resetSpeakBtns();
+                }
+            }
+        }
+
+        function handleGlobalSpeak() {
+            const currentTarget = (currentAISubTab === 'paragraph') ? 'paragraph' : 'conversation';
+            const elId = (currentAISubTab === 'paragraph') ? 'p-content' : 'c-content';
+            const btnId = (currentAISubTab === 'paragraph') ? 'btn-speak-p' : 'btn-speak-c';
+
+            if (currentPlayingTarget === currentTarget) {
+                if (window.stopSpeak) window.stopSpeak();
+                currentPlayingTarget = null;
+                resetSpeakBtns();
+                return;
+            }
+
+            if (window.stopSpeak) window.stopSpeak();
+            currentPlayingTarget = currentTarget;
+            speakText(elId, 'btnMainSpeak', currentTarget);
+        }
+
+        function resetSpeakBtns() { 
+            const isN3Playing = (currentPlayingTarget === 'paragraph');
+            const isN2Playing = (currentPlayingTarget === 'conversation');
+            const isPViPlaying = (currentPlayingTarget === 'p-vi-view');
+            const isCViPlaying = (currentPlayingTarget === 'c-vi-view');
+
+            // Nút đọc N3
+            const btnP = document.getElementById('btn-speak-p');
+            if (btnP) {
+                btnP.classList.toggle('playing', isN3Playing);
+                btnP.innerHTML = isN3Playing ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật';
+            }
+
+            // Nút đọc N2
+            const btnC = document.getElementById('btn-speak-c');
+            if (btnC) {
+                btnC.classList.toggle('playing', isN2Playing);
+                btnC.innerHTML = isN2Playing ? '⏹ Dừng' : '🔊 Đọc tiếng Nhật';
+            }
+
+            // Nút dịch N3
+            const btnPVi = document.getElementById('btn-speak-p-vi');
+            if (btnPVi) {
+                btnPVi.classList.toggle('playing', isPViPlaying);
+                btnPVi.innerHTML = isPViPlaying ? '⏹ Dừng' : '🔊 Đọc dịch';
+            }
+
+            // Nút dịch N2
+            const btnCVi = document.getElementById('btn-speak-c-vi');
+            if (btnCVi) {
+                btnCVi.classList.toggle('playing', isCViPlaying);
+                btnCVi.innerHTML = isCViPlaying ? '⏹ Dừng' : '🔊 Đọc dịch';
+            }
+
+            // Nút Đọc tổng phía trên (Main Speak)
+            const btnMain = document.getElementById('btnMainSpeak');
+            if (btnMain) {
+                const isCurrentVisiblePlaying = (currentTopTab === 1 && currentAISubTab === currentPlayingTarget);
+                btnMain.classList.toggle('playing', isCurrentVisiblePlaying);
+                btnMain.innerHTML = isCurrentVisiblePlaying ? '⏹' : '🔊';
+                btnMain.title = isCurrentVisiblePlaying ? 'Dừng đọc' : 'Đọc';
+            }
+        }
+        
+        function clearEditMode() { 
+            editingId = null; 
+            document.getElementById('diaryInput').value = ''; 
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) {
+                saveBtn.innerHTML = '💾';
+                saveBtn.title = 'Lưu lại';
+            }
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (cancelBtn) {
+                cancelBtn.innerHTML = '✕';
+                cancelBtn.title = 'Hủy';
+                cancelBtn.style.display = 'none';
+            }
+            removeAttachedImage();
+            collapseWriteCard();
+        }
+
+        async function resetAppData() {
+            if (confirm("Bạn có chắc chắn muốn reset toàn bộ dữ liệu nhật ký không?")) {
+                try {
+                    await deleteFromDB(STORE_NAME, SHEET_DIARY);
+                    window.location.reload();
+                } catch (error) {
+                    console.error("Lỗi khi xóa IndexedDB:", error);
+                    alert("Không thể xóa dữ liệu IndexedDB.");
+                }
+            }
+        }
+    </script>
 </body>
 </html>

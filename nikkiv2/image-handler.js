@@ -84,7 +84,7 @@ function getAttachedImages() {
 }
 
 /**
- * Lấy chuỗi biểu diễn ảnh đính kèm hiện tại để lưu vào Nhật ký (cho crud.js)
+ * Lấy chuỗi biểu diễn ảnh đính kèm hiện tại để lưu vào Nhật ký (cho diary-server.js)
  */
 function getAttachedImage() {
     return serializeDiaryImages(getAttachedImages());

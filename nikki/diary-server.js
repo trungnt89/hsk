@@ -47,6 +47,11 @@ async function callAPI(paramsObj,URL='') {
 }
 
 async function saveDiary() {
+    if (typeof isUploadingImage !== 'undefined' && isUploadingImage) {
+        if (typeof waitForImageUpload === 'function') {
+            await waitForImageUpload();
+        }
+    }
     const text = document.getElementById('diaryInput').value.trim();
     const image = (typeof getAttachedImage === 'function' ? getAttachedImage() : '') || '';
     if (!text && !image) return;
@@ -64,6 +69,11 @@ async function saveDiary() {
 }
 
 async function updateDiary() {
+    if (typeof isUploadingImage !== 'undefined' && isUploadingImage) {
+        if (typeof waitForImageUpload === 'function') {
+            await waitForImageUpload();
+        }
+    }
     const text = document.getElementById('diaryInput').value.trim();
     const image = (typeof getAttachedImage === 'function' ? getAttachedImage() : '') || '';
     if (!text && !image) return;

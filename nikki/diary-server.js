@@ -47,7 +47,7 @@ async function callAPI(paramsObj,URL='') {
 }
 
 async function saveDiary() {
-    if (typeof isUploadingImage !== 'undefined' && isUploadingImage) {
+    if ((typeof isUploadingImage !== 'undefined' && isUploadingImage) || (typeof checkIsImageUploading === 'function' && checkIsImageUploading())) {
         if (typeof waitForImageUpload === 'function') {
             await waitForImageUpload();
         }
@@ -69,7 +69,7 @@ async function saveDiary() {
 }
 
 async function updateDiary() {
-    if (typeof isUploadingImage !== 'undefined' && isUploadingImage) {
+    if ((typeof isUploadingImage !== 'undefined' && isUploadingImage) || (typeof checkIsImageUploading === 'function' && checkIsImageUploading())) {
         if (typeof waitForImageUpload === 'function') {
             await waitForImageUpload();
         }

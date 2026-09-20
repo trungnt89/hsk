@@ -1,25 +1,21 @@
 // =============================================================================
-// QUẢN LÝ XỬ LÝ & UPLOAD HÌNH ẢNH (CAMERA, GALLERY, DRAG/DROP, CLIPBOARD)
-// Tích hợp API Vercel / Google Drive: https://hsk-gilt.vercel.app/api/gRecorder
+// QUẢN LÝ XỬ LÝ & UPLOAD NHIỀU HÌNH ẢNH (CAMERA, GALLERY, DRAG/DROP, CLIPBOARD)
+// Hỗ trợ lưu trữ nhiều ảnh trong 1 bài viết với API Vercel: https://hsk-gilt.vercel.app/api/gRecorder
 // =============================================================================
 
 const API_URL = 'https://hsk-gilt.vercel.app/api/gRecorder';
 const LESSION_ID = "IMG_";
 
-// Biến toàn cục quản lý trạng thái ảnh
-var currentAttachedImage = '';
-var isUploadingImage = false;
-var pendingImageUploadPromise = null;
+// Danh sách ảnh đang đính kèm trong bài viết hiện tại:
+// Mỗi item: { id: string, url: string (local dataUrl hoặc remote URL), remoteUrl: string, isUploading: boolean, error: boolean }
+var attachedImages = [];
+
+// Lightbox state cho duyệt nhiều ảnh
+var lightboxImagesList = [];
+var lightboxCurrentIndex = 0;
 
 var cameraStream = null;
 var currentCameraFacing = 'environment';
-
-/**
- * Lấy URL ảnh đính kèm hiện tại để lưu vào Nhật ký
- */
-function getAttachedImage() {
-    return currentAttachedImage || '';
-}
 
 /**
  * Chuẩn hóa URL hiển thị hình ảnh (hỗ trợ full URL, dataUrl và fileId)
@@ -33,75 +29,206 @@ function getImageDisplayUrl(val) {
 }
 
 /**
- * Cập nhật giao diện xem trước ảnh trong write-card
+ * Phân tích chuỗi lưu trữ trong Google Sheet/DB thành mảng các URL ảnh
+ * Hỗ trợ: JSON array, mảng có sẵn, chuỗi ngăn cách bởi dấu ||, dấu xuống dòng, hoặc 1 URL đơn lẻ
  */
-function setAttachedImage(imageSrc, isUploading = false, statusText = '') {
-    currentAttachedImage = imageSrc || '';
-    const container = document.getElementById('imagePreviewContainer');
-    const imgEl = document.getElementById('imagePreviewImg');
-    const metaEl = document.getElementById('previewImgMeta');
-    const hintEl = document.querySelector('.preview-img-hint');
-
-    if (currentAttachedImage) {
-        if (imgEl) imgEl.src = getImageDisplayUrl(currentAttachedImage);
-        if (metaEl) {
-            if (isUploading) {
-                metaEl.innerHTML = '<span style="color:#d97706; font-weight:600;">⏳ Đang tải ảnh lên máy chủ...</span>';
-                if (hintEl) hintEl.innerText = 'Vui lòng đợi giây lát...';
-            } else {
-                metaEl.innerHTML = statusText || '<span style="color:#059669; font-weight:600;">☁️ Đã lưu trên máy chủ</span>';
-                if (hintEl) hintEl.innerText = 'Bấm vào ảnh để xem to • Bấm ✕ để gỡ bỏ';
-            }
-        }
-        if (container) container.style.display = 'flex';
-        if (typeof expandWriteCard === 'function') expandWriteCard();
-    } else {
-        removeAttachedImage();
+function parseDiaryImages(imageVal) {
+    if (!imageVal) return [];
+    if (Array.isArray(imageVal)) {
+        return imageVal.map(s => String(s).trim()).filter(Boolean);
     }
+    if (typeof imageVal !== 'string') return [];
+    const trimmed = imageVal.trim();
+    if (!trimmed) return [];
+
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+                return parsed.map(s => String(s).trim()).filter(Boolean);
+            }
+        } catch (e) {
+            console.warn("[parseDiaryImages] JSON parse fallback", e);
+        }
+    }
+    if (trimmed.includes('||')) {
+        return trimmed.split('||').map(s => s.trim()).filter(Boolean);
+    }
+    if (trimmed.includes('\n')) {
+        return trimmed.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+    return [trimmed];
 }
 
 /**
- * Xóa ảnh đính kèm hiện tại
+ * Chuẩn hóa mảng các URL ảnh thành chuỗi để lưu trữ vào Google Sheet/DB
+ * - Không có ảnh: trả về ""
+ * - 1 ảnh: trả về URL đơn lẻ (tương thích 100% dữ liệu cũ)
+ * - Nhiều ảnh: trả về JSON array chuỗi ["url1", "url2", ...]
  */
-function removeAttachedImage() {
-    currentAttachedImage = '';
-    isUploadingImage = false;
-    pendingImageUploadPromise = null;
+function serializeDiaryImages(images) {
+    if (!images || !images.length) return '';
+    const cleanList = images.map(img => (typeof img === 'string' ? img : (img.remoteUrl || img.url))).filter(Boolean);
+    if (cleanList.length === 0) return '';
+    if (cleanList.length === 1) return cleanList[0];
+    return JSON.stringify(cleanList);
+}
 
-    const container = document.getElementById('imagePreviewContainer');
-    const imgEl = document.getElementById('imagePreviewImg');
-    const metaEl = document.getElementById('previewImgMeta');
-    if (container) container.style.display = 'none';
-    if (imgEl) imgEl.src = '';
-    if (metaEl) metaEl.innerText = 'Ảnh đính kèm';
+/**
+ * Lấy mảng tất cả các URL ảnh đính kèm hiện tại
+ */
+function getAttachedImages() {
+    return attachedImages
+        .map(item => item.remoteUrl || item.url)
+        .filter(Boolean);
+}
 
+/**
+ * Lấy chuỗi biểu diễn ảnh đính kèm hiện tại để lưu vào Nhật ký (cho diary-server.js)
+ */
+function getAttachedImage() {
+    return serializeDiaryImages(getAttachedImages());
+}
+
+/**
+ * Getter/Setter tương thích ngược cho biến currentAttachedImage
+ */
+Object.defineProperty(window, 'currentAttachedImage', {
+    get: function() {
+        return attachedImages.length > 0 ? getAttachedImage() : '';
+    },
+    set: function(val) {
+        if (!val) {
+            clearAllAttachedImages();
+        } else {
+            setAttachedImage(val);
+        }
+    },
+    configurable: true
+});
+
+Object.defineProperty(window, 'isUploadingImage', {
+    get: function() {
+        return checkIsImageUploading();
+    },
+    configurable: true
+});
+
+/**
+ * Khởi tạo hoặc cập nhật danh sách ảnh đính kèm (dùng khi sửa bài viết hoặc nạp ảnh)
+ */
+function setAttachedImage(imageVal) {
+    const urls = parseDiaryImages(imageVal);
+    attachedImages = urls.map(url => ({
+        id: 'img_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+        url: url,
+        remoteUrl: url,
+        isUploading: false,
+        error: false
+    }));
+    renderAttachedImagesPreview();
+}
+
+/**
+ * Xóa một ảnh đính kèm theo id (hoặc xóa toàn bộ nếu không truyền id)
+ */
+function removeAttachedImage(id) {
+    if (!id) {
+        clearAllAttachedImages();
+        return;
+    }
+    attachedImages = attachedImages.filter(item => item.id !== id);
+    renderAttachedImagesPreview();
+}
+
+/**
+ * Xóa toàn bộ ảnh đính kèm
+ */
+function clearAllAttachedImages() {
+    attachedImages = [];
     const gInput = document.getElementById('imageInputGallery');
     const cInput = document.getElementById('imageInputCamera');
     if (gInput) gInput.value = '';
     if (cInput) cInput.value = '';
+    renderAttachedImagesPreview();
 }
 
 /**
- * Kiểm tra trạng thái đang tải ảnh
+ * Cập nhật giao diện xem trước nhiều ảnh trong write-card
  */
-function checkIsImageUploading() {
-    return isUploadingImage;
-}
+function renderAttachedImagesPreview() {
+    const container = document.getElementById('imagePreviewContainer');
+    const listEl = document.getElementById('previewImagesList');
+    const metaEl = document.getElementById('previewImgMeta');
+    const hintEl = document.querySelector('.preview-img-hint');
 
-/**
- * Chờ tiến trình upload ảnh hoàn tất
- */
-async function waitForImageUpload() {
-    if (pendingImageUploadPromise) {
-        try {
-            await pendingImageUploadPromise;
-            return true;
-        } catch (err) {
-            console.error("[Image Upload Wait Error]", err);
-            return false;
+    if (!container) return;
+
+    if (attachedImages.length === 0) {
+        container.style.display = 'none';
+        if (listEl) listEl.innerHTML = '';
+        if (metaEl) metaEl.innerText = 'Ảnh đính kèm';
+        return;
+    }
+
+    container.style.display = 'block';
+
+    const uploadingCount = attachedImages.filter(img => img.isUploading).length;
+    if (metaEl) {
+        if (uploadingCount > 0) {
+            metaEl.innerHTML = `<span style="color:#d97706; font-weight:600;">⏳ Đang tải ${uploadingCount}/${attachedImages.length} ảnh lên máy chủ...</span>`;
+            if (hintEl) hintEl.innerText = 'Vui lòng đợi ảnh tải lên hoàn tất trước khi lưu.';
+        } else {
+            metaEl.innerHTML = `<span style="color:#059669; font-weight:600;">☁️ Đã đính kèm ${attachedImages.length} ảnh</span>`;
+            if (hintEl) hintEl.innerText = 'Bấm vào ảnh để xem to • Bấm ✕ để gỡ ảnh • Có thể thêm tiếp ảnh khác';
         }
     }
-    return true;
+
+    if (listEl) {
+        listEl.innerHTML = attachedImages.map((item, index) => {
+            const displayUrl = getImageDisplayUrl(item.remoteUrl || item.url);
+            const isUploading = item.isUploading;
+            const isError = item.error;
+
+            return `
+                <div class="preview-thumb-item ${isUploading ? 'uploading' : ''} ${isError ? 'error' : ''}" id="thumb-${item.id}">
+                    <img src="${displayUrl}" alt="Ảnh ${index + 1}" onclick="openAttachedImageViewer('${item.id}')" />
+                    <button type="button" class="btn-remove-thumb" onclick="removeAttachedImage('${item.id}')" title="Xóa ảnh này">✕</button>
+                    ${isUploading ? '<div class="thumb-upload-overlay"><div class="thumb-spinner"></div></div>' : ''}
+                    ${isError ? '<div class="thumb-error-badge" title="Lỗi tải ảnh">⚠️</div>' : ''}
+                </div>
+            `;
+        }).join('') + `
+            <div class="preview-add-more-card" onclick="handleGalleryClick()" title="Chọn thêm ảnh">
+                <span class="add-icon">＋</span>
+                <span class="add-text">Thêm ảnh</span>
+            </div>
+        `;
+    }
+
+    if (typeof expandWriteCard === 'function') expandWriteCard();
+}
+
+/**
+ * Kiểm tra có ảnh nào đang trong quá trình upload không
+ */
+function checkIsImageUploading() {
+    return attachedImages.some(img => img.isUploading);
+}
+
+/**
+ * Chờ tất cả các ảnh đang upload hoàn thành
+ */
+async function waitForImageUpload(timeoutMs = 30000) {
+    const startTime = Date.now();
+    while (checkIsImageUploading()) {
+        if (Date.now() - startTime > timeoutMs) {
+            console.warn("[waitForImageUpload] Timeout waiting for image upload");
+            break;
+        }
+        await new Promise(r => setTimeout(r, 200));
+    }
+    return !checkIsImageUploading();
 }
 
 /**
@@ -146,10 +273,10 @@ function compressImage(fileOrBlob, maxDimension = 1280, initialQuality = 0.8) {
 }
 
 /**
- * Gửi yêu cầu tải ảnh lên API gRecorder giống trong image.html
+ * Gửi yêu cầu tải ảnh lên API gRecorder
  */
 async function uploadImageToApi(imageData, fileName) {
-    const name = fileName || `IMG_${Date.now()}.png`;
+    const name = fileName || `IMG_${Date.now()}_${Math.floor(Math.random() * 1000)}.png`;
     console.log("[LOG] Bắt đầu upload ảnh lên API:", API_URL, name);
 
     const response = await fetch(API_URL, {
@@ -177,47 +304,53 @@ async function uploadImageToApi(imageData, fileName) {
 }
 
 /**
- * Xử lý ảnh: hiển thị xem trước tức thì và upload lên máy chủ ở background
+ * Thêm một ảnh vào danh sách đính kèm và tự động upload lên API
  */
-async function processAndUploadImage(dataUrl, fileName) {
-    setAttachedImage(dataUrl, true);
-    isUploadingImage = true;
+async function addImageAndUpload(dataUrl, fileName) {
+    const item = {
+        id: 'img_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+        url: dataUrl,
+        remoteUrl: '',
+        isUploading: true,
+        error: false
+    };
 
-    const task = (async () => {
-        try {
-            const uploadedUrl = await uploadImageToApi(dataUrl, fileName);
-            currentAttachedImage = uploadedUrl;
-            setAttachedImage(uploadedUrl, false, '<span style="color:#059669; font-weight:600;">☁️ Đã lưu trên máy chủ</span>');
-            return uploadedUrl;
-        } catch (err) {
-            console.error("[LOG] Lỗi upload ảnh:", err);
-            setAttachedImage(dataUrl, false, '<span style="color:#dc2626; font-weight:600;">⚠️ Lưu tạm cục bộ (Không thể gửi lên máy chủ)</span>');
-            alert("Lỗi khi tải ảnh lên máy chủ: " + (err.message || err));
-            throw err;
-        } finally {
-            isUploadingImage = false;
-            pendingImageUploadPromise = null;
-        }
-    })();
+    attachedImages.push(item);
+    renderAttachedImagesPreview();
 
-    pendingImageUploadPromise = task;
-    return task;
+    try {
+        const uploadedUrl = await uploadImageToApi(dataUrl, fileName);
+        item.remoteUrl = uploadedUrl;
+        item.isUploading = false;
+        item.error = false;
+    } catch (err) {
+        console.error("[LOG] Lỗi upload ảnh:", err);
+        item.isUploading = false;
+        item.error = true;
+        alert("Lỗi tải ảnh lên máy chủ: " + (err.message || err));
+    } finally {
+        renderAttachedImagesPreview();
+    }
+    return item;
 }
 
 /**
- * Xử lý khi người dùng chọn file từ thư viện hoặc camera
+ * Xử lý khi người dùng chọn một hoặc nhiều file từ máy (Gallery / File Picker)
  */
 async function handleImageFileSelect(input) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
-    try {
-        const dataUrl = await compressImage(file);
-        await processAndUploadImage(dataUrl, file.name);
-    } catch (err) {
-        console.error("[Image Select Error]", err);
-        alert("Không thể tải ảnh này. Vui lòng chọn tệp ảnh khác.");
-    } finally {
-        input.value = '';
+    if (!input.files || input.files.length === 0) return;
+    const files = Array.from(input.files);
+    input.value = '';
+
+    for (const file of files) {
+        try {
+            const dataUrl = await compressImage(file);
+            // Kích hoạt upload song song từng ảnh
+            addImageAndUpload(dataUrl, file.name);
+        } catch (err) {
+            console.error("[Image Select Error]", err);
+            alert("Không thể đọc tệp ảnh: " + file.name);
+        }
     }
 }
 
@@ -230,7 +363,7 @@ function handleGalleryClick() {
 }
 
 /**
- * Mở camera
+ * Mở camera (hỗ trợ mobile trực tiếp và camera modal desktop)
  */
 function handleCameraClick() {
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -248,12 +381,13 @@ function handleCameraClick() {
 }
 
 /**
- * Quản lý Camera Modal (không méo hình giống image.html)
+ * Quản lý Camera Modal
  */
 async function openCameraModal() {
     const modal = document.getElementById('cameraModal');
     if (!modal) return;
     modal.classList.add('active');
+    updateCameraModalStatus();
     await startCameraStream();
 }
 
@@ -279,7 +413,6 @@ async function startCameraStream() {
                 if (canvas) {
                     canvas.width = settings.width || video.videoWidth || 1280;
                     canvas.height = settings.height || video.videoHeight || 720;
-                    console.log(`[LOG] Camera Res: ${canvas.width}x${canvas.height}`);
                 }
             };
             video.play();
@@ -312,8 +445,16 @@ async function switchCameraFacing() {
     await startCameraStream();
 }
 
+function updateCameraModalStatus() {
+    const titleEl = document.querySelector('.camera-modal-title');
+    if (titleEl) {
+        const count = attachedImages.length;
+        titleEl.innerText = count > 0 ? `📷 Chụp ảnh (Đã có ${count} ảnh)` : '📷 Chụp ảnh từ camera';
+    }
+}
+
 /**
- * Chụp ảnh từ Camera Modal
+ * Chụp ảnh từ Camera Modal (có thể chụp liên tục nhiều ảnh)
  */
 async function captureFromCamera() {
     const video = document.getElementById('cameraVideo');
@@ -329,24 +470,99 @@ async function captureFromCamera() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const imageData = canvas.toDataURL('image/png');
-    closeCameraModal();
+    
+    // Hiệu ứng flash khi chụp
+    if (video.parentElement) {
+        video.parentElement.style.opacity = '0.3';
+        setTimeout(() => { video.parentElement.style.opacity = '1'; }, 100);
+    }
 
-    try {
-        await processAndUploadImage(imageData, `IMG_${Date.now()}.png`);
-    } catch (err) {
-        console.error("[Capture Error]", err);
+    // Thêm ảnh vào danh sách đính kèm
+    addImageAndUpload(imageData, `IMG_CAM_${Date.now()}.png`);
+    updateCameraModalStatus();
+
+    // Hiển thị thông báo nhanh
+    const btnCapture = document.querySelector('.btn-cam-capture');
+    if (btnCapture) {
+        const origText = btnCapture.innerText;
+        btnCapture.innerText = '✓ Đã chụp!';
+        btnCapture.style.background = '#059669';
+        setTimeout(() => {
+            btnCapture.innerText = origText;
+            btnCapture.style.background = '';
+        }, 1200);
     }
 }
 
 /**
- * Modal phóng to xem ảnh (Lightbox)
+ * Mở xem ảnh phóng to trong write-card
  */
-function openImageViewer(src) {
-    if (!src) return;
+function openAttachedImageViewer(id) {
+    const idx = attachedImages.findIndex(item => item.id === id);
+    const urls = attachedImages.map(item => item.remoteUrl || item.url);
+    openImageViewer(urls, idx >= 0 ? idx : 0);
+}
+
+/**
+ * Modal phóng to xem ảnh (Lightbox) hỗ trợ duyệt nhiều ảnh
+ */
+function openImageViewer(srcOrList, initialIndex = 0) {
+    let images = [];
+    if (Array.isArray(srcOrList)) {
+        images = srcOrList;
+    } else if (typeof srcOrList === 'string') {
+        images = parseDiaryImages(srcOrList);
+    }
+
+    if (!images || images.length === 0) return;
+
+    lightboxImagesList = images;
+    lightboxCurrentIndex = Math.max(0, Math.min(initialIndex, images.length - 1));
+
+    updateLightboxView();
+
     const modal = document.getElementById('imageLightboxModal');
-    const img = document.getElementById('lightboxImage');
-    if (img) img.src = getImageDisplayUrl(src);
     if (modal) modal.classList.add('active');
+}
+
+function updateLightboxView() {
+    const img = document.getElementById('lightboxImage');
+    const counter = document.getElementById('lightboxCounter');
+    const prevBtn = document.getElementById('lightboxPrevBtn');
+    const nextBtn = document.getElementById('lightboxNextBtn');
+
+    if (!lightboxImagesList || lightboxImagesList.length === 0) return;
+
+    const currentUrl = lightboxImagesList[lightboxCurrentIndex];
+    if (img) img.src = getImageDisplayUrl(currentUrl);
+
+    const total = lightboxImagesList.length;
+    if (total > 1) {
+        if (counter) {
+            counter.innerText = `${lightboxCurrentIndex + 1} / ${total}`;
+            counter.style.display = 'block';
+        }
+        if (prevBtn) prevBtn.style.display = 'flex';
+        if (nextBtn) nextBtn.style.display = 'flex';
+    } else {
+        if (counter) counter.style.display = 'none';
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+    }
+}
+
+function lightboxPrev(e) {
+    if (e) e.stopPropagation();
+    if (!lightboxImagesList || lightboxImagesList.length <= 1) return;
+    lightboxCurrentIndex = (lightboxCurrentIndex - 1 + lightboxImagesList.length) % lightboxImagesList.length;
+    updateLightboxView();
+}
+
+function lightboxNext(e) {
+    if (e) e.stopPropagation();
+    if (!lightboxImagesList || lightboxImagesList.length <= 1) return;
+    lightboxCurrentIndex = (lightboxCurrentIndex + 1) % lightboxImagesList.length;
+    updateLightboxView();
 }
 
 function closeImageViewer() {
@@ -354,10 +570,59 @@ function closeImageViewer() {
     const img = document.getElementById('lightboxImage');
     if (modal) modal.classList.remove('active');
     if (img) img.src = '';
+    lightboxImagesList = [];
+    lightboxCurrentIndex = 0;
 }
 
 /**
- * Hỗ trợ kéo thả & dán ảnh trực tiếp từ clipboard
+ * Tạo khối HTML hiển thị danh sách ảnh cho 1 bài viết trong nhật ký
+ */
+function renderDiaryImagesHtml(imageVal) {
+    const images = parseDiaryImages(imageVal);
+    if (!images || images.length === 0) return '';
+
+    const total = images.length;
+    // Mã hóa mảng ảnh để truyền an toàn vào onclick
+    const encodedJson = encodeURIComponent(JSON.stringify(images));
+
+    if (total === 1) {
+        const url = images[0];
+        return `
+            <div class="diary-image-wrapper single-img" onclick="event.stopPropagation(); openImageViewer(decodeURIComponent('${encodedJson}'), 0)" title="Bấm để xem ảnh phóng to">
+                <img src="${getImageDisplayUrl(url)}" alt="Ảnh nhật ký" loading="lazy" class="diary-image" />
+                <span class="image-zoom-badge">🔍 Xem ảnh</span>
+            </div>
+        `;
+    }
+
+    // Nhiều ảnh: hiển thị theo dạng lưới gallery
+    const gridClass = total === 2 ? 'gallery-grid-2' : (total === 3 ? 'gallery-grid-3' : 'gallery-grid-multi');
+    const maxVisible = 4;
+    const visibleImages = images.slice(0, maxVisible);
+    const remaining = total - maxVisible;
+
+    const itemsHtml = visibleImages.map((url, idx) => {
+        const isLast = idx === maxVisible - 1 && remaining > 0;
+        return `
+            <div class="diary-gallery-item" onclick="event.stopPropagation(); openImageViewer(decodeURIComponent('${encodedJson}'), ${idx})" title="Xem ảnh ${idx + 1}/${total}">
+                <img src="${getImageDisplayUrl(url)}" alt="Ảnh ${idx + 1}" loading="lazy" class="gallery-thumb-img" />
+                ${isLast ? `<div class="gallery-more-overlay">+${remaining}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="diary-gallery-container ${gridClass}">
+            <div class="diary-gallery-grid">
+                ${itemsHtml}
+            </div>
+            <span class="image-zoom-badge">🖼️ ${total} ảnh</span>
+        </div>
+    `;
+}
+
+/**
+ * Hỗ trợ kéo thả & dán nhiều ảnh từ clipboard
  */
 function initImageDropAndPaste() {
     const card = document.querySelector('.write-card');
@@ -381,12 +646,12 @@ function initImageDropAndPaste() {
 
     card.addEventListener('drop', async (e) => {
         const dt = e.dataTransfer;
-        if (dt && dt.files && dt.files[0]) {
-            const file = dt.files[0];
-            if (file.type.startsWith('image/')) {
+        if (dt && dt.files && dt.files.length > 0) {
+            const files = Array.from(dt.files).filter(f => f.type.startsWith('image/'));
+            for (const file of files) {
                 try {
                     const dataUrl = await compressImage(file);
-                    await processAndUploadImage(dataUrl, file.name);
+                    addImageAndUpload(dataUrl, file.name);
                 } catch (err) {
                     console.error("[Drop Image Error]", err);
                 }
@@ -403,13 +668,12 @@ function initImageDropAndPaste() {
                 if (file) {
                     try {
                         const dataUrl = await compressImage(file);
-                        await processAndUploadImage(dataUrl, `IMG_PASTE_${Date.now()}.png`);
+                        addImageAndUpload(dataUrl, `IMG_PASTE_${Date.now()}.png`);
                         if (typeof expandWriteCard === 'function') expandWriteCard();
                     } catch (err) {
                         console.error("[Paste Image Error]", err);
                     }
                 }
-                break;
             }
         }
     });
@@ -418,6 +682,16 @@ function initImageDropAndPaste() {
         if (e.key === 'Escape') {
             closeImageViewer();
             closeCameraModal();
+        } else if (e.key === 'ArrowLeft') {
+            const modal = document.getElementById('imageLightboxModal');
+            if (modal && modal.classList.contains('active')) {
+                lightboxPrev();
+            }
+        } else if (e.key === 'ArrowRight') {
+            const modal = document.getElementById('imageLightboxModal');
+            if (modal && modal.classList.contains('active')) {
+                lightboxNext();
+            }
         }
     });
 }

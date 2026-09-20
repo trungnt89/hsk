@@ -369,82 +369,156 @@
             }
         }
 
-        /* Khung xem trước ảnh trong write-card */
-        .image-preview-box {
-            margin-top: 8px;
-            padding: 8px;
+        /* Khung xem trước nhiều ảnh trong write-card */
+        .image-preview-container {
+            margin-top: 10px;
+            padding: 10px 12px;
             background: #f8fafc;
             border: 1.5px dashed #cbd5e1;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            border-radius: 10px;
             animation: fadeIn 0.2s ease-in-out;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-4px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .preview-img-wrapper {
-            position: relative;
-            width: 62px;
-            height: 62px;
-            border-radius: 6px;
-            overflow: hidden;
-            flex-shrink: 0;
-            border: 1px solid #e2e8f0;
-            background: #000;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-        .preview-img-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .preview-img-wrapper img:hover {
-            transform: scale(1.08);
-        }
-        .btn-remove-img {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #ffffff;
-            border: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+        .preview-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-remove-img:hover {
-            background: #ef4444;
-        }
-        .preview-img-info {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            overflow: hidden;
+            margin-bottom: 8px;
         }
         .preview-img-meta {
             font-size: 12px;
             font-weight: 700;
             color: #1e293b;
         }
+        .btn-clear-all-img {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: background 0.15s;
+        }
+        .btn-clear-all-img:hover {
+            background: #fee2e2;
+        }
+        .preview-images-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .preview-thumb-item {
+            position: relative;
+            width: 66px;
+            height: 66px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1px solid #e2e8f0;
+            background: #0f172a;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .preview-thumb-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .preview-thumb-item img:hover {
+            transform: scale(1.08);
+        }
+        .btn-remove-thumb {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #ffffff;
+            border: none;
+            width: 19px;
+            height: 19px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            z-index: 2;
+        }
+        .btn-remove-thumb:hover {
+            background: #ef4444;
+        }
+        .thumb-upload-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+        .thumb-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .thumb-error-badge {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 12px;
+            z-index: 2;
+        }
+        .preview-add-more-card {
+            width: 66px;
+            height: 66px;
+            border-radius: 8px;
+            border: 1.5px dashed #94a3b8;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            gap: 2px;
+            transition: all 0.2s ease;
+        }
+        .preview-add-more-card:hover {
+            border-color: var(--primary-color);
+            background: #f0fdf4;
+        }
+        .preview-add-more-card .add-icon {
+            font-size: 18px;
+            color: var(--primary-color);
+            line-height: 1;
+        }
+        .preview-add-more-card .add-text {
+            font-size: 9px;
+            font-weight: 600;
+            color: #64748b;
+        }
         .preview-img-hint {
+            margin-top: 6px;
             font-size: 11px;
             color: #64748b;
         }
 
         /* Khung hiển thị ảnh bài viết trong danh sách nhật ký */
-        .diary-image-wrapper {
+        .diary-image-wrapper.single-img {
             margin: 8px 0 10px;
             position: relative;
             max-width: 100%;
@@ -470,6 +544,65 @@
             transform: scale(1.02);
             filter: brightness(0.96);
         }
+
+        /* Grid nhiều ảnh trong bài viết nhật ký */
+        .diary-gallery-container {
+            position: relative;
+            margin: 8px 0 10px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            background: #0f172a;
+        }
+        .diary-gallery-grid {
+            display: grid;
+            gap: 3px;
+            width: 100%;
+        }
+        .gallery-grid-2 .diary-gallery-grid {
+            grid-template-columns: 1fr 1fr;
+            height: 180px;
+        }
+        .gallery-grid-3 .diary-gallery-grid {
+            grid-template-columns: 1fr 1fr 1fr;
+            height: 140px;
+        }
+        .gallery-grid-multi .diary-gallery-grid {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            height: 220px;
+        }
+        .diary-gallery-item {
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            background: #1e293b;
+        }
+        .diary-gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.25s ease, filter 0.2s ease;
+        }
+        .diary-gallery-item:hover img {
+            transform: scale(1.04);
+            filter: brightness(0.94);
+        }
+        .gallery-more-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.72);
+            color: #ffffff;
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
         .image-zoom-badge {
             position: absolute;
             bottom: 6px;
@@ -482,9 +615,10 @@
             border-radius: 12px;
             backdrop-filter: blur(4px);
             pointer-events: none;
+            z-index: 2;
         }
 
-        /* Lightbox phóng to ảnh */
+        /* Lightbox phóng to ảnh & duyệt nhiều ảnh */
         .image-lightbox-modal {
             display: none;
             position: fixed;
@@ -508,9 +642,16 @@
             align-items: center;
             justify-content: center;
         }
+        .lightbox-image-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
         .lightbox-content img {
-            max-width: 95vw;
-            max-height: 86vh;
+            max-width: 92vw;
+            max-height: 84vh;
             object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
@@ -528,9 +669,56 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s ease;
+            z-index: 10;
         }
         .lightbox-close-btn:hover {
             background: rgba(255, 255, 255, 0.45);
+        }
+        .lightbox-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 28px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            z-index: 10;
+        }
+        .lightbox-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.45);
+            transform: translateY(-50%) scale(1.08);
+        }
+        .lightbox-prev {
+            left: -54px;
+        }
+        .lightbox-next {
+            right: -54px;
+        }
+        @media (max-width: 640px) {
+            .lightbox-prev { left: 4px; }
+            .lightbox-next { right: 4px; }
+        }
+        .lightbox-counter {
+            position: absolute;
+            bottom: -32px;
+            background: rgba(15, 23, 42, 0.85);
+            color: #f8fafc;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.25);
+            letter-spacing: 1px;
         }
 
         /* Camera Modal trực tiếp */
@@ -666,15 +854,13 @@
         <div class="write-card">
             <textarea id="diaryInput" placeholder="Hôm nay của bạn thế nào?..."></textarea>
             
-            <div id="imagePreviewContainer" class="image-preview-box" style="display:none;">
-                <div class="preview-img-wrapper">
-                    <img id="imagePreviewImg" src="" alt="Ảnh đính kèm" onclick="openImageViewer(this.src)" />
-                    <button type="button" class="btn-remove-img" onclick="removeAttachedImage()" title="Xóa ảnh">✕</button>
-                </div>
-                <div class="preview-img-info">
+            <div id="imagePreviewContainer" class="image-preview-container" style="display:none;">
+                <div class="preview-header">
                     <span id="previewImgMeta" class="preview-img-meta">Ảnh đính kèm</span>
-                    <span class="preview-img-hint">Bấm vào ảnh để xem to • Bấm ✕ để gỡ bỏ</span>
+                    <button type="button" class="btn-clear-all-img" onclick="clearAllAttachedImages()" title="Xóa tất cả ảnh">✕ Xóa tất cả</button>
                 </div>
+                <div id="previewImagesList" class="preview-images-list"></div>
+                <div class="preview-img-hint">Bấm vào ảnh để xem to • Bấm ✕ để gỡ ảnh • Có thể thêm tiếp ảnh khác</div>
             </div>
 
             <div class="action-area">
@@ -683,7 +869,7 @@
                     <button id="saveBtn" class="btn-save" title="Lưu lại">💾</button>
                     <button type="button" id="btnCamera" class="btn-img-action" onclick="handleCameraClick()" title="Chụp ảnh từ camera">📷</button>
                     <button type="button" id="btnGallery" class="btn-img-action" onclick="handleGalleryClick()" title="Chọn ảnh từ bộ sưu tập">🖼️</button>
-                    <input type="file" id="imageInputGallery" accept="image/*" style="display:none;" onchange="handleImageFileSelect(this)">
+                    <input type="file" id="imageInputGallery" accept="image/*" multiple style="display:none;" onchange="handleImageFileSelect(this)">
                     <input type="file" id="imageInputCamera" accept="image/*" capture="environment" style="display:none;" onchange="handleImageFileSelect(this)">
                     <a href="./promt.html" id="settingPromptBtn" class="btn-prompt-setting" title="Cài đặt Prompt">⚙️</a>
                 </div>
@@ -748,7 +934,12 @@
     <div id="imageLightboxModal" class="image-lightbox-modal" onclick="closeImageViewer()">
         <div class="lightbox-content" onclick="event.stopPropagation()">
             <button type="button" class="lightbox-close-btn" onclick="closeImageViewer()">✕ Đóng</button>
-            <img id="lightboxImage" src="" alt="Xem ảnh phóng to" />
+            <button type="button" id="lightboxPrevBtn" class="lightbox-nav-btn lightbox-prev" onclick="lightboxPrev(event)" style="display:none;" title="Ảnh trước (Phím mũi tên trái)">‹</button>
+            <div class="lightbox-image-container">
+                <img id="lightboxImage" src="" alt="Xem ảnh phóng to" />
+                <div id="lightboxCounter" class="lightbox-counter" style="display:none;">1 / 1</div>
+            </div>
+            <button type="button" id="lightboxNextBtn" class="lightbox-nav-btn lightbox-next" onclick="lightboxNext(event)" style="display:none;" title="Ảnh tiếp theo (Phím mũi tên phải)">›</button>
         </div>
     </div>
 
@@ -1001,16 +1192,11 @@
             div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
             div.id = `item-${item.id}`;
             div.onclick = (e) => {
-                if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger') && !e.target.closest('.diary-image-wrapper')) {
+                if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger') && !e.target.closest('.diary-image-wrapper') && !e.target.closest('.diary-gallery-container')) {
                     selectRecord(item.id);
                 }
             };
-            const imageHtml = item.image ? `
-                <div class="diary-image-wrapper" onclick="event.stopPropagation(); openImageViewer('${item.image}')" title="Bấm để xem ảnh phóng to">
-                    <img src="${getImageDisplayUrl(item.image)}" alt="Ảnh nhật ký" loading="lazy" class="diary-image" />
-                    <span class="image-zoom-badge">🔍 Xem ảnh</span>
-                </div>
-            ` : '';
+            const imageHtml = typeof renderDiaryImagesHtml === 'function' ? renderDiaryImagesHtml(item.image) : '';
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <div class="diary-date" style="margin-bottom:0;">

@@ -27,7 +27,7 @@ async function loadDiaries() {
         });
         if (data.values) {
             currentDiaries = data.values.map(r => ({
-                id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0), paragraph_trans: r[7], conversation_trans: r[8]
+                id: r[0], date: r[1], text: r[2], paragraph: r[3], conversation: r[4], pinned: String(r[5]).toLowerCase() === 'true', voiceCount: parseInt(r[6] || 0), paragraph_trans: r[7], conversation_trans: r[8], image: r[9] || ''
             })).reverse();
             
             // Lưu dữ liệu vừa lấy từ API vào IndexedDB để dùng cho lần sau
@@ -48,14 +48,16 @@ async function callAPI(paramsObj,URL='') {
 
 async function saveDiary() {
     const text = document.getElementById('diaryInput').value.trim();
-    if (!text) return;
+    const image = (typeof getAttachedImage === 'function' ? getAttachedImage() : '') || '';
+    if (!text && !image) return;
     const id = Date.now().toString(), date = new Date().toLocaleString('vi-VN');
-    const newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0, paragraph_trans: "", conversation_trans: "" };
+    const newItem = { id, date, text, paragraph: "", conversation: "", pinned: false, voiceCount: 0, paragraph_trans: "", conversation_trans: "", image };
     currentDiaries.unshift(newItem);
     renderList(currentDiaries);
     document.getElementById('diaryInput').value = '';
+    if (typeof removeAttachedImage === 'function') removeAttachedImage();
     if (typeof collapseWriteCard === 'function') collapseWriteCard();
-    const rowData = [id, date, text, "", "", "false", 0, "", ""];
+    const rowData = [id, date, text, "", "", "false", 0, "", "", image];
 
     await callAPI({ act: 'add', sheet: SHEET_DIARY, spread: SPREAD_DIARY, data: JSON.stringify(rowData) });
     selectRecord(id, true);
@@ -63,14 +65,17 @@ async function saveDiary() {
 
 async function updateDiary() {
     const text = document.getElementById('diaryInput').value.trim();
+    const image = (typeof getAttachedImage === 'function' ? getAttachedImage() : '') || '';
+    if (!text && !image) return;
     const idx = currentDiaries.findIndex(i => i.id == editingId);
     if (idx === -1) return;
     const item = currentDiaries[idx];
     item.text = text;
+    item.image = image;
     renderList(currentDiaries);
     const tid = editingId;
     clearEditMode();
-    const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
+    const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || "", item.image || ""];
     await callAPI({ act: 'updateByPosVal', pos: 0, val: tid, sheet: SHEET_DIARY, spread: SPREAD_DIARY, data: JSON.stringify(rowData) });
 }
 
@@ -88,7 +93,7 @@ async function togglePin(id) {
     const item = currentDiaries[idx];
     item.pinned = !item.pinned;
     renderList(currentDiaries);
-    const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || ""];
+    const rowData = [item.id, item.date, item.text, item.paragraph, item.conversation, String(item.pinned), item.voiceCount, item.paragraph_trans || "", item.conversation_trans || "", item.image || ""];
     await callAPI({ act: 'updateByPosVal', pos: 0, val: id, sheet: SHEET_DIARY, spread: SPREAD_DIARY, data: JSON.stringify(rowData) });
 }
 

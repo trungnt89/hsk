@@ -84,7 +84,7 @@ function getAttachedImages() {
 }
 
 /**
- * Lấy chuỗi biểu diễn ảnh đính kèm hiện tại để lưu vào Nhật ký (cho crud.js)
+ * Lấy chuỗi biểu diễn ảnh đính kèm hiện tại để lưu vào Nhật ký (cho diary-handler.js)
  */
 function getAttachedImage() {
     return serializeDiaryImages(getAttachedImages());
@@ -528,10 +528,18 @@ function openImageViewer(srcOrList, initialIndex = 0) {
 function updateLightboxView() {
     const img = document.getElementById('lightboxImage');
     const counter = document.getElementById('lightboxCounter');
+    const hint = document.getElementById('lightboxSwipeHint');
     const prevBtn = document.getElementById('lightboxPrevBtn');
     const nextBtn = document.getElementById('lightboxNextBtn');
 
     if (!lightboxImagesList || lightboxImagesList.length === 0) return;
+
+    // Reset các trạng thái kéo/vuốt trước đó
+    if (img) {
+        img.classList.remove('swiping');
+        img.style.transform = '';
+        img.style.opacity = '';
+    }
 
     const currentUrl = lightboxImagesList[lightboxCurrentIndex];
     if (img) img.src = getImageDisplayUrl(currentUrl);
@@ -542,10 +550,12 @@ function updateLightboxView() {
             counter.innerText = `${lightboxCurrentIndex + 1} / ${total}`;
             counter.style.display = 'block';
         }
+        if (hint) hint.style.display = 'flex';
         if (prevBtn) prevBtn.style.display = 'flex';
         if (nextBtn) nextBtn.style.display = 'flex';
     } else {
         if (counter) counter.style.display = 'none';
+        if (hint) hint.style.display = 'none';
         if (prevBtn) prevBtn.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'none';
     }
@@ -568,10 +578,158 @@ function lightboxNext(e) {
 function closeImageViewer() {
     const modal = document.getElementById('imageLightboxModal');
     const img = document.getElementById('lightboxImage');
+    const hint = document.getElementById('lightboxSwipeHint');
     if (modal) modal.classList.remove('active');
-    if (img) img.src = '';
+    if (img) {
+        img.classList.remove('swiping');
+        img.style.transform = '';
+        img.style.opacity = '';
+        img.src = '';
+    }
+    if (hint) hint.style.display = 'none';
     lightboxImagesList = [];
     lightboxCurrentIndex = 0;
+    isSwiping = false;
+}
+
+// =============================================================================
+// CỬ CHỈ VUỐT (SWIPE GESTURES) CHUYỂN ẢNH TRÊN THIẾT BỊ CẢM ỨNG & CHUỘT
+// =============================================================================
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeCurrentX = 0;
+let swipeCurrentY = 0;
+let isSwiping = false;
+let swipeStartTime = 0;
+
+function handleSwipeStart(clientX, clientY, target) {
+    const modal = document.getElementById('imageLightboxModal');
+    if (!modal || !modal.classList.contains('active')) return false;
+    if (target && (target.closest('.lightbox-nav-btn') || target.closest('.lightbox-close-btn'))) return false;
+
+    swipeStartX = clientX;
+    swipeStartY = clientY;
+    swipeCurrentX = clientX;
+    swipeCurrentY = clientY;
+    swipeStartTime = Date.now();
+    isSwiping = true;
+
+    const img = document.getElementById('lightboxImage');
+    if (img) {
+        img.classList.add('swiping');
+    }
+    return true;
+}
+
+function handleSwipeMove(clientX, clientY, e) {
+    if (!isSwiping) return;
+    swipeCurrentX = clientX;
+    swipeCurrentY = clientY;
+
+    const deltaX = swipeCurrentX - swipeStartX;
+    const deltaY = swipeCurrentY - swipeStartY;
+
+    // Nếu vuốt ngang rõ rệt, ngăn chặn hành vi cuộn mặc định
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (e && e.cancelable && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
+    }
+
+    const img = document.getElementById('lightboxImage');
+    if (img) {
+        // Áp dụng di chuyển theo tay / con trỏ với hiệu ứng xoay nhẹ tự nhiên
+        const damping = 0.85;
+        const rotate = (deltaX / 35).toFixed(2);
+        img.style.transform = `translateX(${deltaX * damping}px) rotate(${rotate}deg)`;
+        const opacity = Math.max(0.4, 1 - Math.abs(deltaX) / 700);
+        img.style.opacity = opacity;
+    }
+}
+
+function handleSwipeEnd() {
+    if (!isSwiping) return;
+    isSwiping = false;
+
+    const deltaX = swipeCurrentX - swipeStartX;
+    const deltaY = swipeCurrentY - swipeStartY;
+    const deltaTime = Date.now() - swipeStartTime;
+
+    const img = document.getElementById('lightboxImage');
+    if (img) {
+        img.classList.remove('swiping');
+        img.style.transform = '';
+        img.style.opacity = '';
+    }
+
+    if (!lightboxImagesList || lightboxImagesList.length <= 1) return;
+
+    const distanceX = Math.abs(deltaX);
+    const distanceY = Math.abs(deltaY);
+
+    // Ngưỡng nhận diện vuốt: khoảng cách tối thiểu hoặc vuốt nhanh (flick)
+    const isQuickFlick = deltaTime < 320 && distanceX > 25;
+    const isDragSwipe = distanceX > 45;
+
+    if ((isDragSwipe || isQuickFlick) && distanceX > distanceY * 0.9) {
+        if (deltaX > 0) {
+            // Vuốt từ trái sang phải -> Quay lại ảnh trước
+            lightboxPrev();
+        } else {
+            // Vuốt từ phải sang trái -> Chuyển sang ảnh tiếp theo
+            lightboxNext();
+        }
+    } else if (deltaY > 120 && distanceY > distanceX * 1.5) {
+        // Vuốt mạnh xuống dưới -> Đóng lightbox
+        closeImageViewer();
+    }
+}
+
+function initLightboxSwipeGesture() {
+    const modal = document.getElementById('imageLightboxModal');
+    if (!modal) return;
+
+    // 1. Cảm ứng vuốt trên Mobile (Touch Events)
+    modal.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 1) {
+            handleSwipeStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+        }
+    }, { passive: true });
+
+    modal.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length === 1) {
+            handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY, e);
+        }
+    }, { passive: false });
+
+    modal.addEventListener('touchend', () => {
+        handleSwipeEnd();
+    }, { passive: true });
+
+    modal.addEventListener('touchcancel', () => {
+        handleSwipeEnd();
+    }, { passive: true });
+
+    // 2. Kéo thả chuột trên Desktop (Mouse Drag)
+    let isMouseDown = false;
+    modal.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return; // Chỉ nhận click chuột trái
+        if (handleSwipeStart(e.clientX, e.clientY, e.target)) {
+            isMouseDown = true;
+            e.preventDefault();
+        }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+        handleSwipeMove(e.clientX, e.clientY, e);
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (!isMouseDown) return;
+        isMouseDown = false;
+        handleSwipeEnd();
+    });
 }
 
 /**
@@ -694,4 +852,7 @@ function initImageDropAndPaste() {
             }
         }
     });
+
+    // Kích hoạt cử chỉ vuốt chuyển ảnh trong Lightbox
+    initLightboxSwipeGesture();
 }

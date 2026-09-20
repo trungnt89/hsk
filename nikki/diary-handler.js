@@ -1,6 +1,19 @@
 // =============================================================================
-// QUẢN LÝ DANH SÁCH & SOẠN THẢO NHẬT KÝ (DIARY HANDLER)
+// QUẢN LÝ NHẬT KÝ & DỮ LIỆU (DIARY & DATA HANDLER)
+// Bao gồm: Toàn bộ xử lý CRUD (Create, Read, Update, Delete), đồng bộ
+// Google Sheets / IndexedDB, giao diện danh sách, tương tác soạn thảo & AI.
 // =============================================================================
+
+const URL_VERCEL_API  = 'https://hsk-gilt.vercel.app/api/gSheet';
+const URL_AI_GENERATE = 'https://hsk-gilt.vercel.app/api/aiGenerate';
+
+const SPREAD_DIARY    = '1UiAS_mUhl6j6wHyPkNiol9pclzkQJWD4qzPIZD2sx3k';
+const SHEET_DIARY     = 'DairyList';
+
+const SPREAD_SCORE    = '1_OuLRGiUEzXUpMf-QmPeNYCQee0L1ueGAZcUvNELp8A';
+const SHEET_SCORE     = 'ScoreList';
+
+const STORE_NAME      = 'NIKKI';
 
 var currentDiaries = [];
 var editingId = null;
@@ -13,6 +26,294 @@ if (diaryUrlId && diaryUrlId !== localStorage.getItem("diary_selected_id")) {
 }
 
 var showPinnedOnly = localStorage.getItem("diary_show_pinned_only") === "true";
+
+// =============================================================================
+// TẦNG DỮ LIỆU & GỌI API (DATA ACCESS LAYER)
+// =============================================================================
+
+/**
+ * Gọi API trung gian Vercel và tự động xóa cache IndexedDB khi có thao tác ghi/sửa/xóa
+ */
+async function callAPI(paramsObj, URL = '') {
+    if (typeof deleteFromDB === 'function') {
+        await deleteFromDB(STORE_NAME, SHEET_DIARY);
+    }
+    const targetUrl = (URL === '') ? URL_VERCEL_API : URL;
+    return await callAjax(targetUrl, paramsObj);
+}
+
+/**
+ * [READ] Tải danh sách nhật ký: Ưu tiên lấy từ IndexedDB, nếu chưa có thì nạp từ Google Sheets
+ */
+async function loadDiaries() {
+    try {
+        if (typeof getFromDB === 'function') {
+            const cachedData = await getFromDB(STORE_NAME, SHEET_DIARY);
+            if (cachedData && cachedData.length > 0) {
+                currentDiaries = cachedData;
+                renderList(currentDiaries);
+                if (selectedDiaryId) selectRecord(selectedDiaryId, true);
+                return;
+            }
+        }
+
+        const data = await callAjax(URL_VERCEL_API, { 
+            sheet: SHEET_DIARY, 
+            act: 'read', 
+            spread: SPREAD_DIARY 
+        });
+
+        if (data && data.values) {
+            currentDiaries = data.values.map(r => ({
+                id: r[0],
+                date: r[1],
+                text: r[2],
+                paragraph: r[3],
+                conversation: r[4],
+                pinned: String(r[5]).toLowerCase() === 'true',
+                voiceCount: parseInt(r[6] || 0),
+                paragraph_trans: r[7],
+                conversation_trans: r[8],
+                image: r[9] || ''
+            })).reverse();
+            
+            if (typeof saveToDB === 'function') {
+                await saveToDB(STORE_NAME, SHEET_DIARY, currentDiaries);
+            }
+
+            renderList(currentDiaries);
+            if (selectedDiaryId) selectRecord(selectedDiaryId, true);
+        }
+    } catch (err) {
+        console.warn("[Diary Data] Lỗi kết nối / Chế độ Offline:", err);
+    }
+}
+
+/**
+ * [CREATE] Thêm mới bài nhật ký vào Google Sheets & cập nhật UI
+ */
+async function saveDiary() {
+    if ((typeof isUploadingImage !== 'undefined' && isUploadingImage) || (typeof checkIsImageUploading === 'function' && checkIsImageUploading())) {
+        if (typeof waitForImageUpload === 'function') {
+            await waitForImageUpload();
+        }
+    }
+    const diaryInput = document.getElementById('diaryInput');
+    const text = (diaryInput ? diaryInput.value : '').trim();
+    const image = (typeof getAttachedImage === 'function' ? getAttachedImage() : '') || '';
+    if (!text && !image) return;
+
+    const id = Date.now().toString();
+    const date = new Date().toLocaleString('vi-VN');
+    const newItem = {
+        id,
+        date,
+        text,
+        paragraph: "",
+        conversation: "",
+        pinned: false,
+        voiceCount: 0,
+        paragraph_trans: "",
+        conversation_trans: "",
+        image
+    };
+
+    currentDiaries.unshift(newItem);
+    renderList(currentDiaries);
+
+    if (diaryInput) diaryInput.value = '';
+    if (typeof removeAttachedImage === 'function') removeAttachedImage();
+    collapseWriteCard();
+
+    const rowData = [id, date, text, "", "", "false", 0, "", "", image];
+
+    await callAPI({
+        act: 'add',
+        sheet: SHEET_DIARY,
+        spread: SPREAD_DIARY,
+        data: JSON.stringify(rowData)
+    });
+
+    selectRecord(id, true);
+}
+
+/**
+ * [UPDATE] Cập nhật bài nhật ký hiện có
+ */
+async function updateDiary() {
+    if ((typeof isUploadingImage !== 'undefined' && isUploadingImage) || (typeof checkIsImageUploading === 'function' && checkIsImageUploading())) {
+        if (typeof waitForImageUpload === 'function') {
+            await waitForImageUpload();
+        }
+    }
+    const diaryInput = document.getElementById('diaryInput');
+    const text = (diaryInput ? diaryInput.value : '').trim();
+    const image = (typeof getAttachedImage === 'function' ? getAttachedImage() : '') || '';
+    if (!text && !image) return;
+
+    const idx = currentDiaries.findIndex(i => i.id == editingId);
+    if (idx === -1) return;
+
+    const item = currentDiaries[idx];
+    item.text = text;
+    item.image = image;
+
+    renderList(currentDiaries);
+    const tid = editingId;
+    clearEditMode();
+
+    const rowData = [
+        item.id,
+        item.date,
+        item.text,
+        item.paragraph,
+        item.conversation,
+        String(item.pinned),
+        item.voiceCount,
+        item.paragraph_trans || "",
+        item.conversation_trans || "",
+        item.image || ""
+    ];
+
+    await callAPI({
+        act: 'updateByPosVal',
+        pos: 0,
+        val: tid,
+        sheet: SHEET_DIARY,
+        spread: SPREAD_DIARY,
+        data: JSON.stringify(rowData)
+    });
+}
+
+/**
+ * [DELETE] Xóa nhật ký theo ID
+ */
+async function deleteDiary(id) {
+    if (confirm("Xóa nhật ký này?")) {
+        currentDiaries = currentDiaries.filter(i => i.id != id);
+        renderList(currentDiaries);
+        await callAPI({
+            act: 'deleteByPosVal',
+            pos: 0,
+            val: id,
+            sheet: SHEET_DIARY,
+            spread: SPREAD_DIARY
+        });
+    }
+}
+
+/**
+ * [UPDATE - PIN] Bật / tắt ghim bài viết
+ */
+async function togglePin(id) {
+    const idx = currentDiaries.findIndex(d => d.id == id);
+    if (idx === -1) return;
+
+    const item = currentDiaries[idx];
+    item.pinned = !item.pinned;
+    renderList(currentDiaries);
+
+    const rowData = [
+        item.id,
+        item.date,
+        item.text,
+        item.paragraph,
+        item.conversation,
+        String(item.pinned),
+        item.voiceCount,
+        item.paragraph_trans || "",
+        item.conversation_trans || "",
+        item.image || ""
+    ];
+
+    await callAPI({
+        act: 'updateByPosVal',
+        pos: 0,
+        val: id,
+        sheet: SHEET_DIARY,
+        spread: SPREAD_DIARY,
+        data: JSON.stringify(rowData)
+    });
+}
+
+/**
+ * [AI REQUEST] Gửi nội dung nhật ký lên AI để biên soạn Trình độ N3 & N2
+ */
+async function askAI(id, content) {
+    selectRecord(id);
+    if (typeof switchTab === 'function') switchTab(1);
+
+    const pContainer = document.getElementById('paragraphContainer');
+    const cContainer = document.getElementById('conversationContainer');
+    const mContainer = document.getElementById('aiMeaningContainer');
+
+    if (pContainer) pContainer.innerHTML = '<p class="loading-text">🤖 Đang biên soạn nội dung...</p>';
+    if (cContainer) cContainer.innerHTML = '<p class="loading-text">🤖 Đang biên soạn nội dung...</p>';
+    if (mContainer) mContainer.innerHTML = '<p class="loading-text">🤖 Đang biên soạn nội dung...</p>';
+
+    try {
+        const res = await callAPI({ content, lessionId: id }, URL_AI_GENERATE);
+        if (res.status === 'success') {
+            await loadDiaries();
+        } else {
+            alert(res.message);
+            if (typeof switchTab === 'function') switchTab(0);
+        }
+    } catch (e) {
+        console.error("[AI Error]", e);
+        alert("Lỗi kết nối server AI");
+        if (typeof switchTab === 'function') switchTab(0);
+    }
+}
+
+/**
+ * [READ - SCORES] Nạp và tổng hợp điểm số ghi âm các bài học từ ScoreList
+ */
+async function getLessonTotalScore() {
+    try {
+        let result;
+        if (typeof getFromDB === 'function') {
+            const cachedScores = await getFromDB(STORE_NAME, SHEET_SCORE);
+            if (cachedScores && cachedScores.values && cachedScores.values.length > 0) {
+                result = cachedScores;
+            }
+        }
+        if (!result) {
+            result = await callAjax(URL_VERCEL_API, { 
+                sheet: SHEET_SCORE, 
+                act: 'read', 
+                spread: SPREAD_SCORE 
+            });
+            if (result && result.values && result.values.length > 0 && typeof saveToDB === 'function') {
+                await saveToDB(STORE_NAME, SHEET_SCORE, result);
+            }
+        }
+        if (result && result.values && Array.isArray(result.values)) {
+            document.querySelectorAll('.count-trigger').forEach(badge => {
+                const match = badge.getAttribute('onclick')?.match(/'([^']+)'/);
+                if (match && match[1]) {
+                    const lessonID = match[1];
+                    let count = 0, maxScore = 0;
+                    result.values.forEach(row => {
+                        if (row[0] === lessonID) {
+                            count++;
+                            let score = parseInt(row[3]);
+                            if (!isNaN(score) && score > maxScore) maxScore = score;
+                        }
+                    });
+                    badge.innerHTML = `🎙️ ${count} ${maxScore ? ' 🏆 ' + maxScore : ''}`;
+                    badge.style.backgroundColor = count > 0 ? 'orange' : 'gray';
+                }
+            });
+        }
+    } catch (e) {
+        console.error("[Score Sync Error]", e);
+    }
+}
+
+// =============================================================================
+// GIAO DIỆN & TƯƠNG TÁC NGƯỜI DÙNG (UI & INTERACTION)
+// =============================================================================
 
 function expandWriteCard() {
     const card = document.querySelector('.write-card');
@@ -51,9 +352,7 @@ function handleCancelClick() {
 }
 
 async function initApp() {
-    if (typeof loadDiaries === 'function') {
-        loadDiaries();
-    }
+    await loadDiaries();
 }
 
 function renderList(diaries) {
@@ -71,9 +370,7 @@ function renderList(diaries) {
         displayData = displayData.filter(d => d.pinned);
     }
     displayData.forEach((item) => container.appendChild(createItemEl(item)));
-    if (typeof getLessonTotalScore === 'function') {
-        getLessonTotalScore();
-    }
+    getLessonTotalScore();
     if (typeof currentTopTab !== 'undefined' && currentTopTab === 0 && selectedDiaryId) {
         const el = document.getElementById(`item-${selectedDiaryId}`);
         if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
@@ -201,7 +498,7 @@ async function resetAppData() {
     }
 }
 
-// Khởi tạo các sự kiện giao diện cho Nhật ký
+// Khởi tạo các sự kiện giao diện cho thẻ soạn thảo
 function initDiaryEvents() {
     const diaryInput = document.getElementById('diaryInput');
     if (diaryInput) {
@@ -238,9 +535,9 @@ function initDiaryEvents() {
                 saveBtn.innerHTML = origHtml;
             }
             if (editingId) {
-                if (typeof updateDiary === 'function') await updateDiary();
+                await updateDiary();
             } else {
-                if (typeof saveDiary === 'function') await saveDiary();
+                await saveDiary();
             }
             collapseWriteCard();
         });
@@ -251,3 +548,29 @@ function initDiaryEvents() {
         cancelBtn.addEventListener('click', handleCancelClick);
     }
 }
+
+// Khởi tạo ứng dụng khi DOM sẵn sàng
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("[Nikki App] Khởi tạo hệ thống...");
+
+    // 1. Khởi tạo nạp từ vựng Mazii từ IndexedDB để tô màu chữ tức thì
+    if (typeof initWordHighlightFromDB === 'function') {
+        initWordHighlightFromDB();
+    }
+
+    // 2. Khởi tạo tải danh sách nhật ký từ máy chủ / IndexedDB
+    initApp();
+
+    // 3. Khởi tạo cài đặt giọng đọc TTS & thiết lập tab ban đầu
+    if (typeof loadTTSSettings === 'function') {
+        loadTTSSettings();
+    }
+
+    // 4. Khởi tạo tính năng kéo thả, paste ảnh & cử chỉ vuốt Lightbox
+    if (typeof initImageDropAndPaste === 'function') {
+        initImageDropAndPaste();
+    }
+
+    // 5. Khởi tạo các sự kiện cho thẻ soạn thảo nhật ký
+    initDiaryEvents();
+});

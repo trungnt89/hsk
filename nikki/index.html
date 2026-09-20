@@ -185,6 +185,314 @@
             background: #ffffff !important;
             box-sizing: border-box !important;
         }
+
+        /* Nút thao tác ảnh & Camera */
+        .action-left-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+        .btn-img-action {
+            background-color: #f1f2f6;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .btn-img-action:hover {
+            background-color: #e2e8f0;
+            color: var(--primary-color);
+            border-color: #94a3b8;
+        }
+        .btn-img-action:active {
+            transform: scale(0.97);
+        }
+
+        /* Khung xem trước ảnh trong write-card */
+        .image-preview-box {
+            margin-top: 8px;
+            padding: 8px;
+            background: #f8fafc;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .preview-img-wrapper {
+            position: relative;
+            width: 62px;
+            height: 62px;
+            border-radius: 6px;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1px solid #e2e8f0;
+            background: #000;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .preview-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .preview-img-wrapper img:hover {
+            transform: scale(1.08);
+        }
+        .btn-remove-img {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #ffffff;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-remove-img:hover {
+            background: #ef4444;
+        }
+        .preview-img-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            overflow: hidden;
+        }
+        .preview-img-meta {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .preview-img-hint {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        /* Khung hiển thị ảnh bài viết trong danh sách nhật ký */
+        .diary-image-wrapper {
+            margin: 8px 0 10px;
+            position: relative;
+            max-width: 100%;
+            max-height: 260px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            background: #f1f5f9;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .diary-image {
+            display: block;
+            max-width: 100%;
+            max-height: 260px;
+            width: auto;
+            height: auto;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: transform 0.25s ease, filter 0.2s ease;
+        }
+        .diary-image-wrapper:hover .diary-image {
+            transform: scale(1.02);
+            filter: brightness(0.96);
+        }
+        .image-zoom-badge {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background: rgba(15, 23, 42, 0.75);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 12px;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+        }
+
+        /* Lightbox phóng to ảnh */
+        .image-lightbox-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            background: rgba(0, 0, 0, 0.92);
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+            backdrop-filter: blur(5px);
+        }
+        .image-lightbox-modal.active {
+            display: flex;
+        }
+        .lightbox-content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .lightbox-content img {
+            max-width: 95vw;
+            max-height: 86vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+        }
+        .lightbox-close-btn {
+            position: absolute;
+            top: -42px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .lightbox-close-btn:hover {
+            background: rgba(255, 255, 255, 0.45);
+        }
+
+        /* Camera Modal trực tiếp */
+        .camera-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100000;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            backdrop-filter: blur(4px);
+        }
+        .camera-modal.active {
+            display: flex;
+        }
+        .camera-modal-content {
+            background: #ffffff;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        .camera-modal-header {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+        .camera-modal-title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+        }
+        .camera-close-btn {
+            background: #e2e8f0;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .camera-close-btn:hover {
+            background: #cbd5e1;
+            color: #0f172a;
+        }
+        .camera-video-wrapper {
+            position: relative;
+            background: #000;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .camera-video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .camera-modal-actions {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+        .btn-cam-capture {
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.35);
+            transition: all 0.2s;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-cam-capture:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+        .btn-cam-switch, .btn-cam-fallback {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-cam-switch:hover, .btn-cam-fallback:hover {
+            background: #f1f5f9;
+            color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -201,10 +509,28 @@
     <main>
         <div class="write-card">
             <textarea id="diaryInput" placeholder="Hôm nay của bạn thế nào?..."></textarea>
+            
+            <div id="imagePreviewContainer" class="image-preview-box" style="display:none;">
+                <div class="preview-img-wrapper">
+                    <img id="imagePreviewImg" src="" alt="Ảnh đính kèm" onclick="openImageViewer(this.src)" />
+                    <button type="button" class="btn-remove-img" onclick="removeAttachedImage()" title="Xóa ảnh">✕</button>
+                </div>
+                <div class="preview-img-info">
+                    <span id="previewImgMeta" class="preview-img-meta">Ảnh đính kèm</span>
+                    <span class="preview-img-hint">Bấm vào ảnh để xem to • Bấm ✕ để gỡ bỏ</span>
+                </div>
+            </div>
+
             <div class="action-area">
-                <button id="cancelBtn" class="btn-cancel" style="display:none;">Hủy</button>
-                <button id="saveBtn" class="btn-save">Lưu lại</button>
-                <a href="./promt.html" id="settingPromptBtn" class="btn-prompt-setting" title="Cài đặt Prompt">⚙️ Prompt</a>
+                <div class="action-left-group">
+                    <button id="cancelBtn" class="btn-cancel" style="display:none;">Hủy</button>
+                    <button id="saveBtn" class="btn-save">Lưu lại</button>
+                    <button type="button" id="btnCamera" class="btn-img-action" onclick="handleCameraClick()" title="Chụp ảnh từ camera">📷 Chụp ảnh</button>
+                    <button type="button" id="btnGallery" class="btn-img-action" onclick="handleGalleryClick()" title="Chọn ảnh từ bộ sưu tập">🖼️ Bộ sưu tập</button>
+                    <input type="file" id="imageInputGallery" accept="image/*" style="display:none;" onchange="handleImageFileSelect(this)">
+                    <input type="file" id="imageInputCamera" accept="image/*" capture="environment" style="display:none;" onchange="handleImageFileSelect(this)">
+                    <a href="./promt.html" id="settingPromptBtn" class="btn-prompt-setting" title="Cài đặt Prompt">⚙️ Prompt</a>
+                </div>
                 <div class="tts-controls">
                     <button id="btnMainSpeak" class="btn-main-speak" onclick="handleGlobalSpeak()" disabled>🔊 Đọc</button>
                     <button id="btnRepeat" class="btn-repeat" onclick="toggleRepeat()">🔂</button>
@@ -259,6 +585,33 @@
                 <button class="modal-btn back-modal-btn" onclick="backAudioModal()">BACK ↩</button>
             </div>
             <iframe id="audioFrame" src=""></iframe>
+        </div>
+    </div>
+
+    <!-- Modal xem ảnh phóng to (Lightbox) -->
+    <div id="imageLightboxModal" class="image-lightbox-modal" onclick="closeImageViewer()">
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <button type="button" class="lightbox-close-btn" onclick="closeImageViewer()">✕ Đóng</button>
+            <img id="lightboxImage" src="" alt="Xem ảnh phóng to" />
+        </div>
+    </div>
+
+    <!-- Modal chụp ảnh Camera trực tiếp -->
+    <div id="cameraModal" class="camera-modal">
+        <div class="camera-modal-content">
+            <div class="camera-modal-header">
+                <span class="camera-modal-title">📷 Chụp ảnh từ camera</span>
+                <button type="button" class="camera-close-btn" onclick="closeCameraModal()">✕</button>
+            </div>
+            <div class="camera-video-wrapper">
+                <video id="cameraVideo" autoplay playsinline muted></video>
+                <canvas id="cameraCanvas" style="display:none;"></canvas>
+            </div>
+            <div class="camera-modal-actions">
+                <button type="button" class="btn-cam-switch" onclick="switchCameraFacing()">🔄 Đổi camera</button>
+                <button type="button" class="btn-cam-capture" onclick="captureFromCamera()">📸 Chụp ngay</button>
+                <button type="button" class="btn-cam-fallback" onclick="document.getElementById('imageInputCamera').click(); closeCameraModal();">📁 Chụp mặc định</button>
+            </div>
         </div>
     </div>
 
@@ -374,6 +727,288 @@
         // Kích hoạt nạp từ vựng từ IndexedDB ngay lập tức
         initWordHighlightFromDB();
 
+        // ==================== QUẢN LÝ ĐÍNH KÈM HÌNH ẢNH & CAMERA ====================
+        let currentAttachedImage = '';
+
+        function getAttachedImage() {
+            return currentAttachedImage || '';
+        }
+
+        function setAttachedImage(dataUrl) {
+            currentAttachedImage = dataUrl || '';
+            const container = document.getElementById('imagePreviewContainer');
+            const imgEl = document.getElementById('imagePreviewImg');
+            const metaEl = document.getElementById('previewImgMeta');
+            if (currentAttachedImage) {
+                if (imgEl) imgEl.src = currentAttachedImage;
+                if (metaEl) {
+                    const kb = Math.round((currentAttachedImage.length * 3 / 4) / 1024);
+                    metaEl.innerText = `Ảnh đính kèm (~${kb} KB)`;
+                }
+                if (container) container.style.display = 'flex';
+                expandWriteCard();
+            } else {
+                removeAttachedImage();
+            }
+        }
+
+        function removeAttachedImage() {
+            currentAttachedImage = '';
+            const container = document.getElementById('imagePreviewContainer');
+            const imgEl = document.getElementById('imagePreviewImg');
+            if (container) container.style.display = 'none';
+            if (imgEl) imgEl.src = '';
+            const gInput = document.getElementById('imageInputGallery');
+            const cInput = document.getElementById('imageInputCamera');
+            if (gInput) gInput.value = '';
+            if (cInput) cInput.value = '';
+        }
+
+        // Nén ảnh tự động để phù hợp lưu trữ Google Sheet & IndexedDB
+        function compressImage(fileOrBlob, maxDimension = 720, initialQuality = 0.65) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > maxDimension) {
+                                height = Math.round((height * maxDimension) / width);
+                                width = maxDimension;
+                            }
+                        } else {
+                            if (height > maxDimension) {
+                                width = Math.round((width * maxDimension) / height);
+                                height = maxDimension;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        let quality = initialQuality;
+                        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+                        let attempts = 0;
+                        while (dataUrl.length > 42000 && attempts < 4) {
+                            attempts++;
+                            quality -= 0.12;
+                            if (quality < 0.3) {
+                                canvas.width = Math.round(canvas.width * 0.8);
+                                canvas.height = Math.round(canvas.height * 0.8);
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                quality = 0.55;
+                            }
+                            dataUrl = canvas.toDataURL('image/jpeg', Math.max(quality, 0.25));
+                        }
+
+                        resolve(dataUrl);
+                    };
+                    img.onerror = () => reject(new Error("Lỗi tải hình ảnh"));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error("Lỗi đọc file"));
+                reader.readAsDataURL(fileOrBlob);
+            });
+        }
+
+        async function handleImageFileSelect(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            try {
+                const dataUrl = await compressImage(file);
+                setAttachedImage(dataUrl);
+            } catch (err) {
+                console.error("[Image Select Error]", err);
+                alert("Không thể tải ảnh này. Vui lòng chọn tệp ảnh khác.");
+            }
+        }
+
+        function handleGalleryClick() {
+            const input = document.getElementById('imageInputGallery');
+            if (input) input.click();
+        }
+
+        function handleCameraClick() {
+            const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                const camInput = document.getElementById('imageInputCamera');
+                if (camInput) camInput.click();
+            } else {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    openCameraModal();
+                } else {
+                    const camInput = document.getElementById('imageInputCamera');
+                    if (camInput) camInput.click();
+                }
+            }
+        }
+
+        let cameraStream = null;
+        let currentCameraFacing = 'environment';
+
+        async function openCameraModal() {
+            const modal = document.getElementById('cameraModal');
+            if (!modal) return;
+            modal.classList.add('active');
+            await startCameraStream();
+        }
+
+        async function startCameraStream() {
+            stopCameraStream();
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: currentCameraFacing },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                };
+                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('cameraVideo');
+                if (video) {
+                    video.srcObject = cameraStream;
+                    video.play();
+                }
+            } catch (err) {
+                console.warn("[Camera Stream Error]", err);
+                closeCameraModal();
+                const camInput = document.getElementById('imageInputCamera');
+                if (camInput) camInput.click();
+            }
+        }
+
+        function stopCameraStream() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            const video = document.getElementById('cameraVideo');
+            if (video) video.srcObject = null;
+        }
+
+        function closeCameraModal() {
+            stopCameraStream();
+            const modal = document.getElementById('cameraModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        async function switchCameraFacing() {
+            currentCameraFacing = (currentCameraFacing === 'environment') ? 'user' : 'environment';
+            await startCameraStream();
+        }
+
+        async function captureFromCamera() {
+            const video = document.getElementById('cameraVideo');
+            if (!video || !video.videoWidth) {
+                alert("Camera chưa sẵn sàng. Vui lòng thử lại.");
+                return;
+            }
+            const canvas = document.getElementById('cameraCanvas') || document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            closeCameraModal();
+
+            canvas.toBlob(async (blob) => {
+                if (blob) {
+                    try {
+                        const dataUrl = await compressImage(blob);
+                        setAttachedImage(dataUrl);
+                    } catch (err) {
+                        console.error("[Capture Compress Error]", err);
+                    }
+                }
+            }, 'image/jpeg', 0.85);
+        }
+
+        function openImageViewer(src) {
+            if (!src) return;
+            const modal = document.getElementById('imageLightboxModal');
+            const img = document.getElementById('lightboxImage');
+            if (img) img.src = src;
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeImageViewer() {
+            const modal = document.getElementById('imageLightboxModal');
+            const img = document.getElementById('lightboxImage');
+            if (modal) modal.classList.remove('active');
+            if (img) img.src = '';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImageViewer();
+                closeCameraModal();
+            }
+        });
+
+        function initImageDropAndPaste() {
+            const card = document.querySelector('.write-card');
+            if (!card) return;
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                card.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    card.style.borderColor = 'var(--primary-color)';
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                card.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    card.style.borderColor = '';
+                }, false);
+            });
+
+            card.addEventListener('drop', async (e) => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files[0]) {
+                    const file = dt.files[0];
+                    if (file.type.startsWith('image/')) {
+                        try {
+                            const dataUrl = await compressImage(file);
+                            setAttachedImage(dataUrl);
+                        } catch (err) {
+                            console.error("[Drop Image Error]", err);
+                        }
+                    }
+                }
+            });
+
+            document.addEventListener('paste', async (e) => {
+                const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (file) {
+                            try {
+                                const dataUrl = await compressImage(file);
+                                setAttachedImage(dataUrl);
+                                expandWriteCard();
+                            } catch (err) {
+                                console.error("[Paste Image Error]", err);
+                            }
+                        }
+                        break;
+                    }
+                }
+            });
+        }
+
         function expandWriteCard() {
             const card = document.querySelector('.write-card');
             const input = document.getElementById('diaryInput');
@@ -387,6 +1022,7 @@
         }
 
         function collapseWriteCard() {
+            if (currentAttachedImage) return; // Không tự động thu gọn nếu đang có ảnh đính kèm
             const card = document.querySelector('.write-card');
             const input = document.getElementById('diaryInput');
             const cancelBtn = document.getElementById('cancelBtn');
@@ -404,6 +1040,7 @@
             if (editingId) {
                 clearEditMode();
             } else {
+                removeAttachedImage();
                 collapseWriteCard();
             }
         }
@@ -413,6 +1050,7 @@
             initWordHighlightFromDB();
             initApp();
             loadTTSSettings();
+            initImageDropAndPaste();
 
             const diaryInput = document.getElementById('diaryInput');
             if (diaryInput) {
@@ -420,11 +1058,15 @@
                 diaryInput.addEventListener('click', expandWriteCard);
             }
 
-            // Tự động thu gọn khi click ra ngoài thẻ nhập liệu nếu ô trống và không trong chế độ sửa
+            // Tự động thu gọn khi click ra ngoài thẻ nhập liệu nếu ô trống, không có ảnh và không trong chế độ sửa
             document.addEventListener('click', (e) => {
                 const card = document.querySelector('.write-card');
+                const camModal = document.getElementById('cameraModal');
+                const lbModal = document.getElementById('imageLightboxModal');
+                if (camModal && camModal.classList.contains('active')) return;
+                if (lbModal && lbModal.classList.contains('active')) return;
                 if (card && !card.contains(e.target)) {
-                    if (!editingId && diaryInput && (!diaryInput.value || diaryInput.value.trim() === '')) {
+                    if (!editingId && !currentAttachedImage && diaryInput && (!diaryInput.value || diaryInput.value.trim() === '')) {
                         collapseWriteCard();
                     }
                 }
@@ -472,10 +1114,16 @@
             div.className = `diary-item ${item.id == selectedDiaryId ? 'selected' : ''} ${item.pinned ? 'pinned' : ''}`;
             div.id = `item-${item.id}`;
             div.onclick = (e) => {
-                if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger')) {
+                if (!e.target.closest('.item-action-btn') && !e.target.closest('.count-trigger') && !e.target.closest('.diary-image-wrapper')) {
                     selectRecord(item.id);
                 }
             };
+            const imageHtml = item.image ? `
+                <div class="diary-image-wrapper" onclick="event.stopPropagation(); openImageViewer('${item.image}')" title="Bấm để xem ảnh phóng to">
+                    <img src="${item.image}" alt="Ảnh nhật ký" loading="lazy" class="diary-image" />
+                    <span class="image-zoom-badge">🔍 Xem ảnh</span>
+                </div>
+            ` : '';
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <div class="diary-date" style="margin-bottom:0;">
@@ -492,6 +1140,7 @@
                     </div>
                 </div>
                 <div class="diary-content">${item.text}</div>
+                ${imageHtml}
                 <div class="item-actions">
                     <div class="item-action-btn pin-btn" onclick="event.stopPropagation(); togglePin('${item.id}')">${item.pinned ? '📍 Bỏ' : '📌 Ghim'}</div>
                     <div class="item-action-btn ${item.paragraph ? '' : 'disabled'}" style="color:var(--primary-color); font-size:0.75rem;" onclick="event.stopPropagation(); selectRecord('${item.id}'); switchTab(1)">📖 Trình độ N3</div>
@@ -532,6 +1181,12 @@
             if (cancelBtn) {
                 cancelBtn.innerText = 'Hủy';
                 cancelBtn.style.display = 'inline-block';
+            }
+            const item = currentDiaries.find(d => String(d.id) === String(id));
+            if (item && item.image) {
+                setAttachedImage(item.image);
+            } else {
+                removeAttachedImage();
             }
             expandWriteCard();
             document.getElementById('diaryInput').focus();
@@ -966,6 +1621,7 @@
                 cancelBtn.innerText = 'Hủy';
                 cancelBtn.style.display = 'none';
             }
+            removeAttachedImage();
             collapseWriteCard();
         }
 

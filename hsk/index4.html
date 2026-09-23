@@ -1,3 +1,8 @@
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -9,7 +14,9 @@
 	<script src="../com/TTSClient.js"></script>
     <script src="typing.js" defer></script>
     <script>
+        // Tải các script hệ thống bất đồng bộ để tránh lỗi biên dịch tĩnh của Vite
         (function() {
+		    //'https://hsk-gilt.vercel.app/com/TTSClient.js',
             const scripts = ['https://hsk-gilt.vercel.app/com/assistive.js'];
             scripts.forEach(src => {
                 const script = document.createElement('script');
@@ -69,6 +76,7 @@
             margin-bottom: 2px;
         }
 
+        /* Unified and compact Row 1 */
         .top-row {
             display: flex;
             justify-content: space-between;
@@ -136,6 +144,7 @@
             box-shadow: 0 2px 4px rgba(34, 197, 94, 0.15);
         }
 
+        /* Row 2: Compact Inline Pagination */
         .pagination-bar {
             display: flex;
             justify-content: space-between;
@@ -159,6 +168,7 @@
             color: #64748b;
         }
 
+        /* Row 3: Compact Progress */
         .progress-box {
             display: flex;
             justify-content: space-between;
@@ -179,6 +189,7 @@
             font-weight: 500;
         }
 
+        /* Flashcard Container */
         .flashcard-wrapper {
             perspective: 1000px;
             width: 100%;
@@ -230,33 +241,90 @@
             transform: rotateX(180deg);
         }
 
-        .flashcard .card-front { pointer-events: auto; }
-        .flashcard .card-back { pointer-events: none; }
-        .flashcard.flipped .card-front, .flashcard.flipped-vertical .card-front { pointer-events: none; }
-        .flashcard.flipped .card-back, .flashcard.flipped-vertical .card-back { pointer-events: auto; }
+        /* Pointer events alignment during card flip to prevent click interception */
+        .flashcard .card-front {
+            pointer-events: auto;
+        }
+        .flashcard .card-back {
+            pointer-events: none;
+        }
+        .flashcard.flipped .card-front,
+        .flashcard.flipped-vertical .card-front {
+            pointer-events: none;
+        }
+        .flashcard.flipped .card-back,
+        .flashcard.flipped-vertical .card-back {
+            pointer-events: auto;
+        }
 
-        .page-flip-next-out { animation: flipNextOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1); transition: none !important; }
-        .page-flip-next-in { animation: flipNextIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1); transition: none !important; }
-        .page-flip-prev-out { animation: flipPrevOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1); transition: none !important; }
-        .page-flip-prev-in { animation: flipPrevIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1); transition: none !important; }
+        /* Page Flip Animations */
+        .page-flip-next-out {
+            animation: flipNextOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
+        }
+        .page-flip-next-in {
+            animation: flipNextIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
+        }
+        .page-flip-prev-out {
+            animation: flipPrevOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
+        }
+        .page-flip-prev-in {
+            animation: flipPrevIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+            transition: none !important;
+        }
 
         @keyframes flipNextOut {
-            0% { transform: rotateY(0deg); opacity: 1; }
-            100% { transform: rotateY(-90deg); opacity: 0; }
+            0% {
+                transform: rotateY(0deg);
+                transform-origin: center center;
+                opacity: 1;
+            }
+            100% {
+                transform: rotateY(-90deg);
+                transform-origin: center center;
+                opacity: 0;
+            }
         }
         @keyframes flipNextIn {
-            0% { transform: rotateY(90deg); opacity: 0; }
-            100% { transform: rotateY(0deg); opacity: 1; }
+            0% {
+                transform: rotateY(90deg);
+                transform-origin: center center;
+                opacity: 0;
+            }
+            100% {
+                transform: rotateY(0deg);
+                transform-origin: center center;
+                opacity: 1;
+            }
         }
         @keyframes flipPrevOut {
-            0% { transform: rotateY(0deg); opacity: 1; }
-            100% { transform: rotateY(90deg); opacity: 0; }
+            0% {
+                transform: rotateY(0deg);
+                transform-origin: center center;
+                opacity: 1;
+            }
+            100% {
+                transform: rotateY(90deg);
+                transform-origin: center center;
+                opacity: 0;
+            }
         }
         @keyframes flipPrevIn {
-            0% { transform: rotateY(-90deg); opacity: 0; }
-            100% { transform: rotateY(0deg); opacity: 1; }
+            0% {
+                transform: rotateY(-90deg);
+                transform-origin: center center;
+                opacity: 0;
+            }
+            100% {
+                transform: rotateY(0deg);
+                transform-origin: center center;
+                opacity: 1;
+            }
         }
 
+        /* Action Buttons inside Card Corner */
         .card-action-corner {
             position: absolute;
             top: 15px;
@@ -266,6 +334,7 @@
             gap: 10px;
         }
 
+        /* Speaker Button in Bottom-Left Corner of Card */
         .card-action-corner-bottom-left {
             position: absolute;
             bottom: 15px;
@@ -300,6 +369,7 @@
             color: #15803d;
         }
 
+        /* Front Content */
         .word {
             font-size: 6rem;
             font-weight: bold;
@@ -307,6 +377,16 @@
             margin-bottom: 10px;
         }
 
+        .hint {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            border: 1px dashed var(--text-muted);
+            padding: 4px 12px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+
+        /* Back Content */
         .pinyin {
             font-size: 1.3rem;
             color: var(--primary);
@@ -348,6 +428,7 @@
             font-weight: 500;
         }
 
+        /* Controls */
         .controls {
             display: flex;
             justify-content: center;
@@ -393,6 +474,10 @@
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
 
+        .btn-icon.active:hover {
+            background-color: var(--primary-hover);
+        }
+
         @media (max-width: 480px) {
             .btn-icon {
                 width: 48px;
@@ -404,17 +489,23 @@
             }
         }
 
-        .loading, .error {
+        /* Loading */
+        .loading {
             font-size: 1.2rem;
             color: var(--text-muted);
             margin-top: 100px;
             font-weight: 500;
-            text-align: center;
         }
 
-        .error { color: var(--accent); }
+        .error {
+            color: var(--accent);
+            text-align: center;
+            margin-top: 100px;
+            font-weight: 500;
+        }
 
-        .word-list-modal, .pinyin-modal {
+        /* Word List Panel & Modal Styles */
+        .word-list-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -431,30 +522,32 @@
             transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .word-list-modal.open, .pinyin-modal.open {
+        .word-list-modal.open {
             opacity: 1;
             pointer-events: auto;
         }
 
-        .word-list-content, .pinyin-content {
+        .word-list-content {
             background-color: #ffffff;
             width: 100%;
+            max-width: 100%;
             height: 100vh;
             height: 100dvh;
             border-radius: 0;
+            margin-bottom: 0;
             display: flex;
             flex-direction: column;
+            box-shadow: none;
             transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
         }
 
-        .word-list-modal.open .word-list-content,
-        .pinyin-modal.open .pinyin-content {
+        .word-list-modal.open .word-list-content {
             transform: translateY(0);
         }
 
-        .word-list-header, .pinyin-header {
+        .word-list-header {
             padding: 16px 20px;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
@@ -462,7 +555,7 @@
             align-items: center;
         }
 
-        .word-list-header h2, .pinyin-header h2 {
+        .word-list-header h2 {
             font-size: 1.15rem;
             font-weight: 700;
             color: var(--primary);
@@ -484,6 +577,11 @@
             transition: all 0.2s ease;
         }
 
+        .word-list-close:hover {
+            background: #e2e8f0;
+            transform: scale(1.05);
+        }
+
         .word-list-search-box {
             padding: 12px 20px;
             border-bottom: 1px solid #f1f5f9;
@@ -499,24 +597,44 @@
             font-weight: 500;
             outline: none;
             transition: all 0.2s;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
         }
 
         .search-input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1), inset 0 1px 2px rgba(0,0,0,0.02);
             background-color: #ffffff;
         }
 
         .word-list-body {
             flex: 1;
             overflow-y: auto;
-            padding: 12px 16px 20px;
+            padding: 12px 16px 20px; /* Thêm khoảng đệm cho vùng cuộn không sát mép dưới */
             display: flex;
             flex-direction: column;
             gap: 8px;
             -webkit-overflow-scrolling: touch;
         }
 
+        /* Đảm bảo thanh cuộn luôn hiển thị rõ ràng trên mọi thiết bị */
+        .word-list-body::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+            display: block !important;
+        }
+        .word-list-body::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 4px;
+        }
+        .word-list-body::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .word-list-body::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Word List Table and Responsive Layout */
         .word-list-table-container {
             width: 100%;
             overflow-x: auto;
@@ -524,7 +642,24 @@
             border-radius: 12px;
             border: 1px solid #e2e8f0;
             background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
             margin-bottom: 8px;
+        }
+
+        .word-list-table-container::-webkit-scrollbar {
+            height: 6px;
+            display: block !important;
+        }
+        .word-list-table-container::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 3px;
+        }
+        .word-list-table-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .word-list-table-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
 
         .word-list-table {
@@ -533,6 +668,28 @@
             font-size: 0.85rem;
             text-align: left;
             table-layout: fixed;
+        }
+
+        .word-list-table th, .word-list-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .word-list-table th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .word-list-table tr:last-child td {
+            border-bottom: none;
         }
 
         .grid-cell {
@@ -562,6 +719,152 @@
             color: #ea580c !important;
         }
 
+        /* Column Widths */
+        .col-stt { width: 45px; text-align: center; }
+        .col-word { width: 90px; font-weight: 700; color: var(--accent); font-size: 1.15rem; }
+        .col-hanviet { width: 90px; font-weight: 700; text-transform: uppercase; color: #475569; font-size: 0.95rem; }
+        .col-pinyin { width: 100px; font-weight: 600; color: var(--primary); }
+        .col-meaning { width: auto; font-weight: 500; color: var(--text-main); }
+        .col-action { width: 45px; text-align: center; }
+
+        /* Mobile Responsive (Relationsite) */
+        @media (max-width: 480px) {
+            .word-list-table {
+                font-size: 0.75rem;
+            }
+            .word-list-table th, .word-list-table td {
+                padding: 8px 4px;
+            }
+            .col-stt { width: 32px; }
+            .col-word { width: 60px; font-size: 0.95rem; }
+            .col-hanviet { width: 65px; font-size: 0.75rem; }
+            .col-pinyin { width: 70px; font-size: 0.75rem; }
+            .col-action { width: 35px; }
+            
+            .item-action-btn {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 0.8rem !important;
+            }
+        }
+
+        .word-list-item {
+            display: flex;
+            align-items: center;
+            height: 96px !important;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            box-sizing: border-box;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .word-list-item:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .word-list-item.active-word {
+            background-color: #f5f3ff;
+            border-color: #c4b5fd;
+            border-left: 5px solid var(--primary);
+        }
+
+        .item-index {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            min-width: 18px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            padding: 2px 4px;
+            text-align: center;
+        }
+
+        .item-word-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            min-width: 0;
+            height: 100% !important;
+            overflow: hidden;
+        }
+
+        .item-word-zh {
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: var(--accent);
+            line-height: 1.2;
+        }
+
+        .item-word-py {
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .item-word-meaning {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .item-word-meaning[contenteditable="true"] {
+            cursor: text;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s, border-color 0.2s;
+            border: 1px dashed transparent;
+        }
+        .item-word-meaning[contenteditable="true"]:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .item-word-meaning[contenteditable="true"]:focus {
+            background-color: #ffffff;
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+
+        .item-action-btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #64748b;
+            flex-shrink: 0;
+            outline: none;
+        }
+
+        .item-action-btn:hover {
+            transform: scale(1.1);
+            background: #f1f5f9;
+        }
+
+        .item-action-btn.item-mastered {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #15803d;
+        }
+
         .list-filter-tabs {
             display: flex;
             gap: 8px;
@@ -578,18 +881,29 @@
             font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
             height: 32px;
+        }
+
+        .list-filter-btn:hover {
+            background-color: #f1f5f9;
+            color: #334155;
+            border-color: #cbd5e1;
         }
 
         .list-filter-btn.active {
             background-color: var(--primary);
             color: white;
             border-color: var(--primary);
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
         }
 
+        /* Toast notifications styling */
         .toast-container {
             position: fixed;
             top: 20px;
@@ -602,7 +916,7 @@
             font-size: 0.9rem;
             font-weight: 600;
             z-index: 9999;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -610,6 +924,64 @@
         .toast-container.show {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
+        }
+
+        /* Pinyin Modal Styles */
+        .pinyin-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pinyin-modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .pinyin-content {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            border-radius: 0;
+            margin-bottom: 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: none;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .pinyin-modal.open .pinyin-content {
+            transform: translateY(0);
+        }
+
+        .pinyin-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pinyin-header h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0;
         }
 
         .pinyin-iframe-container {
@@ -702,6 +1074,7 @@
                         <button class="action-icon-btn speak-card-btn" onclick="speakCurrentCardManual(event)" title="Phát âm thẻ">🔊</button>
                     </div>
                     
+                    <!-- Phần từ siêu nhỏ gọn positioned absolutely at the top -->
                     <div class="back-word-header" style="position: absolute; top: 15px; left: 20px; right: 20px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; text-align: center; display: flex; flex-direction: column; gap: 4px; align-items: center; flex-shrink: 0; z-index: 10;">
                         <div style="font-size: 0.95rem; color: #64748b; font-weight: bold; display: flex; align-items: baseline; gap: 6px; justify-content: center;">
                             <b id="back-word-text" style="font-size: 1.4rem; color: var(--accent);"></b> <span id="back-hanviet" style="color: #475569; font-size: 1.15rem; text-transform: uppercase; font-weight: bold; display: none;"></span>
@@ -711,6 +1084,7 @@
                         </div>
                     </div>
 
+                    <!-- Phần ví dụ cực kỳ nổi bật, được căn vào chính giữa thẻ và có kích thước cố định để không thay đổi khi chuyển từ -->
                     <div class="example-box" id="example-box" style="width: 100%; height: 245px; min-height: 245px; max-height: 245px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fffdfa; border: 1.5px solid #fed7aa; border-radius: 16px; padding: 25px 20px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08); text-align: center; gap: 12px; box-sizing: border-box; overflow: hidden;">
                         <div class="example-cn" id="ex-cn" style="font-size: 2.3rem; font-weight: bold; color: #1e293b; line-height: 1.35; word-break: normal; overflow-wrap: break-word; white-space: normal;">...</div>
                         <div class="example-py" id="ex-py" style="font-size: 1.2rem; color: var(--primary); font-weight: 600; font-style: italic; line-height: 1.3; word-break: normal; overflow-wrap: break-word; white-space: normal;">...</div>
@@ -737,41 +1111,41 @@
         let currentIndex = 0;
         let pageManualReadCount = 0;
         
+        // Trạng thái cấu hình chức năng thêm
         let isTtsEnabled = true;
-        let currentFilter = 'all';
-        let masteredIds = [];
-        let displayMode = 'sequential';
+        let currentFilter = 'all'; // all, mastered, unmastered
+        let masteredIds = []; // Sẽ đọc bất đồng bộ từ IndexedDB/LocalStorage khi khởi động
+        let displayMode = 'sequential'; // sequential, random
         let isAutoPlaying = false;
         let autoPlayMode = 1; // 1: Chỉ mặt trước, 2: 2 mặt phát âm Trung, 3: 2 mặt phát âm Trung + Việt
         let autoPlayTimeout = null;
         let silentAudioHelper = null;
-        let autoPlayState = 0;
-        let autoPlayStateTimeLimit = 3000;
-        let autoPlayElapsedTime = 0;
+        let autoPlayState = 0; // 0: Đọc từ (mặt trước), 1: Đọc ví dụ (mặt sau), 2: Đọc nghĩa của từ (mặt sau), 3: Chờ chuyển thẻ
+        let autoPlayStateTimeLimit = 3000; // Thời gian chờ của state hiện tại (ms)
+        let autoPlayElapsedTime = 0; // Thời gian đã trôi qua trong state hiện tại (ms)
         let lastTickTime = Date.now();
         let currentHskLevel = 'HSK10';
-        let recordsPerPage = 'all';
+        let recordsPerPage = 'all'; // 10, 20, 30, 40, 50, all
         let currentPage = 1;
-        let listFilterMode = 'all';
+        let listFilterMode = 'all'; // all, mastered, unmastered
         let showListPinyin = true;
         let showListMeaning = true;
         let showListHanViet = true;
-        let listContentMode = 'word';
+        let listContentMode = 'word'; // 'word' hoặc 'example'
 
-        // Đánh dấu URL auto-play đã được kiểm tra và kích hoạt hay chưa
-        let urlAutoPlayChecked = false;
-
+        // Biến kiểm soát vuốt chạm (Swipe) trên mobile
         let touchStartX = 0;
         let touchEndX = 0;
         let touchStartY = 0;
         let touchEndY = 0;
 
+        // Cấu hình IndexedDB để lưu trữ setting
         const dbName = "HskFlashcardsDB";
         const dbVersion = 1;
         let db = null;
 
         function initDatabase() {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
                 const request = indexedDB.open(dbName, dbVersion);
                 request.onerror = (event) => {
                     console.error("IndexedDB error:", event.target.error);
@@ -819,22 +1193,26 @@
             });
         }
 
+        // Hàm xáo trộn mảng bằng giải thuật Fisher-Yates shuffle
         function shuffleList(array) {
-            let cur = array.length, randomIndex;
-            while (cur !== 0) {
-                randomIndex = Math.floor(Math.random() * cur);
-                cur--;
-                [array[cur], array[randomIndex]] = [array[randomIndex], array[cur]];
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
             }
             return array;
         }
 
+        // Fetch dữ liệu từ API dựa trên giá trị selectbox kết hợp hỗ trợ Offline/Cache chất lượng cao từ IndexedDB
         async function fetchData(preservePosition = false) {
             let hasCache = false;
 
+            // Nạp lại danh sách masteredIds từ bộ lưu trữ để đồng bộ chính xác khi chuyển lớp
             const localMastered = JSON.parse(localStorage.getItem('hsk_mastered_ids') || '[]');
             masteredIds = await loadSetting('masteredIds', localMastered) || localMastered;
 
+            // Thử nạp danh sách từ IndexedDB trước tiên (Trực quan hóa tức thời, không bị gián đoạn mạng)
             const cachedList = await loadSetting('rawFlashcards_' + currentHskLevel, null);
             if (cachedList && cachedList.length > 0) {
                 rawFlashcards = cachedList;
@@ -846,6 +1224,7 @@
                 
                 await applyFilterAndRender(preservePosition);
             } else {
+                // Hiển thị màn hình chờ nếu chưa có sẵn cache của cấp độ này
                 document.getElementById('main-content').style.display = 'none';
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
@@ -896,10 +1275,12 @@
                         return item;
                     }).filter(item => item.word);
 
+                    // Đồng bộ ngược lại về IndexedDB và LocalStorage sau khi hòa trộn từ Google Sheets
                     localStorage.setItem('hsk_mastered_ids', JSON.stringify(masteredIds));
                     saveSetting('masteredIds', masteredIds);
 
                     if (remoteFlashcards.length > 0) {
+                        // Lưu trữ danh sách mới tải từ server vào bộ nhớ IndexedDB
                         rawFlashcards = remoteFlashcards;
                         saveSetting('rawFlashcards_' + currentHskLevel, remoteFlashcards);
 
@@ -916,6 +1297,7 @@
                 }
             } catch (error) {
                 console.error('Error fetching data from server:', error);
+                // Nếu chưa có cache thì mới hiển thị màn hình báo lỗi
                 if (!hasCache) {
                     showError();
                 }
@@ -927,6 +1309,7 @@
             document.getElementById('error').style.display = 'block';
         }
 
+        // Áp dụng bộ lọc danh sách thuộc / chưa thuộc và chế độ ngẫu nhiên cố định danh sách
         async function applyFilterAndRender(preservePosition = false) {
             let baseList = [];
             if (currentFilter === 'all') {
@@ -937,8 +1320,10 @@
                 baseList = rawFlashcards.filter(item => !masteredIds.includes(currentHskLevel + '_' + item.stt));
             }
 
+            // Với yêu cầu mới, không xáo trộn toàn bộ list mà chỉ xáo trộn cục bộ theo phân trang
             filteredFlashcards = baseList;
 
+            // Đồng bộ bộ đếm thống kê tổng
             const masteredCount = rawFlashcards.filter(item => masteredIds.includes(currentHskLevel + '_' + item.stt)).length;
             const unmasteredCount = rawFlashcards.length - masteredCount;
             document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
@@ -952,14 +1337,13 @@
             }
             await updatePagination(preservePosition);
 
+            // Tải lại giao diện danh sách từ trong modal nếu đang mở để đồng bộ ngay tức thời
             if (document.getElementById('word-list-modal').classList.contains('open')) {
                 renderWordListItems(document.getElementById('word-search').value);
             }
-
-            // Kiểm tra tham số URL ?play=1,2,3 để tự động phát ngay khi dữ liệu được nạp lần đầu
-            checkUrlAutoPlay();
         }
 
+        // Lấy danh sách từ tuần tự của trang hiện tại
         function getPageSequentialItems() {
             if (recordsPerPage === 'all' || filteredFlashcards.length === 0) {
                 return [...filteredFlashcards];
@@ -973,6 +1357,7 @@
             }
         }
 
+        // Cập nhật giao diện phân trang dựa trên số records hiển thị
         async function updatePagination(preservePosition = false) {
             pageManualReadCount = 0;
             updateCyclesBadge();
@@ -1035,6 +1420,8 @@
             const cardElement = document.getElementById('card');
             if (cardElement && !isTransitioning) {
                 isTransitioning = true;
+                
+                // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
                 cardElement.classList.remove('flipped');
                 cardElement.classList.remove('flipped-vertical');
                 
@@ -1053,6 +1440,7 @@
             }
         }
 
+        // Hiển thị nội dung thẻ hiện tại và điều khiển luồng phát âm thanh TTS
         function renderCard(preventSpeak = false) {
             const cardElement = document.getElementById('card');
             cardElement.classList.remove('flipped');
@@ -1065,7 +1453,9 @@
                 document.getElementById('back-meaning').innerText = "Không có thẻ nào trong danh mục này";
                 document.getElementById('example-box').style.display = 'none';
                 document.getElementById('progress-text').innerText = "0 / 0";
+                const backSttEl = document.getElementById('back-stt');
                 const backWordTextEl = document.getElementById('back-word-text');
+                if (backSttEl) backSttEl.innerText = "";
                 if (backWordTextEl) backWordTextEl.innerText = "";
                 return;
             }
@@ -1076,17 +1466,20 @@
                 isFlipped: false
             };
 
+            // Đồng bộ trạng thái active trong bảng danh sách từ (nếu modal đang mở)
             const listContainer = document.getElementById('word-list-items-container');
             if (listContainer && current) {
                 listContainer.querySelectorAll('.grid-cell:not(.empty-cell)').forEach(el => {
                     if (el.getAttribute('data-stt') === String(current.stt)) {
                         el.classList.add('active-word');
+                        // Tự động cuộn đến từ đang phát để người dùng luôn nhìn thấy
                         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     } else {
                         el.classList.remove('active-word');
                     }
                 });
                 
+                // Đồng bộ hiển thị chi tiết câu ví dụ tương ứng với từ đang chạy tự động
                 const detailDisplay = document.getElementById('example-detail-display');
                 if (detailDisplay) {
                     showExampleDetail(current.stt);
@@ -1097,13 +1490,17 @@
             document.getElementById('front-word').innerText = current.word;
             document.getElementById('front-pinyin').innerText = current.pinyin;
 
+            // Thiết lập thông tin tiêu đề mặt sau giống với chi tiết danh sách
+            const backSttEl = document.getElementById('back-stt');
             const backWordTextEl = document.getElementById('back-word-text');
+            if (backSttEl) backSttEl.innerText = `#${current.stt}`;
             if (backWordTextEl) backWordTextEl.innerText = current.word;
 
             document.getElementById('back-pinyin').innerText = current.pinyin;
             document.getElementById('back-meaning').innerText = current.meaning;
 
             const hanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') ? window.getHanVietForWord(current.word) : '';
+            const frontHvEl = document.getElementById('front-hanviet');
             const backHvEl = document.getElementById('back-hanviet');
             if (hanViet && hanViet !== ' ') {
                 backHvEl.innerText = `[${hanViet}]`;
@@ -1114,18 +1511,22 @@
             
             if(current.exCn) {
                 document.getElementById('example-box').style.display = 'block';
+                
+                // Tô màu khác (primary) cho từ gốc có trong ví dụ chữ Hán (vốn có màu đỏ accent)
                 if (current.word && current.exCn.includes(current.word)) {
                     const regex = new RegExp(current.word, 'g');
                     document.getElementById('ex-cn').innerHTML = current.exCn.replace(regex, `<span style="color: red;background: powderblue;">${current.word}</span>`);
                 } else {
                     document.getElementById('ex-cn').innerText = current.exCn;
                 }
+                
                 document.getElementById('ex-py').innerText = current.exPy;
                 document.getElementById('ex-vn').innerText = current.exVn;
             } else {
                 document.getElementById('example-box').style.display = 'none';
             }
 
+            // Đồng bộ hóa trạng thái nút Đánh dấu thuộc
             const isMastered = masteredIds.includes(currentHskLevel + '_' + current.stt);
             const frontMarkBtn = document.getElementById('mark-btn-front');
             const backMarkBtn = document.getElementById('mark-btn-back');
@@ -1137,7 +1538,9 @@
                 backMarkBtn.classList.remove('status-mastered');
             }
 
+            // Nếu đang trong chế độ chạy tự động, không kích hoạt speak tại renderCard để tránh trùng lặp
             if (!isAutoPlaying) {
+                // Phát âm tự động khi chuyển thẻ nếu bật TTS - Mặc định luôn đọc từ chính khi chuyển thẻ
                 if (isTtsEnabled && !preventSpeak) {
                     speakUniversalText(current.word, false);
                 }
@@ -1148,17 +1551,20 @@
             }
         }
 
+        // Hàm lật thẻ và đọc nội dung tương ứng
         function flipCard() {
             if (paginatedFlashcards.length === 0 || isTransitioning) return;
             const cardElement = document.getElementById('card');
             
             cardElement.classList.toggle('flipped-vertical');
             cardElement.classList.remove('flipped');
-            currentFlipDirection = 'normal';
+            currentFlipDirection = 'normal'; // Reset trạng thái hướng lật sau click trực tiếp
             
             const current = paginatedFlashcards[currentIndex];
 
+            // Chỉ kích hoạt speak thủ công khi không chạy tự động
             if (!isAutoPlaying) {
+                // Phát âm tự động khi lật thẻ - Đọc theo mặt hiển thị sau khi lật
                 if (isTtsEnabled) {
                     const isFlippedNow = cardElement.classList.contains('flipped-vertical');
                     const textToSpeak = isFlippedNow ? (current.exCn || current.word) : current.word;
@@ -1170,6 +1576,7 @@
         let currentFlipDirection = 'normal';
         let isTransitioning = false;
 
+        // Chuyển sang thẻ tiếp theo
         function nextCard() {
             if (paginatedFlashcards.length === 0 || isTransitioning) return;
             if (isAutoPlaying) {
@@ -1177,15 +1584,20 @@
             }
             
             isTransitioning = true;
+            
             const cardElement = document.getElementById('card');
+            
+            // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
             cardElement.classList.remove('flipped');
             cardElement.classList.remove('flipped-vertical');
+            
             cardElement.classList.add('page-flip-next-out');
             
             setTimeout(() => {
                 let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
                 let cycleCompleted = false;
 
+                // Nếu nextIdx quay về 0, nghĩa là đã đọc hết 1 vòng (từ đầu đến cuối trang)
                 if (nextIdx === 0 && paginatedFlashcards.length > 0) {
                     pageManualReadCount++;
                     cycleCompleted = true;
@@ -1206,6 +1618,7 @@
                         if (recordsPerPage !== 'all') {
                             nextPage();
                         } else {
+                            // Nếu "Tất cả" (chỉ có 1 trang), quay trở lại đầu thẻ (index 0)
                             currentIndex = 0;
                             saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                             renderCard();
@@ -1230,6 +1643,7 @@
             }, 300);
         }
 
+        // Quay lại thẻ trước đó
         function prevCard() {
             if (paginatedFlashcards.length === 0 || isTransitioning) return;
             if (isAutoPlaying) {
@@ -1238,8 +1652,11 @@
             isTransitioning = true;
             
             const cardElement = document.getElementById('card');
+            
+            // Clear any vertical flip classes before horizontal page flip starts to prevent rotation conflicts
             cardElement.classList.remove('flipped');
             cardElement.classList.remove('flipped-vertical');
+            
             cardElement.classList.add('page-flip-prev-out');
             
             setTimeout(() => {
@@ -1260,6 +1677,7 @@
             }, 300);
         }
 
+        // Quay lại trang trước đó (bàn phím số 7)
         function prevPage() {
             if (recordsPerPage === 'all' || isTransitioning) return;
             const size = parseInt(recordsPerPage);
@@ -1303,6 +1721,7 @@
             }
         }
 
+        // Tiến thêm 1 trang (bàn phím số 9)
         function nextPage(preserveAutoPlay = false) {
             if (recordsPerPage === 'all' || isTransitioning) return;
             const size = parseInt(recordsPerPage);
@@ -1346,6 +1765,7 @@
             }
         }
 
+        // Bật / Tắt trạng thái TTS phát âm tự động
         function toggleTts(event) {
             event.stopPropagation();
             isTtsEnabled = !isTtsEnabled;
@@ -1355,6 +1775,7 @@
                 ttsBtn.innerHTML = "🔊";
                 ttsBtn.title = "Âm thanh (TTS): BẬT";
                 ttsBtn.classList.add('active');
+                // Phát lại nội dung tương ứng với mặt hiện tại khi kích hoạt lại
                 if (paginatedFlashcards.length > 0 && !isAutoPlaying) {
                     const current = paginatedFlashcards[currentIndex];
                     const cardElement = document.getElementById('card');
@@ -1367,7 +1788,7 @@
                 ttsBtn.title = "Âm thanh (TTS): TẮT";
                 ttsBtn.classList.remove('active');
                 if (isAutoPlaying) {
-                    toggleAutoPlay(true);
+                    toggleAutoPlay(true); // Tắt tự động chạy nếu tắt TTS
                 }
                 if (typeof window.stopSpeak === 'function') {
                     window.stopSpeak();
@@ -1375,11 +1796,13 @@
             }
         }
 
+        // Chuyển đổi chế độ hiển thị danh sách (Tuần tự / Ngẫu nhiên)
         async function toggleDisplayMode(event) {
             if (event && typeof event.stopPropagation === 'function') {
                 event.stopPropagation();
             }
             
+            // Lấy stt của từ hiện tại để lát duy trì đúng từ này
             let currentStt = null;
             if (paginatedFlashcards.length > 0 && paginatedFlashcards[currentIndex]) {
                 currentStt = paginatedFlashcards[currentIndex].stt;
@@ -1399,8 +1822,10 @@
             }
             saveSetting('displayMode', displayMode);
             
+            // Bảo toàn trang hiện tại (gọi với preservePosition = true)
             await applyFilterAndRender(true);
             
+            // Tìm lại vị trí index của từ đang học trong list trang mới sau khi đã chuyển ngẫu nhiên / tuần tự
             if (currentStt && paginatedFlashcards.length > 0) {
                 const foundIndex = paginatedFlashcards.findIndex(item => item.stt === currentStt);
                 if (foundIndex !== -1) {
@@ -1411,10 +1836,14 @@
             renderCard();
         }
 
+        // Khởi tạo audio im lặng giúp giữ tiến trình chạy ngầm mượt mà trên iOS Safari
         function initSilentAudioHelper() {
             if (!silentAudioHelper) {
+                // File WAV im lặng khoảng 1 giây, lặp liên tiếp để duy trì luồng phát phương tiện nền trên iOS
                 silentAudioHelper = new Audio("data:audio/wav;base64,UklGRpwAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YXBCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                 silentAudioHelper.loop = true;
+                
+                // Đăng ký bộ lắng nghe timeupdate hoạt động ngay cả khi tắt màn hình khóa trên iOS
                 silentAudioHelper.addEventListener('timeupdate', () => {
                     if (isAutoPlaying) {
                         runAutoPlayTimeUpdate();
@@ -1423,6 +1852,7 @@
             }
         }
 
+        // Cập nhật thời gian trôi qua của State Machine
         function runAutoPlayTimeUpdate() {
             if (!isAutoPlaying || paginatedFlashcards.length === 0) return;
             
@@ -1430,6 +1860,7 @@
             const delta = now - lastTickTime;
             lastTickTime = now;
             
+            // Xử lý bù đắp nếu delta bị nhảy lệch quá lớn khi trình duyệt bị treo tạm thời
             if (delta <= 0 || delta > 2000) {
                 autoPlayElapsedTime += 250;
             } else {
@@ -1442,6 +1873,7 @@
             }
         }
 
+        // State Machine điều hướng Autoplay chạy tốt kể cả khi khóa màn hình
         function advanceAutoPlayState() {
             if (!isAutoPlaying || paginatedFlashcards.length === 0) return;
             
@@ -1450,11 +1882,14 @@
             if (!current) return;
             
             if (autoPlayState === 0) {
+                // Hết thời gian đọc mặt trước (3s) -> Lật và đọc mặt sau
                 if (autoPlayMode === 1) {
+                    // Chế độ 1: Chỉ đọc mặt trước -> Chuyển sang State 3 (Chờ chuyển thẻ)
                     autoPlayState = 3;
                     autoPlayStateTimeLimit = document.hidden ? 50 : 600;
                     transitionToNextCardAutoPlay();
                 } else {
+                    // Chế độ 2 & Chế độ 3: Lật mặt sau và đọc tiếng Trung
                     autoPlayState = 1;
                     autoPlayStateTimeLimit = (autoPlayMode === 3) ? 4000 : 4500;
                     
@@ -1465,11 +1900,14 @@
                     speakUniversalText(textToSpeak, false);
                 }
             } else if (autoPlayState === 1) {
+                // Hết thời gian đọc tiếng Trung mặt sau
                 if (autoPlayMode === 2) {
+                    // Chế độ 2: Chỉ đọc Trung -> Chuyển sang State 3 (Chờ chuyển thẻ)
                     autoPlayState = 3;
                     autoPlayStateTimeLimit = document.hidden ? 50 : 600;
                     transitionToNextCardAutoPlay();
                 } else if (autoPlayMode === 3) {
+                    // Chế độ 3: Đọc tiếp nghĩa tiếng Việt
                     autoPlayState = 2;
                     autoPlayStateTimeLimit = 3500;
                     
@@ -1477,10 +1915,12 @@
                     speakUniversalText(textToSpeakVn, true);
                 }
             } else if (autoPlayState === 2) {
+                // Hết thời gian đọc nghĩa Việt -> Chuyển sang State 3 (Chờ chuyển thẻ)
                 autoPlayState = 3;
                 autoPlayStateTimeLimit = document.hidden ? 50 : 600;
                 transitionToNextCardAutoPlay();
             } else if (autoPlayState === 3) {
+                // Hoàn tất chờ chuyển thẻ -> Reset trạng thái về State 0 và đọc từ mới
                 autoPlayState = 0;
                 autoPlayStateTimeLimit = 3000;
                 autoPlayElapsedTime = 0;
@@ -1493,79 +1933,22 @@
             }
         }
 
-        // Khởi động trực tiếp chế độ tự động phát (Chế độ 1, 2, hoặc 3)
-        function startAutoPlay(mode = 1) {
-            if (paginatedFlashcards.length === 0) return;
-            const autoPlayBtn = document.getElementById('auto-play-btn');
-            
-            initSilentAudioHelper();
-            
-            isAutoPlaying = true;
-            autoPlayMode = [1, 2, 3].includes(Number(mode)) ? Number(mode) : 1;
-            saveSetting('autoPlayMode', autoPlayMode);
-            
-            if (!isTtsEnabled) {
-                isTtsEnabled = true;
-                saveSetting('isTtsEnabled', isTtsEnabled);
-                const ttsBtn = document.getElementById('tts-toggle');
-                if (ttsBtn) {
-                    ttsBtn.innerHTML = "🔊";
-                    ttsBtn.title = "Âm thanh (TTS): BẬT";
-                    ttsBtn.classList.add('active');
-                }
-            }
-            
-            if (autoPlayBtn) {
-                if (autoPlayMode === 1) {
-                    autoPlayBtn.innerHTML = "❶";
-                    autoPlayBtn.title = "Tự động: 1 (Chỉ đọc mặt trước) - Bấm để đổi Chế độ 2";
-                } else if (autoPlayMode === 2) {
-                    autoPlayBtn.innerHTML = "❷";
-                    autoPlayBtn.title = "Tự động: 2 (Đọc từ + Ví dụ Trung) - Bấm để đổi Chế độ 3";
-                } else if (autoPlayMode === 3) {
-                    autoPlayBtn.innerHTML = "❸";
-                    autoPlayBtn.title = "Tự động: 3 (Đọc từ + Ví dụ Trung + Việt) - Bấm để TẮT";
-                }
-                autoPlayBtn.classList.add('active');
-            }
-            
-            if (silentAudioHelper) {
-                silentAudioHelper.play().catch(e => console.warn('Bỏ qua lỗi tự động phát Audio im lặng:', e));
-            }
-            
-            autoPlayState = 0;
-            autoPlayElapsedTime = 0;
-            lastTickTime = Date.now();
-            autoPlayStateTimeLimit = 3000;
-            
-            const cardElement = document.getElementById('card');
-            if (cardElement) {
-                cardElement.classList.remove('flipped');
-                cardElement.classList.remove('flipped-vertical');
-            }
-            const current = paginatedFlashcards[currentIndex];
-            if (current) {
-                speakUniversalText(current.word, false);
-            }
-        }
-
-        // Bật / Tắt chế độ tự động đọc chuyển từ tuần tự/ngẫu nhiên luân phiên 3 chế độ (1 -> 2 -> 3 -> TẮT)
+        // Bật / Tắt chế độ tự động đọc chuyển từ tuần tự/ngẫu nhiên luân phiên 3 chế độ
         function toggleAutoPlay(forceOff = false) {
             if (paginatedFlashcards.length === 0) return;
             const autoPlayBtn = document.getElementById('auto-play-btn');
             
+            // Đảm bảo helper đã được khởi tạo qua tương tác người dùng
             initSilentAudioHelper();
             
-            if (forceOff || (isAutoPlaying && autoPlayMode === 3)) {
+            if (forceOff) {
                 isAutoPlaying = false;
                 autoPlayMode = 1;
                 saveSetting('autoPlayMode', autoPlayMode);
                 
-                if (autoPlayBtn) {
-                    autoPlayBtn.innerHTML = "▶";
-                    autoPlayBtn.title = "Tự động lật & đọc: TẮT";
-                    autoPlayBtn.classList.remove('active');
-                }
+                autoPlayBtn.innerHTML = "▶";
+                autoPlayBtn.title = "Tự động lật & đọc: TẮT";
+                autoPlayBtn.classList.remove('active');
                 
                 if (silentAudioHelper) {
                     silentAudioHelper.pause();
@@ -1582,61 +1965,108 @@
             }
 
             if (!isAutoPlaying) {
-                startAutoPlay(1);
+                isAutoPlaying = true;
+                autoPlayMode = 1;
+                saveSetting('autoPlayMode', autoPlayMode);
+                
+                if (!isTtsEnabled) {
+                    isTtsEnabled = true;
+                    saveSetting('isTtsEnabled', isTtsEnabled);
+                    const ttsBtn = document.getElementById('tts-toggle');
+                    if (ttsBtn) {
+                        ttsBtn.innerHTML = "🔊";
+                        ttsBtn.title = "Âm thanh (TTS): BẬT";
+                        ttsBtn.classList.add('active');
+                    }
+                }
+                autoPlayBtn.innerHTML = "❶";
+                autoPlayBtn.title = "Tự động: 1 (Chỉ đọc mặt trước) - Bấm để đổi Chế độ 2";
+                autoPlayBtn.classList.add('active');
+                
+                // Chạy silent audio helper lặp tuần hoàn để giữ luồng background hoạt động
+                if (silentAudioHelper) {
+                    silentAudioHelper.play().catch(e => console.warn('Bỏ qua lỗi tự động phát Audio im lặng:', e));
+                }
+                
+                // Khởi tạo các trạng thái đếm giờ của State Machine
+                autoPlayState = 0;
+                autoPlayElapsedTime = 0;
+                lastTickTime = Date.now();
+                autoPlayStateTimeLimit = 3000;
+                
+                const cardElement = document.getElementById('card');
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
+                }
+                const current = paginatedFlashcards[currentIndex];
+                if (current) {
+                    speakUniversalText(current.word, false);
+                }
             } else if (autoPlayMode === 1) {
-                startAutoPlay(2);
+                autoPlayMode = 2;
+                saveSetting('autoPlayMode', autoPlayMode);
+                autoPlayBtn.innerHTML = "❷";
+                autoPlayBtn.title = "Tự động: 2 (Đọc từ + Ví dụ Trung) - Bấm để đổi Chế độ 3";
+                
+                autoPlayState = 0;
+                autoPlayElapsedTime = 0;
+                lastTickTime = Date.now();
+                autoPlayStateTimeLimit = 3000;
+                
+                const cardElement = document.getElementById('card');
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
+                }
+                const current = paginatedFlashcards[currentIndex];
+                if (current) {
+                    speakUniversalText(current.word, false);
+                }
             } else if (autoPlayMode === 2) {
-                startAutoPlay(3);
-            }
-        }
-
-        // Kiểm tra tham số ?play=1,2,3 trên URL khi tải trang
-        function checkUrlAutoPlay() {
-            if (urlAutoPlayChecked) return;
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const playParam = urlParams.get('play');
-            
-            if (playParam !== null && playParam !== undefined) {
-                const val = playParam.trim().toLowerCase();
-                let modeToPlay = null;
+                autoPlayMode = 3;
+                saveSetting('autoPlayMode', autoPlayMode);
+                autoPlayBtn.innerHTML = "❸";
+                autoPlayBtn.title = "Tự động: 3 (Đọc từ + Ví dụ Trung + Việt) - Bấm để TẮT";
                 
-                if (val === '1' || val === '2' || val === '3') {
-                    modeToPlay = parseInt(val, 10);
-                } else if (val === '' || val === 'true' || val === 'yes' || val === 'on' || val === 'auto') {
-                    modeToPlay = 1;
+                autoPlayState = 0;
+                autoPlayElapsedTime = 0;
+                lastTickTime = Date.now();
+                autoPlayStateTimeLimit = 3000;
+                
+                const cardElement = document.getElementById('card');
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
                 }
+                const current = paginatedFlashcards[currentIndex];
+                if (current) {
+                    speakUniversalText(current.word, false);
+                }
+            } else {
+                isAutoPlaying = false;
+                autoPlayMode = 1;
+                saveSetting('autoPlayMode', autoPlayMode);
                 
-                if (modeToPlay && paginatedFlashcards.length > 0) {
-                    urlAutoPlayChecked = true;
-                    console.log(`[URL Param] Phát hiện ?play=${playParam} -> Khởi chạy tự động phát Chế độ ${modeToPlay}`);
-                    
-                    startAutoPlay(modeToPlay);
-                    
-                    const modeDesc = modeToPlay === 1 
-                        ? 'Chế độ 1 (Chỉ đọc từ)' 
-                        : (modeToPlay === 2 ? 'Chế độ 2 (Từ + Ví dụ Trung)' : 'Chế độ 3 (Từ + Ví dụ Trung + Việt)');
-                    showToast(`Tự động phát: ${modeDesc}`);
-
-                    // Đề phòng chính sách chặn âm thanh trình duyệt (Autoplay policy), kích hoạt ngay khi chạm màn hình
-                    const resumeAudioOnInteraction = () => {
-                        if (isAutoPlaying) {
-                            initSilentAudioHelper();
-                            if (silentAudioHelper && silentAudioHelper.paused) {
-                                silentAudioHelper.play().catch(() => {});
-                            }
-                            const current = paginatedFlashcards[currentIndex];
-                            if (current && autoPlayState === 0) {
-                                speakUniversalText(current.word, false);
-                            }
-                        }
-                    };
-                    window.addEventListener('click', resumeAudioOnInteraction, { once: true });
-                    window.addEventListener('touchstart', resumeAudioOnInteraction, { once: true });
+                autoPlayBtn.innerHTML = "▶";
+                autoPlayBtn.title = "Tự động lật & đọc: TẮT";
+                autoPlayBtn.classList.remove('active');
+                
+                if (silentAudioHelper) {
+                    silentAudioHelper.pause();
+                }
+                if (typeof window.stopSpeak === 'function') {
+                    window.stopSpeak();
+                }
+                const cardElement = document.getElementById('card');
+                if (cardElement) {
+                    cardElement.classList.remove('flipped');
+                    cardElement.classList.remove('flipped-vertical');
                 }
             }
         }
 
+        // Chuyển thẻ tự động trong quá trình lặp Autoplay
         function transitionToNextCardAutoPlay() {
             if (!isAutoPlaying) return;
             
@@ -1645,6 +2075,7 @@
             let nextIdx = (currentIndex + 1) % paginatedFlashcards.length;
             let cycleCompleted = false;
 
+            // Nếu nextIdx quay về 0, nghĩa là đã đọc hết 1 vòng (từ đầu đến cuối trang)
             if (nextIdx === 0 && paginatedFlashcards.length > 0) {
                 pageManualReadCount++;
                 cycleCompleted = true;
@@ -1663,11 +2094,13 @@
                     if (recordsPerPage !== 'all') {
                         nextPage(true);
                     } else {
+                        // Nếu "Tất cả" (chỉ có 1 trang), quay trở lại đầu thẻ (index 0)
                         currentIndex = 0;
                         saveSetting('currentIndex_' + currentHskLevel, currentIndex);
                         renderCard();
                     }
                     
+                    // Cài đặt lại trạng thái chờ cho State 3 sau khi chuyển trang
                     autoPlayState = 3;
                     autoPlayStateTimeLimit = document.hidden ? 50 : 600;
                     autoPlayElapsedTime = 0;
@@ -1682,9 +2115,10 @@
             saveSetting('currentIndex_' + currentHskLevel, currentIndex);
 
             if (document.hidden) {
+                // Tắt hoàn toàn transition để xử lý đồng bộ và tức thời khi tắt màn hình/chạy ngầm
                 renderCard();
-                autoPlayState = 3;
-                autoPlayStateTimeLimit = 50;
+                autoPlayState = 3; // Tiếp tục ở State 3
+                autoPlayStateTimeLimit = 50; // Chờ 50ms rồi tự động chuyển qua State 0 để phát tiếng
                 autoPlayElapsedTime = 0;
             } else {
                 isTransitioning = true;
@@ -1711,6 +2145,7 @@
             }
         }
 
+        // Chuyển đổi qua lại giữa các trạng thái bộ lọc (Tất cả / Thuộc / Chưa thuộc)
         function toggleFilter(event) {
             event.stopPropagation();
             const filterBtn = document.getElementById('filter-toggle');
@@ -1735,11 +2170,13 @@
             applyFilterAndRender();
         }
 
+        // Thử đổi cấp độ HSK từ selectbox
         function changeHskLevel(event) {
             currentHskLevel = event.target.value;
             saveSetting('currentHskLevel', currentHskLevel);
             if (isAutoPlaying) toggleAutoPlay(true);
             
+            // Xóa danh sách cũ để tránh hiển thị trạng thái đã thuộc/chưa thuộc cũ trước khi nạp xong dữ liệu mới
             rawFlashcards = [];
             filteredFlashcards = [];
             paginatedFlashcards = [];
@@ -1751,6 +2188,7 @@
             fetchData(true);
         }
 
+        // Cập nhật trạng thái nhớ/chưa nhớ trực tiếp lên Google Sheet qua API
         async function updateMasteredOnSheet(wordItem, isMastered, showSuccessToast = false) {
             const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
             const spreadId = '105i_4pdAfadq4G-ELDmrnopWW7H4pv0EZUg87xsPxtc';
@@ -1800,6 +2238,7 @@
             }
         }
 
+        // Thêm / Xóa từ khỏi danh sách đã thuộc (Lưu IndexedDB và LocalStorage)
         function toggleMastered(event) {
             event.stopPropagation();
             if (paginatedFlashcards.length === 0) return;
@@ -1817,16 +2256,20 @@
             localStorage.setItem('hsk_mastered_ids', JSON.stringify(masteredIds));
             saveSetting('masteredIds', masteredIds);
 
+            // Cập nhật lại giao diện bộ đếm thống kê tổng
             const masteredCount = rawFlashcards.filter(item => masteredIds.includes(currentHskLevel + '_' + item.stt)).length;
             const unmasteredCount = rawFlashcards.length - masteredCount;
             document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
 
+            // Gửi bất đồng bộ lên Google Sheet
             updateMasteredOnSheet(current, isNowMastered);
 
+            // Nếu đang xem ở chế độ lọc Thuộc hoặc Chưa thuộc, xóa thẻ ra khỏi danh sách đang render hiện tại
             if (currentFilter !== 'all') {
                 if (isAutoPlaying) toggleAutoPlay(true);
                 applyFilterAndRender(true);
             } else {
+                // Nếu ở chế độ Tất cả, chỉ cập nhật trạng thái icon Active của thẻ
                 const isMasteredNow = masteredIds.includes(mKey);
                 const frontMarkBtn = document.getElementById('mark-btn-front');
                 const backMarkBtn = document.getElementById('mark-btn-back');
@@ -1840,6 +2283,7 @@
             }
         }
 
+        // Hàm chuyển từ tiếp theo hoặc trước đó trong danh sách từ dạng vòng lặp
         function navigateWordList(direction) {
             const container = document.getElementById('word-list-items-container');
             if (!container) return;
@@ -1872,15 +2316,19 @@
             }
         }
 
+        // Lăng nghe sự kiện điều khiển bàn phím Máy tính (Desktop PC)
         document.addEventListener('keydown', (event) => {
             const wordListModal = document.getElementById('word-list-modal');
             const isModalOpen = wordListModal && wordListModal.classList.contains('open');
             const pinyinModal = document.getElementById('pinyin-modal');
             const isPinyinModalOpen = pinyinModal && pinyinModal.classList.contains('open');
 
+            // Tránh kích hoạt hotkeys khi đang gõ vào ô nhập liệu hoặc ô tìm kiếm ngoại trừ điều hướng danh sách từ
             if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) {
                 if (event.target.id === 'typing-input') {
+                    // Cho phép các phím mũi tên điều hướng đi qua để lật/chuyển thẻ
                     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                        // Đi tiếp tới xử lý phím mũi tên điều hướng thẻ
                     } else {
                         return;
                     }
@@ -1919,7 +2367,7 @@
                     closePinyinModal();
                     return;
                 }
-                return;
+                return; // Ngăn chặn các phím điều hướng ảnh hưởng tới flashcard khi đang mở Pinyin
             }
 
             if (isModalOpen) {
@@ -1938,7 +2386,7 @@
                     navigateWordList('prev');
                     return;
                 }
-                return;
+                return; // Tạm dừng mọi phím di chuyển/lật thẻ lúc mở danh sách
             }
 
             if (document.getElementById('main-content').style.display === 'none') return;
@@ -1974,6 +2422,7 @@
             }
         });
 
+        // Xử lý vuốt màn hình (Swipe Gesture) trên thiết bị di động
         const cardWrapper = document.querySelector('.flashcard-wrapper');
 
         cardWrapper.addEventListener('touchstart', (e) => {
@@ -1994,24 +2443,26 @@
         function handleSwipeGesture() {
             const diffX = touchEndX - touchStartX;
             const diffY = touchEndY - touchStartY;
-            const threshold = 50;
+            const threshold = 50; // Khoảng cách vuốt tối thiểu pixel
 
+            // Ưu tiên xác định vuốt ngang hay vuốt dọc dựa trên khoảng cách lớn nhất
             if (Math.abs(diffX) > Math.abs(diffY)) {
                 if (Math.abs(diffX) > threshold) {
                     if (diffX > 0) {
-                        prevCard();
+                        prevCard(); // Vuốt sang phải -> Quay lại thẻ trước
                     } else {
-                        nextCard();
+                        nextCard(); // Vuốt sang trái -> Chuyển thẻ tiếp theo
                     }
                 }
             } else {
                 if (Math.abs(diffY) > threshold) {
                     currentFlipDirection = 'vertical';
-                    flipCard();
+                    flipCard(); // Vuốt dọc -> Kích hoạt lật thẻ đứng
                 }
             }
         }
 
+        // Chức năng bật/tắt toàn bộ danh sách từ
         function toggleWordList(event) {
             if (event) event.stopPropagation();
             const modal = document.getElementById('word-list-modal');
@@ -2024,21 +2475,26 @@
         }
 
         function openWordList() {
+            // Cho phép tự động chuyển từ tiếp tục chạy khi mở danh sách từ
+            
             const modal = document.getElementById('word-list-modal');
             const searchInput = document.getElementById('word-search');
-            searchInput.value = '';
+            searchInput.value = ''; // Reset thanh tìm kiếm
             const clearBtn = document.getElementById('word-search-clear');
             if (clearBtn) clearBtn.style.display = 'none';
             
+            // Khôi phục bộ lọc danh sách về trạng thái Mặc định 'Tất cả' khi mở lại modal
             listFilterMode = 'all';
             document.querySelectorAll('.list-filter-btn').forEach(btn => btn.classList.remove('active'));
             const filterAllBtn = document.getElementById('list-filter-all');
             if (filterAllBtn) filterAllBtn.classList.add('active');
             
+            // Cập nhật tiêu đề modal kèm số lượng từ
             document.getElementById('modal-title').innerText = `Danh sách từ ${currentHskLevel} (${rawFlashcards.length} từ)`;
             
             renderWordListItems();
             
+            // Đồng bộ hiển thị chi tiết của từ hiện tại
             const detailDisplay = document.getElementById('example-detail-display');
             if (detailDisplay) {
                 const currentItem = paginatedFlashcards[currentIndex];
@@ -2050,8 +2506,9 @@
             }
             
             modal.classList.add('open');
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden'; // Khóa cuộn trang nền
 
+            // Tự động cuộn danh sách đến vị trí của thẻ đang xem
             const container = document.getElementById('word-list-items-container');
             if (container) {
                 const activeWordEl = container.querySelector('.active-word');
@@ -2094,7 +2551,7 @@
             if (event) event.stopPropagation();
             const modal = document.getElementById('word-list-modal');
             modal.classList.remove('open');
-            document.body.style.overflow = '';
+            document.body.style.overflow = ''; // Mở khóa cuộn trang nền
         }
 
         function closeWordListOnOverlay(event) {
@@ -2103,6 +2560,7 @@
             }
         }
 
+        // Bật/tắt Pinyin Modal đầy đủ chức năng
         function togglePinyinModal(event) {
             if (event) event.stopPropagation();
             const modal = document.getElementById('pinyin-modal');
@@ -2116,18 +2574,19 @@
         }
 
         function openPinyinModal() {
-            if (isAutoPlaying) toggleAutoPlay(true);
+            if (isAutoPlaying) toggleAutoPlay(true); // Tắt đọc tự động khi mở danh sách để không xung đột
             
             const modal = document.getElementById('pinyin-modal');
             const iframe = document.getElementById('pinyin-iframe');
             if (!modal) return;
 
-            if (iframe && (!iframe.src || iframe.src.indexOf('pinin.html') === -1)) {
-                iframe.src = 'pinin.html';
+            // Thiết lập src động để chỉ tải iframe khi mở ra, giúp tối ưu hóa bộ nhớ và tốc độ của ứng dụng
+            if (iframe && (!iframe.src || iframe.src.indexOf('hsk-gilt.vercel.app/hsk/pinin.html') === -1)) {
+                iframe.src = 'https://hsk-gilt.vercel.app/hsk/pinin.html';
             }
             
             modal.classList.add('open');
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden'; // Khóa cuộn trang nền
         }
 
         function closePinyinModal(event) {
@@ -2136,7 +2595,7 @@
             if (modal) {
                 modal.classList.remove('open');
             }
-            document.body.style.overflow = '';
+            document.body.style.overflow = ''; // Mở khóa cuộn trang nền
         }
 
         function closePinyinModalOnOverlay(event) {
@@ -2145,6 +2604,7 @@
             }
         }
 
+        // Hàm phát âm chung: Chỉ gọi đến TTS hệ thống qua window.speakCommon
         function speakUniversalText(text, isVietnamese = false) {
             if (!text) return;
             const voice = isVietnamese ? "vi-VN-NamMinhNeural" : "zh-CN-XiaoxiaoNeural";
@@ -2161,6 +2621,7 @@
             }
         }
 
+        // Phát âm từ vựng trực tiếp từ danh mục của word list
         function speakWordFromList(event, word, item) {
             if (event && typeof event.stopPropagation === 'function') {
                 event.stopPropagation();
@@ -2174,6 +2635,7 @@
             speakUniversalText(word, false);
         }
 
+        // Phát âm thủ công thẻ flashcard dựa trên mặt đang hiển thị (mặt trước: từ, mặt sau: ví dụ)
         function speakCurrentCardManual(event) {
             if (event && typeof event.stopPropagation === 'function') {
                 event.stopPropagation();
@@ -2188,13 +2650,19 @@
             speakUniversalText(textToSpeak, false);
         }
 
+        // Xử lý khi nhấn vào ô lưới từ: chọn từ, đổi trạng thái thuộc/chưa thuộc, phát âm, và hiển thị phần nghĩa và câu ví dụ
         function onGridCellClick(event, stt, escapedTargetText) {
+            // 1. Đồng bộ chọn từ và chuyển trang chính (đặt trạng thái active)
             selectWordFromList(stt, true);
+            // 2. Thay đổi trạng thái thuộc/chưa thuộc của từ và lưu trữ, tự động cập nhật màu mới
             toggleMasteredFromList(event, stt);
+            // 3. Phát âm từ đó
             speakWordFromList(null, escapedTargetText, rawFlashcards.find(x => String(x.stt) === String(stt)));
+            // 4. Hiển thị thông tin chi tiết ví dụ và nghĩa (sau khi đã cập nhật trạng thái thuộc)
             showExampleDetail(stt);
         }
 
+        // Hiển thị chi tiết câu ví dụ đầy đủ lên phía trên cùng dưới các nút lọc
         function showExampleDetail(stt) {
             const item = rawFlashcards.find(x => String(x.stt) === String(stt));
             const displayEl = document.getElementById('example-detail-display');
@@ -2235,12 +2703,14 @@
             displayEl.style.display = 'block';
         }
 
+        // Đánh dấu thuộc nhanh trực tiếp từ chi tiết câu ví dụ
         function toggleMasteredFromDetail(event, stt) {
             if (event) event.stopPropagation();
             toggleMasteredFromList(event, stt);
             showExampleDetail(stt);
         }
 
+        // Khi click vào vùng hiển thị nghĩa và câu ví dụ thì đọc câu ví dụ
         function speakExampleFromDetail(event) {
             if (event.target.tagName === 'BUTTON' || event.target.closest('button')) {
                 return;
@@ -2255,6 +2725,7 @@
             }
         }
 
+        // Ẩn chi tiết câu ví dụ
         function hideExampleDetail(event) {
             if (event) event.stopPropagation();
             const displayEl = document.getElementById('example-detail-display');
@@ -2263,6 +2734,7 @@
             }
         }
 
+        // Hiển thị danh sách từ dưới dạng 1 bảng duy nhất gồm 5 cột và 20 dòng, không phân trang, hiển thị 1 nội dung tương ứng chế độ
         function renderWordListItems(filterText = '') {
             const container = document.getElementById('word-list-items-container');
             const savedScrollTop = container ? container.scrollTop : 0;
@@ -2273,6 +2745,7 @@
             
             const query = filterText.toLowerCase().trim();
             
+            // Toàn bộ các từ và ví dụ khớp với từ khóa tìm kiếm
             const queryMatched = rawFlashcards.filter(item => {
                 if (!query) return true;
                 const wordHanViet = (window.getHanVietForWord && typeof window.getHanVietForWord === 'function') 
@@ -2291,6 +2764,7 @@
             const masteredCount = queryMatched.filter(item => masteredIds.includes(currentHskLevel + '_' + item.stt)).length;
             const unmasteredCount = totalCount - masteredCount;
 
+            // Cập nhật số đếm trực tiếp vào các tab lọc
             const tabAll = document.getElementById('list-filter-all');
             const tabMastered = document.getElementById('list-filter-mastered');
             const tabUnmastered = document.getElementById('list-filter-unmastered');
@@ -2307,6 +2781,7 @@
                 tabUnmastered.title = `Chưa thuộc (${unmasteredCount})`;
             }
 
+            // Lọc danh sách hiển thị theo tab đã chọn
             const filtered = queryMatched.filter(item => {
                 const isMastered = masteredIds.includes(currentHskLevel + '_' + item.stt);
                 if (listFilterMode === 'mastered') {
@@ -2317,8 +2792,10 @@
                 return true;
             });
 
+            // Lấy từ đang hiển thị ở thẻ chính để bôi đậm
             const currentItem = paginatedFlashcards[currentIndex];
 
+            // Xây dựng Table HTML gồm đúng 5 cột và 20 dòng
             let tableHtml = `
                 <div class="word-list-table-container" style="width: 100%;">
                     <table class="word-list-table" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0;">
@@ -2351,6 +2828,7 @@
                             </td>
                         `;
                     } else {
+                        // Ô trống để đủ 5 cột và 20 dòng
                         tableHtml += `
                             <td class="grid-cell empty-cell" 
                                 style="border: 1px dashed #e2e8f0; height: 60px; background-color: #f8fafc; cursor: default; pointer-events: none;">
@@ -2370,6 +2848,7 @@
 
             container.innerHTML = tableHtml;
 
+            // Khôi phục lại vị trí cuộn dọc và cuộn ngang
             if (container) {
                 container.scrollTop = savedScrollTop;
                 const tableContainerAfter = container.querySelector('.word-list-table-container');
@@ -2379,8 +2858,11 @@
             }
         }
 
+        // Chuyển đổi trạng thái bộ lọc của danh sách từ
         function changeListFilter(mode) {
             listFilterMode = mode;
+            
+            // Cập nhật trạng thái class active cho các phím lọc
             document.querySelectorAll('.list-filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
@@ -2388,6 +2870,8 @@
             if (filterBtn) {
                 filterBtn.classList.add('active');
             }
+            
+            // Vẽ lại danh sách từ theo bộ lọc mới
             const query = document.getElementById('word-search').value;
             renderWordListItems(query);
         }
@@ -2412,10 +2896,62 @@
             filterWordListItems();
         }
 
+        // Thay đổi hiển thị pinyin/nghĩa/hán việt trong danh sách từ và thẻ học
+        function toggleListFormat(type) {
+            if (type === 'pinyin') {
+                const pinyinChk = document.getElementById('show-pinyin-setting');
+                if (pinyinChk) {
+                    showListPinyin = pinyinChk.checked;
+                    saveSetting('showListPinyin', showListPinyin);
+                }
+            } else if (type === 'meaning') {
+                const meaningChk = document.getElementById('show-meaning-setting');
+                if (meaningChk) {
+                    showListMeaning = meaningChk.checked;
+                    saveSetting('showListMeaning', showListMeaning);
+                }
+            } else if (type === 'hanviet') {
+                const hanvietChk = document.getElementById('show-hanviet-setting');
+                if (hanvietChk) {
+                    showListHanViet = hanvietChk.checked;
+                    saveSetting('showListHanViet', showListHanViet);
+                    // Cập nhật lại giao diện thẻ chính ngay lập tức để ẩn/hiện Hán Việt trên thẻ
+                    renderCard();
+                }
+            }
+            const queryInput = document.getElementById('word-search');
+            const query = queryInput ? queryInput.value : '';
+            renderWordListItems(query);
+        }
+
+        // Chuyển đổi giữa chế độ hiển thị Từ (mặc định luôn hiển thị từ)
+        function setListContentMode(mode) {
+            listContentMode = 'word';
+            saveSetting('listContentMode', 'word');
+            
+            // Đồng bộ hiển thị chi tiết nghĩa và câu ví dụ của từ hiện tại
+            const detailDisplay = document.getElementById('example-detail-display');
+            if (detailDisplay) {
+                const currentItem = paginatedFlashcards[currentIndex];
+                if (currentItem) {
+                    showExampleDetail(currentItem.stt);
+                } else {
+                    detailDisplay.style.display = 'none';
+                }
+            }
+            
+            const queryInput = document.getElementById('word-search');
+            const query = queryInput ? queryInput.value : '';
+            renderWordListItems(query);
+        }
+
+        // Đồng bộ chuyển trang/vị trí thẻ khi click chọn từ từ danh sách
         function selectWordFromList(stt, preventSpeak = false) {
+            // Tìm từ trong toàn bộ danh sách HSK gốc
             const itemIndexInRaw = rawFlashcards.findIndex(item => String(item.stt) === String(stt));
             if (itemIndexInRaw === -1) return;
 
+            // Kiểm tra xem từ có nằm trong bộ lọc hiện không, nếu không thì reset bộ lọc về 'all'
             const matchInFiltered = filteredFlashcards.findIndex(item => String(item.stt) === String(stt));
             if (matchInFiltered === -1) {
                 currentFilter = 'all';
@@ -2425,6 +2961,7 @@
                 filterBtn.classList.remove('active');
                 saveSetting('currentFilter', currentFilter);
                 
+                // Nếu chế độ là ngẫu nhiên, ta đưa về tuần tự để có tính định vị tự nhiên
                 if (displayMode === 'random') {
                     displayMode = 'sequential';
                     const modeBtn = document.getElementById('display-mode-toggle');
@@ -2440,6 +2977,7 @@
                 document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
             }
 
+            // Tìm lại vị trí trong filteredFlashcards (vốn là thứ tự sequential chuẩn)
             const finalIndex = filteredFlashcards.findIndex(item => String(item.stt) === String(stt));
             if (finalIndex !== -1) {
                 if (recordsPerPage === 'all') {
@@ -2450,6 +2988,7 @@
                 }
                 saveSetting('currentPage_' + currentHskLevel, currentPage);
                 
+                // Đồng bộ hóa dropdown chọn trang
                 const pageSelect = document.getElementById('page-select');
                 const pageSelectLabel = document.getElementById('page-select-label');
                 pageSelect.innerHTML = '';
@@ -2482,6 +3021,7 @@
                     }
                 }
 
+                // Định hướng đúng vị trí của stt đã chọn trong paginatedFlashcards (có thể đã shuffle)
                 const foundIndex = paginatedFlashcards.findIndex(item => String(item.stt) === String(stt));
                 if (foundIndex !== -1) {
                     currentIndex = foundIndex;
@@ -2492,6 +3032,7 @@
                 renderCard(preventSpeak);
             }
 
+            // Cập nhật trạng thái hiển thị 'active' của các phần tử trong danh sách từ mà không cần đóng modal hay vẽ lại toàn bộ
             const container = document.getElementById('word-list-items-container');
             if (container) {
                 container.querySelectorAll('.grid-cell:not(.empty-cell)').forEach(el => {
@@ -2504,6 +3045,7 @@
             }
         }
 
+        // Cho phép đánh dấu thuộc nhanh trực tiếp từ danh sách từ
         function toggleMasteredFromList(event, stt) {
             event.stopPropagation();
             const mKey = currentHskLevel + '_' + stt;
@@ -2519,15 +3061,18 @@
             localStorage.setItem('hsk_mastered_ids', JSON.stringify(masteredIds));
             saveSetting('masteredIds', masteredIds);
 
+            // Tìm thông tin từ gốc để sync lên Google Sheet
             const originalWordItem = rawFlashcards.find(item => String(item.stt) === String(stt));
             if (originalWordItem) {
                 updateMasteredOnSheet(originalWordItem, isNowMastered);
             }
 
+            // Cập nhật bộ đếm trong app nền
             const masteredCount = rawFlashcards.filter(item => masteredIds.includes(currentHskLevel + '_' + item.stt)).length;
             const unmasteredCount = rawFlashcards.length - masteredCount;
             document.getElementById('stats-text').innerText = `Thuộc: ${masteredCount} | Chưa thuộc: ${unmasteredCount}`;
 
+            // Cập nhật CSS class của ô được click trực tiếp để không bị vẽ lại, không làm nhảy scroll
             const container = document.getElementById('word-list-items-container');
             if (container) {
                 const cellEl = container.querySelector(`.grid-cell[data-stt="${stt}"]`);
@@ -2540,6 +3085,7 @@
                 }
             }
 
+            // Đồng bộ bộ đếm trên các tab bộ lọc
             const queryVal = document.getElementById('word-search').value.toLowerCase().trim();
             const queryMatched = rawFlashcards.filter(item => {
                 if (!queryVal) return true;
@@ -2565,6 +3111,7 @@
             if (tabMastered) tabMastered.innerHTML = `✅ <b>${qMasteredCount}</b>`;
             if (tabUnmastered) tabUnmastered.innerHTML = `⏳ <b>${qUnunmasteredCount}</b>`;
 
+            // Cập nhật nút bôi đỏ/xanh mặt thẻ nếu thẻ hiện tại trùng từ vừa tick
             const currentItem = paginatedFlashcards[currentIndex];
             if (currentItem && String(currentItem.stt) === String(stt)) {
                 const isMasteredNow = masteredIds.includes(mKey);
@@ -2580,9 +3127,75 @@
             }
         }
 
+        // Lưu nghĩa tiếng Việt khi move out (blur) khỏi ô sửa
+        function saveMeaningFromList(event, stt) {
+            const newMeaning = event.target.innerText.trim();
+            const wordItem = rawFlashcards.find(item => String(item.stt) === String(stt));
+            if (!wordItem) return;
+
+            // Nếu không thay đổi gì thì không cần lưu
+            if (wordItem.meaning === newMeaning) return;
+
+            wordItem.meaning = newMeaning;
+
+            // Đồng bộ sang các mảng phụ khác
+            const filteredItem = filteredFlashcards.find(item => String(item.stt) === String(stt));
+            if (filteredItem) filteredItem.meaning = newMeaning;
+
+            const paginatedItem = paginatedFlashcards.find(item => String(item.stt) === String(stt));
+            if (paginatedItem) paginatedItem.meaning = newMeaning;
+
+            // Lưu cache local IndexedDB
+            saveSetting('rawFlashcards_' + currentHskLevel, rawFlashcards);
+
+            // Cập nhật card hiển thị chính nếu đúng từ đang hoạt động
+            const currentItem = paginatedFlashcards[currentIndex];
+            if (currentItem && String(currentItem.stt) === String(stt)) {
+                renderCard(true); // render lại mà không phát âm
+            }
+
+            // Gửi lên Google Sheet với hàm updateMasteredOnSheet chuẩn
+            const isMastered = masteredIds.includes(currentHskLevel + '_' + wordItem.stt);
+            updateMasteredOnSheet(wordItem, isMastered, true);
+        }
+
+        // Lưu câu dịch tiếng Việt khi move out (blur) khỏi ô sửa (ở chế độ ví dụ)
+        function saveExVnFromList(event, stt) {
+            const newExVn = event.target.innerText.trim();
+            const wordItem = rawFlashcards.find(item => String(item.stt) === String(stt));
+            if (!wordItem) return;
+
+            // Nếu không thay đổi gì thì không cần lưu
+            if (wordItem.exVn === newExVn) return;
+
+            wordItem.exVn = newExVn;
+
+            // Đồng bộ sang các mảng phụ khác
+            const filteredItem = filteredFlashcards.find(item => String(item.stt) === String(stt));
+            if (filteredItem) filteredItem.exVn = newExVn;
+
+            const paginatedItem = paginatedFlashcards.find(item => String(item.stt) === String(stt));
+            if (paginatedItem) paginatedItem.exVn = newExVn;
+
+            // Lưu cache local IndexedDB
+            saveSetting('rawFlashcards_' + currentHskLevel, rawFlashcards);
+
+            // Cập nhật card hiển thị chính nếu đúng từ đang hoạt động
+            const currentItem = paginatedFlashcards[currentIndex];
+            if (currentItem && String(currentItem.stt) === String(stt)) {
+                renderCard(true); // render lại mà không phát âm
+            }
+
+            // Gửi lên Google Sheet với hàm updateMasteredOnSheet chuẩn
+            const isMastered = masteredIds.includes(currentHskLevel + '_' + wordItem.stt);
+            updateMasteredOnSheet(wordItem, isMastered, true);
+        }
+
+        // Khởi tạo ứng dụng sau khi load cấu hình IndexedDB xong
         window.addEventListener('DOMContentLoaded', async () => {
             await initDatabase();
             
+            // Khôi phục các trạng thái cấu hình từ database
             isTtsEnabled = await loadSetting('isTtsEnabled', true);
             currentFilter = await loadSetting('currentFilter', 'all');
             displayMode = await loadSetting('displayMode', 'sequential');
@@ -2593,6 +3206,7 @@
             showListHanViet = await loadSetting('showListHanViet', true);
             listContentMode = await loadSetting('listContentMode', 'word');
 
+            // Đồng bộ bộ nhớ danh sách đã học từ IndexedDB hoặc tự động nhập từ LocalStorage cũ nếu có
             const localMastered = JSON.parse(localStorage.getItem('hsk_mastered_ids') || '[]');
             masteredIds = await loadSetting('masteredIds', null);
             if (!masteredIds) {
@@ -2600,24 +3214,12 @@
                 saveSetting('masteredIds', masteredIds);
             }
 
-            // Hỗ trợ nạp level/sheet từ tham số URL nếu có (?sheet=HSK21 hoặc ?level=HSK21)
-            const urlParams = new URLSearchParams(window.location.search);
-            const levelFromUrl = urlParams.get('level') || urlParams.get('sheet');
-            if (levelFromUrl) {
-                const upperLevel = levelFromUrl.trim().toUpperCase();
-                const levelSelect = document.getElementById('hsk-level-select');
-                if (levelSelect) {
-                    for (let i = 0; i < levelSelect.options.length; i++) {
-                        if (levelSelect.options[i].value.toUpperCase() === upperLevel) {
-                            currentHskLevel = levelSelect.options[i].value;
-                            break;
-                        }
-                    }
-                }
-            }
-
+            // Đồng bộ trạng thái UI tương ứng với cấu hình khôi phục
             document.getElementById('hsk-level-select').value = currentHskLevel;
             document.getElementById('records-per-page-select').value = recordsPerPage;
+            
+            // Đồng bộ chế độ hiển thị bảng từ
+            setListContentMode(listContentMode);
             
             const ttsBtn = document.getElementById('tts-toggle');
             if (isTtsEnabled) {
@@ -2656,10 +3258,12 @@
                 filterBtn.classList.remove('active');
             }
 
+            // Gọi tải dữ liệu và yêu cầu phục hồi đúng vị trí thẻ học của phiên làm việc trước đó
             fetchData(true);
         });
     </script>
 
+    <!-- Word List Panel & Modal (Bottom Sheet style) -->
     <div id="word-list-modal" class="word-list-modal" onclick="closeWordListOnOverlay(event)">
         <div class="word-list-content">
             <div class="word-list-header" style="justify-content: flex-start; gap: 12px;">
@@ -2677,13 +3281,16 @@
                     <button id="list-filter-unmastered" class="list-filter-btn" onclick="changeListFilter('unmastered')" title="Chưa thuộc">⏳ <b>-</b></button>
                 </div>
                 <div id="example-detail-display" onclick="speakExampleFromDetail(event)" style="display: none; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 10px 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative; text-align: left; cursor: pointer;" title="Nhấn vào đây để nghe phát âm câu ví dụ">
+                    <!-- Content will be inserted dynamically -->
                 </div>
             </div>
             <div class="word-list-body" id="word-list-items-container">
+                <!-- Nội dung được tự động kết nạp từ JS -->
             </div>
         </div>
     </div>
 
+    <!-- Pinyin Panel & Modal -->
     <div id="pinyin-modal" class="pinyin-modal" onclick="closePinyinModalOnOverlay(event)">
         <div class="pinyin-content">
             <div class="pinyin-header" style="justify-content: space-between; gap: 12px; border-bottom: 1px solid #e2e8f0;">
@@ -2692,7 +3299,7 @@
                     <h2 style="font-size: 1.15rem; font-weight: bold; color: var(--primary);">Học Pinyin</h2>
                 </div>
                 <div>
-                    <button class="select-box" onclick="window.open('pinin.html', '_blank')" style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.8rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 4px 10px; cursor: pointer; color: #334155;">
+                    <button class="select-box" onclick="window.open('https://hsk-gilt.vercel.app/hsk/pinin.html', '_blank')" style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.8rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 4px 10px; cursor: pointer; color: #334155;">
                         Mở tab mới ↗
                     </button>
                 </div>

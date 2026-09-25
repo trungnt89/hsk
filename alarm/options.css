@@ -27,9 +27,10 @@ body {
 }
 
 .nav-container {
-  max-width: 1100px;
+  width: 95%;
+  max-width: 95%;
   margin: 0 auto;
-  padding: 12px 20px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -86,10 +87,10 @@ body {
 
 /* Main Body */
 .main-body {
-  max-width: 1100px;
+  width: 95%;
+  max-width: 95%;
   margin: 0 auto;
-  padding: 20px;
-  width: 100%;
+  padding: 20px 0;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1137,4 +1138,376 @@ input:checked + .slider:before { transform: translateX(20px); }
     width: 100%;
     justify-content: space-between;
   }
+}
+
+/* ========================================================
+   3 CỘT DANH SÁCH: SÁNG - CHIỀU - TỐI (3-COLUMN LAYOUT)
+   Tối ưu trải nghiệm: Cân bằng chiều cao, cuộn mượt, thẻ gọn
+   ======================================================== */
+.time-periods-container {
+  padding: 16px 18px;
+  background: #f8fafc;
+}
+
+.time-periods-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 1080px) {
+  .time-periods-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* Cột thời gian: Cố định chiều cao tối đa, cuộn độc lập */
+.period-column {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 650px; /* Khống chế chiều cao cột để không bị kéo dài lệch trang */
+  transition: box-shadow 0.2s;
+}
+
+.period-column:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Headers của từng buổi: Dính trên cùng khi cuộn danh sách */
+.period-header {
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid transparent;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.period-morning .period-header {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-bottom-color: #f59e0b;
+}
+
+.period-afternoon .period-header {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-bottom-color: #0284c7;
+}
+
+.period-evening .period-header {
+  background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+  border-bottom-color: #8b5cf6;
+}
+
+.period-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.period-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.period-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.5px;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.period-sub {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  display: block;
+}
+
+.period-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.badge-morning {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.badge-afternoon {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.badge-evening {
+  background: #ede9fe;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
+/* Container danh sách thẻ mốc bên trong từng cột: Luôn xếp 1 hàng cho mỗi setting (1 card per row) */
+.period-items {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  min-height: 160px;
+}
+
+.period-items::-webkit-scrollbar {
+  width: 5px;
+}
+.period-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+.period-items::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.period-items::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Thẻ báo thức (Alarm Card) trong cột: Chiều rộng 100% cột, hiển thị 1 hàng mỗi setting */
+.alarm-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 9px 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.alarm-card:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.alarm-card.disabled {
+  opacity: 0.6;
+  background: #f8fafc;
+  border-style: dashed;
+}
+
+.alarm-card.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.alarm-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.alarm-card-time-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.alarm-card .alarm-time {
+  font-size: 1.25rem;
+  font-weight: 900;
+  font-family: monospace;
+  color: #0f172a;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.alarm-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alarm-card .alarm-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alarm-card .alarm-detail-info {
+  font-size: 0.74rem;
+  color: #64748b;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alarm-card .alarm-detail-info a {
+  color: #0284c7;
+  text-decoration: underline;
+}
+
+.alarm-card .alarm-detail-info .tts-quote {
+  font-style: italic;
+  color: #6b21a8;
+  background: #faf5ff;
+  border-left: 2px solid #c084fc;
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alarm-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-top: 5px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.alarm-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+.alarm-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-card-action {
+  padding: 3px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 5px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.12s;
+  line-height: 1;
+}
+
+.btn-card-action:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.btn-card-action.btn-delete:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.btn-card-action.btn-ring-test:hover {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #86efac;
+}
+
+/* ========================================================
+   CHẾ ĐỘ XEM SIÊU GỌN (COMPACT DENSITY VIEW)
+   Cho người dùng có nhiều mốc báo thức: Tối ưu 50px/thẻ
+   ======================================================== */
+.density-compact .period-column {
+  max-height: 640px;
+}
+
+.density-compact .alarm-card {
+  padding: 6px 9px;
+  gap: 4px;
+  border-radius: 8px;
+}
+
+.density-compact .alarm-card .alarm-time {
+  font-size: 1.1rem;
+}
+
+.density-compact .alarm-card .alarm-title {
+  font-size: 0.82rem;
+}
+
+.density-compact .alarm-card-footer {
+  padding-top: 4px;
+}
+
+.density-compact .btn-card-action {
+  padding: 2px 5px;
+  font-size: 0.68rem;
+}
+
+/* Empty State cho từng cột khi không có mốc */
+.period-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 28px 12px;
+  color: #94a3b8;
+  background: #fcfcfd;
+  border: 1px dashed #e2e8f0;
+  border-radius: 10px;
+  margin: auto 0;
+}
+
+.period-empty-state .empty-icon {
+  font-size: 1.6rem;
+  margin-bottom: 4px;
+  opacity: 0.85;
+}
+
+.period-empty-state .empty-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.period-empty-state .empty-desc {
+  font-size: 0.7rem;
+  color: #94a3b8;
 }

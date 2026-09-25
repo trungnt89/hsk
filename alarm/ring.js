@@ -8,21 +8,81 @@ document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
   const alarmId = params.get('id');
 
+  const urlType = params.get('type') || '';
+  const urlTitle = params.get('title') || '';
+  const urlVid = params.get('vid') || '';
+  const urlTtsText = params.get('ttsText') || '';
+  const urlVoiceType = params.get('ttsVoiceType') || '';
+  const urlGender = params.get('voiceGender') || '';
+  const urlSpeed = params.get('voiceSpeed') ? parseFloat(params.get('voiceSpeed')) : 1.0;
+  const urlWebsiteUrl = params.get('websiteUrl') || '';
+  const urlRepeat = params.get('repeatCount') ? Number(params.get('repeatCount')) : undefined;
+  const urlLoop = params.get('loop') ? params.get('loop') === 'true' : undefined;
+  const urlAuthToken = params.get('authToken') || '';
+
+  // Khởi tạo alarm: Mặc định an toàn, không bao giờ tự ý redirect sang website trừ khi có type=website thực sự
   let alarm = {
-    title: 'Báo thức',
-    type: 'website',
-    websiteUrl: 'https://vnexpress.net',
-    repeatCount: 1
+    id: alarmId || '',
+    title: urlTitle || 'Đã đến giờ hẹn!',
+    type: urlType || (urlVid ? 'youtube' : 'tts'),
+    repeatCount: urlRepeat !== undefined ? urlRepeat : 10,
+    loop: urlLoop !== undefined ? urlLoop : true,
+    vid: urlVid || 'fuXfT4Rv_WM',
+    ttsText: urlTtsText || 'Đã đến giờ báo thức rồi!',
+    ttsVoiceType: urlVoiceType || 'azure_male',
+    voiceGender: urlGender || 'male',
+    voiceSpeed: urlSpeed,
+    authToken: urlAuthToken,
+    websiteUrl: urlWebsiteUrl
   };
 
+  // 1. Thử lấy từ chrome.storage.local
   try {
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local && alarmId) {
       const data = await chrome.storage.local.get(ALARMS_STORAGE_KEY);
       const alarms = data[ALARMS_STORAGE_KEY] || [];
       const found = alarms.find(a => a.id === alarmId);
-      if (found) alarm = found;
+      if (found) {
+        alarm = { ...alarm, ...found };
+      }
     }
   } catch (e) {}
+
+  // 2. Thử lấy từ IndexedDB qua db.js
+  if ((!alarm.title || alarm.title === 'Đã đến giờ hẹn!') && typeof getAllAlarms === 'function' && alarmId) {
+    try {
+      const idbAlarms = await getAllAlarms();
+      const found = idbAlarms.find(a => a.id === alarmId);
+      if (found) {
+        alarm = { ...alarm, ...found };
+      }
+    } catch (e) {}
+  }
+
+  // 3. Thử lấy từ localStorage
+  if ((!alarm.title || alarm.title === 'Đã đến giờ hẹn!') && alarmId) {
+    try {
+      const raw = localStorage.getItem(ALARMS_STORAGE_KEY) || localStorage.getItem('smart_alarms');
+      if (raw) {
+        const localAlarms = JSON.parse(raw);
+        const found = localAlarms.find(a => a.id === alarmId);
+        if (found) {
+          alarm = { ...alarm, ...found };
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Nếu URL params chỉ định type rõ ràng (như khi nhấn nút "Thử"), ưu tiên type từ URL:
+  if (urlType) {
+    alarm.type = urlType;
+  }
+  if (urlVid) {
+    alarm.vid = urlVid;
+  }
+  if (urlTtsText) {
+    alarm.ttsText = urlTtsText;
+  }
 
   maxRepeats = alarm.repeatCount !== undefined ? alarm.repeatCount : (alarm.type === 'website' ? 1 : 10);
   isLooping = alarm.loop !== false && maxRepeats !== 1;
@@ -43,11 +103,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateClock();
   setInterval(updateClock, 1000);
 
+  // CHỈ redirect nếu đúng là loại website VÀ có URL hợp lệ:
   if (alarm.type === 'website') {
-    let finalUrl = (alarm.websiteUrl || 'https://vnexpress.net').trim();
-    if (!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://' + finalUrl;
-    window.location.replace(finalUrl);
-    return;
+    let finalUrl = (alarm.websiteUrl || '').trim();
+    if (finalUrl) {
+      if (!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://' + finalUrl;
+      window.location.replace(finalUrl);
+      return;
+    }
+    // Nếu rỗng, fallback về TTS báo lỗi, không tự ý mở vnexpress
+    alarm.type = 'tts';
+    alarm.ttsText = 'Đã đến giờ mở Website theo hẹn nhưng chưa có địa chỉ web!';
   } else if (alarm.type === 'tts') {
     document.getElementById('ttsLayer').style.display = 'block';
     document.getElementById('ttsTitle').textContent = alarm.title || 'Lời nhắc bằng giọng đọc';

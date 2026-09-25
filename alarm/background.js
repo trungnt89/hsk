@@ -178,12 +178,32 @@ chrome.alarms.onAlarm.addListener(async (alarmInfo) => {
       requireInteraction: true
     });
 
-    openRingTab(matched.id, false);
+    openRingTab(matched, false);
   }
 });
 
-function openRingTab(alarmId, isSnooze = false) {
-  const ringUrl = chrome.runtime.getURL(`ring.html?id=${encodeURIComponent(alarmId)}${isSnooze ? '&snooze=1' : ''}`);
+function openRingTab(alarmOrId, isSnooze = false) {
+  let query = '';
+  if (alarmOrId && typeof alarmOrId === 'object') {
+    const p = new URLSearchParams();
+    if (alarmOrId.id) p.set('id', alarmOrId.id);
+    if (alarmOrId.type) p.set('type', alarmOrId.type);
+    if (alarmOrId.title) p.set('title', alarmOrId.title);
+    if (alarmOrId.vid) p.set('vid', alarmOrId.vid);
+    if (alarmOrId.youtubeUrl) p.set('youtubeUrl', alarmOrId.youtubeUrl);
+    if (alarmOrId.ttsText) p.set('ttsText', alarmOrId.ttsText);
+    if (alarmOrId.ttsVoiceType) p.set('ttsVoiceType', alarmOrId.ttsVoiceType);
+    if (alarmOrId.voiceGender) p.set('voiceGender', alarmOrId.voiceGender);
+    if (alarmOrId.voiceSpeed) p.set('voiceSpeed', String(alarmOrId.voiceSpeed));
+    if (alarmOrId.repeatCount !== undefined) p.set('repeatCount', String(alarmOrId.repeatCount));
+    if (alarmOrId.loop !== undefined) p.set('loop', String(alarmOrId.loop));
+    if (isSnooze) p.set('snooze', '1');
+    query = p.toString();
+  } else {
+    query = `id=${encodeURIComponent(alarmOrId || '')}${isSnooze ? '&snooze=1' : ''}`;
+  }
+
+  const ringUrl = chrome.runtime.getURL(`ring.html?${query}`);
   if (typeof chrome !== 'undefined' && chrome.windows && chrome.windows.create) {
     chrome.windows.create({
       url: ringUrl,
@@ -214,12 +234,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'TRIGGER_TEST') {
     chrome.storage.local.get(ALARMS_STORAGE_KEY).then(data => {
       const alarms = data[ALARMS_STORAGE_KEY] || [];
-      const matched = alarms.find(a => a.id === message.alarmId);
+      const matched = alarms.find(a => a.id === message.alarmId) || message.alarmData;
       if (matched && matched.type === 'website' && matched.websiteUrl) {
         openWebsiteDirectly(matched.websiteUrl);
         sendResponse({ success: true, openedUrl: matched.websiteUrl });
+      } else if (matched) {
+        openRingTab(matched, false);
+        sendResponse({ success: true });
       } else {
-        openRingTab(message.alarmId);
+        openRingTab(message.alarmId, false);
         sendResponse({ success: true });
       }
     });

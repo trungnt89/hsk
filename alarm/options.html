@@ -10,7 +10,6 @@
 </head>
 <body>
   <div class="app-shell">
-  
     <!-- Navbar Header -->
     <header class="navbar">
       <div class="nav-container">
@@ -276,20 +275,79 @@
         <!-- Filter tabs for quick view -->
         <div class="filter-bar">
           <div class="filter-tabs">
-            <button type="button" class="filter-tab active" data-filter="all">Tất cả (<span id="filterAllCount">0</span>)</button>
+            <button type="button" class="filter-tab active" data-filter="enabled">🟢 Đang Bật (<span id="filterEnabledCount">0</span>)</button>
+            <button type="button" class="filter-tab" data-filter="all">Tất cả (<span id="filterAllCount">0</span>)</button>
+            <button type="button" class="filter-tab" data-filter="morning">🌅 Sáng (<span id="filterMorningCount">0</span>)</button>
+            <button type="button" class="filter-tab" data-filter="afternoon">☀️ Chiều (<span id="filterAfternoonCount">0</span>)</button>
+            <button type="button" class="filter-tab" data-filter="evening">🌙 Tối (<span id="filterEveningCount">0</span>)</button>
             <button type="button" class="filter-tab" data-filter="website">🌐 Website (<span id="filterWebCount">0</span>)</button>
             <button type="button" class="filter-tab" data-filter="tts">🗣️ Lời Nhắc TTS (<span id="filterTtsCount">0</span>)</button>
             <button type="button" class="filter-tab" data-filter="youtube">🎬 YouTube (<span id="filterYtCount">0</span>)</button>
-            <button type="button" class="filter-tab" data-filter="enabled">🟢 Đang Bật</button>
           </div>
-          <div class="search-box">
-            <input type="text" id="inputSearchAlarms" placeholder="🔍 Tìm kiếm theo tên, giờ, link..." class="search-input">
+          <div class="filter-right-tools" style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" id="btnToggleDensity" class="btn btn-sm btn-outline" title="Chuyển đổi giao diện hiển thị: Xem gọn gàng / Chi tiết" style="white-space: nowrap; font-size: 0.78rem; font-weight: 700;">
+              🗜️ <span id="densityBtnText">Xem Gọn</span>
+            </button>
+            <div class="search-box">
+              <input type="text" id="inputSearchAlarms" placeholder="🔍 Tìm kiếm theo tên, giờ, link..." class="search-input">
+            </div>
           </div>
         </div>
 
-        <!-- Alarm Items List Container -->
-        <div id="alarmTableContainer" class="table-container">
-          <div class="loading-state">Đang đọc danh sách báo thức...</div>
+        <!-- 3 CỘT DANH SÁCH: SÁNG - CHIỀU - TỐI -->
+        <div id="alarmTableContainer" class="table-container time-periods-container">
+          <div class="time-periods-grid">
+            <!-- CỘT 1: BUỔI SÁNG (00:00 - 11:59) -->
+            <div class="period-column period-morning" id="colMorning">
+              <div class="period-header">
+                <div class="period-header-left">
+                  <span class="period-icon">🌅</span>
+                  <div>
+                    <h3 class="period-title">BUỔI SÁNG</h3>
+                    <span class="period-sub">00:00 - 11:59</span>
+                  </div>
+                </div>
+                <span class="period-badge badge-morning" id="morningCount">0 mốc</span>
+              </div>
+              <div class="period-items" id="morningAlarmsList">
+                <div class="loading-state">Đang tải...</div>
+              </div>
+            </div>
+
+            <!-- CỘT 2: BUỔI CHIỀU (12:00 - 17:59) -->
+            <div class="period-column period-afternoon" id="colAfternoon">
+              <div class="period-header">
+                <div class="period-header-left">
+                  <span class="period-icon">☀️</span>
+                  <div>
+                    <h3 class="period-title">BUỔI CHIỀU</h3>
+                    <span class="period-sub">12:00 - 17:59</span>
+                  </div>
+                </div>
+                <span class="period-badge badge-afternoon" id="afternoonCount">0 mốc</span>
+              </div>
+              <div class="period-items" id="afternoonAlarmsList">
+                <div class="loading-state">Đang tải...</div>
+              </div>
+            </div>
+
+            <!-- CỘT 3: BUỔI TỐI (18:00 - 23:59) -->
+            <div class="period-column period-evening" id="colEvening">
+              <div class="period-header">
+                <div class="period-header-left">
+                  <span class="period-icon">🌙</span>
+                  <div>
+                    <h3 class="period-title">BUỔI TỐI</h3>
+                    <span class="period-sub">18:00 - 23:59</span>
+                  </div>
+                </div>
+                <span class="period-badge badge-evening" id="eveningCount">0 mốc</span>
+              </div>
+              <div class="period-items" id="eveningAlarmsList">
+                <div class="loading-state">Đang tải...</div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </main>

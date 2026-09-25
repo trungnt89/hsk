@@ -75,7 +75,7 @@ const DEFAULT_SAMPLES = [
 ];
 
 let alarms = [];
-let currentFilter = 'all';
+let currentFilter = 'enabled';
 let currentSearch = '';
 let currentFormDays = [0, 1, 2, 3, 4, 5, 6];
 let isSpeakingTest = false;
@@ -331,22 +331,137 @@ function updateStatusBanner(message, type = 'success') {
   }
 }
 
+function getAlarmPeriod(timeStr) {
+  if (!timeStr) return 'morning';
+  const parts = String(timeStr).split(':');
+  const hour = parseInt(parts[0], 10);
+  if (isNaN(hour)) return 'morning';
+  if (hour < 12) return 'morning'; // 00:00 - 11:59 (Buổi Sáng)
+  if (hour < 19) return 'afternoon'; // 12:00 - 17:59 (Buổi Chiều)
+  return 'evening'; // 18:00 - 23:59 (Buổi Tối)
+}
+
+function renderAlarmCard(a, today) {
+  let badgeHtml = '';
+  let detailText = '';
+
+  if (a.type === 'website') {
+    badgeHtml = '<span class="badge badge-web">🌐 Web</span>';
+    detailText = `<a href="${escapeHtml(a.websiteUrl || '')}" target="_blank" rel="noopener noreferrer">${escapeHtml(a.websiteUrl || '')}</a>`;
+  } else if (a.type === 'tts') {
+    let vLabel = 'Nam Azure';
+    if (a.ttsVoiceType === 'azure_female' || a.voiceGender === 'female') vLabel = 'Nữ Azure';
+    if (a.ttsVoiceType === 'browser_default') vLabel = 'Trình duyệt';
+    badgeHtml = `<span class="badge badge-tts">🗣️ ${vLabel}</span>`;
+    detailText = `<span class="tts-quote">“${escapeHtml(a.ttsText || '')}”</span>`;
+  } else {
+    badgeHtml = '<span class="badge badge-yt">🎬 YouTube</span>';
+    detailText = a.vid ? `ID: <code>${escapeHtml(a.vid)}</code>` : '';
+  }
+
+  const days = (a.daysOfWeek && Array.isArray(a.daysOfWeek) && a.daysOfWeek.length > 0)
+    ? a.daysOfWeek
+    : [0, 1, 2, 3, 4, 5, 6];
+  const isTodayActive = days.includes(today);
+  const daysLabel = formatDaysOfWeek(days);
+  const daysBadge = `<span class="badge-days ${isTodayActive ? 'active-today' : ''}" title="Lịch áp dụng: ${daysLabel}">📅 ${daysLabel}${isTodayActive ? ' (Hôm nay)' : ''}</span>`;
+
+  return `
+    <div class="alarm-card ${a.enabled ? '' : 'disabled'}" data-id="${a.id}">
+      <div class="alarm-card-header">
+        <div class="alarm-card-time-group">
+          <span class="alarm-time">${a.time}</span>
+          ${badgeHtml}
+          <span class="badge badge-warning" title="Số lần lặp lại chuông">🔁 ${a.repeatCount === 0 ? 'Vô tận' : (a.repeatCount !== undefined ? a.repeatCount : 10) + 'l'}</span>
+        </div>
+        <label class="switch" title="${a.enabled ? 'Đang bật - Nhấp để tắt' : 'Đang tắt - Nhấp để bật'}">
+          <input type="checkbox" class="toggle-switch" data-id="${a.id}" ${a.enabled ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="alarm-card-body">
+        <div class="alarm-title" title="${escapeHtml(a.title || 'Mốc báo thức')}">${escapeHtml(a.title || 'Mốc báo thức')}</div>
+        ${detailText ? `<div class="alarm-detail-info">${detailText}</div>` : ''}
+      </div>
+
+      <div class="alarm-card-footer">
+        <div class="alarm-card-tags">
+          ${daysBadge}
+        </div>
+
+        <div class="alarm-card-actions">
+          <button type="button" class="btn-card-action btn-ring-test" data-id="${a.id}" title="Reo thử chuông ngay">
+            🔔 <span>Thử</span>
+          </button>
+          <button type="button" class="btn-card-action btn-clone" data-id="${a.id}" title="Nhân bản mốc này">
+            📋
+          </button>
+          <button type="button" class="btn-card-action btn-edit" data-id="${a.id}" title="Sửa thông số">
+            ✏️
+          </button>
+          <button type="button" class="btn-card-action btn-delete" data-id="${a.id}" title="Xóa mốc này">
+            🗑️
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderEmptyPeriod(period) {
+  if (period === 'morning') {
+    return `
+      <div class="period-empty-state">
+        <div class="empty-icon">☕</div>
+        <div class="empty-title">Chưa có mốc buổi sáng</div>
+        <div class="empty-desc">Thức dậy, thể dục, đọc tin tức (00:00 - 11:59)</div>
+      </div>
+    `;
+  } else if (period === 'afternoon') {
+    return `
+      <div class="period-empty-state">
+        <div class="empty-icon">☀️</div>
+        <div class="empty-title">Chưa có mốc buổi chiều</div>
+        <div class="empty-desc">Họp chiều, uống nước, giải lao (12:00 - 17:59)</div>
+      </div>
+    `;
+  } else {
+    return `
+      <div class="period-empty-state">
+        <div class="empty-icon">🌙</div>
+        <div class="empty-title">Chưa có mốc buổi tối</div>
+        <div class="empty-desc">Học bài, giải trí, đi ngủ (18:00 - 23:59)</div>
+      </div>
+    `;
+  }
+}
+
 function renderAlarmsList() {
   const container = document.getElementById('alarmTableContainer');
+  if (!container) return;
+
   const enabledCount = alarms.filter(a => a.enabled).length;
 
-  document.getElementById('enabledCount').textContent = enabledCount;
-  document.getElementById('totalCount').textContent = alarms.length;
+  if (document.getElementById('enabledCount')) document.getElementById('enabledCount').textContent = enabledCount;
+  if (document.getElementById('totalCount')) document.getElementById('totalCount').textContent = alarms.length;
 
   // Filter stats
   const webCount = alarms.filter(a => a.type === 'website').length;
   const ttsCount = alarms.filter(a => a.type === 'tts').length;
   const ytCount = alarms.filter(a => a.type === 'youtube').length;
+  const morningTotal = alarms.filter(a => getAlarmPeriod(a.time) === 'morning').length;
+  const afternoonTotal = alarms.filter(a => getAlarmPeriod(a.time) === 'afternoon').length;
+  const eveningTotal = alarms.filter(a => getAlarmPeriod(a.time) === 'evening').length;
 
+  if (document.getElementById('filterEnabledCount')) document.getElementById('filterEnabledCount').textContent = enabledCount;
   if (document.getElementById('filterAllCount')) document.getElementById('filterAllCount').textContent = alarms.length;
   if (document.getElementById('filterWebCount')) document.getElementById('filterWebCount').textContent = webCount;
   if (document.getElementById('filterTtsCount')) document.getElementById('filterTtsCount').textContent = ttsCount;
   if (document.getElementById('filterYtCount')) document.getElementById('filterYtCount').textContent = ytCount;
+  if (document.getElementById('filterMorningCount')) document.getElementById('filterMorningCount').textContent = morningTotal;
+  if (document.getElementById('filterAfternoonCount')) document.getElementById('filterAfternoonCount').textContent = afternoonTotal;
+  if (document.getElementById('filterEveningCount')) document.getElementById('filterEveningCount').textContent = eveningTotal;
 
   let filtered = [...alarms];
 
@@ -358,6 +473,12 @@ function renderAlarmsList() {
     filtered = filtered.filter(a => a.type === 'youtube');
   } else if (currentFilter === 'enabled') {
     filtered = filtered.filter(a => a.enabled);
+  } else if (currentFilter === 'morning') {
+    filtered = filtered.filter(a => getAlarmPeriod(a.time) === 'morning');
+  } else if (currentFilter === 'afternoon') {
+    filtered = filtered.filter(a => getAlarmPeriod(a.time) === 'afternoon');
+  } else if (currentFilter === 'evening') {
+    filtered = filtered.filter(a => getAlarmPeriod(a.time) === 'evening');
   }
 
   if (currentSearch) {
@@ -370,69 +491,122 @@ function renderAlarmsList() {
     );
   }
 
-  if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty-state">Không tìm thấy mốc báo thức nào phù hợp.</div>';
-    return;
+  // Ensure 3 columns shell exists
+  let morningListEl = document.getElementById('morningAlarmsList');
+  let afternoonListEl = document.getElementById('afternoonAlarmsList');
+  let eveningListEl = document.getElementById('eveningAlarmsList');
+
+  if (!morningListEl || !afternoonListEl || !eveningListEl) {
+    container.innerHTML = `
+      <div class="time-periods-grid">
+        <!-- CỘT 1: BUỔI SÁNG (00:00 - 11:59) -->
+        <div class="period-column period-morning" id="colMorning">
+          <div class="period-header">
+            <div class="period-header-left">
+              <span class="period-icon">🌅</span>
+              <div>
+                <h3 class="period-title">BUỔI SÁNG</h3>
+                <span class="period-sub">00:00 - 11:59</span>
+              </div>
+            </div>
+            <span class="period-badge badge-morning" id="morningCount">0 mốc</span>
+          </div>
+          <div class="period-items" id="morningAlarmsList"></div>
+        </div>
+
+        <!-- CỘT 2: BUỔI CHIỀU (12:00 - 17:59) -->
+        <div class="period-column period-afternoon" id="colAfternoon">
+          <div class="period-header">
+            <div class="period-header-left">
+              <span class="period-icon">☀️</span>
+              <div>
+                <h3 class="period-title">BUỔI CHIỀU</h3>
+                <span class="period-sub">12:00 - 17:59</span>
+              </div>
+            </div>
+            <span class="period-badge badge-afternoon" id="afternoonCount">0 mốc</span>
+          </div>
+          <div class="period-items" id="afternoonAlarmsList"></div>
+        </div>
+
+        <!-- CỘT 3: BUỔI TỐI (18:00 - 23:59) -->
+        <div class="period-column period-evening" id="colEvening">
+          <div class="period-header">
+            <div class="period-header-left">
+              <span class="period-icon">🌙</span>
+              <div>
+                <h3 class="period-title">BUỔI TỐI</h3>
+                <span class="period-sub">18:00 - 23:59</span>
+              </div>
+            </div>
+            <span class="period-badge badge-evening" id="eveningCount">0 mốc</span>
+          </div>
+          <div class="period-items" id="eveningAlarmsList"></div>
+        </div>
+      </div>
+    `;
+    morningListEl = document.getElementById('morningAlarmsList');
+    afternoonListEl = document.getElementById('afternoonAlarmsList');
+    eveningListEl = document.getElementById('eveningAlarmsList');
+  }
+
+  // Handle density mode
+  const isCompact = localStorage.getItem('alarms_density_mode') === 'compact';
+  if (isCompact) {
+    container.classList.add('density-compact');
+  } else {
+    container.classList.remove('density-compact');
+  }
+  const densityBtnText = document.getElementById('densityBtnText');
+  if (densityBtnText) {
+    densityBtnText.textContent = isCompact ? 'Xem Chi Tiết' : 'Xem Gọn';
   }
 
   filtered.sort((a, b) => a.time.localeCompare(b.time));
   const today = new Date().getDay();
 
-  container.innerHTML = filtered.map(a => {
-    let badgeHtml = '';
-    let detailText = '';
+  // Split into Morning, Afternoon, Evening groups
+  const morningAlarms = filtered.filter(a => getAlarmPeriod(a.time) === 'morning');
+  const afternoonAlarms = filtered.filter(a => getAlarmPeriod(a.time) === 'afternoon');
+  const eveningAlarms = filtered.filter(a => getAlarmPeriod(a.time) === 'evening');
 
-    if (a.type === 'website') {
-      badgeHtml = '<span class="badge badge-web">🌐 Website</span>';
-      detailText = `<a href="${a.websiteUrl}" target="_blank" style="color: #0284c7; text-decoration: underline;">${escapeHtml(a.websiteUrl || '')}</a>`;
-    } else if (a.type === 'tts') {
-      let vLabel = 'Nam Azure 👨';
-      if (a.ttsVoiceType === 'azure_female' || a.voiceGender === 'female') vLabel = 'Nữ Azure 👩';
-      if (a.ttsVoiceType === 'browser_default') vLabel = 'Trình duyệt 🌐';
-      badgeHtml = `<span class="badge badge-tts">🗣️ ${vLabel}</span>`;
-      detailText = `"${escapeHtml(a.ttsText || '')}"`;
-    } else {
-      badgeHtml = '<span class="badge badge-yt">🎬 YouTube</span>';
-      detailText = a.vid ? `ID: ${escapeHtml(a.vid)}` : '';
-    }
+  // Đảm bảo tất cả các cột đều xếp 1 hàng cho mỗi setting (1 card per row)
+  const eveningCol = document.getElementById('colEvening');
+  if (eveningCol) {
+    eveningCol.classList.remove('has-many-alarms');
+  }
 
-    const days = (a.daysOfWeek && Array.isArray(a.daysOfWeek) && a.daysOfWeek.length > 0)
-      ? a.daysOfWeek
-      : [0, 1, 2, 3, 4, 5, 6];
-    const isTodayActive = days.includes(today);
-    const daysLabel = formatDaysOfWeek(days);
-    const daysBadge = `<span class="badge-days ${isTodayActive ? 'active-today' : ''}" title="Lịch áp dụng: ${daysLabel}">📅 ${daysLabel}${isTodayActive ? ' (Hôm nay)' : ''}</span>`;
+  // Update column badges with enabled count
+  const morningCountEl = document.getElementById('morningCount');
+  if (morningCountEl) {
+    const actM = morningAlarms.filter(a => a.enabled).length;
+    morningCountEl.textContent = `${morningAlarms.length} mốc (${actM} bật)`;
+  }
 
-    return `
-      <div class="alarm-row ${a.enabled ? '' : 'disabled'}">
-        <div class="alarm-left">
-          <div class="alarm-time">${a.time}</div>
-          <div class="alarm-details">
-            <div class="alarm-title">${escapeHtml(a.title || 'Mốc báo thức')}</div>
-            <div class="alarm-meta">
-              ${badgeHtml}
-              ${daysBadge}
-              <span class="badge badge-warning">
-                🔁 ${a.repeatCount === 0 ? 'Vô tận' : (a.repeatCount !== undefined ? a.repeatCount : 10) + ' lần'}
-              </span>
-              <span>${detailText}</span>
-            </div>
-          </div>
-        </div>
+  const afternoonCountEl = document.getElementById('afternoonCount');
+  if (afternoonCountEl) {
+    const actA = afternoonAlarms.filter(a => a.enabled).length;
+    afternoonCountEl.textContent = `${afternoonAlarms.length} mốc (${actA} bật)`;
+  }
 
-        <div class="alarm-right">
-          <button class="btn btn-sm btn-outline btn-ring-test" data-id="${a.id}" title="Reo chuông ngay">🔔 Reo Thử</button>
-          <button class="btn btn-sm btn-outline btn-clone" data-id="${a.id}" title="Nhân bản mốc này">📋 Nhân bản</button>
-          <button class="btn btn-sm btn-outline btn-edit" data-id="${a.id}" title="Sửa mốc">✏️ Sửa</button>
-          <button class="btn btn-sm btn-outline btn-delete" data-id="${a.id}" title="Xóa mốc">🗑️</button>
-          <label class="switch">
-            <input type="checkbox" class="toggle-switch" data-id="${a.id}" ${a.enabled ? 'checked' : ''}>
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
-    `;
-  }).join('');
+  const eveningCountEl = document.getElementById('eveningCount');
+  if (eveningCountEl) {
+    const actE = eveningAlarms.filter(a => a.enabled).length;
+    eveningCountEl.textContent = `${eveningAlarms.length} mốc (${actE} bật)`;
+  }
+
+  // Render items into each column
+  morningListEl.innerHTML = morningAlarms.length > 0
+    ? morningAlarms.map(a => renderAlarmCard(a, today)).join('')
+    : renderEmptyPeriod('morning');
+
+  afternoonListEl.innerHTML = afternoonAlarms.length > 0
+    ? afternoonAlarms.map(a => renderAlarmCard(a, today)).join('')
+    : renderEmptyPeriod('afternoon');
+
+  eveningListEl.innerHTML = eveningAlarms.length > 0
+    ? eveningAlarms.map(a => renderAlarmCard(a, today)).join('')
+    : renderEmptyPeriod('evening');
 
   // Attach event handlers
   container.querySelectorAll('.toggle-switch').forEach(input => {
@@ -443,45 +617,105 @@ function renderAlarmsList() {
   });
 
   container.querySelectorAll('.btn-ring-test').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = e.target.getAttribute('data-id');
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const targetBtn = e.target.closest('.btn-ring-test') || btn;
+      const id = targetBtn.getAttribute('data-id');
       const item = alarms.find(a => a.id === id);
-      if (item && item.type === 'website' && item.websiteUrl) {
-        let finalUrl = item.websiteUrl.trim();
+      if (!item) {
+        console.warn('Không tìm thấy mốc báo thức với ID:', id);
+        return;
+      }
+
+      if (item.type === 'website') {
+        let finalUrl = (item.websiteUrl || 'https://vnexpress.net').trim();
         if (!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://' + finalUrl;
         if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
           chrome.tabs.create({ url: finalUrl, active: true });
         } else {
           window.open(finalUrl, '_blank');
         }
-        updateStatusBanner(`🌐 Đã mở ngay website: ${finalUrl}`, 'success');
+        updateStatusBanner(`🌐 Đã mở website: ${finalUrl}`, 'success');
         return;
       }
-      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-        chrome.runtime.sendMessage({ action: 'TRIGGER_TEST', alarmId: id });
-      } else {
-        alert('🔔 Đang mô phỏng reo chuông cho mốc: ' + (item ? item.title : id));
+
+      if (item.type === 'tts') {
+        const text = (item.ttsText || 'Đã đến giờ báo thức rồi!').trim();
+        const vType = item.ttsVoiceType || (item.voiceGender === 'female' ? 'azure_female' : 'azure_male');
+        const speed = item.voiceSpeed || 1.0;
+        let token = (item.authToken || '').trim();
+        if (!token) {
+          token = (localStorage.getItem('azure_tts_token') || localStorage.getItem('gsheet_auth_token') || '').trim();
+        }
+
+        updateStatusBanner(`🗣️ Đang phát thử giọng đọc (${item.voiceGender === 'female' ? 'Nữ' : 'Nam'}): "${text}"`, 'info');
+        if (typeof speakTTS === 'function') {
+          //speakTTS(text, vType, speed, token, () => {
+          //  updateStatusBanner(`✅ Đã hoàn tất phát thử giọng đọc!`, 'success');
+          //});
+        }
+
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+          await syncToChromeStorage();
+          chrome.runtime.sendMessage({ action: 'TRIGGER_TEST', alarmId: id, alarmData: item }, () => {
+            if (chrome.runtime.lastError) {
+              openRingWindow(item);
+            }
+          });
+        } else {
+          openRingWindow(item);
+        }
+        return;
+      }
+
+      if (item.type === 'youtube') {
+        let vid = item.vid;
+        if (!vid && item.youtubeUrl) {
+          vid = extractVid(item.youtubeUrl);
+        }
+        if (!vid) vid = 'fuXfT4Rv_WM';
+        item.vid = vid;
+
+        updateStatusBanner(`🎬 Đang phát thử YouTube: ${item.title || vid}`, 'info');
+
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+          await syncToChromeStorage();
+          chrome.runtime.sendMessage({ action: 'TRIGGER_TEST', alarmId: id, alarmData: item }, () => {
+            if (chrome.runtime.lastError) {
+              openRingWindow(item);
+            }
+          });
+        } else {
+          openRingWindow(item);
+        }
+        return;
       }
     });
   });
 
   container.querySelectorAll('.btn-clone').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const id = e.target.getAttribute('data-id');
+      e.stopPropagation();
+      const targetBtn = e.target.closest('.btn-clone') || btn;
+      const id = targetBtn.getAttribute('data-id');
       await cloneAlarm(id);
     });
   });
 
   container.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const id = e.target.getAttribute('data-id');
+      e.stopPropagation();
+      const targetBtn = e.target.closest('.btn-edit') || btn;
+      const id = targetBtn.getAttribute('data-id');
       editAlarm(id);
     });
   });
 
   container.querySelectorAll('.btn-delete').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const id = e.target.getAttribute('data-id');
+      e.stopPropagation();
+      const targetBtn = e.target.closest('.btn-delete') || btn;
+      const id = targetBtn.getAttribute('data-id');
       const item = alarms.find(a => a.id === id);
       if (confirm(`Bạn có chắc muốn xóa mốc "${item ? item.title : id}" khỏi danh sách?`)) {
         await deleteDBAlarm(id);
@@ -783,6 +1017,18 @@ function setupEventListeners() {
     });
   }
 
+  // Chuyển đổi mật độ hiển thị (Xem gọn / Tiêu chuẩn)
+  const btnToggleDensity = document.getElementById('btnToggleDensity');
+  if (btnToggleDensity) {
+    btnToggleDensity.addEventListener('click', () => {
+      const isCompact = localStorage.getItem('alarms_density_mode') === 'compact';
+      const nextMode = isCompact ? 'standard' : 'compact';
+      localStorage.setItem('alarms_density_mode', nextMode);
+      renderAlarmsList();
+      updateStatusBanner(nextMode === 'compact' ? '🗜️ Đã bật chế độ xem thẻ siêu gọn!' : '📰 Đã chuyển sang chế độ xem tiêu chuẩn!', 'info');
+    });
+  }
+
   // Test giọng TTS
   const btnTestTtsVoice = document.getElementById('btnTestTtsVoice');
   if (btnTestTtsVoice) {
@@ -838,12 +1084,44 @@ function setupEventListeners() {
       if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
       window.open(url, '_blank');
     } else if (type === 'tts') {
-      document.getElementById('btnTestTtsVoice').click();
+      const btn = document.getElementById('btnTestTtsVoice');
+      if (btn) btn.click();
     } else {
       let ytUrl = document.getElementById('formYtUrl').value.trim() || 'https://www.youtube.com/watch?v=fuXfT4Rv_WM';
-      window.open(ytUrl, '_blank');
+      const vid = extractVid(ytUrl) || 'fuXfT4Rv_WM';
+      openRingWindow({
+        id: 'test_preview_youtube',
+        type: 'youtube',
+        title: document.getElementById('formTitle').value.trim() || 'Báo thức YouTube',
+        vid: vid,
+        youtubeUrl: ytUrl,
+        repeatCount: Number(document.getElementById('formRepeatCount').value) || 10
+      });
     }
   });
+
+function openRingWindow(item) {
+  const p = new URLSearchParams();
+  p.set('id', item.id || '');
+  p.set('type', item.type || '');
+  p.set('title', item.title || '');
+  if (item.vid) p.set('vid', item.vid);
+  if (item.youtubeUrl) p.set('youtubeUrl', item.youtubeUrl);
+  if (item.ttsText) p.set('ttsText', item.ttsText);
+  if (item.ttsVoiceType) p.set('ttsVoiceType', item.ttsVoiceType);
+  if (item.voiceGender) p.set('voiceGender', item.voiceGender);
+  if (item.voiceSpeed) p.set('voiceSpeed', String(item.voiceSpeed));
+  if (item.repeatCount !== undefined) p.set('repeatCount', String(item.repeatCount));
+  if (item.loop !== undefined) p.set('loop', String(item.loop));
+  if (item.authToken) p.set('authToken', item.authToken);
+  
+  const ringUrl = `ring.html?${p.toString()}`;
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+    chrome.tabs.create({ url: chrome.runtime.getURL(ringUrl), active: true });
+  } else {
+    window.open(ringUrl, '_blank', 'width=960,height=600,scrollbars=no,resizable=yes');
+  }
+}
 
   // Submit form
   document.getElementById('alarmForm').addEventListener('submit', async (e) => {

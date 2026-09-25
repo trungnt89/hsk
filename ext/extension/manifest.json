@@ -1,0 +1,82 @@
+{
+  "manifest_version": 3,
+  "name": "Báo Thức Thông Minh Pro",
+  "version": "2.1.0",
+  "description": "Tiện ích báo thức thông minh với chế độ Assistive hiển thị trên màn hình hiện tại, mở website tự động, TTS tiếng Việt và đồng bộ Google Sheets.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Báo Thức Thông Minh Pro",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "background",
+    "alarms",
+    "storage",
+    "notifications",
+    "tabs",
+    "unlimitedStorage",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "*://www.youtube.com/*",
+    "*://*.youtube.com/*",
+    "*://www.youtube-nocookie.com/*",
+    "*://*.youtube-nocookie.com/*",
+    "*://translate.google.com/*",
+    "*://*.google.com/*",
+    "https://hsk-gilt.vercel.app/*",
+    "<all_urls>"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "options.html",
+        "options.css",
+        "options.js",
+        "audio.js",
+        "db.js",
+        "sheet.js",
+        "utils.js",
+        "icons/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_youtube_referer",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src https://* http://* https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self' https://hsk-gilt.vercel.app https://translate.google.com https://*.google.com blob: data:; connect-src 'self' https://hsk-gilt.vercel.app https://* blob: data:;"
+  }
+}

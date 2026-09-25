@@ -59,7 +59,7 @@ function speakTTS(text, voiceType = 'azure_male', rate = 1, authToken = '', onEn
   // 1 & 2: Sử dụng Azure TTS (Nam của Azure mặc định hoặc Nữ của Azure)
   const lang = 'vi-VN';
   const voice = effectiveType === 'azure_female' ? 'vi-VN-HoaiMyNeural' : 'vi-VN-NamMinhNeural';
-  const token = authToken || (typeof localStorage !== 'undefined' ? (localStorage.getItem('azure_tts_token') || '') : '');
+  const token = authToken || (typeof localStorage !== 'undefined' ? (localStorage.getItem('gsheet_auth_token') || '') : '');
   const effectiveRate = rate || 1;
 
   // Gọi đúng cú pháp URL API theo yêu cầu:

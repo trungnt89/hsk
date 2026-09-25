@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Báo Thức Thông Minh Pro - Quản Lý Báo Thức</title>
+  <link rel="stylesheet" href="options.css">
+  <link rel="icon" type="image/png" href="icons/icon48.png">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Navbar Header -->
+    <header class="navbar">
+      <div class="nav-container">
+        <div class="brand">
+          <img src="icons/icon48.png" alt="Alarm Clock" class="nav-logo-img">
+          <div>
+            <div class="brand-title">Báo Thức Thông Minh Pro</div>
+            <div class="brand-sub">Quản Lý Mốc Báo Thức & Lời Nhắc</div>
+          </div>
+        </div>
+
+        <div class="nav-clock">
+          <div id="navClockTime" class="nav-time">00:00:00</div>
+          <div id="navClockDate" class="nav-date">Đang cập nhật...</div>
+        </div>
+
+        <div class="nav-actions">
+          <button id="btnToggleForm" class="btn btn-primary" title="Thêm mốc báo thức mới">
+            ➕ Thêm Mốc Mới
+          </button>
+          <button id="btnOpenSettingsModal" class="btn btn-secondary" title="Mở bảng cài đặt hệ thống & đồng bộ">
+            ⚙️ Cài Đặt
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area: Focus is Alarms List -->
+    <main class="main-body">
+      <!-- Status Notice Banner -->
+      <div id="statusBanner" class="status-banner">
+        <span id="statusIcon">ℹ️</span>
+        <span id="statusText">Dữ liệu lưu trữ tại IndexedDB cục bộ 100% offline, sẵn sàng hoạt động. Chưa setting token, ko thể sử dụng đồng bộ googlesheet và AzureTTS</span>
+      </div>
+
+      <!-- Cảnh báo Token chuyển sang trang Home / Chính -->
+      <div id="mainTokenAlertBox" class="token-alert-box alert-warning">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-content">
+          <strong>Chưa thiết lập Token:</strong>
+          <span>Hệ thống sẽ tự động sử dụng giọng đọc Tiếng Việt mặc định của trình duyệt (Web Speech API) để phát âm báo thức. Để đồng bộ Google Sheets hoặc kích hoạt Azure TTS, hãy nhập token và bấm "Lưu Token".</span>
+        </div>
+        <button type="button" id="btnQuickOpenTokenModal" class="btn btn-sm btn-outline text-amber" style="margin-left: auto; flex-shrink: 0;" title="Mở cài đặt để nhập token">
+          🔑 Nhập Token
+        </button>
+      </div>
+
+      <!-- Add / Edit Alarm Form (Hidden by default, expands on demand) -->
+      <section id="formSection" class="card form-card" style="display: none;">
+        <div class="card-header">
+          <h2 id="formTitleText" class="card-title">➕ Thêm Mốc Báo Thức Mới</h2>
+          <button type="button" id="btnCloseForm" class="btn-icon" title="Đóng form">✕</button>
+        </div>
+
+        <form id="alarmForm" class="form-grid">
+          <input type="hidden" id="editAlarmId" value="">
+
+          <div class="form-group">
+            <label for="formType">Hình thức báo thức</label>
+            <select id="formType" class="input-control font-bold">
+              <option value="website">🌐 Tự động mở Website / Trang Web</option>
+              <option value="tts">🗣️ Giọng đọc nhân tạo TTS (Nam / Nữ)</option>
+              <option value="youtube">🎬 Phát Video / Nhạc YouTube</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="formTime">Giờ báo thức (24h)</label>
+            <input type="time" id="formTime" class="input-control font-mono font-bold" required value="07:00">
+          </div>
+
+          <div class="form-group col-span-2">
+            <label for="formTitle">Tiêu đề / Ghi chú</label>
+            <input type="text" id="formTitle" class="input-control" placeholder="Ví dụ: Đọc báo buổi sáng, Uống nước, Xem bảng Trello..." required>
+          </div>
+
+          <!-- Lặp lại các ngày trong tuần -->
+          <div class="form-group col-span-2 days-container">
+            <div class="days-header">
+              <label class="days-label">
+                📅 LẶP LẠI CÁC NGÀY TRONG TUẦN:
+              </label>
+              <div class="days-presets">
+                <button type="button" id="btnDaysAll" class="btn-preset-day">Hàng ngày</button>
+                <button type="button" id="btnDaysWorkdays" class="btn-preset-day">T2 - T6</button>
+                <button type="button" id="btnDaysWeekend" class="btn-preset-day">Cuối tuần</button>
+              </div>
+            </div>
+            
+            <div id="weekdayButtonsContainer" class="days-grid">
+              <button type="button" class="day-select-btn active" data-day="1"><span>T2</span><small>Thứ 2</small></button>
+              <button type="button" class="day-select-btn active" data-day="2"><span>T3</span><small>Thứ 3</small></button>
+              <button type="button" class="day-select-btn active" data-day="3"><span>T4</span><small>Thứ 4</small></button>
+              <button type="button" class="day-select-btn active" data-day="4"><span>T5</span><small>Thứ 5</small></button>
+              <button type="button" class="day-select-btn active" data-day="5"><span>T6</span><small>Thứ 6</small></button>
+              <button type="button" class="day-select-btn active" data-day="6"><span>T7</span><small>Thứ 7</small></button>
+              <button type="button" class="day-select-btn active" data-day="0"><span>CN</span><small>Chủ nhật</small></button>
+            </div>
+            <div id="daysSummaryText" class="days-summary">
+              Lịch áp dụng: <strong id="daysSummaryLabel">Hàng ngày (7/7 ngày)</strong>
+            </div>
+          </div>
+
+          <!-- WEBSITE Group -->
+          <div id="websiteGroup" class="form-group col-span-2 form-subbox web-subbox">
+            <div class="subbox-header">
+              <label for="formWebUrl" class="subbox-title web-color">
+                🌐 ĐƯỜNG DẪN WEBSITE CẦN MỞ TỰ ĐỘNG
+              </label>
+              <span class="badge badge-web">Tự động bật tab mới</span>
+            </div>
+            <div class="input-with-action">
+              <input type="url" id="formWebUrl" class="input-control flex-1" placeholder="https://vnexpress.net hoặc https://trello.com" value="https://vnexpress.net">
+              <button type="button" id="btnTestOpenWebsite" class="btn btn-outline">
+                ↗️ Mở Thử
+              </button>
+            </div>
+            
+            <!-- Quick Website Presets -->
+            <div class="quick-presets-box">
+              <span class="hint-label">Chọn nhanh website mẫu:</span>
+              <div class="quick-pills">
+                <button type="button" class="btn-preset-web" data-url="https://vnexpress.net">📰 VnExpress</button>
+                <button type="button" class="btn-preset-web" data-url="https://dantri.com.vn">📰 Dân Trí</button>
+                <button type="button" class="btn-preset-web" data-url="https://trello.com">💼 Trello</button>
+                <button type="button" class="btn-preset-web" data-url="https://calendar.google.com">📅 Lịch Google</button>
+                <button type="button" class="btn-preset-web" data-url="https://github.com">💻 GitHub</button>
+                <button type="button" class="btn-preset-web" data-url="https://notion.so">📝 Notion</button>
+                <button type="button" class="btn-preset-web" data-url="https://duolingo.com">🦉 Duolingo</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TTS Group -->
+          <div id="ttsGroup" class="form-group col-span-2 form-subbox tts-subbox" style="display: none;">
+            <div class="subbox-header">
+              <label for="formTtsText" class="subbox-title tts-color">
+                🗣️ VĂN BẢN VÀ CÀI ĐẶT PHÁT ÂM (TTS)
+              </label>
+              <span class="badge badge-tts">Azure TTS & Trình duyệt</span>
+            </div>
+
+            <!-- Voice selection options -->
+            <div class="voice-options-grid">
+              <label class="radio-label active">
+                <input type="radio" name="voiceTypeRadio" value="azure_male" checked id="radioAzureMale">
+                <span>👨 1. Nam Azure (Mặc định)</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="voiceTypeRadio" value="azure_female" id="radioAzureFemale">
+                <span>👩 2. Nữ của Azure</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="voiceTypeRadio" value="browser_default" id="radioBrowserDefault">
+                <span>🌐 3. Mặc định trình duyệt</span>
+              </label>
+            </div>
+
+            <textarea id="formTtsText" class="input-control"  style="width:100%"  rows="2" placeholder="Chào bạn, đã đến giờ hẹn rồi! Chúc bạn ngày mới năng lượng."></textarea>
+            
+            <div id="ttsTokenNoticeBadge" class="tts-token-notice">
+              <span>⚠️ Chưa cài đặt Token: Hệ thống sẽ tự động sử dụng giọng đọc Tiếng Việt mặc định của trình duyệt.</span>
+            </div>
+
+            <div class="tts-controls-row">
+              <div class="tts-col">
+                <label for="formAzureToken" class="small-label">
+                  🔑 Token xác thực Azure (Tùy chọn):
+                </label>
+                <input type="text" id="formAzureToken" class="input-control small-input" placeholder="Nhập authToken nếu có...">
+              </div>
+
+              <div class="tts-col">
+                <label for="formVoiceSpeed" class="small-label">
+                  Tốc độ đọc (rate): <span id="speedDisplay">1.00x</span>
+                </label>
+                <input type="range" id="formVoiceSpeed" min="0.7" max="1.3" step="0.05" value="1.0" class="slider-range">
+              </div>
+
+              <button type="button" id="btnTestTtsVoice" class="btn btn-outline tts-test-btn">
+                🔊 Thử Giọng Ngay
+              </button>
+            </div>
+          </div>
+
+          <!-- YouTube Group -->
+          <div id="ytGroup" class="form-group col-span-2 form-subbox yt-subbox" style="display: none;">
+            <div class="subbox-header">
+              <label for="formYtUrl" class="subbox-title yt-color">
+                🎬 LIÊN KẾT HOẶC ID VIDEO YOUTUBE
+              </label>
+              <span class="badge badge-yt">YouTube Audio</span>
+            </div>
+            <input type="text" id="formYtUrl" class="input-control" style="width:100%" placeholder="https://www.youtube.com/watch?v=fuXfT4Rv_WM">
+            
+            <div class="quick-presets-box">
+              <span class="hint-label">Chọn nhanh âm thanh mẫu:</span>
+              <div class="quick-pills">
+                <button type="button" class="btn-preset" data-vid="fuXfT4Rv_WM">☕ Lofi Chill</button>
+                <button type="button" class="btn-preset" data-vid="lTRiuFIWV54">🔔 Chuông Báo</button>
+                <button type="button" class="btn-preset" data-vid="jofNR_WkoCE">🎸 Acoustic</button>
+                <button type="button" class="btn-preset" data-vid="mPZkdNFkNps">🌧️ Tiếng Mưa</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Repeat Count Group -->
+          <div class="form-group col-span-2 form-subbox repeat-subbox">
+            <div class="subbox-header">
+              <label for="formRepeatCount" class="subbox-title">
+                🔁 SỐ LẦN LẶP LẠI BÁO THỨC
+              </label>
+              <span class="badge badge-warning">Tự động lặp lại</span>
+            </div>
+            <select id="formRepeatCount" class="input-control font-bold">
+              <option value="1">1️⃣ Phát 1 lần (Không lặp lại - Phù hợp mở Website)</option>
+              <option value="10" selected>🔁 Lặp lại 10 lần (Khuyên dùng cho YouTube/TTS)</option>
+              <option value="2">2️⃣ Lặp lại 2 lần</option>
+              <option value="3">3️⃣ Lặp lại 3 lần</option>
+              <option value="5">5️⃣ Lặp lại 5 lần</option>
+              <option value="15">15️⃣ Lặp lại 15 lần</option>
+              <option value="20">20️⃣ Lặp lại 20 lần</option>
+              <option value="0">♾️ Lặp vô tận (cho đến khi bấm tắt)</option>
+            </select>
+          </div>
+
+          <div class="form-actions col-span-2">
+            <button type="button" id="btnTestFormPreplay" class="btn btn-warning">🎧 Thử Chuông</button>
+            <div class="btn-group-right">
+              <button type="button" id="btnCancelForm" class="btn btn-secondary">Hủy bỏ</button>
+              <button type="submit" id="btnSaveAlarm" class="btn btn-primary">💾 Lưu Mốc Báo Thức</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- Main Section: Alarms List (Chính là danh sách các mốc báo thức) -->
+      <section class="card alarms-table-card">
+        <div class="card-header alarms-header">
+          <div>
+            <h2 class="card-title">📋 Danh Sách Các Mốc Báo Thức</h2>
+            <p class="card-subtitle">Quản lý và kích hoạt các lịch nhắc việc, mở website và chuông báo thức</p>
+          </div>
+          <div class="header-right-tools">
+            <button type="button" id="btnMainPullSheet" class="btn btn-sm btn-outline text-sky" title="Lấy dữ liệu từ Google Sheets về danh sách">
+              ⬇️ Lấy Từ Sheet
+            </button>
+            <button type="button" id="btnMainPushSheet" class="btn btn-sm btn-outline text-green" title="Đẩy toàn bộ danh sách lên Google Sheets">
+              ⬆️ Đẩy Lên Sheet
+            </button>
+            <button type="button" id="btnMainLoadSamples" class="btn btn-sm btn-outline text-amber" title="Nạp lại 5 mốc mẫu mặc định">
+              ✨ Nạp Mẫu Chuẩn
+            </button>
+            <button type="button" id="btnMainClearAll" class="btn btn-sm btn-outline text-danger" title="Xóa tất cả các mốc báo thức khỏi danh sách">
+              🗑️ Xóa Tất Cả Dữ Liệu
+            </button>
+            <div class="table-stats">
+              Đang bật: <strong id="enabledCount" class="text-green">0</strong> / Tổng: <strong id="totalCount">0</strong> mốc
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter tabs for quick view -->
+        <div class="filter-bar">
+          <div class="filter-tabs">
+            <button type="button" class="filter-tab active" data-filter="all">Tất cả (<span id="filterAllCount">0</span>)</button>
+            <button type="button" class="filter-tab" data-filter="website">🌐 Website (<span id="filterWebCount">0</span>)</button>
+            <button type="button" class="filter-tab" data-filter="tts">🗣️ Lời Nhắc TTS (<span id="filterTtsCount">0</span>)</button>
+            <button type="button" class="filter-tab" data-filter="youtube">🎬 YouTube (<span id="filterYtCount">0</span>)</button>
+            <button type="button" class="filter-tab" data-filter="enabled">🟢 Đang Bật</button>
+          </div>
+          <div class="search-box">
+            <input type="text" id="inputSearchAlarms" placeholder="🔍 Tìm kiếm theo tên, giờ, link..." class="search-input">
+          </div>
+        </div>
+
+        <!-- Alarm Items List Container -->
+        <div id="alarmTableContainer" class="table-container">
+          <div class="loading-state">Đang đọc danh sách báo thức...</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal Cài Đặt (Requirement 4: Chỉ khi click Setting mới hiện) -->
+    <div id="settingsModal" class="modal-overlay" style="display: none;">
+      <div class="modal-container">
+        <div class="modal-header">
+          <div class="modal-title">
+            <span class="modal-icon">⚙️</span>
+            <div>
+              <h3>Cài Đặt Hệ Thống & Đồng Bộ</h3>
+              <p>Quản lý Assistive, Google Sheets, Token và Dữ liệu cục bộ</p>
+            </div>
+          </div>
+          <button type="button" id="btnCloseSettingsModal" class="btn-close-modal" title="Đóng cài đặt">✕</button>
+        </div>
+
+        <div class="modal-body settings-single-screen">
+          <!-- 1. SETTING TOKEN -->
+          <div class="settings-block">
+            <div class="settings-block-header">
+              <span class="block-step">1</span>
+              <div>
+                <h4 class="block-title">Setting Token (Đồng Bộ Google Sheets & Azure TTS)</h4>
+                <p class="block-subtitle">Thiết lập Token Authorization để kích hoạt đồng bộ dữ liệu đám mây và phát giọng đọc trực tuyến cao cấp.</p>
+              </div>
+            </div>
+
+            <div class="sheet-info-row">
+              <span class="sheet-badge">Spreadsheet ID: 1HNJrXP3...NDuc</span>
+              <span class="sheet-badge">Sheet: Sheet1</span>
+              <span id="modalSheetTokenBadge" class="token-status-badge badge-missing">Chưa có Token</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+              <label for="modalSheetAuthToken" class="font-bold">🔑 Token Authorization (Bắt buộc để đồng bộ & Azure TTS):</label>
+              <div class="input-with-action">
+                <input type="password" id="modalSheetAuthToken" class="input-control flex-1" placeholder="Nhập token Authorization...">
+                <button type="button" id="btnModalToggleTokenVisible" class="btn btn-outline" title="Hiện/ẩn token">👁️</button>
+                <button type="button" id="btnModalSaveToken" class="btn btn-primary font-bold">💾 Lưu Token</button>
+              </div>
+              <p class="hint">Token được lưu an toàn trong trình duyệt (localStorage & chrome.storage.local) và dùng chung cho toàn bộ hệ thống.</p>
+            </div>
+
+            <div class="sheet-sync-buttons" style="margin-top: 14px;">
+              <button type="button" id="btnModalPullSheet" class="btn btn-sync-pull">
+                ⬇️ Tải Dữ Liệu Từ Google Sheet
+              </button>
+              <button type="button" id="btnModalPushSheet" class="btn btn-sync-push">
+                ⬆️ Đẩy Toàn Bộ Lên Google Sheet
+              </button>
+            </div>
+            <div id="modalSheetSyncMsg" class="sync-msg" style="display: none;"></div>
+          </div>
+
+          <!-- 2. DỮ LIỆU VÀ SAO LƯU -->
+          <div class="settings-block">
+            <div class="settings-block-header">
+              <span class="block-step">2</span>
+              <div>
+                <h4 class="block-title">Dữ Liệu & Sao Lưu (Backup & Khôi Phục)</h4>
+                <p class="block-subtitle">Sao lưu dữ liệu mốc báo thức ra file JSON, khôi phục hoặc xóa toàn bộ dữ liệu cục bộ.</p>
+              </div>
+            </div>
+
+            <div class="db-actions-grid" style="grid-template-columns: 1fr 1fr;">
+              <div class="db-action-card">
+                <h4>📥 Xuất File JSON (Backup)</h4>
+                <p>Tải xuống toàn bộ mốc báo thức để lưu trữ hoặc chuyển sang máy tính khác.</p>
+                <button type="button" id="btnModalExportJson" class="btn btn-outline full-width">Xuất JSON</button>
+              </div>
+
+              <div class="db-action-card">
+                <h4>📤 Nhập File JSON (Restore)</h4>
+                <p>Khôi phục danh sách mốc báo thức từ file sao lưu JSON trước đó.</p>
+                <input type="file" id="modalFileInputJson" accept=".json,application/json" style="display: none;">
+                <button type="button" id="btnModalImportJson" class="btn btn-outline full-width">Chọn File JSON</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. HIỂN THỊ ASSTOUCH -->
+          <div class="settings-block">
+            <div class="settings-block-header">
+              <span class="block-step">3</span>
+              <div>
+                <h4 class="block-title">Hiển Thị Assistive Touch (Nút Nổi Màn Hình)</h4>
+                <p class="block-subtitle">Bảng điều khiển báo thức nổi trực tiếp trên trang web và cấu hình chế độ chạy ngầm.</p>
+              </div>
+            </div>
+
+            <div class="setting-item-box">
+              <div class="setting-item-info">
+                <h4>Hiển thị Assistive Touch trên màn hình</h4>
+                <p>Tự động nhúng bảng điều khiển báo thức nổi trực tiếp lên trang web đang duyệt để tiện theo dõi và thao tác.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="settingModalToggleAssistive">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-hint">
+              💡 Bạn cũng có thể bật/tắt nhanh tùy chọn này ngay tại biểu tượng Extension trên thanh công cụ trình duyệt (Popup).
+            </div>
+
+            <div class="bg-info-box" style="margin-top: 14px;">
+              <div class="bg-info-header">
+                <span class="icon-lg">🛡️</span>
+                <div>
+                  <h4>Chế độ chạy ngầm khi đóng trình duyệt Chrome</h4>
+                  <p>Tiện ích đã được tích hợp quyền <code>background</code> trong Chrome Manifest V3.</p>
+                </div>
+              </div>
+              <div class="bg-steps">
+                <p>Để đảm bảo báo thức reo và tự động bật lại trình duyệt kể cả khi bạn bấm <strong>"X" tắt sạch các cửa sổ</strong>:</p>
+                <ol>
+                  <li>Mở <code>chrome://settings/system</code> trong Chrome.</li>
+                  <li>Bật tùy chọn: <em>"Tiếp tục chạy các ứng dụng nền khi Google Chrome đã đóng"</em>.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnDoneSettingsModal" class="btn btn-primary">Hoàn tất & Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="sheet.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

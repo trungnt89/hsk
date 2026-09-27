@@ -784,7 +784,27 @@ function editAlarm(id) {
   document.getElementById('formWebUrl').value = item.websiteUrl || 'https://vnexpress.net';
   document.getElementById('formYtUrl').value = item.youtubeUrl || (item.vid ? 'https://www.youtube.com/watch?v=' + item.vid : '');
   document.getElementById('formTtsText').value = item.ttsText || '';
-  document.getElementById('formRepeatCount').value = item.repeatCount !== undefined ? item.repeatCount : 10;
+
+  // Đảm bảo số lần lặp lại được hiển thị chính xác theo từng mốc (kể cả 0 - Vô tận hoặc số tùy chỉnh)
+  const repeatSelect = document.getElementById('formRepeatCount');
+  const targetRepeat = item.repeatCount !== undefined 
+    ? item.repeatCount 
+    : (item.type === 'website' ? 1 : 10);
+
+  let hasOpt = false;
+  for (let i = 0; i < repeatSelect.options.length; i++) {
+    if (repeatSelect.options[i].value === String(targetRepeat)) {
+      hasOpt = true;
+      break;
+    }
+  }
+  if (!hasOpt && targetRepeat !== undefined) {
+    const customOpt = document.createElement('option');
+    customOpt.value = String(targetRepeat);
+    customOpt.textContent = targetRepeat === 0 ? '♾️ Lặp vô tận' : `🔁 Lặp lại ${targetRepeat} lần (Tùy chỉnh)`;
+    repeatSelect.appendChild(customOpt);
+  }
+  repeatSelect.value = String(targetRepeat);
 
   const days = (item.daysOfWeek && Array.isArray(item.daysOfWeek) && item.daysOfWeek.length > 0)
     ? item.daysOfWeek
@@ -814,25 +834,40 @@ function editAlarm(id) {
   const speedDisp = document.getElementById('speedDisplay');
   if (speedDisp) speedDisp.textContent = Number(speedVal).toFixed(2) + 'x';
 
-  handleTypeChange();
+  handleTypeChange(false); // Truyền false để giữ nguyên số lần lặp đã lưu của mốc
   document.getElementById('formTitleText').textContent = '✏️ Chỉnh Sửa Mốc Báo Thức';
   document.getElementById('formSection').style.display = 'block';
   document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
 }
 
-function handleTypeChange() {
+let previousTypeVal = 'website';
+
+function handleTypeChange(shouldResetRepeat = true) {
   const type = document.getElementById('formType').value;
   const webGroup = document.getElementById('websiteGroup');
   const ttsGroup = document.getElementById('ttsGroup');
   const ytGroup = document.getElementById('ytGroup');
+  const repeatCountEl = document.getElementById('formRepeatCount');
 
   webGroup.style.display = type === 'website' ? 'block' : 'none';
   ttsGroup.style.display = type === 'tts' ? 'block' : 'none';
   ytGroup.style.display = type === 'youtube' ? 'block' : 'none';
 
-  if (type === 'website') {
-    document.getElementById('formRepeatCount').value = '1';
+  if (shouldResetRepeat) {
+    if (type === 'website') {
+      if (repeatCountEl) repeatCountEl.value = '1';
+    } else if (type === 'youtube') {
+      // Khi chọn YouTube: Nếu đang mang giá trị 1 của website, tự động nâng lên 10 lần chuẩn cho YouTube
+      if (repeatCountEl && (repeatCountEl.value === '1' || previousTypeVal === 'website')) {
+        repeatCountEl.value = '10';
+      }
+    } else if (type === 'tts') {
+      if (repeatCountEl && (repeatCountEl.value === '1' || previousTypeVal === 'website')) {
+        repeatCountEl.value = '5';
+      }
+    }
   }
+  previousTypeVal = type;
 }
 
 function extractVid(url) {
@@ -944,6 +979,10 @@ function setupEventListeners() {
       const vid = btn.getAttribute('data-vid');
       if (vid) {
         document.getElementById('formYtUrl').value = `https://www.youtube.com/watch?v=${vid}`;
+        const repeatCountEl = document.getElementById('formRepeatCount');
+        if (repeatCountEl && repeatCountEl.value === '1') {
+          repeatCountEl.value = '10';
+        }
         updateStatusBanner(`🎵 Đã chọn âm mẫu: ${btn.textContent.trim()}`, 'info');
       }
     });
@@ -1089,13 +1128,16 @@ function setupEventListeners() {
     } else {
       let ytUrl = document.getElementById('formYtUrl').value.trim() || 'https://www.youtube.com/watch?v=fuXfT4Rv_WM';
       const vid = extractVid(ytUrl) || 'fuXfT4Rv_WM';
+      const rawYtRepeat = document.getElementById('formRepeatCount').value;
+      const ytRepeatCount = rawYtRepeat === '0' ? 0 : (parseInt(rawYtRepeat, 10) || 10);
       openRingWindow({
         id: 'test_preview_youtube',
         type: 'youtube',
         title: document.getElementById('formTitle').value.trim() || 'Báo thức YouTube',
         vid: vid,
         youtubeUrl: ytUrl,
-        repeatCount: Number(document.getElementById('formRepeatCount').value) || 10
+        repeatCount: ytRepeatCount,
+        loop: ytRepeatCount === 0 || ytRepeatCount > 1
       });
     }
   });
@@ -1130,7 +1172,20 @@ function openRingWindow(item) {
     const time = document.getElementById('formTime').value;
     const type = document.getElementById('formType').value;
     const title = document.getElementById('formTitle').value.trim();
-    const repeatCount = Number(document.getElementById('formRepeatCount').value) || 1;
+
+    // Xử lý chính xác repeatCount cho YouTube / TTS / Website (bao gồm cả 0 = Lặp vô tận)
+    const rawRepeat = document.getElementById('formRepeatCount').value;
+    let repeatCount = 10;
+    if (type === 'website') {
+      repeatCount = 1;
+    } else if (rawRepeat === '0') {
+      repeatCount = 0; // 0 nghĩa là lặp vô tận
+    } else {
+      const parsed = parseInt(rawRepeat, 10);
+      repeatCount = !isNaN(parsed) && parsed >= 0 ? parsed : (type === 'youtube' ? 10 : 5);
+    }
+
+    const isLoop = type !== 'website' && repeatCount !== 1;
 
     const days = (currentFormDays && currentFormDays.length > 0)
       ? [...currentFormDays]
@@ -1143,7 +1198,7 @@ function openRingWindow(item) {
       title: title || (type === 'website' ? 'Mở Website' : type === 'tts' ? 'Lời nhắc TTS' : 'Báo thức YouTube'),
       enabled: true,
       repeatCount,
-      loop: repeatCount !== 1,
+      loop: isLoop,
       daysOfWeek: days
     };
 

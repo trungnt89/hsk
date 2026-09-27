@@ -2,7 +2,9 @@ const ALARMS_STORAGE_KEY = 'smart_alarms_v2_light';
 
 let currentRepeat = 1;
 let maxRepeats = 10;
-let isLooping = true;
+let isStopped = false;
+let isClosing = false;
+let ttsTimeoutId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
@@ -16,11 +18,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlGender = params.get('voiceGender') || '';
   const urlSpeed = params.get('voiceSpeed') ? parseFloat(params.get('voiceSpeed')) : 1.0;
   const urlWebsiteUrl = params.get('websiteUrl') || '';
-  const urlRepeat = params.get('repeatCount') ? Number(params.get('repeatCount')) : undefined;
-  const urlLoop = params.get('loop') ? params.get('loop') === 'true' : undefined;
+  const urlRepeat = params.get('repeatCount') !== null ? Number(params.get('repeatCount')) : undefined;
+  const urlLoop = params.get('loop') !== null ? params.get('loop') === 'true' : undefined;
   const urlAuthToken = params.get('authToken') || '';
 
-  // Khởi tạo alarm: Mặc định an toàn, không bao giờ tự ý redirect sang website trừ khi có type=website thực sự
+  // Khởi tạo alarm
   let alarm = {
     id: alarmId || '',
     title: urlTitle || 'Đã đến giờ hẹn!',
@@ -73,22 +75,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {}
   }
 
-  // Nếu URL params chỉ định type rõ ràng (như khi nhấn nút "Thử"), ưu tiên type từ URL:
-  if (urlType) {
-    alarm.type = urlType;
-  }
-  if (urlVid) {
-    alarm.vid = urlVid;
-  }
-  if (urlTtsText) {
-    alarm.ttsText = urlTtsText;
-  }
+  // Ưu tiên các param từ URL nếu được truyền cụ thể
+  if (urlType) alarm.type = urlType;
+  if (urlVid) alarm.vid = urlVid;
+  if (urlTtsText) alarm.ttsText = urlTtsText;
+  if (urlRepeat !== undefined) alarm.repeatCount = urlRepeat;
 
-  maxRepeats = alarm.repeatCount !== undefined ? alarm.repeatCount : (alarm.type === 'website' ? 1 : 10);
-  isLooping = alarm.loop !== false && maxRepeats !== 1;
+  // Xác định số lần phát tối đa
+  // 0 = lặp vô tận, 1..N = số lần phát cụ thể
+  maxRepeats = alarm.repeatCount !== undefined ? Number(alarm.repeatCount) : 10;
+  currentRepeat = 1;
 
   document.getElementById('hudTitle').textContent = alarm.title || 'Đã đến giờ hẹn!';
-  document.getElementById('hudRepeat').textContent = maxRepeats === 0 ? '🔁 Vô tận' : `🔁 ${maxRepeats} lần`;
+  updateRepeatDisplay();
 
   const updateClock = () => {
     const now = new Date();
@@ -96,7 +95,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const m = String(now.getMinutes()).padStart(2, '0');
     const s = String(now.getSeconds()).padStart(2, '0');
     const timeStr = `${h}:${m}:${s}`;
-    document.getElementById('hudTime').textContent = timeStr;
+    const hudTime = document.getElementById('hudTime');
+    if (hudTime) hudTime.textContent = timeStr;
     const ttsClock = document.getElementById('ttsClock');
     if (ttsClock) ttsClock.textContent = timeStr;
   };
@@ -111,10 +111,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.location.replace(finalUrl);
       return;
     }
-    // Nếu rỗng, fallback về TTS báo lỗi, không tự ý mở vnexpress
     alarm.type = 'tts';
     alarm.ttsText = 'Đã đến giờ mở Website theo hẹn nhưng chưa có địa chỉ web!';
-  } else if (alarm.type === 'tts') {
+  }
+
+  if (alarm.type === 'tts') {
     document.getElementById('ttsLayer').style.display = 'block';
     document.getElementById('ttsTitle').textContent = alarm.title || 'Lời nhắc bằng giọng đọc';
     document.getElementById('ttsText').textContent = `"${alarm.ttsText || 'Đã đến giờ báo thức rồi!'}"`;
@@ -135,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       badgeBg = '#d97706';
     } else if (vType === 'azure_female') {
       icon = '👩';
-      badge = 'Nữ của Azure';
+      badge = 'Nữ của Azure (vi-VN-HoaiMyNeural)';
       badgeBg = '#7c3aed';
     } else if (vType === 'browser_default') {
       icon = '🌐';
@@ -147,40 +148,140 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('ttsGenderBadge').textContent = badge;
     document.getElementById('ttsGenderBadge').style.background = badgeBg;
 
-    updateTtsStatus();
+    updateRepeatDisplay();
     startTtsLoop(alarm.ttsText, vType, alarm.voiceSpeed || 1, effectiveToken);
   } else {
+    // Chế độ YouTube
     document.getElementById('ytLayer').style.display = 'block';
     const vid = alarm.vid || 'fuXfT4Rv_WM';
     const iframe = document.getElementById('ytIframe');
-    iframe.src = `https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=0&loop=1&playlist=${vid}&enablejsapi=1&origin=https%3A%2F%2Fwww.youtube.com&widget_referrer=https%3A%2F%2Fwww.youtube.com`;
+
+    // Nếu lặp vô tận (maxRepeats === 0): bật loop=1&playlist=${vid}
+    // Nếu có số lần lặp giới hạn (maxRepeats > 0): tắt loop của YouTube để bắt sự kiện kết thúc (ended)
+    const isInfinite = maxRepeats === 0;
+    iframe.src = `https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&widget_referrer=${encodeURIComponent(window.location.origin)}${isInfinite ? `&loop=1&playlist=${vid}` : ''}`;
+
+    setupYouTubeListener(vid);
+    updateRepeatDisplay();
   }
 
   document.getElementById('btnStop').addEventListener('click', () => {
+    isStopped = true;
     stopAllAudio();
-    window.close();
+    closeAlarmWindow();
   });
 
   document.getElementById('btnSnooze').addEventListener('click', () => {
+    isStopped = true;
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       chrome.runtime.sendMessage({ action: 'SNOOZE_ALARM', alarmId: alarm.id, minutes: 5 });
     }
     stopAllAudio();
-    window.close();
+    closeAlarmWindow();
   });
 });
 
-function updateTtsStatus() {
-  const el = document.getElementById('ttsRepeatStatus');
-  if (el) {
-    el.textContent = maxRepeats === 0
-      ? `Đang lặp lại lần thứ ${currentRepeat} (Lặp vô tận)`
-      : `Đang lặp lại: ${currentRepeat} / ${maxRepeats} lần`;
+/**
+ * Cập nhật hiển thị số lần phát / tổng số lần
+ */
+function updateRepeatDisplay() {
+  const hudRepeat = document.getElementById('hudRepeat');
+  const ttsRepeatStatus = document.getElementById('ttsRepeatStatus');
+
+  const hudText = maxRepeats === 0
+    ? `🔁 Lần ${currentRepeat} (Vô tận)`
+    : `🔁 Lần phát: ${currentRepeat}/${maxRepeats}`;
+
+  const ttsText = maxRepeats === 0
+    ? `Đang phát lần thứ ${currentRepeat} (Lặp vô tận)`
+    : `Số lần phát: ${currentRepeat} / ${maxRepeats}`;
+
+  if (hudRepeat) {
+    hudRepeat.textContent = hudText;
+  }
+  if (ttsRepeatStatus) {
+    ttsRepeatStatus.textContent = ttsText;
   }
 }
 
+/**
+ * Xử lý khi đã hoàn thành toàn bộ số lần phát: Tự động đóng cửa sổ
+ */
+function handleAllRepeatsFinished() {
+  if (isStopped || isClosing) return;
+  isClosing = true;
+
+  const hudRepeat = document.getElementById('hudRepeat');
+  const ttsRepeatStatus = document.getElementById('ttsRepeatStatus');
+
+  if (hudRepeat) {
+    hudRepeat.textContent = `✅ Đã xong (${maxRepeats}/${maxRepeats}) - Đang đóng...`;
+    hudRepeat.classList.add('finished');
+  }
+  if (ttsRepeatStatus) {
+    ttsRepeatStatus.textContent = `✅ Đã phát xong ${maxRepeats}/${maxRepeats} lượt. Tự động đóng cửa sổ báo thức...`;
+    ttsRepeatStatus.style.color = '#34d399';
+  }
+
+  stopAllAudio();
+
+  // Đếm ngược 1.2s rồi tự động đóng cửa sổ báo thức
+  setTimeout(() => {
+    closeAlarmWindow();
+  }, 1200);
+}
+
+/**
+ * Đóng cửa sổ / tab báo thức một cách an toàn và triệt để
+ */
+function closeAlarmWindow() {
+  stopAllAudio();
+
+  // 1. Thử dùng Chrome Tabs API nếu mở bằng tab
+  try {
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.getCurrent) {
+      chrome.tabs.getCurrent((tab) => {
+        if (tab && tab.id) {
+          chrome.tabs.remove(tab.id, () => {
+            window.close();
+          });
+          return;
+        }
+        closeViaWindowApi();
+      });
+      return;
+    }
+  } catch (e) {}
+
+  closeViaWindowApi();
+}
+
+function closeViaWindowApi() {
+  // 2. Thử dùng Chrome Windows API nếu mở bằng cửa sổ popup
+  try {
+    if (typeof chrome !== 'undefined' && chrome.windows && chrome.windows.getCurrent) {
+      chrome.windows.getCurrent((win) => {
+        if (win && win.id) {
+          chrome.windows.remove(win.id, () => {
+            window.close();
+          });
+        } else {
+          window.close();
+        }
+      });
+      return;
+    }
+  } catch (e) {}
+
+  // 3. Fallback tiêu chuẩn của trình duyệt
+  window.close();
+}
+
 function stopAllAudio() {
-  isLooping = false;
+  if (ttsTimeoutId) {
+    clearTimeout(ttsTimeoutId);
+    ttsTimeoutId = null;
+  }
   if (typeof stopSpeaking === 'function') stopSpeaking();
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 }
@@ -191,27 +292,86 @@ function startTtsLoop(text, voiceType, speed, authToken) {
 }
 
 function playOneTtsIteration(text, voiceType, speed, authToken) {
-  if (!isLooping && currentRepeat > 1) return;
-  updateTtsStatus();
+  if (isStopped || isClosing) return;
+  updateRepeatDisplay();
 
   const cleanedText = (text || 'Chào bạn, đã đến giờ hẹn rồi!').trim();
   if (typeof speakTTS === 'function') {
     speakTTS(cleanedText, voiceType, speed || 1, authToken || '', () => {
-      onIterationFinished(text, voiceType, speed, authToken);
+      onTtsIterationFinished(text, voiceType, speed, authToken);
     });
   }
 }
 
-function onIterationFinished(text, voiceType, speed, authToken) {
-  if (!isLooping) return;
-  if (maxRepeats === 0 || currentRepeat < maxRepeats) {
-    currentRepeat++;
-    setTimeout(() => {
-      if (isLooping) playOneTtsIteration(text, voiceType, speed, authToken);
-    }, 1500);
-  } else {
-    isLooping = false;
-    const el = document.getElementById('ttsRepeatStatus');
-    if (el) el.textContent = `Đã hoàn thành ${maxRepeats} lần lặp.`;
+function onTtsIterationFinished(text, voiceType, speed, authToken) {
+  if (isStopped || isClosing) return;
+
+  // Kiểm tra nếu đã hoàn thành số lần phát được thiết lập
+  if (maxRepeats > 0 && currentRepeat >= maxRepeats) {
+    handleAllRepeatsFinished();
+    return;
+  }
+
+  // Tăng lượt phát và lặp lại
+  currentRepeat++;
+  updateRepeatDisplay();
+
+  ttsTimeoutId = setTimeout(() => {
+    if (!isStopped && !isClosing) {
+      playOneTtsIteration(text, voiceType, speed, authToken);
+    }
+  }, 1200);
+}
+
+/**
+ * Lắng nghe trạng thái phát của YouTube qua IFrame API postMessage
+ */
+function setupYouTubeListener(vid) {
+  const iframe = document.getElementById('ytIframe');
+  if (iframe) {
+    iframe.addEventListener('load', () => {
+      try {
+        iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+      } catch (e) {}
+    });
+  }
+
+  window.addEventListener('message', (event) => {
+    if (isStopped || isClosing) return;
+    try {
+      const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      let playerState = null;
+
+      if (data && data.event === 'infoDelivery' && data.info && typeof data.info.playerState !== 'undefined') {
+        playerState = data.info.playerState;
+      } else if (data && data.event === 'onStateChange' && typeof data.info !== 'undefined') {
+        playerState = data.info;
+      }
+
+      // Trạng thái 0 = ENDED (kết thúc video)
+      if (playerState === 0) {
+        onYouTubeVideoEnded(vid);
+      }
+    } catch (err) {}
+  });
+}
+
+function onYouTubeVideoEnded(vid) {
+  if (isStopped || isClosing) return;
+
+  if (maxRepeats > 0 && currentRepeat >= maxRepeats) {
+    handleAllRepeatsFinished();
+    return;
+  }
+
+  currentRepeat++;
+  updateRepeatDisplay();
+
+  const iframe = document.getElementById('ytIframe');
+  if (iframe && iframe.contentWindow) {
+    try {
+      iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }), '*');
+      iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: '' }), '*');
+    } catch (e) {}
   }
 }

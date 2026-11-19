@@ -22,8 +22,11 @@ export default async function handler(req, res) {
                 await util.ensureAuthenticated();
 				const rowData = [result.taskId, result.replyText, getJSTTime()];
 			    const upRes = await util.handleAdd(SPREAD_ID, SHEET_2,JSON.stringify(rowData));
+				writeLog("JOB", "Reply telegram thành công");
                 return res.status(200).json({ status: "Success", type: "Webhook", data: result });
-            }
+            }else{
+				writeLog("JOB", "Reply telegram thất bại");
+			}
         }
 
         const sentIds = await ControlSendMessage();

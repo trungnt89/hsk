@@ -18,6 +18,7 @@ export default async function handler(req, res) {
         if (req.method === 'POST') {
             const result = await tg.ReceiveMessage(req.body);
             // FIX: Kiểm tra nếu result là object chứa taskId (thay vì kiểm tra biến boolean như trước)
+			writeLog(JSON.stringify(result));
             if (result && result.taskId) {
                 await util.ensureAuthenticated();
 				const rowData = [result.taskId, result.replyText, getJSTTime()];

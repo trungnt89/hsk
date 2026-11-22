@@ -79,7 +79,8 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:"Be Vietnam Pro
 
 /* cards */
 main{padding:12px 0 68px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px 14px;margin-bottom:14px;overflow-wrap:anywhere}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px 14px;margin-bottom:14px;overflow-wrap:anywhere;transition:border-color .15s,box-shadow .15s}
+.card.active{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 18%,transparent),var(--shadow)}
 .card.hidden{display:none}
 .meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:9px}
 .pill{font-size:11px;font-weight:700;border-radius:99px;padding:2px 8px;border:1px solid var(--border);color:var(--muted);background:var(--surface-2)}
@@ -288,10 +289,13 @@ const store = {
 };
 
 const PAGE_SIZE = 10;
-let topic = "all";
+let topic = store.get("cca.topic", "all");
+if (topic !== "all" && !DATA.some(q => q.topic === topic)) topic = "all";
 let page = Math.max(1, Number(store.get("cca.page", 1)) || 1);
+let activeQ = store.get("cca.activeQ", null);
 
 const answers = store.get("cca.answers", {}); // n -> {picked:[...], ok:bool}
+const picks = store.get("cca.picks", {}); // n -> [...] or {k: v} (unsubmitted selections)
 const correctSet = q => new Set(q.options.filter(o => o.correct).map(o => o.k));
 
 function getFiltered(){
@@ -317,9 +321,7 @@ function renderPagers(total, totalPages, startIdx, endIdx){
   if (totalPages > 1){
     const opts = Array.from({ length: totalPages }, (_, i) => {
       const p = i + 1;
-      const from = i * PAGE_SIZE + 1;
-      const to = Math.min(total, p * PAGE_SIZE);
-      return `<option value="${p}"${p === page ? " selected" : ""}>Trang ${p}/${totalPages} (${from}–${to})</option>`;
+      return `<option value="${p}"${p === page ? " selected" : ""}>Trang ${p}</option>`;
     }).join("");
     btnsHtml = `
       <div class="pager-btns">
@@ -421,10 +423,50 @@ function render(scrollToList = false){
   $("#empty").style.display = total ? "none" : "block";
   for (const q of slice){
     if (answers[q.n]) restore(q.n, answers[q.n]);
+    else if (picks[q.n]) restorePicks(q.n, picks[q.n]);
+    if (activeQ === q.n){
+      const card = document.getElementById("c" + q.n);
+      if (card) card.classList.add("active");
+    }
   }
   renderPagers(total, totalPages, startIdx, startIdx + slice.length);
   if (scrollToList){
     $("main").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function setActiveQ(n){
+  activeQ = n;
+  store.set("cca.activeQ", n);
+  document.querySelectorAll("#list .card.active").forEach(c => c.classList.remove("active"));
+  if (n !== null && n !== undefined){
+    const card = document.getElementById("c" + n);
+    if (card) card.classList.add("active");
+  }
+}
+
+function savePick(card){
+  const n = +card.dataset.n;
+  if (card.querySelector(".row")){
+    const rows = [...card.querySelectorAll(".row")];
+    const picked = Object.fromEntries(rows.filter(li => li.dataset.sel).map(li => [li.dataset.k, li.dataset.sel]));
+    if (Object.keys(picked).length) picks[n] = picked;
+    else delete picks[n];
+  } else {
+    const picked = [...card.querySelectorAll(".opt.picked")].map(li => li.dataset.k);
+    if (picked.length) picks[n] = picked;
+    else delete picks[n];
+  }
+  store.set("cca.picks", picks);
+}
+
+function restorePicks(n, p){
+  const card = document.getElementById("c" + n);
+  if (!card || !p) return;
+  if (Array.isArray(p)){
+    card.querySelectorAll(".opt").forEach(li => li.classList.toggle("picked", p.includes(li.dataset.k)));
+  } else {
+    card.querySelectorAll(".row").forEach(li => setSel(li, p[li.dataset.k] || ""));
   }
 }
 
@@ -464,8 +506,10 @@ function setRevealed(card, on, ok){
 
 function check(card){
   const n = +card.dataset.n;
+  setActiveQ(n);
   if (card.classList.contains("revealed")){
     delete answers[n];
+    delete picks[n];
     card.querySelectorAll(".opt").forEach(li => li.classList.remove("picked"));
     card.querySelectorAll(".row").forEach(li => setSel(li, ""));
     setRevealed(card, false);
@@ -475,6 +519,7 @@ function check(card){
     if (Object.keys(picked).length){
       const ok = rows.every(li => li.dataset.sel === li.dataset.pick);
       answers[n] = { picked, ok };
+      delete picks[n];
       setRevealed(card, true, ok);
     } else {
       setRevealed(card, true);
@@ -486,17 +531,20 @@ function check(card){
     if (picked.length){
       const ok = picked.length === corr.size && picked.every(k => corr.has(k));
       answers[n] = { picked, ok };
+      delete picks[n];
       setRevealed(card, true, ok);
     } else {
       setRevealed(card, true);
     }
   }
   store.set("cca.answers", answers);
+  store.set("cca.picks", picks);
   stats();
 }
 
 function pick(li){
   const card = li.closest(".card");
+  setActiveQ(+card.dataset.n);
   if (card.classList.contains("revealed") || document.body.classList.contains("show-ans")) return;
   const q = DATA.find(x => x.n === +card.dataset.n);
   const limit = correctSet(q).size;
@@ -507,6 +555,7 @@ function pick(li){
     const on = card.querySelectorAll(".opt.picked").length;
     if (li.classList.contains("picked") || on < limit) li.classList.toggle("picked");
   }
+  savePick(card);
 }
 
 function stats(){
@@ -527,18 +576,28 @@ function chips(){
 }
 
 function filter(resetPage = true){
-  if (resetPage) page = 1;
+  store.set("cca.topic", topic);
+  store.set("cca.q", $("#q").value);
+  if (resetPage){
+    page = 1;
+    setActiveQ(null);
+  }
   render();
 }
 
 // events
 $("#list").addEventListener("click", e => {
+  const card = e.target.closest(".card");
+  if (card) setActiveQ(+card.dataset.n);
   const btn = e.target.closest(".reveal");
-  if (btn) return check(btn.closest(".card"));
+  if (btn) return check(card);
   const yn = e.target.closest(".yn");
   if (yn){
     const li = yn.closest(".row");
-    if (!locked(li)) setSel(li, li.dataset.sel === yn.dataset.v ? "" : yn.dataset.v);
+    if (!locked(li)){
+      setSel(li, li.dataset.sel === yn.dataset.v ? "" : yn.dataset.v);
+      savePick(card);
+    }
     return;
   }
   const li = e.target.closest(".opt:not(.row)");
@@ -547,8 +606,11 @@ $("#list").addEventListener("click", e => {
 $("#list").addEventListener("change", e => {
   const dd = e.target.closest(".dd");
   if (!dd) return;
+  const card = dd.closest(".card");
+  setActiveQ(+card.dataset.n);
   const li = dd.closest(".row");
   setSel(li, locked(li) ? li.dataset.sel || "" : dd.value);
+  savePick(card);
 });
 const locked = el => el.closest(".card").classList.contains("revealed") || document.body.classList.contains("show-ans");
 $("#list").addEventListener("keydown", e => {
@@ -569,12 +631,14 @@ $("#q").addEventListener("input", () => filter(true));
     const btn = e.target.closest(".pg-btn[data-p]");
     if (!btn || btn.disabled) return;
     page = +btn.dataset.p;
+    setActiveQ(null);
     render(true);
   });
   el.addEventListener("change", e => {
     const sel = e.target.closest(".pg-jump");
     if (!sel) return;
     page = +sel.value;
+    setActiveQ(null);
     render(true);
   });
 });
@@ -594,7 +658,10 @@ tAns.addEventListener("change", applyToggles);
 $("#reset").addEventListener("click", () => {
   if (!confirm("Xoá toàn bộ kết quả đã làm?")) return;
   for (const k in answers) delete answers[k];
+  for (const k in picks) delete picks[k];
   store.set("cca.answers", answers);
+  store.set("cca.picks", picks);
+  setActiveQ(null);
   render(); stats();
 });
 
@@ -615,7 +682,17 @@ addEventListener("scroll", () => {
 }, { passive: true });
 fab.addEventListener("click", () => scrollTo({ top: 0 }));
 
+$("#q").value = store.get("cca.q", "");
 chips(); applyToggles(); stats(); render();
+if (activeQ !== null && activeQ !== undefined){
+  const activeCard = document.getElementById("c" + activeQ);
+  if (activeCard){
+    requestAnimationFrame(() => {
+      try { activeCard.scrollIntoView({ behavior: "instant", block: "start" }); }
+      catch { activeCard.scrollIntoView(true); }
+    });
+  }
+}
 </script>
 </body>
 </html>

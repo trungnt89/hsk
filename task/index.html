@@ -3,370 +3,2099 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Task Management</title>
+    <title>Task Analytics & Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="../com/assistive.js"></script>     
-	<script src="../com/util.js"></script>    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="../com/assistive.js"></script>
+    <script src="../com/util.js"></script>
+    <style>
+        :root {
+            --bg-canvas: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --bg-subtle: #F1F5F9;
+            --border-hairline: #E2E8F0;
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            --text-muted: #64748B;
+            --accent-primary: #0F172A;
+            --accent-blue: #2563EB;
+            --color-done: #16A34A;
+            --color-miss: #DC2626;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+            --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .font-mono-num {
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Top Bar */
+        .topbar {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-hairline);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-inner {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .brand-wordmark {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            color: var(--text-primary);
+            text-decoration: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-primary-action {
+            appearance: none;
+            border: 1px solid var(--accent-primary);
+            background: var(--accent-primary);
+            color: #FFFFFF;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 7px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background-color 150ms var(--ease-settle), transform 150ms var(--ease-settle), opacity 150ms var(--ease-settle);
+        }
+
+        .btn-primary-action:hover:not(:disabled) {
+            background: #1E293B;
+        }
+
+        .btn-primary-action:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .btn-primary-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-ghost {
+            appearance: none;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-hairline);
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 6px 12px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background-color 150ms var(--ease-settle), color 150ms var(--ease-settle);
+        }
+
+        .btn-ghost:hover:not(:disabled) {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+
+        .btn-primary-action:focus-visible,
+        .ios-toggle-label:focus-visible,
+        .control-input:focus-visible,
+        .btn-ghost:focus-visible,
+        .btn-row-action:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        /* Main Page Container */
+        .page-container {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 14px 24px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Toolbar & iPhone-style Toggles */
+        .toolbar-surface {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-hairline);
+            border-radius: 10px;
+            padding: 10px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .toolbar-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .ios-toggle-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .ios-toggle-label {
+            appearance: none;
+            border: none;
+            background: transparent;
+            padding: 2px 0;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: color 150ms var(--ease-settle);
+        }
+
+        .ios-toggle-label:hover {
+            color: var(--text-primary);
+        }
+
+        .ios-toggle-label.active {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .ios-switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 28px;
+            flex-shrink: 0;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .ios-switch input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .ios-switch-slider {
+            position: absolute;
+            inset: 0;
+            background-color: #CBD5E1;
+            border-radius: 999px;
+            transition: background-color 180ms cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        .ios-switch-slider::before {
+            content: "";
+            position: absolute;
+            height: 24px;
+            width: 24px;
+            left: 2px;
+            top: 2px;
+            background-color: #FFFFFF;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.22), 0 0 1px rgba(15, 23, 42, 0.1);
+            transition: transform 180ms cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        .ios-switch input:checked + .ios-switch-slider {
+            background-color: #34C759;
+        }
+
+        .ios-switch input:checked + .ios-switch-slider::before {
+            transform: translateX(18px);
+        }
+
+        .ios-switch input:focus-visible + .ios-switch-slider {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        .ios-switch.ios-switch-sm {
+            width: 36px;
+            height: 22px;
+        }
+
+        .ios-switch.ios-switch-sm .ios-switch-slider::before {
+            width: 18px;
+            height: 18px;
+            left: 2px;
+            top: 2px;
+        }
+
+        .ios-switch.ios-switch-sm input:checked + .ios-switch-slider::before {
+            transform: translateX(14px);
+        }
+
+        .ios-toggle-divider {
+            width: 1px;
+            height: 22px;
+            background: var(--border-hairline);
+            flex-shrink: 0;
+        }
+
+        .control-input {
+            font-family: var(--font-sans);
+            font-size: 13px;
+            color: var(--text-primary);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            padding: 6px 10px;
+            height: 34px;
+            transition: border-color 150ms var(--ease-settle);
+        }
+
+        .control-input:hover {
+            border-color: #CBD5E1;
+        }
+
+        .text-done {
+            color: var(--color-done);
+        }
+
+        .text-miss {
+            color: var(--color-miss);
+        }
+
+        /* Chart & Panel Surfaces */
+        .panel-surface {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-hairline);
+            border-radius: 10px;
+            padding: 16px 20px;
+        }
+
+        .chart-hero-panel {
+            border-color: #CBD5E1;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+            padding: 18px 22px 16px;
+        }
+
+        .panel-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-hairline);
+        }
+
+        .chart-title-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+        }
+
+        .chart-inline-stats {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chart-inline-stats strong {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-sep {
+            color: #CBD5E1;
+        }
+
+        .legend-inline {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .legend-swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        .chart-scroll-viewport {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 4px;
+        }
+
+        .chart-canvas-wrap {
+            position: relative;
+            height: 460px;
+            min-width: 100%;
+        }
+
+        /* States */
+        .state-box {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .state-box.visible {
+            display: flex;
+        }
+
+        .skeleton-bars {
+            width: 100%;
+            height: 240px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 12px;
+            padding: 20px 16px;
+        }
+
+        .skeleton-bar {
+            flex: 1;
+            max-width: 44px;
+            background: var(--bg-subtle);
+            border-radius: 4px;
+            animation: shimmer 1.4s infinite ease-in-out;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.45; }
+            50% { opacity: 0.95; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .skeleton-bar {
+                animation: none;
+                opacity: 0.7;
+            }
+        }
+
+        /* 2-Line Task List Layout */
+        .task-list-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .task-row-item {
+            border-bottom: 1px solid var(--border-hairline);
+            transition: background-color 120ms var(--ease-settle);
+        }
+
+        .task-row-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-row-header {
+            display: grid;
+            grid-template-columns: 56px 96px repeat(4, minmax(0, 1fr));
+            align-items: center;
+            gap: 8px 12px;
+            padding: 7px 12px;
+            background: var(--bg-canvas);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+        }
+
+        .task-metric-item {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            min-width: 0;
+        }
+
+        .task-metric-item.metric-right {
+            justify-content: flex-end;
+        }
+
+        .task-metric-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .task-metric-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        .task-row-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 10px 12px;
+        }
+
+        .task-row-item:hover .task-row-body {
+            background-color: rgba(248, 250, 252, 0.6);
+        }
+
+        .task-row-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .task-name-cell {
+            flex: 1;
+            min-width: 0;
+            font-weight: 500;
+            font-size: 13.5px;
+            color: var(--text-primary);
+            white-space: pre-line;
+            word-break: break-word;
+            line-height: 1.45;
+        }
+
+        .task-row-note {
+            padding: 0 12px 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: pre-line;
+            word-break: break-word;
+        }
+
+        .task-list-empty {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 28px 16px;
+            font-size: 13px;
+        }
+
+        .note-line {
+            margin-bottom: 2px;
+        }
+
+        .note-line:last-child {
+            margin-bottom: 0;
+        }
+
+        .score-text-done {
+            font-weight: 700;
+            color: var(--color-done);
+            white-space: nowrap;
+        }
+
+        .score-text-miss {
+            font-weight: 700;
+            color: var(--color-miss);
+            white-space: nowrap;
+        }
+
+        .score-text-zero {
+            font-weight: 700;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .row-actions-group {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: center;
+            gap: 4px;
+            min-width: 54px;
+        }
+
+        .btn-row-action {
+            appearance: none;
+            border: 1px solid var(--border-hairline);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            text-align: center;
+            transition: background-color 120ms var(--ease-settle), color 120ms var(--ease-settle), border-color 120ms var(--ease-settle);
+        }
+
+        .btn-row-action:hover {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+
+        .btn-row-danger {
+            color: var(--color-miss);
+        }
+
+        .btn-row-danger:hover {
+            background: rgba(220, 38, 38, 0.08);
+            border-color: rgba(220, 38, 38, 0.35);
+            color: var(--color-miss);
+        }
+
+
+
+        /* 90% Add/Edit Modal Layout */
+        #taskModal .modal-dialog-90 {
+            --bs-modal-width: 90vw;
+            width: 90vw;
+            max-width: 90vw;
+            height: 90vh;
+            max-height: 90vh;
+            margin: 5vh auto;
+        }
+
+        #taskModal .modal-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #taskModal .modal-header {
+            padding: 16px 24px;
+            flex-shrink: 0;
+        }
+
+        #taskModal .modal-body {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 22px 24px;
+        }
+
+        #taskModal .modal-footer {
+            padding: 14px 24px;
+            flex-shrink: 0;
+        }
+
+        .modal-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px 20px;
+        }
+
+        .modal-top-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            gap: 12px 16px;
+            align-items: end;
+        }
+
+        .modal-field-full {
+            grid-column: 1 / -1;
+        }
+
+        .modal-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .modal-field-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .modal-toggle-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 4px 12px;
+            border: 1px solid var(--border-hairline);
+            border-radius: 8px;
+            background: var(--bg-canvas);
+        }
+
+        @media (max-width: 640px) {
+            .modal-form-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .modal-top-row {
+                grid-template-columns: minmax(0, 1.15fr) auto minmax(0, 1fr);
+                gap: 8px;
+            }
+            .modal-top-row .form-control {
+                font-size: 13px;
+                padding: 6px 8px;
+                min-height: 36px;
+            }
+            .modal-top-row .modal-toggle-box {
+                padding: 4px 8px;
+                min-height: 36px;
+            }
+            .modal-top-row .ios-toggle-label {
+                display: none;
+            }
+            #taskModal .modal-body {
+                padding: 14px 12px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .ios-toggle-divider {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .topbar-inner {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+            .brand-wordmark {
+                font-size: 15px;
+            }
+            .btn-ghost, .btn-primary-action {
+                font-size: 12px;
+                padding: 5px 10px;
+                height: 32px;
+            }
+            .page-container {
+                padding: 8px 8px 24px;
+                gap: 8px;
+            }
+            .toolbar-surface {
+                padding: 8px 10px;
+            }
+            .toolbar-toggles {
+                gap: 8px 14px;
+            }
+            .ios-toggle-label {
+                font-size: 12px;
+            }
+            .ios-switch {
+                width: 40px;
+                height: 24px;
+            }
+            .ios-switch-slider::before {
+                width: 20px;
+                height: 20px;
+            }
+            .ios-switch input:checked + .ios-switch-slider::before {
+                transform: translateX(16px);
+            }
+            .panel-surface, .chart-hero-panel {
+                padding: 12px 10px;
+            }
+            .panel-header {
+                gap: 8px;
+                margin-bottom: 8px;
+                padding-bottom: 8px;
+            }
+            .panel-title {
+                font-size: 15px;
+            }
+            .chart-title-wrap {
+                gap: 6px 10px;
+            }
+            .chart-inline-stats {
+                font-size: 12px;
+                gap: 4px;
+            }
+            .chart-canvas-wrap {
+                height: 250px;
+            }
+            .task-row-header {
+                grid-template-columns: 28px 46px repeat(4, minmax(0, 1fr));
+                gap: 4px;
+                padding: 6px 8px;
+            }
+            .task-metric-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1px;
+            }
+            .task-metric-item.metric-right {
+                align-items: flex-end;
+                justify-content: flex-start;
+            }
+            .task-metric-label {
+                font-size: 10px;
+                line-height: 1.1;
+            }
+            .task-metric-value {
+                font-size: 12px;
+                line-height: 1.25;
+            }
+            .task-row-body {
+                padding: 9px 8px;
+                gap: 8px;
+            }
+            .task-row-controls {
+                gap: 8px;
+            }
+            .task-name-cell {
+                font-size: 12.5px;
+                line-height: 1.4;
+            }
+            .task-row-note {
+                padding: 0 8px 9px;
+                font-size: 11.5px;
+            }
+            .row-actions-group {
+                gap: 4px;
+                min-width: 48px;
+            }
+            .btn-row-action {
+                padding: 4px 8px;
+                font-size: 11px;
+                min-height: 28px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-light p-3 p-md-4">
-    <div class="sticky-top bg-light py-3 z-3">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2 class="h4 h2-md font-weight-bold text-dark mb-0">TASK LIST</h2>
-            <div class="d-flex align-items-center gap-3">
-                <div class="form-check form-switch mb-0">
-                    <input class="form-check-input" type="checkbox" role="switch" id="filterToggle" checked onchange="filterTasks()">
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="./index.html" class="brand-wordmark">Task Analytics</a>
+
+            <div class="topbar-actions">
+                <button type="button" id="refreshBtn" class="btn-ghost" onclick="fetchData()">Làm mới</button>
+                <button type="button" class="btn-primary-action" onclick="openModal('add')">+ Thêm Task</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-container">
+        <section class="toolbar-surface" aria-label="Bộ lọc">
+            <div class="toolbar-toggles">
+                <!-- 1. Tất cả / Đang bật -->
+                <div class="ios-toggle-item">
+                    <button type="button" class="ios-toggle-label active" id="lblStatusAll" onclick="setStatusFilter('all')">Tất cả</button>
+                    <label class="ios-switch" aria-label="Chọn Tất cả hoặc Đang bật">
+                        <input type="checkbox" id="toggleStatusFilter" onchange="setStatusFilter(this.checked ? 'active' : 'all')">
+                        <span class="ios-switch-slider"></span>
+                    </label>
+                    <button type="button" class="ios-toggle-label" id="lblStatusActive" onclick="setStatusFilter('active')">Đang bật</button>
                 </div>
-                <button class="btn btn-primary shadow-sm" onclick="openModal('add')">ADD TASK</button>
+
+                <span class="ios-toggle-divider" aria-hidden="true"></span>
+
+                <!-- 2. Chỉ tính Done -->
+                <div class="ios-toggle-item">
+                    <button type="button" class="ios-toggle-label active" id="lblPenaltyDoneOnly" onclick="togglePenaltySwitch()">Chỉ tính Done</button>
+                    <label class="ios-switch" aria-label="Chỉ tính Done">
+                        <input type="checkbox" id="togglePenaltyMode" checked onchange="setPenaltyMode(this.checked ? 'done_only' : 'with_penalty')">
+                        <span class="ios-switch-slider"></span>
+                    </label>
+                </div>
+
+                <span class="ios-toggle-divider" aria-hidden="true"></span>
+
+                <!-- 3. Tất cả / Theo tháng (chỉ cần chọn trên lịch) -->
+                <div class="ios-toggle-item">
+                    <button type="button" class="ios-toggle-label active" id="lblTimeAll" onclick="setTimeMode('all')">Tất cả</button>
+                    <label class="ios-switch" aria-label="Chọn Tất cả hoặc Theo tháng">
+                        <input type="checkbox" id="toggleTimeMode" onchange="setTimeMode(this.checked ? 'month' : 'all')">
+                        <span class="ios-switch-slider"></span>
+                    </label>
+                    <button type="button" class="ios-toggle-label" id="lblTimeMonth" onclick="setTimeMode('month')">Theo tháng</button>
+                </div>
+
+                <input type="month" id="targetMonthInput" class="control-input font-mono-num" aria-label="Chọn tháng trên lịch" onchange="onMonthChange()" style="display: none;">
+            </div>
+        </section>
+
+        <section class="panel-surface chart-hero-panel" aria-label="Biểu đồ cột từng Task">
+            <div class="panel-header">
+                <div class="chart-title-wrap">
+                    <h2 class="panel-title" id="chartHeading">Biểu đồ Done</h2>
+                    <div class="chart-inline-stats tabular-nums" id="chartInlineStats">Đang tải...</div>
+                </div>
+                <div class="legend-inline" id="chartLegend">
+                    <span class="legend-item">
+                        <span class="legend-swatch" style="background: var(--color-done);"></span>
+                        <span id="legendDoneText">+1 Done</span>
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-swatch" id="legendMissSwatch" style="background: #94A3B8;"></span>
+                        <span id="legendMissText">0 Chưa</span>
+                    </span>
+                </div>
+            </div>
+
+            <div id="chartLoadingState" class="state-box visible">
+                <div class="skeleton-bars" aria-hidden="true">
+                    <div class="skeleton-bar" style="height: 55%;"></div>
+                    <div class="skeleton-bar" style="height: 85%;"></div>
+                    <div class="skeleton-bar" style="height: 40%;"></div>
+                    <div class="skeleton-bar" style="height: 70%;"></div>
+                    <div class="skeleton-bar" style="height: 90%;"></div>
+                    <div class="skeleton-bar" style="height: 45%;"></div>
+                    <div class="skeleton-bar" style="height: 75%;"></div>
+                    <div class="skeleton-bar" style="height: 60%;"></div>
+                </div>
+                <span style="font-size: 13px; color: var(--text-muted);">Đang tải dữ liệu...</span>
+            </div>
+
+            <div id="chartErrorState" class="state-box">
+                <p id="errorMessage" style="margin: 0; font-weight: 500; color: var(--color-miss);">Không thể tải dữ liệu từ máy chủ.</p>
+                <button type="button" class="btn-primary-action" onclick="fetchData()">Thử lại</button>
+            </div>
+
+            <div id="chartEmptyState" class="state-box">
+                <p style="margin: 0; font-weight: 500; color: var(--text-secondary);">Không có task nào phù hợp.</p>
+                <button type="button" class="btn-ghost" onclick="resetFilters()">Đặt lại bộ lọc</button>
+            </div>
+
+            <div id="chartViewport" class="chart-scroll-viewport" style="display: none;">
+                <div id="chartCanvasWrap" class="chart-canvas-wrap">
+                    <canvas id="taskColumnChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-surface" aria-label="Danh sách Task">
+            <div class="panel-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <h2 class="panel-title" style="font-size: 15px;">Danh sách Task</h2>
+                    <span id="tableCountMeta" class="tabular-nums" style="font-size: 12px; color: var(--text-muted);"></span>
+                </div>
+                <div class="ios-toggle-item">
+                    <button type="button" class="ios-toggle-label" id="lblShowFullCols" onclick="toggleFullColumns()">Hiển thị Note</button>
+                    <label class="ios-switch ios-switch-sm" aria-label="Hiển thị Note hôm nay">
+                        <input type="checkbox" id="toggleFullColumns" onchange="setShowFullColumns(this.checked)">
+                        <span class="ios-switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="taskBreakdownBody" class="task-list-container">
+                <div class="task-list-empty">Đang tải...</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL THÊM / SỬA TASK -->
+    <div id="taskModal" class="modal fade show" style="display: none; background: rgba(15, 23, 42, 0.55); z-index: 1050;" tabindex="-1" onclick="if (event.target === this) closeModal()">
+        <div class="modal-dialog modal-dialog-90">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header border-bottom">
+                    <h5 id="modalTitle" class="modal-title fw-bold text-dark" style="font-size: 17px;">Thêm Mới Task</h5>
+                    <button type="button" class="btn-close" aria-label="Đóng" onclick="closeModal()"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="modalErrorAlert" class="alert alert-danger py-2 px-3 small mb-3" style="display: none;"></div>
+                    <div id="dynamicFormContainer" class="modal-form-grid"></div>
+                </div>
+                <div class="modal-footer bg-light border-top gap-2">
+                    <button type="button" class="btn-ghost" onclick="closeModal()">Hủy</button>
+                    <button type="button" id="modalSubmitBtn" class="btn-primary-action" onclick="submitModalForm()">Lưu</button>
+                </div>
             </div>
         </div>
     </div>
-    <div id="loading" class="my-4 text-secondary font-weight-medium">Đang tải dữ liệu...</div>
-    <div id="taskContainer" class="mt-3 row g-3" style="display:none;"></div>
-    <div id="taskModal" class="modal fade show" style="display: none; background: rgba(0,0,0,0.5); z-index: 1050;" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg">
-                <div class="modal-header">
-                    <h5 id="modalTitle" class="modal-title font-weight-bold text-dark">Thêm Mới Task</h5>
+
+    <!-- MODAL XÁC NHẬN XÓA TASK -->
+    <div id="deleteConfirmModal" class="modal fade show" style="display: none; background: rgba(15, 23, 42, 0.5); z-index: 1060;" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold text-dark" style="font-size: 15px;">Xác nhận xóa Task</h5>
+                    <button type="button" class="btn-close" aria-label="Đóng" onclick="closeDeleteModal()"></button>
                 </div>
-                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
-                    <div id="dynamicFormContainer"></div>
+                <div class="modal-body">
+                    <p id="deleteConfirmText" class="mb-0" style="font-size: 13px; color: var(--text-secondary);">Bạn có chắc chắn muốn xóa Task này không?</p>
+                    <div id="deleteErrorAlert" class="alert alert-danger py-2 px-3 small mt-3 mb-0" style="display: none;"></div>
                 </div>
-                <div class="modal-footer bg-light gap-2">
-                    <button class="btn btn-secondary" onclick="closeModal()">Hủy</button>
-                    <button class="btn btn-success" onclick="submitModalForm()">Lưu</button>
+                <div class="modal-footer bg-light border-top gap-2">
+                    <button type="button" class="btn-ghost" onclick="closeDeleteModal()">Hủy</button>
+                    <button type="button" id="confirmDeleteBtn" class="btn-row-action btn-row-danger" style="padding: 6px 14px; font-weight: 600;" onclick="confirmDeleteTask()">Xóa Task</button>
                 </div>
             </div>
         </div>
     </div>
+
 <script>
     const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
-	const G_SHEET = "TASK";
-	const G_SHEET2 = "TASK_DETAIL";
-	const G_SPREAD = "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8";
-	let allRowsData = [],
-		currentModalMode = 'add',
-		currentEditRowIndex = -1;
-	async function fetchData() {
-		console.log("Bắt đầu tải dữ liệu từ server...");
-		try {			
-			const data = await callAjax(API_GSHEET_URL,{
-				"sheet": G_SHEET,
-				"act": "read",
-				"spread": G_SPREAD
-			});
+    const G_SHEET = "TASK";
+    const G_SHEET2 = "TASK_DETAIL";
+    const G_SPREAD = "1ezoFMSBVznSNcuufRRQRjxAmUmYyU9MjKDzl-v3wxl8";
 
-            console.log("Tải dữ liệu từ server thành công.", data);
-			await renderTable(data.values);
-			
-		} catch (error) {
-			console.error("Lỗi xảy ra trong quá trình fetchData:", error);
-			document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
-		}
-	}
+    let allRowsData = [];
+    let rawDetailsValues = [];
+    let currentModalMode = 'add';
+    let currentEditRowIndex = -1;
+    let pendingDeleteTaskId = null;
 
-	async function fetchDataDetail() {
-		console.log("Bắt đầu tải dữ liệu từ server...");
-		try {			
-			const data = await callAjax(API_GSHEET_URL,{
-				"sheet": G_SHEET2,
-				"act": "read",
-				"spread": G_SPREAD
-			});
-			
+    let rawTasks = [];
+    let rawDetails = [];
+    let allDetailDates = [];
+    let allDetailMonths = [];
+    let currentEvaluatedTasks = [];
+    let taskChartInstance = null;
 
+    let state = {
+        timeMode: 'all',             // 'all' | 'month'
+        selectedMonth: getCurrentMonthISO(), // YYYY-MM
+        penaltyMode: 'done_only',    // 'done_only' (+1 / 0) | 'with_penalty' (+1 / -1)
+        statusFilter: 'all',         // 'all' | 'active'
+        showFullColumns: false       // false: hide Done, Chưa, Tỉ lệ, Note | true: show all
+    };
 
-			console.log("Tải dữ liệu từ server thành công.", data);
-			renderTableDetail(data.values);
-		} catch (error) {
-			console.error("Lỗi xảy ra trong quá trình fetchData:", error);
-			document.getElementById('loading').innerText = "Lỗi khi tải dữ liệu.";
-		}
-	}
-	function renderTableDetail(values) {
-		if (!values || values.length <= 1) return;
-		console.log("Bắt đầu xử lý hiển thị thông tin chi tiết (Mapping) theo nhóm ngày...");
-		
-		// Lấy chuỗi ngày hiện tại động từ thời gian thực của thiết bị hệ thống
-		const today = new Date();
-		const yyyy = today.getFullYear();
-		const mm = String(today.getMonth() + 1).padStart(2, '0');
-		const dd = String(today.getDate()).padStart(2, '0');
-		const todayStr = `${yyyy}/${mm}/${dd}`;
-		
-		const dataRows = values;
-		const groupMap = {};
-		
-		for (let i = 0; i < dataRows.length; i++) {
-			if (dataRows[i].length < 2) continue;
-			
-			const taskId = String(dataRows[i][0]).trim();
-			const content = (dataRows[i][1] || "").trim();
-			const timestamp = dataRows[i][2] || "";
-			const timePart = `[${timestamp.substring(13, 18)}] `;
-			
-			if (timestamp.startsWith(todayStr)) {
-				if (!groupMap[taskId]) {
-					groupMap[taskId] = [];
-				}
-				if (content) {
-					groupMap[taskId].push(`${timePart} ${content}`);
-				}
-			}
-		}
-		
-		document.querySelectorAll('.task-card-item').forEach(card => {
-			const cardBody = card.querySelector('.card-body');
-			if (cardBody) {
-				const oldBlock = cardBody.querySelector('.detail-mapping-block');
-				if (oldBlock) oldBlock.remove();
-			}
-		});
-		
-		for (const taskId in groupMap) {
-			if (groupMap[taskId].length === 0) continue;
-			
-			const taskCard = document.querySelector(`.task-card-item[data-id="${taskId}"]`);
-			if (taskCard) {
-				const cardBody = taskCard.querySelector('.card-body');
-				if (cardBody) {
-					const combinedContent = groupMap[taskId].join("<br>");
-					let detailHtml = `<div class="mt-2 pt-2 border-top text-muted small detail-mapping-block"><strong class="text-uppercase text-dark d-block mb-1" style="font-size: 11px;">Note (${todayStr}):</strong><div class="p-2 bg-light rounded text-dark" style="border-left: 3px solid #0d6efd;">${combinedContent}</div></div>`;
-					cardBody.innerHTML += detailHtml;
-				}
-			}
-		}
-	}
-	function formatLastTime(timeStr) {
-		if (!timeStr) return "";
-		if (timeStr.includes(":") && timeStr.split(":").length >= 2) {
-			let t = timeStr.includes(" - ") ? timeStr.split(" - ")[1] : timeStr;
-			let parts = t.split(":");
-			return parts[0] + ":" + parts[1];
-		}
-		return timeStr;
-	}
+    function getTodayISO() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
 
-	async function renderTable(values) {
-		console.log("Bắt đầu dựng cấu trúc bảng hiển thị...");
-		const headers = values[0],
-			startColIdx = headers.indexOf("START");
-		const container = document.getElementById('taskContainer');
-		container.innerHTML = "";
-		allRowsData = JSON.parse(JSON.stringify(values));
-		let dataRows = values.slice(1).filter(r => r[0] && String(r[0]).trim() !== "");
-		if (startColIdx !== -1) dataRows.sort((a, b) => (a[startColIdx] || "").localeCompare(b[startColIdx] || ""));
-		for (let i = 0; i < dataRows.length; i++) {
-			if (dataRows[i].length < 2) continue;
-			const origIdx = allRowsData.findIndex(r => String(r[0]) === String(dataRows[i][0]));
-			let isActive = String(dataRows[i][headers.indexOf("STATUS")]) === "1";
+    function getCurrentMonthISO() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        return `${y}-${m}`;
+    }
 
-			let idVal = dataRows[i][0] || "";
-			let startVal = dataRows[i][headers.indexOf("START")] || "";
-			let fregVal = dataRows[i][headers.indexOf("FREG")] || "";
-			let lastTimeVal = dataRows[i][headers.indexOf("LAST_TIME")] || "";
+    function isoToSlashDate(isoStr) {
+        return (isoStr || '').replace(/-/g, '/');
+    }
 
-			startVal = formatLastTime(startVal);
-			fregVal = formatLastTime(fregVal);
-			lastTimeVal = formatLastTime(lastTimeVal);
+    function isoMonthToSlash(isoMonth) {
+        return (isoMonth || '').replace(/-/g, '/');
+    }
 
-			let cardBodyContent = "";
-			for (let j = 0; j < headers.length; j++) {
-				if (headers[j] === "ID" || headers[j] === "NOTE" || headers[j] === "STATUS" || headers[j] === "START" || headers[j] === "FREG" || headers[j] === "LAST_TIME") continue;
-				let val = dataRows[i][j] || "";
+    function slashMonthToIso(slashMonth) {
+        return (slashMonth || '').replace(/\//g, '-');
+    }
 
-				if (headers[j] === "TASK") {
-					cardBodyContent += `<div class="mb-0"><div class="p-2 bg-light rounded text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val.replace(/\n/g, '<br>')}</div></div>`;
-				} else {
-					cardBodyContent += `<div class="mb-2 d-flex justify-content-between align-items-center border-bottom pb-1"><span class="text-uppercase text-secondary font-weight-bold small">${headers[j]}:</span><span class="text-secondary small" contenteditable="true" onblur="updateCellData(this, ${origIdx}, ${j})">${val}</span></div>`;
-				}
-			}
+    function parseSlashDateToUTC(slashDate) {
+        const parts = String(slashDate || '').split('/');
+        if (parts.length !== 3) return null;
+        const y = Number(parts[0]);
+        const m = Number(parts[1]);
+        const d = Number(parts[2]);
+        if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d) || y < 2000) return null;
+        const dt = new Date(Date.UTC(y, m - 1, d));
+        if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) {
+            return null;
+        }
+        return dt;
+    }
 
-			let headerText = `<span class="badge text-bg-primary font-weight-bold mx-1" style="font-size: 12px; padding: 2px 6px;">${startVal}</span> | <span class="text-primary font-weight-bold">${lastTimeVal}</span> | ${fregVal}`;
+    function formatUTCDateToSlash(dt) {
+        const y = dt.getUTCFullYear();
+        const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(dt.getUTCDate()).padStart(2, '0');
+        return `${y}/${m}/${d}`;
+    }
 
-			const cardHtml = `
-					<div class="col-12 task-card-item" data-id="${dataRows[i][0]}" data-status-active="${isActive ? "1" : "0"}">
-						<div class="card h-100 shadow-sm bg-white border">
-							<div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
-								<span class="font-weight-bold text-dark small" style="letter-spacing: 0.5px; word-spacing: 1px;">${headerText}</span>
-								<div class="form-check form-switch mb-0">
-									<input class="form-check-input" type="checkbox" role="switch" ${isActive ? "checked" : ""} onchange="toggleStatus('${dataRows[i][0]}', this, ${origIdx})">
-								</div>
-							</div>
-							<div class="card-body py-2">
-								${cardBodyContent}
-							</div>
-							<div class="card-footer bg-white border-top-0 d-flex justify-content-end gap-2 pb-2 pt-0">
-								<button class="btn btn-warning btn-sm text-white px-2 py-0" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="openModal('edit', ${origIdx})">Sửa</button>
-								<button class="btn btn-danger btn-sm px-2 py-0" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="deleteTask('${dataRows[i][0]}', ${origIdx})">Xóa</button>
-							</div>
-						</div>
-					</div>
-				`;
-			container.innerHTML += cardHtml;
-		}
-		document.getElementById('loading').style.display = 'none';
-		container.style.display = 'flex';
-		console.log("Dựng bảng hoàn tất. Tiến hành chạy bộ lọc khởi tạo.");
-		filterTasks();
-		fetchDataDetail();
-	}
+    function buildContinuousSlashDates(startSlash, endSlash) {
+        const startDt = parseSlashDateToUTC(startSlash);
+        const endDt = parseSlashDateToUTC(endSlash);
+        if (!startDt || !endDt || startDt > endDt) return [];
+        const dates = [];
+        const cursor = new Date(startDt.getTime());
+        while (cursor <= endDt) {
+            dates.push(formatUTCDateToSlash(cursor));
+            cursor.setUTCDate(cursor.getUTCDate() + 1);
+        }
+        return dates;
+    }
 
-	function filterTasks() {
-		const isEnforceActive = document.getElementById('filterToggle').checked;
-		console.log(`Áp dụng bộ lọc hiển thị iPhone Toggle. Chỉ hiện status=1: ${isEnforceActive}`);
-		document.querySelectorAll('.task-card-item').forEach(row => row.style.display = (!isEnforceActive || row.getAttribute('data-status-active') === "1") ? '' : 'none');
-	}
+    function extractSlashDate(rawTimestamp) {
+        const str = String(rawTimestamp || '').trim();
+        if (!str) return '';
 
-	function openModal(mode, rowIndex) {
-		console.log(`Mở modal chế độ: ${mode}, Chỉ mục dòng: ${rowIndex}`);
-		const headers = allRowsData[0],
-			container = document.getElementById('dynamicFormContainer');
-		container.innerHTML = "";
-		document.getElementById('modalTitle').innerText = mode === 'add' ? "Thêm Mới Task" : "Chỉnh Sửa Task";
-		currentModalMode = mode;
-		currentEditRowIndex = mode === 'edit' ? rowIndex : -1;
-		for (let j = 0; j < headers.length; j++) {
-			if (headers[j] === "ID") continue;
-			let val = mode === 'add' ? (headers[j] === "STATUS" ? "1" : (headers[j] === "START" ? "00:00" : "")) : (allRowsData[rowIndex][j] || "");
-			if (headers[j] === "START") {
-				container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><input type="time" class="form-control form-control-sm" id="modal_field_${j}" value="${val}"></div>`;
-			} else if (headers[j] === "TASK") {
-				container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><textarea class="form-control form-control-sm" id="modal_field_${j}" rows="3">${val}</textarea></div>`;
-			} else {
-				container.innerHTML += `<div class="mb-3 d-flex flex-column gap-1"><label class="small font-weight-bold text-secondary text-uppercase mb-1">${headers[j]}</label><input type="text" class="form-control form-control-sm" id="modal_field_${j}" value="${val}"></div>`;
-			}
-		}
-		const modalEl = document.getElementById('taskModal');
-		modalEl.style.display = 'block';
-	}
+        const ymd = str.match(/(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/);
+        if (ymd) {
+            const candidate = `${ymd[1]}/${String(ymd[2]).padStart(2, '0')}/${String(ymd[3]).padStart(2, '0')}`;
+            if (parseSlashDateToUTC(candidate)) return candidate;
+        }
 
-	function closeModal() {
-		console.log("Đóng popup modal form.");
-		const modalEl = document.getElementById('taskModal');
-		modalEl.style.display = 'none';
-	}
+        const dmy = str.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (dmy) {
+            const candidate = `${dmy[3]}/${String(dmy[2]).padStart(2, '0')}/${String(dmy[1]).padStart(2, '0')}`;
+            if (parseSlashDateToUTC(candidate)) return candidate;
+        }
 
-	function submitModalForm() {
-		currentModalMode === 'add' ? addTask() : updateRowFromModal(currentEditRowIndex);
-	}
-	async function addTask() {
-		const headers = allRowsData[0],
-			newRow = new Array(headers.length).fill("");
-		newRow[0] = Date.now();
-		for (let j = 1; j < headers.length; j++) {
-			const el = document.getElementById(`modal_field_${j}`);
-			newRow[j] = el ? el.value.trim() : "";
-		}
-		console.log(`Bắt đầu xử lý thêm mới Task qua Popup Modal`, newRow);
-		try {
-			const response = await callAjax(API_GSHEET_URL,{
-				"act": "add",
-				"sheet": G_SHEET,
-				"spread": G_SPREAD,
-				"data": JSON.stringify(newRow)
-			});
-			
-			console.log("Thêm mới Task lên server thành công.");
-			allRowsData.push(newRow);
-			closeModal();
-			await renderTable(allRowsData);
-			
-		} catch (error) {
-			console.error("Lỗi khi thêm Task:", error);
-		}
-	}
-	async function updateRowFromModal(rowIndex) {
-		const headers = allRowsData[0],
-			id = allRowsData[rowIndex][0];
-		console.log(`Bắt đầu cập nhật toàn bộ dòng từ popup modal cho ID: ${id}`);
-		for (let j = 0; j < headers.length; j++) {
-			const el = document.getElementById(`modal_field_${j}`);
-			if (el) allRowsData[rowIndex][j] = el.value.trim();
-		}
-		try {
-			const response = await callAjax(API_GSHEET_URL, {
-				"act": "updateByPosVal",
-				"pos": 0,
-				"val": id,
-				"sheet": G_SHEET,
-				"spread": G_SPREAD,
-				"data": JSON.stringify(allRowsData[rowIndex])
-			});
-			
-			console.log(`Cập nhật dữ liệu từ popup cho Task ${id} thành công.`);
-			closeModal();
-			await renderTable(allRowsData);
-			
-		} catch (error) {
-			console.error("Lỗi khi update dữ liệu từ modal:", error);
-		}
-	}
-	async function updateCellData(cellEl, rowIndex, colIndex) {
-		const txt = cellEl.innerText.trim(),
-			id = allRowsData[rowIndex][0];
-		console.log(`Bắt đầu sự kiện cập nhật ô dữ liệu dòng ${rowIndex}, cột ${colIndex} -> Nội dung mới: ${txt}`);
-		if (allRowsData[rowIndex][colIndex] === txt) return;
-		allRowsData[rowIndex][colIndex] = txt;
-		try {
-			const response = await callAjax(API_GSHEET_URL, {
-				"act": "updateByPosVal",
-				"pos": 0,
-				"val": id,
-				"sheet": G_SHEET,
-				"spread": G_SPREAD,
-				"data": JSON.stringify(allRowsData[rowIndex])
-			});
-			
-			console.log(`Cập nhật nội dung ô của Task ${id} thành công.`);
-			await renderTable(allRowsData);
-			
-		} catch (error) {
-			console.error("Lỗi khi update ô dữ liệu:", error);
-		}
-	}
-	async function deleteTask(id, rowIndex) {
-		if (!confirm("Bạn có chắc chắn muốn xóa Task này không?")) return;
-		console.log(`Kích hoạt tiến trình xóa Task ID: ${id} tại hàng chỉ mục: ${rowIndex}`);
-		try {
-			const response = await callAjax(API_GSHEET_URL, {
-				"act": "deleteByPosVal",
-				"pos": 0,
-				"val": id,
-				"sheet": G_SHEET,
-				"spread": G_SPREAD
-			});
-			
-			console.log(`Xóa Task ${id} thành công khỏi cơ sở dữ liệu server.`);
-			allRowsData.splice(rowIndex, 1);
-			await renderTable(allRowsData);
-			
-		} catch (error) {
-			console.error(`Gặp lỗi nghiêm trọng khi thực hiện xóa Task ${id}:`, error);
-		}
-	}
-	async function toggleStatus(id, el, rowIndex) {
-		const newStatus = el.checked ? "1" : "0";
-		console.log(`Bắt đầu cập nhật trạng thái Switch Toggle cho Task ID ${id}: ${newStatus}`);
-		const statusColIdx = allRowsData[0].indexOf("STATUS");
-		if (statusColIdx !== -1) allRowsData[rowIndex][statusColIdx] = newStatus;
-		try {
-			const response = await callAjax(API_GSHEET_URL, {
-				"act": "updateByPosVal",
-				"pos": 0,
-				"val": id,
-				"sheet": G_SHEET,
-				"spread": G_SPREAD,
-				"data": JSON.stringify(allRowsData[rowIndex])
-			});
-			
-			console.log(`Đồng bộ trạng thái Switch cho Task ID ${id} thành công.`);
-			await renderTable(allRowsData);
-			
-		} catch (error) {
-			console.error("Lỗi khi thay đổi trạng thái Switch:", error);
-		}
-	}
-	window.onload = fetchData;
+        return '';
+    }
+
+    function extractTimePart(rawTimestamp) {
+        const str = String(rawTimestamp || '');
+        const match = str.match(/(\d{1,2}:\d{2})/);
+        return match ? match[1] : '';
+    }
+
+    function formatShortTime(timeStr) {
+        if (!timeStr) return '—';
+        const str = String(timeStr).trim();
+        if (str.includes(':') && str.split(':').length >= 2) {
+            const t = str.includes(' - ') ? str.split(' - ')[1] : str;
+            const parts = t.split(':');
+            return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+        }
+        return str;
+    }
+
+    function isDoneNote(content) {
+        return String(content || '').toLowerCase().includes('done');
+    }
+
+    function escapeHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function truncateLabel(text, maxLen) {
+        const clean = String(text || '').replace(/\s+/g, ' ').trim();
+        if (clean.length <= maxLen) return clean;
+        return clean.slice(0, maxLen - 1) + '…';
+    }
+
+    // =========================================================================
+    // TẢI DỮ LIỆU TỪ GOOGLE SHEETS
+    // =========================================================================
+
+    async function fetchData() {
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = 'Đang tải...';
+        }
+        showChartState('loading');
+
+        try {
+            const [taskData, detailData] = await Promise.all([
+                callAjax(API_GSHEET_URL, {
+                    sheet: G_SHEET,
+                    act: "read",
+                    spread: G_SPREAD
+                }),
+                callAjax(API_GSHEET_URL, {
+                    sheet: G_SHEET2,
+                    act: "read",
+                    spread: G_SPREAD
+                })
+            ]);
+
+            if (!taskData || taskData.status === 'error' || !Array.isArray(taskData.values)) {
+                throw new Error(taskData?.message || 'Không đọc được dữ liệu từ sheet TASK.');
+            }
+            if (!detailData || detailData.status === 'error' || !Array.isArray(detailData.values)) {
+                throw new Error(detailData?.message || 'Không đọc được dữ liệu từ sheet TASK_DETAIL.');
+            }
+
+            allRowsData = JSON.parse(JSON.stringify(taskData.values));
+            rawDetailsValues = detailData.values;
+
+            rawTasks = parseTaskRows(allRowsData);
+            rawDetails = parseDetailRows(rawDetailsValues);
+            const rawDetailDates = Array.from(new Set(
+                rawDetails.map(d => d.dateKey).filter(Boolean)
+            )).sort();
+
+            const todaySlash = isoToSlashDate(getTodayISO());
+            if (rawDetailDates.length > 0) {
+                const firstDate = rawDetailDates[0];
+                const lastRawDate = rawDetailDates[rawDetailDates.length - 1];
+                const endDate = lastRawDate > todaySlash ? lastRawDate : todaySlash;
+                allDetailDates = buildContinuousSlashDates(firstDate, endDate);
+            } else {
+                allDetailDates = [];
+            }
+
+            allDetailMonths = Array.from(new Set(
+                allDetailDates.map(d => d.slice(0, 7))
+            )).sort();
+
+            if (allDetailMonths.length > 0) {
+                const currentSlashMonth = isoMonthToSlash(state.selectedMonth);
+                if (!allDetailMonths.includes(currentSlashMonth)) {
+                    state.selectedMonth = slashMonthToIso(allDetailMonths[allDetailMonths.length - 1]);
+                }
+            }
+            syncMonthInputs();
+
+            recomputeAndRender();
+        } catch (error) {
+            console.error("Lỗi xảy ra trong quá trình fetchData:", error);
+            document.getElementById('errorMessage').textContent = error.message || "Lỗi khi tải dữ liệu.";
+            showChartState('error');
+        } finally {
+            if (refreshBtn) {
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = 'Làm mới';
+            }
+        }
+    }
+
+    // =========================================================================
+    // CRUD: THÊM, SỬA, XÓA, BẬT/TẮT TRẠNG THÁI TASK
+    // =========================================================================
+
+    function findRowIndexById(id) {
+        return allRowsData.findIndex((r, idx) => idx > 0 && String(r[0]).trim() === String(id).trim());
+    }
+
+    function buildModalFieldHtml(j, headerLabel, val, headerName) {
+        if (headerName === "START") {
+            let timeVal = String(val || '').trim();
+            if (timeVal) {
+                const m = timeVal.match(/(\d{1,2}):(\d{2})/);
+                if (m) timeVal = `${m[1].padStart(2, '0')}:${m[2]}`;
+            }
+            return `
+                <div class="modal-field-group">
+                    <label class="modal-field-label" for="modal_field_${j}">${escapeHtml(headerLabel)}</label>
+                    <input type="time" class="form-control font-mono-num" id="modal_field_${j}" value="${escapeHtml(timeVal)}">
+                </div>`;
+        }
+        if (headerName === "STATUS") {
+            const isOn = String(val).trim() === "1";
+            return `
+                <div class="modal-field-group">
+                    <span class="modal-field-label">${escapeHtml(headerLabel)}</span>
+                    <div class="modal-toggle-box">
+                        <div class="ios-toggle-item">
+                            <button type="button" class="ios-toggle-label ${!isOn ? 'active' : ''}" id="modalStatusOff_${j}" onclick="setModalStatusToggle(${j}, false)">Đã tắt</button>
+                            <label class="ios-switch" aria-label="Bật tắt trạng thái Task">
+                                <input type="checkbox" id="modal_field_${j}" ${isOn ? 'checked' : ''} onchange="syncModalStatusLabels(${j})">
+                                <span class="ios-switch-slider"></span>
+                            </label>
+                            <button type="button" class="ios-toggle-label ${isOn ? 'active' : ''}" id="modalStatusOn_${j}" onclick="setModalStatusToggle(${j}, true)">Đang bật</button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        if (headerName === "TASK" || headerName === "NOTE") {
+            const rowsCount = headerName === "TASK" ? 6 : 3;
+            return `
+                <div class="modal-field-group modal-field-full">
+                    <label class="modal-field-label" for="modal_field_${j}">${escapeHtml(headerLabel)}</label>
+                    <textarea class="form-control" id="modal_field_${j}" rows="${rowsCount}">${escapeHtml(val)}</textarea>
+                </div>`;
+        }
+        return `
+            <div class="modal-field-group">
+                <label class="modal-field-label" for="modal_field_${j}">${escapeHtml(headerLabel)}</label>
+                <input type="text" class="form-control" id="modal_field_${j}" value="${escapeHtml(val)}">
+            </div>`;
+    }
+
+    function openModal(mode, rowIndex) {
+        if (!allRowsData || allRowsData.length === 0) {
+            const statsEl = document.getElementById('chartInlineStats');
+            if (statsEl) statsEl.textContent = "Đang tải dữ liệu, vui lòng đợi...";
+            return;
+        }
+        const headers = allRowsData[0];
+        const container = document.getElementById('dynamicFormContainer');
+        const errorAlert = document.getElementById('modalErrorAlert');
+        if (errorAlert) {
+            errorAlert.style.display = 'none';
+            errorAlert.textContent = '';
+        }
+        container.innerHTML = "";
+        document.getElementById('modalTitle').innerText = mode === 'add' ? "Thêm Mới Task" : "Chỉnh Sửa Task";
+        currentModalMode = mode;
+        currentEditRowIndex = mode === 'edit' ? rowIndex : -1;
+
+        const topOrder = ["START", "STATUS", "FREG"];
+        const topIndices = {};
+        for (let j = 0; j < headers.length; j++) {
+            const hName = String(headers[j] || '').trim().toUpperCase();
+            if (topOrder.includes(hName) && topIndices[hName] === undefined) {
+                topIndices[hName] = j;
+            }
+        }
+
+        const topFieldsHtml = topOrder
+            .filter(hName => topIndices[hName] !== undefined)
+            .map(hName => {
+                const j = topIndices[hName];
+                const val = mode === 'add'
+                    ? (hName === "STATUS" ? "1" : (hName === "START" ? "00:00" : ""))
+                    : (allRowsData[rowIndex][j] || "");
+                return buildModalFieldHtml(j, headers[j], val, hName);
+            })
+            .join('');
+
+        if (topFieldsHtml) {
+            container.insertAdjacentHTML('beforeend', `<div class="modal-top-row modal-field-full">${topFieldsHtml}</div>`);
+        }
+
+        for (let j = 0; j < headers.length; j++) {
+            const headerName = String(headers[j] || '').trim().toUpperCase();
+            if (headerName === "ID" || topOrder.includes(headerName)) continue;
+            const val = mode === 'add' ? "" : (allRowsData[rowIndex][j] || "");
+            container.insertAdjacentHTML('beforeend', buildModalFieldHtml(j, headers[j], val, headerName));
+        }
+        document.getElementById('taskModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function setModalStatusToggle(fieldIdx, isOn) {
+        const input = document.getElementById(`modal_field_${fieldIdx}`);
+        if (input) {
+            input.checked = Boolean(isOn);
+            syncModalStatusLabels(fieldIdx);
+        }
+    }
+
+    function syncModalStatusLabels(fieldIdx) {
+        const input = document.getElementById(`modal_field_${fieldIdx}`);
+        const offLbl = document.getElementById(`modalStatusOff_${fieldIdx}`);
+        const onLbl = document.getElementById(`modalStatusOn_${fieldIdx}`);
+        const isOn = Boolean(input && input.checked);
+        if (offLbl) offLbl.classList.toggle('active', !isOn);
+        if (onLbl) onLbl.classList.toggle('active', isOn);
+    }
+
+    function readModalFieldValue(el) {
+        if (!el) return "";
+        if (el.type === 'checkbox') {
+            return el.checked ? "1" : "0";
+        }
+        return el.value.trim();
+    }
+
+    function openEditById(taskId) {
+        const idx = findRowIndexById(taskId);
+        if (idx > 0) {
+            openModal('edit', idx);
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('taskModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function submitModalForm() {
+        currentModalMode === 'add' ? addTask() : updateRowFromModal(currentEditRowIndex);
+    }
+
+    async function addTask() {
+        const headers = allRowsData[0];
+        const newRow = new Array(headers.length).fill("");
+        newRow[0] = Date.now();
+        for (let j = 1; j < headers.length; j++) {
+            const el = document.getElementById(`modal_field_${j}`);
+            newRow[j] = readModalFieldValue(el);
+        }
+
+        const submitBtn = document.getElementById('modalSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang lưu...';
+
+        try {
+            await callAjax(API_GSHEET_URL, {
+                act: "add",
+                sheet: G_SHEET,
+                spread: G_SPREAD,
+                data: JSON.stringify(newRow)
+            });
+
+            allRowsData.push(newRow);
+            rawTasks = parseTaskRows(allRowsData);
+            closeModal();
+            recomputeAndRender();
+        } catch (error) {
+            console.error("Lỗi khi thêm Task:", error);
+            const errorAlert = document.getElementById('modalErrorAlert');
+            if (errorAlert) {
+                errorAlert.textContent = error.message || "Không thể thêm Task. Vui lòng thử lại.";
+                errorAlert.style.display = 'block';
+            }
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Lưu';
+        }
+    }
+
+    async function updateRowFromModal(rowIndex) {
+        if (rowIndex <= 0 || !allRowsData[rowIndex]) return;
+        const headers = allRowsData[0];
+        const id = allRowsData[rowIndex][0];
+        for (let j = 0; j < headers.length; j++) {
+            const el = document.getElementById(`modal_field_${j}`);
+            if (el) allRowsData[rowIndex][j] = readModalFieldValue(el);
+        }
+
+        const submitBtn = document.getElementById('modalSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang lưu...';
+
+        try {
+            await callAjax(API_GSHEET_URL, {
+                act: "updateByPosVal",
+                pos: 0,
+                val: id,
+                sheet: G_SHEET,
+                spread: G_SPREAD,
+                data: JSON.stringify(allRowsData[rowIndex])
+            });
+
+            rawTasks = parseTaskRows(allRowsData);
+            closeModal();
+            recomputeAndRender();
+        } catch (error) {
+            console.error("Lỗi khi update dữ liệu từ modal:", error);
+            const errorAlert = document.getElementById('modalErrorAlert');
+            if (errorAlert) {
+                errorAlert.textContent = error.message || "Không thể cập nhật Task. Vui lòng thử lại.";
+                errorAlert.style.display = 'block';
+            }
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Lưu';
+        }
+    }
+
+    function deleteTaskById(id) {
+        pendingDeleteTaskId = id;
+        const task = rawTasks.find(t => String(t.id) === String(id));
+        const textEl = document.getElementById('deleteConfirmText');
+        const errEl = document.getElementById('deleteErrorAlert');
+        if (errEl) {
+            errEl.style.display = 'none';
+            errEl.textContent = '';
+        }
+        if (textEl) {
+            textEl.textContent = task
+                ? `Bạn có chắc chắn muốn xóa task "${task.title}" (ID: ${task.id}) không?`
+                : `Bạn có chắc chắn muốn xóa Task ID ${id} không?`;
+        }
+        document.getElementById('deleteConfirmModal').style.display = 'block';
+    }
+
+    function closeDeleteModal() {
+        pendingDeleteTaskId = null;
+        document.getElementById('deleteConfirmModal').style.display = 'none';
+    }
+
+    async function confirmDeleteTask() {
+        if (!pendingDeleteTaskId) return;
+        const id = pendingDeleteTaskId;
+        const rowIndex = findRowIndexById(id);
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        const errEl = document.getElementById('deleteErrorAlert');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Đang xóa...';
+
+        try {
+            await callAjax(API_GSHEET_URL, {
+                act: "deleteByPosVal",
+                pos: 0,
+                val: id,
+                sheet: G_SHEET,
+                spread: G_SPREAD
+            });
+
+            if (rowIndex > 0) {
+                allRowsData.splice(rowIndex, 1);
+            }
+            closeDeleteModal();
+            rawTasks = parseTaskRows(allRowsData);
+            recomputeAndRender();
+        } catch (error) {
+            console.error(`Lỗi khi xóa Task ${id}:`, error);
+            if (errEl) {
+                errEl.textContent = error.message || "Không thể xóa Task. Vui lòng thử lại.";
+                errEl.style.display = 'block';
+            }
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Xóa Task';
+        }
+    }
+
+    async function toggleStatusById(id, el) {
+        const rowIndex = findRowIndexById(id);
+        if (rowIndex <= 0) return;
+
+        const newStatus = el.checked ? "1" : "0";
+        const statusColIdx = allRowsData[0].indexOf("STATUS");
+        if (statusColIdx !== -1) allRowsData[rowIndex][statusColIdx] = newStatus;
+
+        try {
+            await callAjax(API_GSHEET_URL, {
+                act: "updateByPosVal",
+                pos: 0,
+                val: id,
+                sheet: G_SHEET,
+                spread: G_SPREAD,
+                data: JSON.stringify(allRowsData[rowIndex])
+            });
+
+            rawTasks = parseTaskRows(allRowsData);
+            recomputeAndRender();
+        } catch (error) {
+            console.error("Lỗi khi thay đổi trạng thái Switch:", error);
+            el.checked = !el.checked;
+        }
+    }
+
+    // =========================================================================
+    // XỬ LÝ DỮ LIỆU & BIỂU ĐỒ
+    // =========================================================================
+
+    function syncMonthInputs() {
+        const monthInput = document.getElementById('targetMonthInput');
+        if (monthInput) monthInput.value = state.selectedMonth;
+    }
+
+    function parseTaskRows(values) {
+        if (!values || values.length <= 1) return [];
+        const headers = values[0].map(h => String(h || '').trim().toUpperCase());
+        const idIdx = headers.indexOf('ID') !== -1 ? headers.indexOf('ID') : 0;
+        const startIdx = headers.indexOf('START');
+        const taskIdx = headers.indexOf('TASK');
+        const statusIdx = headers.indexOf('STATUS');
+        const fregIdx = headers.indexOf('FREG');
+        const lastTimeIdx = headers.indexOf('LAST_TIME');
+
+        const tasks = [];
+        for (let i = 1; i < values.length; i++) {
+            const row = values[i];
+            if (!row || row.length < 2) continue;
+            const id = String(row[idIdx] || '').trim();
+            if (!id) continue;
+
+            const rawTaskTitle = taskIdx !== -1 ? String(row[taskIdx] || '') : String(row[2] || '');
+            const title = rawTaskTitle.replace(/\r\n/g, '\n').replace(/\\n/g, '\n').trim();
+            const startRaw = startIdx !== -1 ? String(row[startIdx] || '').trim() : '';
+            const statusRaw = statusIdx !== -1 ? String(row[statusIdx] || '').trim() : '1';
+            const fregRaw = fregIdx !== -1 ? String(row[fregIdx] || '').trim() : '';
+            const lastTimeRaw = lastTimeIdx !== -1 ? String(row[lastTimeIdx] || '').trim() : '';
+
+            tasks.push({
+                id,
+                origIdx: i,
+                title: title || `Task ${id}`,
+                startRaw,
+                startDisplay: formatShortTime(startRaw),
+                isActive: statusRaw === '1',
+                freg: fregRaw,
+                lastTime: formatShortTime(lastTimeRaw)
+            });
+        }
+        return tasks;
+    }
+
+    function parseDetailRows(values) {
+        if (!values || values.length === 0) return [];
+        const details = [];
+        for (let i = 0; i < values.length; i++) {
+            const row = values[i];
+            if (!row || row.length < 2) continue;
+            const taskId = String(row[0] || '').trim();
+            if (!taskId) continue;
+            if (i === 0 && (taskId.toUpperCase() === 'ID' || taskId.toUpperCase() === 'TASK_ID')) {
+                continue;
+            }
+            const content = String(row[1] || '').trim();
+            const timestamp = String(row[2] || '').trim();
+            const dateKey = extractSlashDate(timestamp);
+            const timePart = extractTimePart(timestamp);
+
+            details.push({
+                taskId,
+                content,
+                timestamp,
+                dateKey,
+                timePart,
+                isDone: isDoneNote(content)
+            });
+        }
+        return details;
+    }
+
+    function evaluateTasks() {
+        const todaySlash = isoToSlashDate(getTodayISO());
+        const selectedSlashMonth = isoMonthToSlash(state.selectedMonth);
+        const datesToEvaluate = state.timeMode === 'month'
+            ? allDetailDates.filter(d => d.startsWith(selectedSlashMonth))
+            : allDetailDates;
+
+        const detailByTaskDate = new Map();
+
+        for (const d of rawDetails) {
+            if (d.dateKey) {
+                if (!detailByTaskDate.has(d.taskId)) detailByTaskDate.set(d.taskId, new Map());
+                const dateMap = detailByTaskDate.get(d.taskId);
+                if (!dateMap.has(d.dateKey)) dateMap.set(d.dateKey, []);
+                dateMap.get(d.dateKey).push(d);
+            }
+        }
+
+        const filtered = rawTasks.filter(task => {
+            if (state.statusFilter === 'active' && !task.isActive) return false;
+            return true;
+        });
+
+        const isWithPenalty = state.penaltyMode === 'with_penalty';
+
+        const evaluated = filtered.map(task => {
+            const dateMap = detailByTaskDate.get(task.id) || new Map();
+
+            let doneDays = 0;
+            let missDays = 0;
+
+            for (const dateKey of datesToEvaluate) {
+                const dayNotes = dateMap.get(dateKey) || [];
+                const dayDone = dayNotes.some(n => n.isDone);
+                if (dayDone) doneDays++;
+                else missDays++;
+            }
+
+            const score = isWithPenalty ? (doneDays - missDays) : doneDays;
+            const totalEvaluatedDays = datesToEvaluate.length;
+            const completionRate = totalEvaluatedDays > 0 ? Math.round((doneDays / totalEvaluatedDays) * 100) : 0;
+            const todayNotes = dateMap.get(todaySlash) || [];
+
+            return {
+                ...task,
+                score,
+                doneDays,
+                missDays,
+                totalEvaluatedDays,
+                completionRate,
+                todayNotes
+            };
+        });
+
+        evaluated.sort((a, b) => (a.startRaw || '').localeCompare(b.startRaw || ''));
+
+        return { evaluated, datesToEvaluate, todaySlash };
+    }
+
+    function recomputeAndRender() {
+        const { evaluated, datesToEvaluate, todaySlash } = evaluateTasks();
+        currentEvaluatedTasks = evaluated;
+
+        updateSubtitleAndKPIs(evaluated, datesToEvaluate);
+
+        if (evaluated.length === 0) {
+            if (taskChartInstance) {
+                taskChartInstance.destroy();
+                taskChartInstance = null;
+            }
+            showChartState('empty');
+            renderChartTable(evaluated, todaySlash);
+            return;
+        }
+
+        showChartState('chart');
+        renderColumnChart(evaluated, todaySlash);
+        renderChartTable(evaluated, todaySlash);
+    }
+
+    function formatMonthDisplay(isoMonth) {
+        const parts = String(isoMonth || '').split('-');
+        return parts.length === 2 ? `${parts[1]}/${parts[0]}` : isoMonth;
+    }
+
+    function updateSubtitleAndKPIs(tasks, datesToEvaluate) {
+        const headingEl = document.getElementById('chartHeading');
+        const statsEl = document.getElementById('chartInlineStats');
+        const dayCount = datesToEvaluate.length;
+        const isWithPenalty = state.penaltyMode === 'with_penalty';
+
+        if (state.timeMode === 'month') {
+            const monthLabel = formatMonthDisplay(state.selectedMonth);
+            headingEl.textContent = isWithPenalty
+                ? `Tháng ${monthLabel} · Có trừ lùi`
+                : `Tháng ${monthLabel} · Chỉ tính Done`;
+        } else {
+            headingEl.textContent = isWithPenalty
+                ? `Tất cả · Có trừ lùi`
+                : `Tất cả · Chỉ tính Done`;
+        }
+
+        const legendDoneEl = document.getElementById('legendDoneText');
+        const legendMissEl = document.getElementById('legendMissText');
+        const legendMissSwatch = document.getElementById('legendMissSwatch');
+        legendDoneEl.textContent = '+1 Done';
+        legendMissEl.textContent = isWithPenalty ? '-1 Chưa' : '0 Chưa';
+        legendMissSwatch.style.background = isWithPenalty ? 'var(--color-miss)' : '#94A3B8';
+
+        const totalTasks = tasks.length;
+        const totalDoneHits = tasks.reduce((acc, t) => acc + t.doneDays, 0);
+        const totalMissHits = tasks.reduce((acc, t) => acc + t.missDays, 0);
+        const totalChecks = totalDoneHits + totalMissHits;
+        const overallPct = totalChecks > 0 ? Math.round((totalDoneHits / totalChecks) * 100) : 0;
+        const netScore = tasks.reduce((acc, t) => acc + t.score, 0);
+        const netStr = netScore > 0 ? `+${netScore}` : `${netScore}`;
+        const netColor = netScore > 0 ? 'var(--color-done)' : netScore < 0 ? 'var(--color-miss)' : 'var(--text-primary)';
+
+        if (statsEl) {
+            statsEl.innerHTML = `
+                <span><strong>${totalTasks}</strong> task</span>
+                <span class="stat-sep">·</span>
+                <span><strong>${dayCount}</strong> ngày</span>
+                <span class="stat-sep">·</span>
+                <span class="text-done"><strong>${totalDoneHits}</strong> done (${overallPct}%)</span>
+                <span class="stat-sep">·</span>
+                <span>Điểm: <strong style="color:${netColor};">${netStr}</strong></span>
+            `;
+        }
+
+        document.getElementById('tableCountMeta').textContent = `${totalTasks} task`;
+    }
+
+    const barValueLabelPlugin = {
+        id: 'barValueLabelPlugin',
+        afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data) return;
+
+            const isNarrow = chart.width < 520;
+            ctx.save();
+            ctx.font = isNarrow
+                ? '700 10px "JetBrains Mono", monospace'
+                : '700 12px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+
+            meta.data.forEach((bar, index) => {
+                const rawVal = chart.data.datasets[0].data[index];
+                const label = rawVal > 0 ? `+${rawVal}` : `${rawVal}`;
+                const isPositive = rawVal >= 0;
+
+                ctx.fillStyle = rawVal > 0 ? '#15803D' : rawVal < 0 ? '#B91C1C' : '#475569';
+                ctx.textBaseline = isPositive ? 'bottom' : 'top';
+                const gap = isNarrow ? 3 : 6;
+                const yOffset = isPositive ? bar.y - gap : bar.y + gap;
+                ctx.fillText(label, bar.x, yOffset);
+            });
+            ctx.restore();
+        }
+    };
+
+    function renderColumnChart(tasks, todaySlash) {
+        const wrap = document.getElementById('chartCanvasWrap');
+        const viewportEl = document.getElementById('chartViewport');
+        const viewportWidth = viewportEl.clientWidth || Math.max(320, window.innerWidth - 36);
+        const isMobile = window.innerWidth <= 768;
+        const minWidthPerBar = isMobile ? 16 : 68;
+        const targetWidth = Math.max(viewportWidth, tasks.length * minWidthPerBar);
+        wrap.style.width = `${targetWidth}px`;
+
+        const canvas = document.getElementById('taskColumnChart');
+        const ctx = canvas.getContext('2d');
+
+        if (taskChartInstance) {
+            taskChartInstance.destroy();
+        }
+
+        const labels = tasks.map(t => t.startDisplay || '—');
+        const dataValues = tasks.map(t => t.score);
+        const bgColors = dataValues.map(v => v > 0 ? 'rgba(22, 163, 74, 0.90)' : v < 0 ? 'rgba(220, 38, 38, 0.86)' : 'rgba(148, 163, 184, 0.65)');
+        const hoverColors = dataValues.map(v => v > 0 ? '#15803D' : v < 0 ? '#B91C1C' : '#64748B');
+
+        const isWithPenalty = state.penaltyMode === 'with_penalty';
+        const maxAbs = Math.max(1, ...dataValues.map(v => Math.abs(v)));
+        const maxPos = Math.max(1, ...dataValues);
+        const stepSize = Math.max(1, Math.ceil((isWithPenalty ? maxAbs : maxPos) / 5));
+
+        const yMin = isWithPenalty
+            ? -(maxAbs + Math.max(1, Math.ceil(maxAbs * 0.15)))
+            : 0;
+        const yMax = isWithPenalty
+            ? (maxAbs + Math.max(1, Math.ceil(maxAbs * 0.15)))
+            : (maxPos + Math.max(1, Math.ceil(maxPos * 0.15)));
+
+        taskChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Điểm Task',
+                    data: dataValues,
+                    backgroundColor: bgColors,
+                    hoverBackgroundColor: hoverColors,
+                    borderRadius: isMobile ? 4 : 6,
+                    borderSkipped: false,
+                    maxBarThickness: isMobile ? 28 : 48
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 200
+                },
+                layout: {
+                    padding: {
+                        top: isMobile ? 18 : 24,
+                        bottom: isMobile ? 4 : 14,
+                        left: isMobile ? 0 : 8,
+                        right: isMobile ? 2 : 12
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#0F172A',
+                        titleColor: '#F8FAFC',
+                        bodyColor: '#E2E8F0',
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            title: (items) => {
+                                const idx = items[0].dataIndex;
+                                const task = currentEvaluatedTasks[idx];
+                                return task ? task.title : '';
+                            },
+                            label: (item) => {
+                                const idx = item.dataIndex;
+                                const task = currentEvaluatedTasks[idx];
+                                if (!task) return '';
+                                const scoreStr = task.score > 0 ? `+${task.score}` : `${task.score}`;
+                                const missRule = isWithPenalty ? `${task.missDays} ngày chưa (-1)` : `${task.missDays} ngày chưa (0)`;
+                                const lines = [
+                                    `Tổng điểm: ${scoreStr} (${task.doneDays} ngày done +1 / ${missRule})`,
+                                    `Tỉ lệ hoàn thành: ${task.completionRate}% (${task.doneDays}/${task.totalEvaluatedDays} ngày)`,
+                                    `Start: ${task.startDisplay} · ${task.isActive ? 'Đang bật' : 'Đã tắt'}`
+                                ];
+                                if (task.todayNotes.length > 0) {
+                                    lines.push(`--- Note hôm nay (${todaySlash}) ---`);
+                                    task.todayNotes.forEach(n => {
+                                        const timeStr = n.timePart ? `[${n.timePart}] ` : '';
+                                        lines.push(`${timeStr}${n.content}`);
+                                    });
+                                } else {
+                                    lines.push(`Note hôm nay (${todaySlash}): Chưa có note`);
+                                }
+                                return lines;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        border: {
+                            color: '#CBD5E1'
+                        },
+                        ticks: {
+                            color: '#334155',
+                            font: {
+                                family: "'JetBrains Mono', monospace",
+                                size: isMobile ? 10 : 11,
+                                weight: '600'
+                            },
+                            maxRotation: isMobile ? 60 : 30,
+                            minRotation: 0,
+                            autoSkip: false
+                        }
+                    },
+                    y: {
+                        min: yMin,
+                        max: yMax,
+                        border: {
+                            display: false
+                        },
+                        grid: {
+                            color: (ctx) => ctx.tick && ctx.tick.value === 0 ? '#64748B' : '#E2E8F0',
+                            lineWidth: (ctx) => ctx.tick && ctx.tick.value === 0 ? 1.5 : 1,
+                            tickLength: 0
+                        },
+                        ticks: {
+                            stepSize,
+                            color: '#475569',
+                            padding: isMobile ? 4 : 8,
+                            font: {
+                                family: "'JetBrains Mono', monospace",
+                                size: isMobile ? 10 : 11,
+                                weight: '600'
+                            },
+                            callback: (val) => {
+                                if (!Number.isInteger(val)) return '';
+                                return val > 0 ? `+${val}` : `${val}`;
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: [barValueLabelPlugin]
+        });
+    }
+
+    function renderChartTable(tasks, todaySlash) {
+        const listEl = document.getElementById('taskBreakdownBody');
+        const isWithPenalty = state.penaltyMode === 'with_penalty';
+        const showNote = Boolean(state.showFullColumns);
+
+        if (!tasks || tasks.length === 0) {
+            listEl.innerHTML = `<div class="task-list-empty">Không có task nào để hiển thị.</div>`;
+            return;
+        }
+
+        listEl.innerHTML = tasks.map((task, idx) => {
+            const scoreClass = task.score > 0 ? 'score-text-done' : task.score < 0 ? 'score-text-miss' : 'score-text-zero';
+            const scoreStr = task.score > 0 ? `+${task.score}` : `${task.score}`;
+            const missDisplay = isWithPenalty ? `-${task.missDays}` : `${task.missDays}`;
+            const missClass = isWithPenalty ? 'text-miss' : '';
+            const safeId = escapeHtml(task.id);
+
+            let noteRowHtml = '';
+            if (showNote) {
+                const notesHtml = task.todayNotes.length > 0
+                    ? task.todayNotes.map(n => {
+                        const stamp = n.timePart ? `[${n.timePart}] ` : '';
+                        return `<div class="note-line"><span class="font-mono-num" style="color:var(--text-muted);">${escapeHtml(stamp)}</span><span style="color:${n.isDone ? 'var(--color-done)' : 'var(--text-primary)'}; font-weight:${n.isDone ? '600' : '400'};">${escapeHtml(n.content || '(trống)')}</span></div>`;
+                    }).join('')
+                    : `<span style="color: var(--text-muted);">Chưa có note hôm nay</span>`;
+                noteRowHtml = `<div class="task-row-note"><span style="font-weight:600; color:var(--text-muted);">Note (${escapeHtml(todaySlash)}): </span>${notesHtml}</div>`;
+            }
+
+            return `
+                <article class="task-row-item" id="row-${safeId}">
+                    <div class="task-row-header">
+                        <div class="task-metric-item">
+                            <span class="task-metric-label">STT</span>
+                            <span class="task-metric-value font-mono-num" style="color: var(--text-muted);">${idx + 1}</span>
+                        </div>
+                        <div class="task-metric-item">
+                            <span class="task-metric-label">Start</span>
+                            <span class="task-metric-value font-mono-num">${escapeHtml(task.startDisplay)}</span>
+                        </div>
+                        <div class="task-metric-item">
+                            <span class="task-metric-label">Done</span>
+                            <span class="task-metric-value font-mono-num text-done">+${task.doneDays}</span>
+                        </div>
+                        <div class="task-metric-item">
+                            <span class="task-metric-label">Chưa</span>
+                            <span class="task-metric-value font-mono-num ${missClass}" style="${isWithPenalty ? '' : 'color:var(--text-muted);'}">${missDisplay}</span>
+                        </div>
+                        <div class="task-metric-item">
+                            <span class="task-metric-label">Tỉ lệ</span>
+                            <span class="task-metric-value font-mono-num">${task.completionRate}%</span>
+                        </div>
+                        <div class="task-metric-item metric-right">
+                            <span class="task-metric-label">Điểm</span>
+                            <span class="task-metric-value font-mono-num ${scoreClass}">${scoreStr}</span>
+                        </div>
+                    </div>
+                    <div class="task-row-body">
+                        <div class="task-name-cell">${escapeHtml(task.title)}</div>
+                        <div class="task-row-controls">
+                            <label class="ios-switch ios-switch-sm" aria-label="Bật tắt task ${escapeHtml(task.title)}">
+                                <input type="checkbox" ${task.isActive ? 'checked' : ''} data-id="${safeId}" onchange="toggleStatusById(this.dataset.id, this)">
+                                <span class="ios-switch-slider"></span>
+                            </label>
+                            <div class="row-actions-group">
+                                <button type="button" class="btn-row-action" data-id="${safeId}" onclick="openEditById(this.dataset.id)">Sửa</button>
+                                <button type="button" class="btn-row-action btn-row-danger" data-id="${safeId}" onclick="deleteTaskById(this.dataset.id)">Xóa</button>
+                            </div>
+                        </div>
+                    </div>
+                    ${noteRowHtml}
+                </article>`;
+        }).join('');
+    }
+
+    function showChartState(target) {
+        const loadingEl = document.getElementById('chartLoadingState');
+        const errorEl = document.getElementById('chartErrorState');
+        const emptyEl = document.getElementById('chartEmptyState');
+        const viewportEl = document.getElementById('chartViewport');
+
+        loadingEl.classList.toggle('visible', target === 'loading');
+        errorEl.classList.toggle('visible', target === 'error');
+        emptyEl.classList.toggle('visible', target === 'empty');
+        viewportEl.style.display = target === 'chart' ? 'block' : 'none';
+    }
+
+    function syncToggleSwitchesUI() {
+        const isOnlyActive = state.statusFilter === 'active';
+        const toggleStatus = document.getElementById('toggleStatusFilter');
+        if (toggleStatus) toggleStatus.checked = isOnlyActive;
+        document.getElementById('lblStatusAll').classList.toggle('active', !isOnlyActive);
+        document.getElementById('lblStatusActive').classList.toggle('active', isOnlyActive);
+
+        const isDoneOnly = state.penaltyMode === 'done_only';
+        const togglePenalty = document.getElementById('togglePenaltyMode');
+        if (togglePenalty) togglePenalty.checked = isDoneOnly;
+        document.getElementById('lblPenaltyDoneOnly').classList.toggle('active', isDoneOnly);
+
+        const isMonth = state.timeMode === 'month';
+        const toggleTime = document.getElementById('toggleTimeMode');
+        if (toggleTime) toggleTime.checked = isMonth;
+        document.getElementById('lblTimeAll').classList.toggle('active', !isMonth);
+        document.getElementById('lblTimeMonth').classList.toggle('active', isMonth);
+        document.getElementById('targetMonthInput').style.display = isMonth ? 'inline-block' : 'none';
+
+        const toggleFull = document.getElementById('toggleFullColumns');
+        if (toggleFull) toggleFull.checked = state.showFullColumns;
+        const lblFull = document.getElementById('lblShowFullCols');
+        if (lblFull) lblFull.classList.toggle('active', state.showFullColumns);
+    }
+
+    function toggleFullColumns() {
+        setShowFullColumns(!state.showFullColumns);
+    }
+
+    function setShowFullColumns(showFull) {
+        state.showFullColumns = Boolean(showFull);
+        syncToggleSwitchesUI();
+        recomputeAndRender();
+    }
+
+    function setStatusFilter(filter) {
+        state.statusFilter = filter;
+        syncToggleSwitchesUI();
+        recomputeAndRender();
+    }
+
+    function togglePenaltySwitch() {
+        setPenaltyMode(state.penaltyMode === 'done_only' ? 'with_penalty' : 'done_only');
+    }
+
+    function setPenaltyMode(penaltyMode) {
+        state.penaltyMode = penaltyMode;
+        syncToggleSwitchesUI();
+        recomputeAndRender();
+    }
+
+    function setTimeMode(timeMode) {
+        state.timeMode = timeMode;
+        syncToggleSwitchesUI();
+        recomputeAndRender();
+    }
+
+    function onMonthChange() {
+        const input = document.getElementById('targetMonthInput');
+        if (input && input.value) {
+            state.selectedMonth = input.value;
+            recomputeAndRender();
+        }
+    }
+
+    function resetFilters() {
+        state.statusFilter = 'all';
+        state.penaltyMode = 'done_only';
+        state.timeMode = 'all';
+        state.selectedMonth = allDetailMonths.length > 0
+            ? slashMonthToIso(allDetailMonths[allDetailMonths.length - 1])
+            : getCurrentMonthISO();
+
+        syncToggleSwitchesUI();
+        syncMonthInputs();
+        recomputeAndRender();
+    }
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (currentEvaluatedTasks && currentEvaluatedTasks.length > 0) {
+                renderColumnChart(currentEvaluatedTasks, isoToSlashDate(getTodayISO()));
+            }
+        }, 150);
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeDeleteModal();
+        }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        syncToggleSwitchesUI();
+        syncMonthInputs();
+        fetchData();
+    });
 </script>
 </body>
 </html>

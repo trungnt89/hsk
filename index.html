@@ -10,8 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #2563eb; --success: #10b981; --bg: #f8fafc; --card: #ffffff; --text: #1e293b;
+            --primary: #2563eb; --primary-dark: #1d4ed8; --success: #10b981;
+            --bg: #f3f6fb; --card: #ffffff; --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: 'Montserrat', sans-serif;
@@ -23,167 +26,216 @@
         }
 
         header {
-            padding: 15px 15px 5px; text-align: center;
-            background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+            padding: 12px 52px 10px;
+            text-align: center;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
             position: relative;
         }
 
-        header h1 { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--primary); }
-        header p { margin: 2px 0 0; font-size: 9px; color: #64748b; text-transform: uppercase; }
+        header h1 {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: var(--primary);
+        }
+        header p {
+            margin: 3px 0 0;
+            font-size: 9.5px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
 
         .dashboard {
-            flex: 1; padding: 12px;
-            display: flex; flex-direction: column;
-            gap: 12px; width: 100%;
-            box-sizing: border-box; overflow-y: auto;
+            flex: 1;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 1120px;
+            margin: 0 auto;
+            overflow-y: auto;
+            align-content: start;
         }
 
         .nav-card {
-            background: var(--card); border-radius: 20px;
-            padding: 14px 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0; flex-shrink: 0;
-            display: flex; flex-direction: column;
+            background: var(--card);
+            border-radius: 18px;
+            padding: 14px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 18px -6px rgba(15, 23, 42, 0.07);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .nav-card:hover {
-            box-shadow: 0 8px 16px -2px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05), 0 12px 24px -8px rgba(15, 23, 42, 0.1);
         }
 
-        .important-1 { background: #e0f2fe !important; border: 2px solid #7dd3fc !important; }
-        .important-2 { background: #dcfce7 !important; border: 2px solid #86efac !important; }
+        .important-1 {
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%);
+            border: 1.5px solid #bfdbfe;
+        }
+        .important-1 .icon-wrapper { background: #dbeafe; }
 
-        .group-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-shrink: 0; }
+        .important-2 {
+            background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 70%);
+            border: 1.5px solid #bbf7d0;
+        }
+        .important-2 .icon-wrapper { background: #dcfce7; }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
         .icon-wrapper {
-            width: 36px; height: 36px; border-radius: 10px;
+            width: 36px; height: 36px;
+            border-radius: 11px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-size: 18px;
+            background: #f1f5f9;
+            border: 1px solid rgba(15, 23, 42, 0.05);
             flex-shrink: 0;
         }
 
-        .group-title { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
-        .group-desc { font-size: 11px; color: #64748b; font-weight: 600; }
+        .group-title { font-size: 14.5px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+        .group-desc { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 1px; }
 
         .group-links {
             margin: 0; padding: 0; list-style: none;
-            display: flex; flex-wrap: wrap; gap: 10px;
-            flex: 1; align-content: stretch;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            flex: 1;
         }
+        .group-system .group-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
-        .group-links li { flex: 1 1 calc(50% - 10px); display: flex; }
-        .group-system .group-links li { flex: 1 1 calc(33.333% - 10px); min-width: 75px; }
-
-        .full-width { flex: 1 1 100% !important; }
+        .group-links li { display: flex; min-width: 0; }
+        .full-width { grid-column: 1 / -1; }
 
         .group-links a {
-            text-decoration: none; font-size: 13px; font-weight: 700;
-            color: var(--text); display: flex; align-items: center; justify-content: center;
-            padding: 16px 8px; border-radius: 14px;
-            background: #ffffff; border: 1.5px solid #e2e8f0;
-            transition: all 0.2s ease; text-align: center; width: 100%; box-sizing: border-box;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            text-decoration: none;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 52px;
+            padding: 12px 8px;
+            border-radius: 13px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid var(--border);
+            transition: all 0.18s ease;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+            line-height: 1.3;
         }
 
         .group-links a:hover {
             border-color: var(--primary);
             color: var(--primary);
-            background: #f8fafc;
+            background: #ffffff;
             transform: translateY(-2px);
-            box-shadow: 0 6px 14px -2px rgba(37, 99, 235, 0.12);
+            box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.16);
         }
 
-        .group-links a:active { background: #f1f5f9; transform: scale(0.97); }
+        .group-links a:active { background: #f1f5f9; transform: scale(0.98); }
+
+        .group-links a.btn-featured {
+            background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+            color: #ffffff;
+            border-color: #047857;
+            font-weight: 800;
+            box-shadow: 0 6px 14px -4px rgba(5, 150, 105, 0.38);
+        }
+
+        .group-links a.btn-featured:hover {
+            background: linear-gradient(135deg, #047857 0%, #0f766e 100%);
+            color: #ffffff;
+            border-color: #065f46;
+            box-shadow: 0 10px 20px -4px rgba(5, 150, 105, 0.45);
+        }
+
+        .group-links a.btn-featured:active {
+            background: linear-gradient(135deg, #047857 0%, #0f766e 100%);
+            transform: scale(0.98);
+        }
 
         footer {
-            padding: 10px; text-align: center; font-size: 8px;
-            color: #94a3b8; font-weight: 600; flex-shrink: 0;
-            background: white; border-top: 1px solid #f1f5f9;
+            padding: 9px 16px;
+            text-align: center;
+            font-size: 9.5px;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            font-weight: 600;
+            flex-shrink: 0;
+            background: #ffffff;
+            border-top: 1px solid var(--border);
         }
 
-        /* --- RESPONSIVE CHO IPAD & TABLET (768px+) --- */
-        @media (min-width: 768px) {
-            header {
-                padding: 16px 24px 10px;
-            }
-            header h1 {
-                font-size: 1.35rem;
-            }
-            header p {
-                font-size: 11px;
-                letter-spacing: 0.05em;
-            }
-            .logout-pill {
-                right: 24px;
-                top: 18px;
-                font-size: 11px;
-                padding: 7px 14px;
-            }
+        /* --- TABLET (640px - 1023px) --- */
+        @media (min-width: 640px) {
+            header { padding: 14px 64px 12px; }
+            header h1 { font-size: 1.3rem; }
+            header p { font-size: 10.5px; }
+            .logout-pill { right: 20px; top: 15px; font-size: 11px; padding: 6px 13px; }
+
             .dashboard {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                grid-template-rows: repeat(2, minmax(170px, 1fr));
-                gap: 16px;
-                padding: 16px 20px;
-                width: 100%;
-                max-width: 100%;
-            }
-            .nav-card {
+                grid-template-columns: 1fr;
+                gap: 14px;
                 padding: 18px 20px;
-                border-radius: 22px;
+                align-content: center;
             }
+            .important-1 .group-links { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            .important-2 .group-links,
+            .group-system .group-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .important-2 .full-width { grid-column: auto; }
+            .nav-card { padding: 18px 20px; border-radius: 20px; }
+            .group-title { font-size: 15.5px; }
+            .group-desc { font-size: 11.5px; }
+            .icon-wrapper { width: 40px; height: 40px; font-size: 19px; }
+            .group-links { gap: 10px; }
+            .group-links a { font-size: 13.5px; min-height: 58px; padding: 14px 10px; border-radius: 14px; }
+        }
+
+        /* --- DESKTOP (1024px+) --- */
+        @media (min-width: 1024px) {
+            header { padding: 16px 32px 14px; }
+            header h1 { font-size: 1.45rem; }
+            header p { font-size: 11px; }
+            .logout-pill { right: 28px; top: 18px; font-size: 11.5px; padding: 7px 15px; }
+
+            .dashboard {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 18px;
+                padding: 24px 28px;
+                align-content: center;
+            }
+            .important-1 { grid-column: 1 / -1; }
+            .important-1 .group-links { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            .important-2 .group-links,
+            .group-system .group-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .important-2 .full-width { grid-column: auto; }
+            .nav-card { padding: 20px 22px; border-radius: 22px; }
+            .group-header { margin-bottom: 14px; }
             .group-title { font-size: 16px; }
             .group-desc { font-size: 12px; }
-            .icon-wrapper { width: 40px; height: 40px; font-size: 20px; border-radius: 12px; }
-            .group-links { gap: 12px; align-content: center; }
-            .group-links a { font-size: 14px; padding: 18px 10px; border-radius: 16px; }
-            footer { font-size: 10px; padding: 12px; }
-        }
-
-        /* --- RESPONSIVE CHO PC & MÀN HÌNH LỚN (1024px+) --- */
-        @media (min-width: 1024px) {
-            header {
-                padding: 18px 32px 12px;
-            }
-            header h1 {
-                font-size: 1.55rem;
-            }
-            header p {
-                font-size: 12px;
-            }
-            .logout-pill {
-                right: 32px;
-                top: 20px;
-                font-size: 12px;
-                padding: 8px 18px;
-            }
-            .dashboard {
-                gap: 20px;
-                padding: 20px 32px;
-            }
-            .nav-card {
-                padding: 22px 26px;
-                border-radius: 24px;
-            }
-            .group-title { font-size: 17px; }
-            .group-desc { font-size: 12px; }
-            .icon-wrapper { width: 46px; height: 46px; font-size: 22px; border-radius: 14px; }
-            .group-links { gap: 14px; align-content: center; }
-            .group-links a { font-size: 14.5px; padding: 22px 12px; border-radius: 16px; }
-        }
-
-        /* --- RESPONSIVE CHO MÀN HÌNH DESKTOP RỘNG (1440px+) --- */
-        @media (min-width: 1440px) {
-            .dashboard {
-                gap: 24px;
-                padding: 24px 40px;
-            }
-            .nav-card {
-                padding: 26px 30px;
-            }
-            .group-title { font-size: 18px; }
-            .group-desc { font-size: 13px; }
-            .icon-wrapper { width: 48px; height: 48px; font-size: 24px; }
-            .group-links a { font-size: 15px; padding: 24px 14px; border-radius: 18px; }
+            .icon-wrapper { width: 42px; height: 42px; font-size: 20px; border-radius: 12px; }
+            .group-links { gap: 10px; align-content: stretch; }
+            .group-links a { font-size: 13px; min-height: 68px; padding: 14px 8px; border-radius: 14px; }
+            footer { font-size: 10px; padding: 11px; }
         }
 
         /* --- PHẦN POPUP BẢO MẬT BẰNG SESSION --- */
@@ -421,41 +473,29 @@
                 <div class="icon-wrapper">🏆</div>
                 <div>
                     <div class="group-title">Chứng chỉ</div>
-                    <div class="group-desc">PMP &amp; Claude Certification</div>
+                    <div class="group-desc">PMP, Claude, JLPT &amp; HSK</div>
                 </div>
             </div>
             <ul class="group-links">
-                <li><a href="pmp/index.html">📘 PMP Exam Prep</a></li>
+                <li><a href="pmp/index.html">📘 PMP</a></li>
                 <li><a href="claude/index.html">📜 Claude</a></li>
+                <li><a href="n1/index.html">🇯🇵 Nhật ngữ</a></li>
+                <li><a href="hsk/index.html">🇨🇳 Hoa ngữ</a></li>
             </ul>
         </div>
         
         <div class="nav-card important-2">
             <div class="group-header">
-                <div class="icon-wrapper">🎓</div>
-                <div>
-                    <div class="group-title">Học ngôn ngữ</div>
-                    <div class="group-desc">Japanese & Chinese</div>
-                </div>
-            </div>
-            <ul class="group-links">
-                <li class="full-width"><a href="nikki/index.html">🤖 Nhật ký & AI</a></li>
-                <li><a href="n1/index.html">🇯🇵 Nhật ngữ</a></li>
-                <li><a href="hsk/index.html">🇨🇳 Hoa ngữ</a></li>
-            </ul>
-        </div>
-
-        <div class="nav-card">
-            <div class="group-header">
                 <div class="icon-wrapper">⏱️</div>
                 <div>
-                    <div class="group-title">Năng suất</div>
-                    <div class="group-desc">Thói quen & Quản lý</div>
+                    <div class="group-title">Quản Lý Cá Nhân</div>
+                    <div class="group-desc">Thói quen, Quản lý &amp; Nhật ký</div>
                 </div>
             </div>
             <ul class="group-links">
                 <li><a href="task/index.html">📊 Monitoring</a></li>
                 <li><a href="pomodoro/index.html">🍅 Pomodoro</a></li>
+                <li class="full-width"><a href="nikki/index.html" class="btn-featured">🤖 Nhật ký &amp; AI</a></li>
             </ul>
         </div>
 

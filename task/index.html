@@ -465,9 +465,9 @@
 
         .task-row-header {
             display: grid;
-            grid-template-columns: 56px 96px repeat(4, minmax(0, 1fr));
+            grid-template-columns: 52px repeat(7, minmax(0, 1fr));
             align-items: center;
-            gap: 8px 12px;
+            gap: 8px 10px;
             padding: 7px 12px;
             background: var(--bg-canvas);
             border-bottom: 1px solid rgba(226, 232, 240, 0.75);
@@ -475,7 +475,7 @@
 
         .task-metric-item {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             gap: 5px;
             min-width: 0;
         }
@@ -484,11 +484,30 @@
             justify-content: flex-end;
         }
 
-        .task-metric-label {
-            font-size: 11px;
-            font-weight: 600;
+        .task-metric-item.metric-start {
+            justify-self: start;
+            background: rgba(37, 99, 235, 0.10);
+            border: 1px solid rgba(37, 99, 235, 0.24);
+            border-radius: 6px;
+            padding: 3px 8px;
+        }
+
+        .task-metric-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             color: var(--text-muted);
-            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .task-metric-icon svg {
+            width: 13px;
+            height: 13px;
+            display: block;
+        }
+
+        .task-metric-item.metric-start .task-metric-icon {
+            color: var(--accent-blue);
         }
 
         .task-metric-value {
@@ -496,6 +515,53 @@
             font-weight: 700;
             color: var(--text-primary);
             white-space: nowrap;
+        }
+
+        .task-metric-item.metric-start .task-metric-value {
+            color: #1D4ED8;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .task-metric-item.metric-stt .task-metric-icon,
+        .task-metric-item.metric-stt .task-metric-value {
+            color: #64748B;
+        }
+
+        .task-metric-item.metric-freg .task-metric-icon,
+        .task-metric-item.metric-freg .task-metric-value {
+            color: #7C3AED;
+        }
+
+        .task-metric-item.metric-last .task-metric-icon,
+        .task-metric-item.metric-last .task-metric-value {
+            color: #0891B2;
+        }
+
+        .task-metric-item.metric-done .task-metric-icon,
+        .task-metric-item.metric-done .task-metric-value {
+            color: #16A34A;
+        }
+
+        .task-metric-item.metric-miss .task-metric-icon,
+        .task-metric-item.metric-miss .task-metric-value {
+            color: #D97706;
+        }
+
+        .task-metric-item.metric-miss.is-penalty .task-metric-icon,
+        .task-metric-item.metric-miss.is-penalty .task-metric-value {
+            color: #DC2626;
+        }
+
+        .task-metric-item.metric-rate .task-metric-icon,
+        .task-metric-item.metric-rate .task-metric-value {
+            color: #4F46E5;
+        }
+
+        .task-metric-item.metric-score .task-metric-icon.score-text-zero,
+        .task-metric-item.metric-score .task-metric-value.score-text-zero {
+            color: #D97706;
         }
 
         .task-row-body {
@@ -782,26 +848,35 @@
                 height: 250px;
             }
             .task-row-header {
-                grid-template-columns: 28px 46px repeat(4, minmax(0, 1fr));
-                gap: 4px;
-                padding: 6px 8px;
+                grid-template-columns: 24px 1.35fr 1.1fr 1.1fr 0.9fr 0.95fr 0.95fr 0.95fr;
+                gap: 2px;
+                padding: 5px 6px;
             }
             .task-metric-item {
                 flex-direction: column;
-                align-items: flex-start;
-                gap: 1px;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
             }
             .task-metric-item.metric-right {
                 align-items: flex-end;
-                justify-content: flex-start;
+                justify-content: center;
             }
-            .task-metric-label {
-                font-size: 10px;
-                line-height: 1.1;
+            .task-metric-item.metric-start {
+                justify-self: stretch;
+                padding: 2px 4px;
+            }
+            .task-metric-icon svg {
+                width: 12px;
+                height: 12px;
             }
             .task-metric-value {
+                font-size: 11px;
+                line-height: 1.2;
+            }
+            .task-metric-item.metric-start .task-metric-value {
                 font-size: 12px;
-                line-height: 1.25;
+                line-height: 1.2;
             }
             .task-row-body {
                 padding: 9px 8px;
@@ -1011,13 +1086,55 @@
     let currentEvaluatedTasks = [];
     let taskChartInstance = null;
 
+    const SETTINGS_STORAGE_KEY = 'task_analytics_display_settings_v1';
+
     let state = {
         timeMode: 'all',             // 'all' | 'month'
         selectedMonth: getCurrentMonthISO(), // YYYY-MM
         penaltyMode: 'done_only',    // 'done_only' (+1 / 0) | 'with_penalty' (+1 / -1)
         statusFilter: 'all',         // 'all' | 'active'
-        showFullColumns: false       // false: hide Done, Chưa, Tỉ lệ, Note | true: show all
+        showFullColumns: false       // false: hide Note | true: show Note
     };
+
+    function loadSavedSettings() {
+        try {
+            const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') return;
+            if (parsed.timeMode === 'all' || parsed.timeMode === 'month') {
+                state.timeMode = parsed.timeMode;
+            }
+            if (typeof parsed.selectedMonth === 'string' && /^\d{4}-\d{2}$/.test(parsed.selectedMonth)) {
+                state.selectedMonth = parsed.selectedMonth;
+            }
+            if (parsed.penaltyMode === 'done_only' || parsed.penaltyMode === 'with_penalty') {
+                state.penaltyMode = parsed.penaltyMode;
+            }
+            if (parsed.statusFilter === 'all' || parsed.statusFilter === 'active') {
+                state.statusFilter = parsed.statusFilter;
+            }
+            if (typeof parsed.showFullColumns === 'boolean') {
+                state.showFullColumns = parsed.showFullColumns;
+            }
+        } catch (err) {
+            console.warn('Không đọc được setting đã lưu:', err);
+        }
+    }
+
+    function saveSettings() {
+        try {
+            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+                timeMode: state.timeMode,
+                selectedMonth: state.selectedMonth,
+                penaltyMode: state.penaltyMode,
+                statusFilter: state.statusFilter,
+                showFullColumns: state.showFullColumns
+            }));
+        } catch (err) {
+            console.warn('Không lưu được setting:', err);
+        }
+    }
 
     function getTodayISO() {
         const now = new Date();
@@ -1108,12 +1225,23 @@
     function formatShortTime(timeStr) {
         if (!timeStr) return '—';
         const str = String(timeStr).trim();
-        if (str.includes(':') && str.split(':').length >= 2) {
-            const t = str.includes(' - ') ? str.split(' - ')[1] : str;
-            const parts = t.split(':');
-            return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+        const match = str.match(/(\d{1,2}):(\d{2})/);
+        if (match) {
+            return `${match[1].padStart(2, '0')}:${match[2].padStart(2, '0')}`;
         }
         return str;
+    }
+
+    function formatFregDisplay(fregRaw) {
+        const str = String(fregRaw || '').trim();
+        if (!str) return '—';
+        if (str.includes(':')) return formatShortTime(str);
+        const minsNum = Number(str);
+        if (!Number.isFinite(minsNum) || minsNum < 0) return str;
+        const totalMins = Math.round(minsNum);
+        const hh = String(Math.floor(totalMins / 60)).padStart(2, '0');
+        const mm = String(totalMins % 60).padStart(2, '0');
+        return `${hh}:${mm}`;
     }
 
     function isDoneNote(content) {
@@ -1559,6 +1687,7 @@
                 startDisplay: formatShortTime(startRaw),
                 isActive: statusRaw === '1',
                 freg: fregRaw,
+                fregDisplay: formatFregDisplay(fregRaw),
                 lastTime: formatShortTime(lastTimeRaw)
             });
         }
@@ -1842,7 +1971,7 @@
                                 const lines = [
                                     `Tổng điểm: ${scoreStr} (${task.doneDays} ngày done +1 / ${missRule})`,
                                     `Tỉ lệ hoàn thành: ${task.completionRate}% (${task.doneDays}/${task.totalEvaluatedDays} ngày)`,
-                                    `Start: ${task.startDisplay} · ${task.isActive ? 'Đang bật' : 'Đã tắt'}`
+                                    `Start: ${task.startDisplay} · Freg: ${task.fregDisplay} · Last: ${task.lastTime} · ${task.isActive ? 'Đang bật' : 'Đã tắt'}`
                                 ];
                                 if (task.todayNotes.length > 0) {
                                     lines.push(`--- Note hôm nay (${todaySlash}) ---`);
@@ -1910,6 +2039,17 @@
         });
     }
 
+    const HEADER_ICONS = {
+        stt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>`,
+        start: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/></svg>`,
+        freg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>`,
+        last: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>`,
+        done: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>`,
+        miss: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`,
+        rate: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>`,
+        score: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+    };
+
     function renderChartTable(tasks, todaySlash) {
         const listEl = document.getElementById('taskBreakdownBody');
         const isWithPenalty = state.penaltyMode === 'with_penalty';
@@ -1941,28 +2081,36 @@
             return `
                 <article class="task-row-item" id="row-${safeId}">
                     <div class="task-row-header">
-                        <div class="task-metric-item">
-                            <span class="task-metric-label">STT</span>
-                            <span class="task-metric-value font-mono-num" style="color: var(--text-muted);">${idx + 1}</span>
+                        <div class="task-metric-item metric-stt" title="STT" aria-label="STT ${idx + 1}">
+                            <span class="task-metric-icon">${HEADER_ICONS.stt}</span>
+                            <span class="task-metric-value font-mono-num">${idx + 1}</span>
                         </div>
-                        <div class="task-metric-item">
-                            <span class="task-metric-label">Start</span>
+                        <div class="task-metric-item metric-start" title="Thời gian bắt đầu (START)" aria-label="Start ${escapeHtml(task.startDisplay)}">
+                            <span class="task-metric-icon">${HEADER_ICONS.start}</span>
                             <span class="task-metric-value font-mono-num">${escapeHtml(task.startDisplay)}</span>
                         </div>
-                        <div class="task-metric-item">
-                            <span class="task-metric-label">Done</span>
-                            <span class="task-metric-value font-mono-num text-done">+${task.doneDays}</span>
+                        <div class="task-metric-item metric-freg" title="Tần suất (FREG)" aria-label="Freg ${escapeHtml(task.fregDisplay)}">
+                            <span class="task-metric-icon">${HEADER_ICONS.freg}</span>
+                            <span class="task-metric-value font-mono-num">${escapeHtml(task.fregDisplay)}</span>
                         </div>
-                        <div class="task-metric-item">
-                            <span class="task-metric-label">Chưa</span>
-                            <span class="task-metric-value font-mono-num ${missClass}" style="${isWithPenalty ? '' : 'color:var(--text-muted);'}">${missDisplay}</span>
+                        <div class="task-metric-item metric-last" title="Lần gần nhất (LAST_TIME)" aria-label="Last ${escapeHtml(task.lastTime)}">
+                            <span class="task-metric-icon">${HEADER_ICONS.last}</span>
+                            <span class="task-metric-value font-mono-num">${escapeHtml(task.lastTime)}</span>
                         </div>
-                        <div class="task-metric-item">
-                            <span class="task-metric-label">Tỉ lệ</span>
+                        <div class="task-metric-item metric-done" title="Số ngày Done" aria-label="Done +${task.doneDays}">
+                            <span class="task-metric-icon">${HEADER_ICONS.done}</span>
+                            <span class="task-metric-value font-mono-num">+${task.doneDays}</span>
+                        </div>
+                        <div class="task-metric-item metric-miss ${isWithPenalty ? 'is-penalty' : ''}" title="Số ngày Chưa" aria-label="Chưa ${missDisplay}">
+                            <span class="task-metric-icon">${HEADER_ICONS.miss}</span>
+                            <span class="task-metric-value font-mono-num">${missDisplay}</span>
+                        </div>
+                        <div class="task-metric-item metric-rate" title="Tỉ lệ hoàn thành" aria-label="Tỉ lệ ${task.completionRate}%">
+                            <span class="task-metric-icon">${HEADER_ICONS.rate}</span>
                             <span class="task-metric-value font-mono-num">${task.completionRate}%</span>
                         </div>
-                        <div class="task-metric-item metric-right">
-                            <span class="task-metric-label">Điểm</span>
+                        <div class="task-metric-item metric-score metric-right" title="Tổng điểm" aria-label="Điểm ${scoreStr}">
+                            <span class="task-metric-icon ${scoreClass}">${HEADER_ICONS.score}</span>
                             <span class="task-metric-value font-mono-num ${scoreClass}">${scoreStr}</span>
                         </div>
                     </div>
@@ -2027,12 +2175,14 @@
 
     function setShowFullColumns(showFull) {
         state.showFullColumns = Boolean(showFull);
+        saveSettings();
         syncToggleSwitchesUI();
         recomputeAndRender();
     }
 
     function setStatusFilter(filter) {
         state.statusFilter = filter;
+        saveSettings();
         syncToggleSwitchesUI();
         recomputeAndRender();
     }
@@ -2043,12 +2193,14 @@
 
     function setPenaltyMode(penaltyMode) {
         state.penaltyMode = penaltyMode;
+        saveSettings();
         syncToggleSwitchesUI();
         recomputeAndRender();
     }
 
     function setTimeMode(timeMode) {
         state.timeMode = timeMode;
+        saveSettings();
         syncToggleSwitchesUI();
         recomputeAndRender();
     }
@@ -2057,6 +2209,7 @@
         const input = document.getElementById('targetMonthInput');
         if (input && input.value) {
             state.selectedMonth = input.value;
+            saveSettings();
             recomputeAndRender();
         }
     }
@@ -2069,6 +2222,7 @@
             ? slashMonthToIso(allDetailMonths[allDetailMonths.length - 1])
             : getCurrentMonthISO();
 
+        saveSettings();
         syncToggleSwitchesUI();
         syncMonthInputs();
         recomputeAndRender();
@@ -2092,6 +2246,7 @@
     });
 
     window.addEventListener('DOMContentLoaded', () => {
+        loadSavedSettings();
         syncToggleSwitchesUI();
         syncMonthInputs();
         fetchData();

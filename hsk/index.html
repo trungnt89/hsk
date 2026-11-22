@@ -653,6 +653,15 @@
                         <option value="HSK5"> ⭐HSK5</option>
                         <option value="HSK6"> ⭐HSK6</option>
                     </select>
+                    <select id="tts-rate-select" class="select-box" onchange="changeTtsRate(event)" title="Tốc độ đọc">
+                        <option value="0.6">0.6x</option>
+                        <option value="0.7">0.7x</option>
+                        <option value="0.8">0.8x</option>
+                        <option value="0.9">0.9x</option>
+                        <option value="1.0" selected>1.0x</option>
+                        <option value="1.1">1.1x</option>
+                        <option value="1.2">1.2x</option>
+                    </select>
                     <button id="tts-toggle" class="toggle-btn-icon active" onclick="toggleTts(event)" title="Âm thanh (TTS): BẬT">🔊</button>
                 </div>
             </div>
@@ -738,6 +747,7 @@
         let pageManualReadCount = 0;
         
         let isTtsEnabled = true;
+        let ttsRate = '1.0';
         let currentFilter = 'all';
         let masteredIds = [];
         let displayMode = 'sequential';
@@ -2145,9 +2155,26 @@
             }
         }
 
+        function changeTtsRate(event) {
+            ttsRate = (event && event.target && event.target.value) ? event.target.value : '1.0';
+            saveSetting('ttsRate', ttsRate);
+            showToast(`Tốc độ đọc: ${ttsRate}x`);
+            if (isTtsEnabled && !isAutoPlaying && paginatedFlashcards.length > 0) {
+                const current = paginatedFlashcards[currentIndex];
+                const cardElement = document.getElementById('card');
+                const isFlippedNow = cardElement && cardElement.classList.contains('flipped-vertical');
+                const textToSpeak = current ? (isFlippedNow ? (current.exCn || current.word) : current.word) : '';
+                if (textToSpeak) {
+                    speakUniversalText(textToSpeak, false);
+                }
+            }
+        }
+
         function speakUniversalText(text, isVietnamese = false) {
             if (!text) return;
             const voice = isVietnamese ? "vi-VN-NamMinhNeural" : "zh-CN-XiaoxiaoNeural";
+            const rateSelect = document.getElementById('tts-rate-select');
+            const currentRate = (rateSelect && rateSelect.value) ? rateSelect.value : (ttsRate || "1.0");
 
             if (window.currentWordInfo) {
                 const cardElement = document.getElementById('card');
@@ -2155,7 +2182,7 @@
             }
 
             if (typeof window.speakCommon === 'function') {
-                window.speakCommon({ text: text, voice: voice });
+                window.speakCommon({ text: text, voice: voice, rate: currentRate });
             } else {
                 console.warn('Hệ thống TTS (window.speakCommon) chưa sẵn sàng.');
             }
@@ -2584,6 +2611,7 @@
             await initDatabase();
             
             isTtsEnabled = await loadSetting('isTtsEnabled', true);
+            ttsRate = String(await loadSetting('ttsRate', '1.0'));
             currentFilter = await loadSetting('currentFilter', 'all');
             displayMode = await loadSetting('displayMode', 'sequential');
             currentHskLevel = await loadSetting('currentHskLevel', 'HSK10');
@@ -2616,7 +2644,24 @@
                 }
             }
 
+            const rateFromUrl = urlParams.get('rate');
+            const rateSelect = document.getElementById('tts-rate-select');
+            if (rateFromUrl && rateSelect) {
+                const targetRate = rateFromUrl.trim();
+                for (let i = 0; i < rateSelect.options.length; i++) {
+                    if (rateSelect.options[i].value === targetRate) {
+                        ttsRate = targetRate;
+                        break;
+                    }
+                }
+            }
+
             document.getElementById('hsk-level-select').value = currentHskLevel;
+            if (rateSelect) {
+                const hasRateOption = Array.from(rateSelect.options).some(opt => opt.value === ttsRate);
+                if (!hasRateOption) ttsRate = '1.0';
+                rateSelect.value = ttsRate;
+            }
             document.getElementById('records-per-page-select').value = recordsPerPage;
             
             const ttsBtn = document.getElementById('tts-toggle');

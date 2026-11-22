@@ -333,6 +333,13 @@
             border-bottom: 1px solid var(--border-hairline);
         }
 
+        .list-header-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 14px;
+        }
+
         .chart-title-wrap {
             display: flex;
             flex-wrap: wrap;
@@ -447,30 +454,46 @@
             }
         }
 
-        /* 2-Line Task List Layout */
+        /* Task Card List Layout */
         .task-list-container {
             width: 100%;
             display: flex;
             flex-direction: column;
+            gap: 10px;
         }
 
         .task-row-item {
-            border-bottom: 1px solid var(--border-hairline);
-            transition: background-color 120ms var(--ease-settle);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-hairline);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+            transition: border-color 120ms var(--ease-settle), box-shadow 120ms var(--ease-settle);
         }
 
-        .task-row-item:last-child {
-            border-bottom: none;
+        .task-row-item:hover {
+            border-color: #CBD5E1;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
         }
 
         .task-row-header {
             display: grid;
-            grid-template-columns: 52px repeat(7, minmax(0, 1fr));
+            grid-template-columns: 52px repeat(3, minmax(0, 1fr));
+            align-items: center;
+            gap: 8px 10px;
+            padding: 7px 12px;
+            background: #FCE7F3;
+            border-bottom: 1px solid #FBCFE8;
+        }
+
+        .task-row-footer {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             align-items: center;
             gap: 8px 10px;
             padding: 7px 12px;
             background: var(--bg-canvas);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+            border-top: 1px solid rgba(226, 232, 240, 0.75);
         }
 
         .task-metric-item {
@@ -830,9 +853,18 @@
                 padding: 12px 10px;
             }
             .panel-header {
-                gap: 8px;
+                gap: 6px 10px;
                 margin-bottom: 8px;
                 padding-bottom: 8px;
+            }
+            .list-header-toggles {
+                gap: 6px 10px;
+            }
+            .list-header-toggles .ios-toggle-item {
+                gap: 5px;
+            }
+            .list-header-toggles .ios-toggle-label {
+                font-size: 11.5px;
             }
             .panel-title {
                 font-size: 15px;
@@ -847,35 +879,45 @@
             .chart-canvas-wrap {
                 height: 250px;
             }
+            .task-list-container {
+                gap: 8px;
+            }
+            .task-row-item {
+                border-radius: 9px;
+            }
             .task-row-header {
-                grid-template-columns: 24px 1.35fr 1.1fr 1.1fr 0.9fr 0.95fr 0.95fr 0.95fr;
-                gap: 2px;
-                padding: 5px 6px;
+                grid-template-columns: 38px 1.25fr 1fr 1fr;
+                gap: 4px;
+                padding: 6px 8px;
+            }
+            .task-row-footer {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 4px;
+                padding: 6px 8px;
             }
             .task-metric-item {
-                flex-direction: column;
+                flex-direction: row;
                 align-items: center;
-                justify-content: center;
-                gap: 2px;
+                justify-content: flex-start;
+                gap: 4px;
             }
             .task-metric-item.metric-right {
-                align-items: flex-end;
-                justify-content: center;
+                justify-content: flex-end;
             }
             .task-metric-item.metric-start {
-                justify-self: stretch;
-                padding: 2px 4px;
+                justify-self: start;
+                padding: 2px 6px;
             }
             .task-metric-icon svg {
                 width: 12px;
                 height: 12px;
             }
             .task-metric-value {
-                font-size: 11px;
+                font-size: 11.5px;
                 line-height: 1.2;
             }
             .task-metric-item.metric-start .task-metric-value {
-                font-size: 12px;
+                font-size: 12.5px;
                 line-height: 1.2;
             }
             .task-row-body {
@@ -920,19 +962,7 @@
     <main class="page-container">
         <section class="toolbar-surface" aria-label="Bộ lọc">
             <div class="toolbar-toggles">
-                <!-- 1. Tất cả / Đang bật -->
-                <div class="ios-toggle-item">
-                    <button type="button" class="ios-toggle-label active" id="lblStatusAll" onclick="setStatusFilter('all')">Tất cả</button>
-                    <label class="ios-switch" aria-label="Chọn Tất cả hoặc Đang bật">
-                        <input type="checkbox" id="toggleStatusFilter" onchange="setStatusFilter(this.checked ? 'active' : 'all')">
-                        <span class="ios-switch-slider"></span>
-                    </label>
-                    <button type="button" class="ios-toggle-label" id="lblStatusActive" onclick="setStatusFilter('active')">Đang bật</button>
-                </div>
-
-                <span class="ios-toggle-divider" aria-hidden="true"></span>
-
-                <!-- 2. Chỉ tính Done -->
+                <!-- 1. Chỉ tính Done -->
                 <div class="ios-toggle-item">
                     <button type="button" class="ios-toggle-label active" id="lblPenaltyDoneOnly" onclick="togglePenaltySwitch()">Chỉ tính Done</button>
                     <label class="ios-switch" aria-label="Chỉ tính Done">
@@ -943,7 +973,7 @@
 
                 <span class="ios-toggle-divider" aria-hidden="true"></span>
 
-                <!-- 3. Tất cả / Theo tháng (chỉ cần chọn trên lịch) -->
+                <!-- 2. Tất cả / Theo tháng (chỉ cần chọn trên lịch) -->
                 <div class="ios-toggle-item">
                     <button type="button" class="ios-toggle-label active" id="lblTimeAll" onclick="setTimeMode('all')">Tất cả</button>
                     <label class="ios-switch" aria-label="Chọn Tất cả hoặc Theo tháng">
@@ -1012,12 +1042,15 @@
                     <h2 class="panel-title" style="font-size: 15px;">Danh sách Task</h2>
                     <span id="tableCountMeta" class="tabular-nums" style="font-size: 12px; color: var(--text-muted);"></span>
                 </div>
-                <div class="ios-toggle-item">
-                    <button type="button" class="ios-toggle-label" id="lblShowFullCols" onclick="toggleFullColumns()">Hiển thị Note</button>
-                    <label class="ios-switch ios-switch-sm" aria-label="Hiển thị Note hôm nay">
-                        <input type="checkbox" id="toggleFullColumns" onchange="setShowFullColumns(this.checked)">
-                        <span class="ios-switch-slider"></span>
-                    </label>
+                <div class="list-header-toggles" aria-label="Bộ lọc trạng thái">
+                    <!-- Active -->
+                    <div class="ios-toggle-item">
+                        <button type="button" class="ios-toggle-label" id="lblStatusActive" onclick="toggleStatusSwitch()">Active</button>
+                        <label class="ios-switch ios-switch-sm" aria-label="Chỉ hiện task Active">
+                            <input type="checkbox" id="toggleStatusFilter" onchange="setStatusFilter(this.checked ? 'active' : 'all')">
+                            <span class="ios-switch-slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -1086,19 +1119,20 @@
     let currentEvaluatedTasks = [];
     let taskChartInstance = null;
 
-    const SETTINGS_STORAGE_KEY = 'task_analytics_display_settings_v1';
+    const SETTINGS_STORAGE_KEY = 'task_analytics_display_settings_v2';
+    const LEGACY_SETTINGS_STORAGE_KEY = 'task_analytics_display_settings_v1';
 
     let state = {
         timeMode: 'all',             // 'all' | 'month'
         selectedMonth: getCurrentMonthISO(), // YYYY-MM
         penaltyMode: 'done_only',    // 'done_only' (+1 / 0) | 'with_penalty' (+1 / -1)
-        statusFilter: 'all',         // 'all' | 'active'
-        showFullColumns: false       // false: hide Note | true: show Note
+        statusFilter: 'all'          // 'all' | 'active'
     };
 
     function loadSavedSettings() {
         try {
-            const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+            const rawV2 = localStorage.getItem(SETTINGS_STORAGE_KEY);
+            const raw = rawV2 || localStorage.getItem(LEGACY_SETTINGS_STORAGE_KEY);
             if (!raw) return;
             const parsed = JSON.parse(raw);
             if (!parsed || typeof parsed !== 'object') return;
@@ -1114,9 +1148,6 @@
             if (parsed.statusFilter === 'all' || parsed.statusFilter === 'active') {
                 state.statusFilter = parsed.statusFilter;
             }
-            if (typeof parsed.showFullColumns === 'boolean') {
-                state.showFullColumns = parsed.showFullColumns;
-            }
         } catch (err) {
             console.warn('Không đọc được setting đã lưu:', err);
         }
@@ -1128,8 +1159,7 @@
                 timeMode: state.timeMode,
                 selectedMonth: state.selectedMonth,
                 penaltyMode: state.penaltyMode,
-                statusFilter: state.statusFilter,
-                showFullColumns: state.showFullColumns
+                statusFilter: state.statusFilter
             }));
         } catch (err) {
             console.warn('Không lưu được setting:', err);
@@ -2053,7 +2083,6 @@
     function renderChartTable(tasks, todaySlash) {
         const listEl = document.getElementById('taskBreakdownBody');
         const isWithPenalty = state.penaltyMode === 'with_penalty';
-        const showNote = Boolean(state.showFullColumns);
 
         if (!tasks || tasks.length === 0) {
             listEl.innerHTML = `<div class="task-list-empty">Không có task nào để hiển thị.</div>`;
@@ -2067,16 +2096,13 @@
             const missClass = isWithPenalty ? 'text-miss' : '';
             const safeId = escapeHtml(task.id);
 
-            let noteRowHtml = '';
-            if (showNote) {
-                const notesHtml = task.todayNotes.length > 0
-                    ? task.todayNotes.map(n => {
-                        const stamp = n.timePart ? `[${n.timePart}] ` : '';
-                        return `<div class="note-line"><span class="font-mono-num" style="color:var(--text-muted);">${escapeHtml(stamp)}</span><span style="color:${n.isDone ? 'var(--color-done)' : 'var(--text-primary)'}; font-weight:${n.isDone ? '600' : '400'};">${escapeHtml(n.content || '(trống)')}</span></div>`;
-                    }).join('')
-                    : `<span style="color: var(--text-muted);">Chưa có note hôm nay</span>`;
-                noteRowHtml = `<div class="task-row-note"><span style="font-weight:600; color:var(--text-muted);">Note (${escapeHtml(todaySlash)}): </span>${notesHtml}</div>`;
-            }
+            const notesHtml = task.todayNotes.length > 0
+                ? task.todayNotes.map(n => {
+                    const stamp = n.timePart ? `[${n.timePart}] ` : '';
+                    return `<div class="note-line"><span class="font-mono-num" style="color:var(--text-muted);">${escapeHtml(stamp)}</span><span style="color:${n.isDone ? 'var(--color-done)' : 'var(--text-primary)'}; font-weight:${n.isDone ? '600' : '400'};">${escapeHtml(n.content || '(trống)')}</span></div>`;
+                }).join('')
+                : `<span style="color: var(--text-muted);">Chưa có note hôm nay</span>`;
+            const noteRowHtml = `<div class="task-row-note"><span style="font-weight:600; color:var(--text-muted);">Note (${escapeHtml(todaySlash)}): </span>${notesHtml}</div>`;
 
             return `
                 <article class="task-row-item" id="row-${safeId}">
@@ -2093,10 +2119,26 @@
                             <span class="task-metric-icon">${HEADER_ICONS.freg}</span>
                             <span class="task-metric-value font-mono-num">${escapeHtml(task.fregDisplay)}</span>
                         </div>
-                        <div class="task-metric-item metric-last" title="Lần gần nhất (LAST_TIME)" aria-label="Last ${escapeHtml(task.lastTime)}">
+                        <div class="task-metric-item metric-last metric-right" title="Lần gần nhất (LAST_TIME)" aria-label="Last ${escapeHtml(task.lastTime)}">
                             <span class="task-metric-icon">${HEADER_ICONS.last}</span>
                             <span class="task-metric-value font-mono-num">${escapeHtml(task.lastTime)}</span>
                         </div>
+                    </div>
+                    <div class="task-row-body">
+                        <div class="task-name-cell">${escapeHtml(task.title)}</div>
+                        <div class="task-row-controls">
+                            <label class="ios-switch ios-switch-sm" aria-label="Bật tắt task ${escapeHtml(task.title)}">
+                                <input type="checkbox" ${task.isActive ? 'checked' : ''} data-id="${safeId}" onchange="toggleStatusById(this.dataset.id, this)">
+                                <span class="ios-switch-slider"></span>
+                            </label>
+                            <div class="row-actions-group">
+                                <button type="button" class="btn-row-action" data-id="${safeId}" onclick="openEditById(this.dataset.id)">Sửa</button>
+                                <button type="button" class="btn-row-action btn-row-danger" data-id="${safeId}" onclick="deleteTaskById(this.dataset.id)">Xóa</button>
+                            </div>
+                        </div>
+                    </div>
+                    ${noteRowHtml}
+                    <div class="task-row-footer">
                         <div class="task-metric-item metric-done" title="Số ngày Done" aria-label="Done +${task.doneDays}">
                             <span class="task-metric-icon">${HEADER_ICONS.done}</span>
                             <span class="task-metric-value font-mono-num">+${task.doneDays}</span>
@@ -2114,20 +2156,6 @@
                             <span class="task-metric-value font-mono-num ${scoreClass}">${scoreStr}</span>
                         </div>
                     </div>
-                    <div class="task-row-body">
-                        <div class="task-name-cell">${escapeHtml(task.title)}</div>
-                        <div class="task-row-controls">
-                            <label class="ios-switch ios-switch-sm" aria-label="Bật tắt task ${escapeHtml(task.title)}">
-                                <input type="checkbox" ${task.isActive ? 'checked' : ''} data-id="${safeId}" onchange="toggleStatusById(this.dataset.id, this)">
-                                <span class="ios-switch-slider"></span>
-                            </label>
-                            <div class="row-actions-group">
-                                <button type="button" class="btn-row-action" data-id="${safeId}" onclick="openEditById(this.dataset.id)">Sửa</button>
-                                <button type="button" class="btn-row-action btn-row-danger" data-id="${safeId}" onclick="deleteTaskById(this.dataset.id)">Xóa</button>
-                            </div>
-                        </div>
-                    </div>
-                    ${noteRowHtml}
                 </article>`;
         }).join('');
     }
@@ -2148,8 +2176,8 @@
         const isOnlyActive = state.statusFilter === 'active';
         const toggleStatus = document.getElementById('toggleStatusFilter');
         if (toggleStatus) toggleStatus.checked = isOnlyActive;
-        document.getElementById('lblStatusAll').classList.toggle('active', !isOnlyActive);
-        document.getElementById('lblStatusActive').classList.toggle('active', isOnlyActive);
+        const lblActive = document.getElementById('lblStatusActive');
+        if (lblActive) lblActive.classList.toggle('active', isOnlyActive);
 
         const isDoneOnly = state.penaltyMode === 'done_only';
         const togglePenalty = document.getElementById('togglePenaltyMode');
@@ -2162,22 +2190,10 @@
         document.getElementById('lblTimeAll').classList.toggle('active', !isMonth);
         document.getElementById('lblTimeMonth').classList.toggle('active', isMonth);
         document.getElementById('targetMonthInput').style.display = isMonth ? 'inline-block' : 'none';
-
-        const toggleFull = document.getElementById('toggleFullColumns');
-        if (toggleFull) toggleFull.checked = state.showFullColumns;
-        const lblFull = document.getElementById('lblShowFullCols');
-        if (lblFull) lblFull.classList.toggle('active', state.showFullColumns);
     }
 
-    function toggleFullColumns() {
-        setShowFullColumns(!state.showFullColumns);
-    }
-
-    function setShowFullColumns(showFull) {
-        state.showFullColumns = Boolean(showFull);
-        saveSettings();
-        syncToggleSwitchesUI();
-        recomputeAndRender();
+    function toggleStatusSwitch() {
+        setStatusFilter(state.statusFilter === 'active' ? 'all' : 'active');
     }
 
     function setStatusFilter(filter) {

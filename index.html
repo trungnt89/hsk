@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="Ứng dụng trình phát Audio, báo thức âm nhạc offline, đọc văn bản TTS đa ngôn ngữ và phát nhạc từ link YouTube.">
     <title>Learning Master Hub</title>
     <script src="../com/assistive.js"></script>
     <link rel="manifest" href="manifest.json">
@@ -420,11 +421,12 @@
                 <div class="icon-wrapper">🏆</div>
                 <div>
                     <div class="group-title">Chứng chỉ</div>
-                    <div class="group-desc">PMP Exam Preparation</div>
+                    <div class="group-desc">PMP &amp; Claude Certification</div>
                 </div>
             </div>
             <ul class="group-links">
-                <li class="full-width"><a href="pmp/index.html">📘 PMP Exam Prep</a></li>
+                <li><a href="pmp/index.html">📘 PMP Exam Prep</a></li>
+                <li><a href="claude/index.html">📜 Claude</a></li>
             </ul>
         </div>
         
@@ -527,15 +529,18 @@
     }
 
     function checkAuth() {
-        // Kiểm tra Token từ cookie thay vì sessionStorage
-        const token = getCookie('token');
+        // Kiểm tra Token từ cookie, localStorage hoặc sessionStorage
+        const token = getCookie('token') || localStorage.getItem('token') || sessionStorage.getItem('token') || window.token;
 
         const mainContent = document.getElementById('mainContentWrapper');
         const backdrop = document.getElementById('loginBackdrop');
         const logoutBtn = document.getElementById('logoutBtn');
 
         if (token) {
-            // Đã kích hoạt session
+            // Đã kích hoạt session - đồng bộ vào storage
+            window.token = token;
+            if (!localStorage.getItem('token')) localStorage.setItem('token', token);
+            if (!sessionStorage.getItem('token')) sessionStorage.setItem('token', token);
             backdrop.classList.remove('active');
             mainContent.classList.remove('blur-content');
             if (logoutBtn) logoutBtn.style.display = 'inline-flex';
@@ -588,8 +593,12 @@
             if (response.ok && data.success) {
                 showToast('Xác thực thành công! Đang mở khóa...', 'success');
                 
-                // Lưu vào cookie với thời gian sống 7 ngày (7 * 24 * 60 * 60 = 604800 giây)
-                document.cookie = `token=${encodeURIComponent(val)}; path=/; max-age=604800; SameSite=Lax; Secure`;
+                // Lưu vào cookie + localStorage + sessionStorage cho toàn bộ app
+                const isHttps = window.location.protocol === 'https:';
+                document.cookie = `token=${encodeURIComponent(val)}; path=/; max-age=604800; SameSite=Lax${isHttps ? '; Secure' : ''}`;
+                localStorage.setItem('token', val);
+                sessionStorage.setItem('token', val);
+                window.token = val;
                 
                 input.value = ''; // xóa text
                 setTimeout(() => {
@@ -619,8 +628,11 @@
 
     function logout() {
         if (confirm('Bạn có chắc chắn muốn đăng xuất và hủy session hiện tại?')) {
-            // Xóa cookies bằng cách đặt max-age=-1
-            document.cookie = "token=; path=/; max-age=-1; SameSite=Lax; Secure";
+            // Xóa cookies, localStorage và sessionStorage
+            document.cookie = "token=; path=/; max-age=-1; SameSite=Lax";
+            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
+            window.token = '';
             
             showToast('Đã đăng xuất và hủy session thành công!', 'warning');
             checkAuth();

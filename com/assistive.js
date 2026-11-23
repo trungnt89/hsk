@@ -6,8 +6,8 @@
         {
             title: 'Chứng chỉ',
             items: [
-                { icon: '📘', label: 'PMP', href: 'pmp/index.html' },
                 { icon: '📜', label: 'Claude', href: 'claude/index.html' },
+                { icon: '📘', label: 'PMP', href: 'pmp/index.html' },
                 { icon: '🇯🇵', label: 'Nhật ngữ', href: 'n1/index.html' },
                 { icon: '🇨🇳', label: 'Hoa ngữ', href: 'hsk/index.html' }
             ]
@@ -15,9 +15,9 @@
         {
             title: 'Quản Lý Cá Nhân',
             items: [
+                { icon: '🤖', label: 'Nhật ký & AI', href: 'nikki/index.html' },
                 { icon: '📊', label: 'Monitoring', href: 'task/index.html' },
-                { icon: '🍅', label: 'Pomodoro', href: 'pomodoro/index.html' },
-                { icon: '🤖', label: 'Nhật ký & AI', href: 'nikki/index.html' }
+                { icon: '🍅', label: 'Pomodoro', href: 'pomodoro/index.html' }
             ]
         },
         {

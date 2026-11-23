@@ -32,183 +32,254 @@
         }
 
         .system-header { 
-            background: #FFFFFF; 
-            border-bottom: 1px solid rgba(0,0,0,0.05); 
+            background: rgba(255, 255, 255, 0.96); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(15, 23, 42, 0.07); 
             flex-shrink: 0; 
             padding-top: env(safe-area-inset-top);
-            box-shadow: 0 4px 30px rgba(0,0,0,0.015);
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
             z-index: 100;
         }
+        .header-inner {
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
         .nav-row { 
-            padding: 12px 20px; 
+            padding: 10px 14px 10px 48px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+        @media (min-width: 860px) {
+            .nav-row {
+                padding-left: 14px;
+            }
         }
         .brand { 
-            font-size: 16px; 
+            font-size: 15px; 
             font-weight: 800; 
             color: var(--text-main); 
             letter-spacing: -0.02em;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, color 0.2s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
         }
         .brand:hover {
-            transform: scale(1.02);
+            transform: translateY(-0.5px);
+            color: var(--primary);
         }
-        
-        #storage-info { 
-            font-size: 11px; 
-            font-weight: 700; 
-            color: #475569; 
-            background: #F1F5F9; 
-            padding: 3px 10px; 
-            border-radius: 99px; 
-            border: 1px solid rgba(0,0,0,0.02);
+        .header-selects {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            flex-wrap: nowrap;
         }
 
-        #set-select {
-            padding: 6px 14px;
-            border-radius: 99px;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            background-color: #F1F5F9;
-            font-size: 13px;
+        #set-select,
+        .page-select-ctrl {
+            height: 34px;
+            padding: 0 11px;
+            border-radius: 10px;
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            background-color: #FFFFFF;
+            font-size: 12.5px;
             font-weight: 700;
             color: #1E293B;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.18s ease;
             outline: none;
+            font-family: inherit;
+            flex-shrink: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+        #set-select {
+            background-color: #EFF6FF;
+            border-color: rgba(37, 99, 235, 0.22);
+            color: var(--primary);
+            font-weight: 800;
         }
         #set-select:hover {
-            background-color: #E2E8F0;
-            border-color: rgba(0, 0, 0, 0.15);
+            background-color: #DBEAFE;
+            border-color: rgba(37, 99, 235, 0.35);
+        }
+        .page-select-ctrl:hover {
+            background-color: #F1F5F9;
+            border-color: rgba(15, 23, 42, 0.18);
         }
 
-        .segments-container {
-            padding: 0 20px 12px;
-        }
-        .segment-slider-bg {
-            display: flex;
-            background: #F1F5F9;
-            padding: 4px;
-            border-radius: 14px;
-            position: relative;
-            gap: 4px;
-        }
-        .segment-tab {
-            flex: 1;
-            border: none;
-            background: transparent;
-            padding: 10px;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 13px;
-            color: #64748B;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
+        .page-range-badge {
+            height: 36px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            outline: none;
-        }
-        .segment-tab.active {
-            background: #FFFFFF;
-            color: #0F172A;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
-        }
-        .badge-cnt {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 800;
-            background: #E2E8F0;
-            color: #475569;
-            padding: 1px 6px;
-            border-radius: 99px;
-            transition: all 0.2s ease;
-        }
-        .segment-tab.active .badge-cnt {
-            background: #EFF6FF;
             color: var(--primary);
+            background: #EFF6FF;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            padding: 0 10px;
+            border-radius: 11px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        .page-nav-btn {
+            height: 36px;
+            padding: 0 11px;
+            border-radius: 11px;
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            background: #FFFFFF;
+            color: #1E293B;
+            font-weight: 800;
+            font-size: 12.5px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+            box-sizing: border-box;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+            font-family: inherit;
+        }
+        .page-nav-btn svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+            flex-shrink: 0;
+        }
+        .page-nav-btn:hover:not(:disabled) {
+            background: #F1F5F9;
+            border-color: rgba(15, 23, 42, 0.18);
+        }
+        .page-nav-btn.page-nav-next {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            color: #FFFFFF;
+            border: none;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
+        }
+        .page-nav-btn.page-nav-next:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1D4ED8, #1E40AF);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.32);
+        }
+        .page-nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        @media (max-width: 540px) {
+            .nav-short-text {
+                display: none;
+            }
+            .page-nav-btn {
+                width: 34px;
+                padding: 0;
+            }
+        }
+        @media (max-width: 430px) {
+            .nav-row {
+                padding: 9px 10px 9px 46px;
+                gap: 6px;
+            }
+            .brand {
+                font-size: 13px;
+            }
+            .header-selects {
+                gap: 4px;
+            }
+            #set-select,
+            .page-select-ctrl {
+                height: 31px;
+                padding: 0 7px;
+                font-size: 11.5px;
+                border-radius: 9px;
+            }
+            #list-filter-select {
+                max-width: 112px;
+            }
         }
 
         .content-viewport { 
             flex-grow: 1; 
             position: relative; 
-            overflow: hidden; 
-            perspective: 1200px; /* Perspective for stunning 3D rotation transition */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             width: 100%;
             max-width: 760px;
             margin: 0 auto;
+            padding: 12px 14px 88px;
+            box-sizing: border-box;
         }
         
         .main-card { 
-            position: absolute; 
-            left: 14px;
-            right: 14px;
-            top: 14px;
-            bottom: 84px; /* Cozy gap above bottom bar */
-            border-radius: 24px; 
-            box-sizing: border-box; 
+            width: 100%;
             display: flex; 
             flex-direction: column; 
-            opacity: 1; 
-            transform: rotateX(0deg) rotateY(0deg) scale(1) translateX(0);
-            transform-style: preserve-3d;
-            transform-origin: center center;
-            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s ease;
+            gap: 14px;
+            box-sizing: border-box;
             background: transparent;
         }
-
-        .main-card.flipped {
-            transform: rotateX(180deg) scale(1);
-        }
-
-        .card-face {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            border-radius: 24px;
+        .multi-card {
             background: var(--card);
-            border: 1px solid rgba(0, 0, 0, 0.04);
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.015);
-            display: flex;
-            flex-direction: column;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 24px -8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.02);
             overflow: hidden;
         }
-
-        .card-front {
-            z-index: 2;
-            transform: rotateX(0deg);
+        .multi-card .q-sticky-header {
+            border-radius: 20px 20px 0 0;
+            padding: 10px 12px;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            gap: 8px;
         }
-
-        .card-back {
-            transform: rotateX(180deg);
-            background: #F8FAFC; 
-            border: 1px solid rgba(0, 0, 0, 0.06);
+        .multi-card-body {
+            padding: 14px;
         }
-
-        .flip-trigger-btn {
-            background: #F1F5F9;
-            border: 1px solid rgba(0,0,0,0.02);
-            color: #475569;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
+        .multi-footer-pager {
             display: flex;
             align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            outline: none;
-            margin-left: 8px;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 14px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.03);
         }
-        .flip-trigger-btn:hover {
-            background: #E2E8F0;
-            color: var(--primary);
-            transform: scale(1.08);
+        .multi-footer-btn {
+            border: 1px solid #E2E8F0;
+            background: #F8FAFC;
+            color: #1E293B;
+            font-weight: 800;
+            font-size: 12.5px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .multi-footer-btn.primary {
+            background: var(--primary);
+            color: #FFFFFF;
+            border-color: var(--primary);
+        }
+        .multi-footer-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
         @keyframes spinTranslation {
@@ -300,48 +371,111 @@
             padding-bottom: 35px; 
         }
         .q-counter { 
-            font-size: 14px; 
+            font-size: 13.5px; 
             font-weight: 800; 
             color: #1E293B; 
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         .q-counter::before {
             content: '';
-            width: 6px;
-            height: 14px;
+            width: 4px;
+            height: 28px;
             background: var(--primary);
             border-radius: 99px;
             display: inline-block;
+            flex-shrink: 0;
+        }
+        .q-counter-lines {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            line-height: 1.25;
+            gap: 2px;
+        }
+        .q-counter-main {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #1E293B;
+        }
+        .q-counter-id {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748B;
         }
 
         .diff-status-box { 
             display: flex; 
-            gap: 5px; 
+            align-items: stretch;
+            align-self: stretch;
+            flex-wrap: nowrap;
+            gap: 3px; 
             background: #F1F5F9;
-            padding: 4px;
-            border-radius: 99px;
+            padding: 3px;
+            border-radius: 14px;
             border: 1px solid rgba(0, 0, 0, 0.02);
+            min-width: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .diff-status-box::-webkit-scrollbar {
+            display: none;
         }
         .q-diff-tag { 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             font-size: 11px; 
             font-weight: 800; 
-            padding: 6px 14px; 
-            border-radius: 99px; 
+            padding: 8px 11px; 
+            min-height: 34px;
+            box-sizing: border-box;
+            border-radius: 11px; 
             color: #64748B; 
             cursor: pointer; 
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             user-select: none;
             background: transparent;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         .q-diff-tag:hover {
             color: #0F172A;
             background: rgba(255, 255, 255, 0.5);
         }
+        .q-diff-tag.active[data-type="Translate"] { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3); }
+        .q-diff-tag.active[data-type="Ans"] { background: #7C3AED; color: white; box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3); }
         .q-diff-tag.active[data-type="Easy"] { background: var(--easy); color: white; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
         .q-diff-tag.active[data-type="Medium"] { background: var(--medium); color: white; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
         .q-diff-tag.active[data-type="Hard"] { background: var(--hard); color: white; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
+        @media (max-width: 480px) {
+            .multi-card .q-sticky-header {
+                padding: 8px 10px;
+                gap: 6px;
+            }
+            .q-counter {
+                gap: 5px;
+            }
+            .q-counter::before {
+                width: 4px;
+                height: 26px;
+            }
+            .q-counter-main {
+                font-size: 12px;
+            }
+            .q-counter-id {
+                font-size: 10px;
+            }
+            .q-diff-tag {
+                font-size: 10.5px;
+                padding: 7px 8px;
+                min-height: 32px;
+            }
+        }
 
         .q-text { 
             font-size: 16px; 
@@ -434,7 +568,8 @@
             color: #B91C1C;
         }
 
-        #exp-box { 
+        #exp-box,
+        .exp-box { 
             margin-top: 12px; 
             padding: 12px 14px; 
             background: #F8FAFC; 
@@ -527,149 +662,124 @@
         }
 
         .bottom-nav { 
-            height: 72px; 
-            background: rgba(255, 255, 255, 0.85); 
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.6); 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
+            min-height: 54px;
+            background: rgba(255, 255, 255, 0.92); 
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(15, 23, 42, 0.08); 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 8px; 
             padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); 
             position: fixed; 
-            bottom: 12px; 
+            bottom: 10px; 
             left: 12px;
             right: 12px;
             width: calc(100% - 24px);
             max-width: 736px;
             margin: 0 auto;
-            border-radius: 20px;
+            border-radius: 18px;
             box-sizing: border-box; 
             z-index: 100;
-            box-shadow: 0 16px 40px -12px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.04);
+            box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.16), 0 1px 3px rgba(15, 23, 42, 0.05);
+            flex-wrap: nowrap;
         }
-        .nav-btn { 
-            border: 1px solid rgba(0, 0, 0, 0.03); 
+        .bottom-pagination {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .bottom-pagination::-webkit-scrollbar {
+            display: none;
+        }
+        .bottom-nav #page-select {
+            height: 36px;
+            border-radius: 11px;
+        }
+        .bottom-ans-btn {
+            height: 36px;
+            padding: 0 12px;
+            border: 1px solid rgba(15, 23, 42, 0.1); 
             background: #FFFFFF; 
-            border-radius: 14px; 
-            display: flex; 
-            flex-direction: column; 
+            border-radius: 11px; 
+            display: inline-flex; 
             align-items: center; 
             justify-content: center; 
+            gap: 5px;
             color: #475569; 
+            font-size: 12.5px;
+            font-weight: 800;
+            font-family: inherit;
             cursor: pointer; 
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.18s ease;
             user-select: none;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-            gap: 2px;
-            padding: 4px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+            white-space: nowrap;
+            flex-shrink: 0;
+            box-sizing: border-box;
         }
-        .nav-btn:hover {
+        .bottom-ans-btn:hover {
             background: #F8FAFC;
-            transform: translateY(-2px);
-            border-color: rgba(0, 0, 0, 0.08);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            border-color: rgba(15, 23, 42, 0.18);
         }
-        .nav-btn:active {
-            transform: translateY(0) scale(0.96);
-        }
-        
-        .nav-btn svg {
-            width: 22px;
-            height: 22px;
+        .bottom-ans-btn svg {
+            width: 17px;
+            height: 17px;
             display: block;
-            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.2s ease, fill 0.2s ease;
+            flex-shrink: 0;
         }
-        .nav-btn:hover svg {
-            transform: scale(1.12);
-        }
-        
-        /* Distinctive LÙI / TIẾP primary highlights with gorgeous gradients */
-        .nav-btn-prev {
-            background: #FFFFFF !important;
-            border: 1.5px solid #E2E8F0 !important;
-            color: #1E293B !important;
-        }
-        .nav-btn-prev:hover svg {
-            transform: translateX(-3px) scale(1.1);
-        }
-
-        .nav-btn-next {
-            background: linear-gradient(135deg, #2563EB, #1D4ED8) !important;
-            color: #FFFFFF !important;
-            border: none !important;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.24) !important;
-        }
-        .nav-btn-next svg {
-            color: #FFFFFF !important;
-        }
-        .nav-btn-next:hover svg {
-            transform: translateX(3px) scale(1.1);
-        }
-        .nav-btn-next:hover {
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35) !important;
-        }
-
-        /* Specific active style for answer explanation toggler */
         #btn-ans.active { 
-            border-color: rgba(37, 99, 235, 0.3); 
+            border-color: rgba(37, 99, 235, 0.35); 
             color: var(--primary) !important; 
             background: #EFF6FF !important; 
             box-shadow: inset 0 1px 3px rgba(37, 99, 235, 0.08);
         }
         #btn-ans.active svg {
             stroke: var(--primary) !important;
-            fill: rgba(37, 99, 235, 0.1) !important;
+            fill: rgba(37, 99, 235, 0.12) !important;
         }
-
-        /* Distinctive states for difficulty filters */
-        #filt-Easy.active { 
-            background: #10B981 !important; 
-            color: #FFFFFF !important; 
-            border-color: transparent !important;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
-        }
-        #filt-Easy.active svg {
-            stroke: #FFFFFF !important;
-        }
-        #filt-Easy.active svg circle {
-            fill: rgba(255, 255, 255, 0.25) !important;
-        }
-        #filt-Easy.active .filt-cnt { color: rgba(255, 255, 255, 0.95); }
-        
-        #filt-Medium.active { 
-            background: #F59E0B !important; 
-            color: #FFFFFF !important; 
-            border-color: transparent !important;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25) !important;
-        }
-        #filt-Medium.active svg {
-            stroke: #FFFFFF !important;
-        }
-        #filt-Medium.active svg path {
-            fill: rgba(255, 255, 255, 0.25) !important;
-        }
-        #filt-Medium.active .filt-cnt { color: rgba(255, 255, 255, 0.95); }
-
-        #filt-Hard.active { 
-            background: #EF4444 !important; 
-            color: #FFFFFF !important; 
-            border-color: transparent !important;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25) !important;
-        }
-        #filt-Hard.active svg {
-            stroke: #FFFFFF !important;
-        }
-        #filt-Hard.active svg polygon {
-            fill: rgba(255, 255, 255, 0.25) !important;
-        }
-        #filt-Hard.active .filt-cnt { color: rgba(255, 255, 255, 0.95); }
-
-        .filt-cnt {
-            font-size: 9px;
-            font-weight: 800;
-            color: #64748B;
-            transition: color 0.2s ease;
+        @media (max-width: 430px) {
+            .bottom-nav {
+                left: 8px;
+                right: 8px;
+                width: calc(100% - 16px);
+                bottom: 8px;
+                padding: 7px 9px calc(7px + env(safe-area-inset-bottom));
+                gap: 6px;
+                border-radius: 16px;
+            }
+            .bottom-pagination {
+                gap: 4px;
+            }
+            .bottom-nav #page-select,
+            .page-nav-btn,
+            .page-range-badge,
+            .bottom-ans-btn {
+                height: 33px;
+                border-radius: 9px;
+                font-size: 11.5px;
+            }
+            .page-nav-btn {
+                width: 32px;
+            }
+            .page-range-badge {
+                padding: 0 8px;
+            }
+            .bottom-ans-btn {
+                padding: 0 9px;
+                gap: 4px;
+            }
+            .bottom-ans-btn svg {
+                width: 15px;
+                height: 15px;
+            }
         }
 
         #vocab-page { 
@@ -803,28 +913,26 @@
 </div>
 
 <header class="system-header">
-    <div class="nav-row">
-        <div class="brand" onclick="toggleVocabPage(true)">PMP MASTER PRO ✨</div>
-        <div id="storage-info" title="Dung lượng đã dùng trong Sheet">0/50k</div>
-        <select id="set-select" onchange="changeExamSet(this.value)">
-            <option value="DATA_SET_1">ĐỀ 01</option>
-            <option value="DATA_SET_2">ĐỀ 02</option>
-            <option value="DATA_SET_3">ĐỀ 03</option>
-            <option value="DATA_SET_4">ĐỀ 04</option>
-            <option value="DATA_SET_5">ĐỀ 05</option>
-        </select>
-    </div>
-    
-    <div class="segments-container">
-        <div class="segment-slider-bg">
-            <button class="segment-tab" id="tab-todo" onclick="switchTab('todo')">
-                <span>MỚI</span>
-                <span id="top-todo-cnt" class="badge-cnt">(0)</span>
-            </button>
-            <button class="segment-tab" id="tab-done" onclick="switchTab('done')">
-                <span>ĐÃ HỌC</span>
-                <span id="top-done-cnt" class="badge-cnt">(0)</span>
-            </button>
+    <div class="header-inner">
+        <div class="nav-row">
+            <div class="brand" onclick="toggleVocabPage(true)">PMP MASTER PRO ✨</div>
+            <div class="header-selects">
+                <select id="set-select" onchange="changeExamSet(this.value)" title="Chọn bộ đề">
+                    <option value="DATA_SET_1">ĐỀ 01</option>
+                    <option value="DATA_SET_2">ĐỀ 02</option>
+                    <option value="DATA_SET_3">ĐỀ 03</option>
+                    <option value="DATA_SET_4">ĐỀ 04</option>
+                    <option value="DATA_SET_5">ĐỀ 05</option>
+                </select>
+                <select id="list-filter-select" class="page-select-ctrl" onchange="changeListFilter(this.value)" title="Chọn danh sách câu hỏi">
+                    <option value="all">Tất cả (0)</option>
+                    <option value="todo">Mới (0)</option>
+                    <option value="Easy">Dễ (0)</option>
+                    <option value="Medium">Vừa (0)</option>
+                    <option value="Hard">Khó (0)</option>
+                    <option value="done">Đã học (0)</option>
+                </select>
+            </div>
         </div>
     </div>
 </header>
@@ -833,29 +941,319 @@
     <div id="book-page" class="main-card"></div>
 </main>
 
-<nav class="bottom-nav">
-    <div class="nav-btn" id="btn-ans" onclick="toggleAns()" title="Đáp án">
+<nav class="bottom-nav" aria-label="Thanh phân trang và điều khiển">
+    <div class="bottom-pagination">
+        <button type="button" class="page-nav-btn" id="btn-page-prev" onclick="move('prev')" title="Trang trước">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <span class="nav-short-text">Trước</span>
+        </button>
+        <select id="page-select" class="page-select-ctrl" onchange="goToPage(this.value)" title="Chọn trang"></select>
+        <span id="page-range-info" class="page-range-badge" title="Thứ tự câu hỏi đang hiển thị">0</span>
+        <button type="button" class="page-nav-btn page-nav-next" id="btn-page-next" onclick="move('next')" title="Trang sau">
+            <span class="nav-short-text">Sau</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+    </div>
+    <button type="button" class="bottom-ans-btn" id="btn-ans" onclick="toggleAns()" title="Đáp án">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>
-    </div>
-    <div class="nav-btn" id="filt-Easy" onclick="toggleFilter('Easy')" title="Dễ">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="rgba(16, 185, 129, 0.1)"/><path d="m9 12 2 2 4-4"/></svg>
-        <span id="cnt-Easy" class="filt-cnt">(0)</span>
-    </div>
-    <div class="nav-btn" id="filt-Medium" onclick="toggleFilter('Medium')" title="Vừa">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="rgba(245, 158, 11, 0.1)"/></svg>
-        <span id="cnt-Medium" class="filt-cnt">(0)</span>
-    </div>
-    <div class="nav-btn" id="filt-Hard" onclick="toggleFilter('Hard')" title="Khó">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(239, 68, 68, 0.1)"/></svg>
-        <span id="cnt-Hard" class="filt-cnt">(0)</span>
-    </div>
+        <span>Đáp án</span>
+    </button>
 </nav>
 
 <script>
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbymhGMFxLaw-7V5JQblXRH13wdjgAYReukTbQQcs4DXrH7ajja-vki0dsGII6iqb8k/exec';
 const SHEET_ID = '1VrTQvaJlLOwZwyKfuIxueRCCz4lCdve0Vk6_-EbQASE';
+const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
+const NOTE_SHEET_NAME = 'NOTE';
+const NOTES_CACHE_KEY = 'pmp_notes_cache_v1';
+const NOTE_SHEET_HEADERS = ['ID', 'SET', 'QID', 'ANS', 'LEVEL', 'NOTE', 'UPDATE_TIME'];
 
 let isLoaded = false; // CỜ AN TOÀN
+let noteSheetHasHeader = false;
+let noteSheetHasExactHeader = false;
+const noteSyncTimers = new Map();
+const ansSyncTimers = new Map();
+const levelSyncTimers = new Map();
+const qaSyncChains = new Map();
+
+function getAuthToken() {
+    let token = '';
+    try {
+        token = sessionStorage.getItem('token') ||
+                localStorage.getItem('token') ||
+                (document.cookie.match(/(?:^|; )token=([^;]*)/)?.[1] || '');
+        if (!token && typeof window !== 'undefined' && window.location) {
+            const urlParams = new URLSearchParams(window.location.search);
+            token = urlParams.get('token') || urlParams.get('access_token') || '';
+            if (token) {
+                sessionStorage.setItem('token', token);
+            }
+        }
+    } catch (e) {}
+    return token;
+}
+
+async function callGSheetApi(body) {
+    const headers = { 'Content-Type': 'application/json' };
+    const authToken = getAuthToken();
+    if (authToken) {
+        headers['Authorization'] = `${authToken}`;
+    }
+    try {
+        const response = await fetch(API_GSHEET_URL, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body)
+        });
+        let data = null;
+        try {
+            data = await response.json();
+        } catch (parseErr) {}
+        return { ok: response.ok, status: response.status, data };
+    } catch (e) {
+        console.error("[LOG] Lỗi gọi API Google Sheet:", e);
+        return { ok: false, status: 0, data: null, error: e };
+    }
+}
+
+function getNoteRowId(examSet, qid) {
+    return `${examSet}_${qid}`;
+}
+
+function parseAnsList(val) {
+    if (Array.isArray(val)) {
+        return Array.from(new Set(val.map(v => String(v).trim().toUpperCase()).filter(Boolean)));
+    }
+    if (typeof val === 'string') {
+        return Array.from(new Set(
+            val.split(/[\s,;]+/).map(v => v.trim().toUpperCase()).filter(Boolean)
+        ));
+    }
+    return [];
+}
+
+function formatAnsString(val) {
+    return parseAnsList(val).join(',');
+}
+
+function normalizeLevel(val) {
+    const s = String(val ?? '').trim().toLowerCase();
+    if (s === 'easy') return 'Easy';
+    if (s === 'medium') return 'Medium';
+    if (s === 'hard') return 'Hard';
+    return '';
+}
+
+function parseNoteRowKey(row, colMap) {
+    if (!Array.isArray(row) || row.length === 0) return null;
+    const cols = colMap || { id: 0, set: 1, qid: 2, ans: 3, level: 4, note: 5, updateTime: 6 };
+    const rowId = cols.id >= 0 ? String(row[cols.id] || '').trim() : '';
+    if (!rowId || rowId.toUpperCase() === 'ID') return null;
+
+    const rowSet = cols.set >= 0 ? String(row[cols.set] || '').trim() : '';
+    const rowQid = cols.qid >= 0 ? String(row[cols.qid] || '').trim() : '';
+    const ansRaw = cols.ans >= 0 && row[cols.ans] !== undefined && row[cols.ans] !== null ? String(row[cols.ans]) : '';
+    const ansList = parseAnsList(ansRaw);
+    const levelRaw = cols.level >= 0 && row[cols.level] !== undefined && row[cols.level] !== null ? String(row[cols.level]) : '';
+    const level = normalizeLevel(levelRaw);
+    const noteText = cols.note >= 0 && row[cols.note] !== undefined && row[cols.note] !== null ? String(row[cols.note]) : '';
+
+    let progressKey = '';
+    let examSet = rowSet;
+    let qid = rowQid;
+    if (rowSet && rowQid) {
+        progressKey = rowSet + rowQid;
+    } else {
+        const match = rowId.match(/^(DATA_SET_\d+)[_:](.+)$/);
+        if (match) {
+            examSet = match[1];
+            qid = match[2];
+            progressKey = examSet + qid;
+        } else {
+            progressKey = rowId;
+        }
+    }
+    return { progressKey, rowId, noteText, ansList, level, examSet, qid };
+}
+
+function loadNotesCache() {
+    try {
+        const raw = localStorage.getItem(NOTES_CACHE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function writeNotesCache(cacheObj) {
+    try {
+        localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(cacheObj));
+    } catch (e) {}
+}
+
+function setQaCacheEntry(progressKey, noteVal, ansVal, levelVal, dirty, examSet, qid) {
+    const cache = loadNotesCache();
+    const existing = cache[progressKey] && typeof cache[progressKey] === 'object' ? cache[progressKey] : {};
+    cache[progressKey] = {
+        examSet: examSet || existing.examSet || '',
+        qid: qid !== undefined && qid !== null ? String(qid) : (existing.qid || ''),
+        note: noteVal !== undefined ? String(noteVal ?? '') : String(existing.note ?? existing.val ?? ''),
+        ans: ansVal !== undefined ? formatAnsString(ansVal) : formatAnsString(existing.ans ?? ''),
+        level: levelVal !== undefined ? normalizeLevel(levelVal) : normalizeLevel(existing.level ?? ''),
+        dirty: Boolean(dirty),
+        updatedAt: Date.now()
+    };
+    writeNotesCache(cache);
+}
+
+function escapeHtmlText(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+async function loadQaFromSheet() {
+    console.log(`[LOG] Đang tải ghi chú, độ khó & đáp án từ sheet ${NOTE_SHEET_NAME}...`);
+    const res = await callGSheetApi({
+        act: 'read',
+        spread: SHEET_ID,
+        sheet: NOTE_SHEET_NAME
+    });
+
+    const qaMap = {};
+    if (!res.ok || !res.data || !Array.isArray(res.data.values)) {
+        console.warn(`[LOG] Không tải được sheet ${NOTE_SHEET_NAME} (status: ${res.status}). Dùng cache cục bộ nếu có.`);
+        return { ok: false, qaMap };
+    }
+
+    const rows = res.data.values;
+    noteSheetHasHeader = rows.length > 0;
+    const colMap = { id: 0, set: 1, qid: 2, ans: 3, level: 4, note: 5, updateTime: 6 };
+
+    if (rows.length > 0 && String(rows[0][0] || '').trim().toUpperCase() === 'ID') {
+        const hdr = rows[0].map(c => String(c || '').trim().toUpperCase());
+        colMap.id = 0;
+        colMap.set = hdr.indexOf('SET');
+        colMap.qid = hdr.indexOf('QID');
+        colMap.ans = hdr.indexOf('ANS');
+        colMap.level = hdr.indexOf('LEVEL');
+        colMap.note = hdr.indexOf('NOTE');
+        colMap.updateTime = hdr.includes('UPDATE_TIME') ? hdr.indexOf('UPDATE_TIME') : hdr.indexOf('UPDATED_AT');
+        noteSheetHasExactHeader = NOTE_SHEET_HEADERS.every((h, idx) => hdr[idx] === h);
+    } else {
+        noteSheetHasExactHeader = false;
+    }
+
+    rows.forEach(row => {
+        const parsed = parseNoteRowKey(row, colMap);
+        if (parsed && parsed.progressKey) {
+            qaMap[parsed.progressKey] = {
+                note: parsed.noteText,
+                ans: parsed.ansList,
+                level: parsed.level
+            };
+        }
+    });
+
+    console.log(`[LOG] Đã tải ${Object.keys(qaMap).length} bản ghi từ sheet ${NOTE_SHEET_NAME}.`);
+    return { ok: true, qaMap };
+}
+
+function enqueueQaSync(progressKey, taskFn) {
+    const prev = qaSyncChains.get(progressKey) || Promise.resolve();
+    const next = prev.catch(() => {}).then(taskFn);
+    qaSyncChains.set(progressKey, next);
+    next.finally(() => {
+        if (qaSyncChains.get(progressKey) === next) {
+            qaSyncChains.delete(progressKey);
+        }
+    });
+    return next;
+}
+
+function syncQaRowToSheet(examSet, qid) {
+    const progressKey = examSet + qid;
+    return enqueueQaSync(progressKey, async () => {
+        const p = (state.progress && state.progress[progressKey]) || {};
+        const noteVal = p.note == null ? '' : String(p.note);
+        const ansStr = formatAnsString(p.ans);
+        const levelVal = normalizeLevel(p.diff);
+        const hasNote = noteVal.trim() !== '';
+        const hasAns = ansStr !== '';
+        const hasLevel = levelVal !== '';
+        const noteId = getNoteRowId(examSet, qid);
+
+        if (!hasNote && !hasAns && !hasLevel) {
+            const res = await callGSheetApi({
+                act: 'deleteByPosVal',
+                pos: 0,
+                val: noteId,
+                spread: SHEET_ID,
+                sheet: NOTE_SHEET_NAME
+            });
+            if (res.ok || res.status === 404) {
+                setQaCacheEntry(progressKey, '', '', '', false, examSet, qid);
+                console.log(`[LOG] Đã xóa bản ghi ${noteId} trên sheet ${NOTE_SHEET_NAME}.`);
+            }
+            return res;
+        }
+
+        if (!noteSheetHasHeader) {
+            const headerRes = await callGSheetApi({
+                act: 'add',
+                spread: SHEET_ID,
+                sheet: NOTE_SHEET_NAME,
+                data: JSON.stringify(NOTE_SHEET_HEADERS)
+            });
+            if (headerRes.ok) {
+                noteSheetHasHeader = true;
+                noteSheetHasExactHeader = true;
+            }
+        } else if (!noteSheetHasExactHeader) {
+            const headerUpdateRes = await callGSheetApi({
+                act: 'updateByPosVal',
+                pos: 0,
+                val: 'ID',
+                spread: SHEET_ID,
+                sheet: NOTE_SHEET_NAME,
+                data: JSON.stringify(NOTE_SHEET_HEADERS)
+            });
+            if (headerUpdateRes.ok) {
+                noteSheetHasExactHeader = true;
+            }
+        }
+
+        // Thứ tự cột chuẩn: ID - SET - QID - ANS - LEVEL - NOTE - UPDATE_TIME
+        const rowData = [
+            noteId,
+            examSet,
+            String(qid),
+            ansStr,
+            levelVal,
+            noteVal,
+            new Date().toLocaleString('vi-VN')
+        ];
+
+        const res = await callGSheetApi({
+            act: 'updateByPosVal',
+            pos: 0,
+            val: noteId,
+            spread: SHEET_ID,
+            sheet: NOTE_SHEET_NAME,
+            data: JSON.stringify(rowData)
+        });
+
+        if (res.ok) {
+            noteSheetHasHeader = true;
+            noteSheetHasExactHeader = true;
+            setQaCacheEntry(progressKey, noteVal, ansStr, levelVal, false, examSet, qid);
+            console.log(`[LOG] Đã lưu ${noteId} (ANS=${ansStr}, LEVEL=${levelVal}) lên sheet ${NOTE_SHEET_NAME}.`);
+        }
+        return res;
+    });
+}
 
 async function loadState() {
     console.log("[LOG] Đang tải trạng thái từ Google Sheets...");
@@ -878,13 +1276,16 @@ async function save() {
     }
 
     state.lastIdx = idx;
-    const jsonStr = JSON.stringify({ action: 'save', sheetId: SHEET_ID, state: state });
-    const currentSize = jsonStr.length;
-    
-    const storageInfo = document.getElementById('storage-info');
-    if (storageInfo) {
-        storageInfo.innerText = `${(currentSize/1024).toFixed(1)}k / 50k`;
-    }
+    const compactProgress = {};
+    Object.entries(state.progress || {}).forEach(([k, v]) => {
+        if (!v || typeof v !== 'object') return;
+        const { note, ...rest } = v;
+        if (Object.keys(rest).length > 0) {
+            compactProgress[k] = rest;
+        }
+    });
+    const stateForGas = { ...state, progress: compactProgress };
+    const jsonStr = JSON.stringify({ action: 'save', sheetId: SHEET_ID, state: stateForGas });
 
     console.log("[LOG] Đang gửi yêu cầu POST đồng bộ dữ liệu...");
     try {
@@ -899,19 +1300,91 @@ async function save() {
     }
 }
 
+const pageSize = 10;
+const UI_PREFS_STORAGE_KEY = 'pmp_ui_prefs_v1';
+const ALLOWED_LIST_FILTERS = ['all', 'todo', 'Easy', 'Medium', 'Hard', 'done'];
+
 let state = {};
 let currentData = []; let filteredData = []; let idx = 0; let isFirstLoad = true;
-let isFlipped = false;
+let currentPage = 1;
+let initialUrlPage = null;
+const flippedIds = new Set();
+const shownAnsIds = new Set();
+const hiddenAnsIds = new Set();
 
-function flipCard() {
-    const card = document.getElementById('book-page');
-    if (!card) return;
-    const q = filteredData[idx];
-    if (!q) return;
-    
-    isFlipped = !isFlipped;
-    card.classList.toggle('flipped', isFlipped);
-    console.log(`[LOG] Lật thẻ: ${isFlipped ? "Mặt sau (Dịch tiếng Việt)" : "Mặt trước (Tiếng Anh)"}`);
+function loadLocalPrefs() {
+    try {
+        const raw = localStorage.getItem(UI_PREFS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveLocalPrefs() {
+    try {
+        const prefs = {
+            set: state.set || 'DATA_SET_1',
+            listFilter: normalizeListFilter(state.listFilter),
+            page: currentPage,
+            showAns: Boolean(document.getElementById('btn-ans')?.classList.contains('active')),
+            flippedIds: Array.from(flippedIds),
+            shownAnsIds: Array.from(shownAnsIds),
+            hiddenAnsIds: Array.from(hiddenAnsIds)
+        };
+        localStorage.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify(prefs));
+    } catch (e) {}
+}
+
+function normalizeListFilter(val) {
+    return ALLOWED_LIST_FILTERS.includes(val) ? val : 'todo';
+}
+
+function syncPageToUrl(pageNum) {
+    try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', String(pageNum));
+        window.history.replaceState(null, '', url.toString());
+    } catch (e) {}
+}
+
+function isQuestionAnsShown(qid) {
+    const key = String(qid);
+    const isGlobal = Boolean(document.getElementById('btn-ans')?.classList.contains('active'));
+    return isGlobal ? !hiddenAnsIds.has(key) : shownAnsIds.has(key);
+}
+
+function toggleCardAns(qid) {
+    if (qid === undefined) return;
+    const key = String(qid);
+    const isGlobal = Boolean(document.getElementById('btn-ans')?.classList.contains('active'));
+    if (isGlobal) {
+        if (hiddenAnsIds.has(key)) hiddenAnsIds.delete(key);
+        else hiddenAnsIds.add(key);
+    } else {
+        if (shownAnsIds.has(key)) shownAnsIds.delete(key);
+        else shownAnsIds.add(key);
+    }
+    saveLocalPrefs();
+
+    const show = isQuestionAnsShown(qid);
+    const box = document.getElementById(`exp-box-${qid}`);
+    const viBox = document.getElementById(`vi-exp-box-${qid}`);
+    if (box) box.style.display = show ? 'block' : 'none';
+    if (viBox) viBox.style.display = show ? 'block' : 'none';
+    const cardBtn = document.getElementById(`btn-card-ans-${qid}`);
+    if (cardBtn) cardBtn.classList.toggle('active', show);
+    const q = currentData.find(item => String(item.id) === key);
+    if (q) applyAnswerHighlightForQuestion(q);
+}
+
+function flipCard(qid) {
+    if (qid === undefined) return;
+    const key = String(qid);
+    if (flippedIds.has(key)) flippedIds.delete(key);
+    else flippedIds.add(key);
+    saveLocalPrefs();
+    render(true);
 }
 
 async function translateQuestion(q) {
@@ -967,7 +1440,7 @@ async function translateQuestion(q) {
         
         console.log(`[LOG] Dịch thành công câu ${q.id}`);
         save();
-        render(); // Re-render to update the Vietnamese back face
+        render(true); // Re-render preserving scroll position
     } catch (e) {
         console.error(`[LOG] Lỗi dịch câu ${q.id}:`, e);
     } finally {
@@ -977,18 +1450,44 @@ async function translateQuestion(q) {
 
 function changeExamSet(v) { 
     console.log("[LOG] Đổi bộ đề sang:", v);
-    state.set = v; idx = 0; update(); save();
+    state.set = v; idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear(); hiddenAnsIds.clear();
+    update();
+    saveLocalPrefs();
+    save();
 }
 
-function switchTab(t) { 
-    console.log("[LOG] Chuyển tab:", t);
-    state.tab = t; state.diffFilter = null; idx = 0; update(); save();
+function changeListFilter(val) {
+    state.listFilter = normalizeListFilter(val);
+    state.tab = (state.listFilter === 'done') ? 'done' : 'todo';
+    state.diffFilter = ['Easy', 'Medium', 'Hard'].includes(state.listFilter) ? state.listFilter : null;
+    console.log("[LOG] Lọc danh sách:", state.listFilter);
+    idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear(); hiddenAnsIds.clear();
+    update();
+    saveLocalPrefs();
+    save();
 }
 
-function toggleFilter(f) { 
-    state.diffFilter = (state.diffFilter === f) ? null : f; 
-    console.log("[LOG] Lọc trạng thái:", state.diffFilter || "Tất cả");
-    idx = 0; update(); save();
+function goToPage(pageNum) {
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+    const target = Math.min(Math.max(1, Number(pageNum) || 1), totalPages);
+    currentPage = target;
+    idx = (currentPage - 1) * pageSize;
+    flippedIds.clear(); shownAnsIds.clear(); hiddenAnsIds.clear();
+    render();
+    const viewport = document.getElementById('swipe-area');
+    if (viewport) viewport.scrollTop = 0;
+    saveLocalPrefs();
+    save();
+}
+
+function getSelectedQuestionId() {
+    const sel = window.getSelection();
+    let node = sel && sel.anchorNode ? sel.anchorNode : null;
+    if (node && node.nodeType === 3) node = node.parentElement;
+    const cardEl = node && node.closest ? node.closest('[data-qid]') : null;
+    if (cardEl) return cardEl.getAttribute('data-qid');
+    const q = filteredData[idx];
+    return q ? q.id : 'N/A';
 }
 
 document.addEventListener('selectionchange', () => {
@@ -997,6 +1496,7 @@ document.addEventListener('selectionchange', () => {
     if (text.length > 2) {
         clearTimeout(window.transTimer);
         window.transTimer = setTimeout(async () => {
+            const activeQid = getSelectedQuestionId();
             console.log("[LOG] Yêu cầu dịch thuật văn bản:", text);
             display.innerHTML = '<div class="trans-header">BẢN DỊCH <span class="trans-close" onclick="document.getElementById(\'trans-display\').style.display=\'none\'">ĐÓNG [X]</span></div><div class="trans-content" id="trans-text">Đang dịch...</div>';
             display.style.display = 'flex';
@@ -1005,7 +1505,7 @@ document.addEventListener('selectionchange', () => {
                 const data = await res.json();
                 const result = data[0].map(s => s[0]).join("");
                 document.getElementById('trans-text').innerText = result;
-                saveToVocab(text, result);
+                saveToVocab(text, result, activeQid);
             } catch (e) { 
                 console.error("[LOG] Lỗi dịch API:", e);
                 document.getElementById('trans-text').innerText = "Lỗi kết nối."; 
@@ -1014,9 +1514,10 @@ document.addEventListener('selectionchange', () => {
     }
 });
 
-function saveToVocab(en, vi) {
+function saveToVocab(en, vi, qidOverride) {
     const q = filteredData[idx];
-    const item = { set: state.set, qid: q ? q.id : 'N/A', en: en, vi: vi, time: new Date().toLocaleString('vi-VN') };
+    const qid = qidOverride || (q ? q.id : 'N/A');
+    const item = { set: state.set, qid: qid, en: en, vi: vi, time: new Date().toLocaleString('vi-VN') };
     state.vocab.unshift(item);
     console.log("[LOG] Đã thêm từ vựng mới.");
     save();
@@ -1077,310 +1578,402 @@ function importVocab(input) {
     reader.readAsText(file);
 }
 
+function syncPaginationControls() {
+    const pageSelect = document.getElementById('page-select');
+    const prevBtn = document.getElementById('btn-page-prev');
+    const nextBtn = document.getElementById('btn-page-next');
+    const rangeInfo = document.getElementById('page-range-info');
+
+    const total = filteredData.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    if (pageSelect) {
+        if (total === 0) {
+            pageSelect.innerHTML = '<option value="1">Trang 0</option>';
+            pageSelect.disabled = true;
+        } else {
+            pageSelect.disabled = false;
+            let opts = '';
+            for (let p = 1; p <= totalPages; p++) {
+                opts += `<option value="${p}" ${p === currentPage ? 'selected' : ''}>Trang ${p}</option>`;
+            }
+            pageSelect.innerHTML = opts;
+        }
+    }
+
+    if (rangeInfo) {
+        if (total === 0) {
+            rangeInfo.innerText = '0';
+        } else {
+            const start = (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, total);
+            rangeInfo.innerText = `${start}~${end}`;
+        }
+    }
+
+    if (prevBtn) prevBtn.disabled = totalPages <= 1;
+    if (nextBtn) nextBtn.disabled = totalPages <= 1;
+    if (isLoaded) {
+        syncPageToUrl(currentPage);
+        saveLocalPrefs();
+    }
+}
+
 function update() {
     document.getElementById('set-select').value = state.set;
+    state.listFilter = normalizeListFilter(state.listFilter);
     currentData = window[state.set] || [];
-    let counts = { todo: 0, done: 0, Easy: 0, Medium: 0, Hard: 0 };
-    currentData.forEach(q => {
-        const p = state.progress[state.set + q.id];
-        if (p && p.ans) counts.done++; else counts.todo++;
-        if (p?.diff) counts[p.diff]++;
-    });
-    document.getElementById('top-todo-cnt').innerText = `(${counts.todo})`;
-    document.getElementById('top-done-cnt').innerText = `(${counts.done})`;
-    document.getElementById('cnt-Easy').innerText = `(${counts.Easy})`;
-    document.getElementById('cnt-Medium').innerText = `(${counts.Medium})`;
-    document.getElementById('cnt-Hard').innerText = `(${counts.Hard})`;
+    updateCountsOnly();
     
     filteredData = currentData.filter(q => {
         const p = state.progress[state.set + q.id];
-        let matchTab = (state.tab === 'done') ? (p && p.ans) : (!p || !p.ans);
-        let matchDiff = state.diffFilter ? (p?.diff === state.diffFilter) : true;
-        return matchTab && matchDiff;
+        const hasAns = parseAnsList(p?.ans).length > 0;
+        switch (state.listFilter) {
+            case 'all': return true;
+            case 'done': return hasAns;
+            case 'Easy':
+            case 'Medium':
+            case 'Hard':
+                return p?.diff === state.listFilter;
+            case 'todo':
+            default:
+                return !hasAns;
+        }
     });
     
-    if (isFirstLoad) { idx = (state.lastIdx < filteredData.length) ? state.lastIdx : 0; isFirstLoad = false; }
+    if (isFirstLoad) {
+        if (initialUrlPage !== null) {
+            const totalPagesInit = Math.max(1, Math.ceil(filteredData.length / pageSize));
+            const clampedPage = Math.min(Math.max(1, initialUrlPage), totalPagesInit);
+            idx = (clampedPage - 1) * pageSize;
+            initialUrlPage = null;
+        } else {
+            idx = (state.lastIdx >= 0 && state.lastIdx < filteredData.length) ? state.lastIdx : 0;
+        }
+        isFirstLoad = false;
+    }
     if (idx >= filteredData.length && filteredData.length > 0) idx = 0;
+    currentPage = filteredData.length > 0 ? Math.floor(idx / pageSize) + 1 : 1;
+    if (filteredData.length > 0) idx = (currentPage - 1) * pageSize;
     
-    document.getElementById('tab-todo').classList.toggle('active', state.tab === 'todo');
-    document.getElementById('tab-done').classList.toggle('active', state.tab === 'done');
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    if(state.diffFilter) document.getElementById('filt-'+state.diffFilter).classList.add('active');
+    const filterSelect = document.getElementById('list-filter-select');
+    if (filterSelect) filterSelect.value = state.listFilter;
     render();
 }
 
-function render() {
+function render(preserveScroll = false) {
+    const viewport = document.getElementById('swipe-area');
     const container = document.getElementById('book-page');
-    const q = filteredData[idx];
-    if (!q) { container.innerHTML = "<center style='padding-top:100px; color:#999'>Trống</center>"; return; }
-    const p = state.progress[state.set + q.id] || {};
-    const key = state.set + q.id;
-    
-    // Synchronize flip state class
-    if (isFlipped) {
-        container.classList.add('flipped');
-    } else {
-        container.classList.remove('flipped');
+    const prevScrollTop = (preserveScroll && viewport) ? viewport.scrollTop : 0;
+
+    syncPaginationControls();
+
+    if (filteredData.length === 0) {
+        container.innerHTML = "<center style='padding-top:100px; color:#999'>Trống</center>";
+        return;
     }
-    
-    const hasTranslation = p.translation && p.translation.questionVi;
-    
-    let backContentHtml = "";
-    if (hasTranslation) {
-        const trans = p.translation;
-        backContentHtml = `
-            <div class="q-sticky-header">
-                <div class="q-counter">${idx+1}/${filteredData.length}(ID:${q.id})</div>
-                <div style="display: flex; align-items: center;">
-                    <div class="diff-status-box">
-                        <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
-                        <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
-                        <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
+
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const startIdx = (currentPage - 1) * pageSize;
+    const pageItems = filteredData.slice(startIdx, startIdx + pageSize);
+
+    container.innerHTML = pageItems.map((q, localIdx) => {
+        const globalIdx = startIdx + localIdx;
+        const p = state.progress[state.set + q.id] || {};
+        const selectedList = parseAnsList(p.ans);
+        const isCardVi = flippedIds.has(String(q.id));
+        const isCardAns = isQuestionAnsShown(q.id);
+        const hasTranslation = p.translation && p.translation.questionVi;
+
+        if (isCardVi && !hasTranslation) {
+            translateQuestion(q);
+        }
+
+        let bodyHtml = '';
+        if (isCardVi) {
+            if (hasTranslation) {
+                const trans = p.translation;
+                bodyHtml = `
+                    <div class="q-text" style="color: #0F172A; font-weight: 700;">${trans.questionVi}</div>
+                    <div class="options">
+                        ${Object.entries(q.options).map(([k, v]) => {
+                            const optTransText = trans.optionsVi[k] || v;
+                            const isSel = selectedList.includes(String(k).trim().toUpperCase());
+                            return `
+                                <div class="option-item ${isSel ? 'selected' : ''}" id="opt-${q.id}-${k}" data-qid="${q.id}" data-opt="${k}" onclick="setAns('${q.id}','${k}')">
+                                    <span class="option-badge">${k}</span><span class="option-content">${optTransText}</span>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
-                </div>
-            </div>
-            <div class="q-scroll-body">
-                <div class="q-text" style="color: #0F172A; font-weight: 700;">${trans.questionVi}</div>
+                    <div class="exp-box" id="vi-exp-box-${q.id}" style="${isCardAns ? 'display:block;' : 'display:none;'} border-left:4px solid #10B981; background: #F0FDF4; color: #15803D;">
+                        <div style="font-weight: 800; margin-bottom: 6px; color: #10B981;">📖 BẢN DỊCH GIẢI THÍCH CHI TIẾT:</div>
+                        ${trans.explanationVi || "Chưa có bản dịch giải thích."}
+                    </div>
+                    <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." oninput="onNoteInput('${q.id}', this.value)" onchange="saveNote('${q.id}', this.value)">${escapeHtmlText(p.note || '')}</textarea>
+                `;
+            } else {
+                bodyHtml = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #64748B; padding: 28px 12px;">
+                        <div class="spinner-translation" style="width: 34px; height: 34px; border: 3px solid rgba(37, 99, 235, 0.12); border-top-color: var(--primary); border-radius: 50%; animation: spinTranslation 1s linear infinite; margin-bottom: 12px;"></div>
+                        <div style="font-weight: 700; font-size: 14px; color: #334155; margin-bottom: 4px;">Đang chuẩn bị bản dịch tiếng Việt...</div>
+                        <div style="font-size: 12.5px; max-width: 280px; line-height: 1.5; color: #64748B;">Hệ thống đang dịch câu ${globalIdx+1} sang tiếng Việt.</div>
+                    </div>
+                `;
+            }
+        } else {
+            bodyHtml = `
+                <div class="q-text">${q.question}</div>
                 <div class="options">
-                    ${Object.entries(q.options).map(([k,v]) => {
-                        const optTransText = trans.optionsVi[k] || v;
+                    ${Object.entries(q.options).map(([k, v]) => {
+                        const isSel = selectedList.includes(String(k).trim().toUpperCase());
                         return `
-                            <div class="option-item ${p.ans===k?'selected':''}" id="opt-vi-${k}" onclick="setAns('${q.id}','${k}')">
-                                <span class="option-badge">${k}</span><span class="option-content">${optTransText}</span>
+                            <div class="option-item ${isSel ? 'selected' : ''}" id="opt-${q.id}-${k}" data-qid="${q.id}" data-opt="${k}" onclick="setAns('${q.id}','${k}')">
+                                <span class="option-badge">${k}</span><span class="option-content">${v}</span>
                             </div>
                         `;
                     }).join('')}
                 </div>
-                <div id="vi-exp-box" style="${document.getElementById('btn-ans')?.classList.contains('active') ? 'display:block;' : 'display:none;'} border-left:4px solid #10B981; margin-top: 12px; padding: 12px 14px; background: #F0FDF4; border-radius: 12px; font-size: 13px; line-height: 1.5; color: #15803D;">
-                    <div style="font-weight: 800; margin-bottom: 6px; color: #10B981;">📖 BẢN DỊCH GIẢI THÍCH CHI TIẾT:</div>
-                    ${trans.explanationVi || "Chưa có bản dịch giải thích."}
-                </div>
-                <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." onchange="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
-            </div>
-        `;
-    } else {
-        backContentHtml = `
-            <div class="q-sticky-header">
-                <div class="q-counter">${idx+1}/${filteredData.length}(ID:${q.id})</div>
-                <div style="display: flex; align-items: center;">
-                    <div class="diff-status-box">
-                        <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
-                        <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
-                        <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
-                    </div>
-                </div>
-            </div>
-            <div class="q-scroll-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #64748B; padding-top: 60px;">
-                <div class="spinner-translation" style="width: 40px; height: 40px; border: 4px solid rgba(37, 99, 235, 0.1); border-top-color: var(--primary); border-radius: 50%; animation: spinTranslation 1s linear infinite; margin-bottom: 16px;"></div>
-                <div style="font-weight: 700; font-size: 15px; color: #334155; margin-bottom: 6px;">Đang chuẩn bị bản dịch tiếng Việt...</div>
-                <div style="font-size: 13px; max-width: 280px; line-height: 1.5; color: #64748B;">Hệ thống AI đang dịch tự động câu hỏi và các lựa chọn đáp án cho bạn.</div>
-            </div>
-        `;
-        translateQuestion(q);
-    }
-    
-    container.innerHTML = `
-        <!-- MẶT TRƯỚC (TIẾNG ANH) -->
-        <div class="card-face card-front">
-            <div class="q-sticky-header">
-                <div class="q-counter">${idx+1}/${filteredData.length}(ID:${q.id})</div>
-                <div style="display: flex; align-items: center;">
-                    <div class="diff-status-box">
-                        <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
-                        <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
-                        <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
-                    </div>
-                </div>
-            </div>
-            <div class="q-scroll-body">
-                <div class="q-text">${q.question}</div>
-                <div class="options">
-                    ${Object.entries(q.options).map(([k,v]) => `
-                        <div class="option-item ${p.ans===k?'selected':''}" id="opt-${k}" onclick="setAns('${q.id}','${k}')">
-                            <span class="option-badge">${k}</span><span class="option-content">${v}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                <div id="exp-box" style="${document.getElementById('btn-ans')?.classList.contains('active') ? 'display:block;' : 'display:none;'} border-left:4px solid var(--primary);">
+                <div class="exp-box" id="exp-box-${q.id}" style="${isCardAns ? 'display:block;' : 'display:none;'} border-left:4px solid var(--primary);">
                     <div style="font-weight: 800; margin-bottom: 6px; color: var(--primary);">📖 GIẢI THÍCH CHI TIẾT:</div>
-                    ${q.explanation}
+                    ${q.explanation || 'Câu này chưa có giải thích chi tiết.'}
                 </div>
-                <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." onchange="saveNote('${q.id}', this.value)">${p.note || ''}</textarea>
-            </div>
-        </div>
-        
-        <!-- MẶT SAU (TIẾNG VIỆT) -->
-        <div class="card-face card-back">
-            ${backContentHtml}
-        </div>
-    `;
+                <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." oninput="onNoteInput('${q.id}', this.value)" onchange="saveNote('${q.id}', this.value)">${escapeHtmlText(p.note || '')}</textarea>
+            `;
+        }
 
-    // Highlight correct & wrong options synchronously if Answer panel is visible
-    const isAnsActive = document.getElementById('btn-ans')?.classList.contains('active');
-    if (isAnsActive) {
-        document.querySelectorAll('.option-item').forEach(el => {
-            const optKey = el.id.split('-').pop();
-            const isCorrect = Array.isArray(q.answer) ? q.answer.includes(optKey) : optKey === q.answer;
-            if (isCorrect) {
-                 el.classList.add('correct');
-            } else if (el.classList.contains('selected')) {
-                 el.classList.add('wrong');
-            }
-        });
+        return `
+            <section class="multi-card" data-qid="${q.id}">
+                <div class="q-sticky-header">
+                    <div class="q-counter">
+                        <div class="q-counter-lines">
+                            <span class="q-counter-main">${globalIdx+1}/${filteredData.length}</span>
+                            <span class="q-counter-id">(ID:${q.id} of ${currentData.length})</span>
+                        </div>
+                    </div>
+                    <div class="diff-status-box">
+                        <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
+                        <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
+                        <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
+                        <div class="q-diff-tag ${isCardAns?'active':''}" id="btn-card-ans-${q.id}" data-type="Ans" onclick="toggleCardAns('${q.id}')" title="Bật/tắt đáp án">ANS</div>
+                        <div class="q-diff-tag ${isCardVi?'active':''}" data-type="Translate" onclick="flipCard('${q.id}')" title="Bật/tắt dịch tiếng Việt">DỊCH</div>
+                    </div>
+                </div>
+                <div class="multi-card-body">
+                    ${bodyHtml}
+                </div>
+            </section>
+        `;
+    }).join('');
+
+    pageItems.forEach(q => {
+        if (isQuestionAnsShown(q.id)) {
+            applyAnswerHighlightForQuestion(q);
+        }
+    });
+
+    if (preserveScroll && viewport) {
+        viewport.scrollTop = prevScrollTop;
     }
+}
+
+function applyAnswerHighlightForQuestion(q) {
+    if (!q) return;
+    const isAnsActive = isQuestionAnsShown(q.id);
+    const correctList = parseAnsList(q.answer);
+    document.querySelectorAll(`.option-item[data-qid="${q.id}"]`).forEach(el => {
+        el.classList.remove('correct', 'wrong');
+        if (isAnsActive) {
+            const optKey = String(el.getAttribute('data-opt') || el.id.split('-').pop()).trim().toUpperCase();
+            const isCorrect = correctList.includes(optKey);
+            if (isCorrect) {
+                el.classList.add('correct');
+            } else if (el.classList.contains('selected')) {
+                el.classList.add('wrong');
+            }
+        }
+    });
 }
 
 function setStatus(qid, level) {
-    const key = state.set + qid;
+    const examSet = state.set;
+    const key = examSet + qid;
     if(!state.progress[key]) state.progress[key] = {};
     state.progress[key].diff = (state.progress[key].diff === level) ? null : level;
-    console.log(`[LOG] Đã đánh dấu độ khó cho câu ${qid}: ${level}`);
-    updateCountsOnly(); render(); save(); 
+    console.log(`[LOG] Đã đánh dấu độ khó cho câu ${qid}: ${state.progress[key].diff || '(bỏ đánh dấu)'}`);
+    updateCountsOnly(); render(true);
+
+    const noteVal = state.progress[key].note || '';
+    const ansStr = formatAnsString(state.progress[key].ans);
+    const levelVal = normalizeLevel(state.progress[key].diff);
+    setQaCacheEntry(key, noteVal, ansStr, levelVal, true, examSet, qid);
+
+    if (levelSyncTimers.has(key)) {
+        clearTimeout(levelSyncTimers.get(key));
+    }
+    const timerId = setTimeout(() => {
+        levelSyncTimers.delete(key);
+        syncQaRowToSheet(examSet, qid);
+    }, 300);
+    levelSyncTimers.set(key, timerId);
+
+    save();
 }
 
 function setAns(qid, k) {
-    const key = state.set + qid;
-    if(!state.progress[key]) state.progress[key] = {};
-    state.progress[key].ans = (state.progress[key].ans === k) ? null : k;
-    console.log(`[LOG] Người dùng chọn đáp án cho câu ${qid}: ${k}`);
+    const examSet = state.set;
+    const key = examSet + qid;
+    if (!state.progress[key]) state.progress[key] = {};
+
+    const currentList = parseAnsList(state.progress[key].ans);
+    const optNorm = String(k).trim().toUpperCase();
+    const nextList = currentList.includes(optNorm)
+        ? currentList.filter(item => item !== optNorm)
+        : [...currentList, optNorm];
+
+    const q = currentData.find(item => String(item.id) === String(qid));
+    const optOrder = q && q.options ? Object.keys(q.options).map(o => String(o).trim().toUpperCase()) : [];
+    nextList.sort((a, b) => {
+        const ia = optOrder.indexOf(a);
+        const ib = optOrder.indexOf(b);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        return a.localeCompare(b);
+    });
+
+    state.progress[key].ans = nextList.length > 0 ? nextList : null;
+    console.log(`[LOG] Người dùng chọn đáp án cho câu ${qid}: ${nextList.join(',') || '(bỏ chọn hết)'}`);
     updateCountsOnly();
-    document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
-    
-    // Highlight symmetrically on both faces
-    if (state.progress[key].ans) {
-        const optEng = document.getElementById('opt-' + k);
-        const optVie = document.getElementById('opt-vi-' + k);
-        if (optEng) optEng.classList.add('selected');
-        if (optVie) optVie.classList.add('selected');
+
+    const scopedItems = document.querySelectorAll(`.option-item[data-qid="${qid}"]`);
+    scopedItems.forEach(el => {
+        const opt = String(el.getAttribute('data-opt') || '').trim().toUpperCase();
+        el.classList.toggle('selected', nextList.includes(opt));
+    });
+
+    if (q) applyAnswerHighlightForQuestion(q);
+
+    const noteVal = state.progress[key].note || '';
+    const ansStr = nextList.join(',');
+    const levelVal = normalizeLevel(state.progress[key].diff);
+    setQaCacheEntry(key, noteVal, ansStr, levelVal, true, examSet, qid);
+
+    if (ansSyncTimers.has(key)) {
+        clearTimeout(ansSyncTimers.get(key));
     }
-    save(); 
+    const timerId = setTimeout(() => {
+        ansSyncTimers.delete(key);
+        syncQaRowToSheet(examSet, qid);
+    }, 350);
+    ansSyncTimers.set(key, timerId);
+
+    save();
+}
+
+function onNoteInput(qid, val) {
+    const examSet = state.set;
+    const key = examSet + qid;
+    if (!state.progress[key]) state.progress[key] = {};
+    state.progress[key].note = val;
+    setQaCacheEntry(key, val, state.progress[key].ans || '', state.progress[key].diff || '', true, examSet, qid);
+
+    if (noteSyncTimers.has(key)) {
+        clearTimeout(noteSyncTimers.get(key));
+    }
+    const timerId = setTimeout(() => {
+        noteSyncTimers.delete(key);
+        syncQaRowToSheet(examSet, qid);
+    }, 900);
+    noteSyncTimers.set(key, timerId);
 }
 
 function saveNote(qid, val) { 
-    const key = state.set + qid; 
+    const examSet = state.set;
+    const key = examSet + qid; 
     if(!state.progress[key]) state.progress[key] = {}; 
     state.progress[key].note = val; 
-    console.log(`[LOG] Cập nhật ghi chú cho câu ${qid}.`);
-    save(); 
+    setQaCacheEntry(key, val, state.progress[key].ans || '', state.progress[key].diff || '', true, examSet, qid);
+
+    if (noteSyncTimers.has(key)) {
+        clearTimeout(noteSyncTimers.get(key));
+        noteSyncTimers.delete(key);
+    }
+    console.log(`[LOG] Đồng bộ ghi chú câu ${qid} lên sheet ${NOTE_SHEET_NAME}.`);
+    syncQaRowToSheet(examSet, qid);
 }
 
 function updateCountsOnly() {
     let c = { todo: 0, done: 0, Easy: 0, Medium: 0, Hard: 0 };
     currentData.forEach(q => {
         const p = state.progress[state.set + q.id];
-        if (p && p.ans) c.done++; else c.todo++;
+        if (parseAnsList(p?.ans).length > 0) c.done++; else c.todo++;
         if (p?.diff) c[p.diff]++;
     });
-    document.getElementById('top-todo-cnt').innerText = `(${c.todo})`;
-    document.getElementById('top-done-cnt').innerText = `(${c.done})`;
-    document.getElementById('cnt-Easy').innerText = `(${c.Easy})`;
-    document.getElementById('cnt-Medium').innerText = `(${c.Medium})`;
-    document.getElementById('cnt-Hard').innerText = `(${c.Hard})`;
+    const filterSelect = document.getElementById('list-filter-select');
+    if (filterSelect) {
+        const labels = {
+            todo: `Mới (${c.todo})`,
+            done: `Đã học (${c.done})`,
+            Easy: `Dễ (${c.Easy})`,
+            Medium: `Vừa (${c.Medium})`,
+            Hard: `Khó (${c.Hard})`,
+            all: `Tất cả (${currentData.length})`
+        };
+        Array.from(filterSelect.options).forEach(opt => {
+            if (labels[opt.value]) opt.text = labels[opt.value];
+        });
+        filterSelect.value = normalizeListFilter(state.listFilter);
+    }
 }
 
 function toggleAns() {
-    const box = document.getElementById('exp-box');
-    const viBox = document.getElementById('vi-exp-box');
-    const isShow = box ? box.style.display === 'none' : true;
-    const q = filteredData[idx];
-    
-    if (box) box.style.display = isShow ? 'block' : 'none';
-    if (viBox) viBox.style.display = isShow ? 'block' : 'none';
-    
-    document.getElementById('btn-ans').classList.toggle('active', isShow);
-    document.querySelectorAll('.option-item').forEach(el => {
-        el.classList.remove('correct', 'wrong');
-        if (isShow) {
-            const optKey = el.id.split('-').pop();
-            const isCorrect = Array.isArray(q.answer) ? q.answer.includes(optKey) : optKey === q.answer;
-            if (isCorrect) el.classList.add('correct');
-            else if (el.classList.contains('selected')) el.classList.add('wrong');
-        }
+    const btnAns = document.getElementById('btn-ans');
+    const isShow = !btnAns.classList.contains('active');
+    btnAns.classList.toggle('active', isShow);
+    shownAnsIds.clear();
+    hiddenAnsIds.clear();
+    saveLocalPrefs();
+
+    const startIdx = (currentPage - 1) * pageSize;
+    const pageItems = filteredData.slice(startIdx, startIdx + pageSize);
+    pageItems.forEach(q => {
+        const box = document.getElementById(`exp-box-${q.id}`);
+        const viBox = document.getElementById(`vi-exp-box-${q.id}`);
+        if (box) box.style.display = isShow ? 'block' : 'none';
+        if (viBox) viBox.style.display = isShow ? 'block' : 'none';
+        const cardBtn = document.getElementById(`btn-card-ans-${q.id}`);
+        if (cardBtn) cardBtn.classList.toggle('active', isShow);
+        applyAnswerHighlightForQuestion(q);
     });
 }
 
-let isMoving = false;
 function move(dir) {
-    if (isMoving) return;
-    if (filteredData.length <= 1) return;
-    isMoving = true;
-    const card = document.getElementById('book-page');
-    
-    // reset flip back to front before turning page
-    if (isFlipped) {
-        isFlipped = false;
-        card.classList.remove('flipped');
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+    if (totalPages <= 1) return;
+    if (dir === 'next') {
+        currentPage = (currentPage >= totalPages) ? 1 : currentPage + 1;
+    } else {
+        currentPage = (currentPage <= 1) ? totalPages : currentPage - 1;
     }
-    
-    // Clear any leftover animation classes
-    card.classList.remove('page-flip-next-out', 'page-flip-next-in', 'page-flip-prev-out', 'page-flip-prev-in');
-    
-    // Smoothly exit Y-axis rotation (300ms)
-    card.classList.add(dir === 'next' ? 'page-flip-next-out' : 'page-flip-prev-out');
-    
-    setTimeout(() => {
-        if (dir === 'next') {
-            if (idx >= filteredData.length - 1) {
-                idx = 0;
-            } else {
-                idx++;
-            }
-        } else {
-            if (idx <= 0) {
-                idx = filteredData.length - 1;
-            } else {
-                idx--;
-            }
-        }
-        update(); 
-        
-        // Remove exit posture, immediately slide in Y-axis from the opposite side (300ms)
-        card.classList.remove('page-flip-next-out', 'page-flip-prev-out');
-        card.classList.add(dir === 'next' ? 'page-flip-next-in' : 'page-flip-prev-in');
-        
-        setTimeout(() => {
-            // Clean up entered classes and unlock moving
-            card.classList.remove('page-flip-next-in', 'page-flip-prev-in');
-            isMoving = false;
-            save(); // Lưu vị trí câu hiện tại
-        }, 300);
-    }, 300); 
+    idx = (currentPage - 1) * pageSize;
+    flippedIds.clear(); shownAnsIds.clear(); hiddenAnsIds.clear();
+    render();
+    const viewport = document.getElementById('swipe-area');
+    if (viewport) viewport.scrollTop = 0;
+    saveLocalPrefs();
+    save();
 }
 
 let touchStartX = 0;
 let touchStartY = 0;
 let touchEndX = 0;
 let touchEndY = 0;
-let touchTargetIsScrollable = false;
-let touchStartScrollTop = 0;
-let touchStartMaxScroll = 0;
 
 document.getElementById('swipe-area').addEventListener('touchstart', e => { 
     touchStartX = e.changedTouches[0].screenX; 
     touchStartY = e.changedTouches[0].screenY; 
-    
-    // Check if touch started inside an active scrollable body or textarea
-    let target = e.target;
-    touchTargetIsScrollable = false;
-    touchStartScrollTop = 0;
-    touchStartMaxScroll = 0;
-    while (target && target !== document.getElementById('swipe-area')) {
-        if (target.classList && target.classList.contains('q-scroll-body')) {
-            if (target.scrollHeight > target.clientHeight) {
-                touchTargetIsScrollable = true;
-                touchStartScrollTop = target.scrollTop;
-                touchStartMaxScroll = target.scrollHeight - target.clientHeight;
-            }
-            break;
-        }
-        if (target.classList && (target.classList.contains('note-area') || target.tagName === 'TEXTAREA')) {
-            touchTargetIsScrollable = true;
-            touchStartScrollTop = target.scrollTop;
-            touchStartMaxScroll = target.scrollHeight - target.clientHeight;
-            break;
-        }
-        target = target.parentElement;
-    }
 }, {passive: true});
 
 document.getElementById('swipe-area').addEventListener('touchend', e => { 
@@ -1393,63 +1986,119 @@ function handleSwipe() {
     if (window.getSelection().toString().trim() !== "") return;
     const diffX = touchEndX - touchStartX;
     const diffY = touchEndY - touchStartY;
-    const threshold = 55;
-    
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-        if (Math.abs(diffX) > threshold) {
-            if (diffX < 0) move('next');
-            else move('prev');
-        }
-    } else {
-        if (touchTargetIsScrollable) {
-            // Smarter gesture: If they swipe down (diffY > threshold) but touchStartScrollTop is at top limits (<= 3), then allow flip.
-            // If they swipe up (diffY < -threshold) but touchStartScrollTop is at bottom limits (>= max - 3), then allow flip.
-            // Otherwise, it's standard scrolling, so do not trigger a flip.
-            const isAtTopBoundary = (diffY > 0 && touchStartScrollTop <= 3);
-            const isAtBottomBoundary = (diffY < 0 && touchStartScrollTop >= touchStartMaxScroll - 3);
-            if (!isAtTopBoundary && !isAtBottomBoundary) {
-                return; // Standard scrolling, ignore flip
-            }
-        }
-        if (Math.abs(diffY) > threshold) {
-            flipCard();
-        }
+
+    if (Math.abs(diffX) > 75 && Math.abs(diffX) > Math.abs(diffY) * 1.6) {
+        if (diffX < 0) move('next');
+        else move('prev');
     }
 }
 
-// Cho phép nhấp đúp vào vùng trống của thẻ để lật mặt nhanh
-document.getElementById('book-page').addEventListener('dblclick', e => {
-    // Không lật nếu kích chuột vào ô nhập ghi chú, các lựa chọn trắc nghiệm hoặc nút bấm liên quan
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.closest('.option-item') || e.target.closest('.q-diff-tag')) {
-        return;
-    }
-    flipCard();
-});
-
-// Bắt phím ArrowLeft / ArrowRight làm điều hướng chính, ArrowUp / ArrowDown làm lật mặt thẻ
 document.addEventListener('keydown', e => {
-    // Không chuyển trang nếu đang gõ chữ trong các ô nhập liệu hay ghi chú
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.isContentEditable) {
         return;
     }
     if (e.key === 'ArrowLeft' || e.key === '7') {
         move('prev');
     } else if (e.key === 'ArrowRight' || e.key === '9') {
         move('next');
-    } else if (e.key === 'ArrowUp' || e.key === '8') {
-        e.preventDefault();
-        flipCard();
-    } else if (e.key === 'ArrowDown' || e.key === '2') {
-        e.preventDefault();
-        flipCard();
     }
 });
 
 async function startApp() {
     console.log("[LOG] Khởi chạy ứng dụng...");
-    state = await loadState();
+    const localPrefs = loadLocalPrefs();
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageParam = parseInt(urlParams.get('page'), 10);
+        if (!isNaN(pageParam) && pageParam >= 1) {
+            initialUrlPage = pageParam;
+        } else if (localPrefs.page && Number(localPrefs.page) >= 1) {
+            initialUrlPage = Number(localPrefs.page);
+        }
+    } catch (e) {}
+
+    const [loadedState, sheetQaResult] = await Promise.all([
+        loadState(),
+        loadQaFromSheet()
+    ]);
+
+    state = loadedState;
+    if (!state.progress) state.progress = {};
+    if (!Array.isArray(state.vocab)) state.vocab = [];
+
+    // Hợp nhất ghi chú, độ khó & đáp án đã chọn từ sheet "NOTE" và cache cục bộ (ưu tiên bản chưa đồng bộ khi vừa F5)
+    const qaCache = loadNotesCache();
+    if (sheetQaResult.ok) {
+        Object.entries(sheetQaResult.qaMap).forEach(([key, qa]) => {
+            if (!state.progress[key]) state.progress[key] = {};
+            state.progress[key].note = qa.note;
+            if (qa.ans && qa.ans.length > 0) {
+                state.progress[key].ans = qa.ans;
+            }
+            if (qa.level) {
+                state.progress[key].diff = qa.level;
+            }
+        });
+    }
+
+    const dirtyQaToSync = [];
+    Object.entries(qaCache).forEach(([key, entry]) => {
+        const isObj = entry && typeof entry === 'object';
+        const cachedNote = isObj ? String((entry.note !== undefined ? entry.note : entry.val) ?? '') : String(entry ?? '');
+        const hasCachedAnsProp = isObj && entry.ans !== undefined;
+        const cachedAnsList = hasCachedAnsProp ? parseAnsList(entry.ans) : null;
+        const hasCachedLevelProp = isObj && entry.level !== undefined;
+        const cachedLevel = hasCachedLevelProp ? normalizeLevel(entry.level) : null;
+        const isDirty = isObj ? Boolean(entry.dirty) : false;
+
+        if (isDirty || (!sheetQaResult.ok && (cachedNote || (cachedAnsList && cachedAnsList.length > 0) || cachedLevel))) {
+            if (!state.progress[key]) state.progress[key] = {};
+            state.progress[key].note = cachedNote;
+            if (hasCachedAnsProp) {
+                state.progress[key].ans = cachedAnsList.length > 0 ? cachedAnsList : null;
+            }
+            if (hasCachedLevelProp) {
+                state.progress[key].diff = cachedLevel || null;
+            }
+            if (isDirty && isObj && entry.examSet && entry.qid) {
+                dirtyQaToSync.push({ examSet: entry.examSet, qid: entry.qid });
+            }
+        }
+    });
+
+    const allowedSets = ['DATA_SET_1', 'DATA_SET_2', 'DATA_SET_3', 'DATA_SET_4', 'DATA_SET_5'];
+    if (allowedSets.includes(localPrefs.set)) {
+        state.set = localPrefs.set;
+    } else if (!state.set) {
+        state.set = 'DATA_SET_1';
+    }
+
+    const legacyFilter = ['Easy', 'Medium', 'Hard'].includes(state.diffFilter)
+        ? state.diffFilter
+        : (state.tab === 'done' ? 'done' : 'todo');
+    state.listFilter = normalizeListFilter(localPrefs.listFilter || state.listFilter || legacyFilter);
+
+    if (localPrefs.showAns) {
+        document.getElementById('btn-ans')?.classList.add('active');
+    }
+    if (Array.isArray(localPrefs.flippedIds)) {
+        localPrefs.flippedIds.forEach(id => flippedIds.add(String(id)));
+    }
+    if (Array.isArray(localPrefs.shownAnsIds)) {
+        localPrefs.shownAnsIds.forEach(id => shownAnsIds.add(String(id)));
+    }
+    if (Array.isArray(localPrefs.hiddenAnsIds)) {
+        localPrefs.hiddenAnsIds.forEach(id => hiddenAnsIds.add(String(id)));
+    }
+
     isLoaded = true; // MỞ KHÓA LƯU SAU KHI TẢI XONG
     update();
+
+    if (dirtyQaToSync.length > 0) {
+        dirtyQaToSync.forEach(item => {
+            syncQaRowToSheet(item.examSet, item.qid);
+        });
+    }
 }
 
 startApp();

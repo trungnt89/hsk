@@ -120,45 +120,47 @@
         }
 
         .page-range-badge {
-            height: 36px;
+            height: 44px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 800;
             color: var(--primary);
             background: #EFF6FF;
             border: 1px solid rgba(37, 99, 235, 0.18);
             padding: 0 10px;
-            border-radius: 11px;
+            border-radius: 12px;
             white-space: nowrap;
-            flex-shrink: 0;
+            flex: 0.9;
+            min-width: 0;
             box-sizing: border-box;
         }
         .page-nav-btn {
-            height: 36px;
-            padding: 0 11px;
-            border-radius: 11px;
+            height: 44px;
+            padding: 0 12px;
+            border-radius: 12px;
             border: 1px solid rgba(15, 23, 42, 0.1);
             background: #FFFFFF;
             color: #1E293B;
             font-weight: 800;
-            font-size: 12.5px;
+            font-size: 13.5px;
             line-height: 1;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 5px;
             cursor: pointer;
             transition: all 0.15s ease;
-            flex-shrink: 0;
+            flex: 1.15;
+            min-width: 0;
             box-sizing: border-box;
             box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
             font-family: inherit;
         }
         .page-nav-btn svg {
-            width: 16px;
-            height: 16px;
+            width: 17px;
+            height: 17px;
             display: block;
             flex-shrink: 0;
         }
@@ -181,13 +183,9 @@
             cursor: not-allowed;
             box-shadow: none;
         }
-        @media (max-width: 540px) {
+        @media (max-width: 340px) {
             .nav-short-text {
                 display: none;
-            }
-            .page-nav-btn {
-                width: 34px;
-                padding: 0;
             }
         }
         @media (max-width: 430px) {
@@ -668,24 +666,22 @@
         }
 
         .bottom-nav { 
-            min-height: 54px;
-            background: rgba(255, 255, 255, 0.92); 
+            background: rgba(255, 255, 255, 0.95); 
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(15, 23, 42, 0.08); 
             display: flex;
-            align-items: center;
+            align-items: stretch;
             justify-content: center;
-            gap: 8px; 
-            padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); 
+            padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); 
             position: fixed; 
-            bottom: 10px; 
-            left: 12px;
-            right: 12px;
-            width: calc(100% - 24px);
+            bottom: 8px; 
+            left: 10px;
+            right: 10px;
+            width: calc(100% - 20px);
             max-width: 736px;
             margin: 0 auto;
-            border-radius: 18px;
+            border-radius: 16px;
             box-sizing: border-box; 
             z-index: 100;
             box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.16), 0 1px 3px rgba(15, 23, 42, 0.05);
@@ -693,48 +689,42 @@
         }
         .bottom-pagination {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            align-items: stretch;
             gap: 6px;
+            width: 100%;
             flex: 1;
             min-width: 0;
             flex-wrap: nowrap;
-            overflow-x: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .bottom-pagination::-webkit-scrollbar {
-            display: none;
         }
         .bottom-nav #page-select {
-            height: 36px;
-            border-radius: 11px;
+            height: 44px;
+            border-radius: 12px;
+            flex: 1.1;
+            min-width: 0;
+            padding: 0 8px;
+            font-size: 13.5px;
+            text-align: center;
+            text-align-last: center;
         }
         @media (max-width: 430px) {
             .bottom-nav {
-                left: 8px;
-                right: 8px;
-                width: calc(100% - 16px);
-                bottom: 8px;
-                padding: 7px 9px calc(7px + env(safe-area-inset-bottom));
-                gap: 6px;
-                border-radius: 16px;
+                left: 6px;
+                right: 6px;
+                width: calc(100% - 12px);
+                bottom: 6px;
+                padding: 5px 5px calc(5px + env(safe-area-inset-bottom));
+                border-radius: 14px;
             }
             .bottom-pagination {
-                gap: 4px;
+                gap: 5px;
             }
             .bottom-nav #page-select,
             .page-nav-btn,
             .page-range-badge {
-                height: 33px;
-                border-radius: 9px;
-                font-size: 11.5px;
-            }
-            .page-nav-btn {
-                width: 32px;
-            }
-            .page-range-badge {
-                padding: 0 8px;
+                height: 40px;
+                border-radius: 10px;
+                font-size: 12.5px;
+                padding: 0 6px;
             }
         }
 
@@ -913,11 +903,12 @@
 </nav>
 
 <script>
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbymhGMFxLaw-7V5JQblXRH13wdjgAYReukTbQQcs4DXrH7ajja-vki0dsGII6iqb8k/exec';
 const SHEET_ID = '1VrTQvaJlLOwZwyKfuIxueRCCz4lCdve0Vk6_-EbQASE';
 const API_GSHEET_URL = 'https://hsk-gilt.vercel.app/api/gSheet';
 const NOTE_SHEET_NAME = 'NOTE';
 const NOTES_CACHE_KEY = 'pmp_notes_cache_v1';
+const TRANSLATIONS_CACHE_KEY = 'pmp_translations_cache_v1';
+const VOCAB_CACHE_KEY = 'pmp_vocab_cache_v1';
 const NOTE_SHEET_HEADERS = ['ID', 'SET', 'QID', 'ANS', 'LEVEL', 'NOTE', 'UPDATE_TIME'];
 
 let isLoaded = false; // CỜ AN TOÀN
@@ -1207,49 +1198,39 @@ function syncQaRowToSheet(examSet, qid) {
     });
 }
 
-async function loadState() {
-    console.log("[LOG] Đang tải trạng thái từ Google Sheets...");
+function loadTranslationsCache() {
     try {
-        const response = await fetch(`${GAS_WEB_APP_URL}?action=load&sheetId=${SHEET_ID}`);
-        const result = await response.json();
-        console.log("[LOG] Tải dữ liệu thành công.");
-        return result || { set: 'DATA_SET_1', tab: 'todo', diffFilter: null, progress: {}, lastIdx: 0, vocab: [] };
+        const raw = localStorage.getItem(TRANSLATIONS_CACHE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return (parsed && typeof parsed === 'object') ? parsed : {};
     } catch (e) {
-        console.error("[LOG] Lỗi backend GAS.", e);
-        return { set: 'DATA_SET_1', tab: 'todo', diffFilter: null, progress: {}, lastIdx: 0, vocab: [] };
+        return {};
     }
 }
 
-async function save() {
-    // CHỐT CHẶN: Chỉ cho phép lưu nếu ứng dụng đã load xong dữ liệu từ Sheet
-    if (!isLoaded) {
-        console.warn("[LOG] NGĂN CHẶN LỖI: Dữ liệu chưa load xong, hủy lệnh lưu để bảo vệ dữ liệu Sheet.");
-        return;
-    }
-
-    state.lastIdx = idx;
-    const compactProgress = {};
-    Object.entries(state.progress || {}).forEach(([k, v]) => {
-        if (!v || typeof v !== 'object') return;
-        const { note, ...rest } = v;
-        if (Object.keys(rest).length > 0) {
-            compactProgress[k] = rest;
-        }
-    });
-    const stateForGas = { ...state, progress: compactProgress };
-    const jsonStr = JSON.stringify({ action: 'save', sheetId: SHEET_ID, state: stateForGas });
-
-    console.log("[LOG] Đang gửi yêu cầu POST đồng bộ dữ liệu...");
+function saveTranslationCacheEntry(progressKey, translation) {
+    if (!progressKey || !translation) return;
     try {
-        await fetch(GAS_WEB_APP_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: jsonStr
-        });
-        console.log("[LOG] Đã lưu thành công.");
+        const cache = loadTranslationsCache();
+        cache[progressKey] = translation;
+        localStorage.setItem(TRANSLATIONS_CACHE_KEY, JSON.stringify(cache));
+    } catch (e) {}
+}
+
+function loadVocabCache() {
+    try {
+        const raw = localStorage.getItem(VOCAB_CACHE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-        console.error("[LOG] Thất bại khi đồng bộ:", e);
+        return [];
     }
+}
+
+function saveVocabCache(vocabList) {
+    try {
+        localStorage.setItem(VOCAB_CACHE_KEY, JSON.stringify(Array.isArray(vocabList) ? vocabList : []));
+    } catch (e) {}
 }
 
 const pageSize = 10;
@@ -1401,7 +1382,7 @@ async function translateQuestion(q) {
         state.progress[key].translation = translation;
         
         console.log(`[LOG] Dịch thành công câu ${q.id}`);
-        save();
+        saveTranslationCacheEntry(key, translation);
         render(true); // Re-render preserving scroll position
     } catch (e) {
         console.error(`[LOG] Lỗi dịch câu ${q.id}:`, e);
@@ -1415,7 +1396,6 @@ function changeExamSet(v) {
     state.set = v; idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear();
     update();
     saveLocalPrefs();
-    save();
 }
 
 function changeListFilter(val) {
@@ -1426,7 +1406,6 @@ function changeListFilter(val) {
     idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear();
     update();
     saveLocalPrefs();
-    save();
 }
 
 function goToPage(pageNum) {
@@ -1439,7 +1418,6 @@ function goToPage(pageNum) {
     const viewport = document.getElementById('swipe-area');
     if (viewport) viewport.scrollTop = 0;
     saveLocalPrefs();
-    save();
 }
 
 function getSelectedQuestionId() {
@@ -1482,7 +1460,7 @@ function saveToVocab(en, vi, qidOverride) {
     const item = { set: state.set, qid: qid, en: en, vi: vi, time: new Date().toLocaleString('vi-VN') };
     state.vocab.unshift(item);
     console.log("[LOG] Đã thêm từ vựng mới.");
-    save();
+    saveVocabCache(state.vocab);
 }
 
 function toggleVocabPage(show) {
@@ -1506,7 +1484,7 @@ function renderVocabList() {
 function deleteVocab(i) {
     if (confirm("Xóa từ vựng này?")) {
         state.vocab.splice(i, 1);
-        save(); renderVocabList();
+        saveVocabCache(state.vocab); renderVocabList();
     }
 }
 
@@ -1533,7 +1511,7 @@ function importVocab(input) {
                 const cols = row.split('","').map(c => c.replace(/"/g, ''));
                 if(cols.length >= 4) state.vocab.push({ set: cols[0], qid: cols[1], en: cols[2], vi: cols[3], time: cols[4] || '' });
             });
-            save(); renderVocabList();
+            saveVocabCache(state.vocab); renderVocabList();
             alert("Đã nhập thành công!");
         } catch(err) { alert("Lỗi định dạng file!"); }
     };
@@ -1781,8 +1759,6 @@ function setStatus(qid, level) {
         syncQaRowToSheet(examSet, qid);
     }, 300);
     levelSyncTimers.set(key, timerId);
-
-    save();
 }
 
 function setAns(qid, k) {
@@ -1830,8 +1806,6 @@ function setAns(qid, k) {
         syncQaRowToSheet(examSet, qid);
     }, 350);
     ansSyncTimers.set(key, timerId);
-
-    save();
 }
 
 function onNoteInput(qid, val) {
@@ -1904,7 +1878,6 @@ function move(dir) {
     const viewport = document.getElementById('swipe-area');
     if (viewport) viewport.scrollTop = 0;
     saveLocalPrefs();
-    save();
 }
 
 let touchStartX = 0;
@@ -1962,14 +1935,25 @@ async function startApp() {
         }
     } catch (e) {}
 
-    const [loadedState, sheetQaResult] = await Promise.all([
-        loadState(),
-        loadQaFromSheet()
-    ]);
+    const sheetQaResult = await loadQaFromSheet();
 
-    state = loadedState;
-    if (!state.progress) state.progress = {};
-    if (!Array.isArray(state.vocab)) state.vocab = [];
+    state = {
+        set: 'DATA_SET_1',
+        tab: 'todo',
+        diffFilter: null,
+        listFilter: 'todo',
+        progress: {},
+        lastIdx: 0,
+        vocab: loadVocabCache()
+    };
+
+    const translationsCache = loadTranslationsCache();
+    Object.entries(translationsCache).forEach(([key, translation]) => {
+        if (translation && typeof translation === 'object') {
+            if (!state.progress[key]) state.progress[key] = {};
+            state.progress[key].translation = translation;
+        }
+    });
 
     // Hợp nhất ghi chú, độ khó & đáp án đã chọn từ sheet "NOTE" và cache cục bộ (ưu tiên bản chưa đồng bộ khi vừa F5)
     const qaCache = loadNotesCache();

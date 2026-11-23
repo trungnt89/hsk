@@ -451,6 +451,22 @@
             gap: 7px;
             white-space: nowrap;
             flex-shrink: 0;
+            cursor: pointer;
+            user-select: none;
+            padding: 3px 8px 3px 4px;
+            margin: -3px 0 -3px -4px;
+            border-radius: 10px;
+            transition: background 0.18s ease;
+        }
+        .q-counter:hover {
+            background: rgba(255, 255, 255, 0.55);
+        }
+        .q-counter.translated {
+            background: rgba(37, 99, 235, 0.12);
+        }
+        .q-counter.translated .q-counter-main,
+        .q-counter.translated .q-counter-id {
+            color: var(--primary);
         }
         .q-counter::before {
             content: '';
@@ -519,7 +535,6 @@
             color: #0F172A;
             background: rgba(255, 255, 255, 0.5);
         }
-        .q-diff-tag.active[data-type="Translate"] { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3); }
         .q-diff-tag.active[data-type="Ans"] { background: #7C3AED; color: white; box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3); }
         .q-diff-tag.active[data-type="Easy"] { background: var(--easy); color: white; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
         .q-diff-tag.active[data-type="Medium"] { background: var(--medium); color: white; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
@@ -1771,7 +1786,7 @@ function render(preserveScroll = false) {
         return `
             <section class="multi-card" data-qid="${q.id}">
                 <div class="q-sticky-header">
-                    <div class="q-counter">
+                    <div class="q-counter ${isCardVi?'translated':''}" onclick="flipCard('${q.id}')" title="Nhấn để dịch / bỏ dịch tiếng Việt">
                         <div class="q-counter-lines">
                             <span class="q-counter-main">${globalIdx+1}/${filteredData.length}</span>
                             <span class="q-counter-id">(ID:${q.id} of ${currentData.length})</span>
@@ -1782,7 +1797,6 @@ function render(preserveScroll = false) {
                         <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
                         <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
                         <div class="q-diff-tag ${isCardAns?'active':''}" id="btn-card-ans-${q.id}" data-type="Ans" onclick="toggleCardAns('${q.id}')" title="Bật/tắt đáp án">ANS</div>
-                        <div class="q-diff-tag ${isCardVi?'active':''}" data-type="Translate" onclick="flipCard('${q.id}')" title="Bật/tắt dịch tiếng Việt">DỊCH</div>
                     </div>
                 </div>
                 <div class="multi-card-body">
@@ -1988,33 +2002,6 @@ function move(dir) {
     const viewport = document.getElementById('swipe-area');
     if (viewport) viewport.scrollTop = 0;
     saveLocalPrefs();
-}
-
-let touchStartX = 0;
-let touchStartY = 0;
-let touchEndX = 0;
-let touchEndY = 0;
-
-document.getElementById('swipe-area').addEventListener('touchstart', e => { 
-    touchStartX = e.changedTouches[0].screenX; 
-    touchStartY = e.changedTouches[0].screenY; 
-}, {passive: true});
-
-document.getElementById('swipe-area').addEventListener('touchend', e => { 
-    touchEndX = e.changedTouches[0].screenX; 
-    touchEndY = e.changedTouches[0].screenY; 
-    handleSwipe(); 
-}, {passive: true});
-
-function handleSwipe() {
-    if (window.getSelection().toString().trim() !== "") return;
-    const diffX = touchEndX - touchStartX;
-    const diffY = touchEndY - touchStartY;
-
-    if (Math.abs(diffX) > 75 && Math.abs(diffX) > Math.abs(diffY) * 1.6) {
-        if (diffX < 0) move('next');
-        else move('prev');
-    }
 }
 
 document.addEventListener('keydown', e => {

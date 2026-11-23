@@ -1007,7 +1007,7 @@ const NOTE_SHEET_NAME = 'NOTE';
 const NOTES_CACHE_KEY = 'pmp_notes_cache_v1';
 const TRANSLATIONS_CACHE_KEY = 'pmp_translations_cache_v1';
 const VOCAB_CACHE_KEY = 'pmp_vocab_cache_v1';
-const NOTE_SHEET_HEADERS = ['ID', 'SET', 'QID', 'ANS', 'LEVEL', 'NOTE', 'UPDATE_TIME'];
+const NOTE_SHEET_HEADERS = ['ID', 'SET', 'QID', 'ANS', 'LEVEL', 'NOTE', 'DỊCH', 'UPDATE_TIME'];
 
 let isLoaded = false; // CỜ AN TOÀN
 let noteSheetHasHeader = false;
@@ -1016,6 +1016,7 @@ const noteSyncTimers = new Map();
 const ansSyncTimers = new Map();
 const levelSyncTimers = new Map();
 const qaSyncChains = new Map();
+const sheetSyncedDichKeys = new Set();
 
 function getAuthToken() {
     let token = '';
@@ -1085,9 +1086,44 @@ function normalizeLevel(val) {
     return '';
 }
 
+function parseDichObject(val) {
+    if (!val) return null;
+    if (typeof val === 'object' && val.questionVi) return val;
+    const raw = String(val).trim();
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && (parsed.questionVi || parsed.optionsVi || parsed.explanationVi)) {
+            return {
+                questionVi: String(parsed.questionVi || ''),
+                explanationVi: String(parsed.explanationVi || ''),
+                optionsVi: (parsed.optionsVi && typeof parsed.optionsVi === 'object') ? parsed.optionsVi : {}
+            };
+        }
+    } catch (e) {}
+    return null;
+}
+
+function formatDichString(translation) {
+    if (!translation || typeof translation !== 'object') return '';
+    const hasOptions = translation.optionsVi && Object.keys(translation.optionsVi).length > 0;
+    if (!translation.questionVi && !translation.explanationVi && !hasOptions) {
+        return '';
+    }
+    try {
+        return JSON.stringify({
+            questionVi: String(translation.questionVi || ''),
+            explanationVi: String(translation.explanationVi || ''),
+            optionsVi: (translation.optionsVi && typeof translation.optionsVi === 'object') ? translation.optionsVi : {}
+        });
+    } catch (e) {
+        return '';
+    }
+}
+
 function parseNoteRowKey(row, colMap) {
     if (!Array.isArray(row) || row.length === 0) return null;
-    const cols = colMap || { id: 0, set: 1, qid: 2, ans: 3, level: 4, note: 5, updateTime: 6 };
+    const cols = colMap || { id: 0, set: 1, qid: 2, ans: 3, level: 4, note: 5, dich: 6, updateTime: 7 };
     const rowId = cols.id >= 0 ? String(row[cols.id] || '').trim() : '';
     if (!rowId || rowId.toUpperCase() === 'ID') return null;
 
@@ -1098,6 +1134,8 @@ function parseNoteRowKey(row, colMap) {
     const levelRaw = cols.level >= 0 && row[cols.level] !== undefined && row[cols.level] !== null ? String(row[cols.level]) : '';
     const level = normalizeLevel(levelRaw);
     const noteText = cols.note >= 0 && row[cols.note] !== undefined && row[cols.note] !== null ? String(row[cols.note]) : '';
+    const dichRaw = cols.dich >= 0 && row[cols.dich] !== undefined && row[cols.dich] !== null ? String(row[cols.dich]) : '';
+    const translation = parseDichObject(dichRaw);
 
     let progressKey = '';
     let examSet = rowSet;
@@ -1114,7 +1152,7 @@ function parseNoteRowKey(row, colMap) {
             progressKey = rowId;
         }
     }
-    return { progressKey, rowId, noteText, ansList, level, examSet, qid };
+    return { progressKey, rowId, noteText, ansList, level, translation, examSet, qid };
 }
 
 function loadNotesCache() {
@@ -1133,7 +1171,7 @@ function writeNotesCache(cacheObj) {
     } catch (e) {}
 }
 
-function setQaCacheEntry(progressKey, noteVal, ansVal, levelVal, dirty, examSet, qid) {
+function setQaCacheEntry(progressKey, noteVal, ansVal, levelVal, dirty, examSet, qid, dichVal) {
     const cache = loadNotesCache();
     const existing = cache[progressKey] && typeof cache[progressKey] === 'object' ? cache[progressKey] : {};
     cache[progressKey] = {
@@ -1142,6 +1180,7 @@ function setQaCacheEntry(progressKey, noteVal, ansVal, levelVal, dirty, examSet,
         note: noteVal !== undefined ? String(noteVal ?? '') : String(existing.note ?? existing.val ?? ''),
         ans: ansVal !== undefined ? formatAnsString(ansVal) : formatAnsString(existing.ans ?? ''),
         level: levelVal !== undefined ? normalizeLevel(levelVal) : normalizeLevel(existing.level ?? ''),
+        dich: dichVal !== undefined ? String(dichVal ?? '') : String(existing.dich ?? ''),
         dirty: Boolean(dirty),
         updatedAt: Date.now()
     };
@@ -1171,7 +1210,7 @@ async function loadQaFromSheet() {
 
     const rows = res.data.values;
     noteSheetHasHeader = rows.length > 0;
-    const colMap = { id: 0, set: 1, qid: 2, ans: 3, level: 4, note: 5, updateTime: 6 };
+    const colMap = { id: 0, set: 1, qid: 2, ans: 3, level: 4, note: 5, dich: 6, updateTime: 7 };
 
     if (rows.length > 0 && String(rows[0][0] || '').trim().toUpperCase() === 'ID') {
         const hdr = rows[0].map(c => String(c || '').trim().toUpperCase());
@@ -1182,6 +1221,8 @@ async function loadQaFromSheet() {
         colMap.level = hdr.indexOf('LEVEL');
         colMap.note = hdr.indexOf('NOTE');
         colMap.updateTime = hdr.includes('UPDATE_TIME') ? hdr.indexOf('UPDATE_TIME') : hdr.indexOf('UPDATED_AT');
+        colMap.dich = hdr.indexOf('DỊCH');
+        if (colMap.dich < 0) colMap.dich = hdr.indexOf('DICH');
         noteSheetHasExactHeader = NOTE_SHEET_HEADERS.every((h, idx) => hdr[idx] === h);
     } else {
         noteSheetHasExactHeader = false;
@@ -1193,7 +1234,8 @@ async function loadQaFromSheet() {
             qaMap[parsed.progressKey] = {
                 note: parsed.noteText,
                 ans: parsed.ansList,
-                level: parsed.level
+                level: parsed.level,
+                translation: parsed.translation
             };
         }
     });
@@ -1221,12 +1263,14 @@ function syncQaRowToSheet(examSet, qid) {
         const noteVal = p.note == null ? '' : String(p.note);
         const ansStr = formatAnsString(p.ans);
         const levelVal = normalizeLevel(p.diff);
+        const dichStr = formatDichString(p.translation);
         const hasNote = noteVal.trim() !== '';
         const hasAns = ansStr !== '';
         const hasLevel = levelVal !== '';
+        const hasDich = dichStr !== '';
         const noteId = getNoteRowId(examSet, qid);
 
-        if (!hasNote && !hasAns && !hasLevel) {
+        if (!hasNote && !hasAns && !hasLevel && !hasDich) {
             const res = await callGSheetApi({
                 act: 'deleteByPosVal',
                 pos: 0,
@@ -1235,7 +1279,8 @@ function syncQaRowToSheet(examSet, qid) {
                 sheet: NOTE_SHEET_NAME
             });
             if (res.ok || res.status === 404) {
-                setQaCacheEntry(progressKey, '', '', '', false, examSet, qid);
+                sheetSyncedDichKeys.delete(progressKey);
+                setQaCacheEntry(progressKey, '', '', '', false, examSet, qid, '');
                 console.log(`[LOG] Đã xóa bản ghi ${noteId} trên sheet ${NOTE_SHEET_NAME}.`);
             }
             return res;
@@ -1266,7 +1311,7 @@ function syncQaRowToSheet(examSet, qid) {
             }
         }
 
-        // Thứ tự cột chuẩn: ID - SET - QID - ANS - LEVEL - NOTE - UPDATE_TIME
+        // Thứ tự cột chuẩn: ID - SET - QID - ANS - LEVEL - NOTE - DỊCH - UPDATE_TIME
         const rowData = [
             noteId,
             examSet,
@@ -1274,6 +1319,7 @@ function syncQaRowToSheet(examSet, qid) {
             ansStr,
             levelVal,
             noteVal,
+            dichStr,
             new Date().toLocaleString('vi-VN')
         ];
 
@@ -1289,8 +1335,10 @@ function syncQaRowToSheet(examSet, qid) {
         if (res.ok) {
             noteSheetHasHeader = true;
             noteSheetHasExactHeader = true;
-            setQaCacheEntry(progressKey, noteVal, ansStr, levelVal, false, examSet, qid);
-            console.log(`[LOG] Đã lưu ${noteId} (ANS=${ansStr}, LEVEL=${levelVal}) lên sheet ${NOTE_SHEET_NAME}.`);
+            if (hasDich) sheetSyncedDichKeys.add(progressKey);
+            else sheetSyncedDichKeys.delete(progressKey);
+            setQaCacheEntry(progressKey, noteVal, ansStr, levelVal, false, examSet, qid, dichStr);
+            console.log(`[LOG] Đã lưu ${noteId} (ANS=${ansStr}, LEVEL=${levelVal}, DỊCH=${hasDich ? 'có' : 'không'}) lên sheet ${NOTE_SHEET_NAME}.`);
         }
         return res;
     });
@@ -1422,14 +1470,28 @@ function toggleCardAns(qid) {
 function flipCard(qid) {
     if (qid === undefined) return;
     const key = String(qid);
-    if (flippedIds.has(key)) flippedIds.delete(key);
+    const wasFlipped = flippedIds.has(key);
+    if (wasFlipped) flippedIds.delete(key);
     else flippedIds.add(key);
     saveLocalPrefs();
+
+    if (!wasFlipped) {
+        const examSet = state.set;
+        const pKey = examSet + qid;
+        const p = state.progress && state.progress[pKey];
+        if (p && p.translation && p.translation.questionVi && !sheetSyncedDichKeys.has(pKey)) {
+            const dichStr = formatDichString(p.translation);
+            setQaCacheEntry(pKey, p.note || '', p.ans || '', p.diff || '', true, examSet, qid, dichStr);
+            syncQaRowToSheet(examSet, qid);
+        }
+    }
+
     render(true);
 }
 
 async function translateQuestion(q) {
-    const key = state.set + q.id;
+    const examSet = state.set;
+    const key = examSet + q.id;
     if (state.progress[key] && state.progress[key].translation) {
         return state.progress[key].translation;
     }
@@ -1481,6 +1543,14 @@ async function translateQuestion(q) {
         
         console.log(`[LOG] Dịch thành công câu ${q.id}`);
         saveTranslationCacheEntry(key, translation);
+
+        const noteVal = state.progress[key].note || '';
+        const ansStr = formatAnsString(state.progress[key].ans);
+        const levelVal = normalizeLevel(state.progress[key].diff);
+        const dichStr = formatDichString(translation);
+        setQaCacheEntry(key, noteVal, ansStr, levelVal, true, examSet, q.id, dichStr);
+        syncQaRowToSheet(examSet, q.id);
+
         render(true); // Re-render preserving scroll position
     } catch (e) {
         console.error(`[LOG] Lỗi dịch câu ${q.id}:`, e);
@@ -2052,7 +2122,7 @@ async function startApp() {
         }
     });
 
-    // Hợp nhất ghi chú, độ khó & đáp án đã chọn từ sheet "NOTE" và cache cục bộ (ưu tiên bản chưa đồng bộ khi vừa F5)
+    // Hợp nhất ghi chú, độ khó, đáp án & bản dịch từ sheet "NOTE" và cache cục bộ (ưu tiên bản chưa đồng bộ khi vừa F5)
     const qaCache = loadNotesCache();
     if (sheetQaResult.ok) {
         Object.entries(sheetQaResult.qaMap).forEach(([key, qa]) => {
@@ -2063,6 +2133,11 @@ async function startApp() {
             }
             if (qa.level) {
                 state.progress[key].diff = qa.level;
+            }
+            if (qa.translation) {
+                state.progress[key].translation = qa.translation;
+                saveTranslationCacheEntry(key, qa.translation);
+                sheetSyncedDichKeys.add(key);
             }
         });
     }
@@ -2075,9 +2150,10 @@ async function startApp() {
         const cachedAnsList = hasCachedAnsProp ? parseAnsList(entry.ans) : null;
         const hasCachedLevelProp = isObj && entry.level !== undefined;
         const cachedLevel = hasCachedLevelProp ? normalizeLevel(entry.level) : null;
+        const cachedTranslation = isObj && entry.dich ? parseDichObject(entry.dich) : null;
         const isDirty = isObj ? Boolean(entry.dirty) : false;
 
-        if (isDirty || (!sheetQaResult.ok && (cachedNote || (cachedAnsList && cachedAnsList.length > 0) || cachedLevel))) {
+        if (isDirty || (!sheetQaResult.ok && (cachedNote || (cachedAnsList && cachedAnsList.length > 0) || cachedLevel || cachedTranslation))) {
             if (!state.progress[key]) state.progress[key] = {};
             state.progress[key].note = cachedNote;
             if (hasCachedAnsProp) {
@@ -2085,6 +2161,10 @@ async function startApp() {
             }
             if (hasCachedLevelProp) {
                 state.progress[key].diff = cachedLevel || null;
+            }
+            if (cachedTranslation) {
+                state.progress[key].translation = cachedTranslation;
+                saveTranslationCacheEntry(key, cachedTranslation);
             }
             if (isDirty && isObj && entry.examSet && entry.qid) {
                 dirtyQaToSync.push({ examSet: entry.examSet, qid: entry.qid });

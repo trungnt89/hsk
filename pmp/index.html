@@ -565,13 +565,58 @@
         }
 
         .q-text { 
-            font-size: 16px; 
+            font-size: 15.5px; 
             font-weight: 600; 
             line-height: 1.5; 
             margin: 0 0 14px; 
             white-space: pre-wrap; 
             color: #0F172A;
             letter-spacing: -0.01em;
+        }
+        .multi-card.bilingual .q-text {
+            font-size: 15px;
+            line-height: 1.45;
+            margin-bottom: 6px;
+        }
+        .q-vi-sub {
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.45;
+            color: #334155;
+            background: #F8FAFC;
+            border-left: 3px solid #93C5FD;
+            padding: 6px 10px;
+            border-radius: 0 8px 8px 0;
+            margin: 0 0 13px;
+            white-space: pre-wrap;
+        }
+        .q-vi-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748B;
+            background: #F8FAFC;
+            border-left: 3px solid #CBD5E1;
+            padding: 6px 10px;
+            border-radius: 0 8px 8px 0;
+            margin: 0 0 13px;
+        }
+        .q-vi-status.error {
+            color: #DC2626;
+            background: #FEF2F2;
+            border-left-color: #FCA5A5;
+            cursor: pointer;
+        }
+        .q-vi-spinner {
+            width: 13px;
+            height: 13px;
+            border: 2px solid rgba(37, 99, 235, 0.18);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spinTranslation 0.85s linear infinite;
+            flex-shrink: 0;
         }
         
         .option-item { 
@@ -584,7 +629,7 @@
             margin-bottom: 6px; 
             border: 2px solid rgba(0, 0, 0, 0.01); 
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
-            white-space: pre-wrap; 
+            white-space: normal; 
             cursor: pointer;
             box-shadow: 0 1px 2px rgba(0,0,0,0.01);
             line-height: 1.4;
@@ -615,9 +660,29 @@
         }
         .option-content {
             flex-grow: 1;
+            min-width: 0;
             line-height: 1.4;
             color: #334155;
             font-weight: 500;
+        }
+        .option-main-text {
+            display: block;
+            white-space: pre-wrap;
+        }
+        .multi-card.bilingual .option-main-text {
+            font-size: 13.5px;
+            line-height: 1.38;
+            font-weight: 600;
+            color: #1E293B;
+        }
+        .option-vi-sub {
+            display: block;
+            margin-top: 3px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.36;
+            color: #475569;
+            white-space: pre-wrap;
         }
 
         .option-item.selected { 
@@ -638,9 +703,13 @@
             background: var(--easy) !important;
             color: white !important;
         }
-        .option-item.correct .option-content {
+        .option-item.correct .option-content,
+        .option-item.correct .option-main-text {
             color: #15803D;
             font-weight: 700;
+        }
+        .option-item.correct .option-vi-sub {
+            color: #166534;
         }
         .option-item.wrong { 
             background: #FEF2F2 !important; 
@@ -651,8 +720,12 @@
             background: var(--hard) !important;
             color: white !important;
         }
-        .option-item.wrong .option-content {
+        .option-item.wrong .option-content,
+        .option-item.wrong .option-main-text {
             color: #B91C1C;
+        }
+        .option-item.wrong .option-vi-sub {
+            color: #991B1B;
         }
 
         #exp-box,
@@ -662,12 +735,35 @@
             background: #F8FAFC; 
             border-radius: 12px; 
             font-size: 13px; 
-            line-height: 1.5;
+            line-height: 1.48;
             border-left: 4px solid var(--primary); 
             white-space: pre-wrap; 
             color: #334155;
             box-shadow: 0 4px 12px rgba(0,0,0,0.02);
             animation: slideFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .multi-card.bilingual .exp-box {
+            font-size: 12.5px;
+            line-height: 1.44;
+        }
+        .exp-vi-sub {
+            margin-top: 9px;
+            padding-top: 9px;
+            border-top: 1px dashed rgba(37, 99, 235, 0.25);
+            font-size: 12px;
+            line-height: 1.44;
+            color: #334155;
+            white-space: pre-wrap;
+        }
+        @media (max-width: 480px) {
+            .q-text { font-size: 15px; }
+            .multi-card.bilingual .q-text { font-size: 14.5px; }
+            .q-vi-sub { font-size: 12.5px; }
+            .option-item { font-size: 13.5px; }
+            .multi-card.bilingual .option-main-text { font-size: 13px; }
+            .option-vi-sub { font-size: 11.5px; }
+            .multi-card.bilingual .exp-box { font-size: 12px; }
+            .exp-vi-sub { font-size: 11.5px; }
         }
         @keyframes slideFadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -1088,12 +1184,22 @@ function normalizeLevel(val) {
 
 function parseDichObject(val) {
     if (!val) return null;
-    if (typeof val === 'object' && val.questionVi) return val;
+    if (typeof val === 'object') {
+        const qVi = String(val.questionVi || '').trim();
+        if (qVi) {
+            return {
+                questionVi: qVi,
+                explanationVi: String(val.explanationVi || ''),
+                optionsVi: (val.optionsVi && typeof val.optionsVi === 'object') ? val.optionsVi : {}
+            };
+        }
+        return null;
+    }
     const raw = String(val).trim();
     if (!raw) return null;
     try {
         const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === 'object' && (parsed.questionVi || parsed.optionsVi || parsed.explanationVi)) {
+        if (parsed && typeof parsed === 'object' && String(parsed.questionVi || '').trim()) {
             return {
                 questionVi: String(parsed.questionVi || ''),
                 explanationVi: String(parsed.explanationVi || ''),
@@ -1348,17 +1454,24 @@ function loadTranslationsCache() {
     try {
         const raw = localStorage.getItem(TRANSLATIONS_CACHE_KEY);
         const parsed = raw ? JSON.parse(raw) : {};
-        return (parsed && typeof parsed === 'object') ? parsed : {};
+        if (!parsed || typeof parsed !== 'object') return {};
+        const valid = {};
+        Object.entries(parsed).forEach(([k, v]) => {
+            const clean = parseDichObject(v);
+            if (clean) valid[k] = clean;
+        });
+        return valid;
     } catch (e) {
         return {};
     }
 }
 
 function saveTranslationCacheEntry(progressKey, translation) {
-    if (!progressKey || !translation) return;
+    const clean = parseDichObject(translation);
+    if (!progressKey || !clean) return;
     try {
         const cache = loadTranslationsCache();
-        cache[progressKey] = translation;
+        cache[progressKey] = clean;
         localStorage.setItem(TRANSLATIONS_CACHE_KEY, JSON.stringify(cache));
     } catch (e) {}
 }
@@ -1449,6 +1562,93 @@ function isQuestionAnsShown(qid) {
     return shownAnsIds.has(String(qid));
 }
 
+let translateQueueChain = Promise.resolve();
+
+function htmlToPlainText(raw) {
+    const str = String(raw ?? '').trim();
+    if (!str) return '';
+    try {
+        const withBreaks = str.replace(/<br\s*\/?>/gi, '\n');
+        const tmp = document.createElement('div');
+        tmp.innerHTML = withBreaks;
+        return (tmp.textContent || tmp.innerText || '').trim();
+    } catch (e) {
+        return str.replace(/<[^>]*>/g, ' ').trim();
+    }
+}
+
+function splitTextForTranslate(text, maxLen = 900) {
+    const clean = String(text || '').trim();
+    if (!clean) return [];
+    if (clean.length <= maxLen) return [clean];
+
+    const chunks = [];
+    let rest = clean;
+    while (rest.length > maxLen) {
+        let cut = rest.lastIndexOf('\n', maxLen);
+        if (cut < maxLen * 0.4) cut = rest.lastIndexOf('. ', maxLen);
+        if (cut < maxLen * 0.4) cut = rest.lastIndexOf(' ', maxLen);
+        if (cut < maxLen * 0.3) cut = maxLen;
+        chunks.push(rest.slice(0, cut + 1).trim());
+        rest = rest.slice(cut + 1).trim();
+    }
+    if (rest) chunks.push(rest);
+    return chunks;
+}
+
+function sleepMs(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchTranslateChunkOnce(chunk, sl = 'en') {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=vi&dt=t&q=${encodeURIComponent(chunk)}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    if (!Array.isArray(data) || !Array.isArray(data[0])) {
+        throw new Error('Invalid translate response');
+    }
+    return data[0].map(s => (Array.isArray(s) && s[0] ? s[0] : '')).join('');
+}
+
+function translateTextSequential(rawText, sl = 'en') {
+    const plain = htmlToPlainText(rawText);
+    if (!plain) return Promise.resolve('');
+
+    const run = async () => {
+        const chunks = splitTextForTranslate(plain, 900);
+        const translatedParts = [];
+        for (let i = 0; i < chunks.length; i++) {
+            const chunk = chunks[i];
+            let part = '';
+            let lastErr = null;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    part = await fetchTranslateChunkOnce(chunk, sl);
+                    lastErr = null;
+                    break;
+                } catch (err) {
+                    lastErr = err;
+                    if (attempt === 0) await sleepMs(700);
+                }
+            }
+            if (lastErr) throw lastErr;
+            translatedParts.push(part);
+            if (i < chunks.length - 1) {
+                await sleepMs(140);
+            }
+        }
+        await sleepMs(140);
+        return translatedParts.join(' ').replace(/\s+\n/g, '\n').trim();
+    };
+
+    const next = translateQueueChain.catch(() => {}).then(run);
+    translateQueueChain = next.catch(() => {});
+    return next;
+}
+
 function toggleCardAns(qid) {
     if (qid === undefined) return;
     const key = String(qid);
@@ -1458,9 +1658,7 @@ function toggleCardAns(qid) {
 
     const show = isQuestionAnsShown(qid);
     const box = document.getElementById(`exp-box-${qid}`);
-    const viBox = document.getElementById(`vi-exp-box-${qid}`);
     if (box) box.style.display = show ? 'block' : 'none';
-    if (viBox) viBox.style.display = show ? 'block' : 'none';
     const cardBtn = document.getElementById(`btn-card-ans-${qid}`);
     if (cardBtn) cardBtn.classList.toggle('active', show);
     const q = currentData.find(item => String(item.id) === key);
@@ -1475,11 +1673,16 @@ function flipCard(qid) {
     else flippedIds.add(key);
     saveLocalPrefs();
 
+    const q = currentData.find(item => String(item.id) === key);
+    if (!wasFlipped && q) {
+        q.translateFailed = false;
+    }
+
     if (!wasFlipped) {
         const examSet = state.set;
         const pKey = examSet + qid;
         const p = state.progress && state.progress[pKey];
-        if (p && p.translation && p.translation.questionVi && !sheetSyncedDichKeys.has(pKey)) {
+        if (p && p.translation && String(p.translation.questionVi || '').trim() && !sheetSyncedDichKeys.has(pKey)) {
             const dichStr = formatDichString(p.translation);
             setQaCacheEntry(pKey, p.note || '', p.ans || '', p.diff || '', true, examSet, qid, dichStr);
             syncQaRowToSheet(examSet, qid);
@@ -1489,58 +1692,67 @@ function flipCard(qid) {
     render(true);
 }
 
+function retryTranslateQuestion(event, qid) {
+    if (event) event.stopPropagation();
+    const q = currentData.find(item => String(item.id) === String(qid));
+    if (!q) return;
+    q.translateFailed = false;
+    flippedIds.add(String(qid));
+    saveLocalPrefs();
+    render(true);
+}
+
 async function translateQuestion(q) {
     const examSet = state.set;
     const key = examSet + q.id;
-    if (state.progress[key] && state.progress[key].translation) {
-        return state.progress[key].translation;
+    const existing = state.progress[key] && parseDichObject(state.progress[key].translation);
+    if (existing) {
+        state.progress[key].translation = existing;
+        return existing;
     }
-    
+
     if (q.isTranslating) return null;
     q.isTranslating = true;
-    
-    try {
-        console.log(`[LOG] Đang tự động dịch câu ${q.id} sang tiếng Việt...`);
-        
-        const translateText = async (text) => {
-            if (!text) return "";
-            try {
-                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
-                const data = await res.json();
-                return data[0].map(s => s[0]).join("");
-            } catch (e) {
-                console.error("[LOG] Lỗi dịch nhãn:", e);
-                return "";
-            }
-        };
+    q.translateFailed = false;
 
-        const optionKeys = Object.keys(q.options);
-        const optionValues = Object.values(q.options);
-        
-        const promises = [
-            translateText(q.question),
-            translateText(q.explanation || ""),
-            ...optionValues.map(optVal => translateText(optVal))
-        ];
-        
-        const results = await Promise.all(promises);
-        
-        const questionVi = results[0];
-        const explanationVi = results[1];
+    try {
+        console.log(`[LOG] Đang dịch tuần tự câu ${q.id} sang tiếng Việt...`);
+
+        const questionVi = await translateTextSequential(q.question, 'en');
+        if (!questionVi) {
+            throw new Error('Empty question translation');
+        }
+
+        const optionEntries = Object.entries(q.options || {});
         const optionsVi = {};
-        optionKeys.forEach((k, optionIdx) => {
-            optionsVi[k] = results[optionIdx + 2];
-        });
-        
+        for (const [optKey, optVal] of optionEntries) {
+            try {
+                optionsVi[optKey] = await translateTextSequential(optVal, 'en');
+            } catch (optErr) {
+                console.warn(`[LOG] Lỗi dịch đáp án ${optKey} câu ${q.id}:`, optErr);
+                optionsVi[optKey] = '';
+            }
+        }
+
+        let explanationVi = '';
+        if (q.explanation) {
+            try {
+                explanationVi = await translateTextSequential(q.explanation, 'en');
+            } catch (expErr) {
+                console.warn(`[LOG] Lỗi dịch giải thích câu ${q.id}:`, expErr);
+                explanationVi = '';
+            }
+        }
+
         const translation = {
             questionVi,
             explanationVi,
             optionsVi
         };
-        
+
         if (!state.progress[key]) state.progress[key] = {};
         state.progress[key].translation = translation;
-        
+
         console.log(`[LOG] Dịch thành công câu ${q.id}`);
         saveTranslationCacheEntry(key, translation);
 
@@ -1550,12 +1762,12 @@ async function translateQuestion(q) {
         const dichStr = formatDichString(translation);
         setQaCacheEntry(key, noteVal, ansStr, levelVal, true, examSet, q.id, dichStr);
         syncQaRowToSheet(examSet, q.id);
-
-        render(true); // Re-render preserving scroll position
     } catch (e) {
         console.error(`[LOG] Lỗi dịch câu ${q.id}:`, e);
+        q.translateFailed = true;
     } finally {
         q.isTranslating = false;
+        render(true);
     }
 }
 
@@ -1609,11 +1821,9 @@ document.addEventListener('selectionchange', () => {
             display.innerHTML = '<div class="trans-header">BẢN DỊCH <span class="trans-close" onclick="document.getElementById(\'trans-display\').style.display=\'none\'">ĐÓNG [X]</span></div><div class="trans-content" id="trans-text">Đang dịch...</div>';
             display.style.display = 'flex';
             try {
-                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
-                const data = await res.json();
-                const result = data[0].map(s => s[0]).join("");
-                document.getElementById('trans-text').innerText = result;
-                saveToVocab(text, result, activeQid);
+                const result = await translateTextSequential(text, 'auto');
+                document.getElementById('trans-text').innerText = result || "Không có kết quả.";
+                if (result) saveToVocab(text, result, activeQid);
             } catch (e) { 
                 console.error("[LOG] Lỗi dịch API:", e);
                 document.getElementById('trans-text').innerText = "Lỗi kết nối."; 
@@ -1794,67 +2004,53 @@ function render(preserveScroll = false) {
         const selectedList = parseAnsList(p.ans);
         const isCardVi = flippedIds.has(String(q.id));
         const isCardAns = isQuestionAnsShown(q.id);
-        const hasTranslation = p.translation && p.translation.questionVi;
+        const trans = parseDichObject(p.translation);
+        const hasTranslation = Boolean(trans && trans.questionVi);
 
-        if (isCardVi && !hasTranslation) {
+        if (isCardVi && !hasTranslation && !q.isTranslating && !q.translateFailed) {
             translateQuestion(q);
         }
 
-        let bodyHtml = '';
+        let questionSubHtml = '';
         if (isCardVi) {
             if (hasTranslation) {
-                const trans = p.translation;
-                bodyHtml = `
-                    <div class="q-text" style="color: #0F172A; font-weight: 700;">${trans.questionVi}</div>
-                    <div class="options">
-                        ${Object.entries(q.options).map(([k, v]) => {
-                            const optTransText = trans.optionsVi[k] || v;
-                            const isSel = selectedList.includes(String(k).trim().toUpperCase());
-                            return `
-                                <div class="option-item ${isSel ? 'selected' : ''}" id="opt-${q.id}-${k}" data-qid="${q.id}" data-opt="${k}" onclick="setAns('${q.id}','${k}')">
-                                    <span class="option-badge">${k}</span><span class="option-content">${optTransText}</span>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                    <div class="exp-box" id="vi-exp-box-${q.id}" style="${isCardAns ? 'display:block;' : 'display:none;'} border-left:4px solid #10B981; background: #F0FDF4; color: #15803D;">
-                        <div style="font-weight: 800; margin-bottom: 6px; color: #10B981;">📖 BẢN DỊCH GIẢI THÍCH CHI TIẾT:</div>
-                        ${trans.explanationVi || "Chưa có bản dịch giải thích."}
-                    </div>
-                    <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." oninput="onNoteInput('${q.id}', this.value)" onchange="saveNote('${q.id}', this.value)">${escapeHtmlText(p.note || '')}</textarea>
-                `;
+                questionSubHtml = `<div class="q-vi-sub">${escapeHtmlText(trans.questionVi)}</div>`;
+            } else if (q.translateFailed) {
+                questionSubHtml = `<div class="q-vi-status error" onclick="retryTranslateQuestion(event, '${q.id}')">Không thể dịch sang tiếng Việt. Nhấn vào đây để thử lại.</div>`;
             } else {
-                bodyHtml = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #64748B; padding: 28px 12px;">
-                        <div class="spinner-translation" style="width: 34px; height: 34px; border: 3px solid rgba(37, 99, 235, 0.12); border-top-color: var(--primary); border-radius: 50%; animation: spinTranslation 1s linear infinite; margin-bottom: 12px;"></div>
-                        <div style="font-weight: 700; font-size: 14px; color: #334155; margin-bottom: 4px;">Đang chuẩn bị bản dịch tiếng Việt...</div>
-                        <div style="font-size: 12.5px; max-width: 280px; line-height: 1.5; color: #64748B;">Hệ thống đang dịch câu ${globalIdx+1} sang tiếng Việt.</div>
-                    </div>
-                `;
+                questionSubHtml = `<div class="q-vi-status"><span class="q-vi-spinner"></span><span>Đang dịch tuần tự sang tiếng Việt...</span></div>`;
             }
-        } else {
-            bodyHtml = `
-                <div class="q-text">${q.question}</div>
-                <div class="options">
-                    ${Object.entries(q.options).map(([k, v]) => {
-                        const isSel = selectedList.includes(String(k).trim().toUpperCase());
-                        return `
-                            <div class="option-item ${isSel ? 'selected' : ''}" id="opt-${q.id}-${k}" data-qid="${q.id}" data-opt="${k}" onclick="setAns('${q.id}','${k}')">
-                                <span class="option-badge">${k}</span><span class="option-content">${v}</span>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-                <div class="exp-box" id="exp-box-${q.id}" style="${isCardAns ? 'display:block;' : 'display:none;'} border-left:4px solid var(--primary);">
-                    <div style="font-weight: 800; margin-bottom: 6px; color: var(--primary);">📖 GIẢI THÍCH CHI TIẾT:</div>
-                    ${q.explanation || 'Câu này chưa có giải thích chi tiết.'}
-                </div>
-                <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." oninput="onNoteInput('${q.id}', this.value)" onchange="saveNote('${q.id}', this.value)">${escapeHtmlText(p.note || '')}</textarea>
-            `;
         }
 
+        const expViHtml = (isCardVi && hasTranslation && trans.explanationVi)
+            ? `<div class="exp-vi-sub"><div style="font-weight: 800; margin-bottom: 4px; color: #1D4ED8;">🇻🇳 DỊCH GIẢI THÍCH:</div>${escapeHtmlText(trans.explanationVi)}</div>`
+            : '';
+
+        const bodyHtml = `
+            <div class="q-text">${q.question}</div>
+            ${questionSubHtml}
+            <div class="options">
+                ${Object.entries(q.options).map(([k, v]) => {
+                    const isSel = selectedList.includes(String(k).trim().toUpperCase());
+                    const optTransText = (isCardVi && hasTranslation && trans.optionsVi) ? String(trans.optionsVi[k] || '').trim() : '';
+                    const optViHtml = optTransText ? `<span class="option-vi-sub">${escapeHtmlText(optTransText)}</span>` : '';
+                    return `
+                        <div class="option-item ${isSel ? 'selected' : ''}" id="opt-${q.id}-${k}" data-qid="${q.id}" data-opt="${k}" onclick="setAns('${q.id}','${k}')">
+                            <span class="option-badge">${k}</span><span class="option-content"><span class="option-main-text">${v}</span>${optViHtml}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <div class="exp-box" id="exp-box-${q.id}" style="${isCardAns ? 'display:block;' : 'display:none;'} border-left:4px solid var(--primary);">
+                <div style="font-weight: 800; margin-bottom: 6px; color: var(--primary);">📖 GIẢI THÍCH CHI TIẾT:</div>
+                ${q.explanation || 'Câu này chưa có giải thích chi tiết.'}
+                ${expViHtml}
+            </div>
+            <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." oninput="onNoteInput('${q.id}', this.value)" onchange="saveNote('${q.id}', this.value)">${escapeHtmlText(p.note || '')}</textarea>
+        `;
+
         return `
-            <section class="multi-card" data-qid="${q.id}">
+            <section class="multi-card ${isCardVi ? 'bilingual' : ''}" data-qid="${q.id}">
                 <div class="q-sticky-header">
                     <div class="q-counter ${isCardVi?'translated':''}" onclick="flipCard('${q.id}')" title="Nhấn để dịch / bỏ dịch tiếng Việt">
                         <div class="q-counter-lines">

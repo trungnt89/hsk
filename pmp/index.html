@@ -188,9 +188,67 @@
                 display: none;
             }
         }
+        .study-progress-wrap {
+            padding: 0 14px 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            box-sizing: border-box;
+        }
+        .study-progress-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 11.5px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+        .study-stat-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .study-stat-item.done {
+            color: #047857;
+        }
+        .study-stat-item.todo {
+            color: #64748B;
+        }
+        .study-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 99px;
+            flex-shrink: 0;
+        }
+        .study-dot.done {
+            background: #10B981;
+        }
+        .study-dot.todo {
+            background: #CBD5E1;
+        }
+        .study-progress-track {
+            width: 100%;
+            height: 8px;
+            border-radius: 99px;
+            background: #E2E8F0;
+            overflow: hidden;
+            display: flex;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+        }
+        .study-progress-fill-done {
+            height: 100%;
+            width: 0%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #10B981, #059669);
+            transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            flex-shrink: 0;
+        }
+
         @media (max-width: 430px) {
             .nav-row {
-                padding: 9px 10px 9px 46px;
+                padding: 9px 10px 8px 46px;
                 gap: 6px;
             }
             .brand {
@@ -208,6 +266,16 @@
             }
             #list-filter-select {
                 max-width: 112px;
+            }
+            .study-progress-wrap {
+                padding: 0 10px 8px;
+                gap: 4px;
+            }
+            .study-progress-meta {
+                font-size: 11px;
+            }
+            .study-progress-track {
+                height: 7px;
             }
         }
 
@@ -878,6 +946,21 @@
                     <option value="Hard">Khó (0)</option>
                     <option value="done">Đã học (0)</option>
                 </select>
+            </div>
+        </div>
+        <div class="study-progress-wrap" id="study-progress-wrap" title="Tiến trình học tập">
+            <div class="study-progress-meta">
+                <span class="study-stat-item done">
+                    <span class="study-dot done"></span>
+                    <span>Đã học <strong id="progress-done-label">0/0 (0%)</strong></span>
+                </span>
+                <span class="study-stat-item todo">
+                    <span class="study-dot todo"></span>
+                    <span>Chưa học <strong id="progress-todo-label">0 (0%)</strong></span>
+                </span>
+            </div>
+            <div class="study-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="study-progress-track">
+                <div class="study-progress-fill-done" id="progress-bar-done"></div>
             </div>
         </div>
     </div>
@@ -1862,6 +1945,33 @@ function updateCountsOnly() {
         });
         filterSelect.value = normalizeListFilter(state.listFilter);
     }
+    updateStudyProgressBar(c.done, c.todo, currentData.length);
+}
+
+function updateStudyProgressBar(done, todo, total) {
+    const doneLabel = document.getElementById('progress-done-label');
+    const todoLabel = document.getElementById('progress-todo-label');
+    const barDone = document.getElementById('progress-bar-done');
+    const track = document.getElementById('study-progress-track');
+    const wrap = document.getElementById('study-progress-wrap');
+
+    const safeTotal = Math.max(0, Number(total) || 0);
+    const safeDone = Math.min(Math.max(0, Number(done) || 0), safeTotal);
+    const safeTodo = Math.max(0, safeTotal - safeDone);
+
+    const donePctRaw = safeTotal > 0 ? (safeDone / safeTotal) * 100 : 0;
+    const donePctRounded = safeTotal > 0 ? Math.round(donePctRaw * 10) / 10 : 0;
+    const todoPctRounded = safeTotal > 0 ? Math.round((100 - donePctRounded) * 10) / 10 : 0;
+
+    const formatPct = (val) => `${Number(val).toFixed(1).replace(/\.0$/, '')}%`;
+    const donePctText = formatPct(donePctRounded);
+    const todoPctText = formatPct(todoPctRounded);
+
+    if (doneLabel) doneLabel.textContent = `${safeDone}/${safeTotal} (${donePctText})`;
+    if (todoLabel) todoLabel.textContent = `${safeTodo} (${todoPctText})`;
+    if (barDone) barDone.style.width = safeTotal > 0 ? `${donePctRaw}%` : '0%';
+    if (track) track.setAttribute('aria-valuenow', String(Math.round(donePctRaw)));
+    if (wrap) wrap.title = `Đã học ${safeDone}/${safeTotal} (${donePctText}) • Chưa học ${safeTodo}/${safeTotal} (${todoPctText})`;
 }
 
 function move(dir) {

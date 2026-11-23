@@ -221,7 +221,7 @@
             width: 100%;
             max-width: 760px;
             margin: 0 auto;
-            padding: 12px 14px 88px;
+            padding: 0 14px 88px;
             box-sizing: border-box;
         }
         
@@ -235,13 +235,13 @@
         }
         .multi-card {
             background: var(--card);
-            border-radius: 20px;
+            border-radius: 0 0 16px 16px;
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 8px 24px -8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.02);
-            overflow: hidden;
+            overflow: clip;
         }
         .multi-card .q-sticky-header {
-            border-radius: 20px 20px 0 0;
+            border-radius: 0;
             padding: 10px 12px;
             flex-wrap: nowrap;
             align-items: stretch;
@@ -355,14 +355,20 @@
         }
 
         .q-sticky-header { 
+            position: -webkit-sticky;
+            position: sticky;
+            top: -1px;
             padding: 12px 18px; 
-            background: white; 
-            border-bottom: 1px solid #F1F5F9; 
+            background: rgba(255, 237, 213, 0.98); 
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-bottom: 1px solid #FED7AA; 
+            box-shadow: 0 4px 12px -6px rgba(234, 88, 12, 0.14);
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            z-index: 10; 
-            border-radius: 24px 24px 0 0; 
+            z-index: 20; 
+            border-radius: 0; 
         }
         .q-scroll-body { 
             flex-grow: 1; 
@@ -413,10 +419,10 @@
             align-self: stretch;
             flex-wrap: nowrap;
             gap: 3px; 
-            background: #F1F5F9;
+            background: rgba(255, 255, 255, 0.8);
             padding: 3px;
             border-radius: 14px;
-            border: 1px solid rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(249, 115, 22, 0.22);
             min-width: 0;
             overflow-x: auto;
             scrollbar-width: none;
@@ -669,7 +675,7 @@
             border: 1px solid rgba(15, 23, 42, 0.08); 
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             gap: 8px; 
             padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); 
             position: fixed; 
@@ -688,6 +694,7 @@
         .bottom-pagination {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             flex: 1;
             min-width: 0;
@@ -702,48 +709,6 @@
         .bottom-nav #page-select {
             height: 36px;
             border-radius: 11px;
-        }
-        .bottom-ans-btn {
-            height: 36px;
-            padding: 0 12px;
-            border: 1px solid rgba(15, 23, 42, 0.1); 
-            background: #FFFFFF; 
-            border-radius: 11px; 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 5px;
-            color: #475569; 
-            font-size: 12.5px;
-            font-weight: 800;
-            font-family: inherit;
-            cursor: pointer; 
-            transition: all 0.18s ease;
-            user-select: none;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-            white-space: nowrap;
-            flex-shrink: 0;
-            box-sizing: border-box;
-        }
-        .bottom-ans-btn:hover {
-            background: #F8FAFC;
-            border-color: rgba(15, 23, 42, 0.18);
-        }
-        .bottom-ans-btn svg {
-            width: 17px;
-            height: 17px;
-            display: block;
-            flex-shrink: 0;
-        }
-        #btn-ans.active { 
-            border-color: rgba(37, 99, 235, 0.35); 
-            color: var(--primary) !important; 
-            background: #EFF6FF !important; 
-            box-shadow: inset 0 1px 3px rgba(37, 99, 235, 0.08);
-        }
-        #btn-ans.active svg {
-            stroke: var(--primary) !important;
-            fill: rgba(37, 99, 235, 0.12) !important;
         }
         @media (max-width: 430px) {
             .bottom-nav {
@@ -760,8 +725,7 @@
             }
             .bottom-nav #page-select,
             .page-nav-btn,
-            .page-range-badge,
-            .bottom-ans-btn {
+            .page-range-badge {
                 height: 33px;
                 border-radius: 9px;
                 font-size: 11.5px;
@@ -771,14 +735,6 @@
             }
             .page-range-badge {
                 padding: 0 8px;
-            }
-            .bottom-ans-btn {
-                padding: 0 9px;
-                gap: 4px;
-            }
-            .bottom-ans-btn svg {
-                width: 15px;
-                height: 15px;
             }
         }
 
@@ -954,10 +910,6 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </button>
     </div>
-    <button type="button" class="bottom-ans-btn" id="btn-ans" onclick="toggleAns()" title="Đáp án">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>
-        <span>Đáp án</span>
-    </button>
 </nav>
 
 <script>
@@ -1310,7 +1262,6 @@ let currentPage = 1;
 let initialUrlPage = null;
 const flippedIds = new Set();
 const shownAnsIds = new Set();
-const hiddenAnsIds = new Set();
 
 function loadLocalPrefs() {
     try {
@@ -1327,10 +1278,8 @@ function saveLocalPrefs() {
             set: state.set || 'DATA_SET_1',
             listFilter: normalizeListFilter(state.listFilter),
             page: currentPage,
-            showAns: Boolean(document.getElementById('btn-ans')?.classList.contains('active')),
             flippedIds: Array.from(flippedIds),
-            shownAnsIds: Array.from(shownAnsIds),
-            hiddenAnsIds: Array.from(hiddenAnsIds)
+            shownAnsIds: Array.from(shownAnsIds)
         };
         localStorage.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify(prefs));
     } catch (e) {}
@@ -1340,31 +1289,44 @@ function normalizeListFilter(val) {
     return ALLOWED_LIST_FILTERS.includes(val) ? val : 'todo';
 }
 
-function syncPageToUrl(pageNum) {
+function normalizeExamSetParam(val) {
+    if (!val) return null;
+    const raw = String(val).trim().toUpperCase();
+    if (['DATA_SET_1', 'DATA_SET_2', 'DATA_SET_3', 'DATA_SET_4', 'DATA_SET_5'].includes(raw)) {
+        return raw;
+    }
+    const numMatch = raw.match(/^0*([1-5])$/);
+    if (numMatch) {
+        return `DATA_SET_${numMatch[1]}`;
+    }
+    return null;
+}
+
+function syncUrlParams(examSet, pageNum) {
     try {
         const url = new URL(window.location.href);
-        url.searchParams.set('page', String(pageNum));
+        const nextParams = new URLSearchParams();
+        nextParams.set('set', normalizeExamSetParam(examSet || state.set) || 'DATA_SET_1');
+        nextParams.set('page', String(Math.max(1, Number(pageNum || currentPage) || 1)));
+        url.searchParams.forEach((v, k) => {
+            if (k !== 'set' && k !== 'page') {
+                nextParams.set(k, v);
+            }
+        });
+        url.search = nextParams.toString();
         window.history.replaceState(null, '', url.toString());
     } catch (e) {}
 }
 
 function isQuestionAnsShown(qid) {
-    const key = String(qid);
-    const isGlobal = Boolean(document.getElementById('btn-ans')?.classList.contains('active'));
-    return isGlobal ? !hiddenAnsIds.has(key) : shownAnsIds.has(key);
+    return shownAnsIds.has(String(qid));
 }
 
 function toggleCardAns(qid) {
     if (qid === undefined) return;
     const key = String(qid);
-    const isGlobal = Boolean(document.getElementById('btn-ans')?.classList.contains('active'));
-    if (isGlobal) {
-        if (hiddenAnsIds.has(key)) hiddenAnsIds.delete(key);
-        else hiddenAnsIds.add(key);
-    } else {
-        if (shownAnsIds.has(key)) shownAnsIds.delete(key);
-        else shownAnsIds.add(key);
-    }
+    if (shownAnsIds.has(key)) shownAnsIds.delete(key);
+    else shownAnsIds.add(key);
     saveLocalPrefs();
 
     const show = isQuestionAnsShown(qid);
@@ -1450,7 +1412,7 @@ async function translateQuestion(q) {
 
 function changeExamSet(v) { 
     console.log("[LOG] Đổi bộ đề sang:", v);
-    state.set = v; idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear(); hiddenAnsIds.clear();
+    state.set = v; idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear();
     update();
     saveLocalPrefs();
     save();
@@ -1461,7 +1423,7 @@ function changeListFilter(val) {
     state.tab = (state.listFilter === 'done') ? 'done' : 'todo';
     state.diffFilter = ['Easy', 'Medium', 'Hard'].includes(state.listFilter) ? state.listFilter : null;
     console.log("[LOG] Lọc danh sách:", state.listFilter);
-    idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear(); hiddenAnsIds.clear();
+    idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear();
     update();
     saveLocalPrefs();
     save();
@@ -1472,7 +1434,7 @@ function goToPage(pageNum) {
     const target = Math.min(Math.max(1, Number(pageNum) || 1), totalPages);
     currentPage = target;
     idx = (currentPage - 1) * pageSize;
-    flippedIds.clear(); shownAnsIds.clear(); hiddenAnsIds.clear();
+    flippedIds.clear(); shownAnsIds.clear();
     render();
     const viewport = document.getElementById('swipe-area');
     if (viewport) viewport.scrollTop = 0;
@@ -1616,7 +1578,7 @@ function syncPaginationControls() {
     if (prevBtn) prevBtn.disabled = totalPages <= 1;
     if (nextBtn) nextBtn.disabled = totalPages <= 1;
     if (isLoaded) {
-        syncPageToUrl(currentPage);
+        syncUrlParams(state.set, currentPage);
         saveLocalPrefs();
     }
 }
@@ -1928,27 +1890,6 @@ function updateCountsOnly() {
     }
 }
 
-function toggleAns() {
-    const btnAns = document.getElementById('btn-ans');
-    const isShow = !btnAns.classList.contains('active');
-    btnAns.classList.toggle('active', isShow);
-    shownAnsIds.clear();
-    hiddenAnsIds.clear();
-    saveLocalPrefs();
-
-    const startIdx = (currentPage - 1) * pageSize;
-    const pageItems = filteredData.slice(startIdx, startIdx + pageSize);
-    pageItems.forEach(q => {
-        const box = document.getElementById(`exp-box-${q.id}`);
-        const viBox = document.getElementById(`vi-exp-box-${q.id}`);
-        if (box) box.style.display = isShow ? 'block' : 'none';
-        if (viBox) viBox.style.display = isShow ? 'block' : 'none';
-        const cardBtn = document.getElementById(`btn-card-ans-${q.id}`);
-        if (cardBtn) cardBtn.classList.toggle('active', isShow);
-        applyAnswerHighlightForQuestion(q);
-    });
-}
-
 function move(dir) {
     const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
     if (totalPages <= 1) return;
@@ -1958,7 +1899,7 @@ function move(dir) {
         currentPage = (currentPage <= 1) ? totalPages : currentPage - 1;
     }
     idx = (currentPage - 1) * pageSize;
-    flippedIds.clear(); shownAnsIds.clear(); hiddenAnsIds.clear();
+    flippedIds.clear(); shownAnsIds.clear();
     render();
     const viewport = document.getElementById('swipe-area');
     if (viewport) viewport.scrollTop = 0;
@@ -2007,11 +1948,15 @@ document.addEventListener('keydown', e => {
 async function startApp() {
     console.log("[LOG] Khởi chạy ứng dụng...");
     const localPrefs = loadLocalPrefs();
+    let initialUrlSet = null;
     try {
         const urlParams = new URLSearchParams(window.location.search);
+        initialUrlSet = normalizeExamSetParam(urlParams.get('set'));
         const pageParam = parseInt(urlParams.get('page'), 10);
         if (!isNaN(pageParam) && pageParam >= 1) {
             initialUrlPage = pageParam;
+        } else if (initialUrlSet && initialUrlSet !== localPrefs.set) {
+            initialUrlPage = 1;
         } else if (localPrefs.page && Number(localPrefs.page) >= 1) {
             initialUrlPage = Number(localPrefs.page);
         }
@@ -2067,7 +2012,9 @@ async function startApp() {
     });
 
     const allowedSets = ['DATA_SET_1', 'DATA_SET_2', 'DATA_SET_3', 'DATA_SET_4', 'DATA_SET_5'];
-    if (allowedSets.includes(localPrefs.set)) {
+    if (initialUrlSet && allowedSets.includes(initialUrlSet)) {
+        state.set = initialUrlSet;
+    } else if (allowedSets.includes(localPrefs.set)) {
         state.set = localPrefs.set;
     } else if (!state.set) {
         state.set = 'DATA_SET_1';
@@ -2078,17 +2025,11 @@ async function startApp() {
         : (state.tab === 'done' ? 'done' : 'todo');
     state.listFilter = normalizeListFilter(localPrefs.listFilter || state.listFilter || legacyFilter);
 
-    if (localPrefs.showAns) {
-        document.getElementById('btn-ans')?.classList.add('active');
-    }
     if (Array.isArray(localPrefs.flippedIds)) {
         localPrefs.flippedIds.forEach(id => flippedIds.add(String(id)));
     }
     if (Array.isArray(localPrefs.shownAnsIds)) {
         localPrefs.shownAnsIds.forEach(id => shownAnsIds.add(String(id)));
-    }
-    if (Array.isArray(localPrefs.hiddenAnsIds)) {
-        localPrefs.hiddenAnsIds.forEach(id => hiddenAnsIds.add(String(id)));
     }
 
     isLoaded = true; // MỞ KHÓA LƯU SAU KHI TẢI XONG

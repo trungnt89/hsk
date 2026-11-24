@@ -1,0 +1,9710 @@
+var DATA = [
+  {
+    "n": 1,
+    "topic": "Integration",
+    "multi": false,
+    "q": "You are configuring tool permissions for a Claude-based assistant. The assistant's defined responsibilities require read access to a knowledge base and write access to a draft queue, [[and nothing else]].\nWhich scoping design best applies least privilege?",
+    "q_vi": "Bạn đang cấu hình quyền dùng tool cho một trợ lý chạy trên Claude. Nhiệm vụ đã định của trợ lý cần quyền đọc một knowledge base và quyền ghi vào một draft queue, ngoài ra không gì khác.\nThiết kế phạm vi quyền nào áp dụng đúng nhất nguyên tắc least privilege?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Allow access to all tools with read permissions globally and restrict write permissions to the draftqueue tool, without scoping to only the specific tools required for defined tasks.",
+        "vi": "Cho dùng mọi tool với quyền đọc trên toàn hệ thống và chỉ giới hạn quyền ghi vào tool draftqueue, không khoanh lại đúng các tool cần cho nhiệm vụ đã định.",
+        "correct": false,
+        "why": "Cấp quyền read toàn cục rồi mới thu hẹp phần write là cấp thừa trước, thu hẹp sau. Quyền không được giới hạn đúng hai tool cần dùng ngay từ đầu, nên vẫn vi phạm least privilege."
+      },
+      {
+        "k": "B",
+        "text": "[[Per-role allow-list of exactly]] the read-knowledge-base and write-draft-queue tools, enforced at the orchestration layer.",
+        "vi": "Một allow-list theo vai trò chỉ gồm đúng hai tool đọc knowledge base và ghi draft queue, được áp ở tầng điều phối.",
+        "correct": true,
+        "why": "Least privilege nghĩa là quyền khớp đúng nhu cầu tối thiểu. Allow-list theo role chỉ liệt kê hai tool cần dùng, và được áp ở tầng orchestration trước khi tool chạy, nên trợ lý không có quyền nào thừa."
+      },
+      {
+        "k": "C",
+        "text": "Allow access to every tool in the catalog and rely on the model to decline tools it should not use.",
+        "vi": "Cho dùng mọi tool trong catalog và trông vào model tự từ chối các tool nó không nên dùng.",
+        "correct": false,
+        "why": "Cho phép mọi tool và trông chờ model tự từ chối không phải là kiểm soát quyền. Model không phải cơ chế access control, đây chỉ là một lời mong, không phải thiết kế."
+      },
+      {
+        "k": "D",
+        "text": "Disable all tools entirely to achieve a minimal permission surface, accepting that the assistant can no longer perform the read-knowledge-base or write-draft-queue tasks it was designed for.",
+        "vi": "Tắt hẳn mọi tool để có bề mặt quyền nhỏ nhất, chấp nhận trợ lý không còn làm được việc đọc knowledge base hay ghi draft queue mà nó được thiết kế để làm.",
+        "correct": false,
+        "why": "Tắt hết tool thì không còn quyền thừa, nhưng trợ lý cũng không làm được việc được giao. Least privilege vẫn phải đủ quyền để hoàn thành nhiệm vụ, không phải zero-access."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "and nothing else",
+      "choice": "Per-role allow-list of exactly",
+      "note": "Least privilege là **allow-list đúng khít nhu cầu**. Đáp án C cho hết rồi tin model, còn đáp án D cắt hết cho chắc: cả hai đều lệch.",
+      "rules": [
+        {
+          "trigger": "and nothing else",
+          "choice": "Per-role allow-list of exactly"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Thiết kế phân quyền tool theo nguyên tắc least privilege",
+      "text": "Trợ lý chỉ cần đọc knowledge base và ghi vào draft queue, không cần gì thêm. Đề hỏi thiết kế phân quyền nào áp dụng đúng nguyên tắc least privilege (quyền tối thiểu)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.1 · Xếp lớp, không dựa vào một lớp"
+    ]
+  },
+  {
+    "n": 2,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": true,
+    "q": "You are running a controlled experiment to compare two prompts and must complete the design steps before executing the experiment.\nWhich two steps must be completed [[BEFORE running]] the experiment with random assignment?\n(Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang chạy một thí nghiệm có kiểm soát để so sánh hai prompt và phải hoàn tất các bước thiết kế trước khi chạy thí nghiệm.\nHai bước nào phải xong TRƯỚC KHI chạy thí nghiệm với phân nhóm ngẫu nhiên?\n(Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Determine]] the minimum detectable effect size and the sample size needed for power.",
+        "vi": "Xác định effect size nhỏ nhất cần phát hiện và cỡ mẫu cần để đủ sức mạnh thống kê.",
+        "correct": true,
+        "why": "Phải tính trước **effect size tối thiểu** muốn phát hiện (mức chênh nhỏ nhất đáng quan tâm, ví dụ tỉ lệ đúng tăng 2%) và **sample size** cần có để đủ **power**, tức đủ sức thấy được mức chênh đó nếu nó có thật. Không tính trước thì chạy xong mới biết mẫu quá nhỏ, kết quả không kết luận được gì."
+      },
+      {
+        "k": "B",
+        "text": "Decide whether to promote, reject, or iterate the candidate based on the analysis.",
+        "vi": "Quyết định đưa lên, loại bỏ hay tiếp tục chỉnh phương án dựa trên kết quả phân tích.",
+        "correct": false,
+        "why": "Quyết định giữ, bỏ hay sửa tiếp prompt mới dựa trên kết quả phân tích, nên chỉ làm được sau khi thí nghiệm chạy xong."
+      },
+      {
+        "k": "C",
+        "text": "[[Define]] the hypothesis and the primary success metric for the comparison.",
+        "vi": "Định nghĩa giả thuyết và chỉ số thành công chính cho phép so sánh.",
+        "correct": true,
+        "why": "Thí nghiệm nào cũng bắt đầu từ câu hỏi: đang kiểm chứng điều gì (**hypothesis**, ví dụ prompt mới trả lời đúng hơn) và đo bằng con số nào (**primary success metric**). Chốt hai thứ này trước khi chạy để không ai chọn metric đẹp sau khi đã thấy số liệu."
+      },
+      {
+        "k": "D",
+        "text": "Analyze the results against the predefined success metric and significance threshold.",
+        "vi": "Phân tích kết quả theo chỉ số thành công và ngưỡng ý nghĩa đã định trước.",
+        "correct": false,
+        "why": "Phân tích kết quả cần có dữ liệu của thí nghiệm, nên là bước sau khi chạy."
+      },
+      {
+        "k": "E",
+        "text": "Document the recommendation, the trade-offs accepted, and the alternatives considered.",
+        "vi": "Ghi lại khuyến nghị, các đánh đổi đã chấp nhận và các phương án đã cân nhắc.",
+        "correct": false,
+        "why": "Ghi lại khuyến nghị và các đánh đổi là bước tổng kết cuối cùng, sau cả phân tích ở đáp án D lẫn quyết định ở đáp án B."
+      }
+    ],
+    "answer": "A, C",
+    "tip": {
+      "trigger": "BEFORE running",
+      "choice": "Determine · Define",
+      "note": "**Dạng BEFORE** (đề hỏi *must be completed BEFORE X*): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**.\nLàm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out).\nỞ câu này, đáp án C **Define** giả thuyết và metric, đáp án A **Determine** effect size và số mẫu: cả hai là đặt mục tiêu, làm được khi chưa có số liệu nào. Đáp án B quyết định, D phân tích, E ghi khuyến nghị đều cần có kết quả thí nghiệm.",
+      "rules": [
+        {
+          "trigger": "BEFORE running",
+          "choice": "Determine · Define"
+        }
+      ]
+    },
+    "ask": {
+      "title": "A/B test hai prompt: việc nào phải xong trước khi chạy",
+      "text": "Bạn sắp chạy thí nghiệm so sánh hai prompt, chia người dùng ngẫu nhiên vào hai nhóm (random assignment). Đề hỏi hai bước thiết kế phải làm xong **trước khi** bắt đầu chạy."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.3 · Thiết kế trước khi chạy"
+    ]
+  },
+  {
+    "n": 3,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are reviewing a peer's Claude Code permission rules for an enterprise rollout. The rules grant [[unrestricted Bash access]] to all projects across all developers.\nWhich response is most appropriate?",
+    "q_vi": "Bạn đang review các luật quyền Claude Code của một đồng nghiệp cho đợt triển khai toàn doanh nghiệp. Các luật này cho quyền Bash không giới hạn trên mọi dự án cho mọi developer.\nPhản hồi nào phù hợp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Add unrestricted access to additional tool categories as well, so that Bash is not asymmetrically more permissive than other tools, expanding the attack surface further in the name of consistency.",
+        "vi": "Cho thêm quyền không giới hạn với các nhóm tool khác, để Bash không lỏng hơn hẳn các tool khác, mở rộng thêm bề mặt tấn công cho nhất quán.",
+        "correct": false,
+        "why": "Mở rộng thêm các category khác cho đồng bộ là đi ngược hướng: attack surface tăng thêm chứ không giảm."
+      },
+      {
+        "k": "B",
+        "text": "Approve the unrestricted Bash access as written on the grounds that narrowing the rules would add configuration complexity, accepting the full attack surface for all engineers across all projects.",
+        "vi": "Duyệt quyền Bash không giới hạn như đang viết với lý do thu hẹp luật sẽ làm cấu hình phức tạp hơn, chấp nhận toàn bộ bề mặt tấn công cho mọi kỹ sư trên mọi dự án.",
+        "correct": false,
+        "why": "Giữ nguyên vì thu hẹp làm cấu hình phức tạp là chấp nhận toàn bộ rủi ro thay vì xử lý tận gốc. Cấu hình phức tạp hơn một chút không phải lý do bỏ qua kiểm soát quyền."
+      },
+      {
+        "k": "C",
+        "text": "Replace unrestricted Bash with [[narrowly scoped tool patterns]] that allow only the specific commands the workflows require, and add explicit deny rules for sensitive operations.",
+        "vi": "Thay Bash không giới hạn bằng các mẫu tool khoanh hẹp chỉ cho đúng các lệnh quy trình cần, và thêm luật deny rõ ràng cho các thao tác nhạy cảm.",
+        "correct": true,
+        "why": "Cần vừa giảm bề mặt tấn công vừa không chặn nhầm việc hợp lệ, nên hướng đúng là thu hẹp về các pattern cụ thể mà workflow thật sự cần, cộng thêm deny rule tường minh cho thao tác nhạy cảm."
+      },
+      {
+        "k": "D",
+        "text": "Disable all permission rules for the enterprise rollout so every command across every project runs without any tool-pattern scoping or explicit deny rules for sensitive operations.",
+        "vi": "Tắt mọi luật quyền cho đợt triển khai, để mọi lệnh trên mọi dự án chạy mà không có mẫu tool khoanh vùng hay luật deny cho thao tác nhạy cảm.",
+        "correct": false,
+        "why": "Tắt hết permission rule thì mất luôn khả năng kiểm soát, còn tệ hơn rule quá rộng ban đầu."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "unrestricted Bash access",
+      "choice": "narrowly scoped tool patterns",
+      "note": "Rule quá rộng thì **thu hẹp theo nhu cầu thật và thêm deny rule tường minh**. Đừng đi lên như đáp án A, đi xuống như đáp án D, hay đứng yên như đáp án B.",
+      "rules": [
+        {
+          "trigger": "unrestricted Bash access",
+          "choice": "narrowly scoped tool patterns"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Rule permission quá rộng: sửa đúng hướng, đừng đi cực đoan",
+      "text": "Rule hiện tại cấp unrestricted Bash access cho mọi project, mọi developer, rộng hơn nhiều so với nhu cầu thực tế."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Luật quyền: allow, ask, deny"
+    ]
+  },
+  {
+    "n": 4,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": true,
+    "q": "A senior architect is managing stakeholder expectations for a Claude-based reporting assistant midway through development. Stakeholders have escalating concerns about response latency.\nWhich two actions most directly address [[stakeholder expectation alignment]] in this situation? (Select two.)",
+    "q_vi": "Một kiến trúc sư cấp cao đang quản lý kỳ vọng của các bên liên quan cho một trợ lý báo cáo chạy trên Claude, khi dự án đang làm dở giữa chừng. Các bên liên quan ngày càng lo về độ trễ phản hồi.\nHai hành động nào xử lý trực tiếp nhất việc thống nhất kỳ vọng của các bên liên quan trong tình huống này? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Present [[measured p50 and p95 latency baselines]] against the agreed SLA thresholds so stakeholders have accurate data.",
+        "vi": "Trình bày số đo độ trễ p50 và p95 so với các ngưỡng SLA đã thống nhất, để các bên có dữ liệu chính xác.",
+        "correct": true,
+        "why": "Muốn hai bên cùng một kỳ vọng thì trước hết phải nhìn cùng một số liệu. Đưa ra latency đo thật ở **p50** (một nửa số request nhanh hơn mức này) và **p95** (95% request nhanh hơn mức này), đặt cạnh ngưỡng **SLA** đã thống nhất, để stakeholder thấy chậm tới đâu thay vì dựa vào cảm giác."
+      },
+      {
+        "k": "B",
+        "text": "Pause all development and reallocate engineering resources entirely to latency optimization.",
+        "vi": "Dừng mọi việc phát triển và dồn toàn bộ nguồn lực kỹ thuật sang tối ưu độ trễ.",
+        "correct": false,
+        "why": "Dừng toàn bộ việc phát triển để dồn sức giảm latency là phản ứng quá đà, và cũng không phải nói chuyện với stakeholder để thống nhất kỳ vọng."
+      },
+      {
+        "k": "C",
+        "text": "Communicate that latency concerns are a known LLM limitation and outside the architecture team's control.",
+        "vi": "Thông báo rằng độ trễ là giới hạn đã biết của LLM và nằm ngoài tầm kiểm soát của nhóm kiến trúc.",
+        "correct": false,
+        "why": "Bảo latency là giới hạn của LLM, nằm ngoài tầm kiểm soát của đội, là né trách nhiệm. Stakeholder không có thêm thông tin gì để điều chỉnh kỳ vọng."
+      },
+      {
+        "k": "D",
+        "text": "Replace the current Claude model with a third-party model that may offer lower latency without evaluation.",
+        "vi": "Thay model Claude hiện tại bằng một model bên thứ ba có thể nhanh hơn mà không đánh giá.",
+        "correct": false,
+        "why": "Đổi sang model của bên khác **mà không đánh giá trước** là liều: chưa chắc nhanh hơn, có thể kém chất lượng hơn, và vẫn không giải quyết chuyện kỳ vọng."
+      },
+      {
+        "k": "E",
+        "text": "[[Revise the SLA]] definition collaboratively with stakeholders if current targets are not achievable given production constraints.",
+        "vi": "Cùng các bên liên quan sửa lại định nghĩa SLA nếu mục tiêu hiện tại không đạt được với các ràng buộc của production.",
+        "correct": true,
+        "why": "Nếu số đo cho thấy ngưỡng SLA hiện tại không đạt được với giới hạn thật của production, cách làm đúng là **ngồi lại cùng stakeholder sửa SLA**, không phải âm thầm trễ hẹn. Kỳ vọng mới do hai bên cùng chốt nên ai cũng hiểu như nhau."
+      }
+    ],
+    "answer": "A, E",
+    "tip": {
+      "trigger": "stakeholder expectation alignment",
+      "choice": "measured p50 and p95 latency baselines · Revise the SLA",
+      "note": "**Dạng đúng khái niệm** (đề hỏi *belong on the list, characteristic of, most directly address ...*): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng.\nBa kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như *only · single · every · mandatory · lock · immediately · without evaluation*. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog).\nỞ câu này, đáp án A đưa **measured p50 and p95 latency baselines** so với SLA, đáp án E **Revise the SLA** cùng stakeholder: một bên cho số liệu thật, một bên chốt lại kỳ vọng. Đáp án B là Cực (dừng hết việc phát triển), C là Thiếu (né, đổ cho giới hạn của LLM), D là Cực (đổi model without evaluation).",
+      "rules": [
+        {
+          "trigger": "stakeholder expectation alignment",
+          "choice": "measured p50 and p95 latency baselines · Revise the SLA"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Stakeholder lo về latency: làm sao để hai bên hiểu cùng một kỳ vọng",
+      "text": "Giữa dự án, stakeholder ngày càng lo vì trợ lý trả lời chậm. Đề không hỏi cách làm cho nhanh hơn, mà hỏi cách **đưa kỳ vọng của stakeholder về khớp với thực tế** (expectation alignment)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.3 · Khi các bên lo lắng: đưa số đo, rồi thương lượng"
+    ]
+  },
+  {
+    "n": 5,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are supporting a team whose Claude Code sessions consistently load [[60 or more MCP tools]] from many servers, exhausting context budget before the session begins.\nWhich adjustment most directly addresses this issue [[without removing capability]]?",
+    "q_vi": "Bạn đang hỗ trợ một nhóm có các phiên Claude Code luôn nạp 60 MCP tool trở lên từ nhiều server, làm cạn ngân sách context trước khi phiên bắt đầu.\nĐiều chỉnh nào xử lý trực tiếp nhất vấn đề này mà không bớt khả năng?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Enable Tool Search]] so tool definitions are deferred and [[discovered on demand]] rather than loaded into context upfront.",
+        "vi": "Bật Tool Search để định nghĩa tool được hoãn nạp và tìm khi cần, thay vì nạp hết vào context từ đầu.",
+        "correct": true,
+        "why": "Cần giữ nguyên toàn bộ khả năng mà chỉ đổi thời điểm tool definition vào context, nên đáp án đúng là bật Tool Search để tool được nạp trễ (deferred), khám phá theo nhu cầu thay vì load hết ngay từ đầu."
+      },
+      {
+        "k": "B",
+        "text": "Disable every MCP server in the configuration to free up context budget, accepting that the team loses all tool access and cannot perform any MCP-dependent task in the session.",
+        "vi": "Tắt mọi MCP server trong cấu hình để giải phóng ngân sách context, chấp nhận nhóm mất hết quyền dùng tool và không làm được việc gì cần MCP trong phiên.",
+        "correct": false,
+        "why": "Tắt hết MCP server thì mất trắng khả năng dùng tool, vi phạm đúng điều kiện không xoá capability của đề."
+      },
+      {
+        "k": "C",
+        "text": "Increase the prompt's verbosity with additional instructions and context, which consumes more of the context budget rather than reducing the tool-definition overhead causing the issue.",
+        "vi": "Làm prompt dài hơn với thêm chỉ dẫn và context, việc này tốn thêm ngân sách context chứ không giảm phần định nghĩa tool đang gây ra vấn đề.",
+        "correct": false,
+        "why": "Thêm hướng dẫn dài hơn vào prompt chỉ tốn thêm context, không giảm phần chiếm dụng do tool definition gây ra."
+      },
+      {
+        "k": "D",
+        "text": "Add additional MCP servers to give the team more capability, which increases rather than reduces the number of tool definitions loaded into the session's context budget.",
+        "vi": "Thêm MCP server để nhóm có thêm khả năng, việc này làm tăng chứ không giảm số định nghĩa tool nạp vào ngân sách context của phiên.",
+        "correct": false,
+        "why": "Thêm MCP server mới làm số tool definition tăng thêm, đi ngược hướng cần giải quyết."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "60 or more MCP tools · without removing capability",
+      "choice": "Enable Tool Search · discovered on demand",
+      "note": "Nhiều MCP tool ngốn context thì dùng **Tool Search** (nạp theo nhu cầu), không tắt bớt như đáp án B hay thêm nữa như đáp án D.",
+      "rules": [
+        {
+          "trigger": "60 or more MCP tools · without removing capability",
+          "choice": "Enable Tool Search · discovered on demand"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Context bị 60+ MCP tool chiếm hết: Tool Search là lời giải",
+      "text": "Session load từ 60 tool MCP trở lên từ nhiều server, ngốn hết context budget trước khi phiên bắt đầu. Đề hỏi cách xử lý mà không đánh đổi capability."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.8 · Tool search: nạp tool khi cần"
+    ]
+  },
+  {
+    "n": 6,
+    "topic": "Integration",
+    "multi": true,
+    "q": "You are reviewing an integration specification for security gaps.\nWhich two findings constitute [[valid security gaps]] in the specification? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang review một bản đặc tả tích hợp để tìm lỗ hổng bảo mật.\nHai phát hiện nào là lỗ hổng bảo mật thật trong bản đặc tả? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Tool calls execute server-side under a least-privilege service principal scoped to the requested action.",
+        "vi": "Lời gọi tool chạy ở server dưới một service principal theo least privilege, chỉ có quyền cho đúng thao tác được yêu cầu.",
+        "correct": false,
+        "why": "Tool call chạy ở server dưới một service principal chỉ có đúng quyền cần cho việc đó (**least-privilege**): đây là cách làm đúng, không phải lỗ hổng."
+      },
+      {
+        "k": "B",
+        "text": "Service credentials are [[placed in the prompt]] context, where they can leak into logs and traces.",
+        "vi": "Credential của service được đặt trong context của prompt, nơi chúng có thể lọt vào log và trace.",
+        "correct": true,
+        "why": "Credential của service mà nằm trong **prompt context** thì đi theo prompt tới mọi nơi lưu prompt: log, trace, công cụ debug. Ai đọc được log là lấy được credential. Credential phải nằm ở server, model không cần và không nên thấy nó."
+      },
+      {
+        "k": "C",
+        "text": "Role-based access control is enforced [[only at the response-rendering layer]] after the model accesses restricted data.",
+        "vi": "Phân quyền theo vai trò chỉ được áp ở tầng hiển thị response, sau khi model đã truy cập dữ liệu bị hạn chế.",
+        "correct": true,
+        "why": "**RBAC** (phân quyền theo vai trò) chỉ chặn ở bước hiển thị câu trả lời thì đã quá muộn: model đã đọc dữ liệu hạn chế rồi, và có thể đưa nó vào câu trả lời, bản tóm tắt hay một tool call khác. Quyền phải được kiểm **trước khi** dữ liệu vào context của model."
+      },
+      {
+        "k": "D",
+        "text": "Per-user OAuth tokens are exchanged with scope-restricted permissions and refreshed within the active session.",
+        "vi": "OAuth token của từng người dùng được đổi với quyền giới hạn theo scope và làm mới trong phiên đang chạy.",
+        "correct": false,
+        "why": "OAuth token riêng cho từng user, quyền giới hạn và được làm mới trong phiên: đây là cách làm đúng, không phải lỗ hổng."
+      },
+      {
+        "k": "E",
+        "text": "Tool inputs and outputs are encrypted in transit using transport-layer security between services.",
+        "vi": "Đầu vào và đầu ra của tool được mã hoá khi truyền bằng bảo mật tầng transport giữa các service.",
+        "correct": false,
+        "why": "Mã hoá dữ liệu khi truyền giữa các service bằng TLS là yêu cầu bảo mật cơ bản, bản đặc tả đã làm đúng."
+      }
+    ],
+    "answer": "B, C",
+    "tip": {
+      "trigger": "valid security gaps",
+      "choice": "placed in the prompt · only at the response-rendering layer",
+      "note": "**Dạng tìm chỗ thiếu** (đề hỏi *gaps*, hay việc gì còn phải làm thêm): chọn câu kể một điều **đang thiếu hoặc đặt sai chỗ**, thường có chữ *not · only · in the prompt.*\nBẫy: câu kể việc **đang làm đúng** (least-privilege, encrypted, exported, redaction), hoặc thứ đề nói **đã có sẵn**.\nỞ câu này, đáp án B có credential **placed in the prompt** (đặt sai chỗ), đáp án C kiểm quyền **only at the response-rendering layer**, sau khi model đã đọc dữ liệu (quá muộn). Đáp án A least-privilege, D OAuth giới hạn quyền, E encrypted đều là việc đang làm đúng.",
+      "rules": [
+        {
+          "trigger": "valid security gaps",
+          "choice": "placed in the prompt · only at the response-rendering layer"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tìm lỗ hổng bảo mật thật trong bản đặc tả tích hợp",
+      "text": "Năm mục trong bản đặc tả đều nói về bảo mật, nhưng ba mục là cách làm đúng, chỉ hai mục là **lỗ hổng thật** (security gap)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.2 · Credential không được nằm trong prompt",
+      "Bài 3.2 · Kiểm quyền trước khi dữ liệu tới model"
+    ]
+  },
+  {
+    "n": 7,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are investigating an MCP server that [[fails on first launch]] but succeeds on subsequent runs.\nSystem [[permission dialogs appeared]] during the first launch.\nWhich response is most appropriate?",
+    "q_vi": "Bạn đang điều tra một MCP server lỗi ở lần chạy đầu nhưng chạy được ở các lần sau.\nCác hộp thoại xin quyền của hệ thống đã hiện ra trong lần chạy đầu.\nPhản hồi nào phù hợp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Recognize the [[first-run permission grant as the cause]], document the expected behavior in onboarding guidance, and confirm that subsequent runs succeed.",
+        "vi": "Nhận ra việc cấp quyền ở lần chạy đầu là nguyên nhân, ghi hành vi này vào hướng dẫn onboarding, và xác nhận các lần chạy sau đều được.",
+        "correct": true,
+        "why": "Hộp thoại xin quyền xuất hiện đúng lúc lỗi xảy ra, nên hướng đúng là nhận ra việc cấp quyền một lần chính là nguyên nhân, ghi hành vi này vào tài liệu onboarding, và xác nhận các lần chạy sau đều thành công trước khi kết luận."
+      },
+      {
+        "k": "B",
+        "text": "Reinstall the operating system to clear all permission state without first confirming whether the one-time permission grant caused the failure.",
+        "vi": "Cài lại hệ điều hành để xoá mọi trạng thái quyền mà không xác nhận trước việc cấp quyền một lần có phải là nguyên nhân không.",
+        "correct": false,
+        "why": "Cài lại cả hệ điều hành để xoá trạng thái quyền là phản ứng quá tay, lại làm trước khi xác nhận việc cấp quyền một lần có đúng là nguyên nhân hay không."
+      },
+      {
+        "k": "C",
+        "text": "Disable operating-system permission dialogs entirely, accept the resulting security implications, and proceed without confirming whether the failure recurs.",
+        "vi": "Tắt hẳn hộp thoại xin quyền của hệ điều hành, chấp nhận hệ quả bảo mật, và làm tiếp mà không xác nhận lỗi có lặp lại không.",
+        "correct": false,
+        "why": "Tắt hẳn hộp thoại xin quyền của hệ điều hành là đổi rủi ro bảo mật lâu dài để né một lần cấp quyền vô hại, và cũng không xác nhận lỗi còn lặp lại hay không."
+      },
+      {
+        "k": "D",
+        "text": "Treat the first-run failure as a permanent fault, replace the MCP server, and do not verify whether subsequent runs succeed.",
+        "vi": "Coi lỗi lần đầu là lỗi vĩnh viễn, thay MCP server, và không kiểm xem các lần chạy sau có được không.",
+        "correct": false,
+        "why": "Coi lỗi lần đầu là hỏng vĩnh viễn rồi thay cả MCP server, mà không kiểm chứng các lần sau còn lỗi hay không, là kết luận vội vàng."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "fails on first launch · permission dialogs appeared",
+      "choice": "first-run permission grant as the cause",
+      "note": "Lỗi lần đầu kèm hộp thoại xin quyền thường là **one-time grant**, không phải lỗi thật. Luôn xác nhận lại các lần sau trước khi hành động.",
+      "rules": [
+        {
+          "trigger": "fails on first launch · permission dialogs appeared",
+          "choice": "first-run permission grant as the cause"
+        }
+      ]
+    },
+    "ask": {
+      "title": "MCP server lỗi lần đầu, chạy trơn các lần sau — đọc đúng tín hiệu",
+      "text": "Lần chạy đầu có hộp thoại xin quyền của hệ điều hành, rồi MCP server lỗi. Các lần sau đều chạy tốt, và tín hiệu này chỉ thẳng ra nguyên nhân."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.3 · Ba trạng thái hỏng của MCP server"
+    ]
+  },
+  {
+    "n": 8,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "A technical team is cataloguing risks specific to Claude's use in a document-grounded Q & A system.\nWhich two items represent failure modes [[intrinsic to LLM-based systems]] rather than generic software defects? (Select two.)",
+    "q_vi": "Một nhóm kỹ thuật đang liệt kê các rủi ro riêng khi dùng Claude trong một hệ thống hỏi đáp dựa trên tài liệu.\nHai mục nào là kiểu hỏng vốn có của hệ thống dựa trên LLM chứ không phải lỗi phần mềm thông thường? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "An expired TLS certificate blocks outbound API calls to Claude.",
+        "vi": "Một chứng chỉ TLS hết hạn chặn các lời gọi API ra ngoài tới Claude.",
+        "correct": false,
+        "why": "Chứng chỉ TLS hết hạn làm hỏng mọi lời gọi API ra ngoài. Hệ thống nào cũng có thể gặp, không riêng gì LLM."
+      },
+      {
+        "k": "B",
+        "text": "A database connection timeout causes retrieval to return an empty result set.",
+        "vi": "Một lần timeout kết nối database khiến bước truy xuất trả về tập kết quả rỗng.",
+        "correct": false,
+        "why": "Database quá thời gian kết nối là lỗi hạ tầng quen thuộc, không liên quan đến model."
+      },
+      {
+        "k": "C",
+        "text": "[[The model refuses]] a legitimate query because surface features trigger an overly broad safety pattern.",
+        "vi": "Model từ chối một câu hỏi chính đáng vì các đặc điểm bề mặt kích hoạt một mẫu an toàn quá rộng.",
+        "correct": true,
+        "why": "Model từ chối một câu hỏi hợp lệ chỉ vì vài chữ trong câu giống mẫu nội dung nguy hiểm (**over-refusal**). Đây là hành vi của model, đến từ cách nó được huấn luyện an toàn; phần mềm thông thường không có lỗi kiểu này."
+      },
+      {
+        "k": "D",
+        "text": "A misconfigured load balancer routes requests to a deprecated API version.",
+        "vi": "Một load balancer cấu hình sai chuyển request tới phiên bản API đã ngừng dùng.",
+        "correct": false,
+        "why": "Load balancer cấu hình sai, chuyển request tới bản API cũ, là lỗi vận hành hạ tầng, không do model."
+      },
+      {
+        "k": "E",
+        "text": "[[The model generates]] a plausible-sounding answer unsupported by any retrieved document.",
+        "vi": "Model sinh ra câu trả lời nghe hợp lý nhưng không tài liệu truy xuất nào hỗ trợ.",
+        "correct": true,
+        "why": "Model viết ra câu trả lời nghe rất hợp lý nhưng không tài liệu nào được truy xuất ủng hộ: đây là **hallucination**. Code thông thường không tự bịa dữ liệu, chỉ model sinh chữ theo xác suất mới như vậy."
+      }
+    ],
+    "answer": "C, E",
+    "tip": {
+      "trigger": "intrinsic to LLM-based systems",
+      "choice": "The model refuses · The model generates",
+      "note": "**Dạng đúng khái niệm** (đề hỏi *belong on the list, characteristic of, most directly address ...*): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng.\nBa kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như *only · single · every · mandatory · lock · immediately · without evaluation*. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog).\nỞ câu này, lỗi riêng của LLM thì chủ ngữ là model: đáp án C **The model refuses** nhầm câu hợp lệ, đáp án E **The model generates** câu trả lời không có nguồn. Đáp án A (TLS), B (database), D (load balancer) đều là Lạc: lỗi hạ tầng hệ nào cũng gặp.",
+      "rules": [
+        {
+          "trigger": "intrinsic to LLM-based systems",
+          "choice": "The model refuses · The model generates"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Lỗi chỉ hệ thống LLM mới có, khác lỗi phần mềm thông thường",
+      "text": "Đề liệt kê rủi ro của một hệ thống hỏi đáp dựa trên tài liệu. Hai mục là lỗi **sinh ra từ chính model** (intrinsic), ba mục còn lại là lỗi hạ tầng mà hệ thống phần mềm nào cũng có thể gặp."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.2 · Kiểu hỏng riêng của LLM"
+    ]
+  },
+  {
+    "n": 9,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "You are running a risk assessment on a planned Claude-based deployment and must complete the inventory steps [[before assessing]] threats against assets.\nWhich two steps must be completed BEFORE assessing threats against assets to estimate likelihood and impact? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang đánh giá rủi ro cho một đợt triển khai Claude dự kiến và phải hoàn tất các bước kiểm kê trước khi đánh giá mối đe doạ với tài sản.\nHai bước nào phải xong TRƯỚC KHI đánh giá mối đe doạ với tài sản để ước lượng khả năng xảy ra và mức ảnh hưởng? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Document the assessment outcome with risks, mitigations, residual risk, and acceptance owners.",
+        "vi": "Ghi lại kết quả đánh giá gồm rủi ro, biện pháp giảm thiểu, rủi ro còn lại và người chịu trách nhiệm chấp nhận.",
+        "correct": false,
+        "why": "Ghi lại kết quả đánh giá, gồm rủi ro, cách giảm thiểu và người chịu phần rủi ro còn lại, là bước cuối, chỉ làm được khi đã đánh giá xong."
+      },
+      {
+        "k": "B",
+        "text": "Recommend mitigations and residual-risk acceptance for the risks that remain after analysis.",
+        "vi": "Đề xuất biện pháp giảm thiểu và việc chấp nhận rủi ro còn lại cho các rủi ro còn tồn tại sau phân tích.",
+        "correct": false,
+        "why": "Đề xuất cách giảm thiểu cho rủi ro **còn lại sau khi phân tích**, nên phải có kết quả phân tích trước."
+      },
+      {
+        "k": "C",
+        "text": "[[Identify]] the assets that the deployment touches, along with the sensitivity of each asset.",
+        "vi": "Xác định các tài sản mà đợt triển khai đụng tới, cùng mức nhạy cảm của từng tài sản.",
+        "correct": true,
+        "why": "Không biết hệ thống đụng tới **asset** nào (dữ liệu khách hàng, hệ thống nội bộ...) và mỗi asset nhạy cảm tới đâu thì không thể nói một mối đe doạ gây thiệt hại lớn hay nhỏ. Đây là nửa đầu của bảng kiểm kê: cần bảo vệ cái gì."
+      },
+      {
+        "k": "D",
+        "text": "Recommend mitigations and residual-risk acceptance for risks that remain.",
+        "vi": "Đề xuất biện pháp giảm thiểu và việc chấp nhận rủi ro còn lại cho các rủi ro còn tồn tại.",
+        "correct": false,
+        "why": "Gần giống đáp án B: đề xuất cách giảm thiểu cho rủi ro còn lại, cũng phải phân tích xong mới làm được."
+      },
+      {
+        "k": "E",
+        "text": "[[Enumerate]] the threat actors and attack vectors relevant to the deployment.",
+        "vi": "Liệt kê các tác nhân đe doạ và hướng tấn công liên quan tới đợt triển khai.",
+        "correct": true,
+        "why": "Nửa còn lại của bảng kiểm kê: ai có thể tấn công (**threat actor**, ví dụ người dùng gian lận, nhân viên nội bộ) và tấn công bằng cách nào (**attack vector**, ví dụ prompt injection). Có cả asset lẫn threat thì mới ghép thành từng rủi ro để đánh giá."
+      }
+    ],
+    "answer": "C, E",
+    "tip": {
+      "trigger": "BEFORE assessing",
+      "choice": "Identify · Enumerate",
+      "note": "**Dạng BEFORE** (đề hỏi *must be completed BEFORE X*): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**.\nLàm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out).\nỞ câu này, đáp án C **Identify** asset, đáp án E **Enumerate** threat actor: cả hai là tìm hiểu, làm được khi chưa đánh giá gì. Đáp án B, D đề xuất giảm thiểu và đáp án A ghi kết quả đều cần đánh giá xong.",
+      "rules": [
+        {
+          "trigger": "BEFORE assessing",
+          "choice": "Identify · Enumerate"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Đánh giá rủi ro: việc nào làm trước khi đánh giá mối đe doạ",
+      "text": "Trước khi ước lượng khả năng xảy ra (likelihood) và mức thiệt hại (impact) của từng mối đe doạ lên tài sản, phải làm xong hai bước kiểm kê (inventory)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.2 · Đánh giá rủi ro theo đúng thứ tự"
+    ]
+  },
+  {
+    "n": 10,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "You are compiling [[guardrail tactics]] for a customer-facing assistant.\nWhich two tactics belong on the guardrail list?\nEach correct answer presents a complete solution.",
+    "q_vi": "Bạn đang tổng hợp các chiến thuật guardrail cho một trợ lý phục vụ khách hàng.\nHai chiến thuật nào thuộc danh sách guardrail?\nMỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Embed approved override phrases that let trusted users relax guardrails on demand.",
+        "vi": "Nhúng các câu ghi đè được duyệt sẵn cho phép người dùng tin cậy nới guardrail khi cần.",
+        "correct": false,
+        "why": "Cài sẵn câu lệnh cho người dùng \"tin cậy\" nới lỏng guardrail là mở cửa hậu: ai biết câu đó cũng né được guardrail."
+      },
+      {
+        "k": "B",
+        "text": "Lower sampling temperature globally to reduce the chance of off-policy completions.",
+        "vi": "Hạ sampling temperature trên toàn hệ thống để giảm khả năng sinh nội dung trái chính sách.",
+        "correct": false,
+        "why": "Hạ temperature chỉ làm câu trả lời bớt ngẫu nhiên, không chặn được nội dung vi phạm nào. Đây là chỉnh tham số, không phải guardrail."
+      },
+      {
+        "k": "C",
+        "text": "[[Validate]] the model output against a structured schema before downstream actions are taken.",
+        "vi": "Kiểm đầu ra của model theo một schema có cấu trúc trước khi thực hiện các hành động phía sau.",
+        "correct": true,
+        "why": "Trước khi kết quả của model được dùng để làm gì đó (gọi API, ghi database), kiểm nó theo một **schema** cố định: đủ trường, đúng kiểu, giá trị trong phạm vi cho phép. Output sai bị chặn lại thay vì gây hậu quả ở bước sau."
+      },
+      {
+        "k": "D",
+        "text": "[[Layer]] prompt-level guardrails with runtime content checks rather than relying on either alone.",
+        "vi": "Xếp lớp guardrail ở mức prompt với kiểm tra nội dung lúc chạy thay vì chỉ dựa vào một trong hai.",
+        "correct": true,
+        "why": "Chỉ dặn trong prompt thì model vẫn có lúc không theo; chỉ kiểm lúc chạy thì bỏ phí cái lợi của việc dặn trước. Ghép **guardrail trong prompt** với **kiểm tra nội dung lúc chạy** (runtime content check) thì lớp này lọt còn lớp kia chặn."
+      },
+      {
+        "k": "E",
+        "text": "Rely on a single hardened system prompt that enumerates every disallowed behavior.",
+        "vi": "Dựa vào một system prompt duy nhất được gia cố liệt kê mọi hành vi bị cấm.",
+        "correct": false,
+        "why": "Dồn hết vào một system prompt, dù viết kỹ tới đâu, vẫn chỉ có một lớp bảo vệ. Lớp đó lọt là hết, ngược với cách làm nhiều lớp ở đáp án D."
+      }
+    ],
+    "answer": "C, D",
+    "tip": {
+      "trigger": "guardrail tactics",
+      "choice": "Validate · Layer",
+      "note": "**Dạng đúng khái niệm** (đề hỏi *belong on the list, characteristic of, most directly address ...*): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng.\nBa kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như *only · single · every · mandatory · lock · immediately · without evaluation*. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog).\nỞ câu này, đáp án C **Validate** output theo schema trước khi hành động, đáp án D **Layer** nhiều lớp kiểm. Đáp án A là Lạc (mở cửa hậu, ngược mục tiêu), B là Lạc (temperature chỉ là tham số), E là Cực (rely on a single system prompt).",
+      "rules": [
+        {
+          "trigger": "guardrail tactics",
+          "choice": "Validate · Layer"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Biện pháp nào thật sự là guardrail cho trợ lý chăm sóc khách hàng",
+      "text": "Năm lựa chọn đều nghe có vẻ an toàn. Đề hỏi hai biện pháp nên có trong danh sách **guardrail**: các lớp chặn để model không làm hay nói điều không được phép."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.1 · Xếp lớp, không dựa vào một lớp"
+    ]
+  },
+  {
+    "n": 11,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are diagnosing a Claude Code session whose subagent uses [[50,000 tokens of context before the engineer types]] a single message.\nWhich root cause is most likely?",
+    "q_vi": "Bạn đang chẩn đoán một phiên Claude Code có subagent dùng 50.000 token context trước khi kỹ sư gõ tin nhắn nào.\nNguyên nhân gốc khả dĩ nhất là gì?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The developer's keyboard layout or input-method configuration is the cause of the elevated context consumption, introducing extra tokens before the engineer types any message.",
+        "vi": "Bố cục bàn phím hoặc cấu hình bộ gõ của developer là nguyên nhân làm tăng mức dùng context, chèn thêm token trước khi kỹ sư gõ tin nhắn nào.",
+        "correct": false,
+        "why": "Bàn phím hay input method không liên quan gì tới việc token được nạp vào context. Đây là đáp án phi kỹ thuật."
+      },
+      {
+        "k": "B",
+        "text": "[[Many MCP servers are configured]], each contributing tool definitions to the context budget; [[Tool Search is not enabled]], so all definitions load upfront.",
+        "vi": "Nhiều MCP server được cấu hình, mỗi cái đóng góp định nghĩa tool vào ngân sách context; Tool Search không được bật, nên mọi định nghĩa được nạp ngay từ đầu.",
+        "correct": true,
+        "why": "Mỗi MCP server được cấu hình đều góp định nghĩa tool của nó vào context. Khi Tool Search chưa bật, mọi định nghĩa đó được nạp ngay từ đầu, nên context đã đầy trước cả khi có tin nhắn đầu tiên. Đây là cơ chế duy nhất trong bốn đáp án thật sự chiếm token lúc khởi động."
+      },
+      {
+        "k": "C",
+        "text": "The model has internal personal preferences or default behaviors that silently consume large portions of context budget before any user message is processed, independent of tool configuration.",
+        "vi": "Model có sở thích cá nhân bên trong hoặc hành vi mặc định âm thầm tiêu tốn phần lớn ngân sách context trước khi xử lý tin nhắn nào của người dùng, không phụ thuộc cấu hình tool.",
+        "correct": false,
+        "why": "Model không có \"sở thích cá nhân\" nào âm thầm ngốn context. LLM không hoạt động như vậy."
+      },
+      {
+        "k": "D",
+        "text": "The font rendering or display-scaling settings of the IDE are converting visual output into additional context tokens, causing the high pre-session context consumption.",
+        "vi": "Cài đặt render font hoặc tỉ lệ hiển thị của IDE đang đổi đầu ra hình ảnh thành token context, gây mức dùng context cao trước phiên.",
+        "correct": false,
+        "why": "Font chữ hay độ scale màn hình chỉ là thuộc tính hiển thị của IDE, không biến thành token trong context."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "50,000 tokens of context before the engineer types",
+      "choice": "Many MCP servers are configured · Tool Search is not enabled",
+      "note": "Context đã đầy từ trước khi gõ chữ nào: nghi ngay **nhiều MCP server, Tool Search chưa bật, nạp hết định nghĩa tool**. Bàn phím, font, \"sở thích\" của model không chiếm token.",
+      "rules": [
+        {
+          "trigger": "50,000 tokens of context before the engineer types",
+          "choice": "Many MCP servers are configured · Tool Search is not enabled"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chẩn đoán vì sao subagent đã tốn 50.000 token context trước khi engineer gõ chữ nào",
+      "text": "Subagent dùng **50.000 token context trước khi engineer gõ một tin nhắn nào**. Đề hỏi nguyên nhân gốc, không hỏi hiện tượng."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.8 · Nạp hết tốn gì"
+    ]
+  },
+  {
+    "n": 12,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "A team manager wants all engineers working on the [[same repository]] to share identical MCP server definitions [[without manual synchronization]].\nWhich configuration approach satisfies this requirement?",
+    "q_vi": "Một quản lý nhóm muốn mọi kỹ sư làm trên cùng một repository dùng chung định nghĩa MCP server giống hệt nhau mà không phải đồng bộ tay.\nCách cấu hình nào đáp ứng yêu cầu này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "managed configuration pushed to all endpoints by the administrator",
+        "vi": "managed configuration do quản trị viên đẩy xuống mọi máy",
+        "correct": false,
+        "why": "Managed configuration do quản trị viên phát tới từng máy và áp cho cả tổ chức, không riêng một repo. Đây không phải cách chia sẻ cấu hình theo repo bằng commit rồi pull."
+      },
+      {
+        "k": "B",
+        "text": "environment variables set at the operating-system level on each workstation",
+        "vi": "biến môi trường đặt ở mức hệ điều hành trên từng máy trạm",
+        "correct": false,
+        "why": "Biến môi trường đặt ở từng workstation là cấu hình cục bộ của từng máy, không có gì chia sẻ hay đồng bộ giữa các máy."
+      },
+      {
+        "k": "C",
+        "text": "[[project-scope]] .claude/settings.json and .mcp.json files [[committed to the repository]]",
+        "vi": "các file .claude/settings.json và .mcp.json ở phạm vi dự án được commit vào repository",
+        "correct": true,
+        "why": "Cấu hình ở project scope là .claude/settings.json và .mcp.json, commit vào repo. Ai kéo code về cũng có sẵn cùng cấu hình, nên không cần thêm bước đồng bộ nào."
+      },
+      {
+        "k": "D",
+        "text": "each engineer maintains a personal ~/.claude/settings.json with the shared definitions",
+        "vi": "mỗi kỹ sư tự giữ một file ~/.claude/settings.json riêng chứa các định nghĩa dùng chung",
+        "correct": false,
+        "why": "File ~/.claude/settings.json của từng người là user scope, chỉ đi theo một người qua mọi repo. Mỗi kỹ sư tự giữ một bản chính là kiểu đồng bộ tay mà đề muốn tránh."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "same repository · without manual synchronization",
+      "choice": "project-scope · committed to the repository",
+      "note": "Chung team, chung repo thì chọn **project scope, commit vào repo**. Cấu hình ở user scope (đáp án D) hay ở từng máy (đáp án B) đều đi ngược yêu cầu \"chung\".",
+      "rules": [
+        {
+          "trigger": "same repository · without manual synchronization",
+          "choice": "project-scope · committed to the repository"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Cho cả team dùng chung định nghĩa MCP server mà không đồng bộ tay",
+      "text": "Muốn mọi kỹ sư làm trên **cùng một repo** dùng chung định nghĩa MCP server, **không phải đồng bộ thủ công**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Năm nơi đặt cấu hình, mỗi nơi chạm tới ai"
+    ]
+  },
+  {
+    "n": 13,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are supporting an engineer whose Claude Code session reports a permission denial when the engineer [[expected the action to be allowed]].\nWhich resolution step is most appropriate?",
+    "q_vi": "Bạn đang hỗ trợ một kỹ sư có phiên Claude Code báo bị từ chối quyền, trong khi kỹ sư nghĩ thao tác đó được phép.\nBước xử lý nào phù hợp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Tell the engineer to retry the denied action verbatim repeatedly until the denial stops appearing, without inspecting the active permission rules to determine whether the denial is intentional.",
+        "vi": "Bảo kỹ sư thử lại nguyên thao tác bị từ chối nhiều lần tới khi hết bị từ chối, mà không xem các luật quyền đang áp để biết việc từ chối có chủ ý không.",
+        "correct": false,
+        "why": "Thử lại y nguyên nhiều lần mà không kiểm tra rule là vô nghĩa nếu deny là chủ đích — chẳng khác gì đoán mò."
+      },
+      {
+        "k": "B",
+        "text": "Disable the permission system entirely across all scopes to remove the denial, eliminating all toolpattern and deny-rule controls rather than identifying and amending the specific rule.",
+        "vi": "Tắt hẳn hệ thống quyền ở mọi phạm vi để hết bị từ chối, bỏ mọi kiểm soát theo mẫu tool và luật deny thay vì tìm và sửa đúng luật đó.",
+        "correct": false,
+        "why": "Tắt toàn bộ hệ thống permission ở mọi scope để hết bị chặn là xoá sổ luôn mọi kiểm soát — quá tay so với việc chỉ cần sửa một rule."
+      },
+      {
+        "k": "C",
+        "text": "[[Inspect the active permission rules]] across all scopes-managed, command-line, local, project, and user-to identify which rule is denying the action and confirm whether it should be amended or remain denied.",
+        "vi": "Xem các luật quyền đang áp ở mọi phạm vi (managed, command-line, local, project và user) để tìm luật nào đang từ chối thao tác và xác nhận nên sửa luật đó hay vẫn để từ chối.",
+        "correct": true,
+        "why": "Vì phải chẩn đoán có hệ thống trước khi thay đổi bất cứ gì, nên đáp án đúng là soát lại **toàn bộ rule đang active trên mọi scope — managed, command-line, local, project, user** để xác định đúng rule nào gây deny, rồi **xác nhận rule đó nên sửa hay giữ nguyên**."
+      },
+      {
+        "k": "D",
+        "text": "Grant the engineer unrestricted Bash access to bypass the specific rule causing the denial, removing all tool-pattern constraints rather than amending only the rule in question.",
+        "vi": "Cho kỹ sư quyền Bash không giới hạn để vượt qua luật đang gây từ chối, bỏ mọi ràng buộc theo mẫu tool thay vì chỉ sửa đúng luật đó.",
+        "correct": false,
+        "why": "Cấp quyền Bash không giới hạn để né rule đang chặn là bỏ qua tất cả ràng buộc, thay vì chỉnh đúng rule gây vấn đề."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "expected the action to be allowed",
+      "choice": "Inspect the active permission rules",
+      "note": "Bị deny bất ngờ thì **soát luật ở mọi scope trước, rồi sửa đúng luật đó**. Đừng tắt cả hệ thống quyền (đáp án B) hay né bằng quyền rộng (đáp án D).",
+      "rules": [
+        {
+          "trigger": "expected the action to be allowed",
+          "choice": "Inspect the active permission rules"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Permission bị deny ngoài dự kiến — chẩn đoán trước, đừng đoán mò",
+      "text": "Kỹ sư **kỳ vọng hành động được cho phép** nhưng lại bị từ chối — cần tìm đúng rule đang chặn trước khi hành động tiếp."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.3 · Bắt đầu từ triệu chứng: kiểm cái gì đã nạp"
+    ]
+  },
+  {
+    "n": 14,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are integrating Claude Code into the team's pull-request workflow. The team wants AIassisted review [[without removing human approval]].\nWhich integration design best fits this requirement?",
+    "q_vi": "Bạn đang tích hợp Claude Code vào quy trình pull request của nhóm. Nhóm muốn có review hỗ trợ bằng AI mà không bỏ bước duyệt của con người.\nThiết kế tích hợp nào hợp nhất với yêu cầu này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Claude Code reviews the pull request and [[posts a structured analysis as a comment]], while a [[human reviewer retains the approval]] decision under the existing branch-protection rules.",
+        "vi": "Claude Code review pull request và đăng phân tích có cấu trúc thành một comment, trong khi người review vẫn giữ quyền quyết định duyệt theo các luật branch-protection hiện có.",
+        "correct": true,
+        "why": "Vì AI chỉ nên hỗ trợ thông tin còn quyền quyết định cuối vẫn thuộc con người, nên đáp án đúng là Claude Code **đăng nhận xét có cấu trúc dưới dạng comment**, còn **quyền approve vẫn thuộc reviewer con người** theo branch-protection hiện có."
+      },
+      {
+        "k": "B",
+        "text": "Claude Code merges every pull request automatically after completing its analysis, bypassing human approval and the existing branch-protection rules.",
+        "vi": "Claude Code tự merge mọi pull request sau khi phân tích xong, bỏ qua bước duyệt của con người và các luật branch-protection hiện có.",
+        "correct": false,
+        "why": "Tự động merge mọi PR và bỏ qua approval của con người là đúng điều đề bài yêu cầu không được làm."
+      },
+      {
+        "k": "C",
+        "text": "Claude Code disables all existing branch-protection rules to streamline the merge process, removing human approval as a required gate.",
+        "vi": "Claude Code tắt mọi luật branch-protection hiện có để quy trình merge gọn hơn, bỏ việc duyệt của con người khỏi các cổng bắt buộc.",
+        "correct": false,
+        "why": "Tắt hết luật bảo vệ nhánh để merge nhanh hơn là xoá luôn cơ chế bắt buộc phải có người duyệt."
+      },
+      {
+        "k": "D",
+        "text": "Claude Code silently deletes pull requests it assesses as low quality without posting a comment or notifying the author.",
+        "vi": "Claude Code lặng lẽ xoá các pull request nó đánh giá là kém chất lượng mà không đăng comment hay báo cho tác giả.",
+        "correct": false,
+        "why": "Âm thầm xoá PR mà không báo tác giả là thiếu minh bạch, và cũng không phải \"hỗ trợ review\"."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "without removing human approval",
+      "choice": "posts a structured analysis as a comment · human reviewer retains the approval",
+      "note": "AI hỗ trợ = **comment + con người vẫn approve**. Mọi phương án để AI tự merge/xoá/tắt gate đều loại bỏ vai trò con người — sai yêu cầu đề.",
+      "rules": [
+        {
+          "trigger": "without removing human approval",
+          "choice": "posts a structured analysis as a comment · human reviewer retains the approval"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tích hợp Claude Code vào PR review mà vẫn giữ người duyệt cuối",
+      "text": "Team muốn AI hỗ trợ review **mà không loại bỏ approval của con người**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.2 · Đưa Claude Code vào pull request và CI"
+    ]
+  },
+  {
+    "n": 15,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "q": "A platform team operates a self-hosted multi-agent system on Kubernetes that orchestrates seven specialized agents for invoice processing. The team spends approximately 40 percent of engineering capacity on infrastructure maintenance, message bus reliability, and agent state recovery. The CFO has asked you to evaluate moving to managed agent infrastructure to reclaim engineering capacity. The security officer requires that all customer financial data [[remain within an approved network boundary]].\nWhich factor should most heavily influence your recommendation?",
+    "q_vi": "Một nhóm platform vận hành một hệ thống nhiều agent tự host trên Kubernetes, điều phối bảy agent chuyên trách để xử lý hoá đơn. Nhóm tốn khoảng 40% năng lực kỹ thuật cho việc bảo trì hạ tầng, độ tin cậy của message bus và khôi phục trạng thái agent. CFO nhờ bạn đánh giá việc chuyển sang hạ tầng agent được quản lý (managed) để lấy lại năng lực kỹ thuật. Trưởng bộ phận bảo mật yêu cầu mọi dữ liệu tài chính của khách hàng phải nằm trong một ranh giới mạng đã được duyệt.\nYếu tố nào nên ảnh hưởng nhiều nhất tới khuyến nghị của bạn?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Whether the current seven agents map cleanly to the patterns supported by managed agents.",
+        "vi": "Bảy agent hiện tại có khớp gọn với các mẫu mà managed agents hỗ trợ không.",
+        "correct": false,
+        "why": "Việc map 7 agent hiện tại vào pattern của managed agent là cân nhắc kỹ thuật hợp lý, nhưng không phải yếu tố *chặn* nếu ràng buộc bảo mật chưa được thoả."
+      },
+      {
+        "k": "B",
+        "text": "Whether managed agents reduce per-invoice token costs across the existing processing volume.",
+        "vi": "Managed agents có giảm chi phí token mỗi hoá đơn với lượng xử lý hiện tại không.",
+        "correct": false,
+        "why": "Chi phí token mỗi invoice là tối ưu tài chính, chỉ có ý nghĩa *sau khi* phương án đã vượt qua ràng buộc bảo mật."
+      },
+      {
+        "k": "C",
+        "text": "Whether managed agents support the current bus topology used by the platform team.",
+        "vi": "Managed agents có hỗ trợ topology bus hiện tại của nhóm platform không.",
+        "correct": false,
+        "why": "Tương thích bus topology hiện tại là vấn đề tích hợp kỹ thuật, vẫn xếp sau ràng buộc cứng về nơi lưu trữ dữ liệu."
+      },
+      {
+        "k": "D",
+        "text": "Whether managed agent [[data handling satisfies the network boundary]] required by security.",
+        "vi": "Cách managed agents xử lý dữ liệu có đáp ứng ranh giới mạng mà bảo mật yêu cầu không.",
+        "correct": true,
+        "why": "Vì ràng buộc cứng (hard constraint) luôn phải xét trước mọi lợi ích khác, nên yếu tố quyết định nhất là **liệu cách xử lý dữ liệu của managed agent có thoả network boundary mà security yêu cầu hay không** — nếu không thoả, mọi lợi ích chi phí/kỹ thuật đều vô nghĩa vì phương án bị loại ngay từ đầu."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "remain within an approved network boundary",
+      "choice": "data handling satisfies the network boundary",
+      "note": "Có ràng buộc pháp lý hay bảo mật cứng thì **luôn xét ràng buộc đó trước**. Chi phí (đáp án B) hay sự thuận tiện kỹ thuật (đáp án A, C) chỉ xét sau.",
+      "rules": [
+        {
+          "trigger": "remain within an approved network boundary",
+          "choice": "data handling satisfies the network boundary"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chọn yếu tố quyết định khi cân nhắc chuyển sang managed agent — ràng buộc cứng thắng chi phí/kỹ thuật",
+      "text": "CFO muốn giảm 40% effort vận hành bằng managed agent, nhưng security yêu cầu **toàn bộ dữ liệu tài chính khách hàng phải nằm trong network boundary đã duyệt** — đây là ràng buộc *bắt buộc*, không phải một tiêu chí cân nhắc thông thường."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.1 · Chọn cách xây, và ràng buộc cứng xét trước"
+    ]
+  },
+  {
+    "n": 16,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": true,
+    "q": "You are producing an architecture guide for a new deployment and must complete the planning steps [[before drafting]] each section.\nWhich two steps must be completed BEFORE drafting each section of the guide? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang viết một tài liệu hướng dẫn kiến trúc cho một đợt triển khai mới và phải hoàn tất các bước lập kế hoạch trước khi soạn từng mục.\nHai bước nào phải xong TRƯỚC KHI soạn từng mục của tài liệu? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Identify]] the audience and the questions the guide must answer for that audience.",
+        "vi": "Xác định người đọc và các câu hỏi tài liệu phải trả lời cho người đọc đó.",
+        "correct": true,
+        "why": "Phải biết tài liệu viết cho ai (**audience**: kỹ sư vận hành, đội bảo mật hay người mới vào) và họ cần tài liệu trả lời câu hỏi gì. Người đọc quyết định viết sâu tới đâu và cần có những phần nào."
+      },
+      {
+        "k": "B",
+        "text": "Translate the guide into the supported regional languages for the candidate population.",
+        "vi": "Dịch tài liệu sang các ngôn ngữ khu vực được hỗ trợ cho nhóm ứng viên.",
+        "correct": false,
+        "why": "Dịch tài liệu sang ngôn ngữ các vùng cho \"thí sinh\" là chi tiết lạc đề, không phải bước lên kế hoạch nội dung."
+      },
+      {
+        "k": "C",
+        "text": "Validate the guide with the implementation team and incorporate corrections.",
+        "vi": "Kiểm chứng tài liệu với nhóm triển khai và đưa các chỗ sửa vào.",
+        "correct": false,
+        "why": "Đưa đội triển khai đọc và góp ý cần có bản nháp trước, nên là bước sau khi viết."
+      },
+      {
+        "k": "D",
+        "text": "Establish the document under version control with a defined review cadence and approver list.",
+        "vi": "Đưa tài liệu vào version control với lịch review định kỳ và danh sách người duyệt.",
+        "correct": false,
+        "why": "Đưa tài liệu vào quản lý phiên bản với lịch duyệt định kỳ là quy trình quản lý tài liệu, không phải lên kế hoạch nội dung cần viết."
+      },
+      {
+        "k": "E",
+        "text": "[[Outline]] the guide sections covering the overview, components, contracts, flows, runbooks, and limitations.",
+        "vi": "Lập dàn ý các mục gồm tổng quan, component, hợp đồng interface, luồng, runbook và giới hạn.",
+        "correct": true,
+        "why": "Biết người đọc rồi thì dựng **dàn ý** các phần: tổng quan, các thành phần, giao ước giữa các thành phần (contract), luồng xử lý, runbook, giới hạn. Có khung trước thì từng phần viết ra không trùng, không sót."
+      }
+    ],
+    "answer": "A, E",
+    "tip": {
+      "trigger": "BEFORE drafting",
+      "choice": "Identify · Outline",
+      "note": "**Dạng BEFORE** (đề hỏi *must be completed BEFORE X*): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**.\nLàm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out).\nỞ câu này, đáp án A **Identify** người đọc (tìm hiểu), đáp án E **Outline** các phần (đặt mục tiêu): cả hai làm được khi chưa viết chữ nào. Đáp án C góp ý cần bản nháp; B dịch là lạc đề; D quản lý phiên bản là quy trình, không phải lên nội dung.",
+      "rules": [
+        {
+          "trigger": "BEFORE drafting",
+          "choice": "Identify · Outline"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Viết tài liệu kiến trúc: việc nào làm trước khi viết từng phần",
+      "text": "Bạn soạn tài liệu hướng dẫn kiến trúc (architecture guide) cho một hệ thống mới. Đề hỏi hai bước lên kế hoạch phải xong **trước khi** bắt tay viết từng phần."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.4 · Trước khi viết: ai đọc, họ cần hỏi gì"
+    ]
+  },
+  {
+    "n": 17,
+    "topic": "Integration",
+    "multi": false,
+    "type": "matrix",
+    "q": "You are evaluating retrieval-strategy claims used by a peer team.\nFor each claim, select yes if the statement is generally accurate. Otherwise, select no.",
+    "q_vi": "Bạn đang đánh giá các nhận định về chiến lược retrieval mà một nhóm đồng nghiệp đang dùng.\nVới mỗi nhận định, chọn Yes nếu nó nhìn chung là đúng. Ngược lại, chọn No.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Dense vector retrieval is well suited to recovering paraphrased intent against unstructured text.",
+        "vi": "Dense vector retrieval phù hợp để tìm lại ý định đã được diễn đạt khác đi trên văn bản phi cấu trúc.",
+        "correct": false,
+        "why": "Dense retrieval so sánh theo nghĩa, nên người dùng hỏi bằng chữ khác với tài liệu vẫn tìm ra đoạn cần tìm.",
+        "pick": "Yes"
+      },
+      {
+        "k": "B",
+        "text": "Sparse term-matching retrieval recovers exact terms (such as identifiers and rare tokens) more reliably than dense alone.",
+        "vi": "Sparse term-matching retrieval tìm lại đúng các thuật ngữ (như mã định danh và token hiếm) đáng tin cậy hơn chỉ dùng dense.",
+        "correct": false,
+        "why": "Sparse retrieval so khớp từng chữ, nên mã đơn, mã lỗi hay từ hiếm được tìm chính xác. Dense hay bỏ sót những chữ này vì chúng không mang nghĩa rõ.",
+        "pick": "Yes"
+      },
+      {
+        "k": "C",
+        "text": "Structured query retrieval is the right fit for filter-and-aggregate workloads against a relational store with schema and indexes.",
+        "vi": "Structured query retrieval là lựa chọn đúng cho các tác vụ lọc và tổng hợp trên một kho quan hệ có schema và index.",
+        "correct": false,
+        "why": "Lọc rồi đếm, cộng, nhóm trên database có schema và index là việc của câu truy vấn như SQL, không cần tìm theo nghĩa.",
+        "pick": "Yes"
+      },
+      {
+        "k": "D",
+        "text": "[[Hybrid retrieval is identical]] to dense-only retrieval and shares the same recall characteristics.",
+        "vi": "Hybrid retrieval giống hệt dense-only retrieval và có cùng đặc tính recall.",
+        "correct": false,
+        "why": "Hybrid không giống dense-only: nó ghép dense với sparse, nên tìm được cả theo nghĩa lẫn theo chữ, recall cũng khác.",
+        "pick": "No"
+      },
+      {
+        "k": "E",
+        "text": "[[Random sampling]] of a data store is a sound retrieval strategy for production Q&A.",
+        "vi": "Lấy mẫu ngẫu nhiên từ kho dữ liệu là một chiến lược retrieval hợp lý cho hệ hỏi đáp production.",
+        "correct": false,
+        "why": "Lấy ngẫu nhiên không dựa vào câu hỏi, nên đoạn lấy ra thường chẳng liên quan. Không ai dùng cách này để trả lời câu hỏi thật.",
+        "pick": "No"
+      }
+    ],
+    "answer": "A: Yes · B: Yes · C: Yes · D: No · E: No",
+    "tip": {
+      "trigger": "Hybrid retrieval is identical · Random sampling",
+      "choice": "No",
+      "note": "Còn lại chọn **Yes**\nHybrid **giống hệt** dense, hay lấy mẫu **ngẫu nhiên**: chọn No. Ba kiểu kia mỗi kiểu một sở trường: **dense = nghĩa, sparse = khớp chữ, structured = lọc và tổng hợp**.",
+      "rules": [
+        {
+          "trigger": "Hybrid retrieval is identical · Random sampling",
+          "choice": "No"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Mỗi kiểu retrieval hợp với loại truy vấn nào",
+      "text": "Đề đưa 5 nhận định về các kiểu retrieval: dense, sparse, structured query, hybrid và lấy mẫu ngẫu nhiên. Nhận định nói trúng sở trường của từng kiểu thì chọn Yes."
+    },
+    "choices": [
+      "Yes",
+      "No"
+    ],
+    "lessons": [
+      "Bài 3.6 · Khớp cách truy xuất với dữ liệu"
+    ]
+  },
+  {
+    "n": 18,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": true,
+    "q": "A Claude-based research assistant begins producing responses that confidently contradict its retrieved source documents despite [[no change to the retrieval pipeline]].\nWhich two diagnostic actions most directly identify the root cause of this behavior? (Select two.)",
+    "q_vi": "Một trợ lý nghiên cứu chạy trên Claude bắt đầu đưa ra câu trả lời tự tin mâu thuẫn với chính các tài liệu nguồn nó truy xuất, dù pipeline truy xuất không thay đổi gì.\nHai bước chẩn đoán nào xác định trực tiếp nhất nguyên nhân gốc của hành vi này? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Increase the context-window size to allow more retrieved chunks per query.",
+        "vi": "Tăng kích thước context window để chứa thêm chunk truy xuất cho mỗi truy vấn.",
+        "correct": false,
+        "why": "Tăng context window không cho biết vì sao model trả lời ngược tài liệu. Retrieval vẫn như cũ, nhét thêm chunk cũng không giải thích được lỗi."
+      },
+      {
+        "k": "B",
+        "text": "Switch the retrieval index to a denser embedding model to improve chunk-relevance scores.",
+        "vi": "Chuyển index truy xuất sang embedding model dày đặc hơn để tăng điểm liên quan của chunk.",
+        "correct": false,
+        "why": "Đổi embedding model là sửa retrieval, trong khi đề đã nói retrieval không đổi. Vừa không tìm ra nguyên nhân, vừa thêm một thay đổi mới làm rối việc điều tra."
+      },
+      {
+        "k": "C",
+        "text": "Determine whether the failure [[reproduces on the previous model version]] to test for a model mismatch.",
+        "vi": "Xác định lỗi có tái hiện trên phiên bản model trước không, để kiểm xem có lệch phiên bản model không.",
+        "correct": true,
+        "why": "Retrieval không đổi mà câu trả lời bỗng sai, thì thứ có thể đã đổi là model. Chạy lại đúng các câu hỏi đó trên **phiên bản model trước**: model cũ trả lời đúng mà model mới sai thì lỗi nằm ở việc đổi model (**model mismatch**)."
+      },
+      {
+        "k": "D",
+        "text": "Reduce the temperature setting to lower response variance across all query types.",
+        "vi": "Hạ temperature để giảm độ biến thiên câu trả lời trên mọi loại truy vấn.",
+        "correct": false,
+        "why": "Hạ temperature chỉ làm câu chữ bớt đa dạng. Đây là chỉnh tham số, không cho biết vì sao câu trả lời mâu thuẫn với nguồn."
+      },
+      {
+        "k": "E",
+        "text": "[[Inspect]] the system-prompt grounding instructions to determine whether citation constraints remain intact.",
+        "vi": "Xem lại các chỉ dẫn bám nguồn trong system prompt để xác định các ràng buộc về trích dẫn còn nguyên vẹn không.",
+        "correct": true,
+        "why": "Chỗ còn lại có thể đã đổi là system prompt. Model chỉ bám tài liệu khi prompt dặn rõ phải dựa vào nguồn và trích dẫn. Nếu ai đó sửa prompt làm mất **ràng buộc trích dẫn** này, model sẽ trả lời theo hiểu biết riêng và mâu thuẫn với nguồn."
+      }
+    ],
+    "answer": "C, E",
+    "tip": {
+      "trigger": "no change to the retrieval pipeline",
+      "choice": "reproduces on the previous model version · Inspect",
+      "note": "**Dạng tìm nguyên nhân** (đề hỏi *root cause, diagnostic*): chọn bước **so sánh, chạy lại cho lỗi hiện ra, hoặc soi tận nơi**: Compare · Replay · Reproduce · Inspect.\nBẫy: **chỉnh tham số** (Increase, Reduce temperature, max_tokens, context), **đổi luôn cho xong** (Switch, Roll back, Clear cache), báo nhà cung cấp trước khi tự chạy lại, hoặc đụng vào phần đề nói **không thay đổi**.\nỞ câu này, retrieval không đổi nên nghi model và prompt: đáp án C chạy lại xem lỗi có **reproduces on the previous model version**, đáp án E **Inspect** chỉ dẫn trích dẫn trong system prompt. Đáp án A, B đụng vào retrieval; D chỉnh temperature.",
+      "rules": [
+        {
+          "trigger": "no change to the retrieval pipeline",
+          "choice": "reproduces on the previous model version · Inspect"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Trả lời mâu thuẫn với tài liệu dù retrieval không đổi: tìm nguyên nhân ở đâu",
+      "text": "Trợ lý nghiên cứu bỗng trả lời ngược với chính tài liệu nó truy xuất. Đề nói rõ **retrieval pipeline không thay đổi**, nên nguyên nhân phải nằm ở phần khác: model hoặc prompt."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.4 · Bốn tầng có thể hỏng"
+    ]
+  },
+  {
+    "n": 19,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "q": "A solutions architect is analyzing stakeholder feedback collected after the first quarter of a Claude-powered procurement automation deployment. The feedback includes four statements: (1) \"Our procurement team is processing 3x more purchase orders per analyst per day.\" (2) \"We have [[eliminated the manual data entry role entirely]] and redeployed those staff to vendor relationship management.\" (3) \"The API integration costs are running 40% over the projected per-transaction budget.\" (4) \"Response latency during end-of-month batch runs is averaging 11 seconds, against our committed 5-second SLA.\" Which of the following correctly identifies the primary business value pillar each stakeholder statement represents?",
+    "q_vi": "Một solutions architect đang phân tích phản hồi của các bên liên quan sau quý đầu triển khai tự động hoá mua hàng chạy trên Claude. Phản hồi gồm bốn ý: (1) \"Nhóm mua hàng đang xử lý gấp 3 lần số đơn mua mỗi chuyên viên mỗi ngày.\" (2) \"Chúng tôi đã bỏ hẳn vị trí nhập liệu tay và chuyển các nhân sự đó sang quản lý quan hệ nhà cung cấp.\" (3) \"Chi phí tích hợp API đang vượt 40% so với ngân sách dự kiến mỗi giao dịch.\" (4) \"Độ trễ phản hồi trong các đợt chạy batch cuối tháng trung bình 11 giây, so với SLA cam kết 5 giây.\" Lựa chọn nào xác định đúng trụ cột giá trị kinh doanh chính mà mỗi ý đại diện?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Statement 1: Efficiency; Statement 2: Transformation]]; Statement 3: Solution Cost; Statement 4: Performance SLA",
+        "vi": "Ý 1: Efficiency; Ý 2: Transformation; Ý 3: Solution Cost; Ý 4: Performance SLA",
+        "correct": true,
+        "why": "Phát biểu 1 là làm nhanh hơn, nhiều hơn cùng một việc, nên thuộc **Efficiency**. Phát biểu 2 đổi hẳn vai trò và quy trình: bỏ vị trí nhập liệu, chuyển người sang việc khác. Không chỉ nhanh hơn mà khác đi, nên thuộc **Transformation**. Phát biểu 3 nói chi phí vượt ngân sách, nên thuộc **Solution Cost**. Phát biểu 4 nói độ trễ vi phạm cam kết hiệu năng, nên thuộc **Performance SLA**. Ghép đúng thứ tự này ra đáp án A."
+      },
+      {
+        "k": "B",
+        "text": "Statement 1: Productivity; Statement 2: Efficiency; Statement 3: Solution Cost; Statement 4: Performance SLA",
+        "vi": "Ý 1: Productivity; Ý 2: Efficiency; Ý 3: Solution Cost; Ý 4: Performance SLA",
+        "correct": false,
+        "why": "Đáp án này gắn phát biểu 1 là Productivity và phát biểu 2 là Efficiency, cả hai đều lệch. Phát biểu 1 chỉ là cùng một việc làm nhanh hơn, nên là Efficiency. Phát biểu 2 bỏ hẳn một vị trí, nên là Transformation chứ không phải Efficiency."
+      },
+      {
+        "k": "C",
+        "text": "Statement 1: Transformation; Statement 2: Productivity; Statement 3: Solution Cost; Statement 4: Efficiency",
+        "vi": "Ý 1: Transformation; Ý 2: Productivity; Ý 3: Solution Cost; Ý 4: Efficiency",
+        "correct": false,
+        "why": "Đáp án này gắn phát biểu 1 là Transformation, phát biểu 2 là Productivity và phát biểu 4 là Efficiency, sai cả ba. Phát biểu 1 chỉ tăng tốc việc cũ, phát biểu 2 mới là thay đổi vai trò, còn phát biểu 4 là độ trễ vượt cam kết nên thuộc Performance SLA."
+      },
+      {
+        "k": "D",
+        "text": "Statement 1: Efficiency; Statement 2: Productivity; Statement 3: Performance SLA; Statement 4: Solution Cost",
+        "vi": "Ý 1: Efficiency; Ý 2: Productivity; Ý 3: Performance SLA; Ý 4: Solution Cost",
+        "correct": false,
+        "why": "Đáp án này gắn phát biểu 2 là Productivity và đổi chỗ phát biểu 3 với 4. Phát biểu 2 đổi hẳn vai trò nên là Transformation. Chi phí vượt ngân sách (tiền) và độ trễ vượt SLA (thời gian phản hồi) là hai trụ khác nhau, nên phát biểu 3 là Solution Cost và phát biểu 4 là Performance SLA."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "eliminated the manual data entry role entirely",
+      "choice": "Statement 1: Efficiency; Statement 2: Transformation",
+      "note": "Hỏi \"làm nhanh hơn hay đổi hẳn cách làm?\" để phân biệt Efficiency với Transformation. Hỏi \"tiền hay giây?\" để phân biệt Solution Cost với Performance SLA.",
+      "rules": [
+        {
+          "trigger": "eliminated the manual data entry role entirely",
+          "choice": "Statement 1: Efficiency; Statement 2: Transformation"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Gắn đúng trụ cột giá trị cho từng phát biểu: Efficiency, Transformation, Solution Cost, Performance SLA",
+      "text": "Bốn phát biểu của stakeholder cần gắn đúng trụ cột giá trị: **mỗi analyst xử lý gấp 3 số đơn mua hàng mỗi ngày, bỏ hẳn vị trí nhập liệu thủ công rồi chuyển người sang quản lý quan hệ nhà cung cấp, chi phí tích hợp API vượt 40% ngân sách dự kiến, độ trễ trung bình 11 giây trong khi SLA cam kết 5 giây**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.6 · Efficiency, productivity và transformation dễ lẫn nhất"
+    ]
+  },
+  {
+    "n": 20,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "type": "matrix",
+    "q": "You are a solution architect evaluating candidate use cases for a Claude-based program.\nFor each scenario, select Yes if Claude is appropriate as the primary solution at the architectural level.\nOtherwise, select No.",
+    "q_vi": "Bạn là solution architect đang đánh giá các use case ứng viên cho một chương trình dùng Claude.\nVới mỗi tình huống, chọn Yes nếu Claude phù hợp làm giải pháp chính ở mức kiến trúc.\nNgược lại, chọn No.",
+    "options": [
+      {
+        "k": "A",
+        "text": "drafting first-pass investigative reports from semi-structured incident logs for analyst review",
+        "vi": "soạn bản nháp đầu của báo cáo điều tra từ log sự cố bán cấu trúc để chuyên viên review",
+        "correct": false,
+        "why": "Đọc log rồi viết bản nháp báo cáo là việc đọc hiểu và viết, sở trường của Claude. Lại có chuyên viên review trước khi dùng.",
+        "pick": "Yes"
+      },
+      {
+        "k": "B",
+        "text": "[[computing real-time fraud scores]] at sub-50-millisecond latency on a streaming pipeline",
+        "vi": "tính điểm gian lận real-time với độ trễ dưới 50 mili giây trên một pipeline streaming",
+        "correct": false,
+        "why": "Claude không kịp: phải chấm điểm dưới 50 mili giây cho từng giao dịch, trong khi một lần gọi model thường mất từ vài trăm mili giây trở lên. Việc này dành cho model chấm điểm chuyên dụng.",
+        "pick": "No"
+      },
+      {
+        "k": "C",
+        "text": "long-context contract review with structured clause extraction and deviation flagging",
+        "vi": "review hợp đồng dài với trích xuất điều khoản có cấu trúc và đánh dấu chỗ sai lệch",
+        "correct": false,
+        "why": "Đọc hợp đồng dài, rút ra từng điều khoản và chỉ chỗ khác mẫu là việc đọc hiểu văn bản, Claude làm tốt.",
+        "pick": "Yes"
+      },
+      {
+        "k": "D",
+        "text": "[[replacing a vector index]] for semantic retrieval over a multi-million-document corpus",
+        "vi": "thay thế vector index cho semantic retrieval trên một kho hàng triệu tài liệu",
+        "correct": false,
+        "why": "Claude không thay được vector index: index là hạ tầng để tìm nhanh trong hàng triệu tài liệu, còn Claude chỉ đọc những đoạn index tìm ra.",
+        "pick": "No"
+      },
+      {
+        "k": "E",
+        "text": "routing inbound support tickets into 30 categories with reasoning for the chosen routing",
+        "vi": "phân loại ticket hỗ trợ đến vào 30 nhóm kèm lý giải cho cách phân loại đã chọn",
+        "correct": false,
+        "why": "Đọc ticket, xếp vào nhóm và giải thích vì sao chọn nhóm đó là việc hiểu và viết, Claude làm tốt.",
+        "pick": "Yes"
+      }
+    ],
+    "answer": "A: Yes · B: No · C: Yes · D: No · E: Yes",
+    "tip": {
+      "trigger": "computing real-time fraud scores · replacing a vector index",
+      "choice": "No",
+      "note": "Còn lại chọn **Yes**\nClaude không làm việc cần trả lời **real-time trong vài chục mili giây**, cũng không **thay hạ tầng index**. Việc **đọc, hiểu, viết và giải thích** thì Claude làm chính được.",
+      "rules": [
+        {
+          "trigger": "computing real-time fraud scores · replacing a vector index",
+          "choice": "No"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Khi nào Claude hợp làm giải pháp chính",
+      "text": "Đề đưa 5 use case. Chọn Yes nếu Claude nên là phần chính của kiến trúc, No nếu việc đó nên giao cho hệ thống khác."
+    },
+    "choices": [
+      "Yes",
+      "No"
+    ],
+    "lessons": [
+      "Bài 1.1 · Việc nào hợp với Claude, việc nào không"
+    ]
+  },
+  {
+    "n": 21,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are an architect supporting the iteration phase of a deployed Claude-based system.\nWhich activity most directly fits this phase?",
+    "q_vi": "Bạn là kiến trúc sư hỗ trợ giai đoạn lặp cải tiến của một hệ thống chạy trên Claude đã triển khai.\nHoạt động nào hợp nhất với giai đoạn này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Rebuild the entire system architecture from scratch at the start of every iteration cycle regardless of what production telemetry, evaluations, and stakeholder feedback indicate is needed.",
+        "vi": "Dựng lại toàn bộ kiến trúc hệ thống từ đầu ở đầu mỗi vòng lặp, bất kể telemetry production, kết quả đánh giá và phản hồi của các bên cho thấy cần gì.",
+        "correct": false,
+        "why": ""
+      },
+      {
+        "k": "B",
+        "text": "Stop measuring production outcomes once the deployment has successfully launched, treating the go- live milestone as the end of the evaluation and iteration cycle.",
+        "vi": "Thôi đo kết quả production khi triển khai đã chạy thành công, coi mốc go-live là kết thúc vòng đánh giá và lặp cải tiến.",
+        "correct": false,
+        "why": ""
+      },
+      {
+        "k": "C",
+        "text": "Discard the evaluation framework and reference set once the deployment is in production, accepting that future iterations will have no structured basis for measuring the impact of changes.",
+        "vi": "Bỏ khung đánh giá và tập tham chiếu khi đã lên production, chấp nhận các vòng lặp sau không còn cơ sở có cấu trúc để đo tác động của thay đổi.",
+        "correct": false,
+        "why": ""
+      },
+      {
+        "k": "D",
+        "text": "Review production telemetry, sampled output evaluations, and stakeholder feedback to identify the highest-impact change for the next cycle, then plan the change against the evaluation framework .",
+        "vi": "Xem telemetry production, đánh giá trên mẫu đầu ra và phản hồi của các bên để tìm thay đổi có tác động lớn nhất cho vòng tới, rồi lên kế hoạch thay đổi đó theo khung đánh giá.",
+        "correct": true,
+        "why": ""
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "",
+      "choice": "",
+      "note": "",
+      "rules": []
+    },
+    "ask": {
+      "title": "",
+      "text": ""
+    },
+    "type": "choice",
+    "lessons": [],
+    "note": "Ảnh gốc không hiển thị đáp án và giải thích. Đáp án D được suy luận từ nội dung."
+  },
+  {
+    "n": 22,
+    "topic": "Integration",
+    "multi": false,
+    "type": "dropdown",
+    "choices": [
+      "Long Structured Documents",
+      "Heterogeneous Short Records",
+      "Code or Hierarchical Specs"
+    ],
+    "q": "You are classifying chunking strategies by the corpus type each is best suited to.\nFor each chunking strategy, select the appropriate corpus type: \"Long Structured Documents,\" \"Heterogeneous Short Records,\" or \"Code or Hierarchical Specifications.\"",
+    "q_vi": "Bạn đang xếp các chiến lược chunking theo loại kho tài liệu mà mỗi chiến lược phù hợp nhất.\nVới mỗi chiến lược chunking, chọn loại kho phù hợp: \"Long Structured Documents\", \"Heterogeneous Short Records\" hoặc \"Code or Hierarchical Specifications\".",
+    "options": [
+      {
+        "k": "A",
+        "text": "function-level or section-level chunking for [[code]] modules:",
+        "vi": "chunking theo function hoặc theo mục cho các module code",
+        "correct": false,
+        "why": "Function là đơn vị chỉ code mới có, và dòng này nói rõ *code modules*. Cắt theo từng hàm thì mỗi chunk là một đoạn code trọn vẹn.",
+        "pick": "Code or Hierarchical Specs"
+      },
+      {
+        "k": "B",
+        "text": "tree-aware chunking that follows [[code]] or specification hierarchy:",
+        "vi": "chunking theo cây, bám cấu trúc phân cấp của code hoặc đặc tả",
+        "correct": false,
+        "why": "Code và đặc tả đều chia theo cấp, như từ module xuống class rồi xuống hàm. Cắt bám theo cây đó thì chunk không bị đứt giữa chừng, và dòng này cũng nói rõ *code or specification*.",
+        "pick": "Code or Hierarchical Specs"
+      },
+      {
+        "k": "C",
+        "text": "[[per-record]] chunking where each record is one chunk:",
+        "vi": "chunking theo bản ghi, mỗi bản ghi là một chunk",
+        "correct": false,
+        "why": "Mỗi bản ghi đã ngắn và tự đủ nghĩa, như một phiếu bảo hành hay một phiếu sự cố. Giữ mỗi bản ghi thành một chunk là vừa, không cần cắt nhỏ hơn.",
+        "pick": "Heterogeneous Short Records"
+      },
+      {
+        "k": "D",
+        "text": "semantic chunking along clause or [[paragraph]] boundaries:",
+        "vi": "chunking theo ngữ nghĩa, cắt ở ranh giới điều khoản hoặc đoạn văn",
+        "correct": false,
+        "why": "Điều khoản và đoạn văn là cấu trúc của văn bản dài như hợp đồng, chính sách. Cắt ở ranh giới đó thì mỗi chunk trọn một ý.",
+        "pick": "Long Structured Documents"
+      },
+      {
+        "k": "E",
+        "text": "fixed-size chunking with overlap for short [[records]] of similar length:",
+        "vi": "chunking kích thước cố định có phần chồng lấn, cho các bản ghi ngắn dài gần bằng nhau",
+        "correct": false,
+        "why": "Dòng này nói rõ *short records* dài gần bằng nhau, nên cắt theo một kích thước cố định là vừa. Phần chồng lấn (overlap) giữ lại ý nằm vắt qua chỗ cắt.",
+        "pick": "Heterogeneous Short Records"
+      },
+      {
+        "k": "F",
+        "text": "hierarchical chunking that mirrors [[document]] section structure:",
+        "vi": "chunking phân cấp, phản chiếu cấu trúc các mục của tài liệu",
+        "correct": false,
+        "why": "Cũng chia theo cấp, nhưng cấp ở đây là chương, mục, tiểu mục của một tài liệu dài, không phải cấu trúc của code.",
+        "pick": "Long Structured Documents"
+      }
+    ],
+    "answer": "A: Code or Hierarchical Specs · B: Code or Hierarchical Specs · C: Heterogeneous Short Records · D: Long Structured Documents · E: Heterogeneous Short Records · F: Long Structured Documents",
+    "tip": {
+      "trigger": "paragraph · document | per-record · records | code",
+      "choice": "Long Structured Documents | Heterogeneous Short Records | Code or Hierarchical Specs",
+      "note": "Coi chừng dòng cuối: chữ *hierarchical* gợi tới nhóm Code or Hierarchical Specs, nhưng thứ được chia theo cấp ở đây là các mục của **document**, nên chọn Long Structured Documents.",
+      "rules": [
+        {
+          "trigger": "paragraph · document",
+          "choice": "Long Structured Documents"
+        },
+        {
+          "trigger": "per-record · records",
+          "choice": "Heterogeneous Short Records"
+        },
+        {
+          "trigger": "code",
+          "choice": "Code or Hierarchical Specs"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chọn cách chia chunk hợp với từng loại tài liệu",
+      "text": "Trong RAG, tài liệu được chia thành từng đoạn nhỏ (**chunk**) để tìm kiếm. Đề đưa 6 cách chia, bạn chọn mỗi cách hợp nhất với loại tài liệu nào: tài liệu dài có cấu trúc (**Long Structured Documents**), nhiều bản ghi ngắn, rời rạc (**Heterogeneous Short Records**), hay code và đặc tả phân cấp (**Code or Hierarchical Specs**)."
+    },
+    "lessons": [
+      "Bài 3.5 · Chia chunk theo hình dạng dữ liệu"
+    ]
+  },
+  {
+    "n": 23,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "type": "matrix",
+    "q": "You are evaluating prompting claims in a peer's design document.\nFor each claim, select yes if the claim reflects sound practice. Otherwise, select no.",
+    "q_vi": "Bạn đang đánh giá các nhận định về prompting trong tài liệu thiết kế của một đồng nghiệp.\nVới mỗi nhận định, chọn Yes nếu nó phản ánh cách làm đúng. Ngược lại, chọn No.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Zero-shot is appropriate as a starting point for closed-set classification when categories and descriptions are provided in the prompt.",
+        "vi": "Zero-shot là điểm khởi đầu phù hợp cho phân loại tập đóng khi các nhóm và mô tả đã có sẵn trong prompt.",
+        "correct": false,
+        "why": "Prompt đã có sẵn danh sách nhóm kèm mô tả thì model đủ thông tin để phân loại mà chưa cần ví dụ. Thử zero-shot trước, kết quả chưa ổn mới thêm ví dụ.",
+        "pick": "Yes"
+      },
+      {
+        "k": "B",
+        "text": "Adding a few-shot example set with exact field names anchors output formatting on extraction tasks.",
+        "vi": "Thêm một bộ ví dụ few-shot với đúng tên field giúp neo định dạng đầu ra cho tác vụ trích xuất.",
+        "correct": false,
+        "why": "Ví dụ few-shot cho model thấy đầu ra phải trông ra sao. Ví dụ dùng tên field nào thì model trả về chính tên field đó.",
+        "pick": "Yes"
+      },
+      {
+        "k": "C",
+        "text": "[[Chain-of-thought should be the default]] on every task regardless of complexity.",
+        "vi": "Chain-of-thought nên là mặc định cho mọi tác vụ bất kể độ phức tạp.",
+        "correct": false,
+        "why": "Không nên bật cho mọi việc: chain-of-thought (bắt model suy luận từng bước) chỉ có ích với việc khó. Việc đơn giản mà bật lên thì chỉ tốn thêm token và thời gian.",
+        "pick": "No"
+      },
+      {
+        "k": "D",
+        "text": "Leading-question framing is best mitigated by asking for an even-handed comparison with stated criteria.",
+        "vi": "Câu hỏi dẫn dắt được khắc phục tốt nhất bằng cách yêu cầu so sánh công bằng với các tiêu chí nêu rõ.",
+        "correct": false,
+        "why": "Câu hỏi dẫn dắt (kiểu \"A tốt hơn B phải không?\") kéo model về một phía. Yêu cầu so sánh công bằng theo tiêu chí nêu rõ thì câu trả lời khách quan hơn.",
+        "pick": "Yes"
+      },
+      {
+        "k": "E",
+        "text": "[[Behavioral differences across model versions]] can be ignored once a prompt has been validated on one version.",
+        "vi": "Khác biệt hành vi giữa các phiên bản model có thể bỏ qua khi prompt đã được kiểm chứng trên một phiên bản.",
+        "correct": false,
+        "why": "Không bỏ qua được: đổi phiên bản model thì cách model hiểu prompt có thể đổi. Prompt chạy tốt trên bản cũ vẫn phải kiểm lại trên bản mới.",
+        "pick": "No"
+      }
+    ],
+    "answer": "A: Yes · B: Yes · C: No · D: Yes · E: No",
+    "tip": {
+      "trigger": "Chain-of-thought should be the default · Behavioral differences across model versions",
+      "choice": "No",
+      "note": "Còn lại chọn **Yes**\nNhận định **nói quá** thì chọn No: CoT làm **mặc định cho mọi tác vụ**, khác biệt giữa các phiên bản model **bỏ qua được**. Cách làm hợp lý luôn gắn với tình huống cụ thể.",
+      "rules": [
+        {
+          "trigger": "Chain-of-thought should be the default · Behavioral differences across model versions",
+          "choice": "No"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Nhận định nào về prompting là cách làm hợp lý",
+      "text": "Đề đưa 5 nhận định trong tài liệu thiết kế của đồng nghiệp. Cách làm hợp lý thì chọn Yes, nhận định nói quá thì chọn No."
+    },
+    "choices": [
+      "Yes",
+      "No"
+    ],
+    "lessons": [
+      "Bài 2.3 · Chain-of-thought và thinking"
+    ]
+  },
+  {
+    "n": 24,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": false,
+    "q": "You are assessing a Claude-based system whose dominant risk is [[silent quality drift]] on safetyrelevant outputs [[after a model-version upgrade]].\nWhich assessment activity most directly addresses this risk?",
+    "q_vi": "Bạn đang đánh giá một hệ thống chạy trên Claude có rủi ro lớn nhất là chất lượng âm thầm trôi đi ở các đầu ra liên quan an toàn sau khi nâng phiên bản model.\nHoạt động đánh giá nào xử lý rủi ro này trực tiếp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Disable adversarial evaluation entirely during model-version upgrade cycles to reduce evaluation cost, accepting that safety drift will go undetected until it appears in production.",
+        "vi": "Tắt hẳn đánh giá adversarial trong các đợt nâng phiên bản model để giảm chi phí đánh giá, chấp nhận việc an toàn bị trôi sẽ không được phát hiện cho tới khi lộ ra ở production.",
+        "correct": false,
+        "why": "**Tắt hẳn adversarial evaluation** lúc upgrade là bỏ đúng công cụ cần để bắt drift — đi ngược mục tiêu."
+      },
+      {
+        "k": "B",
+        "text": "Rotate adversarial inputs randomly so no two upgrades are scored on the same set.",
+        "vi": "Xoay vòng ngẫu nhiên đầu vào adversarial để không hai đợt nâng cấp nào được chấm trên cùng một bộ.",
+        "correct": false,
+        "why": "**Đổi ngẫu nhiên input mỗi lần** khiến các version **không còn so sánh được trên cùng một chuẩn**, nên mất khả năng phát hiện suy giảm."
+      },
+      {
+        "k": "C",
+        "text": "Skip evaluation on each model-version upgrade and rely on user-submitted complaints to surface safety drift after the upgraded model has already served production traffic.",
+        "vi": "Bỏ đánh giá ở mỗi đợt nâng phiên bản và dựa vào khiếu nại của người dùng để phát hiện an toàn bị trôi sau khi model mới đã phục vụ traffic production.",
+        "correct": false,
+        "why": "**Bỏ qua eval, chờ complaint từ user** nghĩa là drift chỉ lộ ra **sau khi đã phục vụ traffic thật** — quá muộn với output liên quan an toàn."
+      },
+      {
+        "k": "D",
+        "text": "Maintain an adversarial evaluation set with [[version-attributed scoring]] so each upgrade is measured against the [[same set before promotion]].",
+        "vi": "Duy trì một bộ đánh giá adversarial với điểm ghi theo phiên bản, để mỗi đợt nâng cấp được đo trên cùng bộ đó trước khi đưa lên.",
+        "correct": true,
+        "why": "Đúng vì duy trì **một bộ adversarial eval cố định, chấm điểm gắn theo từng version**, giúp mỗi lần upgrade được **đo trên cùng bộ đó trước khi promote** — có baseline so sánh ngang hàng qua các version nên phát hiện được drift trước khi ảnh hưởng người dùng."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "silent quality drift · after a model-version upgrade",
+      "choice": "version-attributed scoring · same set before promotion",
+      "note": "Chống drift = **bộ test cố định + version-attributed scoring, đo trước khi promote**. Đổi bộ test liên tục (đáp án B) hay chờ complaint (đáp án C) đều làm mất khả năng so sánh.",
+      "rules": [
+        {
+          "trigger": "silent quality drift · after a model-version upgrade",
+          "choice": "version-attributed scoring · same set before promotion"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chống drift chất lượng âm thầm sau upgrade model — cần bộ test cố định, không phải phản ứng bị động",
+      "text": "Rủi ro chính: **drift chất lượng âm thầm trên output liên quan an toàn, sau khi upgrade model version**. Cần chọn hoạt động đánh giá chủ động, phát hiện được trước khi lên production."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.6 · Theo dõi chất lượng theo thời gian"
+    ]
+  },
+  {
+    "n": 25,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "You are responding to an adversarial input pattern in which users include text [[claiming admin authority]] and instructing the model to bypass safety restrictions.\nWhich combination of controls most effectively mitigates this attack pattern?",
+    "q_vi": "Bạn đang xử lý một mẫu đầu vào tấn công, trong đó người dùng chèn chữ tự nhận có quyền admin và bảo model bỏ qua các giới hạn an toàn.\nTổ hợp biện pháp nào giảm thiểu kiểu tấn công này hiệu quả nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Trusting that the model will intrinsically recognize and reject all bypass attempts without promptlevel instructions, runtime classifiers, scoped permissions, or audit logging.",
+        "vi": "Tin rằng model tự nhận ra và từ chối mọi nỗ lực vượt rào mà không cần chỉ dẫn ở prompt, bộ phân loại lúc chạy, quyền khoanh vùng hay audit log.",
+        "correct": false,
+        "why": "Tin rằng **model tự nhận diện được** mà không cần lớp kiểm soát nào — đặt cược toàn bộ an toàn vào hành vi mô hình, không có kiểm soát thật."
+      },
+      {
+        "k": "B",
+        "text": "Prompt-level instructions that [[treat user content as untrusted data]], runtime classifiers that detect override attempts, scoped tool permissions that [[cannot be elevated by user content]], and audit logging of attempts.",
+        "vi": "Chỉ dẫn ở mức prompt coi nội dung của người dùng là dữ liệu không tin cậy, bộ phân loại lúc chạy phát hiện nỗ lực ghi đè, quyền tool khoanh vùng không thể bị nội dung người dùng nâng lên, và audit log ghi lại các nỗ lực.",
+        "correct": true,
+        "why": "Đúng vì kết hợp 4 lớp phòng thủ: prompt-level instructions **coi nội dung user là dữ liệu không tin cậy**, runtime classifier phát hiện override, quyền tool **scoped và không thể bị nâng cấp bởi nội dung user**, cùng audit log ghi lại các lần thử — phòng thủ theo chiều sâu, không dựa vào một cơ chế duy nhất."
+      },
+      {
+        "k": "C",
+        "text": "Removing all safety restrictions and guardrails to eliminate the attack surface that bypass attempts target, accepting that this makes the assistant unrestricted for all inputs.",
+        "vi": "Bỏ hết giới hạn an toàn và guardrail để xoá bề mặt mà các nỗ lực vượt rào nhắm vào, chấp nhận trợ lý không còn giới hạn với mọi đầu vào.",
+        "correct": false,
+        "why": "**Gỡ hết guardrail** để 'xoá bề mặt tấn công' khiến hệ thống mất phòng thủ hoàn toàn — cực đoan theo hướng ngược lại."
+      },
+      {
+        "k": "D",
+        "text": "Granting users any privilege level they assert in their message content, on the assumption that cooperative behavior requires honoring self-declared authority without independent verification.",
+        "vi": "Cấp cho người dùng mọi mức quyền họ tự nhận trong tin nhắn, với giả định hợp tác nghĩa là phải tôn trọng quyền tự xưng mà không kiểm chứng độc lập.",
+        "correct": false,
+        "why": "**Cấp quyền theo đúng những gì user tự xưng** trong nội dung tin nhắn chính là lỗ hổng bị khai thác, không phải cách phòng thủ."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "claiming admin authority",
+      "choice": "treat user content as untrusted data · cannot be elevated by user content",
+      "note": "Chống giả danh quyền = **coi input là untrusted + classifier + quyền không tự nâng được + log**, nhiều lớp cùng lúc. Đừng tin mù quáng vào model (đáp án A) hay tin tuyệt đối lời user tự xưng (đáp án D).",
+      "rules": [
+        {
+          "trigger": "claiming admin authority",
+          "choice": "treat user content as untrusted data · cannot be elevated by user content"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Prompt injection giả danh admin — phòng thủ nhiều lớp, không đặt cược vào một điểm",
+      "text": "Kẻ tấn công chèn text **tự xưng quyền admin, yêu cầu bỏ qua safety**. Cần chọn tổ hợp kiểm soát chặn hiệu quả nhất."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.1 · Xếp lớp, không dựa vào một lớp"
+    ]
+  },
+  {
+    "n": 26,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": true,
+    "q": "An operations engineer reports that a Claude-based pipeline began returning malformed JSON responses [[after a scheduled maintenance window]], causing downstream processing failures.\nWhich two investigative steps most directly isolate the root cause? (Select two.)",
+    "q_vi": "Một kỹ sư vận hành báo một pipeline chạy trên Claude bắt đầu trả JSON hỏng sau một đợt bảo trì định kỳ, làm hỏng các bước xử lý phía sau.\nHai bước điều tra nào khoanh vùng nguyên nhân gốc trực tiếp nhất? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Clear the prompt cache and resubmit all pending requests to eliminate stale cached prefixes.",
+        "vi": "Xoá prompt cache và gửi lại mọi request đang chờ để loại các prefix cache đã cũ.",
+        "correct": false,
+        "why": "Xoá cache rồi gửi lại có thể làm lỗi tạm hết, nhưng không cho biết nguyên nhân, và lỗi có thể quay lại."
+      },
+      {
+        "k": "B",
+        "text": "[[Compare]] the current system prompt and output schema configuration against the last known good version from before the maintenance window.",
+        "vi": "So system prompt và cấu hình output schema hiện tại với bản chạy tốt gần nhất trước đợt bảo trì.",
+        "correct": true,
+        "why": "Lỗi xuất hiện đúng sau bảo trì, nên nghi trước hết là cấu hình đã bị đổi trong đợt đó. Đặt **system prompt và cấu hình output schema** hiện tại cạnh bản chạy tốt gần nhất trước bảo trì (**last known good**): chỗ nào khác nhau là chỗ đáng nghi số một."
+      },
+      {
+        "k": "C",
+        "text": "Switch to a different Claude model tier to rule out provider-side changes as a contributing factor.",
+        "vi": "Chuyển sang model tier Claude khác để loại trừ thay đổi phía nhà cung cấp là một nguyên nhân.",
+        "correct": false,
+        "why": "Đổi model tier là đổi vội, lại thêm một biến mới. Lỗi xảy ra ngay sau đợt bảo trì, nên cấu hình đáng nghi hơn phía nhà cung cấp."
+      },
+      {
+        "k": "D",
+        "text": "Increase the max_tokens limit to determine whether output truncation is causing incomplete JSON structures.",
+        "vi": "Tăng giới hạn max_tokens để xác định đầu ra bị cắt có phải là nguyên nhân làm JSON thiếu không.",
+        "correct": false,
+        "why": "Tăng max_tokens chỉ thử một giả thuyết (JSON bị cắt giữa chừng) bằng cách chỉnh tham số, không phải cách khoanh vùng nguyên nhân."
+      },
+      {
+        "k": "E",
+        "text": "[[Replay]] a set of premaintenance requests against the current configuration and inspect the raw model output before downstream parsing.",
+        "vi": "Chạy lại một bộ request từ trước đợt bảo trì với cấu hình hiện tại và xem đầu ra thô của model trước bước parse phía sau.",
+        "correct": true,
+        "why": "Lấy các request đã chạy tốt trước bảo trì, **replay** trên cấu hình hiện tại và đọc **raw output** của model trước khi parser xử lý. Raw output đã hỏng thì lỗi ở model hoặc prompt; raw output đúng mà vẫn lỗi thì lỗi ở bước parse phía sau."
+      }
+    ],
+    "answer": "B, E",
+    "tip": {
+      "trigger": "after a scheduled maintenance window",
+      "choice": "Compare · Replay",
+      "note": "**Dạng tìm nguyên nhân** (đề hỏi *root cause, diagnostic*): chọn bước **so sánh, chạy lại cho lỗi hiện ra, hoặc soi tận nơi**: Compare · Replay · Reproduce · Inspect.\nBẫy: **chỉnh tham số** (Increase, Reduce temperature, max_tokens, context), **đổi luôn cho xong** (Switch, Roll back, Clear cache), báo nhà cung cấp trước khi tự chạy lại, hoặc đụng vào phần đề nói **không thay đổi**.\nỞ câu này, lỗi xuất hiện ngay sau bảo trì nên đáp án B **Compare** cấu hình với bản chạy tốt trước đó, đáp án E **Replay** request cũ và đọc raw output. Đáp án A xoá cache, C đổi model là đổi luôn cho xong; D tăng max_tokens là chỉnh tham số.",
+      "rules": [
+        {
+          "trigger": "after a scheduled maintenance window",
+          "choice": "Compare · Replay"
+        }
+      ]
+    },
+    "ask": {
+      "title": "JSON hỏng ngay sau đợt bảo trì: khoanh vùng nguyên nhân",
+      "text": "Pipeline bắt đầu trả JSON sai định dạng **ngay sau một đợt bảo trì theo lịch**, làm hỏng các bước xử lý phía sau. Đề hỏi hai bước điều tra khoanh vùng được nguyên nhân."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.4 · Lỗi prompt: làm đúng chữ, sai ý"
+    ]
+  },
+  {
+    "n": 27,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "Engineering leadership wants to roll out Claude Skills to 280 developers across 14 teams. Skills will encode internal coding standards, code-review checklists, and incident-postmortem templates. Leadership has asked how to govern Skill authorship so that Skills remain [[trustworthy without bottlenecking]] on a single central team.\nWhich governance model should you recommend?",
+    "q_vi": "Lãnh đạo kỹ thuật muốn triển khai Claude Skills cho 280 developer thuộc 14 nhóm. Skills sẽ chứa chuẩn code nội bộ, checklist review code và mẫu postmortem sự cố. Lãnh đạo hỏi nên quản lý việc soạn Skill thế nào để Skills luôn đáng tin cậy mà không nghẽn ở một nhóm trung tâm duy nhất.\nBạn nên đề xuất mô hình quản trị nào?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Per-developer authorship across the 280 engineers with no team-level coordination required.",
+        "vi": "Mỗi developer trong 280 kỹ sư tự soạn, không cần phối hợp ở mức nhóm.",
+        "correct": false,
+        "why": "Mỗi trong 280 dev tự viết, **không cần phối hợp cấp team nào** — không ai kiểm soát chất lượng, dễ loạn chuẩn."
+      },
+      {
+        "k": "B",
+        "text": "Centralized authorship by a single platform team responsible for every Skill produced.",
+        "vi": "Soạn tập trung bởi một nhóm platform duy nhất chịu trách nhiệm mọi Skill được tạo ra.",
+        "correct": false,
+        "why": "Một team trung tâm **chịu trách nhiệm viết mọi Skill** — chính là bottleneck mà đề bài muốn tránh."
+      },
+      {
+        "k": "C",
+        "text": "Fully decentralized authorship across the 14 teams with no review before publication.",
+        "vi": "Soạn phi tập trung hoàn toàn trên 14 nhóm, không review trước khi phát hành.",
+        "correct": false,
+        "why": "14 team tự do viết **không qua review trước khi publish** — mất đúng yếu tố 'trustworthy' mà đề bài yêu cầu."
+      },
+      {
+        "k": "D",
+        "text": "[[Federated authorship]] across the 14 teams with a [[central review and publication gate]].",
+        "vi": "Soạn liên kết (federated) trên 14 nhóm, có một cổng review và phát hành tập trung.",
+        "correct": true,
+        "why": "Đúng vì **federated authorship: mỗi team tự viết Skill của mình, nhưng có một cổng review + publish tập trung** — vừa phân tán công sức viết (không bottleneck) vừa giữ một điểm kiểm soát chất lượng chung (vẫn đáng tin cậy)."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "trustworthy without bottlenecking",
+      "choice": "Federated authorship · central review and publication gate",
+      "note": "Quy mô lớn, cần vừa nhanh vừa tin cậy: **viết phân tán (federated), duyệt tập trung (gate)**. Toàn phân tán (đáp án C) thì mất kiểm soát; toàn tập trung (đáp án B) thì thành bottleneck.",
+      "rules": [
+        {
+          "trigger": "trustworthy without bottlenecking",
+          "choice": "Federated authorship · central review and publication gate"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Governance cho Skill authorship quy mô lớn — federated + gate trung tâm",
+      "text": "280 dev / 14 team cùng viết Skill mã hoá coding standard, checklist, postmortem. Cần **đáng tin cậy mà không bottleneck vào một team trung tâm**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Triển khai cho cả đội từng bước"
+    ]
+  },
+  {
+    "n": 28,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are transitioning a Claude-based deployment from design into implementation. Which [[handoff package]] most directly supports a clean transition?",
+    "q_vi": "Bạn đang chuyển một triển khai chạy trên Claude từ giai đoạn thiết kế sang giai đoạn cài đặt. Gói bàn giao nào hỗ trợ trực tiếp nhất cho việc chuyển giao gọn gàng?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The most recent set of design presentation slides without component-level diagrams, interface contracts, an evaluation framework with a reference set, runbooks, or a known-limitations register.",
+        "vi": "Bộ slide trình bày thiết kế gần nhất, không có sơ đồ mức component, hợp đồng interface, khung đánh giá kèm tập tham chiếu, runbook hay danh sách giới hạn đã biết.",
+        "correct": false,
+        "why": "Chỉ có slide trình bày, **thiếu diagram cấp component, interface contract, eval framework, runbook, hay known-limitations** — không đủ để implement đúng."
+      },
+      {
+        "k": "B",
+        "text": "A verbal walkthrough conducted on the day of handoff with no written architecture overview, ADRs, component contracts, evaluation framework, runbooks, playbook, or known limitations.",
+        "vi": "Một buổi trình bày miệng vào ngày bàn giao, không có tổng quan kiến trúc bằng văn bản, ADR, hợp đồng component, khung đánh giá, runbook, playbook hay giới hạn đã biết.",
+        "correct": false,
+        "why": "Chỉ nói miệng ngày bàn giao, **không có tài liệu kiến trúc, ADR, contract, eval, runbook, playbook** nào bằng văn bản — mất hết ngay khi người nói rời đi."
+      },
+      {
+        "k": "C",
+        "text": "Architecture overview, ADRs, component contracts, [[evaluation framework with reference set]], runbooks, on-call playbook, and known limitations.",
+        "vi": "Tổng quan kiến trúc, ADR, hợp đồng component, khung đánh giá kèm tập tham chiếu, runbook, playbook trực sự cố và các giới hạn đã biết.",
+        "correct": true,
+        "why": "Đúng vì gói đầy đủ gồm **architecture overview, ADRs, component contracts, evaluation framework kèm reference set, runbooks, on-call playbook, và known limitations** — đủ để đội triển khai hiểu kiến trúc, lý do các quyết định, cách đo chất lượng, và cách vận hành khi có sự cố."
+      },
+      {
+        "k": "D",
+        "text": "Source code alone with no integrating architecture overview, ADRs, component contracts, evaluation framework, runbooks, on-call playbook, or known-limitations register to support the delivery team.",
+        "vi": "Chỉ có source code, không có tổng quan kiến trúc tổng hợp, ADR, hợp đồng component, khung đánh giá, runbook, playbook trực sự cố hay danh sách giới hạn đã biết để hỗ trợ nhóm triển khai.",
+        "correct": false,
+        "why": "Chỉ đưa source code, **không kèm tài liệu kiến trúc/ADR/contract/eval/runbook/playbook/known-limitations** nào — code không tự giải thích được quyết định thiết kế hay cách vận hành."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "handoff package",
+      "choice": "evaluation framework with reference set",
+      "note": "Handoff sạch = **đủ bộ 7 thành phần** (kiến trúc, ADR, contract, eval, runbook, playbook, limitations). Thiếu phần nào (A/B/D đều thiếu gần hết) là bàn giao hỏng.",
+      "rules": [
+        {
+          "trigger": "handoff package",
+          "choice": "evaluation framework with reference set"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Handoff package chuẩn khi chuyển từ design sang implementation",
+      "text": "Cần chọn gói bàn giao **hỗ trợ chuyển giao sạch sẽ nhất** từ thiết kế sang triển khai."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.4 · Gói bàn giao để đội triển khai tự làm được"
+    ]
+  },
+  {
+    "n": 29,
+    "topic": "Integration",
+    "multi": true,
+    "q": "A security audit uncovers two issues: (1) all end users [[share a single API key]], and (2) tool calls are executed [[without logging the initiating user]]. Which two mitigations directly address these specific findings? (Select two.)",
+    "q_vi": "Một đợt kiểm tra bảo mật phát hiện hai vấn đề: (1) mọi người dùng cuối dùng chung một API key, và (2) lời gọi tool được thực hiện mà không ghi log người khởi tạo. Hai biện pháp nào xử lý trực tiếp đúng các phát hiện này? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Validate structured outputs against a schema before downstream actions are executed.",
+        "vi": "Kiểm đầu ra có cấu trúc theo schema trước khi thực hiện các hành động phía sau.",
+        "correct": false,
+        "why": "Kiểm output theo schema giữ cho kết quả của model đúng định dạng, không liên quan đến key dùng chung hay việc ghi log người gọi."
+      },
+      {
+        "k": "B",
+        "text": "Enforce RBAC at the retrieval layer before content enters the model context.",
+        "vi": "Áp RBAC ở tầng truy xuất trước khi nội dung vào context của model.",
+        "correct": false,
+        "why": "Phân quyền ở bước truy xuất kiểm soát dữ liệu nào được đưa vào context, không vá được key dùng chung hay log thiếu người gọi."
+      },
+      {
+        "k": "C",
+        "text": "Move credentials out of the prompt context and resolve them from a server-side secret store.",
+        "vi": "Đưa credential ra khỏi context của prompt và lấy từ secret store ở server.",
+        "correct": false,
+        "why": "Đưa credential ra khỏi prompt là để credential không lộ qua log và trace. Đó là một lỗ hổng khác, không phải hai vấn đề kiểm toán tìm ra."
+      },
+      {
+        "k": "D",
+        "text": "Add [[actor attribution]] to tool-call logs so each call records the initiating user identity.",
+        "vi": "Thêm thông tin người thực hiện vào log lời gọi tool để mỗi lời gọi ghi lại danh tính người khởi tạo.",
+        "correct": true,
+        "why": "Vá vấn đề thứ hai. **Actor attribution** là ghi kèm danh tính người dùng vào log của mỗi tool call. Khi có sự cố, nhìn log là biết ai đã yêu cầu hành động đó."
+      },
+      {
+        "k": "E",
+        "text": "Replace the shared API key with [[per-user OAuth tokens]] carrying scope-restricted permissions.",
+        "vi": "Thay API key dùng chung bằng OAuth token theo từng người dùng mang quyền giới hạn theo scope.",
+        "correct": true,
+        "why": "Vá vấn đề thứ nhất. Mỗi người dùng có **OAuth token** riêng thay cho một key chung, mỗi token chỉ mang đúng quyền người đó cần. Lộ một token chỉ ảnh hưởng một người, và hệ thống phân biệt được ai đang gọi."
+      }
+    ],
+    "answer": "D, E",
+    "tip": {
+      "trigger": "without logging the initiating user · share a single API key",
+      "choice": "actor attribution · per-user OAuth tokens",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó.\nBẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra.\nỞ câu này, đề nói tool call chạy **without logging the initiating user** nên đáp án D thêm **actor attribution** vào log; đề nói mọi người **share a single API key** nên đáp án E đổi sang **per-user OAuth tokens**. Đáp án A, B, C đều là biện pháp tốt nhưng cho vấn đề khác.",
+      "rules": [
+        {
+          "trigger": "without logging the initiating user · share a single API key",
+          "choice": "actor attribution · per-user OAuth tokens"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Kiểm toán tìm ra hai lỗ hổng: chọn đúng biện pháp vá từng cái",
+      "text": "Đợt kiểm toán bảo mật tìm ra đúng hai vấn đề: **mọi người dùng chung một API key**, và **tool call không ghi lại ai đã gọi**. Đề hỏi hai biện pháp vá thẳng hai vấn đề này, không phải biện pháp bảo mật chung chung."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.2 · Hai câu hỏi: ai đang gọi, và được làm gì"
+    ]
+  },
+  {
+    "n": 30,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "An architect is reviewing a Claude-based candidate-screening tool prior to deployment. A stakeholder asserts that because the model was not trained on company data, [[no bias evaluation is necessary]]. Which two responses most accurately challenge this assertion? (Select two.)",
+    "q_vi": "Một kiến trúc sư đang review một tool sàng lọc ứng viên chạy trên Claude trước khi triển khai. Một bên liên quan khẳng định vì model không được huấn luyện trên dữ liệu công ty nên không cần đánh giá thiên lệch. Hai phản hồi nào phản bác khẳng định này chính xác nhất? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Transparency obligations are satisfied by disclosing that an AI system is in use, without further evaluation.",
+        "vi": "Nghĩa vụ minh bạch đã được đáp ứng khi công bố có dùng hệ thống AI, không cần đánh giá thêm.",
+        "correct": false,
+        "why": "Thông báo là có dùng AI chỉ đáp ứng yêu cầu minh bạch, không cho biết kết quả sàng lọc có thiên lệch hay không. Câu này vẫn đồng ý là khỏi đánh giá."
+      },
+      {
+        "k": "B",
+        "text": "Fairness testing is required only when the training dataset is known to contain protected-class labels.",
+        "vi": "Chỉ cần test công bằng khi biết tập huấn luyện có nhãn về nhóm được bảo vệ.",
+        "correct": false,
+        "why": "Cho rằng chỉ cần kiểm tra công bằng khi dữ liệu huấn luyện có nhãn nhóm được bảo vệ là sai: bias vẫn có thể có dù dữ liệu không có nhãn nào."
+      },
+      {
+        "k": "C",
+        "text": "The model may carry demographic [[biases from pretraining]] that manifest in screening outcomes regardless of fine-tuning.",
+        "vi": "Model có thể mang thiên lệch nhân khẩu học từ giai đoạn pretraining và lộ ra trong kết quả sàng lọc bất kể có fine-tune hay không.",
+        "correct": true,
+        "why": "Bias không chỉ đến từ dữ liệu của công ty. Lúc **pretraining**, model đã học từ lượng văn bản khổng lồ, trong đó có sẵn định kiến về giới tính, tuổi, dân tộc. Những định kiến này vẫn có thể lộ ra khi sàng lọc hồ sơ, dù có fine-tune hay không."
+      },
+      {
+        "k": "D",
+        "text": "The system [[should be evaluated]] on outcome-disparity metrics across protected groups before deployment.",
+        "vi": "Hệ thống nên được đánh giá bằng các chỉ số chênh lệch kết quả giữa các nhóm được bảo vệ trước khi triển khai.",
+        "correct": true,
+        "why": "Muốn biết có bias hay không thì phải đo trên kết quả thật: so tỉ lệ ứng viên được chọn giữa các **nhóm được pháp luật bảo vệ** (**outcome disparity**), và đo trước khi triển khai. Dựa vào số đo, không suy đoán từ nguồn gốc dữ liệu."
+      },
+      {
+        "k": "E",
+        "text": "Bias evaluation is unnecessary when the model provider has published a responsible-use policy.",
+        "vi": "Không cần đánh giá thiên lệch khi nhà cung cấp model đã công bố chính sách sử dụng có trách nhiệm.",
+        "correct": false,
+        "why": "Nhà cung cấp có chính sách sử dụng có trách nhiệm là cam kết trên giấy, không phải kết quả đo trên hệ thống của bạn."
+      }
+    ],
+    "answer": "C, D",
+    "tip": {
+      "trigger": "no bias evaluation is necessary",
+      "choice": "biases from pretraining · should be evaluated",
+      "note": "**Dạng phản biện** (có người kết luận vội, đề hỏi challenge, findings, objections): chọn câu chỉ ra kết luận đó **chưa có căn cứ** (does not establish · does not by itself · poor proxy), hoặc đề nghị **đi đo, kiểm tra thật**.\nBẫy: **đồng ý** với kết luận (proves · sufficient · unnecessary · isolated), **đi quá đà** (disable · reject by default · nới ngưỡng), hoặc **chuyện bên lề** (mẫu nhỏ, khảo sát, pilot ngắn).\nỞ câu này, đáp án C chỉ ra model vẫn mang **biases from pretraining** dù không học dữ liệu công ty, nên như đáp án D nói, hệ thống vẫn **should be evaluated** bằng số đo chênh lệch kết quả. Đáp án A, B, E đều đồng ý là khỏi đo: chỉ cần thông báo, chỉ khi có nhãn, đã có chính sách.",
+      "rules": [
+        {
+          "trigger": "no bias evaluation is necessary",
+          "choice": "biases from pretraining · should be evaluated"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Không huấn luyện trên dữ liệu công ty vẫn phải đánh giá bias",
+      "text": "Công cụ sàng lọc ứng viên dùng Claude sắp triển khai. Một stakeholder cho rằng model **không được huấn luyện trên dữ liệu công ty nên không cần đánh giá bias**. Đề hỏi hai câu phản biện đúng."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.5 · Thiên lệch đi vào từ đâu",
+      "Bài 5.5 · Đo công bằng"
+    ]
+  },
+  {
+    "n": 31,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are distinguishing functional from [[non-functional requirement]]s during discovery. Which item is a non-functional requirement?",
+    "q_vi": "Bạn đang phân biệt yêu cầu chức năng với yêu cầu phi chức năng trong giai đoạn khảo sát. Mục nào là yêu cầu phi chức năng?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The system must extract a defined set of specific fields from invoice attachments and populate a downstream data record.",
+        "vi": "Hệ thống phải trích một tập field cụ thể đã định từ file đính kèm hoá đơn và điền vào bản ghi dữ liệu phía sau.",
+        "correct": false,
+        "why": "'Trích xuất field từ invoice' mô tả **hệ thống làm gì** — một chức năng cụ thể, là functional requirement."
+      },
+      {
+        "k": "B",
+        "text": "The system must produce a draft response that a human reviewer can edit before sending.",
+        "vi": "Hệ thống phải tạo bản nháp phản hồi mà người review sửa được trước khi gửi.",
+        "correct": false,
+        "why": "'Tạo draft để người review chỉnh sửa' cũng mô tả **một chức năng** — functional."
+      },
+      {
+        "k": "C",
+        "text": "The system must classify inbound tickets into a defined set of categories.",
+        "vi": "Hệ thống phải phân loại ticket đến vào một tập nhóm đã định.",
+        "correct": false,
+        "why": "'Phân loại ticket vào category' là **một chức năng phân loại** cụ thể — functional."
+      },
+      {
+        "k": "D",
+        "text": "The system must respond at [[p95 latency under 800 milliseconds]] at the expected request volume.",
+        "vi": "Hệ thống phải phản hồi với độ trễ p95 dưới 800 mili giây ở lượng request dự kiến.",
+        "correct": true,
+        "why": "Đúng vì **p95 latency dưới 800ms** mô tả chất lượng vận hành (tốc độ phản hồi), không mô tả một chức năng cụ thể nào — đây chính là non-functional requirement."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "non-functional requirement",
+      "choice": "p95 latency under 800 milliseconds",
+      "note": "Hỏi 'hệ thống làm Gì?' thì đó là functional (đáp án A, B, C). Hỏi 'làm TỐT tới đâu, nhanh ra sao?' thì đó là non-functional (đáp án D, về latency hay SLA).",
+      "rules": [
+        {
+          "trigger": "non-functional requirement",
+          "choice": "p95 latency under 800 milliseconds"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Functional vs Non-functional — nhận diện latency/SLA là NFR",
+      "text": "Cần phân biệt yêu cầu hệ thống làm gì (functional) với hệ thống làm tốt tới đâu (non-functional)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.1 · Yêu cầu chức năng và phi chức năng"
+    ]
+  },
+  {
+    "n": 32,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "type": "dropdown",
+    "choices": [
+      "Pre-Processing",
+      "Model Stage",
+      "Post-Processing"
+    ],
+    "q": "You are sequencing decomposed components in an invoice-processing pipeline. For each of the decomposed components, select the execution layer it belongs to: \"Pre-Processing,\" \"Model Stage,\" or \"Post-Processing.\"",
+    "q_vi": "Bạn đang sắp thứ tự các component đã tách ra trong một pipeline xử lý hoá đơn. Với mỗi component, chọn tầng thực thi mà nó thuộc về: \"Pre-Processing\", \"Model Stage\" hoặc \"Post-Processing\".",
+    "options": [
+      {
+        "k": "1",
+        "text": "[[Claude-based]] classification of invoice type",
+        "vi": "phân loại kiểu hoá đơn bằng Claude",
+        "correct": false,
+        "why": "Dòng này có chữ Claude-based: chính Claude đọc hoá đơn rồi cho biết nó thuộc loại nào.",
+        "pick": "Model Stage"
+      },
+      {
+        "k": "2",
+        "text": "[[persistence]] of validated records to the system of record",
+        "vi": "lưu các bản ghi đã kiểm vào hệ thống gốc (system of record)",
+        "correct": false,
+        "why": "Bản ghi được lưu là bản đã qua bước kiểm, nên đây là bước cuối cùng, sau khi model trả kết quả. System of record là hệ thống chính nơi doanh nghiệp giữ dữ liệu gốc.",
+        "pick": "Post-Processing"
+      },
+      {
+        "k": "3",
+        "text": "[[schema validation]] of the extracted fields",
+        "vi": "kiểm schema của các field đã trích",
+        "correct": false,
+        "why": "Model phải trích ra các field trước thì mới có cái để kiểm schema, nên bước này nằm sau model.",
+        "pick": "Post-Processing"
+      },
+      {
+        "k": "4",
+        "text": "[[Claude-based]] extraction of structured invoice fields",
+        "vi": "trích các field hoá đơn có cấu trúc bằng Claude",
+        "correct": false,
+        "why": "Lại có chữ Claude-based: Claude đọc hoá đơn và trích ra các field có cấu trúc, như số hoá đơn, ngày, tổng tiền.",
+        "pick": "Model Stage"
+      },
+      {
+        "k": "5",
+        "text": "[[PII redaction]] on extracted text prior to model invocation",
+        "vi": "che PII trong văn bản đã trích trước khi gọi model",
+        "correct": false,
+        "why": "Dòng này nói rõ prior to model invocation: che thông tin cá nhân (PII) trước khi gửi cho model. Chữ extracted text ở đây là chữ OCR đọc ra từ ảnh, không phải field do model trích, nên đừng xếp nhầm vào sau model.",
+        "pick": "Pre-Processing"
+      },
+      {
+        "k": "6",
+        "text": "[[optical character recognition]] on scanned invoice images",
+        "vi": "nhận dạng ký tự quang học (OCR) trên ảnh hoá đơn đã scan",
+        "correct": false,
+        "why": "Ảnh scan phải qua OCR thành chữ thì model mới đọc được, nên đây là việc làm đầu tiên.",
+        "pick": "Pre-Processing"
+      }
+    ],
+    "answer": "1: Model Stage · 2: Post-Processing · 3: Post-Processing · 4: Model Stage · 5: Pre-Processing · 6: Pre-Processing",
+    "tip": {
+      "trigger": "PII redaction · optical character recognition | Claude-based | persistence · schema validation",
+      "choice": "Pre-Processing | Model Stage | Post-Processing",
+      "note": "Đi theo đường dữ liệu: chuẩn bị cho model đọc, rồi Claude làm, rồi kiểm và lưu kết quả. Kiểm schema và lưu bản ghi dễ bị xếp vào tầng model vì nghe như một phần của việc trích xuất, nhưng cả hai đều làm trên kết quả Claude đã trả về.",
+      "rules": [
+        {
+          "trigger": "PII redaction · optical character recognition",
+          "choice": "Pre-Processing"
+        },
+        {
+          "trigger": "Claude-based",
+          "choice": "Model Stage"
+        },
+        {
+          "trigger": "persistence · schema validation",
+          "choice": "Post-Processing"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Xếp các bước xử lý hoá đơn vào trước, trong hay sau lượt gọi model",
+      "text": "Pipeline xử lý hoá đơn đã được tách thành 6 bước. Với mỗi bước, bạn chọn nó chạy ở tầng nào: trước khi gọi model (**Pre-Processing**), do Claude làm (**Model Stage**), hay sau khi model trả kết quả (**Post-Processing**)."
+    },
+    "lessons": [
+      "Bài 1.2 · Bốn tầng của hệ thống"
+    ]
+  },
+  {
+    "n": 33,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": true,
+    "q": "A pilot AI assistant for procurement specialists shows [[89 percent first-response acceptance]], but follow-up surveys reveal that specialists frequently override the assistant's vendor recommendations after considering [[criteria the assistant did not evaluate]]. The pilot owner wants to ship the assistant unchanged because of the strong acceptance rate. Which two Discernment-competency observations should you raise BEFORE approving the launch? (Select two.)",
+    "q_vi": "Một trợ lý AI thí điểm cho chuyên viên mua hàng có tỉ lệ chấp nhận câu trả lời đầu tiên 89%, nhưng khảo sát sau đó cho thấy chuyên viên thường gạt bỏ gợi ý nhà cung cấp của trợ lý sau khi cân nhắc các tiêu chí mà trợ lý không xét tới. Người phụ trách thí điểm muốn phát hành nguyên trạng vì tỉ lệ chấp nhận cao. Hai nhận xét nào thuộc năng lực Discernment bạn nên nêu TRƯỚC KHI duyệt phát hành? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "The acceptance rate alone proves readiness for general production use.",
+        "vi": "Chỉ riêng tỉ lệ chấp nhận đã chứng minh sẵn sàng cho việc dùng chung trên production.",
+        "correct": false,
+        "why": "Cho rằng riêng tỉ lệ chấp nhận đã đủ chứng minh sẵn sàng chính là kết luận vội của chủ dự án, không phải phản biện."
+      },
+      {
+        "k": "B",
+        "text": "The survey response rate may not be statistically representative of all specialists.",
+        "vi": "Tỉ lệ phản hồi khảo sát có thể không đại diện về mặt thống kê cho mọi chuyên viên.",
+        "correct": false,
+        "why": "Tỉ lệ trả lời khảo sát có đại diện hay không là chuyện bên lề. Vấn đề chính là trợ lý thiếu tiêu chí và được chấp nhận không đồng nghĩa với đúng."
+      },
+      {
+        "k": "C",
+        "text": "The unconsidered criteria represent a [[scope gap]] in the assistant's input space.",
+        "vi": "Các tiêu chí không được xét tới là một lỗ hổng phạm vi trong không gian đầu vào của trợ lý.",
+        "correct": true,
+        "why": "Chuyên viên phải tự xét thêm tiêu chí vì trợ lý không hề nhận được những thông tin đó, chứ không phải vì nó suy luận sai. Đây là **scope gap**: đầu vào của trợ lý thiếu những thứ cần để ra quyết định."
+      },
+      {
+        "k": "D",
+        "text": "Acceptance [[does not establish]] whether recommendations remain correct after specialist review.",
+        "vi": "Việc được chấp nhận không cho biết gợi ý còn đúng hay không sau khi chuyên viên xem xét.",
+        "correct": true,
+        "why": "Chuyên viên bấm chấp nhận câu trả lời đầu chỉ cho thấy nó nghe hợp lý lúc đó. Việc họ đổi lựa chọn sau khi xem kỹ cho thấy tỉ lệ chấp nhận **không chứng minh** được gợi ý còn đúng sau khi người có chuyên môn kiểm tra."
+      },
+      {
+        "k": "E",
+        "text": "The pilot duration was probably too short to demonstrate reliability across the full year.",
+        "vi": "Thời gian thí điểm có lẽ quá ngắn để chứng minh độ tin cậy suốt cả năm.",
+        "correct": false,
+        "why": "Đề không có dữ liệu nào cho thấy pilot quá ngắn. Đây là suy đoán bên lề, nghe hợp lý nhưng không bám tình huống."
+      }
+    ],
+    "answer": "C, D",
+    "tip": {
+      "trigger": "criteria the assistant did not evaluate · 89 percent first-response acceptance",
+      "choice": "scope gap · does not establish",
+      "note": "**Dạng phản biện** (có người kết luận vội, đề hỏi challenge, findings, objections): chọn câu chỉ ra kết luận đó **chưa có căn cứ** (does not establish · does not by itself · poor proxy), hoặc đề nghị **đi đo, kiểm tra thật**.\nBẫy: **đồng ý** với kết luận (proves · sufficient · unnecessary · isolated), **đi quá đà** (disable · reject by default · nới ngưỡng), hoặc **chuyện bên lề** (mẫu nhỏ, khảo sát, pilot ngắn).\nỞ câu này, đáp án C gọi đúng tên vấn đề: tiêu chí trợ lý không xét là một **scope gap**; đáp án D chỉ ra tỉ lệ chấp nhận cao **does not establish** gợi ý là đúng. Đáp án A đồng ý với kết luận (proves readiness); B khảo sát không đại diện, E pilot ngắn là chuyện bên lề.",
+      "rules": [
+        {
+          "trigger": "criteria the assistant did not evaluate · 89 percent first-response acceptance",
+          "choice": "scope gap · does not establish"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tỉ lệ chấp nhận cao chưa chứng minh trợ lý gợi ý đúng",
+      "text": "Trợ lý mua hàng có 89% câu trả lời đầu được chấp nhận ngay, nhưng khảo sát cho thấy chuyên viên **hay đổi nhà cung cấp mà trợ lý gợi ý, sau khi xét thêm những tiêu chí trợ lý không hề xem**. Chủ dự án muốn phát hành nguyên trạng. Đề hỏi hai nhận xét thuộc năng lực **Discernment** (đánh giá đúng chất lượng đầu ra của AI) nên nêu ra."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.1 · Chỉ số trông đẹp nhưng không chứng minh gì"
+    ]
+  },
+  {
+    "n": 34,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": true,
+    "q": "A revenue projection assistant has missed its monthly cost target by 38 percent. Profiling shows three contributors: a 6,000-token policy preamble repeated on every call (45 percent of cost), retrieval of historical sales chunks averaging 3,000 tokens per call (30 percent), and inference on a flagship-tier model (25 percent). Stakeholders require that projection [[accuracy remain unchanged]]. Which two optimizations should you sequence first to reduce cost without affecting accuracy? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Một trợ lý dự báo doanh thu vượt mục tiêu chi phí hằng tháng 38%. Phân tích cho thấy ba nguồn: một đoạn mở đầu chính sách 6.000 token lặp lại ở mọi lời gọi (45% chi phí), truy xuất các chunk doanh số lịch sử trung bình 3.000 token mỗi lời gọi (30%), và chạy trên model tier cao nhất (25%). Các bên liên quan yêu cầu độ chính xác dự báo giữ nguyên. Hai tối ưu nào nên làm trước để giảm chi phí mà không ảnh hưởng độ chính xác? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Reduce the number of historical sales chunks retrieved across each query run.",
+        "vi": "Giảm số chunk doanh số lịch sử được truy xuất trong mỗi lần chạy truy vấn.",
+        "correct": false,
+        "why": "Lấy ít chunk hơn thì model thấy ít dữ liệu lịch sử hơn, dự báo có thể kém đi. Phá ràng buộc giữ nguyên độ chính xác."
+      },
+      {
+        "k": "B",
+        "text": "Truncate the policy preamble to remove non-essential clauses from the prompt.",
+        "vi": "Cắt bớt đoạn mở đầu chính sách, bỏ các điều khoản không thiết yếu khỏi prompt.",
+        "correct": false,
+        "why": "Cắt bớt điều khoản trong preamble là đổi nội dung model dựa vào để suy luận, có thể làm đổi kết quả."
+      },
+      {
+        "k": "C",
+        "text": "[[Enable prompt caching]] on the static policy preamble across the recurring calls.",
+        "vi": "Bật prompt caching cho đoạn mở đầu chính sách tĩnh qua các lời gọi lặp lại.",
+        "correct": true,
+        "why": "Đoạn chính sách (preamble) giống hệt nhau ở mọi lần gọi, lại chiếm phần chi phí lớn nhất. **Prompt caching** lưu phần đầu prompt đã xử lý, các lần gọi sau đọc lại với giá rẻ hơn nhiều. Model vẫn nhận đúng nội dung cũ nên độ chính xác không đổi."
+      },
+      {
+        "k": "D",
+        "text": "Switch the workload to a smaller, faster Claude model tier across all queries.",
+        "vi": "Chuyển workload sang model tier Claude nhỏ và nhanh hơn cho mọi truy vấn.",
+        "correct": false,
+        "why": "Chuyển mọi truy vấn sang model nhỏ hơn là đổi thẳng năng lực suy luận, rủi ro cho độ chính xác lớn nhất trong các lựa chọn."
+      },
+      {
+        "k": "E",
+        "text": "[[Cache]] common retrieved sales chunks accessed across many of the daily queries.",
+        "vi": "Cache các chunk doanh số hay được truy xuất bởi nhiều truy vấn hằng ngày.",
+        "correct": true,
+        "why": "Nhiều câu hỏi trong ngày dùng lại cùng những chunk dữ liệu bán hàng. **Cache** các chunk hay dùng thì không phải truy xuất và xử lý lại chúng mỗi lần. Model vẫn thấy đúng dữ liệu như trước, chỉ bớt chi phí lặp."
+      }
+    ],
+    "answer": "C, E",
+    "tip": {
+      "trigger": "accuracy remain unchanged",
+      "choice": "Enable prompt caching · Cache",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó.\nBẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra.\nỞ câu này, ràng buộc **accuracy remain unchanged** nên chỉ được cache những phần lặp y hệt: đáp án C **Enable prompt caching** cho preamble, đáp án E **Cache** các chunk hay dùng. Đáp án A bớt chunk, B cắt preamble, D đổi model nhỏ đều làm đổi thứ model nhận được, phá ràng buộc.",
+      "rules": [
+        {
+          "trigger": "accuracy remain unchanged",
+          "choice": "Enable prompt caching · Cache"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Giảm chi phí mà độ chính xác phải giữ nguyên: dùng cache",
+      "text": "Trợ lý dự báo doanh thu vượt ngân sách 38%. Chi phí đến từ: đoạn chính sách 6.000 token lặp lại ở mọi lần gọi (**45%**), các chunk dữ liệu bán hàng truy xuất (30%), và model hạng cao nhất (25%). Ràng buộc: **độ chính xác dự báo không được đổi**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.5 · Bước 2: các khoản không mất chất lượng"
+    ]
+  },
+  {
+    "n": 35,
+    "topic": "Integration",
+    "multi": false,
+    "q": "A technical team is debating whether to implement a new capability for generating regulatory filings from internal data as a Claude Skill or as an MCP server. The capability requires a fixed authoring procedure with embedded examples, does not need to call live external systems, and must be portable across three Claude deployments: claude.ai, an internal API integration, and Claude Code. Which factor most strongly [[favors implementing the capability as a Skill]]?",
+    "q_vi": "Một nhóm kỹ thuật đang tranh luận nên làm khả năng mới tạo hồ sơ nộp cơ quan quản lý từ dữ liệu nội bộ thành Claude Skill hay MCP server. Khả năng này cần một quy trình soạn cố định có ví dụ nhúng sẵn, không cần gọi hệ thống bên ngoài đang chạy, và phải mang được sang ba nơi triển khai Claude: claude.ai, một tích hợp API nội bộ và Claude Code. Yếu tố nào nghiêng mạnh nhất về việc làm khả năng này thành Skill?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The capability needs to query a live database for the most recent regulatory filings.",
+        "vi": "Khả năng này cần truy vấn một database đang chạy để lấy các hồ sơ mới nhất.",
+        "correct": false,
+        "why": "Cần **query live database** là dấu hiệu ngược lại — đòi hỏi kết nối sống, nghiêng về MCP server chứ không phải Skill."
+      },
+      {
+        "k": "B",
+        "text": "The capability must also be callable from a developer's command-line interface.",
+        "vi": "Khả năng này cũng phải gọi được từ command-line của developer.",
+        "correct": false,
+        "why": "'Gọi được từ command-line' không phải yếu tố phân biệt Skill/MCP — cả hai đều có thể tích hợp trong Claude Code, đây là chi tiết trung lập."
+      },
+      {
+        "k": "C",
+        "text": "The capability requires direct authentication against the corporate identity provider.",
+        "vi": "Khả năng này cần xác thực trực tiếp với identity provider của công ty.",
+        "correct": false,
+        "why": "Cần **xác thực trực tiếp với identity provider** ngụ ý một kết nối hệ thống sống có kiểm soát truy cập — lại nghiêng về MCP server."
+      },
+      {
+        "k": "D",
+        "text": "The capability is [[procedural knowledge with no live external-system calls]] required.",
+        "vi": "Khả năng này là kiến thức quy trình, không cần gọi hệ thống bên ngoài nào.",
+        "correct": true,
+        "why": "Yếu tố nghiêng về Skill mạnh nhất là **bản chất tri thức thủ tục (procedural knowledge), không đòi hỏi gọi hệ thống ngoài đang sống (live)** — đúng hình dạng của Skill (kiến thức + ví dụ đóng gói tĩnh), khác với MCP server vốn sinh ra để kết nối tới hệ thống bên ngoài."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "favors implementing the capability as a Skill",
+      "choice": "procedural knowledge with no live external-system calls",
+      "note": "Skill = **kiến thức thủ tục tĩnh, không cần gọi hệ thống sống**. Hễ thấy 'cần gọi live system' hay 'cần auth với hệ thống ngoài' (đáp án A, C) thì nghiêng về MCP server.",
+      "rules": [
+        {
+          "trigger": "favors implementing the capability as a Skill",
+          "choice": "procedural knowledge with no live external-system calls"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Skill vs MCP server — 'thủ tục cố định, không cần gọi hệ thống sống' là dấu hiệu chọn Skill",
+      "text": "Capability cần: **quy trình biên soạn cố định kèm ví dụ, không cần gọi hệ thống ngoài đang chạy**, và phải portable qua claude.ai / API nội bộ / Claude Code."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.7 · Skill hay MCP"
+    ]
+  },
+  {
+    "n": 36,
+    "topic": "Integration",
+    "multi": false,
+    "type": "matrix",
+    "choices": [
+      "Yes",
+      "No"
+    ],
+    "q": "You are auditing a procurement-assistant agent whose defined responsibility is to draft purchase requests for review. For each tool currently configured on the agent, select yes if the tool should remain after a least-privilege audit. Otherwise, select no if it should be removed.",
+    "q_vi": "Bạn đang kiểm tra một agent trợ lý mua hàng có nhiệm vụ đã định là soạn yêu cầu mua hàng để người duyệt. Với mỗi tool đang cấu hình cho agent, chọn Yes nếu tool nên được giữ lại sau đợt kiểm tra least privilege. Ngược lại, chọn No nếu nên gỡ bỏ.",
+    "options": [
+      {
+        "k": "1",
+        "text": "a read-only catalog lookup tool that returns vendor and SKU information",
+        "vi": "một tool tra catalog chỉ đọc, trả thông tin nhà cung cấp và SKU",
+        "correct": false,
+        "why": "Agent cần tool này để tra nhà cung cấp và SKU khi soạn đơn. Tool chỉ đọc, không sửa hay gửi được gì, nên không có rủi ro.",
+        "pick": "Yes"
+      },
+      {
+        "k": "2",
+        "text": "an [[inbox-send tool]] that emails purchase requests to vendors directly",
+        "vi": "một tool gửi hộp thư gửi thẳng yêu cầu mua hàng qua email cho nhà cung cấp",
+        "correct": false,
+        "why": "Tool này gửi thẳng email cho nhà cung cấp, tức là agent tự đặt hàng mà không qua người duyệt. Việc của agent chỉ là soạn nháp, nên phải gỡ.",
+        "pick": "No"
+      },
+      {
+        "k": "3",
+        "text": "a draft-write tool that creates purchase-request drafts in the review queue",
+        "vi": "một tool ghi bản nháp tạo bản nháp yêu cầu mua hàng trong hàng chờ duyệt",
+        "correct": false,
+        "why": "Tạo bản nháp trong hàng chờ duyệt chính là việc của agent. Bản nháp vẫn phải qua người duyệt mới đi tiếp.",
+        "pick": "Yes"
+      },
+      {
+        "k": "4",
+        "text": "a [[production-database admin tool]] unrelated to procurement",
+        "vi": "một tool quản trị database production không liên quan tới mua hàng",
+        "correct": false,
+        "why": "Quyền quản trị database production không liên quan gì tới việc soạn đơn mua hàng. Giữ lại chỉ thêm rủi ro: agent chạy nhầm một lệnh là hỏng dữ liệu thật.",
+        "pick": "No"
+      },
+      {
+        "k": "5",
+        "text": "a read-only policy-document tool that returns the relevant procurement policies",
+        "vi": "một tool tài liệu chính sách chỉ đọc trả về các chính sách mua hàng liên quan",
+        "correct": false,
+        "why": "Tool này chỉ đọc chính sách mua hàng, giúp agent soạn đơn theo quy định mà không sửa được gì.",
+        "pick": "Yes"
+      }
+    ],
+    "answer": "1: Yes · 2: No · 3: Yes · 4: No · 5: Yes",
+    "tip": {
+      "trigger": "inbox-send tool · production-database admin tool | Còn lại",
+      "choice": "No | Yes",
+      "note": "Agent chỉ **soạn nháp**: gỡ tool **tự gửi ra ngoài** và tool **không liên quan** nhiệm vụ. Tool chỉ đọc và tool ghi nháp thì giữ.",
+      "rules": [
+        {
+          "trigger": "inbox-send tool · production-database admin tool",
+          "choice": "No"
+        },
+        {
+          "trigger": "Còn lại",
+          "choice": "Yes"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Least privilege: agent chỉ soạn nháp thì giữ tool nào",
+      "text": "Agent mua hàng chỉ có một việc: soạn yêu cầu mua hàng để người duyệt. Với từng tool, chọn Yes nếu giữ lại, No nếu gỡ."
+    },
+    "lessons": [
+      "Bài 3.1 · Kiểm kê: giữ tool nào"
+    ]
+  },
+  {
+    "n": 37,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "type": "matrix",
+    "choices": [
+      "Yes",
+      "No"
+    ],
+    "q": "You are evaluating model-selection claims used by a peer team. For each statement, select yes if the statement is generally true. Otherwise, select no.",
+    "q_vi": "Bạn đang đánh giá các nhận định về chọn model mà một nhóm đồng nghiệp đang dùng. Với mỗi nhận định, chọn Yes nếu nó nhìn chung là đúng. Ngược lại, chọn No.",
+    "options": [
+      {
+        "k": "1",
+        "text": "Heavier-reasoning models typically consume more of the rate limit and run more slowly than lighter models on the same input.",
+        "vi": "Model suy luận nặng hơn thường tốn nhiều rate limit hơn và chạy chậm hơn model nhẹ trên cùng đầu vào.",
+        "correct": false,
+        "why": "Model suy luận nặng dùng nhiều token hơn cho cùng một đầu vào, nên tốn rate limit hơn và trả lời chậm hơn model nhẹ.",
+        "pick": "Yes"
+      },
+      {
+        "k": "2",
+        "text": "A representative-sample evaluation on the target workload is the right basis for confirming a model selection.",
+        "vi": "Đánh giá trên một mẫu đại diện của workload đích là cơ sở đúng để xác nhận việc chọn model.",
+        "correct": false,
+        "why": "Muốn chọn model thì chạy thử trên một mẫu dữ liệu giống việc thật rồi so kết quả. Đó là căn cứ đáng tin nhất.",
+        "pick": "Yes"
+      },
+      {
+        "k": "3",
+        "text": "[[The most capable model]] is always the right choice regardless of the workload profile.",
+        "vi": "Model mạnh nhất luôn là lựa chọn đúng bất kể đặc điểm workload.",
+        "correct": false,
+        "why": "Không phải lúc nào cũng vậy: model mạnh nhất đắt và chậm hơn, còn việc đơn giản thì model nhẹ đã làm tốt.",
+        "pick": "No"
+      },
+      {
+        "k": "4",
+        "text": "Tiered routing can serve routine traffic with a lighter model while reserving a heavier model for traffic that needs its capability.",
+        "vi": "Định tuyến theo tầng có thể phục vụ traffic thường ngày bằng model nhẹ, dành model nặng cho phần traffic cần đến khả năng của nó.",
+        "correct": false,
+        "why": "Chia tầng là phần lớn request dùng model nhẹ cho rẻ và nhanh, chỉ request khó mới chuyển sang model nặng.",
+        "pick": "Yes"
+      },
+      {
+        "k": "5",
+        "text": "[[Selecting a model based on which version]] was most recently announced is the right basis for production decisions.",
+        "vi": "Chọn model theo phiên bản được công bố gần nhất là cơ sở đúng cho quyết định production.",
+        "correct": false,
+        "why": "Bản mới công bố chưa chắc hợp với việc của bạn. Vẫn phải chạy eval trên dữ liệu thật rồi mới quyết.",
+        "pick": "No"
+      }
+    ],
+    "answer": "1: Yes · 2: Yes · 3: No · 4: Yes · 5: No",
+    "tip": {
+      "trigger": "The most capable model · Selecting a model based on which version | Còn lại",
+      "choice": "No | Yes",
+      "note": "\"**Mạnh nhất**\" hay \"**mới nhất**\" không phải lý do chọn model. Chọn bằng **eval trên đúng workload**, rồi **chia tầng** nhẹ và nặng.",
+      "rules": [
+        {
+          "trigger": "The most capable model · Selecting a model based on which version",
+          "choice": "No"
+        },
+        {
+          "trigger": "Còn lại",
+          "choice": "Yes"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chọn model dựa vào đâu",
+      "text": "Đề đưa 5 nhận định về cách chọn model. Nhận định nhìn chung là thật thì chọn Yes."
+    },
+    "lessons": [
+      "Bài 2.1 · Bắt đầu từ đâu",
+      "Bài 2.1 · Dùng nhiều model trong một hệ thống"
+    ]
+  },
+  {
+    "n": 38,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": true,
+    "q": "The engineering lead at Trenova Systems, Inc. is evaluating two proposals for improving developer workflows using Claude-assisted tooling. Proposal A adds Claude Code to the IDE for inline code generation and review. Proposal B routes all code-generation requests through a shared Slack bot without IDE integration. Which two observations most accurately evaluate these proposals against [[workflow-improvement objectives]]? (Select two.)",
+    "q_vi": "Trưởng nhóm kỹ thuật của Trenova Systems, Inc. đang đánh giá hai đề xuất cải thiện quy trình làm việc của developer bằng tool có Claude hỗ trợ. Đề xuất A đưa Claude Code vào IDE để sinh và review code ngay tại chỗ. Đề xuất B chuyển mọi yêu cầu sinh code qua một Slack bot dùng chung, không tích hợp IDE. Hai nhận xét nào đánh giá chính xác nhất các đề xuất này theo mục tiêu cải thiện quy trình làm việc? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Proposal B is superior because centralizing requests in Slack creates an auditable log of all codegeneration activity.",
+        "vi": "Đề xuất B tốt hơn vì gom yêu cầu về Slack tạo ra log kiểm tra được của mọi hoạt động sinh code.",
+        "correct": false,
+        "why": "Có log để kiểm toán là lợi ích thật của việc gom về Slack, nhưng đề hỏi về cải thiện workflow, không hỏi về kiểm toán."
+      },
+      {
+        "k": "B",
+        "text": "Proposal B [[introduces workflow friction]] by requiring developers to leave the IDE, undermining the productivity objective.",
+        "vi": "Đề xuất B gây vướng víu cho quy trình vì bắt developer phải rời IDE, đi ngược mục tiêu năng suất.",
+        "correct": true,
+        "why": "Với phương án B, mỗi lần cần code, dev phải rời IDE sang Slack, gửi yêu cầu, chờ, rồi chép kết quả về. Mỗi lần chuyển qua lại là một lần đứt mạch làm việc, đi ngược mục tiêu tăng năng suất."
+      },
+      {
+        "k": "C",
+        "text": "Proposal A [[reduces context switching]] by providing AI assistance at the point of development without requiring a separate tool.",
+        "vi": "Đề xuất A giảm việc chuyển ngữ cảnh nhờ đưa hỗ trợ AI ngay tại chỗ đang phát triển mà không cần tool riêng.",
+        "correct": true,
+        "why": "Phương án A đặt trợ giúp của AI ngay trong IDE, nơi dev đang viết code. Không phải mở công cụ khác nên dev giữ được mạch suy nghĩ, ít phải chuyển qua lại giữa các công cụ (**context switching**)."
+      },
+      {
+        "k": "D",
+        "text": "Proposal B improves workflow velocity because Slack notifications create an asynchronous review queue.",
+        "vi": "Đề xuất B tăng tốc quy trình vì thông báo Slack tạo ra một hàng chờ review bất đồng bộ.",
+        "correct": false,
+        "why": "Hàng đợi bất đồng bộ qua Slack nghĩa là dev phải chờ. Coi việc chờ là tăng tốc là hiểu ngược."
+      },
+      {
+        "k": "E",
+        "text": "Both proposals are equivalent because the model capabilities are identical regardless of the integration point.",
+        "vi": "Hai đề xuất như nhau vì khả năng của model giống hệt nhau bất kể điểm tích hợp.",
+        "correct": false,
+        "why": "Model giống nhau không có nghĩa hai phương án như nhau. Thứ ảnh hưởng tới workflow là AI nằm ở đâu: ngay trong IDE hay ở một công cụ khác."
+      }
+    ],
+    "answer": "B, C",
+    "tip": {
+      "trigger": "workflow-improvement objectives",
+      "choice": "introduces workflow friction · reduces context switching",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng.\nBa kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog).\nỞ câu này, trục so sánh là workflow: đáp án B chỉ ra phương án Slack **introduces workflow friction** vì phải rời IDE, đáp án C chỉ ra phương án IDE **reduces context switching**. Đáp án A (audit log), D (coi chờ là nhanh), E (so model thay vì so workflow) đều là Lạc.",
+      "rules": [
+        {
+          "trigger": "workflow-improvement objectives",
+          "choice": "introduces workflow friction · reduces context switching"
+        }
+      ]
+    },
+    "ask": {
+      "title": "So hai phương án theo đúng mục tiêu: cải thiện cách dev làm việc",
+      "text": "Phương án A đưa Claude Code vào IDE để sinh và review code ngay tại chỗ. Phương án B gửi mọi yêu cầu sinh code qua một bot Slack chung, không gắn với IDE. Đề hỏi hai nhận xét đánh giá đúng theo **mục tiêu cải thiện workflow**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.2 · Đặt AI vào đúng chỗ trong quy trình"
+    ]
+  },
+  {
+    "n": 39,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "A document analysis service processes legal filings averaging 80,000 tokens each. Each filing is queried by attorneys an [[average of 14 times during a case]]. The current architecture sends the full filing on every query. The CFO has asked you to reduce per-query costs while preserving response quality. The security officer requires that filing contents [[not be stored outside]] Fabrikam's tenancy. Which optimization approach should you recommend?",
+    "q_vi": "Một dịch vụ phân tích tài liệu xử lý hồ sơ pháp lý trung bình 80.000 token mỗi hồ sơ. Mỗi hồ sơ được luật sư truy vấn trung bình 14 lần trong một vụ việc. Kiến trúc hiện tại gửi nguyên hồ sơ ở mọi truy vấn. CFO nhờ bạn giảm chi phí mỗi truy vấn mà vẫn giữ chất lượng câu trả lời. Trưởng bộ phận bảo mật yêu cầu nội dung hồ sơ không được lưu ngoài tenancy của Fabrikam. Bạn nên đề xuất cách tối ưu nào?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Summarize each filing once at intake and run all subsequent queries against the summary.",
+        "vi": "Tóm tắt mỗi hồ sơ một lần khi tiếp nhận và chạy mọi truy vấn sau trên bản tóm tắt.",
+        "correct": false,
+        "why": "**Tóm tắt một lần rồi hỏi trên bản tóm tắt** có nguy cơ **mất chi tiết pháp lý** mà luật sư cần khi hỏi sâu — ảnh hưởng chất lượng."
+      },
+      {
+        "k": "B",
+        "text": "[[Cache the filing as the prompt prefix]] for reuse across the 14 queries per case.",
+        "vi": "Cache hồ sơ làm prompt prefix để dùng lại cho 14 truy vấn của mỗi vụ việc.",
+        "correct": true,
+        "why": "**Cache hồ sơ làm prompt prefix, dùng lại cho cả 14 lần truy vấn trong case**. Mọi câu hỏi vẫn dùng nội dung đầy đủ nên không mất chất lượng, phần đọc từ cache được tính giá thấp hơn nhiều, và không phải dựng thêm kho lưu trữ hồ sơ nào mới."
+      },
+      {
+        "k": "C",
+        "text": "Index filings in a vector store and retrieve only the relevant passages per query.",
+        "vi": "Đánh index hồ sơ trong vector store và chỉ truy xuất các đoạn liên quan cho mỗi truy vấn.",
+        "correct": false,
+        "why": "**Đưa vào vector store, chỉ lấy đoạn liên quan** vừa có rủi ro **bỏ sót ngữ cảnh** (giảm chất lượng), vừa phải dựng thêm một kho chỉ mục chứa nội dung hồ sơ, kéo theo câu hỏi kho đó có nằm trong tenancy hay không."
+      },
+      {
+        "k": "D",
+        "text": "Move the workload to a smaller Claude model to reduce the per-token cost paid.",
+        "vi": "Chuyển workload sang model Claude nhỏ hơn để giảm giá mỗi token.",
+        "correct": false,
+        "why": "**Chuyển sang model nhỏ hơn** giảm chi phí nhưng đánh đổi trực tiếp **năng lực trả lời** — vi phạm yêu cầu giữ nguyên chất lượng."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "average of 14 times during a case · not be stored outside",
+      "choice": "Cache the filing as the prompt prefix",
+      "note": "Hỏi lặp lại trên cùng một tài liệu dài thì **cache làm prefix**, giữ nguyên nội dung và không rời khỏi hạ tầng hiện có. Tóm tắt (đáp án A) hay retrieval từng phần (đáp án C) đều đánh đổi chất lượng; đổi model (đáp án D) đánh đổi năng lực.",
+      "rules": [
+        {
+          "trigger": "average of 14 times during a case · not be stored outside",
+          "choice": "Cache the filing as the prompt prefix"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Giảm chi phí truy vấn hồ sơ pháp lý dài — cache làm prefix, không tóm tắt hay đẩy dữ liệu ra ngoài tenancy",
+      "text": "Hồ sơ ~80k token, truy vấn 14 lần/case, hiện gửi **toàn bộ hồ sơ mỗi lần hỏi**. Ràng buộc: giữ **chất lượng câu trả lời** và **dữ liệu không được lưu ngoài tenancy** của Fabrikam."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.5 · Prompt caching"
+    ]
+  },
+  {
+    "n": 40,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": true,
+    "q": "You are designing a test strategy for a Claude-based pipeline that handles sensitive financial data. Which two test types should be prioritized to cover both [[safety under attack]] and [[cross-component correctness]]? (Select two.)",
+    "q_vi": "Bạn đang thiết kế chiến lược test cho một pipeline chạy trên Claude xử lý dữ liệu tài chính nhạy cảm. Hai loại test nào nên được ưu tiên để phủ cả an toàn khi bị tấn công lẫn tính đúng giữa các component? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Adversarial tests]] using prompt-injection and malformed-input cases.",
+        "vi": "Test adversarial dùng các ca prompt injection và đầu vào hỏng.",
+        "correct": true,
+        "why": "Phủ yêu cầu an toàn khi bị tấn công. **Adversarial test** cố tình đưa vào **prompt injection** (lệnh giấu trong dữ liệu đầu vào) và input dị dạng, để xem pipeline có bị lừa làm sai hay để lộ dữ liệu tài chính không."
+      },
+      {
+        "k": "B",
+        "text": "Regression tests against a stable reference set of previously known-good outputs.",
+        "vi": "Test hồi quy trên một tập tham chiếu ổn định gồm các đầu ra đã biết là đúng.",
+        "correct": false,
+        "why": "Regression test so với bộ output đã biết là đúng giúp bắt lỗi cũ quay lại, nhưng không nhắm vào tấn công, cũng không chủ yếu kiểm chỗ nối giữa các thành phần."
+      },
+      {
+        "k": "C",
+        "text": "Smoke tests that verify core paths after each deployment.",
+        "vi": "Smoke test kiểm các luồng chính sau mỗi lần triển khai.",
+        "correct": false,
+        "why": "Smoke test chỉ kiểm nhanh vài đường chính sau mỗi lần deploy, quá nông cho cả hai yêu cầu."
+      },
+      {
+        "k": "D",
+        "text": "[[Integration tests]] that verify end-to-end pipeline behavior across all components.",
+        "vi": "Integration test kiểm hành vi end-to-end của pipeline qua mọi component.",
+        "correct": true,
+        "why": "Phủ yêu cầu chạy đúng khi nối các thành phần. **Integration test** chạy cả pipeline từ đầu tới cuối qua mọi thành phần: truy xuất, model, tool, các bước xử lý sau. Lỗi ở chỗ nối giữa các phần chỉ lộ ra khi chạy chung như vậy."
+      },
+      {
+        "k": "E",
+        "text": "Unit tests targeting only individual prompt-template rendering logic.",
+        "vi": "Unit test chỉ nhắm vào logic render prompt template riêng lẻ.",
+        "correct": false,
+        "why": "Unit test chỉ cho phần dựng prompt template là kiểm một thành phần đơn lẻ, ngược với yêu cầu kiểm xuyên các thành phần."
+      }
+    ],
+    "answer": "A, D",
+    "tip": {
+      "trigger": "safety under attack · cross-component correctness",
+      "choice": "Adversarial tests · Integration tests",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó.\nBẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra.\nỞ câu này, đề cần **safety under attack** nên chọn đáp án A **Adversarial tests**; đề cần **cross-component correctness** nên chọn đáp án D **Integration tests**. Đáp án B regression, C smoke không nhắm vào tấn công; E unit test chỉ kiểm một thành phần.",
+      "rules": [
+        {
+          "trigger": "safety under attack · cross-component correctness",
+          "choice": "Adversarial tests · Integration tests"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Test pipeline dữ liệu tài chính: phủ cả tấn công lẫn chỗ nối giữa các thành phần",
+      "text": "Đề nêu hai yêu cầu: **an toàn khi bị tấn công** và **chạy đúng khi các thành phần nối với nhau** (cross-component correctness). Cần đúng hai loại test, mỗi loại phủ một yêu cầu."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.2 · Các loại kiểm thử trong một khung"
+    ]
+  },
+  {
+    "n": 41,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": true,
+    "q": "The platform team at Trenova Systems, Inc. needs to reduce per-query cost and p95 latency for a high-volume Claude pipeline without degrading output quality on the core use case. Which two optimizations directly target [[both cost and latency]] simultaneously? (Select two.)",
+    "q_vi": "Nhóm platform của Trenova Systems, Inc. cần giảm chi phí mỗi truy vấn và độ trễ p95 của một pipeline Claude lưu lượng lớn mà không làm giảm chất lượng đầu ra ở use case chính. Hai tối ưu nào nhắm trực tiếp cùng lúc cả chi phí lẫn độ trễ? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Enable prompt caching]] on the static system-prompt prefix to reduce billable input tokens on repeated calls.",
+        "vi": "Bật prompt caching cho phần prefix tĩnh của system prompt để giảm số token đầu vào bị tính tiền ở các lời gọi lặp lại.",
+        "correct": true,
+        "why": "System prompt là phần đầu giống hệt nhau ở mọi lần gọi. Bật **prompt caching** thì từ lần thứ hai, phần này được đọc lại từ cache: token đầu vào tính giá rẻ hơn nhiều, và model không phải xử lý lại nên trả lời nhanh hơn. Một thay đổi giảm được cả hai chỉ số."
+      },
+      {
+        "k": "B",
+        "text": "[[Route straightforward query types]] to a smaller, faster Claude model and reserve the full model for complex cases.",
+        "vi": "Chuyển các loại truy vấn đơn giản sang model Claude nhỏ và nhanh hơn, dành model đầy đủ cho các ca phức tạp.",
+        "correct": true,
+        "why": "Câu hỏi đơn giản không cần model mạnh nhất. **Chuyển (route) các loại câu dễ sang model nhỏ**, vừa rẻ vừa nhanh, và chỉ giữ model đầy đủ cho ca khó. Phần lớn lưu lượng đi đường rẻ và nhanh, còn chất lượng ở ca khó vẫn giữ nguyên."
+      },
+      {
+        "k": "C",
+        "text": "Increase max_tokens to reduce the frequency of truncated responses requiring follow-up calls.",
+        "vi": "Tăng max_tokens để giảm tần suất câu trả lời bị cắt phải gọi tiếp.",
+        "correct": false,
+        "why": "Tăng max_tokens chỉ giảm số lần câu trả lời bị cắt giữa chừng. Mỗi lần gọi không rẻ hơn hay nhanh hơn, có khi còn tốn hơn vì câu trả lời dài ra."
+      },
+      {
+        "k": "D",
+        "text": "Add a retrieval step that fetches the full source corpus into the context window before generation.",
+        "vi": "Thêm bước truy xuất nạp toàn bộ kho nguồn vào context window trước khi sinh.",
+        "correct": false,
+        "why": "Đưa **toàn bộ** kho tài liệu vào context làm đầu vào phình to: tốn thêm token và model xử lý lâu hơn. Đi ngược cả hai mục tiêu."
+      },
+      {
+        "k": "E",
+        "text": "Expand the system prompt to include additional few-shot examples on every request.",
+        "vi": "Mở rộng system prompt để thêm ví dụ few-shot ở mọi request.",
+        "correct": false,
+        "why": "Thêm ví dụ few-shot vào **mọi** request làm prompt dài ra ở mỗi lần gọi, nên vừa tốn thêm vừa chậm thêm."
+      }
+    ],
+    "answer": "A, B",
+    "tip": {
+      "trigger": "both cost and latency",
+      "choice": "Enable prompt caching · Route straightforward query types",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó.\nBẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra.\nỞ câu này, đề cần giảm **both cost and latency** nên đáp án A **Enable prompt caching** cho phần cố định, đáp án B **Route straightforward query types** sang model nhỏ. Đáp án D, E làm request dài thêm nên tăng cả hai; đáp án C không giảm được chi phí hay độ trễ. Lưu ý: chuyển sang model nhỏ chỉ đúng khi chuyển **một phần** câu hỏi, không phải tất cả.",
+      "rules": [
+        {
+          "trigger": "both cost and latency",
+          "choice": "Enable prompt caching · Route straightforward query types"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Giảm cùng lúc cả chi phí lẫn latency: cache phần prompt cố định, chuyển câu dễ sang model nhỏ",
+      "text": "Pipeline Claude chạy số lượng lớn cần giảm **cùng lúc chi phí mỗi query và p95 latency**, nhưng không được làm giảm chất lượng ở việc chính."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.5 · Prompt caching",
+      "Bài 2.1 · Dùng nhiều model trong một hệ thống"
+    ]
+  },
+  {
+    "n": 42,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "You are evaluating a Claude-based deployment for adherence to a specific regulation. Which two steps must be completed [[BEFORE mapping]] deployment data flows to specific regulatory clauses? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang đánh giá một triển khai chạy trên Claude về việc tuân thủ một quy định cụ thể. Hai bước nào phải xong TRƯỚC KHI ánh xạ các luồng dữ liệu của triển khai với các điều khoản quy định cụ thể? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Compare the in-place controls against the regulatory requirements to identify any compliance gaps.",
+        "vi": "So các biện pháp kiểm soát đang có với yêu cầu của quy định để tìm ra các chỗ chưa tuân thủ.",
+        "correct": false,
+        "why": "So các biện pháp đang có với yêu cầu của quy định để tìm chỗ còn thiếu là bước làm **sau khi** đã gán luồng dữ liệu vào điều khoản. Đừng để chữ identify ở giữa câu đánh lừa."
+      },
+      {
+        "k": "B",
+        "text": "[[Identify the applicability]] of the regulation based on data types, jurisdiction, and audience.",
+        "vi": "Xác định quy định có áp dụng không, dựa trên loại dữ liệu, khu vực pháp lý và đối tượng sử dụng.",
+        "correct": true,
+        "why": "Câu hỏi đầu tiên luôn là: quy định này **có áp dụng cho mình không**? Điều đó phụ thuộc loại dữ liệu xử lý, khu vực pháp lý và đối tượng người dùng. Quy định không áp dụng thì không có gì để đối chiếu."
+      },
+      {
+        "k": "C",
+        "text": "Schedule the remediation work with the engineering team based on the prioritized gap findings.",
+        "vi": "Lên lịch việc khắc phục với nhóm kỹ thuật dựa trên các chỗ thiếu đã xếp ưu tiên.",
+        "correct": false,
+        "why": "Lên lịch khắc phục dựa trên danh sách chỗ thiếu đã tìm ra, nên phải phân tích xong mới làm được."
+      },
+      {
+        "k": "D",
+        "text": "Document the identified gaps along with recommended remediations and residual risk for signoff.",
+        "vi": "Ghi lại các chỗ thiếu đã tìm ra kèm cách khắc phục đề xuất và rủi ro còn lại để ký duyệt.",
+        "correct": false,
+        "why": "Ghi lại các chỗ thiếu kèm đề xuất khắc phục để ký duyệt là bước tổng kết cuối cùng của cả quy trình."
+      },
+      {
+        "k": "E",
+        "text": "[[Inventory]] the vendor-provided compliance tooling and confirm which compliance affordances are in place.",
+        "vi": "Kiểm kê các tool tuân thủ do nhà cung cấp cung cấp và xác nhận những khả năng hỗ trợ tuân thủ nào đang có.",
+        "correct": true,
+        "why": "Cần biết trong tay đang có gì: nhà cung cấp đã có sẵn những công cụ hỗ trợ tuân thủ nào (lưu log, xoá dữ liệu, chọn vùng lưu trữ...). **Kiểm kê** trước thì lúc đối chiếu mới biết điều khoản nào đã được đáp ứng sẵn."
+      }
+    ],
+    "answer": "B, E",
+    "tip": {
+      "trigger": "BEFORE mapping",
+      "choice": "Identify the applicability · Inventory",
+      "note": "**Dạng BEFORE** (đề hỏi must be completed BEFORE X): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**.\nLàm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out).\nỞ câu này, đáp án B **Identify the applicability** và đáp án E **Inventory** công cụ có sẵn: cả hai là tìm hiểu, làm được khi chưa đối chiếu gì. Đáp án A tìm chỗ thiếu cần đối chiếu xong; C lên lịch khắc phục và D ghi lại chỗ thiếu còn về sau nữa.",
+      "rules": [
+        {
+          "trigger": "BEFORE mapping",
+          "choice": "Identify the applicability · Inventory"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Đánh giá tuân thủ một quy định: việc nào làm trước khi đối chiếu với từng điều khoản",
+      "text": "Bạn đánh giá một hệ thống dùng Claude có tuân thủ một quy định cụ thể không. Đề hỏi hai bước phải xong **trước khi** gán từng luồng dữ liệu của hệ thống vào điều khoản tương ứng trong quy định."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.4 · Xác định trước khi đối chiếu"
+    ]
+  },
+  {
+    "n": 43,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": true,
+    "q": "A research summarization assistant has been deployed for six months. A user has flagged that a generated summary contained a fabricated citation. The product team has asked whether the incident requires architectural action or whether it is an [[isolated case]]. Which two Diligence-competency actions should you take? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Một trợ lý tóm tắt nghiên cứu đã chạy được sáu tháng. Một người dùng báo một bản tóm tắt có trích dẫn bịa. Nhóm sản phẩm hỏi sự cố này cần hành động ở mức kiến trúc hay chỉ là ca cá biệt. Hai hành động nào thuộc năng lực Diligence bạn nên làm? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Sample]] recent summaries to estimate the fabrication frequency across the population.",
+        "vi": "Lấy mẫu các bản tóm tắt gần đây để ước lượng tần suất bịa trên toàn bộ.",
+        "correct": true,
+        "why": "Muốn biết ca lẻ hay phổ biến thì phải đếm. **Lấy mẫu** một loạt bản tóm tắt gần đây, kiểm bao nhiêu bản có trích dẫn bịa, từ đó ước lượng tần suất trên toàn bộ. Có số liệu thì câu trả lời không còn là phỏng đoán."
+      },
+      {
+        "k": "B",
+        "text": "Disable the assistant immediately for all current users without any prior diagnostic analysis.",
+        "vi": "Tắt ngay trợ lý cho mọi người dùng hiện tại mà không chẩn đoán gì trước.",
+        "correct": false,
+        "why": "Tắt trợ lý với mọi người dùng khi chưa chẩn đoán gì là phản ứng quá đà, hành động trước khi hiểu vấn đề."
+      },
+      {
+        "k": "C",
+        "text": "[[Review]] whether citation-grounding controls exist anywhere in the current generation pipeline.",
+        "vi": "Xem lại xem có biện pháp kiểm soát trích dẫn bám nguồn nào trong pipeline sinh hiện tại không.",
+        "correct": true,
+        "why": "Xem lại pipeline có bước nào **bắt model trích dẫn đúng nguồn** không, ví dụ chỉ cho trích từ tài liệu đã truy xuất, hay kiểm trích dẫn trước khi trả về. Nếu chưa từng có bước nào như vậy thì đây là lỗ hổng thiết kế, sớm muộn sẽ lặp lại."
+      },
+      {
+        "k": "D",
+        "text": "Communicate to users that the assistant does not fabricate output as a matter of design.",
+        "vi": "Thông báo với người dùng rằng trợ lý được thiết kế để không bao giờ bịa đầu ra.",
+        "correct": false,
+        "why": "Nói với người dùng rằng trợ lý không bao giờ bịa là sai sự thật, ngay khi vừa có bằng chứng ngược lại."
+      },
+      {
+        "k": "E",
+        "text": "Treat the incident as an anecdotal isolated case and take no further investigative action.",
+        "vi": "Coi sự cố là một ca cá biệt kể lại và không điều tra gì thêm.",
+        "correct": false,
+        "why": "Coi là ca lẻ và không điều tra gì thêm chính là kết luận vội mà nhóm sản phẩm đang muốn kiểm chứng."
+      }
+    ],
+    "answer": "A, C",
+    "tip": {
+      "trigger": "isolated case",
+      "choice": "Sample · Review",
+      "note": "**Dạng phản biện** (có người kết luận vội, đề hỏi challenge, findings, objections): chọn câu chỉ ra kết luận đó **chưa có căn cứ** (does not establish · does not by itself · poor proxy), hoặc đề nghị **đi đo, kiểm tra thật**.\nBẫy: **đồng ý** với kết luận (proves · sufficient · unnecessary · isolated), **đi quá đà** (disable · reject by default · nới ngưỡng), hoặc **chuyện bên lề** (mẫu nhỏ, khảo sát, pilot ngắn).\nỞ câu này, muốn biết ca lẻ hay lỗi hệ thống thì đi đo: đáp án A **Sample** để ước lượng tần suất bịa, đáp án C **Review** xem pipeline đã có bước kiểm trích dẫn chưa. Đáp án B đi quá đà (tắt ngay), D chối (bảo không bao giờ bịa), E đồng ý là ca lẻ.",
+      "rules": [
+        {
+          "trigger": "isolated case",
+          "choice": "Sample · Review"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Trợ lý bịa trích dẫn một lần: đo xem là ca lẻ hay lỗi của cả hệ thống",
+      "text": "Trợ lý tóm tắt tài liệu đã chạy 6 tháng thì một người dùng báo có bản tóm tắt **bịa ra trích dẫn**. Nhóm sản phẩm hỏi: cần sửa kiến trúc hay đây chỉ là **một ca lẻ**? Đề hỏi hai việc nên làm theo năng lực **Diligence** (cẩn trọng, có trách nhiệm khi dùng AI)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.4 · Lệch model và ước lượng quy mô"
+    ]
+  },
+  {
+    "n": 44,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "A security team is evaluating two proposed controls. Control A adds an [[outbound tool allowlist]] with destination restrictions and per-call review. Control B scores responses against a stable adversarial evaluation set [[after each model-version change]]. Which two risk categories are correctly matched to these controls? (Select two.)",
+    "q_vi": "Một nhóm bảo mật đang đánh giá hai biện pháp kiểm soát được đề xuất. Biện pháp A thêm allowlist cho tool gọi ra ngoài, có giới hạn đích đến và review từng lời gọi. Biện pháp B chấm điểm câu trả lời trên một bộ đánh giá adversarial ổn định sau mỗi lần đổi phiên bản model. Hai nhóm rủi ro nào được ghép đúng với các biện pháp này? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Control A - prompt injection from adversarial content in retrieved data",
+        "vi": "Biện pháp A - prompt injection từ nội dung độc hại trong dữ liệu truy xuất",
+        "correct": false,
+        "why": "Prompt injection nằm trong nội dung tài liệu truy xuất về. Allowlist chỉ quản tool được gọi đi đâu, không xét nội dung đưa vào model, nên không chặn được loại này."
+      },
+      {
+        "k": "B",
+        "text": "Control A - silent quality drift after a model-version upgrade",
+        "vi": "Biện pháp A - chất lượng âm thầm trôi sau khi nâng phiên bản model",
+        "correct": false,
+        "why": "Control A kiểm soát tool gọi ra ngoài, không đo gì về chất lượng câu trả lời giữa các phiên bản model."
+      },
+      {
+        "k": "C",
+        "text": "[[Control A - data exfiltration]] via outbound tool calls",
+        "vi": "Biện pháp A - lọt dữ liệu ra ngoài qua lời gọi tool ra ngoài",
+        "correct": true,
+        "why": "Dữ liệu bị đánh cắp qua tool (**data exfiltration**) là khi model bị lừa gọi tool gửi dữ liệu ra một địa chỉ lạ. Control A chỉ cho gọi những tool, những nơi nhận đã được duyệt, và còn xem từng lần gọi, nên chặn đúng con đường dữ liệu đi ra này."
+      },
+      {
+        "k": "D",
+        "text": "Control B - data exfiltration via outbound tool calls",
+        "vi": "Biện pháp B - lọt dữ liệu ra ngoài qua lời gọi tool ra ngoài",
+        "correct": false,
+        "why": "Control B đo chất lượng sau khi đổi model, không chặn được dữ liệu bị gửi ra ngoài qua tool."
+      },
+      {
+        "k": "E",
+        "text": "[[Control B - silent quality drift]] after a model-version upgrade",
+        "vi": "Biện pháp B - chất lượng âm thầm trôi sau khi nâng phiên bản model",
+        "correct": true,
+        "why": "Đổi phiên bản model có thể làm chất lượng tụt mà không ai để ý (**silent quality drift**). Control B chấm lại **cùng một bộ câu hỏi** sau mỗi lần đổi, so điểm với lần trước là thấy ngay chỗ tụt."
+      }
+    ],
+    "answer": "C, E",
+    "tip": {
+      "trigger": "outbound tool allowlist · after each model-version change",
+      "choice": "Control A - data exfiltration · Control B - silent quality drift",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó.\nBẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra.\nỞ câu này, đề có **outbound tool allowlist** thì ghép với rủi ro dữ liệu đi ra: đáp án C **Control A - data exfiltration**; đề có chấm lại **after each model-version change** thì ghép với chất lượng tụt: đáp án E **Control B - silent quality drift**. Đáp án A, B, D ghép lệch cặp.",
+      "rules": [
+        {
+          "trigger": "outbound tool allowlist · after each model-version change",
+          "choice": "Control A - data exfiltration · Control B - silent quality drift"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Ghép đúng mỗi biện pháp kiểm soát với loại rủi ro nó chặn",
+      "text": "Control A: danh sách tool được phép gọi ra ngoài (allowlist), giới hạn nơi gửi tới và duyệt từng lần gọi. Control B: sau mỗi lần đổi phiên bản model, chấm điểm lại trên một bộ câu hỏi đối kháng cố định. Đề hỏi hai cặp control và rủi ro ghép đúng."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.1 · Chặn rò rỉ dữ liệu qua tool"
+    ]
+  },
+  {
+    "n": 45,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": true,
+    "q": "You are selecting a model for a new production workload and must complete the upstream steps before testing candidate models empirically. Which two steps must be completed [[BEFORE running]] a representative sample on a candidate model? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang chọn model cho một workload production mới và phải hoàn tất các bước đầu trước khi test thực nghiệm các model ứng viên. Hai bước nào phải xong TRƯỚC KHI chạy một mẫu đại diện trên model ứng viên? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Select the lightest model that consistently meets the quality bar across the sample.",
+        "vi": "Chọn model nhẹ nhất luôn đạt ngưỡng chất lượng trên mẫu.",
+        "correct": false,
+        "why": "Chọn model nhẹ nhất mà vẫn đạt chất lượng trên mẫu thử là kết luận rút ra **sau khi** đã chạy thử. Chữ across the sample cho thấy mẫu đã chạy rồi."
+      },
+      {
+        "k": "B",
+        "text": "Retest the model choice when a new model version becomes available.",
+        "vi": "Test lại lựa chọn model khi có phiên bản model mới.",
+        "correct": false,
+        "why": "Thử lại khi có phiên bản model mới là việc lặp lại về sau, trong lúc vận hành."
+      },
+      {
+        "k": "C",
+        "text": "[[Choose a candidate]] model based on the requirements profile and known capabilities.",
+        "vi": "Chọn một model ứng viên dựa trên hồ sơ yêu cầu và các khả năng đã biết.",
+        "correct": true,
+        "why": "Muốn chạy thử thì phải có một model cụ thể để thử. **Chọn model ứng viên** dựa trên yêu cầu của việc và những gì đã biết về từng model (giỏi suy luận, nhanh, rẻ...), rồi mới đem đi đo."
+      },
+      {
+        "k": "D",
+        "text": "[[Define]] the quality bar, latency tolerance, and expected volume for the workload.",
+        "vi": "Định nghĩa ngưỡng chất lượng, mức độ trễ chấp nhận được và lưu lượng dự kiến cho workload.",
+        "correct": true,
+        "why": "Trước khi đo phải biết thế nào là đạt: **chất lượng tối thiểu** (quality bar), latency chấp nhận được và lưu lượng dự kiến. Không có tiêu chí thì chạy thử xong cũng không biết model có qua hay không."
+      },
+      {
+        "k": "E",
+        "text": "Sign off the production rollout plan with the platform and security teams.",
+        "vi": "Ký duyệt kế hoạch triển khai production với nhóm platform và nhóm bảo mật.",
+        "correct": false,
+        "why": "Ký duyệt kế hoạch đưa lên production là bước cuối cùng, sau khi đã chọn xong model."
+      }
+    ],
+    "answer": "C, D",
+    "tip": {
+      "trigger": "BEFORE running",
+      "choice": "Choose a candidate · Define",
+      "note": "**Dạng BEFORE** (đề hỏi must be completed BEFORE X): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**.\nLàm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out).\nỞ câu này, đáp án D **Define** tiêu chí đạt (đặt mục tiêu) và đáp án C **Choose a candidate** (chuẩn bị). Coi chừng đáp án A: Select the lightest ... across the sample là kết luận sau khi chạy thử. Đáp án B thử lại, E ký duyệt còn về sau nữa.",
+      "rules": [
+        {
+          "trigger": "BEFORE running",
+          "choice": "Choose a candidate · Define"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chọn model cho việc mới: hai việc làm trước khi chạy thử",
+      "text": "Bạn chọn model cho một workload production mới. Đề hỏi hai bước phải xong **trước khi** chạy thử một mẫu dữ liệu đại diện trên model ứng viên."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.1 · Bắt đầu từ đâu"
+    ]
+  },
+  {
+    "n": 46,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are preparing an [[operational runbook]] for a Claude-based service. Which content is essential to include in the runbook?",
+    "q_vi": "Bạn đang soạn một runbook vận hành cho một dịch vụ chạy trên Claude. Nội dung nào bắt buộc phải có trong runbook?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Dashboard and log references only, without alert definitions, triage steps, escalation paths, or rollback procedures for the on-call engineer to act on.",
+        "vi": "Chỉ có tham chiếu dashboard và log, không có định nghĩa cảnh báo, bước phân loại xử lý, đường chuyển cấp hay quy trình rollback để kỹ sư trực hành động.",
+        "correct": false,
+        "why": "Chỉ có dashboard/log **mà thiếu alert, triage, escalation, rollback** — biết nhìn vào đâu nhưng không biết làm gì tiếp theo."
+      },
+      {
+        "k": "B",
+        "text": "[[Common alerts and their triage steps]], escalation paths, rollback procedures, and references to the relevant dashboards and logs.",
+        "vi": "Các cảnh báo thường gặp cùng bước phân loại xử lý, đường chuyển cấp, quy trình rollback và tham chiếu tới dashboard, log liên quan.",
+        "correct": true,
+        "why": "Runbook đạt chuẩn cần đủ **alert thường gặp kèm bước triage, escalation path, rollback procedure, và link tới dashboard/log liên quan** — đây là chuỗi hành động liền mạch từ phát hiện sự cố đến xử lý xong, đúng thứ tự on-call engineer cần khi có báo động."
+      },
+      {
+        "k": "C",
+        "text": "Alert definitions and triage steps only, without escalation paths, rollback procedures, or references to dashboards and logs for on-call use.",
+        "vi": "Chỉ có định nghĩa cảnh báo và bước phân loại xử lý, không có đường chuyển cấp, quy trình rollback hay tham chiếu dashboard, log cho người trực.",
+        "correct": false,
+        "why": "Chỉ có alert + triage **mà thiếu escalation và rollback** — chẩn đoán được ban đầu nhưng bí khi cần leo thang hoặc khôi phục dịch vụ."
+      },
+      {
+        "k": "D",
+        "text": "Escalation paths and rollback procedures only, without alert definitions, triage steps, or dashboard references to guide initial incident response.",
+        "vi": "Chỉ có đường chuyển cấp và quy trình rollback, không có định nghĩa cảnh báo, bước phân loại xử lý hay tham chiếu dashboard để dẫn dắt phản ứng ban đầu với sự cố.",
+        "correct": false,
+        "why": "Chỉ có escalation + rollback **mà thiếu alert definition và triage** — có bước xử lý cuối nhưng không biết khi nào bắt đầu hay chẩn đoán ra sao."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "operational runbook",
+      "choice": "Common alerts and their triage steps",
+      "note": "Runbook đủ phải có cả năm thứ: **alert**, **triage**, **escalation**, **rollback**, **dashboard/log**. Đứt khâu nào giữa chuỗi từ phát hiện tới xử lý xong thì on-call cũng bị kẹt.",
+      "rules": [
+        {
+          "trigger": "operational runbook",
+          "choice": "Common alerts and their triage steps"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Runbook đủ dùng — thiếu một khâu là kẹt cả ca trực",
+      "text": "Soạn runbook vận hành cho một service Claude-based — hỏi nội dung nào là **essential**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.4 · Gói bàn giao để đội triển khai tự làm được"
+    ]
+  },
+  {
+    "n": 47,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are designing a feedback session for a deployment in flight. Which structure best supports [[productive stakeholder feedback]]?",
+    "q_vi": "Bạn đang thiết kế một buổi lấy phản hồi cho một triển khai đang chạy dở. Cấu trúc nào hỗ trợ tốt nhất cho phản hồi hiệu quả từ các bên liên quan?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Hold an open-ended meeting with no pre-distributed agenda or artifacts, and rely on participants' memory to carry decisions and follow-up owners forward.",
+        "vi": "Tổ chức một buổi họp mở không gửi trước agenda hay tài liệu, và trông vào trí nhớ người dự để mang các quyết định và người phụ trách việc tiếp theo về sau.",
+        "correct": false,
+        "why": "Họp mở, **không agenda, không tài liệu gửi trước**, dựa vào trí nhớ để mang quyết định đi tiếp — thông tin dễ thất thoát."
+      },
+      {
+        "k": "B",
+        "text": "Define a focused agenda, [[share the artifacts in advance]], [[capture decisions and follow-ups in writing]], and confirm action owners and dates.",
+        "vi": "Định một agenda tập trung, gửi tài liệu trước, ghi lại quyết định và việc tiếp theo bằng văn bản, và xác nhận người phụ trách cùng hạn chót.",
+        "correct": true,
+        "why": "Cấu trúc chuẩn: **agenda tập trung + gửi tài liệu trước buổi họp** để người tham dự có thời gian chuẩn bị, rồi **ghi lại quyết định và việc cần làm bằng văn bản**, chốt rõ ai phụ trách và hạn chót — mọi thứ được chuẩn bị kỹ và lưu vết, không phụ thuộc trí nhớ ai cả."
+      },
+      {
+        "k": "C",
+        "text": "Distribute artifacts at the session start rather than in advance, so stakeholders review materials in real time without preparation before the discussion begins.",
+        "vi": "Phát tài liệu lúc bắt đầu buổi thay vì gửi trước, để các bên xem tài liệu tại chỗ mà không chuẩn bị trước khi thảo luận.",
+        "correct": false,
+        "why": "Phát tài liệu **ngay lúc bắt đầu thay vì gửi trước**, buộc người tham dự vừa đọc vừa họp — không kịp chuẩn bị ý kiến."
+      },
+      {
+        "k": "D",
+        "text": "End the session without recording decisions, follow-up items, action owners, or dates, relying on participant memory to carry the session's outcomes forward.",
+        "vi": "Kết thúc buổi mà không ghi lại quyết định, việc tiếp theo, người phụ trách hay hạn chót, trông vào trí nhớ người dự để mang kết quả của buổi về sau.",
+        "correct": false,
+        "why": "Kết thúc **mà không ghi lại quyết định, việc cần làm, người phụ trách, hay hạn chót** — buổi họp coi như không để lại dấu vết gì."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "productive stakeholder feedback",
+      "choice": "share the artifacts in advance · capture decisions and follow-ups in writing",
+      "note": "Feedback hiệu quả = **chuẩn bị trước (agenda + tài liệu) + chốt lại sau (quyết định, owner, hạn) bằng văn bản** — không dựa vào trí nhớ ai.",
+      "rules": [
+        {
+          "trigger": "productive stakeholder feedback",
+          "choice": "share the artifacts in advance · capture decisions and follow-ups in writing"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Feedback session hiệu quả — chuẩn bị trước, chốt lại bằng văn bản",
+      "text": "Thiết kế buổi lấy feedback cho một deployment **đang triển khai dở** — hỏi cấu trúc nào hỗ trợ feedback hiệu quả nhất."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.3 · Vòng phản hồi có nhịp"
+    ]
+  },
+  {
+    "n": 48,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are integrating AI-assisted tooling into the team's documentation workflow. The team wants generated documentation that [[stays grounded in the actual code]]. Which integration approach best fits this requirement?",
+    "q_vi": "Bạn đang tích hợp tool có AI hỗ trợ vào quy trình viết tài liệu của nhóm. Nhóm muốn tài liệu sinh ra luôn bám vào code thật. Cách tích hợp nào hợp nhất với yêu cầu này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Generate documentation from the model's training-data recall without reading any of the actual repository code, accepting that the output will not reflect the current implementation.",
+        "vi": "Sinh tài liệu từ những gì model nhớ trong dữ liệu huấn luyện mà không đọc code thật nào trong repo, chấp nhận đầu ra không phản ánh cài đặt hiện tại.",
+        "correct": false,
+        "why": "Sinh tài liệu từ **trí nhớ huấn luyện, không đọc code thật nào** — chắc chắn lệch khỏi implementation hiện tại."
+      },
+      {
+        "k": "B",
+        "text": "Have the subagents publish generated documentation directly to the public-facing site without passing through the team's normal review workflow or any human approval step.",
+        "vi": "Cho các subagent đăng thẳng tài liệu sinh ra lên trang công khai mà không qua quy trình review thường lệ của nhóm hay bất kỳ bước duyệt nào của con người.",
+        "correct": false,
+        "why": "Xuất bản thẳng ra ngoài **không qua review** — dù có đọc code thật, vẫn thiếu bước kiểm tra con người trước khi công khai."
+      },
+      {
+        "k": "C",
+        "text": "Configure subagents that [[read the relevant code files]] via filesystem and code-search tools, generate the documentation, and [[emit changes through the team's normal review workflow]].",
+        "vi": "Cấu hình các subagent đọc các file code liên quan qua tool filesystem và tìm kiếm code, sinh tài liệu, và đưa thay đổi qua quy trình review thường lệ của nhóm.",
+        "correct": true,
+        "why": "Subagent **đọc trực tiếp code qua filesystem và code-search tool**, sinh tài liệu từ đó, rồi **đẩy thay đổi qua đúng quy trình review** của team — vừa đảm bảo nội dung bám sát code thật (vì đọc trực tiếp), vừa có người kiểm tra trước khi công bố."
+      },
+      {
+        "k": "D",
+        "text": "Disable all filesystem and code-search tools so the subagents cannot read any repository code, accepting that documentation generation will be entirely disconnected from the actual implementation.",
+        "vi": "Tắt mọi tool filesystem và tìm kiếm code để subagent không đọc được code nào trong repo, chấp nhận việc sinh tài liệu hoàn toàn tách rời khỏi cài đặt thật.",
+        "correct": false,
+        "why": "**Tắt hết công cụ đọc code** khiến subagent không còn cách nào bám vào implementation thật — đi ngược hoàn toàn yêu cầu đề bài."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "stays grounded in the actual code",
+      "choice": "read the relevant code files · emit changes through the team's normal review workflow",
+      "note": "Grounded-in-code = **đọc code thật (filesystem/code-search) + qua review trước khi xuất bản**. Thiếu một vế (A mất đọc code, B mất review, D mất luôn khả năng đọc) đều hỏng.",
+      "rules": [
+        {
+          "trigger": "stays grounded in the actual code",
+          "choice": "read the relevant code files · emit changes through the team's normal review workflow"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tài liệu AI sinh ra phải bám sát code — đọc thật, qua review thật",
+      "text": "Muốn tài liệu do AI sinh ra **luôn khớp với code thực tế**, không phải nội dung tưởng tượng từ model."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.2 · Đưa Claude Code vào pull request và CI"
+    ]
+  },
+  {
+    "n": 49,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "type": "matrix",
+    "choices": [
+      "Yes",
+      "No"
+    ],
+    "q": "You are reviewing a peer's end-to-end design for a Claude-based platform expected to scale to thousands of concurrent users. For each statement, indicate Yes if it reflects sound architectural practice. Otherwise, select No.",
+    "q_vi": "Bạn đang review thiết kế end-to-end của một đồng nghiệp cho một platform chạy trên Claude dự kiến mở rộng tới hàng nghìn người dùng đồng thời. Với mỗi nhận định, chọn Yes nếu nó phản ánh cách làm kiến trúc đúng. Ngược lại, chọn No.",
+    "options": [
+      {
+        "k": "1",
+        "text": "Authentication and authorization run before retrieval so retrieval can filter by identity.",
+        "vi": "Xác thực và phân quyền chạy trước bước truy xuất để truy xuất lọc được theo danh tính.",
+        "correct": false,
+        "why": "Phải biết người hỏi là ai và được xem gì trước, thì bước retrieval mới lọc ra những tài liệu người đó được phép đọc.",
+        "pick": "Yes"
+      },
+      {
+        "k": "2",
+        "text": "An asynchronous queue absorbs bursty traffic between intake and the model invocation layer.",
+        "vi": "Một hàng đợi bất đồng bộ hấp thụ traffic dồn dập giữa bước tiếp nhận và tầng gọi model.",
+        "correct": false,
+        "why": "Hàng nghìn người dùng cùng lúc thì traffic lên xuống thất thường. Hàng đợi giữ request lại rồi đưa dần vào model, nên model không bị quá tải.",
+        "pick": "Yes"
+      },
+      {
+        "k": "3",
+        "text": "[[Tax computation]] is encoded directly in the system prompt rather than in code.",
+        "vi": "Việc tính thuế được viết thẳng trong system prompt thay vì trong code.",
+        "correct": false,
+        "why": "Tính thuế phải ra cùng một kết quả mỗi lần, nên viết trong code để chính xác và kiểm thử được. Để model tự tính theo prompt thì có lúc tính nhầm.",
+        "pick": "No"
+      },
+      {
+        "k": "4",
+        "text": "[[Conversation logs]] include unredacted government identifiers to maximize signal for tuning.",
+        "vi": "Log hội thoại chứa số định danh nhà nước không che, để có nhiều tín hiệu nhất cho việc tinh chỉnh.",
+        "correct": false,
+        "why": "Số định danh nhà nước (như số căn cước) là PII. Log luôn phải che PII, mục đích tinh chỉnh model cũng không là ngoại lệ.",
+        "pick": "No"
+      }
+    ],
+    "answer": "1: Yes · 2: Yes · 3: No · 4: No",
+    "tip": {
+      "trigger": "Tax computation · Conversation logs | Còn lại",
+      "choice": "No | Yes",
+      "note": "Phép tính để trong **code** chứ không trong prompt, PII trong log thì **luôn che**. Kiểm quyền trước retrieval và hàng đợi đỡ tải dồn thì chọn Yes.",
+      "rules": [
+        {
+          "trigger": "Tax computation · Conversation logs",
+          "choice": "No"
+        },
+        {
+          "trigger": "Còn lại",
+          "choice": "Yes"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Thiết kế hợp lý cho nền tảng hàng nghìn người dùng đồng thời",
+      "text": "Đề đưa 4 nhận định trong bản thiết kế end-to-end của đồng nghiệp. Cách làm kiến trúc hợp lý thì chọn Yes."
+    },
+    "lessons": [
+      "Bài 1.2 · Thứ tự an toàn và chịu tải"
+    ]
+  },
+  {
+    "n": 50,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are presenting an architectural decision to a [[mixed audience]] that includes an executive sponsor and the engineering leads who will implement the decision. Which presentation strategy [[best serves both audiences]]?",
+    "q_vi": "Bạn đang trình bày một quyết định kiến trúc cho một nhóm người nghe hỗn hợp gồm nhà tài trợ cấp điều hành và các trưởng nhóm kỹ thuật sẽ thực hiện quyết định đó. Cách trình bày nào phục vụ tốt nhất cả hai nhóm?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Open with a deep dive into low-level implementation details targeted at engineering leads, and stop there without addressing the business outcomes or trade-offs the executive sponsor needs.",
+        "vi": "Mở đầu bằng phần đi sâu vào chi tiết cài đặt cấp thấp dành cho trưởng nhóm kỹ thuật, và dừng ở đó mà không nói tới kết quả kinh doanh hay các đánh đổi mà nhà tài trợ cần.",
+        "correct": false,
+        "why": "Mở đầu bằng **chi tiết kỹ thuật thấp cấp rồi dừng lại**, không hề chạm outcome/trade-off mà exec cần — bỏ rơi một nửa audience."
+      },
+      {
+        "k": "B",
+        "text": "[[Lead with the decision, the business outcomes it serves]], and the trade-offs accepted; [[follow with the technical rationale]], alternatives, and implementation implications for the engineering audience.",
+        "vi": "Mở đầu bằng quyết định, kết quả kinh doanh mà nó phục vụ và các đánh đổi đã chấp nhận; tiếp theo là lý giải kỹ thuật, các phương án khác và hệ quả triển khai cho nhóm kỹ thuật.",
+        "correct": true,
+        "why": "**Mở đầu bằng quyết định, giá trị kinh doanh nó mang lại, và trade-off đã chấp nhận — đúng thứ exec cần trước** — rồi **tiếp nối bằng rationale kỹ thuật, phương án thay thế, tác động triển khai — phục vụ engineering** — mỗi phần đúng trọng tâm của từng nhóm, theo đúng thứ tự quan tâm của họ."
+      },
+      {
+        "k": "C",
+        "text": "Skip the rationale, alternatives, and trade-off discussion entirely and simply announce the chosen decision, leaving both audiences without the context needed to implement or validate it.",
+        "vi": "Bỏ hẳn phần lý giải, phương án khác và thảo luận đánh đổi mà chỉ công bố quyết định đã chọn, khiến cả hai nhóm thiếu context để thực hiện hay kiểm chứng nó.",
+        "correct": false,
+        "why": "**Bỏ hẳn rationale, phương án thay thế, trade-off**, chỉ công bố quyết định — cả hai nhóm đều thiếu context để hiểu hay triển khai."
+      },
+      {
+        "k": "D",
+        "text": "Present a single undifferentiated narrative that addresses technical and business concerns with equal weight throughout, treating both audiences as requiring the same depth on every section.",
+        "vi": "Trình bày một mạch duy nhất không phân biệt, nói về vấn đề kỹ thuật và kinh doanh với mức nặng như nhau từ đầu tới cuối, coi cả hai nhóm cần cùng độ sâu ở mọi phần.",
+        "correct": false,
+        "why": "Một mạch **không phân biệt, kỹ thuật và kinh doanh nặng như nhau xuyên suốt** — không ai nhận đúng thứ mình cần đúng lúc, gây loãng thông tin cho cả hai."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "mixed audience · best serves both audiences",
+      "choice": "Lead with the decision, the business outcomes it serves · follow with the technical rationale",
+      "note": "Audience hỗn hợp thì **exec trước (decision + outcome + trade-off), kỹ thuật sau (rationale + alternatives)**, có thứ tự rõ ràng. Viết đều tay một mạch như đáp án D, hay bỏ sót một bên như đáp án A, đều sai.",
+      "rules": [
+        {
+          "trigger": "mixed audience · best serves both audiences",
+          "choice": "Lead with the decision, the business outcomes it serves · follow with the technical rationale"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Trình bày cho audience hỗn hợp — chốt quyết định trước, đi sâu kỹ thuật sau",
+      "text": "Trình bày một quyết định kiến trúc cho **cả exec sponsor lẫn engineering lead** trong cùng một buổi — hai nhóm cần loại thông tin khác nhau."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.2 · Quyết định trước, phần của từng người sau"
+    ]
+  },
+  {
+    "n": 51,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "q": "You are selecting a pattern for a compliance Q & A assistant that must answer policy questions with [[citations to the authoritative internal source set]]. [[Latency, cost, and audit predictability]] are prioritized. Which pattern is the best fit?",
+    "q_vi": "Bạn đang chọn mẫu kiến trúc cho một trợ lý hỏi đáp tuân thủ, phải trả lời câu hỏi về chính sách kèm trích dẫn tới bộ nguồn nội bộ có thẩm quyền. Độ trễ, chi phí và khả năng kiểm tra được ưu tiên. Mẫu nào phù hợp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Augmented LLM with retrieval-augmented generation]] over the indexed authoritative corpus and [[citation rendering]] on each answer.",
+        "vi": "LLM tăng cường với retrieval-augmented generation trên kho tài liệu có thẩm quyền đã đánh index, kèm hiển thị trích dẫn ở mỗi câu trả lời.",
+        "correct": true,
+        "why": "**Augmented LLM với RAG trên corpus chính thống đã index, kèm render citation cho mỗi câu trả lời** — mỗi câu hỏi chỉ cần một lượt truy xuất + sinh câu trả lời, vừa nhanh vừa rẻ vừa dễ audit (luôn có citation cụ thể để kiểm chứng) — đáp ứng đúng cả 3 ưu tiên."
+      },
+      {
+        "k": "B",
+        "text": "Multi-agent orchestration with a planner, researcher, and writer agent for every query.",
+        "vi": "Điều phối nhiều agent với agent lập kế hoạch, agent nghiên cứu và agent viết cho mọi truy vấn.",
+        "correct": false,
+        "why": "Multi-agent với planner/researcher/writer **chạy cho mọi câu hỏi** — nhiều bước hơn nghĩa là chậm hơn, tốn hơn, khó audit hơn hẳn RAG đơn giản."
+      },
+      {
+        "k": "C",
+        "text": "A pure agent loop with open web-browsing tools to surface the most current policy information, without constraining retrieval to the authoritative internal corpus.",
+        "vi": "Một vòng lặp agent thuần với tool duyệt web mở để lấy thông tin chính sách mới nhất, không giới hạn truy xuất trong kho nội bộ có thẩm quyền.",
+        "correct": false,
+        "why": "Agent loop web-browsing **không giới hạn vào corpus nội bộ chính thống** — vi phạm thẳng yêu cầu 'trích dẫn nguồn chính thống', rủi ro lấy thông tin ngoài kiểm soát."
+      },
+      {
+        "k": "D",
+        "text": "A static prompt with the entire policy corpus concatenated into every request.",
+        "vi": "Một prompt tĩnh nối toàn bộ kho chính sách vào mọi request.",
+        "correct": false,
+        "why": "Nhét **toàn bộ corpus chính sách vào mỗi request** — input token khổng lồ mỗi lần gọi, vừa tốn kém vừa chậm, không scale."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "citations to the authoritative internal source set · Latency, cost, and audit predictability",
+      "choice": "Augmented LLM with retrieval-augmented generation · citation rendering",
+      "note": "Cần citation từ nguồn cố định, lại ưu tiên latency, cost, audit thì chọn **RAG đơn giản, có citation**. Multi-agent (đáp án B) và nhét cả corpus vào mỗi lần gọi (đáp án D) đều tốn hơn không cần thiết; web-browsing (đáp án C) phá ràng buộc nguồn chính thống.",
+      "rules": [
+        {
+          "trigger": "citations to the authoritative internal source set · Latency, cost, and audit predictability",
+          "choice": "Augmented LLM with retrieval-augmented generation · citation rendering"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Compliance Q&A cần citation — RAG đơn giản khi latency/cost/audit là ưu tiên",
+      "text": "Trợ lý Q&A chính sách phải trích dẫn đúng nguồn nội bộ chính thống, đồng thời ưu tiên **latency thấp, chi phí thấp, khả năng audit dự đoán được**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.3 · Ba mẫu kiến trúc"
+    ]
+  },
+  {
+    "n": 52,
+    "topic": "Integration",
+    "multi": false,
+    "q": "You are a platform architect designing an internal Claude-based assistant that serves both finance analysts and external auditors. Each population must access only documents permitted by its role. [[Where should role-based access control be enforced]] in the pipeline?",
+    "q_vi": "Bạn là platform architect đang thiết kế một trợ lý nội bộ chạy trên Claude phục vụ cả chuyên viên tài chính lẫn kiểm toán viên bên ngoài. Mỗi nhóm chỉ được truy cập tài liệu mà vai trò của mình cho phép. Nên áp phân quyền theo vai trò ở đâu trong pipeline?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Inside the system prompt as a natural-language instruction for Claude to ignore unauthorized documents.",
+        "vi": "Trong system prompt, dưới dạng chỉ dẫn bằng lời bảo Claude bỏ qua các tài liệu không được phép.",
+        "correct": false,
+        "why": "Nhét chỉ dẫn 'bỏ qua tài liệu không được phép' vào system prompt **không phải access control thật** — chỉ là gợi ý ngôn ngữ tự nhiên, model có thể không tuân theo."
+      },
+      {
+        "k": "B",
+        "text": "[[At the retrieval layer, before any role-restricted content]] reaches the prompt-construction step or the model.",
+        "vi": "Ở tầng truy xuất, trước khi bất kỳ nội dung bị giới hạn theo vai trò nào tới bước dựng prompt hay tới model.",
+        "correct": true,
+        "why": "Enforce **ngay tại tầng retrieval, trước khi nội dung bị hạn chế theo vai trò có cơ hội tới bước dựng prompt hoặc tới model** — dữ liệu không được phép thì không bao giờ lọt vào context, loại trừ hoàn toàn rủi ro rò rỉ qua output hay qua chính quá trình suy luận của model."
+      },
+      {
+        "k": "C",
+        "text": "Nowhere in the pipeline; rely on the model's general refusal behavior to reject unauthorized document access without any enforced access control.",
+        "vi": "Không ở đâu trong pipeline; trông vào hành vi từ chối chung của model để chặn truy cập tài liệu trái phép mà không có kiểm soát truy cập nào được áp.",
+        "correct": false,
+        "why": "**Không enforce ở đâu cả**, trông chờ hành vi từ chối chung chung của model — đây là may rủi, không phải kiểm soát truy cập."
+      },
+      {
+        "k": "D",
+        "text": "After the response is generated, by post-filtering content that should not have been retrieved.",
+        "vi": "Sau khi sinh câu trả lời, bằng cách lọc sau các nội dung lẽ ra không được truy xuất.",
+        "correct": false,
+        "why": "Lọc **sau khi đã sinh phản hồi** nghĩa là nội dung hạn chế đã lọt vào context và có thể ảnh hưởng lý luận của model từ trước — enforcement đến quá trễ."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "Where should role-based access control be enforced",
+      "choice": "At the retrieval layer, before any role-restricted content",
+      "note": "RBAC đúng chỗ là **chặn tại retrieval, trước khi dữ liệu vào prompt**. Chặn bằng câu dặn trong prompt (đáp án A) không chắc chắn, không chặn gì (đáp án C) là rủi ro, chặn sau khi sinh (đáp án D) là quá muộn.",
+      "rules": [
+        {
+          "trigger": "Where should role-based access control be enforced",
+          "choice": "At the retrieval layer, before any role-restricted content"
+        }
+      ]
+    },
+    "ask": {
+      "title": "RBAC phải chặn TẠI retrieval, trước khi dữ liệu chạm model",
+      "text": "Hai nhóm người dùng (finance analyst, external auditor) chỉ được xem tài liệu đúng vai trò mình — hỏi **nên enforce RBAC ở đâu trong pipeline**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.2 · Kiểm quyền trước khi dữ liệu tới model"
+    ]
+  },
+  {
+    "n": 53,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "You are designing a content moderation classifier that processes [[high volumes]] of usergenerated comments under a [[tight per-message latency budget]] using well-defined classification labels. Which model selection best aligns with the workload?",
+    "q_vi": "Bạn đang thiết kế một bộ phân loại kiểm duyệt nội dung xử lý lượng rất lớn bình luận do người dùng tạo với ngân sách độ trễ mỗi tin nhắn rất chặt, dùng các nhãn phân loại đã định nghĩa rõ. Lựa chọn model nào hợp nhất với workload này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Opus, because every moderation decision requires maximum reasoning depth regardless of classification complexity.",
+        "vi": "Opus, vì mọi quyết định kiểm duyệt đều cần độ sâu suy luận tối đa bất kể độ phức tạp của việc phân loại.",
+        "correct": false,
+        "why": "Cho rằng **mọi quyết định moderation đều cần reasoning tối đa** là sai — nhãn đã rõ ràng sẵn, không cần độ sâu đó, còn vi phạm luôn ràng buộc latency."
+      },
+      {
+        "k": "B",
+        "text": "[[Haiku]], because its latency and cost profile align with high-volume classification workloads that require limited reasoning depth.",
+        "vi": "Haiku, vì đặc điểm độ trễ và chi phí của nó hợp với workload phân loại lưu lượng lớn cần ít độ sâu suy luận.",
+        "correct": true,
+        "why": "**Haiku phù hợp vì profile latency/cost của nó khớp với workload classification khối lượng lớn, chỉ cần độ sâu suy luận hạn chế** — dùng đúng model nhỏ, nhanh cho việc không cần reasoning phức tạp."
+      },
+      {
+        "k": "C",
+        "text": "Sonnet, because larger general-purpose models are preferred even when workload latency requirements are strict.",
+        "vi": "Sonnet, vì model đa dụng lớn hơn được ưu tiên kể cả khi yêu cầu độ trễ của workload rất chặt.",
+        "correct": false,
+        "why": "Ưu tiên model lớn hơn **ngay cả khi latency đòi hỏi nghiêm ngặt** là bỏ qua chính ràng buộc quan trọng nhất của bài toán."
+      },
+      {
+        "k": "D",
+        "text": "Sonnet with extended thinking enabled, because deeper reasoning should be applied to every moderation request to improve edge-case handling.",
+        "vi": "Sonnet có bật extended thinking, vì nên áp suy luận sâu hơn cho mọi request kiểm duyệt để xử lý ca biên tốt hơn.",
+        "correct": false,
+        "why": "Bật extended thinking **cho mọi request** cộng thêm độ trễ đáng kể vào một workload vốn cần nhanh — phản tác dụng."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "high volumes · tight per-message latency budget",
+      "choice": "Haiku",
+      "note": "Khối lượng lớn, latency chặt, nhãn rõ ràng thì **chọn model nhẹ nhất vẫn đáp ứng đủ (Haiku)**. Đừng mang \"súng lớn\" (Opus, hay Sonnet kèm thinking) ra dùng cho việc không cần suy luận sâu.",
+      "rules": [
+        {
+          "trigger": "high volumes · tight per-message latency budget",
+          "choice": "Haiku"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chọn model theo workload — Haiku cho classification khối lượng lớn, latency chặt",
+      "text": "Bộ phân loại nội dung xử lý **khối lượng lớn**, **latency mỗi tin nhắn phải chặt**, nhãn phân loại đã định nghĩa rõ ràng — không đòi hỏi suy luận sâu."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.1 · So bằng chi phí trên mỗi việc xong"
+    ]
+  },
+  {
+    "n": 54,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "A Claude architect is implementing safety controls for a customer-facing advice assistant that [[must never provide]] regulated investment recommendations. Which two guardrail implementations most directly enforce this constraint? (Select two.)",
+    "q_vi": "Một kiến trúc sư Claude đang làm các biện pháp an toàn cho một trợ lý tư vấn phục vụ khách hàng, không bao giờ được đưa ra khuyến nghị đầu tư thuộc diện quản lý. Hai cách cài guardrail nào áp ràng buộc này trực tiếp nhất? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Increase response temperature to introduce variability that reduces the likelihood of specific recommendations.",
+        "vi": "Tăng temperature để câu trả lời biến thiên hơn, giảm khả năng đưa khuyến nghị cụ thể.",
+        "correct": false,
+        "why": "Tăng temperature chỉ làm câu chữ ngẫu nhiên hơn, không ngăn được nội dung khuyến nghị đầu tư. Đây là chỉnh tham số, không phải guardrail."
+      },
+      {
+        "k": "B",
+        "text": "Add an [[output classifier]] that detects and blocks responses containing regulated investmentrecommendation language.",
+        "vi": "Thêm một bộ phân loại đầu ra phát hiện và chặn câu trả lời có ngôn ngữ khuyến nghị đầu tư thuộc diện quản lý.",
+        "correct": true,
+        "why": "Một bộ phân loại (**output classifier**) đọc từng câu trả lời trước khi gửi đi; thấy câu chữ mang tính khuyến nghị đầu tư thì chặn lại. Đây là chốt cuối: dù model lỡ viết ra, khách hàng cũng không nhận được."
+      },
+      {
+        "k": "C",
+        "text": "Limit session length to reduce the volume of queries processed per user per day.",
+        "vi": "Giới hạn độ dài phiên để giảm số truy vấn xử lý cho mỗi người dùng mỗi ngày.",
+        "correct": false,
+        "why": "Giới hạn độ dài phiên chỉ giảm số câu hỏi mỗi ngày, không liên quan đến việc nội dung bị cấm có xuất hiện hay không."
+      },
+      {
+        "k": "D",
+        "text": "Log all user queries to a SIEM for post-hoc compliance review.",
+        "vi": "Ghi mọi truy vấn của người dùng vào SIEM để review tuân thủ sau đó.",
+        "correct": false,
+        "why": "Ghi log để xem lại sau là phát hiện khi đã muộn: câu trả lời vi phạm đã đến tay khách hàng rồi."
+      },
+      {
+        "k": "E",
+        "text": "Define [[explicit out-of-scope categories]] in the system prompt with fixed refusal phrasing for investment advice requests.",
+        "vi": "Định nghĩa rõ các nhóm ngoài phạm vi trong system prompt, với câu từ chối cố định cho các yêu cầu tư vấn đầu tư.",
+        "correct": true,
+        "why": "Ghi rõ trong system prompt những chủ đề **ngoài phạm vi**, trong đó có tư vấn đầu tư, kèm một câu từ chối cố định. Model biết từ đầu là không trả lời loại câu này và trả lời giống nhau mọi lần, không phải tự nghĩ cách từ chối."
+      }
+    ],
+    "answer": "B, E",
+    "tip": {
+      "trigger": "must never provide",
+      "choice": "output classifier · explicit out-of-scope categories",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng.\nBa kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog).\nỞ câu này, đề nói **must never provide** nên cần chặn trực tiếp: đáp án B **output classifier** chặn ở đầu ra, đáp án E **explicit out-of-scope categories** kèm câu từ chối cố định trong prompt. Đáp án A (temperature), C (độ dài phiên) là Lạc; D là Thiếu (chỉ xem log về sau).",
+      "rules": [
+        {
+          "trigger": "must never provide",
+          "choice": "output classifier · explicit out-of-scope categories"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Trợ lý không được khuyến nghị đầu tư: chặn ở đầu ra và khoanh phạm vi ngay trong prompt",
+      "text": "Trợ lý tư vấn khách hàng **không bao giờ được đưa ra khuyến nghị đầu tư thuộc diện pháp luật quản lý**. Đề hỏi hai guardrail **thực thi trực tiếp** ràng buộc này."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.1 · Xếp lớp, không dựa vào một lớp"
+    ]
+  },
+  {
+    "n": 55,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are responding to a stakeholder request that [[adds significant scope]] to a deployment [[already in flight]]. Which response best aligns expectations while respecting the stakeholder's underlying need?",
+    "q_vi": "Bạn đang trả lời một yêu cầu của bên liên quan làm tăng đáng kể phạm vi của một triển khai đang chạy dở. Cách phản hồi nào thống nhất kỳ vọng tốt nhất mà vẫn tôn trọng nhu cầu thật sự của bên liên quan?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Hide the scope-addition request from the broader delivery team to avoid a difficult conversation, allowing the change to proceed without team awareness of its timeline implications.",
+        "vi": "Giấu yêu cầu thêm phạm vi khỏi nhóm triển khai để tránh một cuộc nói chuyện khó, để thay đổi diễn ra mà nhóm không biết hệ quả về tiến độ.",
+        "correct": false,
+        "why": "**Giấu yêu cầu này với đội triển khai** để né việc khó nói — thiếu minh bạch, đội sẽ bất ngờ khi timeline trễ mà không hiểu vì sao."
+      },
+      {
+        "k": "B",
+        "text": "Decline the request outright without acknowledging the stakeholder's underlying need or offering alternatives such as deferral, descoping, or timeline extension.",
+        "vi": "Từ chối thẳng yêu cầu mà không ghi nhận nhu cầu thật sự của bên liên quan hay đưa ra phương án khác như hoãn, cắt bớt phạm vi hay kéo dài tiến độ.",
+        "correct": false,
+        "why": "**Từ chối thẳng, không ghi nhận nhu cầu, không đưa phương án nào** — không tôn trọng nhu cầu thật của stakeholder, dễ mất lòng tin."
+      },
+      {
+        "k": "C",
+        "text": "Acknowledge the request, [[describe the scope and timeline implications transparently]], and [[propose options]]-defer it, descope something else, or extend the timeline-for the stakeholder to choose.",
+        "vi": "Ghi nhận yêu cầu, nói rõ minh bạch hệ quả về phạm vi và tiến độ, và đề xuất các phương án (hoãn lại, cắt bớt phần khác, hoặc kéo dài tiến độ) để bên liên quan chọn.",
+        "correct": true,
+        "why": "**Ghi nhận yêu cầu, trình bày minh bạch tác động lên scope/timeline, rồi đề xuất các lựa chọn — hoãn lại, bớt việc khác, hoặc giãn timeline — để stakeholder tự chọn** — vừa tôn trọng nhu cầu của họ, vừa giữ minh bạch và chủ động kiểm soát kế hoạch."
+      },
+      {
+        "k": "D",
+        "text": "Accept the additional scope into the current release without describing the timeline or descoping implications, allowing the delivery plan to absorb unacknowledged changes until they surface as delays.",
+        "vi": "Nhận phần phạm vi thêm vào bản phát hành hiện tại mà không nói về hệ quả tiến độ hay việc cắt bớt phạm vi, để kế hoạch triển khai gánh các thay đổi không được ghi nhận cho tới khi chúng lộ ra thành trễ hạn.",
+        "correct": false,
+        "why": "**Nhận thêm việc mà không nói rõ hệ quả timeline/scope** — âm thầm để kế hoạch tự 'hấp thụ' thay đổi cho tới khi trễ hạn mới lộ ra."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "adds significant scope · already in flight",
+      "choice": "describe the scope and timeline implications transparently · propose options",
+      "note": "Scope creep giữa chừng thì **minh bạch tác động và đưa lựa chọn cụ thể (hoãn, bớt, giãn) để họ chọn**. Giấu (đáp án A), từ chối cứng (đáp án B), âm thầm nhận (đáp án D) đều thiếu vế minh bạch hoặc vế tôn trọng nhu cầu.",
+      "rules": [
+        {
+          "trigger": "adds significant scope · already in flight",
+          "choice": "describe the scope and timeline implications transparently · propose options"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Scope creep giữa chừng — minh bạch, đưa lựa chọn, để stakeholder tự quyết",
+      "text": "Stakeholder xin thêm scope đáng kể cho một deployment **đang chạy dở** — cần phản hồi vừa tôn trọng nhu cầu thật của họ, vừa không phá vỡ kế hoạch."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.3 · Khi các bên lo lắng: đưa số đo, rồi thương lượng"
+    ]
+  },
+  {
+    "n": 56,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "You are assessing data-exfiltration risk in a Claude-based assistant that has tools for both internal-document retrieval and outbound HTTP calls. Which scenario [[most directly indicates a data-exfiltration risk]]?",
+    "q_vi": "Bạn đang đánh giá rủi ro lọt dữ liệu ra ngoài ở một trợ lý chạy trên Claude có tool truy xuất tài liệu nội bộ và tool gọi HTTP ra ngoài. Tình huống nào cho thấy trực tiếp nhất rủi ro lọt dữ liệu ra ngoài?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The outbound HTTP tool returns a 200 response when the assistant calls an allow-listed domain to fulfil a user-initiated data-lookup request.",
+        "vi": "Tool HTTP ra ngoài trả 200 khi trợ lý gọi một domain trong allowlist để đáp ứng yêu cầu tra cứu dữ liệu do người dùng khởi tạo.",
+        "correct": false,
+        "why": "Gọi domain **đã nằm trong allowlist, đúng theo yêu cầu người dùng** — hành vi bình thường, có kiểm soát, không phải rủi ro."
+      },
+      {
+        "k": "B",
+        "text": "The user submits a routine question and receives a routine answer.",
+        "vi": "Người dùng gửi một câu hỏi thông thường và nhận câu trả lời thông thường.",
+        "correct": false,
+        "why": "Câu hỏi thường, trả lời thường — **không có dấu hiệu bất thường nào** liên quan tới việc dữ liệu bị đưa ra ngoài."
+      },
+      {
+        "k": "C",
+        "text": "[[Adversarial content in a retrieved document]] instructs the model to call the outbound HTTP tool and send sensitive content to an [[attacker-controlled URL]].",
+        "vi": "Nội dung độc hại trong một tài liệu truy xuất bảo model gọi tool HTTP ra ngoài và gửi nội dung nhạy cảm tới một URL do kẻ tấn công kiểm soát.",
+        "correct": true,
+        "why": "**Nội dung độc hại cài trong một tài liệu được truy xuất ra lệnh cho model gọi tool HTTP, gửi dữ liệu nhạy cảm tới URL do kẻ tấn công kiểm soát** — đây là indirect prompt injection dẫn thẳng tới exfiltration: lệnh độc hại không đến từ user, mà ẩn ngay trong dữ liệu được truy xuất."
+      },
+      {
+        "k": "D",
+        "text": "The internal-document retrieval tool returns a document that the user is authorized to view.",
+        "vi": "Tool truy xuất tài liệu nội bộ trả về một tài liệu người dùng được phép xem.",
+        "correct": false,
+        "why": "Tài liệu trả về **đúng quyền xem của user** — truy xuất hợp lệ, không phải rò rỉ."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "most directly indicates a data-exfiltration risk",
+      "choice": "Adversarial content in a retrieved document · attacker-controlled URL",
+      "note": "Exfiltration thật thường đến từ **nội dung độc hại ẩn trong dữ liệu truy xuất, điều khiển tool gọi ra ngoài**. Một lệnh gọi tool bình thường, hợp lệ (đáp án A, D) hay một câu hỏi vô hại (đáp án B) thì không phải.",
+      "rules": [
+        {
+          "trigger": "most directly indicates a data-exfiltration risk",
+          "choice": "Adversarial content in a retrieved document · attacker-controlled URL"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Data exfiltration thật — injection gián tiếp điều khiển tool gọi ra ngoài",
+      "text": "Trợ lý có cả tool đọc tài liệu nội bộ lẫn tool gọi HTTP ra ngoài — cần chọn đúng kịch bản **thực sự chỉ ra rủi ro rò rỉ dữ liệu**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.1 · Chặn rò rỉ dữ liệu qua tool"
+    ]
+  },
+  {
+    "n": 57,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "You are building an [[ethics-review checklist]] for deployments supported by artificial intelligence. Which two checks belong on the list? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang dựng checklist review đạo đức cho các triển khai có trí tuệ nhân tạo hỗ trợ. Hai mục kiểm nào thuộc danh sách? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Confirm that vendor licensing terms permit the planned production use of the model.",
+        "vi": "Xác nhận điều khoản giấy phép của nhà cung cấp cho phép việc dùng model trên production như dự kiến.",
+        "correct": false,
+        "why": "Điều khoản giấy phép của nhà cung cấp là chuyện pháp lý, thương mại, không phải câu hỏi đạo đức về cách hệ thống đối xử với con người."
+      },
+      {
+        "k": "B",
+        "text": "Verify that outputs [[do not rely on generalizations]] about people that the underlying data does not support.",
+        "vi": "Kiểm đầu ra không dựa vào các khái quát về con người mà dữ liệu bên dưới không hỗ trợ.",
+        "correct": true,
+        "why": "Đây là phần **công bằng**. Model có thể đưa ra nhận định kiểu \"người ở vùng này thường...\" mà dữ liệu không hề chứng minh. Kiểm để output không dựa vào những **khái quát hoá về con người** như vậy, vì chúng dễ thành định kiến và gây thiệt cho một nhóm người."
+      },
+      {
+        "k": "C",
+        "text": "Confirm that high-impact decisions [[retain human accountability]] rather than being attributed to the model.",
+        "vi": "Xác nhận các quyết định có tác động lớn vẫn giữ trách nhiệm của con người thay vì quy cho model.",
+        "correct": true,
+        "why": "Đây là phần **trách nhiệm giải trình**. Với quyết định ảnh hưởng lớn (duyệt vay, tuyển dụng, chẩn đoán), phải có một người cụ thể chịu trách nhiệm, không được nói \"model quyết định\". AI chỉ hỗ trợ, người ký vẫn là người."
+      },
+      {
+        "k": "D",
+        "text": "Restrict ethics review to outputs that exceed a defined model-confidence threshold.",
+        "vi": "Chỉ review đạo đức các đầu ra vượt một ngưỡng tin cậy của model đã định.",
+        "correct": false,
+        "why": "Chỉ xét đạo đức với output vượt một ngưỡng độ tự tin là bỏ sót: model rất tự tin vẫn có thể thiên lệch. Đây là làm bớt việc."
+      },
+      {
+        "k": "E",
+        "text": "Confirm that latency and throughput targets are met across supported user populations.",
+        "vi": "Xác nhận đạt các mục tiêu độ trễ và thông lượng trên mọi nhóm người dùng được hỗ trợ.",
+        "correct": false,
+        "why": "Latency và throughput là chỉ tiêu hiệu năng, không liên quan đến công bằng hay trách nhiệm."
+      }
+    ],
+    "answer": "B, C",
+    "tip": {
+      "trigger": "ethics-review checklist",
+      "choice": "do not rely on generalizations · retain human accountability",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, đạo đức gồm công bằng và trách nhiệm: đáp án B kiểm output **do not rely on generalizations** về con người, đáp án C giữ cho quyết định lớn **retain human accountability**. Đáp án A (giấy phép là pháp lý), E (latency là hiệu năng) là Lạc; D là Thiếu (chỉ xét output vượt ngưỡng).",
+      "rules": [
+        {
+          "trigger": "ethics-review checklist",
+          "choice": "do not rely on generalizations · retain human accountability"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Checklist đạo đức khi dùng AI: không khái quát sai về con người, và con người vẫn chịu trách nhiệm",
+      "text": "Bạn soạn danh sách kiểm tra đạo đức (ethics review) cho các hệ thống có AI hỗ trợ. Đề hỏi hai mục **thật sự thuộc về đạo đức**, không phải pháp lý hay hiệu năng."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.5 · Không suy rộng vượt dữ liệu, con người chịu trách nhiệm"
+    ]
+  },
+  {
+    "n": 58,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "You are listing characteristics of [[robust guardrail design]] for an enterprise deployment. Which two characteristics belong on the list? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang liệt kê các đặc điểm của thiết kế guardrail vững chắc cho một triển khai doanh nghiệp. Hai đặc điểm nào thuộc danh sách? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Centralized log retention for guardrail violations with quarterly review by the security team.",
+        "vi": "Lưu tập trung log vi phạm guardrail, nhóm bảo mật review hằng quý.",
+        "correct": false,
+        "why": "Lưu log vi phạm rồi để đội bảo mật xem theo quý là kiểm tra sau và quá thưa. Đây là làm bớt, không phải thiết kế vững chắc."
+      },
+      {
+        "k": "B",
+        "text": "[[Per-role tool allow-lists]] enforced at the orchestration layer before any tool call executes.",
+        "vi": "Allowlist tool theo vai trò, áp ở tầng điều phối trước khi bất kỳ lời gọi tool nào chạy.",
+        "correct": true,
+        "why": "Mỗi vai trò người dùng có một danh sách tool được phép (**allow-list**), và lớp điều phối (orchestration) kiểm danh sách này **trước khi** tool nào được chạy. Model có bị lừa đòi gọi tool ngoài quyền thì lời gọi cũng bị chặn từ đầu, không phụ thuộc vào việc model nghe lời."
+      },
+      {
+        "k": "C",
+        "text": "User feedback channels that route reported guardrail failures into the product backlog for triage.",
+        "vi": "Kênh phản hồi của người dùng đưa các lỗi guardrail được báo vào product backlog để phân loại.",
+        "correct": false,
+        "why": "Đưa lỗi người dùng báo vào backlog sản phẩm là xử lý sau khi sự cố đã xảy ra, sửa nhanh hay chậm tuỳ độ ưu tiên."
+      },
+      {
+        "k": "D",
+        "text": "Periodic refresh of the system prompt wording to keep refusal language current and clear.",
+        "vi": "Định kỳ làm mới câu chữ system prompt để lời từ chối luôn cập nhật và rõ ràng.",
+        "correct": false,
+        "why": "Định kỳ sửa câu chữ system prompt vẫn chỉ dựa vào một lớp là prompt. Lớp đó lọt là hết."
+      },
+      {
+        "k": "E",
+        "text": "[[Adversarial-input coverage]] in the evaluation set with regression tracking on guardrail performance.",
+        "vi": "Bộ đánh giá có phủ đầu vào adversarial, kèm theo dõi hồi quy hiệu quả của guardrail.",
+        "correct": true,
+        "why": "Bộ đánh giá có sẵn các **input tấn công** (prompt injection, câu lách luật...), và mỗi lần thay đổi đều chạy lại để xem guardrail có yếu đi không (**regression tracking**). Nhờ vậy biết chắc guardrail còn hoạt động, không chỉ tin là nó chạy."
+      }
+    ],
+    "answer": "B, E",
+    "tip": {
+      "trigger": "robust guardrail design",
+      "choice": "Per-role tool allow-lists · Adversarial-input coverage",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, vững chắc nghĩa là chặn trước và đo đều: đáp án B **Per-role tool allow-lists** kiểm trước khi tool chạy, đáp án E **Adversarial-input coverage** có theo dõi tụt điểm. Đáp án A (xem theo quý), C (đưa vào backlog) là Thiếu; D là Cực (chỉ dựa vào câu chữ system prompt).",
+      "rules": [
+        {
+          "trigger": "robust guardrail design",
+          "choice": "Per-role tool allow-lists · Adversarial-input coverage"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Guardrail vững chắc: chặn trước khi tool chạy và đo đều đặn",
+      "text": "Đề hỏi hai đặc điểm của guardrail **thiết kế vững chắc** cho doanh nghiệp, khác với những biện pháp chỉ xử lý sau khi sự cố đã xảy ra."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.1 · Xếp lớp, không dựa vào một lớp"
+    ]
+  },
+  {
+    "n": 59,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "You are integrating human review into a high-volume classification pipeline where [[reviewing every output is infeasible]]. Which sampling strategy best balances throughput with quality oversight?",
+    "q_vi": "Bạn đang đưa bước review của con người vào một pipeline phân loại lưu lượng lớn, nơi không thể review mọi đầu ra. Chiến lược lấy mẫu nào cân bằng tốt nhất giữa thông lượng và giám sát chất lượng?",
+    "options": [
+      {
+        "k": "A",
+        "text": "No sampling, relying entirely on user complaints to reveal quality and safety problems after they affect users.",
+        "vi": "Không lấy mẫu, trông hoàn toàn vào khiếu nại của người dùng để phát hiện vấn đề chất lượng và an toàn sau khi chúng đã ảnh hưởng người dùng.",
+        "correct": false,
+        "why": "**Không sampling gì cả, chờ complaint** là bỏ hoàn toàn vai trò giám sát chủ động — vấn đề chỉ lộ ra sau khi đã ảnh hưởng người dùng."
+      },
+      {
+        "k": "B",
+        "text": "[[Risk-stratified sampling]] that reviews all low-confidence and high-impact outputs and a smaller random sample of high-confidence routine outputs.",
+        "vi": "Lấy mẫu phân tầng theo rủi ro: review mọi đầu ra độ tin cậy thấp và tác động lớn, cộng một mẫu ngẫu nhiên nhỏ hơn các đầu ra thường ngày độ tin cậy cao.",
+        "correct": true,
+        "why": "**Review toàn bộ output confidence thấp và impact cao, cộng thêm một mẫu ngẫu nhiên nhỏ từ output confidence cao/routine** — dồn nguồn lực giám sát vào đúng nơi rủi ro tập trung, vẫn giữ được thông lượng vì không cần review 100%."
+      },
+      {
+        "k": "C",
+        "text": "Inverse sampling that reviews only high-confidence routine outputs and skips low-confidence and high- impact outputs.",
+        "vi": "Lấy mẫu ngược: chỉ review đầu ra thường ngày độ tin cậy cao, bỏ qua đầu ra độ tin cậy thấp và tác động lớn.",
+        "correct": false,
+        "why": "Sampling ngược: **chỉ review phần an toàn (confidence cao), bỏ qua đúng phần rủi ro nhất (confidence thấp/impact cao)** — sai hướng hoàn toàn so với mục tiêu giám sát."
+      },
+      {
+        "k": "D",
+        "text": "Universal review of every output regardless of confidence or throughput impact.",
+        "vi": "Review toàn bộ mọi đầu ra bất kể độ tin cậy hay ảnh hưởng tới thông lượng.",
+        "correct": false,
+        "why": "**Review 100%** đúng là kỹ nhưng đã bị chính đề bài loại trừ vì infeasible ở quy mô lớn — không khả thi về throughput."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "reviewing every output is infeasible",
+      "choice": "Risk-stratified sampling",
+      "note": "Sampling thông minh là **dồn lực vào rủi ro cao (low-confidence + high-impact), lấy mẫu nhỏ ở chỗ an toàn**. Đảo ngược ưu tiên (đáp án C), không sampling (đáp án A), hay review hết (đáp án D, bất khả thi) đều sai.",
+      "rules": [
+        {
+          "trigger": "reviewing every output is infeasible",
+          "choice": "Risk-stratified sampling"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Risk-stratified sampling — dồn lực review đúng chỗ rủi ro cao",
+      "text": "Review 100% output là bất khả thi ở quy mô lớn — cần chiến lược sampling **cân bằng giữa throughput và chất lượng giám sát**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.3 · Lấy mẫu khi không duyệt hết"
+    ]
+  },
+  {
+    "n": 60,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "A business sponsor has requested an AI solution to \"improve customer experience.\" The sponsor [[cannot articulate which customer journey is failing]], which metric reflects the failure, or which decisions the AI should support. The sponsor is asking you to begin design work next week. Which delegation-competency action should you take first?",
+    "q_vi": "Một nhà tài trợ nghiệp vụ yêu cầu một giải pháp AI để \"cải thiện trải nghiệm khách hàng\". Nhà tài trợ không nói rõ được hành trình khách hàng nào đang hỏng, chỉ số nào phản ánh việc đó, hay AI cần hỗ trợ quyết định nào. Nhà tài trợ muốn bạn bắt đầu thiết kế từ tuần sau. Bạn nên làm hành động nào thuộc năng lực Delegation trước tiên?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Recommend that the sponsor revise the request and resubmit it later for evaluation.",
+        "vi": "Đề nghị nhà tài trợ sửa lại yêu cầu và gửi lại sau để đánh giá.",
+        "correct": false,
+        "why": "Đẩy trách nhiệm lại cho sponsor 'tự viết lại yêu cầu' không giải quyết được gì — sponsor vốn đã không tự làm rõ nổi, cần người dẫn dắt discovery chứ không phải bị yêu cầu tự làm lại."
+      },
+      {
+        "k": "B",
+        "text": "Begin prototyping a generic assistant against the broad request before the next deadline.",
+        "vi": "Bắt đầu làm prototype một trợ lý chung chung theo yêu cầu rộng trước hạn chót kế tiếp.",
+        "correct": false,
+        "why": "Bắt đầu prototype ngay trên **một yêu cầu còn mơ hồ** chỉ vì áp lực deadline dễ dẫn đến xây sai thứ và phải làm lại từ đầu."
+      },
+      {
+        "k": "C",
+        "text": "Propose a fixed scope that you commit to by default based on your own assumptions.",
+        "vi": "Đề xuất một phạm vi cố định mà bạn mặc định cam kết dựa trên giả định của riêng mình.",
+        "correct": false,
+        "why": "Tự chốt một scope **dựa trên giả định của riêng mình** trong khi sponsor còn chưa rõ mục tiêu là rủi ro cao — scope đó không dựa trên nhu cầu thật đã được xác nhận."
+      },
+      {
+        "k": "D",
+        "text": "[[Facilitate a structured discovery]] to define the [[failing decision and the target metric]].",
+        "vi": "Dẫn dắt một buổi khảo sát có cấu trúc để xác định quyết định đang hỏng và chỉ số mục tiêu.",
+        "correct": true,
+        "why": "Vì yêu cầu còn quá mơ hồ để thiết kế bất cứ thứ gì, nên hành động đúng là **tổ chức một buổi discovery có cấu trúc để cùng sponsor xác định rõ quyết định đang thất bại và metric mục tiêu** — đây chính là năng lực delegation: làm rõ phạm vi trước khi giao việc, thay vì nhận việc mơ hồ rồi tự đoán."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "cannot articulate which customer journey is failing",
+      "choice": "Facilitate a structured discovery · failing decision and the target metric",
+      "note": "Yêu cầu mơ hồ lại bị ép deadline thì **discovery trước để chốt decision và metric**. Đừng tự đoán (đáp án C), vội làm (đáp án B), hay đá bóng trách nhiệm (đáp án A).",
+      "rules": [
+        {
+          "trigger": "cannot articulate which customer journey is failing",
+          "choice": "Facilitate a structured discovery · failing decision and the target metric"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Yêu cầu mơ hồ từ sponsor — ưu tiên discovery trước khi thiết kế",
+      "text": "Sponsor muốn 'cải thiện customer experience' nhưng không chỉ ra được **journey nào đang hỏng, đo bằng metric gì, AI hỗ trợ quyết định nào** — lại giục bắt tay thiết kế ngay tuần sau."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.1 · Khảo sát trước, thiết kế sau"
+    ]
+  },
+  {
+    "n": 61,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "A loan pre-qualification assistant shows 94 percent approval recommendations that match the human underwriter decision. The fairness team has reviewed approval rate parity across protected groups and reported no significant difference. A board member has asked whether this evidence is [[sufficient to declare the assistant fair]]. Which two Discernment-competency findings should you report? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Một trợ lý sơ duyệt khoản vay có 94% khuyến nghị duyệt khớp với quyết định của chuyên viên thẩm định. Nhóm công bằng đã xem xét mức tương đồng tỉ lệ duyệt giữa các nhóm được bảo vệ và báo không có khác biệt đáng kể. Một thành viên hội đồng hỏi bằng chứng này đã đủ để tuyên bố trợ lý là công bằng chưa. Hai phát hiện nào thuộc năng lực Discernment bạn nên báo cáo? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Approval rate parity [[does not by itself]] assess error rate parity across protected groups.",
+        "vi": "Tương đồng tỉ lệ duyệt tự nó không đánh giá được tương đồng tỉ lệ lỗi giữa các nhóm được bảo vệ.",
+        "correct": true,
+        "why": "Tỉ lệ duyệt bằng nhau chưa nói gì về **tỉ lệ sai**. Hai nhóm cùng được duyệt 60%, nhưng nhóm này có thể bị từ chối oan nhiều hơn, nhóm kia được duyệt nhầm nhiều hơn. Phải so thêm tỉ lệ sai giữa các nhóm (**error rate parity**) mới biết."
+      },
+      {
+        "k": "B",
+        "text": "Match with human underwriters [[does not establish]] freedom from underwriter-introduced bias.",
+        "vi": "Khớp với chuyên viên thẩm định không chứng minh được việc không có thiên lệch do chính chuyên viên mang vào.",
+        "correct": true,
+        "why": "Trợ lý khớp với người thẩm định chỉ chứng minh nó giống người thẩm định. Nếu chính họ có định kiến trong các quyết định cũ thì trợ lý học theo và lặp lại định kiến đó. Khớp với một chuẩn có thể lệch không phải bằng chứng công bằng."
+      },
+      {
+        "k": "C",
+        "text": "The 94 percent match rate is sufficient evidence of fairness for the assistant's decisions.",
+        "vi": "Tỉ lệ khớp 94% là bằng chứng đủ về tính công bằng của các quyết định của trợ lý.",
+        "correct": false,
+        "why": "Coi khớp 94% là đủ bằng chứng công bằng chính là kết luận vội mà câu hỏi muốn bạn phản biện."
+      },
+      {
+        "k": "D",
+        "text": "The fairness team's review process likely missed at least some of the protected groups studied.",
+        "vi": "Quy trình review của nhóm công bằng có lẽ đã bỏ sót ít nhất vài nhóm được bảo vệ trong nghiên cứu.",
+        "correct": false,
+        "why": "Đề không có dữ kiện nào cho thấy nhóm fairness bỏ sót nhóm người nào. Đây là đoán, không phải nhận xét có căn cứ."
+      },
+      {
+        "k": "E",
+        "text": "A larger sample is needed before any meaningful fairness claim can be made about the model.",
+        "vi": "Cần mẫu lớn hơn trước khi có thể đưa ra bất kỳ nhận định công bằng có ý nghĩa nào về model.",
+        "correct": false,
+        "why": "Đòi mẫu lớn hơn là chuyện bên lề, không chỉ ra hai lỗ hổng thật: chưa so tỉ lệ sai và chuẩn so sánh có thể đã lệch."
+      }
+    ],
+    "answer": "A, B",
+    "tip": {
+      "trigger": "sufficient to declare the assistant fair",
+      "choice": "does not by itself · does not establish",
+      "note": "**Dạng phản biện** (có người kết luận vội, đề hỏi challenge, findings, objections): chọn câu chỉ ra kết luận đó **chưa có căn cứ** (does not establish · does not by itself · poor proxy), hoặc đề nghị **đi đo, kiểm tra thật**. Bẫy: **đồng ý** với kết luận (proves · sufficient · unnecessary · isolated), **đi quá đà** (disable · reject by default · nới ngưỡng), hoặc **chuyện bên lề** (mẫu nhỏ, khảo sát, pilot ngắn). Ở câu này, đáp án A chỉ ra tỉ lệ duyệt ngang nhau **does not by itself** cho biết tỉ lệ sai có ngang nhau không; đáp án B chỉ ra khớp với người thẩm định **does not establish** là hết định kiến, vì người cũng có thể lệch. Đáp án C đồng ý với kết luận (sufficient); D đoán nhóm bỏ sót, E đòi mẫu lớn hơn là chuyện bên lề.",
+      "rules": [
+        {
+          "trigger": "sufficient to declare the assistant fair",
+          "choice": "does not by itself · does not establish"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Khớp 94% với người duyệt và tỉ lệ duyệt ngang nhau vẫn chưa đủ để nói là công bằng",
+      "text": "Trợ lý xét sơ bộ hồ sơ vay khớp 94% với quyết định của người thẩm định (underwriter), và tỉ lệ được duyệt giữa các nhóm được pháp luật bảo vệ **không chênh nhau đáng kể**. Thành viên hội đồng hỏi bằng chứng này **đã đủ để tuyên bố trợ lý công bằng** chưa. Đề hỏi hai nhận xét theo năng lực **Discernment**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.5 · Đo công bằng"
+    ]
+  },
+  {
+    "n": 62,
+    "topic": "Integration",
+    "multi": false,
+    "q": "You are operating an interactive assistant whose [[dominant performance constraint]] is perturn latency. Quality on routine turns is already acceptable. Which configuration adjustment most directly improves latency [[without disproportionately damaging quality]]?",
+    "q_vi": "Bạn đang vận hành một trợ lý tương tác có ràng buộc hiệu năng chính là độ trễ mỗi lượt. Chất lượng ở các lượt thường ngày đã chấp nhận được. Điều chỉnh cấu hình nào cải thiện độ trễ trực tiếp nhất mà không làm giảm chất lượng quá mức?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Disable prompt caching entirely to ensure fresh context processing on every request, preventing stale prefix content from affecting latency-sensitive interactions.",
+        "vi": "Tắt hẳn prompt caching để mọi request đều xử lý context mới, tránh nội dung prefix cũ ảnh hưởng các tương tác nhạy với độ trễ.",
+        "correct": false,
+        "why": "**Tắt hẳn prompt caching** loại bỏ đúng cơ chế giúp giảm latency cho phần nội dung lặp lại — đi ngược mục tiêu."
+      },
+      {
+        "k": "B",
+        "text": "[[Reduce retrieval depth to the top-k passages]] that historically cover the answer, and [[cache stable system- prompt content]].",
+        "vi": "Giảm độ sâu truy xuất xuống top-k đoạn trước giờ đã đủ bao câu trả lời, và cache phần nội dung system prompt ổn định.",
+        "correct": true,
+        "why": "Vì top-k lịch sử đã đủ bao phủ câu trả lời, nên **giảm độ sâu retrieval xuống đúng top-k đó** cắt bớt phần dư thừa mà không mất chất lượng; đồng thời **cache phần system-prompt ổn định** giúp khỏi xử lý lại nội dung tĩnh mỗi lượt — cả hai cộng lại giảm latency trực tiếp mà vẫn giữ chất lượng."
+      },
+      {
+        "k": "C",
+        "text": "Increase retrieval depth to the corpus maximum to improve recall regardless of latency.",
+        "vi": "Tăng độ sâu truy xuất tới mức tối đa của kho để tăng recall bất kể độ trễ.",
+        "correct": false,
+        "why": "Tăng retrieval depth lên **tối đa corpus** chắc chắn làm chậm thêm mỗi lượt — ngược hướng với constraint latency."
+      },
+      {
+        "k": "D",
+        "text": "Switch every turn to the heaviest available model to maximize output quality, accepting that the increased model latency will worsen the per-turn SLO rather than improve it.",
+        "vi": "Chuyển mọi lượt sang model nặng nhất hiện có để chất lượng đầu ra cao nhất, chấp nhận độ trễ model tăng sẽ làm SLO mỗi lượt tệ hơn chứ không tốt lên.",
+        "correct": false,
+        "why": "Đổi sang **model nặng nhất cho mọi lượt** trực tiếp làm tăng latency — vi phạm đúng constraint chính của bài toán."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "dominant performance constraint · without disproportionately damaging quality",
+      "choice": "Reduce retrieval depth to the top-k passages · cache stable system-prompt content",
+      "note": "Giảm latency an toàn = **cắt phần dư (retrieval sâu không cần) + cache phần lặp lại (system prompt)**. Đừng tắt cache (đáp án A), đào sâu hơn (đáp án C), hay dùng model nặng hơn (đáp án D): cả ba đều tăng latency.",
+      "rules": [
+        {
+          "trigger": "dominant performance constraint · without disproportionately damaging quality",
+          "choice": "Reduce retrieval depth to the top-k passages · cache stable system-prompt content"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Giảm latency mỗi lượt mà không hại chất lượng — cắt top-k + cache phần ổn định",
+      "text": "Constraint chính là **latency mỗi lượt hội thoại**, trong khi chất lượng ở lượt thường đã ổn — cần điều chỉnh giúp giảm latency mà **không kéo chất lượng xuống quá nhiều**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.3 · Bắt đầu từ đâu"
+    ]
+  },
+  {
+    "n": 63,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": true,
+    "q": "You are building a [[feedback-and-alignment routine]] for a multi-stakeholder deployment. Which two practices belong in the routine? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang dựng một quy trình định kỳ lấy phản hồi và thống nhất cho một triển khai có nhiều bên liên quan. Hai cách làm nào thuộc quy trình này? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Record each session and distribute the recording to stakeholders who could not attend live.",
+        "vi": "Ghi hình mỗi buổi và gửi bản ghi cho các bên không dự trực tiếp được.",
+        "correct": false,
+        "why": "Ghi hình buổi họp gửi cho người vắng mặt là chuyện tổ chức cho tiện, không tự làm các bên thống nhất kỳ vọng."
+      },
+      {
+        "k": "B",
+        "text": "Escalate any disagreement among stakeholders to the executive sponsor for binding resolution.",
+        "vi": "Đẩy mọi bất đồng giữa các bên lên nhà tài trợ cấp điều hành để quyết định có tính ràng buộc.",
+        "correct": false,
+        "why": "Đẩy mọi bất đồng lên lãnh đạo để phán quyết là bỏ qua việc các bên tự dàn xếp với nhau. Đây là cách làm cực đoan, dùng quyền thay cho đối thoại."
+      },
+      {
+        "k": "C",
+        "text": "Rotate facilitation among the participating stakeholder groups to share ownership of the routine.",
+        "vi": "Luân phiên vai trò điều phối giữa các nhóm bên liên quan tham gia để cùng làm chủ quy trình.",
+        "correct": false,
+        "why": "Luân phiên người điều phối chỉ chia đều vai trò, không trực tiếp giúp thống nhất kỳ vọng hay gỡ bất đồng."
+      },
+      {
+        "k": "D",
+        "text": "Set a [[regular cadence]] for revisiting expectations and assumptions as conditions evolve over time.",
+        "vi": "Đặt nhịp định kỳ để xem lại kỳ vọng và giả định khi điều kiện thay đổi theo thời gian.",
+        "correct": true,
+        "why": "Thống nhất không phải làm một lần là xong: yêu cầu, ngân sách, hành vi model đều thay đổi theo thời gian. Đặt **lịch đều đặn** để cùng xem lại kỳ vọng và các giả định, nhờ vậy hai bên không lệch nhau dần mà không biết."
+      },
+      {
+        "k": "E",
+        "text": "[[Reconcile]] divergent stakeholder positions explicitly rather than papering over them in the moment.",
+        "vi": "Hoà giải rõ ràng các quan điểm khác nhau của các bên thay vì che lấp chúng cho qua lúc đó.",
+        "correct": true,
+        "why": "Khi các stakeholder muốn những điều khác nhau, phải nói thẳng ra và **dàn xếp cho rõ**, thay vì gật đầu cho êm buổi họp. Bất đồng bị lấp đi sẽ quay lại về sau, lúc đó còn khó gỡ hơn."
+      }
+    ],
+    "answer": "D, E",
+    "tip": {
+      "trigger": "feedback-and-alignment routine",
+      "choice": "regular cadence · Reconcile",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, đáp án D đặt **regular cadence** để xem lại kỳ vọng, đáp án E **Reconcile** bất đồng một cách công khai. Đáp án A (ghi hình), C (luân phiên điều phối) là Lạc, chỉ là cách tổ chức; B là Cực (đẩy mọi bất đồng lên lãnh đạo).",
+      "rules": [
+        {
+          "trigger": "feedback-and-alignment routine",
+          "choice": "regular cadence · Reconcile"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Quy trình lấy góp ý và thống nhất với nhiều stakeholder: họp đều đặn, gỡ bất đồng công khai",
+      "text": "Bạn dựng một quy trình định kỳ để lấy góp ý và giữ cho các stakeholder cùng một kỳ vọng (**feedback-and-alignment routine**). Đề hỏi hai thực hành thuộc về chính việc thống nhất, không phải chi tiết tổ chức buổi họp."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.3 · Vòng phản hồi có nhịp"
+    ]
+  },
+  {
+    "n": 64,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": true,
+    "q": "An architect is reviewing a set of architecture documentation packages before handing off a Claude-based pipeline to an implementation team. Which two characteristics indicate that a documentation package is sufficient to support implementation [[without ongoing architect involvement]]? (Select two.)",
+    "q_vi": "Một kiến trúc sư đang review các gói tài liệu kiến trúc trước khi bàn giao một pipeline chạy trên Claude cho nhóm triển khai. Hai đặc điểm nào cho thấy một gói tài liệu đủ để hỗ trợ triển khai mà không cần kiến trúc sư tham gia liên tục? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "The document specifies [[integration contracts]], configuration schemas, and expected input/output shapes for each component.",
+        "vi": "Tài liệu nêu rõ hợp đồng tích hợp, schema cấu hình và hình dạng đầu vào/đầu ra mong đợi của từng component.",
+        "correct": true,
+        "why": "Đội triển khai cần biết chính xác phải xây gì: các thành phần nói chuyện với nhau theo **giao ước** nào (integration contract), cấu hình theo **schema** nào, mỗi thành phần nhận vào và trả ra dữ liệu dạng gì. Có đủ những thứ này thì viết code đúng mà không phải hỏi."
+      },
+      {
+        "k": "B",
+        "text": "The document includes a [[decision log]] that records the rationale for key architectural choices and the alternatives rejected.",
+        "vi": "Tài liệu có nhật ký quyết định ghi lý do của các lựa chọn kiến trúc chính và các phương án đã loại.",
+        "correct": true,
+        "why": "Khi làm, đội triển khai sẽ gặp lúc muốn hỏi \"sao không làm cách khác?\". **Decision log** ghi lại lý do của từng lựa chọn lớn và các phương án đã bị loại, trả lời trước câu hỏi đó. Nhờ vậy họ cũng không vô tình đổi sang một cách đã từng bị loại vì có lý do."
+      },
+      {
+        "k": "C",
+        "text": "The document provides a high-level narrative description of the business problem without component- level detail.",
+        "vi": "Tài liệu mô tả tổng quan bằng lời về bài toán kinh doanh mà không có chi tiết mức component.",
+        "correct": false,
+        "why": "Chỉ mô tả bài toán kinh doanh ở mức cao, không có chi tiết từng thành phần, thì đội triển khai không có gì để bắt tay làm."
+      },
+      {
+        "k": "D",
+        "text": "The document includes the architect's contact information for questions arising during implementation.",
+        "vi": "Tài liệu có thông tin liên hệ của kiến trúc sư để hỏi khi có thắc mắc lúc triển khai.",
+        "correct": false,
+        "why": "Để sẵn thông tin liên lạc của kiến trúc sư cho thấy tài liệu vẫn cần người giải thích thêm, ngược với yêu cầu tự làm được."
+      },
+      {
+        "k": "E",
+        "text": "The document lists all Claude models that were evaluated but does not specify which was selected or why.",
+        "vi": "Tài liệu liệt kê mọi model Claude đã đánh giá nhưng không nói model nào được chọn hay vì sao.",
+        "correct": false,
+        "why": "Liệt kê các model đã thử mà không nói chọn model nào và vì sao là thiếu đúng thông tin quan trọng nhất."
+      }
+    ],
+    "answer": "A, B",
+    "tip": {
+      "trigger": "without ongoing architect involvement",
+      "choice": "integration contracts · decision log",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, tự làm được cần biết làm gì và vì sao: đáp án A có **integration contracts** và schema, đáp án B có **decision log**. Đáp án C (không có chi tiết), E (không nói chọn model nào) là Thiếu; D là Lạc (để số liên lạc nghĩa là vẫn cần kiến trúc sư).",
+      "rules": [
+        {
+          "trigger": "without ongoing architect involvement",
+          "choice": "integration contracts · decision log"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Bàn giao tài liệu kiến trúc: đủ để đội triển khai tự làm, không cần hỏi lại kiến trúc sư",
+      "text": "Trước khi bàn giao pipeline cho đội triển khai, kiến trúc sư xem lại các bộ tài liệu. Đề hỏi hai đặc điểm cho thấy tài liệu **đủ để đội triển khai làm mà không cần kiến trúc sư theo kèm**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.4 · Tài liệu kiến trúc phải chốt được những gì",
+      "Bài 6.4 · Ghi lý do bằng ADR"
+    ]
+  },
+  {
+    "n": 65,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "You are reviewing a peer's draft system prompt that contains [[contradictory instructions]]: one section says never to speculate beyond the supplied source, while another says to confidently fill in any gaps. Which response is most appropriate?",
+    "q_vi": "Bạn đang review bản nháp system prompt của một đồng nghiệp có các chỉ dẫn mâu thuẫn: một mục bảo không bao giờ suy đoán ngoài nguồn được cung cấp, mục khác lại bảo tự tin lấp mọi chỗ trống. Phản hồi nào phù hợp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Add a priority instruction directing the model to evaluate all instructions and apply whichever appears most contextually appropriate on each request.",
+        "vi": "Thêm một chỉ dẫn ưu tiên bảo model xét mọi chỉ dẫn và áp chỉ dẫn nào có vẻ hợp ngữ cảnh nhất ở mỗi request.",
+        "correct": false,
+        "why": "Thêm chỉ dẫn ưu tiên 'model tự đánh giá áp dụng cái nào phù hợp' vẫn **để hai chỉ dẫn mâu thuẫn cùng tồn tại**, nên kết quả vẫn không nhất quán giữa các lần chạy."
+      },
+      {
+        "k": "B",
+        "text": "[[Remove or rewrite the gap-filling instruction]] so the prompt consistently constrains the model to source- supported content.",
+        "vi": "Bỏ hoặc viết lại chỉ dẫn lấp chỗ trống để prompt nhất quán giới hạn model trong nội dung có nguồn hỗ trợ.",
+        "correct": true,
+        "why": "Vì hai chỉ dẫn triệt tiêu lẫn nhau khiến hành vi model không dự đoán được, nên cách xử lý đúng là **gỡ bỏ hoặc viết lại chỉ dẫn 'lấp khoảng trống' để prompt nhất quán chỉ cho phép nội dung có nguồn hỗ trợ** — loại bỏ hẳn một vế xung đột thay vì để cả hai cùng tồn tại."
+      },
+      {
+        "k": "C",
+        "text": "Increase temperature so output randomness masks the contradiction.",
+        "vi": "Tăng temperature để độ ngẫu nhiên của đầu ra che đi chỗ mâu thuẫn.",
+        "correct": false,
+        "why": "Tăng temperature chỉ **che mờ mâu thuẫn bằng nhiễu ngẫu nhiên**, không sửa được logic sai mà còn khiến khó nhận ra hơn."
+      },
+      {
+        "k": "D",
+        "text": "Keep both instructions and rely on the model to decide which one to follow on each request.",
+        "vi": "Giữ cả hai chỉ dẫn và trông vào model tự quyết theo chỉ dẫn nào ở mỗi request.",
+        "correct": false,
+        "why": "Giữ nguyên cả hai và **để model tự quyết định mỗi lần** mắc y hệt vấn đề của A — không giải quyết gốc rễ, hành vi vẫn không dự đoán được."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "contradictory instructions",
+      "choice": "Remove or rewrite the gap-filling instruction",
+      "note": "Prompt tự mâu thuẫn thì **xoá vế gây xung đột, đừng để model \"tự xử\"**. Thêm một câu ưu tiên (đáp án A) hay giữ cả hai chờ model chọn (đáp án D) đều không sửa được gì.",
+      "rules": [
+        {
+          "trigger": "contradictory instructions",
+          "choice": "Remove or rewrite the gap-filling instruction"
+        }
+      ]
+    },
+    "ask": {
+      "title": "System prompt tự mâu thuẫn — sửa tận gốc, đừng để model tự phân xử",
+      "text": "Draft system prompt vừa nói **'không được suy đoán ngoài nguồn'** vừa nói **'tự tin lấp khoảng trống'** — hai chỉ dẫn triệt tiêu lẫn nhau."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.2 · Chỉ dẫn cụ thể, có lý do, không mâu thuẫn"
+    ]
+  },
+  {
+    "n": 66,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "q": "You are comparing patterns for a batch document-classification job that [[follows fixed steps]]: extract metadata, classify, summarize, and persist. Which pattern is the best fit and why?",
+    "q_vi": "Bạn đang so sánh các mẫu kiến trúc cho một job phân loại tài liệu theo batch đi theo các bước cố định: trích metadata, phân loại, tóm tắt và lưu lại. Mẫu nào phù hợp nhất và vì sao?",
+    "options": [
+      {
+        "k": "A",
+        "text": "A workflow pattern, because agentic patterns do not support tool invocations and therefore cannot execute the persist step that writes results to the downstream store.",
+        "vi": "Mẫu workflow, vì mẫu agentic không hỗ trợ gọi tool nên không chạy được bước lưu ghi kết quả vào kho phía sau.",
+        "correct": false,
+        "why": "Cũng chọn workflow nhưng **lý do sai**: agentic pattern vẫn gọi tool bình thường được — tiền đề trong đáp án này không đúng."
+      },
+      {
+        "k": "B",
+        "text": "An agentic pattern, because the open-ended planning capability of agents produces more consistent structured outputs than a fixed workflow graph on classification tasks.",
+        "vi": "Mẫu agentic, vì khả năng lập kế hoạch mở của agent cho đầu ra có cấu trúc nhất quán hơn một đồ thị workflow cố định ở tác vụ phân loại.",
+        "correct": false,
+        "why": "Chọn agentic với lý do **'agent tạo output nhất quán hơn workflow cố định'** là khái quát sai — thực tế ngược lại: task có bước rõ ràng thì workflow cố định mới cho kết quả nhất quán hơn."
+      },
+      {
+        "k": "C",
+        "text": "An agentic pattern, because agents are categorically more accurate than workflows and therefore always preferable regardless of step predictability.",
+        "vi": "Mẫu agentic, vì agent về bản chất chính xác hơn workflow nên luôn được ưu tiên bất kể các bước có dễ đoán hay không.",
+        "correct": false,
+        "why": "Cho rằng agent **'chính xác hơn về bản chất, luôn nên dùng'** là tuyệt đối hoá sai — lựa chọn pattern phụ thuộc đặc tính task, không pattern nào luôn thắng."
+      },
+      {
+        "k": "D",
+        "text": "A workflow pattern, because [[the steps are well-defined and predictable]] per-request token cost is [[preferred over flexibility]].",
+        "vi": "Mẫu workflow, vì các bước đã được định rõ và dễ đoán và chi phí token mỗi request được ưu tiên hơn sự linh hoạt.",
+        "correct": true,
+        "why": "Vì các bước **đã rõ ràng, dự đoán được**, và bài toán ưu tiên **chi phí token mỗi request dự đoán được hơn là tính linh hoạt**, nên workflow pattern phù hợp hơn — không cần agent tự lập kế hoạch, workflow cố định vừa đủ vừa kiểm soát chi phí tốt hơn."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "follows fixed steps",
+      "choice": "the steps are well-defined and predictable · preferred over flexibility",
+      "note": "Bước cố định, dự đoán được, cần kiểm soát cost thì chọn **workflow**, và lý do đúng là dự đoán được quan trọng hơn linh hoạt. Đừng chọn vì lý do sai như agent \"kém\" hay \"không gọi được tool\" (các lý do sai ở đáp án A, B, C).",
+      "rules": [
+        {
+          "trigger": "follows fixed steps",
+          "choice": "the steps are well-defined and predictable · preferred over flexibility"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Workflow pattern cho task các bước cố định — chọn đúng pattern VÀ đúng lý do",
+      "text": "Job phân loại tài liệu theo batch có **các bước cố định: extract, classify, summarize, rồi persist**. Câu hỏi đòi cả pattern đúng lẫn lý do đúng."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.3 · Đúng mẫu nhưng phải đúng cả lý do"
+    ]
+  },
+  {
+    "n": 67,
+    "topic": "Integration",
+    "multi": true,
+    "q": "A managed agent deployment for claims triage has grown from 6 tools to 34 tools over 18 months as product teams added capabilities. Triage accuracy has declined from 91 percent to 78 percent, and average tool- selection latency has increased by 2.3 seconds. A junior engineer has proposed adding a tool-router agent in front of the current agent to filter the tool list per request. Which two findings should you present to [[justify capability decomposition]] before [[adding the router]]? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Một triển khai managed agent phân loại hồ sơ bồi thường đã tăng từ 6 lên 34 tool trong 18 tháng khi các nhóm sản phẩm thêm khả năng. Độ chính xác phân loại giảm từ 91% xuống 78%, và độ trễ chọn tool trung bình tăng thêm 2,3 giây. Một kỹ sư mới đề xuất thêm một agent định tuyến tool trước agent hiện tại để lọc danh sách tool cho mỗi request. Hai phát hiện nào bạn nên trình bày để lý giải việc tách nhỏ khả năng trước khi thêm bộ định tuyến? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Tool descriptions overlap across multiple claim categories within the agent's tool set.",
+        "vi": "Mô tả tool chồng lấn nhau giữa nhiều loại hồ sơ bồi thường trong bộ tool của agent.",
+        "correct": false,
+        "why": "Mô tả tool trùng nhau là lỗi viết mô tả, sửa bằng cách viết lại cho rõ, không nhất thiết phải tách agent."
+      },
+      {
+        "k": "B",
+        "text": "Several tools have not been invoked across the most recent 90 days of traffic.",
+        "vi": "Vài tool không được gọi lần nào trong 90 ngày traffic gần nhất.",
+        "correct": false,
+        "why": "Tool không ai dùng trong 90 ngày thì nên dọn đi. Đó là việc bảo trì, không phải lý do để tách agent theo nhóm việc."
+      },
+      {
+        "k": "C",
+        "text": "The 34 tools serve [[four distinct claim-workflow domains]] within the triage scope.",
+        "vi": "34 tool phục vụ bốn lĩnh vực quy trình bồi thường khác nhau trong phạm vi phân loại.",
+        "correct": true,
+        "why": "34 tool thật ra phục vụ **4 nhóm quy trình** bồi thường tách biệt. Đó là đường ranh có sẵn: tách thành 4 agent, mỗi agent chỉ giữ tool của nhóm mình. Mỗi agent chọn trong ít tool hơn nên chọn đúng hơn và nhanh hơn."
+      },
+      {
+        "k": "D",
+        "text": "The router pattern is well documented across publicly available agent literature.",
+        "vi": "Mẫu bộ định tuyến được ghi chép đầy đủ trong tài liệu công khai về agent.",
+        "correct": false,
+        "why": "Router được viết nhiều trong tài liệu ngoài kia không nói gì về hệ thống cụ thể này. Không phải bằng chứng từ dữ liệu thật."
+      },
+      {
+        "k": "E",
+        "text": "The proposed router introduces an [[additional model call]] on every incoming request.",
+        "vi": "Bộ định tuyến đề xuất thêm một lời gọi model ở mọi request đến.",
+        "correct": true,
+        "why": "Router là thêm một lần gọi model nữa **trước mọi request**, nên request nào cũng chậm thêm và tốn thêm. Nó chỉ che triệu chứng (quá nhiều tool) chứ không sửa gốc là một agent ôm quá nhiều việc."
+      }
+    ],
+    "answer": "C, E",
+    "tip": {
+      "trigger": "justify capability decomposition · adding the router",
+      "choice": "four distinct claim-workflow domains · additional model call",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra. Ở câu này, để cần lý do **justify capability decomposition**: đáp án C cho thấy 34 tool đã chia sẵn thành **four distinct claim-workflow domains**; để cần lý do chưa nên **adding the router**: đáp án E chỉ ra router thêm **additional model call** cho mọi request. Đáp án A sửa mô tả, B dọn tool thừa là việc khác; D chỉ là tài liệu có nói, không phải dữ liệu của hệ thống.",
+      "rules": [
+        {
+          "trigger": "justify capability decomposition · adding the router",
+          "choice": "four distinct claim-workflow domains · additional model call"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Agent có 34 tool, độ chính xác tụt: lý do nên tách agent thay vì thêm router",
+      "text": "Agent phân loại hồ sơ bồi thường tăng từ 6 lên 34 tool trong 18 tháng. Độ chính xác giảm từ 91% xuống 78%, thời gian chọn tool tăng 2,3 giây. Một kỹ sư đề xuất đặt thêm một agent router phía trước để lọc danh sách tool cho từng request. Đề hỏi hai phát hiện để biện minh cho việc **tách agent theo năng lực (capability decomposition) trước khi thêm router**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.1 · Sửa: gộp, đặt tên theo không gian, hoặc tách agent"
+    ]
+  },
+  {
+    "n": 68,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "A Claude architect needs to ensure that a security-hardening flag [[cannot be disabled by any individual engineer]] after it is set. Which configuration scope correctly enforces this requirement?",
+    "q_vi": "Một kiến trúc sư Claude cần chắc chắn một cờ gia cố bảo mật không thể bị bất kỳ kỹ sư nào tắt đi sau khi đã đặt. Phạm vi cấu hình nào áp đúng yêu cầu này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "User scope (~/.claude/settings.json) on each engineer's machine",
+        "vi": "Phạm vi user (~/.claude/settings.json) trên máy của từng kỹ sư",
+        "correct": false,
+        "why": "User scope nằm **ngay trên máy của từng engineer** — chính engineer đó có toàn quyền sửa, không hề bị chặn."
+      },
+      {
+        "k": "B",
+        "text": "Environment variable defined in the CI/CD pipeline only",
+        "vi": "Biến môi trường chỉ định nghĩa trong CI/CD pipeline",
+        "correct": false,
+        "why": "Env var chỉ đặt **trong CI/CD**, không ảnh hưởng gì khi engineer chạy cục bộ trên máy mình — vẫn có thể tắt flag ở môi trường local."
+      },
+      {
+        "k": "C",
+        "text": "[[Managed configuration]] applied centrally and marked as [[non-overridable]]",
+        "vi": "Managed configuration áp tập trung và được đánh dấu là không ghi đè được",
+        "correct": true,
+        "why": "Vì 'non-overridable' chính là cơ chế enforce cứng, nên chỉ **Managed configuration áp dụng tập trung và đánh dấu non-overridable** mới thực sự chặn được việc sửa đổi ở cấp cá nhân — ba lựa chọn còn lại đều có đường vòng."
+      },
+      {
+        "k": "D",
+        "text": "Project scope (.claude/settings.json) committed to the repository",
+        "vi": "Phạm vi project (.claude/settings.json) được commit vào repository",
+        "correct": false,
+        "why": "Project scope commit vào repo **vẫn có thể bị override** bởi cấu hình scope thấp hơn trên máy cá nhân hoặc bị sửa trực tiếp trong repo — chưa đạt mức 'không ai tắt được'."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "cannot be disabled by any individual engineer",
+      "choice": "Managed configuration · non-overridable",
+      "note": "Muốn 'không ai được tắt' = cần **managed + non-overridable** — scope duy nhất mang tính cưỡng chế thật sự. Mọi scope khác (user/CI-only/project) đều có đường vòng để cá nhân thay đổi.",
+      "rules": [
+        {
+          "trigger": "cannot be disabled by any individual engineer",
+          "choice": "Managed configuration · non-overridable"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Flag bảo mật không ai được tắt — chỉ Managed config non-overridable làm được",
+      "text": "Cần đảm bảo một flag hardening bảo mật **không thể bị bất kỳ engineer cá nhân nào tắt** sau khi đã đặt — chọn đúng scope enforce được điều này."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Thứ bắt buộc thì đưa vào managed settings"
+    ]
+  },
+  {
+    "n": 69,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": true,
+    "q": "A Claude architect is auditing configuration scope assignments. Which two statements correctly identify an appropriate use of [[user-scope configuration]] versus other scopes? (Select two.)",
+    "q_vi": "Một kiến trúc sư Claude đang kiểm tra việc gán phạm vi cấu hình. Hai nhận định nào xác định đúng cách dùng phù hợp của cấu hình phạm vi user so với các phạm vi khác? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Persisting [[personal editor theme preferences]] that follow an engineer across projects.",
+        "vi": "Lưu sở thích theme editor cá nhân đi theo kỹ sư qua mọi dự án.",
+        "correct": true,
+        "why": "Theme của trình soạn thảo là sở thích riêng của một kỹ sư, và họ muốn nó giống nhau ở mọi project. Riêng một người, áp cho mọi repo: đúng là **user scope**."
+      },
+      {
+        "k": "B",
+        "text": "Saving a [[preferred Claude response language]] that applies to all repositories the engineer uses.",
+        "vi": "Lưu ngôn ngữ trả lời ưa thích của Claude áp cho mọi repository kỹ sư đó dùng.",
+        "correct": true,
+        "why": "Ngôn ngữ trả lời mà một người thích (ví dụ tiếng Việt) cũng là thiết lập cá nhân, áp cho **mọi repo** người đó làm. Không ai khác trong team bị ảnh hưởng, nên đặt ở **user scope**."
+      },
+      {
+        "k": "C",
+        "text": "Enforcing a company-wide policy that disables a feature for all engineers.",
+        "vi": "Áp một chính sách toàn công ty tắt một tính năng cho mọi kỹ sư.",
+        "correct": false,
+        "why": "Chính sách tắt một tính năng cho mọi kỹ sư trong công ty là việc của **managed scope**: áp cho cả công ty và không ai tự đổi được."
+      },
+      {
+        "k": "D",
+        "text": "Defining MCP server endpoints shared by all contributors to a specific repository.",
+        "vi": "Định nghĩa endpoint MCP server dùng chung cho mọi người đóng góp vào một repository cụ thể.",
+        "correct": false,
+        "why": "Địa chỉ MCP server dùng chung cho mọi người làm trong một repo là **project scope**: gắn với repo, commit vào git."
+      },
+      {
+        "k": "E",
+        "text": "Storing API authentication keys so they are not committed to version control.",
+        "vi": "Lưu API key xác thực để chúng không bị commit vào version control.",
+        "correct": false,
+        "why": "Giữ API key để khỏi bị commit lên git là chuyện quản lý bí mật (biến môi trường, secret manager), không phải câu hỏi chọn scope cho thiết lập cá nhân."
+      }
+    ],
+    "answer": "A, B",
+    "tip": {
+      "trigger": "user-scope configuration",
+      "choice": "personal editor theme preferences · preferred Claude response language",
+      "note": "**Dạng scope Claude Code**: tự hỏi hai câu, ai dùng chung? và ai được sửa? **managed**: cả công ty, không ai tự đổi được. **project**: cả team trong một repo, commit vào git. **user**: riêng bạn, áp cho mọi repo. **local**: riêng bạn, chỉ trong một repo. Ở câu này, đáp án A **personal editor theme preferences** và đáp án B **preferred Claude response language** cho mọi repo đều là của riêng mình, theo mình đi mọi nơi, nên là user. Đáp án C áp cả công ty là managed; D dùng chung một repo là project; E giữ API key là chuyện bí mật, không phải scope.",
+      "rules": [
+        {
+          "trigger": "user-scope configuration",
+          "choice": "personal editor theme preferences · preferred Claude response language"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Khi nào dùng user scope: thiết lập riêng của bạn, theo bạn qua mọi repo",
+      "text": "Kiểm tra cách gán scope cấu hình trong Claude Code. Đề hỏi hai trường hợp **dùng user scope là đúng**, khác với managed hay project scope."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Năm nơi đặt cấu hình, mỗi nơi chạm tới ai"
+    ]
+  },
+  {
+    "n": 70,
+    "topic": "Integration",
+    "multi": true,
+    "q": "You are compiling factors that should drive the choice between Model Context Protocol (MCP), [[direct API integration, and agent-to-agent handoff]]. Which two factors belong on the list? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang tổng hợp các yếu tố nên quyết định việc chọn giữa Model Context Protocol (MCP), tích hợp API trực tiếp và chuyển giao giữa các agent. Hai yếu tố nào thuộc danh sách? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Whether the vendor publishes detailed reference documentation for each candidate protocol.",
+        "vi": "Nhà cung cấp có công bố tài liệu tham khảo chi tiết cho từng protocol ứng viên không.",
+        "correct": false,
+        "why": "Nhà cung cấp có tài liệu chi tiết giúp làm nhanh hơn, nhưng không quyết định cách nào hợp với bài toán."
+      },
+      {
+        "k": "B",
+        "text": "Whether the team has prior implementation experience with any of the candidate protocols.",
+        "vi": "Nhóm đã có kinh nghiệm cài đặt trước đó với protocol ứng viên nào không.",
+        "correct": false,
+        "why": "Team đã từng làm cách nào là chuyện nguồn lực, không phải đặc điểm của bài toán tích hợp."
+      },
+      {
+        "k": "C",
+        "text": "Whether the underlying transport supports encryption in transit between the integrated services.",
+        "vi": "Tầng transport bên dưới có hỗ trợ mã hoá khi truyền giữa các service được tích hợp không.",
+        "correct": false,
+        "why": "Mã hoá khi truyền là yêu cầu bắt buộc với cả ba cách, nên không giúp phân biệt nên chọn cách nào."
+      },
+      {
+        "k": "D",
+        "text": "Whether the integration must be [[portable across multiple AI clients]] in the ecosystem.",
+        "vi": "Tích hợp có cần mang được sang nhiều AI client trong hệ sinh thái không.",
+        "correct": true,
+        "why": "Lợi thế chính của **MCP** là chuẩn chung: viết một MCP server thì nhiều AI client (Claude Code, Claude Desktop, ứng dụng khác) cùng dùng được. Nếu tích hợp chỉ phục vụ một ứng dụng thì gọi API trực tiếp là đủ; cần **dùng lại trên nhiều client** thì MCP đáng đầu tư."
+      },
+      {
+        "k": "E",
+        "text": "Whether the interaction is [[stateless and latency-sensitive]] or stateful and longer-running.",
+        "vi": "Tương tác là không trạng thái và nhạy với độ trễ, hay có trạng thái và chạy lâu hơn.",
+        "correct": true,
+        "why": "Cách tương tác quyết định độ phức tạp cần có. Một lần hỏi, một lần đáp, cần nhanh và không nhớ gì (**stateless**) thì gọi API trực tiếp là gọn nhất. Việc kéo dài, nhiều bước, cần nhớ trạng thái (**stateful**) thì hợp hơn với việc giao cho một agent khác tự xử lý."
+      }
+    ],
+    "answer": "D, E",
+    "tip": {
+      "trigger": "direct API integration, and agent-to-agent handoff",
+      "choice": "portable across multiple AI clients · stateless and latency-sensitive",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, đáp án D hỏi tích hợp có cần **portable across multiple AI clients**, đáp án E hỏi tương tác là **stateless and latency-sensitive** hay kéo dài, có trạng thái. Đáp án A (tài liệu nhà cung cấp), B (kinh nghiệm team), C (mã hoá) đều là Lạc: không giúp chọn giữa ba cách.",
+      "rules": [
+        {
+          "trigger": "direct API integration, and agent-to-agent handoff",
+          "choice": "portable across multiple AI clients · stateless and latency-sensitive"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chọn MCP, gọi API trực tiếp hay chuyển giao giữa agent: dựa vào cách tương tác và nhu cầu dùng lại",
+      "text": "Có ba cách tích hợp: **MCP**, gọi **API trực tiếp**, và **agent-to-agent handoff** (agent này giao việc cho agent khác). Đề hỏi hai yếu tố thật sự quyết định nên chọn cách nào."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.7 · Ba cơ chế chính"
+    ]
+  },
+  {
+    "n": 71,
+    "topic": "Integration",
+    "multi": false,
+    "q": "You are selecting a protocol for a [[single low-latency stateless tool call]] from a Claude-based assistant to an internal pricing service that [[already exposes a stable HTTP API]]. Which integration mechanism is the most appropriate?",
+    "q_vi": "Bạn đang chọn protocol cho một lời gọi tool duy nhất, không trạng thái, độ trễ thấp từ một trợ lý chạy trên Claude tới một service tính giá nội bộ đã có sẵn HTTP API ổn định. Cơ chế tích hợp nào phù hợp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "A [[direct API call to the existing endpoint]] with the appropriate scoped credentials.",
+        "vi": "Gọi API trực tiếp tới endpoint có sẵn với credential được giới hạn phạm vi phù hợp.",
+        "correct": true,
+        "why": "Vì tương tác chỉ là **một lời gọi tool stateless, latency thấp** tới một service đã có sẵn HTTP API ổn định, nên **gọi API trực tiếp tới endpoint sẵn có, dùng credential đã được scope đúng** là đúng mức độ phức tạp cần thiết — không thêm lớp trung gian không cần thiết."
+      },
+      {
+        "k": "B",
+        "text": "A long-lived stateful session protocol for a stateless single-call interaction.",
+        "vi": "Một protocol phiên có trạng thái sống lâu cho một tương tác gọi một lần không trạng thái.",
+        "correct": false,
+        "why": "Dùng **session protocol có trạng thái, sống lâu** cho một tương tác **vốn stateless, chỉ một lần gọi** là thừa phức tạp không cần thiết."
+      },
+      {
+        "k": "C",
+        "text": "A bespoke streaming protocol layered over an unrelated asynchronous message bus.",
+        "vi": "Một protocol streaming tự chế đặt trên một message bus bất đồng bộ không liên quan.",
+        "correct": false,
+        "why": "Streaming protocol tự chế trên **một message bus không liên quan** hoàn toàn không khớp với nhu cầu một lời gọi đơn giản, đồng bộ."
+      },
+      {
+        "k": "D",
+        "text": "An agent-to-agent handoff that introduces another Claude-based agent in front of the pricing service.",
+        "vi": "Một chuyển giao giữa các agent đặt thêm một agent chạy trên Claude trước service tính giá.",
+        "correct": false,
+        "why": "Chèn thêm **một agent Claude khác đứng trước pricing service** chỉ để gọi API làm tăng độ trễ và độ phức tạp không cần thiết cho việc vốn có thể gọi thẳng."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "single low-latency stateless tool call · already exposes a stable HTTP API",
+      "choice": "direct API call to the existing endpoint",
+      "note": "Tương tác càng đơn giản (1 lần, stateless, có sẵn API ổn định) thì **giải pháp càng nên đơn giản (gọi API trực tiếp)**. Đừng dùng cơ chế phức tạp hơn mức cần thiết: đáp án B, C, D đều over-engineer.",
+      "rules": [
+        {
+          "trigger": "single low-latency stateless tool call · already exposes a stable HTTP API",
+          "choice": "direct API call to the existing endpoint"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Gọi 1 API nội bộ, stateless, latency thấp — đơn giản nhất là đúng nhất",
+      "text": "Chỉ cần **một lời gọi tool stateless, latency thấp** tới pricing service nội bộ đã có sẵn HTTP API ổn định — không cần gì phức tạp hơn."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.7 · Ba cơ chế chính"
+    ]
+  },
+  {
+    "n": 72,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": false,
+    "q": "A Claude architect observes that after a recent model-version upgrade, grounded responses began including [[claims not supported by the retrieved source documents]]. Which mitigation is most directly targeted at this failure mode?",
+    "q_vi": "Một kiến trúc sư Claude thấy sau đợt nâng phiên bản model gần đây, các câu trả lời bám nguồn bắt đầu có nhận định không được tài liệu nguồn truy xuất hỗ trợ. Biện pháp nào nhắm trực tiếp nhất vào kiểu hỏng này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Constrain responses to source-supported content]], require citations, and add a [[verification step]].",
+        "vi": "Giới hạn câu trả lời trong nội dung có nguồn hỗ trợ, bắt buộc trích dẫn và thêm một bước kiểm chứng.",
+        "correct": true,
+        "why": "Vì failure mode ở đây là claim không có căn cứ trong tài liệu nguồn, nên mitigation cần nhắm thẳng vào nó: **ràng buộc response chỉ chứa nội dung có nguồn hỗ trợ, bắt buộc trích dẫn, và thêm một bước xác minh**."
+      },
+      {
+        "k": "B",
+        "text": "Score each new model version against a stable adversarial evaluation set.",
+        "vi": "Chấm mỗi phiên bản model mới trên một bộ đánh giá adversarial ổn định.",
+        "correct": false,
+        "why": "Chấm điểm theo bộ adversarial eval ổn định là công cụ **phát hiện drift nói chung**, không trực tiếp ngăn việc model bịa thêm claim ở mỗi response."
+      },
+      {
+        "k": "C",
+        "text": "Replace the shared API key with per-user OAuth tokens to restrict data access.",
+        "vi": "Thay API key dùng chung bằng OAuth token theo từng người dùng để giới hạn truy cập dữ liệu.",
+        "correct": false,
+        "why": "Đổi API key sang OAuth theo user là biện pháp **kiểm soát truy cập dữ liệu**, không liên quan đến việc response có bám nguồn hay không."
+      },
+      {
+        "k": "D",
+        "text": "Treat retrieved data as untrusted and apply input classifiers at ingestion time.",
+        "vi": "Coi dữ liệu truy xuất là không tin cậy và áp bộ phân loại đầu vào lúc tiếp nhận.",
+        "correct": false,
+        "why": "Coi retrieved data là untrusted + classifier ở bước ingest là biện pháp chống **prompt injection từ tài liệu truy xuất** — một failure mode khác, không phải 'model tự bịa thêm claim'."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "claims not supported by the retrieved source documents",
+      "choice": "Constrain responses to source-supported content · verification step",
+      "note": "Hallucination trên nền RAG thì chặn bằng **ràng buộc bám nguồn + citation + verify**, không phải công cụ phát hiện drift chung (đáp án B), kiểm soát quyền truy cập (đáp án C), hay chống injection (đáp án D).",
+      "rules": [
+        {
+          "trigger": "claims not supported by the retrieved source documents",
+          "choice": "Constrain responses to source-supported content · verification step"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Model upgrade làm response 'bịa' thêm — chặn đúng chỗ: buộc bám nguồn + thêm bước verify",
+      "text": "Sau khi upgrade model, response grounded **bắt đầu chứa claim không có trong tài liệu nguồn đã truy xuất** — cần mitigation nhắm thẳng vào failure mode này (hallucination trên nền RAG)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.4 · Xác nhận bịa thông tin"
+    ]
+  },
+  {
+    "n": 73,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "You are defining escalation criteria for ambiguous cases in an automated workflow. Which set of criteria best supports [[consistent escalation]]?",
+    "q_vi": "Bạn đang định nghĩa tiêu chí chuyển cấp cho các ca mơ hồ trong một quy trình tự động. Bộ tiêu chí nào hỗ trợ tốt nhất cho việc chuyển cấp nhất quán?",
+    "options": [
+      {
+        "k": "A",
+        "text": "No escalation criteria; the model decides independently on every turn whether to escalate, without explicit confidence thresholds, impact categories, or classifier-based ambiguity flags.",
+        "vi": "Không có tiêu chí chuyển cấp; model tự quyết ở mỗi lượt có chuyển cấp không, không có ngưỡng tin cậy, nhóm tác động hay cờ mơ hồ từ bộ phân loại.",
+        "correct": false,
+        "why": "**Không có tiêu chí nào**, để model tự quyết mỗi lượt — không thể nhất quán vì không có chuẩn chung để so sánh giữa các lần."
+      },
+      {
+        "k": "B",
+        "text": "Escalation only after an affected customer has contacted support to complain, after the automated workflow has already completed without human review.",
+        "vi": "Chỉ chuyển cấp sau khi khách hàng bị ảnh hưởng đã liên hệ hỗ trợ để phàn nàn, khi quy trình tự động đã chạy xong mà không có người review.",
+        "correct": false,
+        "why": "Chỉ escalate **sau khi khách hàng đã phàn nàn** là phản ứng, không chủ động — workflow đã chạy xong rồi mới có người xem lại."
+      },
+      {
+        "k": "C",
+        "text": "Escalation at the discretion of whoever is available when the team's on-call engineer has spare capacity, without a defined threshold, category, or ambiguity criterion.",
+        "vi": "Chuyển cấp tuỳ người đang rảnh khi kỹ sư trực của nhóm còn dư sức, không có ngưỡng, nhóm hay tiêu chí mơ hồ được định nghĩa.",
+        "correct": false,
+        "why": "Tuỳ **ai đang rảnh** quyết định, không ngưỡng không category không tiêu chí — hoàn toàn phụ thuộc may rủi về nhân sự."
+      },
+      {
+        "k": "D",
+        "text": "A [[confidence score below a defined threshold]], presence of high-impact decision categories, ambiguity flags raised by content classifiers, and the user's explicit request for review.",
+        "vi": "Điểm tin cậy dưới một ngưỡng đã định, có các nhóm quyết định tác động lớn, có cờ mơ hồ do bộ phân loại nội dung bật lên, và người dùng yêu cầu rõ được review.",
+        "correct": true,
+        "why": "Vì escalation nhất quán đòi hỏi tiêu chí khách quan, lặp lại được, nên đáp án đúng là **kết hợp ngưỡng confidence score thấp, category quyết định tác động cao, cờ mơ hồ từ classifier, và yêu cầu review tường minh từ user** — bốn tín hiệu tường minh cùng lúc, không phụ thuộc cảm tính của một người hay một thời điểm."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "consistent escalation",
+      "choice": "confidence score below a defined threshold",
+      "note": "Escalation nhất quán = **nhiều tín hiệu khách quan cùng lúc** (confidence + impact + ambiguity flag + user request). Không tiêu chí (đáp án A), chờ phàn nàn (đáp án B), hay tuỳ người rảnh (đáp án C) đều không nhất quán.",
+      "rules": [
+        {
+          "trigger": "consistent escalation",
+          "choice": "confidence score below a defined threshold"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Escalation nhất quán cần tiêu chí rõ ràng, không phải cảm tính hay chờ phàn nàn",
+      "text": "Định nghĩa tiêu chí escalation cho case mơ hồ trong workflow tự động — cần bộ tiêu chí **hỗ trợ escalation nhất quán**, lặp lại được."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.3 · Tiêu chí chuyển người phải rõ"
+    ]
+  },
+  {
+    "n": 74,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": false,
+    "q": "After a prompt-template update, several [[previously passing test cases]] now produce unexpected outputs. Which test type is specifically designed to detect this category of failure?",
+    "q_vi": "Sau khi cập nhật prompt template, vài test case trước đây qua giờ cho đầu ra không mong đợi. Loại test nào được thiết kế riêng để phát hiện kiểu lỗi này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Integration tests that validate cross-component pipeline behavior.",
+        "vi": "Integration test kiểm hành vi pipeline giữa các component.",
+        "correct": false,
+        "why": "Integration test kiểm tra **hành vi xuyên nhiều component**, không phải so sánh với baseline hành vi cũ ở cấp prompt."
+      },
+      {
+        "k": "B",
+        "text": "Adversarial tests that probe for prompt-injection vulnerabilities.",
+        "vi": "Adversarial test dò lỗ hổng prompt injection.",
+        "correct": false,
+        "why": "Adversarial test nhắm vào **lỗ hổng prompt-injection**, khác hẳn mục tiêu 'phát hiện hành vi bị thay đổi ngoài ý muốn'."
+      },
+      {
+        "k": "C",
+        "text": "[[Regression tests]] scored against a stable reference set of [[known-good behavior]].",
+        "vi": "Regression test chấm trên một tập tham chiếu ổn định gồm các hành vi đã biết là đúng.",
+        "correct": true,
+        "why": "Vì cần phát hiện đúng kiểu lỗi 'hành vi từng đúng nay bị thay đổi ngoài ý muốn', nên **regression test, chấm theo một bộ tham chiếu ổn định các hành vi đã biết là đúng (known-good)** là lựa chọn đúng — so sánh hành vi mới với hành vi cũ đã xác nhận đúng để phát hiện ngay sai khác sau thay đổi."
+      },
+      {
+        "k": "D",
+        "text": "Smoke tests that confirm high-level system availability after the change.",
+        "vi": "Smoke test xác nhận hệ thống vẫn sẵn sàng ở mức tổng quan sau thay đổi.",
+        "correct": false,
+        "why": "Smoke test chỉ xác nhận **hệ thống còn chạy được ở mức cao**, quá nông để bắt được sai lệch hành vi chi tiết như vậy."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "previously passing test cases",
+      "choice": "Regression tests · known-good behavior",
+      "note": "'Trước pass giờ fail sau khi sửa' = đúng bài của **regression test (so với baseline known-good)**. Integration/adversarial/smoke đều nhắm mục tiêu khác.",
+      "rules": [
+        {
+          "trigger": "previously passing test cases",
+          "choice": "Regression tests · known-good behavior"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Regression test — đúng công cụ để bắt 'trước pass giờ fail' sau khi sửa prompt-template",
+      "text": "Sau khi update prompt-template, **một số test case từng pass giờ ra output không mong đợi** — cần loại test được thiết kế riêng để bắt đúng kiểu lỗi này."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.2 · Các loại kiểm thử trong một khung"
+    ]
+  },
+  {
+    "n": 75,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": true,
+    "q": "A Claude architect at a health services organization is defining evaluation metrics for a clinical-summary pipeline. The pipeline must remain within a [[per-query cost ceiling]] and must never surface patient data to [[unauthorized roles]]. Which two metrics directly address these requirements? (Select two.)",
+    "q_vi": "Một kiến trúc sư Claude ở một tổ chức dịch vụ y tế đang định nghĩa chỉ số đánh giá cho một pipeline tóm tắt lâm sàng. Pipeline phải nằm trong trần chi phí mỗi truy vấn và không bao giờ để lộ dữ liệu bệnh nhân cho vai trò không được phép. Hai chỉ số nào xử lý trực tiếp các yêu cầu này? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "BLEU score computed against a human-annotated reference summary set",
+        "vi": "Điểm BLEU tính trên một tập tóm tắt tham chiếu do người gán nhãn",
+        "correct": false,
+        "why": "BLEU so bản tóm tắt với bản mẫu do người viết, tức là đo chất lượng câu chữ. Không liên quan đến chi phí hay quyền truy cập."
+      },
+      {
+        "k": "B",
+        "text": "[[Role-based access-control enforcement]] rate measured on a red-team dataset",
+        "vi": "Tỉ lệ áp đúng phân quyền theo vai trò, đo trên một bộ dữ liệu red-team",
+        "correct": true,
+        "why": "Đo ràng buộc về quyền. Dùng một bộ dữ liệu **red-team** (cố tình thử lấy dữ liệu bằng tài khoản không có quyền) rồi đo tỉ lệ lần hệ thống chặn đúng theo **RBAC** (phân quyền theo vai trò). Ràng buộc là \"không bao giờ\", nên con số này phải đạt 100%."
+      },
+      {
+        "k": "C",
+        "text": "Throughput measured as successful requests processed per minute",
+        "vi": "Thông lượng đo bằng số request xử lý thành công mỗi phút",
+        "correct": false,
+        "why": "Throughput đo số request xử lý được mỗi phút, không đo chi phí mỗi query hay việc lộ dữ liệu."
+      },
+      {
+        "k": "D",
+        "text": "[[Per-query token cost]] measured against the defined cost ceiling",
+        "vi": "Chi phí token mỗi truy vấn đo so với trần chi phí đã định",
+        "correct": true,
+        "why": "Đo ràng buộc về chi phí. Tính **chi phí token của từng query** và so với trần đã định, để biết có query nào vượt trần không, chứ không chỉ nhìn tổng chi phí cả tháng."
+      },
+      {
+        "k": "E",
+        "text": "Response latency at the 95th percentile across a one-week sample window",
+        "vi": "Độ trễ phản hồi ở phân vị thứ 95 trên một cửa sổ mẫu một tuần",
+        "correct": false,
+        "why": "Latency p95 đo tốc độ trả lời, không đo chi phí hay quyền truy cập dữ liệu bệnh nhân."
+      }
+    ],
+    "answer": "B, D",
+    "tip": {
+      "trigger": "unauthorized roles · per-query cost ceiling",
+      "choice": "Role-based access-control enforcement · Per-query token cost",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra. Ở câu này, để có **unauthorized roles** thì chọn đáp án B đo **Role-based access-control enforcement**; để có **per-query cost ceiling** thì chọn đáp án D đo **Per-query token cost**. Đáp án A (chất lượng câu chữ), C (throughput), E (latency) đều đo thứ khác.",
+      "rules": [
+        {
+          "trigger": "unauthorized roles · per-query cost ceiling",
+          "choice": "Role-based access-control enforcement · Per-query token cost"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Pipeline y tế: chọn metric đo đúng hai ràng buộc đề đặt ra",
+      "text": "Pipeline tóm tắt hồ sơ bệnh án có hai ràng buộc: **không vượt trần chi phí mỗi query**, và **không bao giờ để lộ dữ liệu bệnh nhân cho vai trò không có quyền**. Đề hỏi hai metric đo thẳng hai ràng buộc này."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.1 · Nhiều chiều, mỗi chiều một ngưỡng"
+    ]
+  },
+  {
+    "n": 76,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are choosing the level of detail for an implementation guide. The audience is a [[delivery team that will build the deployment]]. Which guidance composition best serves them?",
+    "q_vi": "Bạn đang chọn mức chi tiết cho một tài liệu hướng dẫn triển khai. Người đọc là nhóm delivery sẽ dựng triển khai đó. Cách soạn hướng dẫn nào phục vụ họ tốt nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Component responsibilities, contracts between components]], sequence diagrams of the dominant flows, configuration parameters with defaults, and operational runbooks.",
+        "vi": "Trách nhiệm của từng component, hợp đồng giữa các component, sơ đồ tuần tự của các luồng chính, tham số cấu hình kèm giá trị mặc định, và runbook vận hành.",
+        "correct": true,
+        "why": "Vì đội build cần biết cả 'xây gì, xây thế nào, và vận hành ra sao', nên bộ tài liệu đúng phải gồm đủ **trách nhiệm từng component, contract giữa các component, sequence diagram cho luồng chính, tham số cấu hình kèm giá trị mặc định, và runbook vận hành** — thiếu mảnh nào cũng khiến đội phải quay lại hỏi architect."
+      },
+      {
+        "k": "B",
+        "text": "Component responsibilities and interface contracts only, without sequence diagrams of the dominant flows, configuration parameters with defaults, or runbooks to guide operational tasks.",
+        "vi": "Chỉ có trách nhiệm component và hợp đồng interface, không có sơ đồ tuần tự các luồng chính, tham số cấu hình kèm mặc định hay runbook để hướng dẫn việc vận hành.",
+        "correct": false,
+        "why": "Chỉ có trách nhiệm + contract, **thiếu sequence diagram, tham số cấu hình, runbook** — biết interface nhưng không biết luồng chạy thực tế hay cách vận hành."
+      },
+      {
+        "k": "C",
+        "text": "An architecture overview and sequence diagrams for the dominant flows, without interface contracts, configuration-parameter tables, or operational runbooks for the delivery team to follow.",
+        "vi": "Tổng quan kiến trúc và sơ đồ tuần tự các luồng chính, không có hợp đồng interface, bảng tham số cấu hình hay runbook vận hành để nhóm delivery làm theo.",
+        "correct": false,
+        "why": "Chỉ có overview + sequence diagram, **thiếu contract, bảng tham số, runbook** — thấy được luồng nhưng không đủ chi tiết để code interface hay cấu hình đúng."
+      },
+      {
+        "k": "D",
+        "text": "An architecture overview and a list of known limitations, without component-level diagrams, interface contracts, configuration parameters, or operational runbooks to support implementation.",
+        "vi": "Tổng quan kiến trúc và danh sách giới hạn đã biết, không có sơ đồ mức component, hợp đồng interface, tham số cấu hình hay runbook vận hành để hỗ trợ triển khai.",
+        "correct": false,
+        "why": "Chỉ có overview + known-limitations, **thiếu gần như mọi thứ mang tính hành động** — không đủ để bắt đầu build gì cả."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "delivery team that will build the deployment",
+      "choice": "Component responsibilities, contracts between components",
+      "note": "Guide cho đội build = **đủ bộ: trách nhiệm + contract + sequence diagram + cấu hình + runbook**. Thiếu bất kỳ mảnh nào (B, C, D đều thiếu 3/5) là chưa đủ để họ tự triển khai.",
+      "rules": [
+        {
+          "trigger": "delivery team that will build the deployment",
+          "choice": "Component responsibilities, contracts between components"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Implementation guide cho đội trực tiếp build — cần đủ bộ để tự triển khai",
+      "text": "Chọn mức chi tiết cho implementation guide, đối tượng đọc là **đội sẽ trực tiếp xây dựng deployment**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.4 · Gói bàn giao để đội triển khai tự làm được"
+    ]
+  },
+  {
+    "n": 77,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "You are identifying the highest-impact optimization for a deployment whose token cost is dominated by a [[long, repeated system prompt]] and a [[large retrieved context]] per request. Which optimization most directly targets the dominant cost driver?",
+    "q_vi": "Bạn đang tìm tối ưu có tác động lớn nhất cho một triển khai có chi phí token chủ yếu đến từ một system prompt dài lặp lại và một context truy xuất lớn ở mỗi request. Tối ưu nào nhắm trực tiếp nhất vào nguồn chi phí chính?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Increase retrieval depth on every request to maximize recall, worsening the dominant cost driver by adding more retrieved tokens per request rather than reducing them.",
+        "vi": "Tăng độ sâu truy xuất ở mọi request để recall cao nhất, làm nguồn chi phí chính tệ hơn vì thêm token truy xuất mỗi request thay vì giảm.",
+        "correct": false,
+        "why": "Tăng retrieval depth **làm driver context-lớn còn lớn hơn** — đi ngược hướng cần giảm."
+      },
+      {
+        "k": "B",
+        "text": "Add additional repeated content to the system prompt to give the model more guidance.",
+        "vi": "Thêm nội dung lặp lại vào system prompt để model có thêm hướng dẫn.",
+        "correct": false,
+        "why": "Thêm nội dung lặp lại vào system prompt **làm driver prompt-dài-lặp-lại càng nặng hơn** — ngược hướng."
+      },
+      {
+        "k": "C",
+        "text": "[[Move the long, repeated system prompt into a cacheable prefix]] and [[trim retrieved context]] to the spans relevant to each query.",
+        "vi": "Đưa system prompt dài lặp lại vào một prefix cache được, và cắt context truy xuất xuống các đoạn liên quan tới từng truy vấn.",
+        "correct": true,
+        "why": "Vì chi phí bị chi phối bởi đúng hai nguồn — system prompt dài lặp lại và context truy xuất lớn — nên optimization đúng phải xử lý cả hai: **đưa system prompt vào một prefix có thể cache** giải quyết phần lặp lại, còn **cắt context truy xuất xuống chỉ còn đoạn liên quan tới từng câu hỏi** giải quyết phần quá lớn, không đụng vào chi phí nào khác."
+      },
+      {
+        "k": "D",
+        "text": "Switch every request to the heaviest available model to maximize output quality, accepting that higher per-request inference cost compounds rather than addresses the dominant cost driver.",
+        "vi": "Chuyển mọi request sang model nặng nhất hiện có để chất lượng đầu ra cao nhất, chấp nhận chi phí suy luận mỗi request cao hơn chỉ cộng dồn chứ không xử lý nguồn chi phí chính.",
+        "correct": false,
+        "why": "Đổi sang model nặng nhất **thêm hẳn một driver chi phí mới** (inference cost), không hề đụng tới hai driver chính đã nêu (prompt lặp + context lớn)."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "long, repeated system prompt · large retrieved context",
+      "choice": "Move the long, repeated system prompt into a cacheable prefix · trim retrieved context",
+      "note": "Chi phí bị chi phối bởi 2 nguồn cụ thể thì **xử lý đúng 2 nguồn đó (cache + trim)**, đừng làm chúng nặng thêm (đáp án A, B) hay đi chệch sang driver khác (đáp án D).",
+      "rules": [
+        {
+          "trigger": "long, repeated system prompt · large retrieved context",
+          "choice": "Move the long, repeated system prompt into a cacheable prefix · trim retrieved context"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Nhắm đúng 2 driver chi phí đã nêu: cache system prompt + cắt retrieved context",
+      "text": "Chi phí token bị chi phối bởi **system prompt dài, lặp lại** và **context truy xuất lớn mỗi request** — cần optimization nhắm thẳng vào đúng 2 driver này."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.4 · Giảm token ở từng giai đoạn"
+    ]
+  },
+  {
+    "n": 78,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "You are defining [[transparency practices]] for a [[customer-facing assistant]] whose responses are materially shaped by AI. Which transparency practice most directly supports responsible deployment?",
+    "q_vi": "Bạn đang định nghĩa các cách làm minh bạch cho một trợ lý phục vụ khách hàng có câu trả lời được AI định hình đáng kể. Cách làm minh bạch nào hỗ trợ trực tiếp nhất cho việc triển khai có trách nhiệm?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Misrepresent the AI's role in producing responses in order to make the assistant feel more trustworthy or more human, undermining informed user consent and organizational transparency.",
+        "vi": "Mô tả sai vai trò của AI trong việc tạo câu trả lời để trợ lý có vẻ đáng tin hay giống người hơn, làm suy yếu sự đồng thuận có hiểu biết của người dùng và tính minh bạch của tổ chức.",
+        "correct": false,
+        "why": "**Cố tình che giấu/giả vờ** vai trò của AI để trông đáng tin hơn vi phạm trực tiếp tinh thần minh bạch và sự đồng thuận có hiểu biết của người dùng."
+      },
+      {
+        "k": "B",
+        "text": "Refuse to answer any user question about how the responses were produced or whether AI was involved, treating the AI's role as confidential operational information.",
+        "vi": "Từ chối trả lời mọi câu hỏi của người dùng về cách câu trả lời được tạo ra hay có AI tham gia không, coi vai trò của AI là thông tin vận hành mật.",
+        "correct": false,
+        "why": "**Từ chối trả lời** câu hỏi về việc có AI tham gia hay không là không minh bạch — coi thông tin này là bí mật nội bộ trong khi người dùng có quyền được biết."
+      },
+      {
+        "k": "C",
+        "text": "[[Disclose AI involvement to end users]] in line with the organization's transparency policy and provide a [[documented path to reach a human]] when needed.",
+        "vi": "Công bố việc có AI tham gia cho người dùng cuối theo chính sách minh bạch của tổ chức và đưa ra một đường liên hệ người thật có tài liệu rõ ràng khi cần.",
+        "correct": true,
+        "why": "Vì người dùng cuối là đối tượng có quyền được biết AI tham gia định hình response của họ, nên thực hành đúng là **công khai việc có AI tham gia theo đúng chính sách minh bạch của tổ chức, kèm đường dẫn rõ ràng để liên hệ người thật khi cần** — đúng đối tượng cần biết và có lối thoát sang con người."
+      },
+      {
+        "k": "D",
+        "text": "Disclose AI involvement only to internal staff and operators while withholding that information from the end users whose interactions are materially shaped by the AI system.",
+        "vi": "Chỉ công bố việc có AI tham gia cho nhân viên và người vận hành nội bộ, trong khi giấu thông tin đó với người dùng cuối mà tương tác của họ bị hệ thống AI định hình đáng kể.",
+        "correct": false,
+        "why": "Chỉ công khai **cho nhân viên nội bộ, giấu chính người dùng cuối** — đối tượng cần biết nhất lại là người không được thông báo, ngược hoàn toàn với mục tiêu transparency."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "transparency practices · customer-facing assistant",
+      "choice": "Disclose AI involvement to end users · documented path to reach a human",
+      "note": "Transparency đúng = **công khai cho đúng người cần biết (end user) + có lối gặp người thật**. Giấu (đáp án A), im lặng (đáp án B), hay chỉ nói nội bộ (đáp án D) đều phản lại chính người dùng cuối.",
+      "rules": [
+        {
+          "trigger": "transparency practices · customer-facing assistant",
+          "choice": "Disclose AI involvement to end users · documented path to reach a human"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Transparency đúng cách — công khai với người dùng cuối, có đường liên hệ người thật",
+      "text": "Response của trợ lý khách hàng **bị định hình đáng kể bởi AI** — cần thực hành transparency hỗ trợ triển khai có trách nhiệm."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.5 · Minh bạch với người dùng"
+    ]
+  },
+  {
+    "n": 79,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": true,
+    "q": "An engineering organization is adopting Claude Code across 200 developers. A team lead proposes that AI- generated pull requests [[bypass standard code review]] for changes [[under 50 lines]] because small changes are considered low risk and review capacity is constrained. Which two Diligence-competency objections should you raise? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Một tổ chức kỹ thuật đang đưa Claude Code tới 200 developer. Một trưởng nhóm đề xuất các pull request do AI sinh ra được bỏ qua review code tiêu chuẩn nếu thay đổi dưới 50 dòng, vì thay đổi nhỏ được coi là rủi ro thấp và năng lực review đang hạn chế. Hai phản đối nào thuộc năng lực Diligence bạn nên nêu? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Removing review [[eliminates the verification mechanism]] required for AI-generated output across the workflow.",
+        "vi": "Bỏ review làm mất cơ chế kiểm chứng cần có cho đầu ra do AI sinh trong toàn quy trình.",
+        "correct": true,
+        "why": "Code do AI viết có thể sai mà trông vẫn rất hợp lý, nên cần một bước có người kiểm lại. Trong quy trình này, **review chính là bước kiểm đó**. Bỏ review thì code AI đi thẳng vào hệ thống mà không ai xác nhận nó đúng."
+      },
+      {
+        "k": "B",
+        "text": "Code-review capacity should be expanded to handle every code change submitted across the team.",
+        "vi": "Năng lực review code nên được mở rộng để xử lý mọi thay đổi code cả nhóm gửi lên.",
+        "correct": false,
+        "why": "Tăng người review cho mọi thay đổi là mong muốn chính đáng, nhưng không chỉ ra chỗ sai trong lập luận \"nhỏ là an toàn\". Đây chỉ là né vấn đề."
+      },
+      {
+        "k": "C",
+        "text": "The threshold should be increased to 200 lines to capture more changes.",
+        "vi": "Nên nâng ngưỡng lên 200 dòng để bao được nhiều thay đổi hơn.",
+        "correct": false,
+        "why": "Nâng ngưỡng lên 200 dòng vẫn dùng số dòng để đo rủi ro, chỉ dời ranh giới chứ không sửa cái sai gốc, lại còn cho nhiều code bỏ review hơn."
+      },
+      {
+        "k": "D",
+        "text": "AI-generated pull requests should be rejected by default across the organization.",
+        "vi": "Pull request do AI sinh nên bị từ chối mặc định trên toàn tổ chức.",
+        "correct": false,
+        "why": "Từ chối mặc định mọi PR do AI tạo là đi quá đà theo hướng ngược lại, không phải phản biện đúng vào điểm yếu của đề xuất."
+      },
+      {
+        "k": "E",
+        "text": "Line count is a [[poor proxy]] for the actual risk introduced by a code change.",
+        "vi": "Số dòng là thước đo kém cho rủi ro thật mà một thay đổi code mang lại.",
+        "correct": true,
+        "why": "Số dòng không nói lên mức nguy hiểm. Sửa 3 dòng trong phần đăng nhập, mã hoá hay tính tiền có thể gây hậu quả lớn hơn nhiều so với sửa 200 dòng chữ hiển thị. Đếm dòng là **thước đo rủi ro tồi** (poor proxy)."
+      }
+    ],
+    "answer": "A, E",
+    "tip": {
+      "trigger": "bypass standard code review · under 50 lines",
+      "choice": "eliminates the verification mechanism · poor proxy",
+      "note": "**Dạng phản biện** (có người kết luận vội, đề hỏi challenge, findings, objections): chọn câu chỉ ra kết luận đó **chưa có căn cứ** (does not establish · does not by itself · poor proxy), hoặc đề nghị **đi đo, kiểm tra thật**. Bẫy: **đồng ý** với kết luận (proves · sufficient · unnecessary · isolated), **đi quá đà** (disable · reject by default · nới ngưỡng), hoặc **chuyện bên lề** (mẫu nhỏ, khảo sát, pilot ngắn). Ở câu này, đề xuất muốn **bypass standard code review** thì đáp án A chỉ ra làm vậy **eliminates the verification mechanism** cho code AI viết; đề xuất lấy mốc **under 50 lines** thì đáp án E chỉ ra số dòng là **poor proxy** cho rủi ro. Đáp án B xin thêm người, C nới lên 200 dòng (vẫn đếm dòng), D đi quá đà (cấm hết).",
+      "rules": [
+        {
+          "trigger": "bypass standard code review · under 50 lines",
+          "choice": "eliminates the verification mechanism · poor proxy"
+        }
+      ]
+    },
+    "ask": {
+      "title": "PR do AI viết dưới 50 dòng có được bỏ review không",
+      "text": "Tổ chức có 200 lập trình viên dùng Claude Code. Một trưởng nhóm đề xuất: pull request do AI tạo mà **dưới 50 dòng thì bỏ qua code review**, vì thay đổi nhỏ được coi là ít rủi ro và người review không đủ. Đề hỏi hai phản biện theo năng lực **Diligence** (cẩn trọng, chịu trách nhiệm với kết quả của AI)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.2 · Đặt AI vào đúng chỗ trong quy trình"
+    ]
+  },
+  {
+    "n": 80,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are defining an SLA for a Claude-based assistant. Which SLA definition is [[most operationally meaningful]]?",
+    "q_vi": "Bạn đang định nghĩa SLA cho một trợ lý chạy trên Claude. Định nghĩa SLA nào có ý nghĩa vận hành nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "A target tied to a stakeholder sentiment measure such as \"the team feels satisfied,\" which cannot be measured objectively or used to trigger a documented breach response.",
+        "vi": "Một mục tiêu gắn với cảm nhận của các bên như \"nhóm thấy hài lòng\", không đo khách quan được và không dùng để kích hoạt quy trình xử lý vi phạm có tài liệu.",
+        "correct": false,
+        "why": "Mục tiêu dựa trên **cảm nhận hài lòng của team** — không đo khách quan được nên không thể kích hoạt bất kỳ quy trình xử lý vi phạm nào."
+      },
+      {
+        "k": "B",
+        "text": "A [[measurable target]] with a defined metric, threshold, [[evaluation window, and consequence for breach]]- for example, \"p95 per-request latency under 800 ms over a 28-day window.\"",
+        "vi": "Một mục tiêu đo được có chỉ số, ngưỡng, cửa sổ đánh giá và hệ quả khi vi phạm được định nghĩa rõ, ví dụ \"độ trễ p95 mỗi request dưới 800 ms trong cửa sổ 28 ngày\".",
+        "correct": true,
+        "why": "Đáp án B hội đủ **4 thành phần bắt buộc của một SLA vận hành được: metric cụ thể, ngưỡng, khung thời gian đánh giá, và hậu quả khi vi phạm** — ví dụ 'p95 latency dưới 800ms trong 28 ngày'. Có đủ 4 mảnh này mới biết chính xác khi nào SLA bị vi phạm và điều gì xảy ra tiếp theo."
+      },
+      {
+        "k": "C",
+        "text": "A qualitative commitment such as \"the system will be fast and reliable,\" which names no metric, threshold, or evaluation window.",
+        "vi": "Một cam kết định tính như \"hệ thống sẽ nhanh và ổn định\", không nêu chỉ số, ngưỡng hay cửa sổ đánh giá nào.",
+        "correct": false,
+        "why": "Cam kết định tính 'nhanh và đáng tin cậy' **không nêu metric, ngưỡng hay khung thời gian** — không ai xác định được lúc nào là 'vi phạm'."
+      },
+      {
+        "k": "D",
+        "text": "A target that names the metric and threshold but omits the evaluation window and breach consequence, leaving compliance periods and remediation triggers undefined.",
+        "vi": "Một mục tiêu nêu chỉ số và ngưỡng nhưng bỏ cửa sổ đánh giá và hệ quả khi vi phạm, để thời kỳ tuân thủ và điều kiện kích hoạt khắc phục không được định nghĩa.",
+        "correct": false,
+        "why": "Có metric và ngưỡng nhưng **thiếu khung thời gian đánh giá và hậu quả vi phạm** — biết đo gì nhưng không biết đo trong bao lâu, cũng không biết chuyện gì xảy ra nếu không đạt."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "most operationally meaningful",
+      "choice": "measurable target · evaluation window, and consequence for breach",
+      "note": "SLA dùng được = đủ **4 mảnh: metric + threshold + window + consequence**. Thiếu đo lường (đáp án A, C) hay thiếu 2 mảnh cuối (đáp án D) đều chưa enforce được.",
+      "rules": [
+        {
+          "trigger": "most operationally meaningful",
+          "choice": "measurable target · evaluation window, and consequence for breach"
+        }
+      ]
+    },
+    "ask": {
+      "title": "SLA đo được = metric + threshold + window + hậu quả vi phạm, thiếu mảnh nào cũng vô nghĩa",
+      "text": "Định nghĩa SLA cho trợ lý dựa trên Claude — chọn phiên bản **có ý nghĩa vận hành thật sự**, chứ không chỉ nghe hay."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.3 · SLA phải đo được"
+    ]
+  },
+  {
+    "n": 81,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "A Claude architect is designing a HIPAA-compliant pipeline that processes patient records. Which two design decisions directly support [[HIPAA compliance]] requirements? (Select two.)",
+    "q_vi": "Một kiến trúc sư Claude đang thiết kế một pipeline xử lý hồ sơ bệnh nhân tuân thủ HIPAA. Hai quyết định thiết kế nào hỗ trợ trực tiếp yêu cầu tuân thủ HIPAA? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Setting max_tokens to a low value to minimize the volume of text generated per request.",
+        "vi": "Đặt max_tokens ở mức thấp để giảm lượng chữ sinh ra mỗi request.",
+        "correct": false,
+        "why": "Đặt max_tokens thấp chỉ giảm độ dài câu trả lời, không liên quan đến ai được xem PHI hay dữ liệu có ra khỏi tổ chức không."
+      },
+      {
+        "k": "B",
+        "text": "Selecting the highest-capability Claude model to maximize diagnostic accuracy.",
+        "vi": "Chọn model Claude mạnh nhất để chẩn đoán chính xác nhất.",
+        "correct": false,
+        "why": "Chọn model mạnh nhất để chẩn đoán chính xác hơn là chuyện chất lượng, không phải tuân thủ."
+      },
+      {
+        "k": "C",
+        "text": "Enforcing [[role-based access controls]] so that PHI is retrievable only by authorized personnel.",
+        "vi": "Áp phân quyền theo vai trò để PHI chỉ được truy xuất bởi nhân sự có quyền.",
+        "correct": true,
+        "why": "HIPAA yêu cầu thông tin sức khoẻ của bệnh nhân (**PHI**) chỉ đến tay người có nhiệm vụ cần xem. **Phân quyền theo vai trò** (RBAC) là cách thực hiện yêu cầu đó: bác sĩ điều trị xem được, nhân viên kế toán thì không."
+      },
+      {
+        "k": "D",
+        "text": "Ensuring patient data is [[never included in training feedback loops]] sent to the model provider without a BAA in place.",
+        "vi": "Đảm bảo dữ liệu bệnh nhân không bao giờ nằm trong vòng phản hồi huấn luyện gửi cho nhà cung cấp model khi chưa có BAA.",
+        "correct": true,
+        "why": "Theo HIPAA, bên ngoài nào được nhận PHI thì phải ký **BAA** (Business Associate Agreement), cam kết bảo vệ dữ liệu như bên gốc. Chưa có BAA mà dữ liệu bệnh nhân đã theo vòng góp ý huấn luyện gửi sang nhà cung cấp model thì đã vi phạm."
+      },
+      {
+        "k": "E",
+        "text": "Using streaming responses to reduce perceived latency for clinical users.",
+        "vi": "Dùng response dạng streaming để giảm độ trễ cảm nhận cho người dùng lâm sàng.",
+        "correct": false,
+        "why": "Streaming chỉ làm người dùng cảm thấy đỡ phải chờ. Đây là trải nghiệm, không liên quan đến HIPAA."
+      }
+    ],
+    "answer": "C, D",
+    "tip": {
+      "trigger": "HIPAA compliance",
+      "choice": "role-based access controls · never included in training feedback loops",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, HIPAA quan tâm ai được xem PHI và dữ liệu đi đâu: đáp án C dùng **role-based access controls**, đáp án D giữ dữ liệu bệnh nhân **never included in training feedback loops** khi chưa có BAA. Đáp án A (max_tokens), B (model mạnh), E (streaming) đều là Lạc: chuyện hiệu năng và chất lượng.",
+      "rules": [
+        {
+          "trigger": "HIPAA compliance",
+          "choice": "role-based access controls · never included in training feedback loops"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Pipeline hồ sơ bệnh nhân theo HIPAA: quyết định nào phục vụ tuân thủ",
+      "text": "Bạn thiết kế pipeline xử lý hồ sơ bệnh nhân phải tuân thủ **HIPAA** (luật Mỹ về bảo vệ thông tin sức khoẻ). Đề hỏi hai quyết định trực tiếp phục vụ tuân thủ, khác với các quyết định về hiệu năng hay trải nghiệm."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.4 · Kiểm soát nào phải nằm ở ứng dụng",
+      "Bài 5.4 · HIPAA"
+    ]
+  },
+  {
+    "n": 82,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "You are designing a human-in-the-loop validation workflow for a new Claude-based deployment and must complete the design steps [[before piloting]] the workflow. Which two steps must be completed BEFORE piloting the workflow with a representative subset of traffic? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang thiết kế một quy trình kiểm chứng có con người tham gia (human-in-the-loop) cho một triển khai Claude mới, và phải hoàn tất các bước thiết kế trước khi chạy thử quy trình. Hai bước nào phải xong TRƯỚC KHI chạy thử quy trình với một phần traffic đại diện? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Define]] the sampling strategy and the escalation criteria at each oversight point in the pipeline.",
+        "vi": "Định nghĩa chiến lược lấy mẫu và tiêu chí chuyển cấp ở từng điểm giám sát trong pipeline.",
+        "correct": true,
+        "why": "Biết chỗ cần người rồi thì đặt cách làm ở từng chỗ: duyệt hết hay chỉ **lấy mẫu** một phần, và khi gặp trường hợp nào thì **chuyển lên cấp cao hơn** (escalation). Không có hai thứ này thì người duyệt không biết phải xem gì, xử lý ra sao."
+      },
+      {
+        "k": "B",
+        "text": "Iterate the workflow design based on observed pilot findings before broader rollout to production.",
+        "vi": "Lặp lại thiết kế quy trình theo các phát hiện khi chạy thử trước khi mở rộng ra production.",
+        "correct": false,
+        "why": "Sửa thiết kế theo những gì thấy trong lần chạy thử thì chỉ làm được **sau khi** đã chạy thử."
+      },
+      {
+        "k": "C",
+        "text": "Onboard the reviewer pool with role-specific training on the check criteria and escalation procedures.",
+        "vi": "Đào tạo nhóm người review theo vai trò về tiêu chí kiểm tra và quy trình chuyển cấp.",
+        "correct": false,
+        "why": "Đào tạo người duyệt theo tiêu chí kiểm tra cần có tiêu chí trước, tức là cần đáp án A và E xong rồi mới làm được."
+      },
+      {
+        "k": "D",
+        "text": "Document the workflow with check criteria, escalation paths, and service-level agreements (SLAs) for each step.",
+        "vi": "Ghi tài liệu quy trình với tiêu chí kiểm tra, đường chuyển cấp và SLA cho từng bước.",
+        "correct": false,
+        "why": "Viết tài liệu tiêu chí, đường chuyển cấp và SLA cho từng bước là ghi lại thiết kế đã có, nên đi sau đáp án A và E."
+      },
+      {
+        "k": "E",
+        "text": "[[Identify]] the decision points in the pipeline that require human oversight by impact and reversibility.",
+        "vi": "Xác định các điểm quyết định trong pipeline cần con người giám sát, theo mức tác động và khả năng đảo ngược.",
+        "correct": true,
+        "why": "Việc đầu tiên là biết **chỗ nào cần người**. Xét từng điểm ra quyết định trong pipeline: sai thì thiệt hại lớn tới đâu (impact), có sửa lại được không (reversibility). Điểm nào thiệt hại lớn hoặc không sửa được thì cần người duyệt."
+      }
+    ],
+    "answer": "A, E",
+    "tip": {
+      "trigger": "BEFORE piloting",
+      "choice": "Define · Identify",
+      "note": "**Dạng BEFORE** (đề hỏi *must be completed BEFORE X*): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**. Làm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out). Ở câu này, đáp án E **Identify** chỗ cần người (tìm hiểu), rồi đáp án A **Define** cách lấy mẫu và chuyển cấp (đặt mục tiêu). Đáp án C đào tạo và D viết tài liệu đều dựa trên kết quả của A và E nên đi sau; B sửa theo kết quả chạy thử là sau khi đã chạy.",
+      "rules": [
+        {
+          "trigger": "BEFORE piloting",
+          "choice": "Define · Identify"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Quy trình có người kiểm duyệt: việc nào làm trước khi chạy thử",
+      "text": "Bạn thiết kế quy trình có người kiểm tra kết quả của Claude (**human-in-the-loop**). Đề hỏi hai bước thiết kế phải xong **trước khi** chạy thử với một phần lưu lượng thật."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.3 · Đặt người ở đâu",
+      "Bài 5.3 · Lấy mẫu khi không duyệt hết"
+    ]
+  },
+  {
+    "n": 83,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": true,
+    "q": "You are compiling [[team-setup practices]] for a Claude Code rollout across an engineering organization. Which two practices belong on the list? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang tổng hợp các cách thiết lập cho nhóm khi triển khai Claude Code trong một tổ chức kỹ thuật. Hai cách làm nào thuộc danh sách? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Use [[project scope for team-shared]] Model Context Protocol (MCP) servers and permission rules under version control.",
+        "vi": "Dùng phạm vi project cho các MCP server và luật quyền dùng chung của nhóm, đặt dưới version control.",
+        "correct": true,
+        "why": "MCP server và quy tắc cấp quyền mà cả team cùng dùng thì đặt ở **project scope**, commit vào git cùng repo. Ai clone hay pull repo về là có ngay cấu hình giống hệt mọi người."
+      },
+      {
+        "k": "B",
+        "text": "Apply [[managed configuration]] centrally for security-critical settings that must not be overridden by individual engineers.",
+        "vi": "Áp managed configuration tập trung cho các thiết lập bảo mật quan trọng không được để từng kỹ sư ghi đè.",
+        "correct": true,
+        "why": "Thiết lập bảo mật quan trọng, không ai được tự ý đổi, thì phải đặt ở **managed configuration** do tổ chức quản lý tập trung. Đây là scope duy nhất mà kỹ sư không ghi đè được."
+      },
+      {
+        "k": "C",
+        "text": "Use local scope for security-critical permission rules so each engineer can adapt them to ongoing work.",
+        "vi": "Dùng phạm vi local cho các luật quyền bảo mật quan trọng để mỗi kỹ sư tự điều chỉnh theo việc đang làm.",
+        "correct": false,
+        "why": "Local scope là thiết lập riêng của từng người, ai cũng sửa được. Đặt quy tắc bảo mật quan trọng ở đây là ngược với yêu cầu không ai được đổi."
+      },
+      {
+        "k": "D",
+        "text": "Use user scope for team-shared MCP servers so every engineer on the team has consistent access.",
+        "vi": "Dùng phạm vi user cho các MCP server dùng chung của nhóm để mọi kỹ sư trong nhóm truy cập nhất quán.",
+        "correct": false,
+        "why": "User scope là thiết lập riêng của từng người, không chia sẻ cho ai. Đặt MCP server dùng chung ở đây thì không có gì đảm bảo cả team có cùng cấu hình."
+      },
+      {
+        "k": "E",
+        "text": "Use project scope for personal editor preferences so the preferences apply consistently within the project.",
+        "vi": "Dùng phạm vi project cho sở thích editor cá nhân để chúng áp nhất quán trong dự án.",
+        "correct": false,
+        "why": "Sở thích riêng của trình soạn thảo thuộc user scope. Đặt ở project scope là ép sở thích của một người lên cả team."
+      }
+    ],
+    "answer": "A, B",
+    "tip": {
+      "trigger": "team-setup practices",
+      "choice": "project scope for team-shared · managed configuration",
+      "note": "**Dạng scope Claude Code**: tự hỏi hai câu, *ai dùng chung?* và *ai được sửa?* **managed**: cả công ty, không ai tự đổi được. **project**: cả team trong một repo, commit vào git. **user**: riêng bạn, áp cho mọi repo. **local**: riêng bạn, chỉ trong một repo. Ở câu này, MCP server và quyền dùng chung cả team thì chọn đáp án A **project scope for team-shared**; thiết lập bảo mật không ai được đổi thì chọn đáp án B **managed configuration**. Đáp án C, D, E đặt sai scope: local cho thứ cấm sửa, user cho thứ dùng chung, project cho sở thích riêng.",
+      "rules": [
+        {
+          "trigger": "team-setup practices",
+          "choice": "project scope for team-shared · managed configuration"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Thiết lập Claude Code cho cả team: mỗi loại cấu hình đặt đúng scope",
+      "text": "Bạn soạn danh sách cách thiết lập Claude Code cho cả tổ chức kỹ thuật. Đề hỏi hai thực hành **đặt đúng loại cấu hình vào đúng scope**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Năm nơi đặt cấu hình, mỗi nơi chạm tới ai",
+      "Bài 7.1 · Thứ bắt buộc thì đưa vào managed settings"
+    ]
+  },
+  {
+    "n": 84,
+    "topic": "Integration",
+    "multi": false,
+    "q": "You are reviewing a customer-support agent's configuration. Each candidate tool falls into one of four categories: (1) required to complete defined tasks, (2) frequently used and reduces handoffs, (3) occasionally useful for unrelated work, (4) speculative future utility. Which categories should [[typically remain in the agent configuration]]?",
+    "q_vi": "Bạn đang review cấu hình của một agent hỗ trợ khách hàng. Mỗi tool ứng viên thuộc một trong bốn nhóm: (1) bắt buộc để làm các việc đã định, (2) dùng thường xuyên và giảm việc chuyển giao, (3) đôi khi có ích cho việc không liên quan, (4) có thể có ích trong tương lai. Nhóm nào thường nên được giữ trong cấu hình agent?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Only category 3, because occasionally useful tools for unrelated work provide broader coverage and should take priority over tools required for the agent's defined tasks.",
+        "vi": "Chỉ nhóm 3, vì tool đôi khi có ích cho việc không liên quan mang lại độ bao phủ rộng hơn và nên được ưu tiên hơn tool bắt buộc cho việc đã định của agent.",
+        "correct": false,
+        "why": "Ưu tiên category 3 (việc không liên quan) **hơn cả** tool bắt buộc cho nhiệm vụ chính — đảo ngược hoàn toàn thứ tự ưu tiên hợp lý."
+      },
+      {
+        "k": "B",
+        "text": "Only category 4, because speculative future-utility tools provide the most flexibility and should be configured even when no defined task currently requires them.",
+        "vi": "Chỉ nhóm 4, vì tool có thể có ích trong tương lai linh hoạt nhất và nên được cấu hình kể cả khi hiện chưa việc nào cần tới.",
+        "correct": false,
+        "why": "Chỉ giữ category 4 (suy đoán tương lai) **dù chưa có nhiệm vụ nào cần đến** — cấp quyền cho nhu cầu chưa tồn tại, đi ngược tinh thần tối thiểu hoá bề mặt công cụ."
+      },
+      {
+        "k": "C",
+        "text": "[[Categories 1 and 2 only]], because they map to defined tasks and the agent's regular hand-offs.",
+        "vi": "Chỉ nhóm 1 và 2, vì chúng gắn với các việc đã định và các lần chuyển giao thường xuyên của agent.",
+        "correct": true,
+        "why": "**Chỉ giữ category 1 (bắt buộc cho task đã định nghĩa) và category 2 (thường dùng, giảm hand-off)** — cả hai đều ánh xạ trực tiếp tới công việc thật của agent. Category 3 (thi thoảng hữu ích cho việc không liên quan) và category 4 (có thể hữu ích trong tương lai) không phục vụ nhiệm vụ hiện tại, nên loại bỏ để giữ bề mặt công cụ tối thiểu."
+      },
+      {
+        "k": "D",
+        "text": "All four categories, because broader tool access is categorically better for agent performance regardless of whether the tools map to defined tasks or regular hand-offs.",
+        "vi": "Cả bốn nhóm, vì cho dùng nhiều tool hơn về bản chất luôn tốt hơn cho hiệu quả của agent bất kể tool có gắn với việc đã định hay lần chuyển giao thường xuyên không.",
+        "correct": false,
+        "why": "Giữ **cả bốn category bất kể liên quan hay không** — trái ngược nguyên tắc chỉ cấp quyền theo đúng nhu cầu thực tế của agent."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "typically remain in the agent configuration",
+      "choice": "Categories 1 and 2 only",
+      "note": "Agent config gọn = **chỉ giữ tool ánh xạ tới nhiệm vụ thật (category 1+2)**. Đáp án A ưu tiên việc không liên quan, đáp án B giữ suy đoán tương lai, đáp án D giữ tất cả: cả ba đều làm phình bề mặt công cụ không cần thiết.",
+      "rules": [
+        {
+          "trigger": "typically remain in the agent configuration",
+          "choice": "Categories 1 and 2 only"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Giữ tool nào trong agent config — chỉ giữ thứ thực sự ánh xạ tới nhiệm vụ đã định nghĩa",
+      "text": "4 nhóm tool ứng viên, từ 'bắt buộc cho task đã định nghĩa' đến 'có thể hữu ích trong tương lai' — hỏi nhóm nào **nên giữ lại** trong config thực tế."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.1 · Kiểm kê: giữ tool nào"
+    ]
+  },
+  {
+    "n": 85,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are documenting an architectural decision to [[support future audit and onboarding]]. Which artifact is the strongest fit?",
+    "q_vi": "Bạn đang ghi lại một quyết định kiến trúc để phục vụ việc kiểm tra và onboarding sau này. Tài liệu nào phù hợp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "A slide deck in a presentation folder with no accompanying written rationale.",
+        "vi": "Một bộ slide trong thư mục trình bày, không kèm lý giải bằng văn bản.",
+        "correct": false,
+        "why": "Slide trình bày **không kèm rationale viết ra** — chỉ có kết luận, mất hết lý do dẫn tới quyết định."
+      },
+      {
+        "k": "B",
+        "text": "A code comment in a single file that contains an opinion of one engineer.",
+        "vi": "Một comment code trong một file chứa ý kiến của một kỹ sư.",
+        "correct": false,
+        "why": "Comment trong một file **chỉ là ý kiến của một người**, dễ thất lạc khi file thay đổi, không phải nguồn tham khảo chính thức."
+      },
+      {
+        "k": "C",
+        "text": "An [[Architecture Decision Record]] that states the context, the decision, the alternatives considered, the consequences, and the date and authors.",
+        "vi": "Một Architecture Decision Record nêu bối cảnh, quyết định, các phương án đã cân nhắc, hệ quả, cùng ngày và người viết.",
+        "correct": true,
+        "why": "**Architecture Decision Record nêu rõ bối cảnh, quyết định, các phương án đã cân nhắc, hệ quả, cùng ngày tháng và tác giả** — đủ để người đọc sau này, dù không có mặt lúc ra quyết định, vẫn hiểu được *tại sao* chọn thế này chứ không chỉ *đã chọn gì*."
+      },
+      {
+        "k": "D",
+        "text": "A short verbal note shared during a hallway conversation with no written record.",
+        "vi": "Một ghi chú miệng ngắn chia sẻ trong lúc nói chuyện ngoài hành lang, không có bản ghi nào.",
+        "correct": false,
+        "why": "Trao đổi miệng **không để lại bản ghi nào** — hoàn toàn không thể audit hay dùng để onboarding người mới."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "support future audit and onboarding",
+      "choice": "Architecture Decision Record",
+      "note": "Audit/onboarding cần artifact **viết ra, có cấu trúc, đủ context + decision + alternative + consequence**, đúng hình dạng của ADR. Đáp án A (slide), đáp án B (comment) và đáp án D (lời nói) đều thiếu tính bền vững hoặc đầy đủ.",
+      "rules": [
+        {
+          "trigger": "support future audit and onboarding",
+          "choice": "Architecture Decision Record"
+        }
+      ]
+    },
+    "ask": {
+      "title": "ADR (Architecture Decision Record) là artifact chuẩn để audit và onboarding về sau",
+      "text": "Ghi lại một quyết định kiến trúc để phục vụ audit và onboarding sau này — chọn artifact **vững chắc nhất**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.4 · Ghi lý do bằng ADR"
+    ]
+  },
+  {
+    "n": 86,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "During an architectural review, the security team identifies a risk that [[adversarial content injected into retrieved documents]] could manipulate the model's behavior. Which mitigation most directly addresses this threat?",
+    "q_vi": "Trong một buổi review kiến trúc, nhóm bảo mật xác định rủi ro nội dung độc hại chèn vào tài liệu truy xuất có thể thao túng hành vi của model. Biện pháp nào xử lý trực tiếp nhất mối đe doạ này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Treat all retrieved content as untrusted input]] and apply input classifiers with output validation.",
+        "vi": "Coi mọi nội dung truy xuất là đầu vào không tin cậy, áp bộ phân loại đầu vào cùng kiểm tra đầu ra.",
+        "correct": true,
+        "why": "Coi mọi nội dung truy xuất là input không đáng tin, áp classifier ở đầu vào và validate ở đầu ra. Cách này chặn đúng con đường injection: dữ liệu được kiểm tra từ lúc vào tới lúc ra, không mặc định tin nội dung lấy từ nguồn ngoài."
+      },
+      {
+        "k": "B",
+        "text": "Require citations for each claim and constrain responses to source-supported content.",
+        "vi": "Bắt buộc trích dẫn cho mỗi nhận định và giới hạn câu trả lời trong nội dung có nguồn hỗ trợ.",
+        "correct": false,
+        "why": "Yêu cầu citation và giới hạn theo nguồn nhắm vào **hallucination/thiếu căn cứ**, khác hẳn failure mode 'bị thao túng hành vi' do injection."
+      },
+      {
+        "k": "C",
+        "text": "Restrict outbound tool calls to an approved destination allow-list.",
+        "vi": "Giới hạn lời gọi tool ra ngoài trong một allowlist đích đến đã duyệt.",
+        "correct": false,
+        "why": "Giới hạn tool gọi ra ngoài theo allowlist nhắm vào **exfiltration qua tool** — chỉ là một hệ quả *có thể* của injection, không phải mitigation cho chính injection."
+      },
+      {
+        "k": "D",
+        "text": "Score outputs against a stable adversarial evaluation set on each model-version change.",
+        "vi": "Chấm đầu ra trên một bộ đánh giá adversarial ổn định mỗi khi đổi phiên bản model.",
+        "correct": false,
+        "why": "Chấm điểm theo bộ adversarial mỗi lần đổi version phát hiện **drift giữa các version**, không giúp gì cho việc *đang* bị nội dung độc hại thao túng ngay trong request hiện tại."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "adversarial content injected into retrieved documents",
+      "choice": "Treat all retrieved content as untrusted input",
+      "note": "Injection từ dữ liệu retrieved thì chặn bằng **untrusted-by-default + classifier + validate output**, ngay tại điểm dữ liệu vào và ra. Đáp án B (citation), đáp án C (tool allowlist) và đáp án D (version-eval) đều nhắm vào failure mode khác.",
+      "rules": [
+        {
+          "trigger": "adversarial content injected into retrieved documents",
+          "choice": "Treat all retrieved content as untrusted input"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Injection từ tài liệu retrieved — chặn bằng coi input là untrusted, thêm classifier và validate output",
+      "text": "Rủi ro: **nội dung độc hại cài trong tài liệu truy xuất có thể thao túng hành vi model** — cần mitigation nhắm thẳng vào đúng cơ chế này."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.1 · Chặn rò rỉ dữ liệu qua tool"
+    ]
+  },
+  {
+    "n": 87,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": false,
+    "q": "You are evaluating an evaluation set used to score a Claude-based hiring-support tool. The set is drawn from [[one geographic region and one tenure band]]. Which response is most appropriate?",
+    "q_vi": "Bạn đang đánh giá bộ đánh giá dùng để chấm một tool hỗ trợ tuyển dụng chạy trên Claude. Bộ này chỉ lấy từ một khu vực địa lý và một nhóm thâm niên. Phản hồi nào phù hợp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Discard all quantitative evaluation and replace it with qualitative impressions collected from a small, convenience-selected group that may not represent the tool's full user population.",
+        "vi": "Bỏ mọi đánh giá định lượng và thay bằng cảm nhận định tính thu từ một nhóm nhỏ chọn cho tiện, có thể không đại diện cho toàn bộ người dùng của tool.",
+        "correct": false,
+        "why": "Bỏ hẳn đánh giá định lượng, thay bằng cảm nhận định tính từ **nhóm nhỏ, chọn tiện lợi, không đại diện** — còn kém đại diện hơn cả bộ eval hẹp ban đầu."
+      },
+      {
+        "k": "B",
+        "text": "[[Expand the evaluation set]] to cover the geographic regions and tenure bands the tool will serve, and [[rescore the system]] on the expanded set before broader release.",
+        "vi": "Mở rộng bộ đánh giá để phủ các khu vực địa lý và nhóm thâm niên mà tool sẽ phục vụ, và chấm lại hệ thống trên bộ mở rộng trước khi phát hành rộng hơn.",
+        "correct": true,
+        "why": "Mở rộng eval set để bao phủ đúng các khu vực và dải thâm niên mà công cụ sẽ thực sự phục vụ, rồi chấm điểm lại trước khi phát hành rộng. Cách này sửa đúng gốc rễ: eval phải đại diện cho population sẽ dùng, không chỉ population sẵn có dữ liệu."
+      },
+      {
+        "k": "C",
+        "text": "Reduce the evaluation set further to a single demographic subgroup to simplify score interpretation, narrowing coverage rather than expanding it to match the intended user population.",
+        "vi": "Thu hẹp bộ đánh giá hơn nữa xuống một nhóm nhân khẩu duy nhất để dễ hiểu điểm, thu hẹp chứ không mở rộng độ bao phủ cho khớp nhóm người dùng dự kiến.",
+        "correct": false,
+        "why": "Thu hẹp **thêm nữa xuống một nhóm nhân khẩu học duy nhất** — đi ngược hẳn hướng cần mở rộng."
+      },
+      {
+        "k": "D",
+        "text": "Continue using the narrow evaluation set drawn from one region and one tenure band because the existing benchmark scores are already high on that subset.",
+        "vi": "Tiếp tục dùng bộ đánh giá hẹp từ một khu vực và một nhóm thâm niên vì điểm benchmark hiện có đã cao trên tập con đó.",
+        "correct": false,
+        "why": "Giữ nguyên eval hẹp chỉ vì **điểm số đã cao trên đúng subset đó** — điểm cao trên phạm vi hẹp không nói lên gì về hiệu năng trên phần dân số chưa được đánh giá."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "one geographic region and one tenure band",
+      "choice": "Expand the evaluation set · rescore the system",
+      "note": "Eval hẹp hơn population thật sẽ phục vụ thì **mở rộng đúng theo population đó, rồi chấm lại**. Đáp án C thu hẹp thêm, đáp án A bỏ định lượng, đáp án D giữ nguyên vì điểm đẹp trên phạm vi hẹp: cả ba đều không sửa đúng vấn đề.",
+      "rules": [
+        {
+          "trigger": "one geographic region and one tenure band",
+          "choice": "Expand the evaluation set · rescore the system"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Eval set hẹp — mở rộng đúng theo population sẽ phục vụ, đừng thu hẹp thêm hay lờ đi",
+      "text": "Bộ eval của công cụ hỗ trợ tuyển dụng chỉ lấy từ **một khu vực địa lý, một dải thâm niên** — cần phản hồi đúng đắn trước khi mở rộng dùng cho population thật."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.2 · Bộ dữ liệu phản ánh việc thật"
+    ]
+  },
+  {
+    "n": 88,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You must present an architectural recommendation to deploy a Claude-based contract review assistant to a steering committee that includes the CFO, the general counsel, and the CIO. [[Each stakeholder cares about different aspects]] of the decision. How should you structure the recommendation document?",
+    "q_vi": "Bạn phải trình bày khuyến nghị kiến trúc về việc triển khai một trợ lý review hợp đồng chạy trên Claude cho một ban chỉ đạo gồm CFO, giám đốc pháp chế và CIO. Mỗi bên quan tâm tới những khía cạnh khác nhau của quyết định. Nên cấu trúc tài liệu khuyến nghị thế nào?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Lead with the technical architecture diagram and the full component list before any other section.",
+        "vi": "Mở đầu bằng sơ đồ kiến trúc kỹ thuật và danh sách đầy đủ các component trước mọi mục khác.",
+        "correct": false,
+        "why": "Mở đầu bằng **diagram kỹ thuật và danh sách component** — chỉ phục vụ CIO, bỏ rơi CFO và general counsel ngay từ đầu."
+      },
+      {
+        "k": "B",
+        "text": "Lead with detailed cost projections across the full multi-year horizon before the rationale section.",
+        "vi": "Mở đầu bằng dự báo chi phí chi tiết cho cả chặng nhiều năm trước mục lý giải.",
+        "correct": false,
+        "why": "Mở đầu bằng **chi tiết chi phí nhiều năm trước cả phần rationale** — ưu tiên một mình CFO, chưa ai kịp hiểu quyết định là gì đã đi sâu vào số liệu."
+      },
+      {
+        "k": "C",
+        "text": "Present the same dense narrative throughout with no stakeholder differentiation in any section.",
+        "vi": "Trình bày cùng một mạch dày đặc từ đầu tới cuối, không phân biệt theo bên liên quan ở mục nào.",
+        "correct": false,
+        "why": "Một mạch văn dày đặc **không phân biệt đối tượng** ở bất kỳ phần nào — không ai trong ba người dễ dàng tìm được đúng phần liên quan tới mình."
+      },
+      {
+        "k": "D",
+        "text": "[[Lead with the architectural decision]], then address [[each stakeholder's primary concerns]] directly.",
+        "vi": "Mở đầu bằng quyết định kiến trúc, rồi trả lời trực tiếp mối quan tâm chính của từng bên.",
+        "correct": true,
+        "why": "Mở đầu bằng chính quyết định kiến trúc, sau đó lần lượt giải quyết mối quan tâm chính của từng stakeholder. Ai cũng thấy bức tranh quyết định trước, rồi tìm được đúng phần liên quan tới mình (CFO quan tâm chi phí, general counsel quan tâm pháp lý và tuân thủ, CIO quan tâm kỹ thuật và vận hành) mà không phải đọc hết phần không liên quan trước."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "Each stakeholder cares about different aspects",
+      "choice": "Lead with the architectural decision · each stakeholder's primary concerns",
+      "note": "Steering committee đa dạng = **nêu quyết định trước, rồi phục vụ đúng mối lo từng người sau**. Đáp án A và B ưu tiên một nhóm ngay từ đầu, đáp án C không phân biệt gì: đều bỏ rơi phần còn lại.",
+      "rules": [
+        {
+          "trigger": "Each stakeholder cares about different aspects",
+          "choice": "Lead with the architectural decision · each stakeholder's primary concerns"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Trình bày cho steering committee đa dạng — mở đầu bằng quyết định, rồi mới giải đúng mối lo từng người",
+      "text": "Trình bày khuyến nghị kiến trúc cho CFO, general counsel, CIO cùng lúc — mỗi người **quan tâm khía cạnh khác nhau** của quyết định."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.2 · Quyết định trước, phần của từng người sau"
+    ]
+  },
+  {
+    "n": 89,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": true,
+    "q": "You are compiling a [[diagnostic toolkit]] for Claude Code operational issues. Which two diagnostic actions belong in the toolkit? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang tổng hợp bộ công cụ chẩn đoán cho các sự cố vận hành Claude Code. Hai hành động chẩn đoán nào thuộc bộ công cụ? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Increase the model sampling temperature so that intermittent issues surface more frequently for analysis.",
+        "vi": "Tăng sampling temperature của model để các lỗi chập chờn lộ ra thường xuyên hơn cho việc phân tích.",
+        "correct": false,
+        "why": "Tăng temperature làm hành vi của model ngẫu nhiên hơn, lỗi càng khó tái hiện và khoanh vùng. Đây là chỉnh tham số."
+      },
+      {
+        "k": "B",
+        "text": "File a support ticket with vendor support before any local reproduction or evidence collection.",
+        "vi": "Gửi ticket cho bộ phận hỗ trợ của nhà cung cấp trước khi tái hiện hay thu thập bằng chứng ở local.",
+        "correct": false,
+        "why": "Báo nhà cung cấp khi chưa tự tái hiện hay thu thập bằng chứng nào là bỏ qua bước chẩn đoán cơ bản nhất."
+      },
+      {
+        "k": "C",
+        "text": "[[Reproduce]] the issue with a minimal reproduction case that isolates one variable at a time.",
+        "vi": "Tái hiện lỗi bằng một ca tái hiện tối giản, mỗi lần chỉ cô lập một biến.",
+        "correct": true,
+        "why": "Dựng một **ca tái hiện tối giản**: bỏ hết những gì không liên quan cho tới khi chỉ còn ít bước nhất mà lỗi vẫn xảy ra, rồi mỗi lần chỉ đổi **một yếu tố**. Đổi yếu tố nào mà lỗi mất thì đó là nguyên nhân."
+      },
+      {
+        "k": "D",
+        "text": "Roll back to the previous Claude Code version immediately to confirm whether the issue is version specific.",
+        "vi": "Lập tức quay về phiên bản Claude Code trước để xác nhận lỗi có phải do phiên bản không.",
+        "correct": false,
+        "why": "Quay về phiên bản cũ ngay lập tức là đổi luôn cho xong. Có thể thấy lỗi liên quan tới phiên bản, nhưng không cho biết chính xác cái gì gây lỗi."
+      },
+      {
+        "k": "E",
+        "text": "[[List]] the configured Model Context Protocol (MCP) servers and [[inspect server status]] to identify connection failures.",
+        "vi": "Liệt kê các MCP server đã cấu hình và xem trạng thái server để tìm lỗi kết nối.",
+        "correct": true,
+        "why": "MCP server mất kết nối là nguồn lỗi hay gặp và dễ kiểm. **Liệt kê** các MCP server đã cấu hình rồi xem trạng thái từng cái: server nào không kết nối được thì tool của nó không chạy, và lỗi nằm ở đó."
+      }
+    ],
+    "answer": "C, E",
+    "tip": {
+      "trigger": "diagnostic toolkit",
+      "choice": "Reproduce · List · inspect server status",
+      "note": "... **hoặc soi tận nơi**: Compare · Replay · Reproduce · Inspect. Bẫy: **chỉnh tham số** (Increase, Reduce temperature, max_tokens, context), **đổi luôn cho xong** (Switch, Roll back, Clear cache), báo nhà cung cấp trước khi tự chạy lại, hoặc đụng vào phần đề nói **không thay đổi**. Ở câu này, đáp án C **Reproduce** bằng ca tối giản, mỗi lần đổi một yếu tố; đáp án E **List** MCP server rồi **inspect server status**. Đáp án A tăng temperature là chỉnh tham số, B báo nhà cung cấp trước khi tự chạy lại, D quay về bản cũ ngay là đổi luôn cho xong.",
+      "rules": [
+        {
+          "trigger": "diagnostic toolkit",
+          "choice": "Reproduce · List · inspect server status"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Bộ công cụ chẩn đoán lỗi Claude Code: tái hiện tối giản và kiểm MCP server",
+      "text": "Bạn soạn **bộ công cụ chẩn đoán** (diagnostic toolkit) cho các sự cố khi vận hành Claude Code. Đề hỏi hai thao tác giúp khoanh vùng nguyên nhân, không phải phản ứng vội."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.3 · Khoanh vùng: tái hiện tối giản, chế độ an toàn, cấu hình sạch",
+      "Bài 7.3 · Ba trạng thái hỏng của MCP server"
+    ]
+  },
+  {
+    "n": 90,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "q": "A Claude Architect is reviewing a post-deployment performance report for an AI-assisted legal-document summarization system. The report includes these observations: * Average summarization time decreased from 47 minutes to 6 minutes per document. * Associates spend less time on summaries, but overall [[billable output has not measurably changed]]. * Infrastructure costs increased by 22% because redundant retry logic generated additional API calls. * Some summaries [[require attorney correction]], adding an average of 8 minutes of review per document. Which analysis correctly attributes each observation to the appropriate business-value pillar?",
+    "q_vi": "Một Claude Architect đang review báo cáo hiệu quả sau triển khai của một hệ thống tóm tắt tài liệu pháp lý có AI hỗ trợ. Báo cáo gồm các nhận xét: * Thời gian tóm tắt trung bình giảm từ 47 phút xuống 6 phút mỗi tài liệu. * Luật sư cộng sự tốn ít thời gian cho bản tóm tắt hơn, nhưng tổng sản lượng tính phí không thay đổi đo được. * Chi phí hạ tầng tăng 22% vì logic retry thừa sinh thêm lời gọi API. * Một số bản tóm tắt cần luật sư sửa, tốn thêm trung bình 8 phút review mỗi tài liệu. Phân tích nào gán đúng mỗi nhận xét vào trụ cột giá trị kinh doanh phù hợp?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Observations 1 and 2 both indicate efficiency gains; Observation 3 is a solution-cost issue; Observation 4 is a performance-SLA issue.",
+        "vi": "Nhận xét 1 và 2 đều cho thấy lợi về efficiency; nhận xét 3 là vấn đề solution cost; nhận xét 4 là vấn đề performance SLA.",
+        "correct": false,
+        "why": "Gộp quan sát 1 và 2 **đều là efficiency gain** bỏ qua tín hiệu quan trọng của quan sát 2 (thời gian giảm nhưng output không đổi — đó là dấu hiệu về productivity, không phải thêm một efficiency gain nữa)."
+      },
+      {
+        "k": "B",
+        "text": "Observation 1 is a transformation outcome; Observation 2 is an efficiency gain; Observation 3 is a performance-SLA degradation; Observation 4 is a solution-cost issue.",
+        "vi": "Nhận xét 1 là kết quả transformation; nhận xét 2 là lợi về efficiency; nhận xét 3 là performance SLA bị giảm; nhận xét 4 là vấn đề solution cost.",
+        "correct": false,
+        "why": "Gọi quan sát 1 là **'transformation'** là sai pillar — không có gì về *cách làm việc* hay *vai trò* thay đổi, chỉ đơn thuần nhanh hơn ở cùng một quy trình."
+      },
+      {
+        "k": "C",
+        "text": "Observations 1 and 4 together indicate a net performance-SLA improvement; Observation 2 is a transformation gap; Observation 3 is a productivity drain from over-engineering.",
+        "vi": "Nhận xét 1 và 4 cộng lại cho thấy performance SLA cải thiện ròng; nhận xét 2 là khoảng trống transformation; nhận xét 3 là hao hụt productivity do thiết kế quá đà.",
+        "correct": false,
+        "why": "Gộp quan sát 1+4 thành **'net performance-SLA improvement'** dùng nhầm pillar — không có cam kết SLA nào được nêu trong tình huống, đây là suy diễn không có căn cứ."
+      },
+      {
+        "k": "D",
+        "text": "[[Observation 1 indicates an efficiency gain]]; Observation 2 shows that [[productivity has not yet been realized]]; Observation 3 is a solution-cost issue; Observation 4 is an efficiency loss that partially offsets Observation 1.",
+        "vi": "Nhận xét 1 cho thấy lợi về efficiency; nhận xét 2 cho thấy productivity chưa thành hiện thực; nhận xét 3 là vấn đề solution cost; nhận xét 4 là mất efficiency bù trừ một phần cho nhận xét 1.",
+        "correct": true,
+        "why": "**Quan sát 1 là efficiency gain** — cùng một việc, làm nhanh hơn hẳn. **Quan sát 2 cho thấy productivity CHƯA thực sự hiện thực hoá** — thời gian tiết kiệm không chuyển thành nhiều output hơn. **Quan sát 3 là vấn đề solution-cost** — chi phí hạ tầng tăng do lỗi kỹ thuật (retry logic). **Quan sát 4 là một khoản efficiency LOSS ăn ngược vào chính lợi ích của quan sát 1** — 8 phút sửa lại mỗi tài liệu làm giảm net-gain thực tế so với con số giảm thời gian thô ban đầu."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "billable output has not measurably changed · require attorney correction",
+      "choice": "Observation 1 indicates an efficiency gain · productivity has not yet been realized",
+      "note": "Nhanh hơn ở cùng việc = **efficiency**; tiết kiệm thời gian mà output chưa tăng = **productivity chưa hiện thực hoá**; chi phí hạ tầng lệch = **solution cost**; thời gian sửa lại ăn vào gain ban đầu = **efficiency loss bù trừ**. Đừng gán nhầm sang transformation như đáp án B, hay sang SLA không có căn cứ như đáp án C.",
+      "rules": [
+        {
+          "trigger": "billable output has not measurably changed · require attorney correction",
+          "choice": "Observation 1 indicates an efficiency gain · productivity has not yet been realized"
+        }
+      ]
+    },
+    "ask": {
+      "title": "4 trụ giá trị (efficiency/productivity/solution-cost/SLA) áp cho 4 quan sát thật",
+      "text": "Báo cáo tóm tắt pháp lý: thời gian giảm mạnh, từ 47 xuống 6 phút, nhưng **billable output không đổi**; chi phí hạ tầng +22% do lỗi retry logic; và cần **thêm 8 phút** luật sư sửa lại mỗi tài liệu."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.6 · Efficiency, productivity và transformation dễ lẫn nhất"
+    ]
+  },
+  {
+    "n": 91,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are supporting an engineer whose [[newly added MCP server]] [[does not appear]] in their Claude Code session. Which diagnostic step should be tried first?",
+    "q_vi": "Bạn đang hỗ trợ một kỹ sư có MCP server mới thêm không hiện trong phiên Claude Code của họ. Nên thử bước chẩn đoán nào trước tiên?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Disable every MCP server in the configuration to isolate the issue, removing all tool access rather than confirming whether the new server is registered.",
+        "vi": "Tắt mọi MCP server trong cấu hình để cô lập vấn đề, bỏ hết quyền dùng tool thay vì xác nhận server mới đã được đăng ký chưa.",
+        "correct": false,
+        "why": "Tắt **toàn bộ** MCP server để cô lập vấn đề — mất hết quyền truy cập tool thay vì chỉ kiểm tra riêng server mới, phản ứng quá tay so với một bước chẩn đoán đơn giản đầu tiên."
+      },
+      {
+        "k": "B",
+        "text": "Switch the team to a different Claude product family unrelated to the existing workflow, abandoning the current configuration rather than diagnosing the registration issue.",
+        "vi": "Chuyển nhóm sang một dòng sản phẩm Claude khác không liên quan tới quy trình hiện tại, bỏ cấu hình hiện có thay vì chẩn đoán lỗi đăng ký.",
+        "correct": false,
+        "why": "Đổi hẳn sang **product family khác** — bỏ luôn cấu hình hiện tại thay vì chẩn đoán, không giải quyết được gì."
+      },
+      {
+        "k": "C",
+        "text": "[[Verify the MCP server is registered]] using the listing command, then [[reconnect the session]] if needed, since configuration changes typically require a restart to take effect.",
+        "vi": "Kiểm MCP server đã được đăng ký bằng lệnh liệt kê, rồi kết nối lại phiên nếu cần, vì thay đổi cấu hình thường cần khởi động lại mới có hiệu lực.",
+        "correct": true,
+        "why": "Xác nhận server đã được đăng ký bằng lệnh liệt kê, rồi kết nối lại session nếu cần, vì thay đổi cấu hình thường cần khởi động lại mới nhận. Đây là bước rẻ nhất, trực tiếp nhất, nhắm đúng nguyên nhân phổ biến nhất (chưa restart hoặc chưa đăng ký đúng)."
+      },
+      {
+        "k": "D",
+        "text": "Reinstall the developer's operating system from scratch, discarding all local configuration and tool state before attempting any targeted diagnostic steps.",
+        "vi": "Cài lại hệ điều hành của developer từ đầu, bỏ mọi cấu hình và trạng thái tool ở local trước khi thử bất kỳ bước chẩn đoán có mục tiêu nào.",
+        "correct": false,
+        "why": "**Cài lại cả hệ điều hành** để mất hết state cục bộ — cực đoan không tương xứng với một vấn đề đăng ký server đơn giản."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "newly added MCP server · does not appear",
+      "choice": "Verify the MCP server is registered · reconnect the session",
+      "note": "Sự cố đơn giản (server mới không hiện) thì **thử bước rẻ nhất trước (kiểm tra registration + restart)**. Đừng nhảy thẳng tới phản ứng cực đoan như đáp án A, B, D khi chưa thử bước cơ bản.",
+      "rules": [
+        {
+          "trigger": "newly added MCP server · does not appear",
+          "choice": "Verify the MCP server is registered · reconnect the session"
+        }
+      ]
+    },
+    "ask": {
+      "title": "MCP server mới không hiện — kiểm tra registration trước, đừng phá cả hệ thống",
+      "text": "Server MCP vừa thêm **không hiện** trong session Claude Code của kỹ sư — hỏi bước chẩn đoán nên thử **đầu tiên**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.3 · Ba trạng thái hỏng của MCP server"
+    ]
+  },
+  {
+    "n": 92,
+    "topic": "Integration",
+    "multi": false,
+    "q": "You are a solution architect designing a Claude-based assistant with access to 60 internal tools across multiple business domains. Loading every tool definition on every request increases token usage and time to first response. Which design pattern best addresses this issue [[without sacrificing capability breadth]]?",
+    "q_vi": "Bạn là solution architect đang thiết kế một trợ lý chạy trên Claude dùng được 60 tool nội bộ trên nhiều lĩnh vực nghiệp vụ. Nạp mọi định nghĩa tool ở mọi request làm tăng token và thời gian tới phản hồi đầu tiên. Mẫu thiết kế nào xử lý vấn đề này tốt nhất mà không bớt độ rộng khả năng?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Apply [[progressive tool discovery]] so a curated initial subset is exposed and additional tools are [[loaded on demand]] based on the task.",
+        "vi": "Áp khám phá tool dần dần: đưa ra một tập ban đầu chọn lọc, và nạp thêm tool khi cần theo việc đang làm.",
+        "correct": true,
+        "why": "Progressive tool discovery: chỉ hiện một tập con đã chọn lọc ban đầu, các tool khác nạp thêm theo nhu cầu của từng task. Toàn bộ 60 tool vẫn khả dụng khi cần (không mất capability), chỉ đổi *thời điểm* chúng vào context để giảm token và latency mặc định."
+      },
+      {
+        "k": "B",
+        "text": "Use a separate model call to summarize all 60 tool definitions before each user turn.",
+        "vi": "Dùng một lời gọi model riêng để tóm tắt cả 60 định nghĩa tool trước mỗi lượt của người dùng.",
+        "correct": false,
+        "why": "Gọi thêm **một lượt model riêng để tóm tắt cả 60 tool** trước mỗi lượt — chính lượt gọi thêm này lại cộng thêm latency, phản tác dụng."
+      },
+      {
+        "k": "C",
+        "text": "Increase the maximum context length and load all 60 tool definitions on every request, accepting the higher token cost and latency as necessary for full capability.",
+        "vi": "Tăng độ dài context tối đa và nạp cả 60 định nghĩa tool ở mọi request, chấp nhận tốn token và trễ hơn vì cần đủ khả năng.",
+        "correct": false,
+        "why": "Load hết 60 tool mỗi request, **chấp nhận chi phí/latency cao hơn** — giữ được capability nhưng không hề giải quyết vấn đề đã nêu."
+      },
+      {
+        "k": "D",
+        "text": "Hard-code a fixed set of five tools per request to reduce token usage, regardless of whether those tools are relevant to the current task.",
+        "vi": "Cố định năm tool mỗi request để giảm token, bất kể các tool đó có liên quan tới việc hiện tại không.",
+        "correct": false,
+        "why": "Cố định **5 tool bất kể liên quan hay không** — giảm token thật, nhưng **hy sinh capability breadth**, vi phạm đúng ràng buộc của đề bài."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "without sacrificing capability breadth",
+      "choice": "progressive tool discovery · loaded on demand",
+      "note": "Muốn giữ capability mà vẫn giảm token mặc định thì **nạp tool theo nhu cầu (progressive discovery)**. Đáp án B thêm lượt gọi tóm tắt và đáp án C load hết đều không giải quyết vấn đề; đáp án D cố định ít tool thì hy sinh capability.",
+      "rules": [
+        {
+          "trigger": "without sacrificing capability breadth",
+          "choice": "progressive tool discovery · loaded on demand"
+        }
+      ]
+    },
+    "ask": {
+      "title": "60 tool, token/latency tăng — progressive discovery giữ nguyên capability breadth",
+      "text": "60 tool nội bộ, load hết mỗi request **làm tăng token và thời gian phản hồi đầu tiên** — cần pattern giải quyết vấn đề này **mà không hy sinh độ rộng năng lực**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.8 · Tool search: nạp tool khi cần"
+    ]
+  },
+  {
+    "n": 93,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "The compliance team at a firm has approved a Claude Skill that generates client-facing investment summaries. The Skill includes the firm's required disclaimers and prohibited-language list. A product manager has asked whether additional guardrails are needed at the application layer or whether the Skill alone is sufficient. Which two guardrail responsibilities should remain at the [[application layer rather than the Skill]]? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Nhóm tuân thủ của một công ty đã duyệt một Claude Skill tạo bản tóm tắt đầu tư gửi khách hàng. Skill có sẵn các tuyên bố miễn trừ bắt buộc và danh sách từ ngữ bị cấm của công ty. Một product manager hỏi có cần thêm guardrail ở tầng ứng dụng hay chỉ Skill là đủ. Hai trách nhiệm guardrail nào nên giữ ở tầng ứng dụng thay vì trong Skill? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Log]] every generated summary to the firm's compliance audit trail for retention.",
+        "vi": "Ghi mọi bản tóm tắt sinh ra vào audit trail tuân thủ của công ty để lưu trữ.",
+        "correct": true,
+        "why": "Skill chỉ hướng dẫn Claude soạn nội dung, không nắm hệ thống lưu trữ của công ty. **Ghi mọi bản tóm tắt vào nhật ký kiểm toán** (audit trail) để lưu giữ theo quy định là việc của ứng dụng, nơi nhận kết quả và cất vào kho."
+      },
+      {
+        "k": "B",
+        "text": "[[Verify]] the requesting user is authorized to generate investment summaries at all.",
+        "vi": "Kiểm người yêu cầu có quyền tạo bản tóm tắt đầu tư hay không.",
+        "correct": true,
+        "why": "Kiểm người gửi yêu cầu **có quyền** tạo bản tóm tắt đầu tư hay không phải xong trước khi Skill được gọi. Skill không biết ai đang dùng; chỉ ứng dụng nắm danh tính và quyền của người dùng."
+      },
+      {
+        "k": "C",
+        "text": "Format output sections according to the firm's standardized house style guidelines.",
+        "vi": "Định dạng các mục đầu ra theo hướng dẫn house style chuẩn của công ty.",
+        "correct": false,
+        "why": "Định dạng các phần theo văn phong chuẩn của công ty là việc soạn nội dung, Skill làm được."
+      },
+      {
+        "k": "D",
+        "text": "Apply the disclaimer template that the compliance team has standardized firm-wide.",
+        "vi": "Áp mẫu tuyên bố miễn trừ mà nhóm tuân thủ đã chuẩn hoá cho toàn công ty.",
+        "correct": false,
+        "why": "Đề nói Skill **đã có sẵn** mẫu disclaimer, nên đây không phải chỗ còn thiếu ở tầng ứng dụng."
+      },
+      {
+        "k": "E",
+        "text": "Apply the prohibited-language list that the compliance team maintains and updates.",
+        "vi": "Áp danh sách từ ngữ bị cấm mà nhóm tuân thủ duy trì và cập nhật.",
+        "correct": false,
+        "why": "Đề nói Skill **đã có sẵn** danh sách từ cấm, cũng như đáp án D, không phải chỗ còn thiếu."
+      }
+    ],
+    "answer": "A, B",
+    "tip": {
+      "trigger": "application layer rather than the Skill",
+      "choice": "Log · Verify",
+      "note": "**Dạng tìm chỗ thiếu** (đề hỏi *gaps*, hay việc gì còn phải làm thêm): chọn câu kể một điều **đang thiếu hoặc đặt sai chỗ**, thường có chữ *not · only · in the prompt*. Bẫy: câu kể việc **đang làm đúng** (least-privilege, encrypted, exported, redaction), hoặc thứ đề nói **đã có sẵn**. Ở câu này, đề hỏi việc phải để ở **application layer rather than the Skill**. Đề nói Skill đã có disclaimer (đáp án D) và danh sách từ cấm (đáp án E), còn định dạng (đáp án C) cũng là việc của Skill. Phần Skill không tự làm được: đáp án A **Log** vào nhật ký kiểm toán và đáp án B **Verify** người gọi có quyền.",
+      "rules": [
+        {
+          "trigger": "application layer rather than the Skill",
+          "choice": "Log · Verify"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Skill đã có disclaimer và danh sách từ cấm: việc nào vẫn phải để ở tầng ứng dụng",
+      "text": "Bộ phận tuân thủ đã duyệt một **Claude Skill** soạn bản tóm tắt đầu tư cho khách hàng. Skill đã có sẵn câu miễn trừ trách nhiệm (disclaimer) và danh sách từ ngữ bị cấm. Đề hỏi hai trách nhiệm guardrail **vẫn phải nằm ở tầng ứng dụng**, Skill không tự làm được."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.4 · Kiểm soát nào phải nằm ở ứng dụng"
+    ]
+  },
+  {
+    "n": 94,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "You are supporting an EU-based deployment with [[GDPR obligations]]. Which combination of measures best supports the deployment's GDPR posture?",
+    "q_vi": "Bạn đang hỗ trợ một triển khai ở EU có nghĩa vụ GDPR. Tổ hợp biện pháp nào hỗ trợ tốt nhất tư thế GDPR của triển khai?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[enterprise-tier deployment]] with a signed Data Processing Addendum, defined data-retention configuration, redaction of personal data not needed for the task, and documented data-subjectrights handling",
+        "vi": "triển khai gói enterprise với Data Processing Addendum đã ký, cấu hình lưu giữ dữ liệu xác định, che dữ liệu cá nhân không cần cho việc, và quy trình xử lý quyền của chủ thể dữ liệu có tài liệu",
+        "correct": true,
+        "why": "Gói enterprise-tier kèm Data Processing Addendum đã ký, cấu hình retention rõ ràng, redact dữ liệu cá nhân không cần cho tác vụ, và quy trình xử lý quyền chủ thể dữ liệu đã tài liệu hoá. Đủ bốn trụ cột GDPR cùng lúc: hợp đồng pháp lý với bên xử lý, kiểm soát thời gian lưu, tối thiểu hoá dữ liệu, và tôn trọng quyền của chủ thể dữ liệu."
+      },
+      {
+        "k": "B",
+        "text": "disabling all data-retention configuration, redaction controls, and data-subject-rights handling to simplify day-to-day operations, accepting the resulting GDPR compliance exposure",
+        "vi": "tắt mọi cấu hình lưu giữ dữ liệu, biện pháp che dữ liệu và quy trình xử lý quyền chủ thể dữ liệu cho vận hành hằng ngày đơn giản, chấp nhận rủi ro tuân thủ GDPR đi kèm",
+        "correct": false,
+        "why": "**Tắt hết** retention, redaction, và xử lý quyền chủ thể **để đơn giản vận hành** — chấp nhận rủi ro GDPR trực diện, ngược hoàn toàn mục tiêu."
+      },
+      {
+        "k": "C",
+        "text": "using a personal Claude account tier for processing EU personal data at scale, with no signed Data Processing Addendum and no documented data-subject-rights handling procedure",
+        "vi": "dùng gói tài khoản Claude cá nhân để xử lý dữ liệu cá nhân EU ở quy mô lớn, không có Data Processing Addendum đã ký và không có quy trình xử lý quyền chủ thể dữ liệu",
+        "correct": false,
+        "why": "Dùng **tài khoản cá nhân xử lý dữ liệu EU ở quy mô lớn, không DPA, không quy trình quyền chủ thể** — vi phạm gần như mọi yêu cầu nền tảng của GDPR."
+      },
+      {
+        "k": "D",
+        "text": "pasting full EU personal data into every prompt to \"give Claude complete context\" without considering purpose limitation, data minimization, or the organization's Data Processing Addendum obligations",
+        "vi": "dán toàn bộ dữ liệu cá nhân EU vào mọi prompt để \"cho Claude context đầy đủ\" mà không xét giới hạn mục đích, tối thiểu hoá dữ liệu hay nghĩa vụ theo Data Processing Addendum của tổ chức",
+        "correct": false,
+        "why": "Dán **toàn bộ dữ liệu cá nhân EU vào mọi prompt** mà không cân nhắc purpose limitation hay data minimization — vi phạm trực tiếp nguyên tắc tối thiểu hoá dữ liệu cốt lõi của GDPR."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "GDPR obligations",
+      "choice": "enterprise-tier deployment",
+      "note": "GDPR posture đủ = **DPA + retention + redaction + quyền chủ thể**, đủ cả bốn, không thiếu mảnh nào. Đáp án B tắt kiểm soát, đáp án C dùng tier cá nhân sai mục đích, đáp án D nhét hết dữ liệu vào prompt: cả ba đều vi phạm nghiêm trọng.",
+      "rules": [
+        {
+          "trigger": "GDPR obligations",
+          "choice": "enterprise-tier deployment"
+        }
+      ]
+    },
+    "ask": {
+      "title": "GDPR posture đầy đủ = DPA + retention + redaction + quyền chủ thể dữ liệu, đủ cả bốn cùng lúc",
+      "text": "Deployment tại EU có nghĩa vụ GDPR — chọn tổ hợp biện pháp **hỗ trợ posture GDPR tốt nhất**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.4 · GDPR và FedRAMP"
+    ]
+  },
+  {
+    "n": 95,
+    "topic": "Integration",
+    "multi": true,
+    "q": "You are reviewing instrumentation in a multi-agent system. Which two findings constitute [[valid observability gaps]] in the instrumentation? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang review phần instrumentation trong một hệ thống nhiều agent. Hai phát hiện nào là khoảng trống observability thật trong instrumentation? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Trace spans for each agent step are exported to the shared distributed-tracing backend.",
+        "vi": "Trace span cho mỗi bước agent được xuất về backend distributed tracing dùng chung.",
+        "correct": false,
+        "why": "Trace của từng bước agent đã được gửi về hệ thống tracing chung. Đây là việc đã làm tốt."
+      },
+      {
+        "k": "B",
+        "text": "Latency and token usage on every span are emitted to the central metrics pipeline.",
+        "vi": "Độ trễ và lượng token trên mọi span được gửi về pipeline metrics trung tâm.",
+        "correct": false,
+        "why": "Latency và lượng token của từng bước đã được gửi về hệ thống metric trung tâm. Cũng là việc đã làm tốt."
+      },
+      {
+        "k": "C",
+        "text": "Tool-call payloads and outcomes are recorded with redaction applied to known sensitive fields.",
+        "vi": "Payload và kết quả lời gọi tool được ghi lại có che các field nhạy cảm đã biết.",
+        "correct": false,
+        "why": "Nội dung và kết quả tool call được ghi lại, có che các trường nhạy cảm. Đúng chuẩn, không phải chỗ thiếu."
+      },
+      {
+        "k": "D",
+        "text": "[[Model identity]] and version on each turn are [[not recorded]] with the turn artifacts.",
+        "vi": "Danh tính và phiên bản model ở mỗi lượt không được ghi cùng dữ liệu của lượt đó.",
+        "correct": true,
+        "why": "Mỗi lượt không ghi lại **model nào, phiên bản nào** đã trả lời. Khi một câu trả lời sai, bạn không biết nó do model nào sinh ra, nên không biết lỗi có xuất hiện sau lần đổi model không."
+      },
+      {
+        "k": "E",
+        "text": "Request-scoped correlation identifiers [[do not propagate]] across agent and tool calls.",
+        "vi": "Mã correlation theo request không được truyền qua các lời gọi agent và tool.",
+        "correct": true,
+        "why": "Mỗi request cần một mã chung (**correlation ID**) đi theo qua mọi agent và tool nó chạm tới. Mã này không được truyền tiếp thì log của các bước nằm rời rạc, không ghép lại được thành một chuỗi để lần theo một request."
+      }
+    ],
+    "answer": "D, E",
+    "tip": {
+      "trigger": "valid observability gaps",
+      "choice": "Model identity · not recorded · do not propagate",
+      "note": "**Dạng tìm chỗ thiếu** (đề hỏi *gaps*, hay việc gì còn phải làm thêm): chọn câu kể một điều **đang thiếu hoặc đặt sai chỗ**, thường có chữ *not · only · in the prompt*. Bẫy: câu kể việc **đang làm đúng** (least-privilege, encrypted, exported, redaction), hoặc thứ đề nói **đã có sẵn**. Ở câu này, chỗ thiếu có chữ *not*: đáp án D **Model identity** và phiên bản **not recorded**, đáp án E correlation ID **do not propagate**. Đáp án A exported, B emitted, C có redaction đều là việc đang làm đúng.",
+      "rules": [
+        {
+          "trigger": "valid observability gaps",
+          "choice": "Model identity · not recorded · do not propagate"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Hệ nhiều agent: chỗ thiếu thật trong việc ghi vết để theo dõi",
+      "text": "Bạn xem lại phần ghi vết (instrumentation) của một hệ thống nhiều agent. Đề hỏi hai mục là **chỗ thiếu thật** khiến không theo dõi, điều tra được hệ thống (observability gap), khác với những việc đã làm tốt."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.4 · Ghi gì để truy được lỗi"
+    ]
+  },
+  {
+    "n": 96,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "When communicating an architectural decision to a [[security and compliance reviewer]], which content set is most aligned with that audience's primary concerns?",
+    "q_vi": "Khi truyền đạt một quyết định kiến trúc cho người review bảo mật và tuân thủ, bộ nội dung nào hợp nhất với mối quan tâm chính của người nghe này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Feature delivery schedule, roadmap dependencies, and scope boundaries for the product manager.",
+        "vi": "Lịch giao tính năng, phụ thuộc trong roadmap và ranh giới phạm vi cho product manager.",
+        "correct": false,
+        "why": "Lịch giao tính năng, phụ thuộc roadmap, ranh giới scope — đúng mối quan tâm của **product manager**, không phải security/compliance."
+      },
+      {
+        "k": "B",
+        "text": "Implementation timeline, component interfaces, and deployment sequence for the engineering team.",
+        "vi": "Tiến độ triển khai, interface giữa các component và trình tự triển khai cho nhóm kỹ thuật.",
+        "correct": false,
+        "why": "Timeline triển khai, interface component, trình tự deploy — đúng mối quan tâm của **đội kỹ thuật**, không phải bảo mật/tuân thủ."
+      },
+      {
+        "k": "C",
+        "text": "[[Threat model, control mappings]], residual-risk acceptance criteria, and audit traceability.",
+        "vi": "Mô hình mối đe doạ, ánh xạ biện pháp kiểm soát, tiêu chí chấp nhận rủi ro còn lại và khả năng truy vết cho kiểm toán.",
+        "correct": true,
+        "why": "Threat model, ánh xạ control, tiêu chí chấp nhận residual-risk, và khả năng truy vết phục vụ audit: đúng ngôn ngữ và mối quan tâm cốt lõi của người làm bảo mật và tuân thủ. Họ cần biết rủi ro nào, kiểm soát nào xử lý rủi ro đó, ai chấp nhận phần rủi ro còn lại, và có truy vết được không khi cần audit."
+      },
+      {
+        "k": "D",
+        "text": "Decision rationale, business outcomes, and high-level risk summary for executive review.",
+        "vi": "Lý giải quyết định, kết quả kinh doanh và tóm tắt rủi ro tổng quan cho cấp điều hành review.",
+        "correct": false,
+        "why": "Rationale quyết định, kết quả kinh doanh, tóm tắt rủi ro cấp cao — đúng mối quan tâm của **cấp điều hành**, không đủ chi tiết kỹ thuật bảo mật mà reviewer cần."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "security and compliance reviewer",
+      "choice": "Threat model, control mappings",
+      "note": "Mỗi audience có ngôn ngữ riêng: PM cần roadmap (đáp án A); kỹ sư cần timeline và interface (đáp án B); exec cần outcome và rủi ro cấp cao (đáp án D); còn người làm bảo mật và tuân thủ cần **threat model + control + audit trail**.",
+      "rules": [
+        {
+          "trigger": "security and compliance reviewer",
+          "choice": "Threat model, control mappings"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Security/compliance reviewer cần threat model + control mapping, không phải timeline hay chi phí",
+      "text": "Giao tiếp một quyết định kiến trúc với người review bảo mật/tuân thủ — chọn nội dung **đúng trọng tâm mối quan tâm của họ**, phân biệt với nội dung dành cho audience khác."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.2 · Rủi ro còn lại: nói rõ và có giới hạn"
+    ]
+  },
+  {
+    "n": 97,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are defining when to introduce a project subagent versus relying on Claude Code's general capabilities. Which scenario [[most directly justifies a dedicated subagent]]?",
+    "q_vi": "Bạn đang định nghĩa khi nào nên thêm một subagent cho dự án thay vì dựa vào khả năng chung của Claude Code. Tình huống nào lý giải trực tiếp nhất việc có một subagent riêng?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The team has a [[recurring specialized task]], such as database schema review, that requires a focused system prompt, narrow tool permissions, and a specific model selection [[across many sessions]].",
+        "vi": "Nhóm có một việc chuyên biệt lặp lại, như review schema database, cần system prompt tập trung, quyền tool hẹp và chọn model riêng qua nhiều phiên.",
+        "correct": true,
+        "why": "Task chuyên biệt lặp đi lặp lại (như review schema database), cần system prompt tập trung, quyền tool hẹp, và một model cụ thể, xuyên suốt nhiều phiên làm việc. Đầu tư một lần để thiết lập subagent rồi tái sử dụng nhiều lần mới xứng đáng; nếu chỉ dùng một lần thì chi phí thiết lập không bù lại được."
+      },
+      {
+        "k": "B",
+        "text": "The team has a one-time ad hoc question that will not recur and does not require a focused system prompt, narrow tool permissions, or dedicated model selection.",
+        "vi": "Nhóm có một câu hỏi tuỳ hứng một lần, không lặp lại, không cần system prompt tập trung, quyền tool hẹp hay chọn model riêng.",
+        "correct": false,
+        "why": "Câu hỏi **một lần, không lặp lại**, không cần prompt/tool/model riêng — không có gì để 'tái sử dụng' nên không đáng tạo subagent."
+      },
+      {
+        "k": "C",
+        "text": "The team has no recurring specialized tasks and uses Claude Code only for isolated generalpurpose work that does not justify a dedicated system prompt or tool scope.",
+        "vi": "Nhóm không có việc chuyên biệt lặp lại nào và chỉ dùng Claude Code cho các việc đa dụng rời rạc, không đáng có system prompt hay phạm vi tool riêng.",
+        "correct": false,
+        "why": "**Không có task chuyên biệt lặp lại nào** — không có nhu cầu thực sự để biện minh cho một subagent dành riêng."
+      },
+      {
+        "k": "D",
+        "text": "The team wants every Claude Code interaction to use the same generic system prompt with no task-specific specialization, narrow tool permissions, or dedicated model selection.",
+        "vi": "Nhóm muốn mọi tương tác Claude Code dùng cùng một system prompt chung chung, không chuyên biệt theo việc, không có quyền tool hẹp hay chọn model riêng.",
+        "correct": false,
+        "why": "Muốn **mọi tương tác dùng chung một prompt chung chung, không chuyên biệt hoá gì** — trái ngược hoàn toàn lý do tồn tại của subagent (chuyên biệt hoá cho một loại việc)."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "most directly justifies a dedicated subagent",
+      "choice": "recurring specialized task · across many sessions",
+      "note": "Subagent đáng đầu tư khi = **lặp lại nhiều lần + cần chuyên biệt hoá (prompt/tool/model)**. Đáp án B là việc một lần, đáp án C không có task chuyên biệt, đáp án D muốn dùng chung mọi thứ: cả ba đều không đủ lý do để tạo subagent riêng.",
+      "rules": [
+        {
+          "trigger": "most directly justifies a dedicated subagent",
+          "choice": "recurring specialized task · across many sessions"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Subagent chuyên biệt chỉ đáng đầu tư khi task LẶP LẠI, cần prompt/tool/model riêng, qua NHIỀU phiên",
+      "text": "Xác định khi nào nên tạo subagent riêng thay vì dùng năng lực chung của Claude Code — chọn tình huống **thực sự đáng để đầu tư** một subagent chuyên biệt."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.2 · Biến việc lặp lại thành công cụ của đội"
+    ]
+  },
+  {
+    "n": 98,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are identifying signals that a deployment should [[re-enter design rather than continue iterating in place]]. Which signal most directly indicates the need for a new design cycle?",
+    "q_vi": "Bạn đang xác định các tín hiệu cho thấy một triển khai nên quay lại giai đoạn thiết kế thay vì tiếp tục lặp cải tiến tại chỗ. Tín hiệu nào cho thấy trực tiếp nhất cần một vòng thiết kế mới?",
+    "options": [
+      {
+        "k": "A",
+        "text": "A minor copy edit is requested in a customer-facing string within the existing UI, which can be handled as a localized content change without altering component responsibilities or contracts.",
+        "vi": "Có yêu cầu sửa nhỏ câu chữ trong một chuỗi hiển thị cho khách ở UI hiện có, xử lý được như một thay đổi nội dung cục bộ mà không đổi trách nhiệm hay hợp đồng của component.",
+        "correct": false,
+        "why": "Chỉ là sửa lỗi/copy chữ hiển thị cho khách hàng — **thay đổi nội dung cục bộ**, không đụng tới trách nhiệm hay contract nào."
+      },
+      {
+        "k": "B",
+        "text": "A dashboard alert threshold needs a small numerical adjustment to reduce false-positive noise, which can be handled as an operational configuration change without a new design cycle.",
+        "vi": "Một ngưỡng cảnh báo trên dashboard cần chỉnh nhẹ con số để giảm báo nhầm, xử lý được như một thay đổi cấu hình vận hành mà không cần vòng thiết kế mới.",
+        "correct": false,
+        "why": "Chỉnh ngưỡng cảnh báo trên dashboard **chỉ là một thay đổi cấu hình vận hành**, không chạm tới kiến trúc."
+      },
+      {
+        "k": "C",
+        "text": "A runbook step requires a clarification edit to improve on-call guidance accuracy, which can be handled as a documentation update without changes to component responsibilities or core contracts.",
+        "vi": "Một bước trong runbook cần sửa cho rõ để hướng dẫn trực sự cố chính xác hơn, xử lý được như một cập nhật tài liệu mà không đổi trách nhiệm component hay hợp đồng lõi.",
+        "correct": false,
+        "why": "Sửa một bước trong runbook **chỉ là cập nhật tài liệu**, không ảnh hưởng tới trách nhiệm hay contract của component nào."
+      },
+      {
+        "k": "D",
+        "text": "The system's [[current architecture cannot meet the new requirements]] without changes to component responsibilities or core contracts.",
+        "vi": "Kiến trúc hiện tại của hệ thống không đáp ứng được yêu cầu mới nếu không đổi trách nhiệm component hay hợp đồng lõi.",
+        "correct": true,
+        "why": "**D đúng** vì đây là ranh giới thật của 'cần thiết kế lại': **kiến trúc hiện tại không đáp ứng được yêu cầu mới nếu không đổi trách nhiệm (responsibilities) hoặc contract giữa các component**. Khi thay đổi vượt ra ngoài phạm vi một component hay một cấu hình đơn lẻ, chạm tới cách các phần hệ thống phối hợp với nhau, đó là lúc phải quay lại bàn thiết kế chứ không thể tiếp tục vá."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "re-enter design rather than continue iterating in place",
+      "choice": "current architecture cannot meet the new requirements",
+      "note": "Chạm tới **trách nhiệm hoặc contract của component** thì cần thiết kế lại. Sửa nội dung, chỉnh cấu hình, hay update tài liệu thì chưa tới mức đó.",
+      "rules": [
+        {
+          "trigger": "re-enter design rather than continue iterating in place",
+          "choice": "current architecture cannot meet the new requirements"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Khi nào cần quay lại thiết kế (design cycle) thay vì vá tại chỗ",
+      "text": "Phân biệt tín hiệu **thật sự cần thiết kế lại** với những thay đổi nhỏ vẫn xử lý được tại chỗ."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.5 · Cải tiến: làm tiếp, sửa tại chỗ, hay quay lại thiết kế"
+    ]
+  },
+  {
+    "n": 99,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": true,
+    "q": "You are rolling out monitoring for a Claude-based deployment and must complete the specification steps [[before instrumenting]] the deployment. Which two steps must be completed BEFORE instrumenting the deployment to emit metrics and traces? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang triển khai giám sát cho một hệ thống chạy trên Claude và phải hoàn tất các bước đặc tả trước khi gắn instrumentation. Hai bước nào phải xong TRƯỚC KHI gắn instrumentation để hệ thống phát metrics và trace? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Define the metrics]] and the slices the deployment will monitor across normal and adversarial traffic.",
+        "vi": "Định nghĩa các metrics và các lát cắt mà hệ thống sẽ theo dõi trên traffic bình thường và traffic tấn công.",
+        "correct": true,
+        "why": "Gắn code đo thì phải biết đo **những metric nào** và chia theo **nhóm nào** (slice): lưu lượng bình thường, lưu lượng tấn công, từng loại người dùng... Không định trước thì gắn code xong mới thấy thiếu số cần xem."
+      },
+      {
+        "k": "B",
+        "text": "Tune the alert thresholds based on observed normal-state distributions to reduce false positives.",
+        "vi": "Tinh chỉnh ngưỡng cảnh báo dựa trên phân bố quan sát được ở trạng thái bình thường để giảm báo nhầm.",
+        "correct": false,
+        "why": "Chỉnh ngưỡng cảnh báo theo phân bố số liệu đã quan sát cần có số liệu thật, nên chỉ làm được sau khi đã gắn code đo."
+      },
+      {
+        "k": "C",
+        "text": "[[Define the service-level objectives]] (SLOs) and the error budgets the deployment will be held to.",
+        "vi": "Định nghĩa các SLO và error budget mà hệ thống phải đáp ứng.",
+        "correct": true,
+        "why": "Cần chốt **SLO** (mục tiêu dịch vụ, ví dụ 99% request dưới 3 giây) và **error budget** (mức lỗi được phép, phần còn lại của 100%). Có ngưỡng chốt trước thì số đo ra so được ngay là đạt hay không."
+      },
+      {
+        "k": "D",
+        "text": "Build the dashboards that surface metrics across slices at the cadence the team operates on.",
+        "vi": "Dựng các dashboard hiển thị metrics theo lát cắt với nhịp mà nhóm vận hành theo.",
+        "correct": false,
+        "why": "Dựng dashboard hiển thị metric cần metric đã được phát ra, nên là việc sau."
+      },
+      {
+        "k": "E",
+        "text": "Document the dashboards, alerts, and runbooks for the on-call rotation that will respond.",
+        "vi": "Ghi tài liệu dashboard, cảnh báo và runbook cho ca trực sẽ phản ứng.",
+        "correct": false,
+        "why": "Viết tài liệu dashboard, cảnh báo và runbook cho người trực cần những thứ đó đã có, nên càng về sau."
+      }
+    ],
+    "answer": "A, C",
+    "tip": {
+      "trigger": "BEFORE instrumenting",
+      "choice": "Define the metrics · Define the service-level objectives",
+      "note": "**Dạng BEFORE** (đề hỏi *must be completed BEFORE X*): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**. Làm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out). Ở câu này, cả hai đáp án đều là đặt mục tiêu: đáp án A **Define the metrics** và nhóm cần đo, đáp án C **Define the service-level objectives** và error budget. Đáp án B chỉnh theo số đã quan sát, D dựng dashboard, E viết tài liệu đều cần metric đã được phát ra.",
+      "rules": [
+        {
+          "trigger": "BEFORE instrumenting",
+          "choice": "Define the metrics · Define the service-level objectives"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Giám sát hệ thống: việc nào làm trước khi gắn code đo",
+      "text": "Bạn triển khai giám sát cho một hệ thống dùng Claude. Đề hỏi hai bước đặc tả phải xong **trước khi** gắn code đo để hệ thống bắt đầu phát metric và trace (instrumenting)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.6 · Đặc tả trước khi gắn đo"
+    ]
+  },
+  {
+    "n": 100,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": true,
+    "q": "You are integrating Claude Code into a team workflow and must complete the design and configuration steps [[before piloting]] the integrated workflow with a small group. Which two steps must be completed BEFORE piloting the integrated workflow? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang tích hợp Claude Code vào quy trình làm việc của nhóm và phải hoàn tất các bước thiết kế, cấu hình trước khi chạy thử quy trình tích hợp với một nhóm nhỏ. Hai bước nào phải xong TRƯỚC KHI chạy thử quy trình tích hợp? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Document the integrated workflow with handoff criteria, permission boundaries, and on-call runbooks.",
+        "vi": "Ghi tài liệu quy trình tích hợp với tiêu chí chuyển giao, ranh giới quyền và runbook trực sự cố.",
+        "correct": false,
+        "why": "Viết tài liệu đầy đủ tiêu chí bàn giao, ranh giới quyền và runbook trực là việc khi quy trình đã ổn định, dành cho lúc mở rộng, không cần cho một buổi chạy thử nhỏ."
+      },
+      {
+        "k": "B",
+        "text": "[[Identify]] the workflow steps where AI-assisted tooling adds value and where human authority must remain.",
+        "vi": "Xác định các bước trong quy trình mà tool có AI hỗ trợ tạo thêm giá trị, và các bước con người phải giữ quyền quyết định.",
+        "correct": true,
+        "why": "Trước khi ai dùng thử, phải rõ ranh giới: ở bước nào AI giúp được nhiều, và bước nào **con người phải giữ quyền quyết định** (ví dụ duyệt merge, đổi cấu hình production). Không rõ ranh giới thì người dùng thử không biết được giao cho AI tới đâu."
+      },
+      {
+        "k": "C",
+        "text": "Negotiate the workflow change with affected teams and obtain formal sign-off from each manager.",
+        "vi": "Thương lượng thay đổi quy trình với các nhóm bị ảnh hưởng và xin ký duyệt chính thức của từng quản lý.",
+        "correct": false,
+        "why": "Xin chữ ký chính thức của từng quản lý là thủ tục nặng, hợp với triển khai rộng chứ không cần chỉ để chạy thử với nhóm nhỏ."
+      },
+      {
+        "k": "D",
+        "text": "Iterate the integrated workflow based on pilot findings before broader rollout to the team.",
+        "vi": "Lặp lại quy trình tích hợp theo các phát hiện khi chạy thử trước khi mở rộng ra cả nhóm.",
+        "correct": false,
+        "why": "Sửa quy trình theo kết quả chạy thử chỉ làm được sau khi đã chạy thử."
+      },
+      {
+        "k": "E",
+        "text": "[[Configure]] the project-scope MCP servers, permissions, subagents, and persistent project context.",
+        "vi": "Cấu hình các MCP server phạm vi project, quyền, subagent và context dự án lâu dài.",
+        "correct": true,
+        "why": "Nhóm chạy thử cần có sẵn môi trường để dùng ngay: **cấu hình** MCP server ở project scope, quyền, subagent và phần ngữ cảnh dự án lưu lâu dài (như CLAUDE.md). Không có những thứ này thì buổi chạy thử chỉ thử được Claude Code trơn, không phải quy trình đã tích hợp."
+      }
+    ],
+    "answer": "B, E",
+    "tip": {
+      "trigger": "BEFORE piloting",
+      "choice": "Identify · Configure",
+      "note": "**Dạng BEFORE** (đề hỏi *must be completed BEFORE X*): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**. Làm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out). Ở câu này, đáp án B **Identify** ranh giới giữa người và AI (tìm hiểu), đáp án E **Configure** MCP server và quyền (chuẩn bị). Đáp án D sửa theo kết quả chạy thử là sau khi chạy; A viết runbook và C xin chữ ký là việc chốt lại, dành cho lúc triển khai rộng.",
+      "rules": [
+        {
+          "trigger": "BEFORE piloting",
+          "choice": "Identify · Configure"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Đưa Claude Code vào quy trình của team: việc nào làm trước khi chạy thử",
+      "text": "Bạn tích hợp Claude Code vào quy trình làm việc của team. Đề hỏi hai bước phải xong **trước khi** chạy thử với một nhóm nhỏ."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.2 · Đặt AI vào đúng chỗ trong quy trình"
+    ]
+  },
+  {
+    "n": 101,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "You are preparing a HIPAA-eligible deployment for a healthcare customer. Which configuration supports [[HIPAA compliance using Anthropic-offered tools]]?",
+    "q_vi": "Bạn đang chuẩn bị một triển khai đủ điều kiện HIPAA cho một khách hàng y tế. Cấu hình nào hỗ trợ tuân thủ HIPAA bằng các công cụ Anthropic cung cấp?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Claude Free with no contractual addendum, since consumer products meet HIPAA requirements out of the box.",
+        "vi": "Claude Free không có phụ lục hợp đồng nào, vì sản phẩm cho người dùng cá nhân sẵn đáp ứng HIPAA.",
+        "correct": false,
+        "why": "Claude Free **không có addendum hợp đồng nào** — là sản phẩm tiêu dùng, không tự động đạt HIPAA chỉ vì do Anthropic làm ra; thiếu đúng nền tảng pháp lý bắt buộc là BAA."
+      },
+      {
+        "k": "B",
+        "text": "[[Claude Enterprise]] with a signed Business Associate Agreement, [[Zero Data Retention enabled]], and audit logging configured for compliance tracking.",
+        "vi": "Claude Enterprise với Business Associate Agreement đã ký, bật Zero Data Retention và cấu hình audit logging để theo dõi tuân thủ.",
+        "correct": true,
+        "why": "**B đúng** vì đây là cấu hình có Claude Enterprise kèm Business Associate Agreement (BAA) đã ký, bật Zero Data Retention (ZDR) và cấu hình audit logging để theo dõi tuân thủ. Nó có cả nền tảng pháp lý (BAA) lẫn các biện pháp kỹ thuật (ZDR, audit log) khi dùng bên xử lý dữ liệu thứ ba."
+      },
+      {
+        "k": "C",
+        "text": "Disabling all audit logging so that no PHI is recorded in any log store, on the assumption that the absence of logs satisfies HIPAA requirements without a signed BAA.",
+        "vi": "Tắt mọi audit logging để không có PHI nào bị ghi vào log, với giả định không có log là đáp ứng HIPAA mà không cần BAA đã ký.",
+        "correct": false,
+        "why": "**Tắt hết audit logging** với giả định 'không log thì không vi phạm', trong khi **vẫn chưa có BAA** — sai kép: vừa mất khả năng theo dõi (audit), vừa thiếu nền tảng pháp lý."
+      },
+      {
+        "k": "D",
+        "text": "An ad-hoc personal Claude account used by individual clinicians for PHI-related tasks, with no Business Associate Agreement, no Zero Data Retention, and no audit logging configured.",
+        "vi": "Một tài khoản Claude cá nhân tuỳ tiện do từng bác sĩ dùng cho việc liên quan PHI, không có Business Associate Agreement, không Zero Data Retention và không cấu hình audit logging.",
+        "correct": false,
+        "why": "Tài khoản cá nhân dùng tuỳ tiện, **không BAA, không ZDR, không audit logging** — thiếu tất cả những gì đáp án B có, kể cả nền tảng pháp lý."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "HIPAA compliance using Anthropic-offered tools",
+      "choice": "Claude Enterprise · Zero Data Retention enabled",
+      "note": "Đề HIPAA dùng công cụ Anthropic thì chọn **Enterprise + BAA + ZDR + audit log**. Thiếu BAA, như đáp án A và đáp án D, là sai nền tảng pháp lý; tắt log để né, như đáp án C, chỉ là che giấu vấn đề.",
+      "rules": [
+        {
+          "trigger": "HIPAA compliance using Anthropic-offered tools",
+          "choice": "Claude Enterprise · Zero Data Retention enabled"
+        }
+      ]
+    },
+    "ask": {
+      "title": "HIPAA dùng công cụ Anthropic: cần đủ Enterprise + BAA + ZDR + audit log",
+      "text": "Chuẩn bị deployment HIPAA-eligible cho khách hàng y tế — chọn cấu hình **thật sự đáp ứng HIPAA**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.4 · HIPAA"
+    ]
+  },
+  {
+    "n": 102,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": true,
+    "q": "You are listing characteristics of [[strong architectural-decision communication]]. Which two characteristics belong on the list? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang liệt kê các đặc điểm của việc truyền đạt quyết định kiến trúc tốt. Hai đặc điểm nào thuộc danh sách? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Ownership and review cadence]] for revisiting the decision when conditions or assumptions change.",
+        "vi": "Có người chịu trách nhiệm và nhịp review để xem lại quyết định khi điều kiện hay giả định thay đổi.",
+        "correct": true,
+        "why": "Quyết định nào cũng dựa trên điều kiện lúc đó, và điều kiện sẽ đổi. Ghi rõ **ai chịu trách nhiệm** quyết định này và **khi nào xem lại**, để nó không thành luật cứng mà không ai dám đụng."
+      },
+      {
+        "k": "B",
+        "text": "Distribution to a standing review forum with mandatory attendance from senior engineering leaders.",
+        "vi": "Gửi tới một hội đồng review thường trực với các lãnh đạo kỹ thuật cấp cao bắt buộc phải dự.",
+        "correct": false,
+        "why": "Bắt lãnh đạo cấp cao phải có mặt ở buổi review là thủ tục cực đoan, không phải đặc điểm của nội dung quyết định."
+      },
+      {
+        "k": "C",
+        "text": "Omission of rejected alternatives to keep the decision document focused and concise for readers.",
+        "vi": "Bỏ các phương án đã loại để tài liệu quyết định tập trung và ngắn gọn cho người đọc.",
+        "correct": false,
+        "why": "Bỏ các phương án đã bị loại cho gọn là bỏ mất phần giải thích vì sao chọn. Ngược với đáp án D."
+      },
+      {
+        "k": "D",
+        "text": "[[Alternatives considered]] along with the criteria that were used to evaluate each alternative.",
+        "vi": "Các phương án đã cân nhắc cùng tiêu chí dùng để đánh giá từng phương án.",
+        "correct": true,
+        "why": "Ghi các **phương án đã cân nhắc** cùng **tiêu chí** dùng để so chúng. Người đọc sau hiểu được vì sao chọn cách này mà không chọn cách kia, và biết khi tiêu chí đổi thì phương án nào đáng xét lại."
+      },
+      {
+        "k": "E",
+        "text": "Use of a consistent template across the team to standardize the visual presentation of decisions.",
+        "vi": "Dùng một mẫu thống nhất trong nhóm để chuẩn hoá cách trình bày các quyết định.",
+        "correct": false,
+        "why": "Dùng chung một mẫu trình bày chỉ làm hình thức đồng đều, không đảm bảo nội dung có đủ người chịu trách nhiệm, phương án và tiêu chí."
+      }
+    ],
+    "answer": "A, D",
+    "tip": {
+      "trigger": "strong architectural-decision communication",
+      "choice": "Ownership and review cadence · Alternatives considered",
+      "note": "**Dạng đúng khái niệm** (đề hỏi *belong on the list, characteristic of, most directly address ...*): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như *only · single · every · mandatory · lock · immediately · without evaluation*. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, đáp án A có **Ownership and review cadence**, đáp án D có **Alternatives considered** kèm tiêu chí so sánh. Đáp án B là Cực (bắt buộc lãnh đạo dự), C là Thiếu (bỏ phương án đã loại), E là Lạc (mẫu trình bày chỉ là hình thức).",
+      "rules": [
+        {
+          "trigger": "strong architectural-decision communication",
+          "choice": "Ownership and review cadence · Alternatives considered"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Truyền đạt một quyết định kiến trúc cho tốt: có người giữ và có các phương án đã cân nhắc",
+      "text": "Đề hỏi hai đặc điểm của một bản truyền đạt **quyết định kiến trúc** tốt, khác với những yếu tố chỉ thuộc về hình thức hay thủ tục."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.2 · Ghi người phụ trách và lúc xem lại"
+    ]
+  },
+  {
+    "n": 103,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are integrating Claude Code into a workflow that runs against a [[production database]]. Which guardrail design most directly preserves safety on [[data-modifying operations]]?",
+    "q_vi": "Bạn đang tích hợp Claude Code vào một quy trình chạy trên database production. Thiết kế guardrail nào giữ an toàn trực tiếp nhất cho các thao tác sửa dữ liệu?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Allow Claude Code to write directly to the production database without subagent scoping, readonly credential defaults, or human confirmation gates on data-modifying operations.",
+        "vi": "Cho Claude Code ghi thẳng vào database production mà không khoanh phạm vi subagent, không mặc định credential chỉ đọc, không có cổng xác nhận của con người cho thao tác sửa dữ liệu.",
+        "correct": false,
+        "why": "Cho ghi thẳng vào production **không scoping, không mặc định read-only, không cổng xác nhận** — thiếu cả ba lớp bảo vệ cùng lúc."
+      },
+      {
+        "k": "B",
+        "text": "Configure the database MCP server with a fully privileged credential that can perform any read or write operation, and allow all operations to proceed without explicit human confirmation.",
+        "vi": "Cấu hình MCP server database với credential toàn quyền làm được mọi thao tác đọc ghi, và cho mọi thao tác chạy mà không cần con người xác nhận rõ.",
+        "correct": false,
+        "why": "Credential **toàn quyền đọc/ghi, không cần xác nhận** — đối lập hoàn toàn với nguyên tắc least-privilege và human-in-the-loop cho thao tác nguy hiểm."
+      },
+      {
+        "k": "C",
+        "text": "Disable all logging and auditing on database operations through the MCP server to reduce alert noise, removing the observability needed to detect unintended data modifications.",
+        "vi": "Tắt mọi log và audit cho thao tác database qua MCP server để bớt nhiễu cảnh báo, bỏ luôn khả năng quan sát cần để phát hiện sửa dữ liệu ngoài ý muốn.",
+        "correct": false,
+        "why": "**Tắt hết logging/auditing** để giảm nhiễu cảnh báo — làm mất khả năng phát hiện thao tác sửa đổi ngoài ý muốn, phản tác dụng với chính mục tiêu an toàn."
+      },
+      {
+        "k": "D",
+        "text": "Configure the database MCP server with a [[read-only credential by default]], restrict the subagent's tool list to read-only operations, and [[require explicit human confirmation]] on any operation that would modify data.",
+        "vi": "Cấu hình MCP server database với credential chỉ đọc theo mặc định, giới hạn danh sách tool của subagent ở các thao tác chỉ đọc, và bắt buộc con người xác nhận rõ với mọi thao tác sẽ sửa dữ liệu.",
+        "correct": true,
+        "why": "**D đúng** nhờ ba lớp phòng thủ cùng lúc: credential **mặc định read-only**, tool list của subagent **chỉ còn thao tác đọc**, và **bắt buộc xác nhận từ con người** cho bất kỳ thao tác nào sửa đổi dữ liệu — mặc định an toàn, giới hạn năng lực, và cổng chặn cuối trước khi dữ liệu thật sự bị thay đổi."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "production database · data-modifying operations",
+      "choice": "read-only credential by default · require explicit human confirmation",
+      "note": "An toàn với production DB = **read-only mặc định + tool list giới hạn + người xác nhận trước khi ghi**. Cấp quyền rộng (đáp án A và đáp án B) hay tắt quan sát (đáp án C) đều phá vỡ một trong ba lớp này.",
+      "rules": [
+        {
+          "trigger": "production database · data-modifying operations",
+          "choice": "read-only credential by default · require explicit human confirmation"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Claude Code chạm production DB: mặc định read-only, ghi phải qua người xác nhận",
+      "text": "Tích hợp Claude Code vào workflow chạm **production database** — cần thiết kế guardrail bảo vệ đúng các thao tác sửa đổi dữ liệu."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.2 · Khi Claude Code chạm hệ thống thật"
+    ]
+  },
+  {
+    "n": 104,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": true,
+    "q": "You are building an evaluation pipeline for a Claude-based deployment and must complete the specification steps [[before running]] the deployment against the dataset. Which two steps must be completed BEFORE running the deployment against the evaluation dataset? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang dựng một pipeline đánh giá cho một triển khai chạy trên Claude và phải hoàn tất các bước đặc tả trước khi chạy triển khai trên bộ dữ liệu. Hai bước nào phải xong TRƯỚC KHI chạy triển khai trên bộ dữ liệu đánh giá? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Publish the aggregated metrics to a dashboard and gate releases on threshold checks.",
+        "vi": "Đăng metrics tổng hợp lên dashboard và chặn phát hành bằng các bước kiểm ngưỡng.",
+        "correct": false,
+        "why": "Đưa số liệu lên dashboard và chặn phát hành theo ngưỡng cần đã có điểm, nên là bước sau khi chạy."
+      },
+      {
+        "k": "B",
+        "text": "[[Curate]] and label the evaluation dataset to match the defined slices.",
+        "vi": "Chọn lọc và gán nhãn bộ dữ liệu đánh giá cho khớp các lát cắt đã định.",
+        "correct": true,
+        "why": "Có nhóm cần đo rồi thì **chọn lọc và gán nhãn** dữ liệu cho đủ từng nhóm, mỗi câu có đáp án chuẩn để so. Thiếu dữ liệu của nhóm nào thì nhóm đó không đo được."
+      },
+      {
+        "k": "C",
+        "text": "Review failure cases with subject matter experts to refine the scoring rubric.",
+        "vi": "Review các ca lỗi với chuyên gia nghiệp vụ để tinh chỉnh thang chấm.",
+        "correct": false,
+        "why": "Xem lại các ca sai cùng chuyên gia để sửa thang chấm cần đã có ca sai thật, tức là đã chạy xong."
+      },
+      {
+        "k": "D",
+        "text": "[[Define]] the metrics and slices the framework will report across representative, edge, and adversarial cases.",
+        "vi": "Định nghĩa các metrics và lát cắt mà khung đánh giá sẽ báo cáo trên các ca đại diện, ca biên và ca tấn công.",
+        "correct": true,
+        "why": "Phải định trước sẽ báo cáo **metric nào** và chia theo **nhóm nào** (slice): ca thông thường, ca biên (edge case), ca tấn công. Đây là đặt mục tiêu: biết đo gì thì mới biết cần dữ liệu gì."
+      },
+      {
+        "k": "E",
+        "text": "Score the deployment outputs against the reference labels and aggregate the metrics.",
+        "vi": "Chấm đầu ra của triển khai theo nhãn tham chiếu và tổng hợp metrics.",
+        "correct": false,
+        "why": "Chấm output so với nhãn chuẩn là bước đến sau khi chạy hệ thống trên bộ dữ liệu mà đề nhắc tới, không phải việc làm trước nó."
+      }
+    ],
+    "answer": "B, D",
+    "tip": {
+      "trigger": "BEFORE running",
+      "choice": "Curate · Define",
+      "note": "**Dạng BEFORE** (đề hỏi *must be completed BEFORE X*): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**. Làm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out). Ở câu này, đáp án D **Define** metric và nhóm cần đo (đặt mục tiêu), rồi đáp án B **Curate** và gán nhãn dữ liệu (chuẩn bị). Đáp án E chấm điểm đến sau khi chạy; C xem ca sai và A đưa lên dashboard đều cần đã có điểm.",
+      "rules": [
+        {
+          "trigger": "BEFORE running",
+          "choice": "Curate · Define"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Pipeline đánh giá: việc nào làm trước khi chạy hệ thống trên bộ dữ liệu",
+      "text": "Bạn xây pipeline đánh giá (evaluation) cho một hệ thống dùng Claude. Đề hỏi hai bước đặc tả phải xong **trước khi** chạy hệ thống trên bộ dữ liệu đánh giá."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.2 · Việc phải xong trước khi chạy"
+    ]
+  },
+  {
+    "n": 105,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": true,
+    "q": "You are rolling out a standardized Claude Code configuration to an engineering team and must complete the planning steps [[before piloting]] the configuration. Which two steps must be completed BEFORE piloting the configuration with a small group of engineers? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang triển khai một cấu hình Claude Code chuẩn cho một nhóm kỹ thuật và phải hoàn tất các bước lập kế hoạch trước khi chạy thử cấu hình. Hai bước nào phải xong TRƯỚC KHI chạy thử cấu hình với một nhóm nhỏ kỹ sư? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Define]] the project-scope baseline covering Model Context Protocol (MCP) servers, permission rules, and subagents.",
+        "vi": "Định nghĩa cấu hình nền phạm vi project gồm các MCP server, luật quyền và subagent.",
+        "correct": true,
+        "why": "Từ đó **định ra bộ cấu hình gốc** (baseline) ở project scope: những MCP server, quy tắc cấp quyền và subagent mà mọi người dùng chung. Có một bản cụ thể thì nhóm nhỏ mới có thứ để chạy thử."
+      },
+      {
+        "k": "B",
+        "text": "Onboard every engineer in the organization to the new configuration through mandatory training sessions.",
+        "vi": "Đưa mọi kỹ sư trong tổ chức vào cấu hình mới qua các buổi đào tạo bắt buộc.",
+        "correct": false,
+        "why": "Bắt **mọi kỹ sư trong tổ chức** học bắt buộc là việc của lúc triển khai rộng, quá sớm và quá lớn cho một buổi chạy thử nhỏ."
+      },
+      {
+        "k": "C",
+        "text": "Roll out the stabilized configuration to additional teams with documentation and a defined support channel.",
+        "vi": "Mở rộng cấu hình đã ổn định sang các nhóm khác kèm tài liệu và một kênh hỗ trợ rõ ràng.",
+        "correct": false,
+        "why": "Đưa bộ cấu hình **đã ổn định** sang các team khác cần qua chạy thử và chỉnh xong trước."
+      },
+      {
+        "k": "D",
+        "text": "[[Identify]] the team workflows, security boundaries, and which decisions belong to managed configuration versus project scope.",
+        "vi": "Xác định các quy trình làm việc của nhóm, ranh giới bảo mật, và quyết định nào thuộc managed configuration hay phạm vi project.",
+        "correct": true,
+        "why": "Trước tiên phải hiểu team làm việc thế nào, ranh giới bảo mật ở đâu, và thiết lập nào phải **khoá ở managed** (cả công ty, không ai đổi được) còn thiết lập nào để ở **project scope** (theo từng repo). Chia sai chỗ này thì cấu hình chuẩn hoặc quá lỏng hoặc quá cứng."
+      },
+      {
+        "k": "E",
+        "text": "Iterate the configuration based on the pilot findings and stabilize the baseline before broader rollout.",
+        "vi": "Lặp lại cấu hình theo các phát hiện khi chạy thử và ổn định cấu hình nền trước khi mở rộng.",
+        "correct": false,
+        "why": "Chỉnh cấu hình theo kết quả chạy thử chỉ làm được sau khi đã chạy thử."
+      }
+    ],
+    "answer": "A, D",
+    "tip": {
+      "trigger": "BEFORE piloting",
+      "choice": "Define · Identify",
+      "note": "**Dạng BEFORE** (đề hỏi *must be completed BEFORE X*): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**. Làm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out). Ở câu này, đáp án D **Identify** quy trình của team và ranh giới managed với project (tìm hiểu), đáp án A **Define** bộ cấu hình gốc (đặt mục tiêu). Đáp án E chỉnh theo kết quả chạy thử là sau khi chạy; C đưa sang team khác và B đào tạo cả tổ chức là việc của lúc triển khai rộng.",
+      "rules": [
+        {
+          "trigger": "BEFORE piloting",
+          "choice": "Define · Identify"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chuẩn hoá cấu hình Claude Code cho team: việc nào làm trước khi chạy thử",
+      "text": "Bạn đưa một bộ cấu hình Claude Code chuẩn cho cả team kỹ sư. Đề hỏi hai bước lập kế hoạch phải xong **trước khi** chạy thử với một nhóm nhỏ."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Triển khai cho cả đội từng bước"
+    ]
+  },
+  {
+    "n": 106,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "q": "A healthcare organization is evaluating two Claude-powered AI architectures for a clinical documentation assistant. Architecture X produces higher output quality scores but costs $0.18 per documentation session and averages 4.2 seconds per response. Architecture Y scores slightly lower on quality metrics but costs $0.09 per session and averages 2.1 seconds per response. The stated [[SLA requires responses under 3 seconds]], and the annual volume is projected at 2 million documentation sessions. Which evaluation approach correctly applies business value pillar analysis to this decision?",
+    "q_vi": "Một tổ chức y tế đang đánh giá hai kiến trúc AI chạy trên Claude cho một trợ lý ghi hồ sơ lâm sàng. Kiến trúc X cho điểm chất lượng đầu ra cao hơn nhưng tốn $0.18 mỗi phiên ghi hồ sơ và trung bình 4,2 giây mỗi câu trả lời. Kiến trúc Y điểm chất lượng thấp hơn một chút nhưng tốn $0.09 mỗi phiên và trung bình 2,1 giây mỗi câu trả lời. SLA đã nêu yêu cầu câu trả lời dưới 3 giây, và lưu lượng dự kiến mỗi năm là 2 triệu phiên ghi hồ sơ. Cách đánh giá nào áp đúng phân tích theo trụ cột giá trị kinh doanh cho quyết định này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Select Architecture Y based solely on the 50% cost reduction, since solution cost is the most important value pillar in healthcare budget-constrained environments.",
+        "vi": "Chọn kiến trúc Y chỉ dựa trên việc giảm 50% chi phí, vì solution cost là trụ cột giá trị quan trọng nhất trong môi trường y tế bị giới hạn ngân sách.",
+        "correct": false,
+        "why": "Chọn Y **chỉ dựa trên việc giảm 50% chi phí**, coi solution cost là pillar quan trọng nhất một cách tuyệt đối — bỏ qua bước xác nhận SLA và đánh giá tác động chất lượng trước khi quyết định."
+      },
+      {
+        "k": "B",
+        "text": "Select Architecture X because the higher quality scores justify the cost premium, and any SLA gap can be addressed through infrastructure optimization after deployment.",
+        "vi": "Chọn kiến trúc X vì điểm chất lượng cao hơn đáng với chi phí cao hơn, và khoảng hụt SLA có thể xử lý bằng tối ưu hạ tầng sau khi triển khai.",
+        "correct": false,
+        "why": "Chọn X dù biết **vi phạm SLA, định 'sửa sau' bằng tối ưu hạ tầng** — triển khai thứ đã biết không đạt yêu cầu cứng, đặt cược vào việc khắc phục sau khi đã live."
+      },
+      {
+        "k": "C",
+        "text": "[[Eliminate Architecture X on SLA grounds]], then evaluate Architecture Y against the efficiency and solution cost pillars by calculating annual cost difference and assessing whether the quality delta materially impacts clinical workflow productivity.",
+        "vi": "Loại kiến trúc X vì không đạt SLA, rồi đánh giá kiến trúc Y theo trụ cột efficiency và solution cost bằng cách tính chênh lệch chi phí hằng năm và xem phần chất lượng thấp hơn có ảnh hưởng đáng kể tới năng suất quy trình lâm sàng không.",
+        "correct": true,
+        "why": "**C đúng** vì phải loại Architecture X ngay từ đầu do vi phạm SLA (4,2 giây vượt ngưỡng 3 giây, là ràng buộc cứng, không thương lượng được), rồi mới đánh giá Architecture Y theo pillar efficiency và solution cost — tính chênh lệch chi phí hàng năm và xem độ chênh chất lượng có thực sự ảnh hưởng năng suất lâm sàng hay không. Đúng trình tự: áp constraint cứng trước, phân tích trade-off trên phần còn lại đủ điều kiện sau."
+      },
+      {
+        "k": "D",
+        "text": "Recommend a hybrid approach using Architecture X for complex cases and Architecture Y for routine cases, without additional analysis, since this preserves quality where it matters most.",
+        "vi": "Đề xuất cách kết hợp dùng kiến trúc X cho ca phức tạp và kiến trúc Y cho ca thường ngày, không phân tích thêm, vì cách này giữ chất lượng ở nơi quan trọng nhất.",
+        "correct": false,
+        "why": "Đề xuất hybrid **mà không phân tích gì thêm** — nhảy thẳng tới một giải pháp cụ thể (X cho case phức tạp, Y cho case thường) mà chưa hề đánh giá theo pillar nào."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "SLA requires responses under 3 seconds",
+      "choice": "Eliminate Architecture X on SLA grounds",
+      "note": "Có ràng buộc cứng (SLA) thì **loại phương án vi phạm trước, rồi mới cân đo trade-off (cost/quality)** trên phần còn lại. Đừng để một pillar, như cost ở đáp án A, lấn át việc kiểm tra ràng buộc cứng, và đừng triển khai thứ đã biết vi phạm rồi tính sửa sau (đáp án B).",
+      "rules": [
+        {
+          "trigger": "SLA requires responses under 3 seconds",
+          "choice": "Eliminate Architecture X on SLA grounds"
+        }
+      ]
+    },
+    "ask": {
+      "title": "So Architecture X/Y: áp constraint cứng (SLA) trước, rồi mới cân đo trade-off",
+      "text": "Architecture X: chất lượng cao hơn, $0.18/phiên, 4.2s. Architecture Y: chất lượng thấp hơn chút, $0.09/phiên, 2.1s. **SLA yêu cầu phản hồi dưới 3 giây**, khối lượng 2 triệu phiên/năm."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.6 · Dùng trụ cột để chọn phương án"
+    ]
+  },
+  {
+    "n": 107,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are explaining the precedence of Claude Code configuration scopes to the team. Which precedence ordering, [[from highest to lowest]], is correct?",
+    "q_vi": "Bạn đang giải thích cho nhóm thứ tự ưu tiên giữa các phạm vi cấu hình của Claude Code. Thứ tự ưu tiên nào, từ cao xuống thấp, là đúng?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Local > managed > user > command-line arguments > project",
+        "vi": "Local > managed > user > command-line arguments > project",
+        "correct": false,
+        "why": "Đặt **local trên managed** là sai: managed tồn tại chính để không ai ghi đè được. Đáp án này còn đặt CLI và project gần cuối, ngược với thứ tự thật."
+      },
+      {
+        "k": "B",
+        "text": "Project > user > managed > local > command-line arguments",
+        "vi": "Project > user > managed > local > command-line arguments",
+        "correct": false,
+        "why": "Đưa **project lên đầu** và **managed xuống giữa**, nên chính sách của tổ chức có thể bị cấu hình repo ghi đè. CLI cũng bị đặt sai xuống cuối."
+      },
+      {
+        "k": "C",
+        "text": "[[Managed > command-line arguments > local > project > user]]",
+        "vi": "Managed > command-line arguments > local > project > user",
+        "correct": true,
+        "why": "**C đúng**: thứ tự chuẩn là **Managed > command-line arguments > local > project > user**. Managed (tổ chức áp đặt tập trung) luôn thắng mọi cấu hình khác vì đúng mục đích của nó là *không ai được override*; user scope (cá nhân) đứng dưới cùng của thứ tự."
+      },
+      {
+        "k": "D",
+        "text": "User > project > local > command-line arguments > managed",
+        "vi": "User > project > local > command-line arguments > managed",
+        "correct": false,
+        "why": "Đảo ngược hoàn toàn: **user ở đầu, managed ở cuối**, đúng thứ tự ngược với thật. Nếu vậy mỗi cá nhân đều vượt được chính sách của tổ chức."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "from highest to lowest",
+      "choice": "Managed > command-line arguments > local > project > user",
+      "note": "Thứ tự giống **chuỗi chỉ huy**: **tổ chức (managed)**, rồi tới **lệnh lúc chạy (CLI)**, rồi **máy này (local)**, rồi **repo (project)**, cuối cùng là **cá nhân (user)**. Managed luôn đứng đầu, user luôn đứng cuối.",
+      "rules": [
+        {
+          "trigger": "from highest to lowest",
+          "choice": "Managed > command-line arguments > local > project > user"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Precedence config Claude Code: MANAGED cao nhất, USER thấp nhất",
+      "text": "Giải thích thứ tự ưu tiên giữa các scope cấu hình Claude Code từ cao xuống thấp — kiến thức cần nhớ chính xác, không suy luận ra được."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Năm nơi đặt cấu hình, mỗi nơi chạm tới ai"
+    ]
+  },
+  {
+    "n": 108,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": true,
+    "q": "A Claude architect is leading the discovery phase for a new AI-powered customer service solution. Which two activities are characteristic of [[structured discovery]] and requirement gathering for a Claude-based deployment? (Select two.)",
+    "q_vi": "Một kiến trúc sư Claude đang dẫn dắt giai đoạn khảo sát cho một giải pháp chăm sóc khách hàng có AI mới. Hai hoạt động nào đặc trưng cho khảo sát và thu thập yêu cầu có cấu trúc cho một triển khai chạy trên Claude? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Facilitating [[stakeholder workshops]] to surface latency, accuracy, and compliance constraints before scoping begins.",
+        "vi": "Tổ chức workshop với các bên liên quan để làm lộ ra các ràng buộc về độ trễ, độ chính xác và tuân thủ trước khi chốt phạm vi.",
+        "correct": true,
+        "why": "Tổ chức **buổi làm việc với stakeholder** để họ nói ra các ràng buộc thật: cần trả lời nhanh tới đâu, chính xác tới đâu, phải tuân thủ quy định nào. Làm việc này **trước khi** chốt phạm vi, để phạm vi dựa trên yêu cầu thật chứ không dựa trên phỏng đoán."
+      },
+      {
+        "k": "B",
+        "text": "Selecting the Claude model tier based on the architect's prior project experience before stakeholder input is collected.",
+        "vi": "Chọn model tier Claude theo kinh nghiệm dự án trước của kiến trúc sư trước khi thu ý kiến các bên liên quan.",
+        "correct": false,
+        "why": "Chọn model theo kinh nghiệm riêng của kiến trúc sư, khi chưa hỏi stakeholder, là quyết định quá sớm và bỏ qua chính việc tìm hiểu yêu cầu."
+      },
+      {
+        "k": "C",
+        "text": "Generating an initial prototype and iterating based on user reaction rather than written requirements.",
+        "vi": "Làm prototype đầu tiên và lặp theo phản ứng của người dùng thay vì yêu cầu bằng văn bản.",
+        "correct": false,
+        "why": "Làm bản mẫu rồi sửa theo phản ứng người dùng **thay cho** yêu cầu viết ra là bỏ bước ghi nhận yêu cầu, dễ trôi đi không kiểm soát."
+      },
+      {
+        "k": "D",
+        "text": "Documenting explicit [[success criteria and failure thresholds]] that will gate production deployment.",
+        "vi": "Ghi rõ tiêu chí thành công và ngưỡng thất bại sẽ làm cổng chặn cho việc lên production.",
+        "correct": true,
+        "why": "Ghi rõ bằng văn bản **thế nào là thành công** và **ngưỡng nào là thất bại**, và dùng chúng làm cửa chặn trước khi lên production. Mọi người biết từ đầu đích đến là gì, cuối dự án không phải cãi nhau chuyện đạt hay chưa."
+      },
+      {
+        "k": "E",
+        "text": "Deferring constraint documentation until the integration design phase to avoid scope creep.",
+        "vi": "Hoãn ghi tài liệu ràng buộc tới giai đoạn thiết kế tích hợp để tránh phình phạm vi.",
+        "correct": false,
+        "why": "Hoãn ghi lại các ràng buộc tới giai đoạn thiết kế tích hợp không tránh được phình phạm vi; ràng buộc tới muộn mới chính là thứ làm phạm vi phình ra."
+      }
+    ],
+    "answer": "A, D",
+    "tip": {
+      "trigger": "structured discovery",
+      "choice": "stakeholder workshops · success criteria and failure thresholds",
+      "note": "**Dạng đúng khái niệm** (đề hỏi *belong on the list, characteristic of, most directly address ...*): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như *only · single · every · mandatory · lock · immediately · without evaluation*. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, đáp án A tổ chức **stakeholder workshops** trước khi chốt phạm vi, đáp án D ghi rõ **success criteria and failure thresholds**. Đáp án B (chọn model khi chưa hỏi ai), C (bản mẫu thay cho yêu cầu viết), E (hoãn ghi ràng buộc) đều là Thiếu.",
+      "rules": [
+        {
+          "trigger": "structured discovery",
+          "choice": "stakeholder workshops · success criteria and failure thresholds"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Giai đoạn tìm hiểu yêu cầu có cấu trúc: họp với stakeholder và ghi rõ thế nào là đạt",
+      "text": "Kiến trúc sư dẫn dắt giai đoạn tìm hiểu (discovery) cho một giải pháp chăm sóc khách hàng dùng AI. Đề hỏi hai hoạt động đặc trưng của việc **tìm hiểu và thu thập yêu cầu có cấu trúc**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.1 · Khảo sát trước, thiết kế sau",
+      "Bài 6.1 · Tiêu chí thành công viết trước khi xây"
+    ]
+  },
+  {
+    "n": 109,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "type": "dropdown",
+    "multi": false,
+    "q": "You are classifying token-management tactics by where each tactic applies in the request lifecycle: \"Input Preparation,\" \"Prompt Construction,\" or \"Output Handling.\"",
+    "q_vi": "Bạn đang xếp các chiến thuật quản lý token theo vị trí mỗi chiến thuật áp dụng trong vòng đời request: \"Input Preparation\", \"Prompt Construction\" hoặc \"Output Handling\".",
+    "options": [
+      {
+        "k": "1",
+        "text": "Persist the validated [[output]] for downstream consumption and audit",
+        "vi": "Lưu đầu ra đã kiểm để các bước sau dùng và để kiểm toán.",
+        "correct": false,
+        "why": "Chữ validated cho biết kết quả đã qua bước kiểm, tức là model đã trả lời xong. Lưu kết quả đó cho bước sau dùng và để tra lại khi cần (audit) là việc làm với câu trả lời của model.",
+        "pick": "Output Handling"
+      },
+      {
+        "k": "2",
+        "text": "Order the prompt sections so [[cacheable]] content sits before per-request content",
+        "vi": "Sắp các mục của prompt để phần cache được đứng trước phần riêng của từng request.",
+        "correct": false,
+        "why": "Việc này không bớt chữ nào, chỉ đổi thứ tự: phần giống nhau ở mọi yêu cầu đặt trước, phần riêng của từng yêu cầu đặt sau, để prompt caching dùng lại được phần đầu. Đây là việc sắp xếp các phần của prompt.",
+        "pick": "Prompt Construction"
+      },
+      {
+        "k": "3",
+        "text": "[[Summarize]] prior conversation history when full history is no longer needed",
+        "vi": "Tóm tắt lịch sử hội thoại trước đó khi không còn cần toàn bộ lịch sử.",
+        "correct": false,
+        "why": "Tóm tắt làm lịch sử hội thoại ngắn lại trước khi đưa vào prompt, tức là bớt chữ của đầu vào. Có khi chính Claude viết bản tóm tắt, nhưng việc đó vẫn là chuẩn bị cho lượt gọi tiếp theo.",
+        "pick": "Input Preparation"
+      },
+      {
+        "k": "4",
+        "text": "Validate the model's structured [[output]] against the expected schema",
+        "vi": "Kiểm đầu ra có cấu trúc của model theo schema mong đợi.",
+        "correct": false,
+        "why": "Phải có câu trả lời của model thì mới có cái để so với schema, nên việc kiểm này làm sau khi model trả lời.",
+        "pick": "Output Handling"
+      },
+      {
+        "k": "5",
+        "text": "Move stable repeated content into a [[cacheable]] prefix at the head of the prompt",
+        "vi": "Chuyển phần nội dung ổn định lặp lại vào một prefix cache được ở đầu prompt.",
+        "correct": false,
+        "why": "Phần nội dung lặp lại ở mọi yêu cầu được dời lên đầu prompt để cache, chữ vẫn giữ nguyên. Đây là đổi chỗ trong prompt chứ không bớt chữ.",
+        "pick": "Prompt Construction"
+      },
+      {
+        "k": "6",
+        "text": "[[Trim]] retrieved passages to spans relevant to the user's question",
+        "vi": "Cắt các đoạn truy xuất xuống phần liên quan tới câu hỏi của người dùng.",
+        "correct": false,
+        "why": "Dễ chọn nhầm Prompt Construction vì các đoạn này rồi sẽ nằm trong prompt. Nhưng việc ở đây là cắt bớt chữ của các đoạn tìm được, làm trước khi ghép chúng vào prompt.",
+        "pick": "Input Preparation"
+      }
+    ],
+    "answer": "1: Output Handling · 2: Prompt Construction · 3: Input Preparation · 4: Output Handling · 5: Prompt Construction · 6: Input Preparation",
+    "tip": {
+      "trigger": "Summarize · Trim | cacheable | output",
+      "choice": "Gặp Summarize · Trim thì chọn Input Preparation; Gặp cacheable thì chọn Prompt Construction; Gặp output thì chọn Output Handling",
+      "note": "Hai giai đoạn đầu dễ lẫn vì đều làm trước khi gọi model. Làm **bớt chữ** của dữ liệu (tóm tắt, cắt đoạn) là Input Preparation; **giữ nguyên chữ, chỉ đổi chỗ** để cache là Prompt Construction.",
+      "rules": [
+        {
+          "trigger": "Summarize · Trim",
+          "choice": "Gặp Summarize · Trim thì chọn Input Preparation; Gặp cacheable thì chọn Prompt Construction; Gặp output thì chọn Output Handling"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Xếp các cách quản lý token vào đúng giai đoạn của một yêu cầu",
+      "text": "Một yêu cầu gửi cho Claude đi qua ba giai đoạn: làm gọn dữ liệu sẽ đưa vào (**Input Preparation**), sắp các phần thành prompt (**Prompt Construction**), rồi xử lý câu trả lời model gửi về (**Output Handling**). Đề đưa 6 việc, bạn chọn mỗi việc thuộc giai đoạn nào."
+    },
+    "choices": [
+      "Output Handling",
+      "Prompt Construction",
+      "Input Preparation"
+    ],
+    "lessons": [
+      "Bài 2.4 · Giảm token ở từng giai đoạn"
+    ]
+  },
+  {
+    "n": 110,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "A customer support team has proposed delegating customer refund decisions to a Claudedriven workflow with no human review for refunds [[under 50 USD]]. The team's reasoning is that [[small refunds are low-risk]] and human review would erase the efficiency gain. Which Delegation-competency principle should guide your response?",
+    "q_vi": "Một nhóm hỗ trợ khách hàng đề xuất giao quyết định hoàn tiền cho một quy trình do Claude điều khiển, không cần người review với khoản hoàn dưới 50 USD. Lý do của nhóm là khoản hoàn nhỏ thì rủi ro thấp, và người review sẽ xoá mất lợi ích về hiệu suất. Nguyên tắc nào thuộc năng lực Delegation nên định hướng phản hồi của bạn?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Delegation should always include human review on every decision the workflow produces.",
+        "vi": "Giao việc luôn phải có người review ở mọi quyết định mà quy trình đưa ra.",
+        "correct": false,
+        "why": "Yêu cầu **luôn luôn** có review con người cho **mọi** quyết định là tuyệt đối hoá — xoá bỏ hoàn toàn lợi ích của việc delegation, không phải một nguyên tắc cân bằng."
+      },
+      {
+        "k": "B",
+        "text": "Delegation scope should reflect the [[type of risk involved]], [[not the transaction size alone]].",
+        "vi": "Phạm vi giao việc nên phản ánh loại rủi ro liên quan, không chỉ dựa vào giá trị giao dịch.",
+        "correct": true,
+        "why": "**B đúng** vì phạm vi delegation nên dựa trên LOẠI rủi ro liên quan, không chỉ dựa trên quy mô giao dịch. Một khoản hoàn nhỏ vẫn có thể là gian lận lặp lại, nên số tiền không phải thước đo đáng tin cho rủi ro."
+      },
+      {
+        "k": "C",
+        "text": "Delegation scope should be set primarily by maximizing efficiency gains across the workflow.",
+        "vi": "Phạm vi giao việc nên được đặt chủ yếu để tối đa lợi ích hiệu suất trên toàn quy trình.",
+        "correct": false,
+        "why": "Đặt **hiệu quả làm tiêu chí chính** để quyết định phạm vi delegation là sai trọng tâm — hiệu quả là kết quả mong muốn, không phải cơ sở để đánh giá nên delegate tới đâu."
+      },
+      {
+        "k": "D",
+        "text": "Delegation should be avoided entirely wherever financial transactions occur in the workflow.",
+        "vi": "Nên tránh giao việc hoàn toàn ở bất kỳ chỗ nào có giao dịch tài chính trong quy trình.",
+        "correct": false,
+        "why": "Tránh delegation **hoàn toàn** ở bất kỳ đâu có giao dịch tài chính là cực đoan theo hướng ngược lại — vẫn không cân nhắc loại rủi ro cụ thể, mắc đúng lỗi của đề xuất ban đầu nhưng đi ngược hướng."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "under 50 USD · small refunds are low-risk",
+      "choice": "type of risk involved · not the transaction size alone",
+      "note": "Delegation đúng = **dựa vào loại rủi ro, không dựa vào số tiền**. Tuyệt đối hoá theo hướng nào (luôn review mọi thứ - A, hay không bao giờ delegate tài chính - D) đều bỏ qua việc đánh giá rủi ro thực chất.",
+      "rules": [
+        {
+          "trigger": "under 50 USD · small refunds are low-risk",
+          "choice": "type of risk involved · not the transaction size alone"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Delegation đúng: dựa vào LOẠI rủi ro, không dựa vào số tiền",
+      "text": "Đề xuất bỏ qua review cho hoàn tiền dưới 50 USD với lý do 'nhỏ thì ít rủi ro, review sẽ làm mất lợi ích hiệu quả' — cần nguyên tắc Delegation đúng để phản biện."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.3 · Giao việc theo loại rủi ro, không theo số tiền"
+    ]
+  },
+  {
+    "n": 111,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are identifying inefficiency in a Claude Code workflow where each engineer [[manually re-explains]] the project's conventions and architecture in [[every session]]. Which adjustment most directly removes this inefficiency?",
+    "q_vi": "Bạn đang tìm chỗ kém hiệu quả trong một quy trình Claude Code mà mỗi kỹ sư phải tự giải thích lại quy ước và kiến trúc của dự án ở mọi phiên. Điều chỉnh nào xoá bỏ trực tiếp nhất chỗ kém hiệu quả này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Forbid the use of Claude Code on the project entirely to avoid the session-initialization overhead, accepting that the team loses all AI-assisted development productivity for this codebase.",
+        "vi": "Cấm hẳn dùng Claude Code trong dự án để tránh chi phí khởi tạo phiên, chấp nhận nhóm mất toàn bộ năng suất phát triển có AI hỗ trợ trên codebase này.",
+        "correct": false,
+        "why": "**Cấm dùng Claude Code hoàn toàn** để né overhead khởi tạo — mất luôn mọi lợi ích năng suất mà công cụ mang lại, phản tác dụng."
+      },
+      {
+        "k": "B",
+        "text": "[[Capture the project's conventions]] and architecture in a project-scoped [[CLAUDE.md]] (or equivalent persistent project-context file) committed to the repository, so each session loads it automatically.",
+        "vi": "Ghi quy ước và kiến trúc của dự án vào một file CLAUDE.md phạm vi project (hoặc file context dự án lâu dài tương đương) commit vào repository, để mỗi phiên tự nạp.",
+        "correct": true,
+        "why": "**B đúng**: ghi convention và kiến trúc vào một file **CLAUDE.md** ở project-scope, commit vào repo, để mỗi phiên tự động nạp — chuyển kiến thức từ 'phải gõ lại mỗi lần' sang 'có sẵn, nạp tự động', giải quyết đúng gốc rễ của sự lặp lại."
+      },
+      {
+        "k": "C",
+        "text": "Tell each engineer to retype the project conventions and architecture context more quickly at the start of each session, reducing time lost without eliminating the repeated manual effort.",
+        "vi": "Bảo mỗi kỹ sư gõ lại quy ước và context kiến trúc của dự án nhanh hơn ở đầu mỗi phiên, giảm thời gian mất đi mà không bỏ được công sức tay lặp lại.",
+        "correct": false,
+        "why": "Bảo kỹ sư **gõ nhanh hơn** mỗi lần — chỉ giảm thời gian mất đi, **không loại bỏ** được việc phải lặp lại thao tác thủ công."
+      },
+      {
+        "k": "D",
+        "text": "Remove all documented project conventions and architectural standards so engineers have nothing to re- explain at session start, accepting the loss of consistency and shared coding standards.",
+        "vi": "Bỏ mọi quy ước và chuẩn kiến trúc đã ghi của dự án để kỹ sư không còn gì phải giải thích lại lúc đầu phiên, chấp nhận mất tính nhất quán và chuẩn code chung.",
+        "correct": false,
+        "why": "**Xoá hết tài liệu convention** để không còn gì phải giải thích lại — mất luôn tính nhất quán và chuẩn coding chung, giải quyết triệu chứng bằng cách xoá luôn giá trị cốt lõi."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "manually re-explains · every session",
+      "choice": "Capture the project's conventions · CLAUDE.md",
+      "note": "Lặp lại giải thích mỗi phiên thì **đưa vào file context bền vững, tự nạp (CLAUDE.md)**. Gõ nhanh hơn (đáp án C) chỉ giảm nhẹ triệu chứng; cấm dùng tool (đáp án A) hay xoá tài liệu (đáp án D) đều mất nhiều hơn được.",
+      "rules": [
+        {
+          "trigger": "manually re-explains · every session",
+          "choice": "Capture the project's conventions · CLAUDE.md"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Hết lặp lại giải thích convention mỗi phiên: dùng CLAUDE.md persistent",
+      "text": "Mỗi kỹ sư phải tự giải thích lại convention/kiến trúc project trong mọi phiên Claude Code — cần điều chỉnh loại bỏ đúng sự lặp lại này."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Thứ bắt buộc thì đưa vào managed settings"
+    ]
+  },
+  {
+    "n": 112,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": true,
+    "q": "The compliance team has authored a regulatory disclosure procedure that [[must be applied identically]] across customer service, sales, and onboarding workflows. The procedure changes when regulators issue updates, currently [[four to six times per year]]. You are designing how the procedure will be packaged for use by Claude across all three workflows. Which two design decisions should you include? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Nhóm tuân thủ đã soạn một quy trình công bố thông tin theo quy định, phải được áp giống hệt nhau trên các quy trình chăm sóc khách hàng, bán hàng và onboarding. Quy trình thay đổi khi cơ quan quản lý ra bản cập nhật, hiện bốn tới sáu lần mỗi năm. Bạn đang thiết kế cách đóng gói quy trình này để Claude dùng trên cả ba quy trình làm việc. Hai quyết định thiết kế nào bạn nên đưa vào? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Package the procedure as a Claude [[Skill owned directly by the compliance team]].",
+        "vi": "Đóng gói quy trình thành một Claude Skill do chính nhóm tuân thủ sở hữu.",
+        "correct": true,
+        "why": "Đóng gói quy trình thành một **Claude Skill** do chính bộ phận tuân thủ quản lý. Quy trình đổi 4–6 lần mỗi năm, mỗi lần đúng người hiểu quy định sửa ở đúng một chỗ, không phải đi nhờ từng bộ phận khác sửa."
+      },
+      {
+        "k": "B",
+        "text": "Embed the procedure text into each workflow's system prompt at integration time.",
+        "vi": "Nhúng chữ của quy trình vào system prompt của từng quy trình làm việc lúc tích hợp.",
+        "correct": false,
+        "why": "Chép thẳng nội dung quy trình vào system prompt của từng bộ phận tạo ra ba bản sao. Mỗi lần quy định đổi phải sửa ba nơi, sớm muộn sẽ lệch nhau."
+      },
+      {
+        "k": "C",
+        "text": "Store the procedure in a shared retrieval corpus accessed by all three workflows.",
+        "vi": "Lưu quy trình trong một kho truy xuất dùng chung cho cả ba quy trình làm việc.",
+        "correct": false,
+        "why": "Để trong kho tài liệu truy xuất chung thì không bảo đảm mọi nơi lấy đúng và đủ bản quy trình duy nhất cho một quy trình bắt buộc phải làm giống hệt."
+      },
+      {
+        "k": "D",
+        "text": "Have each workflow team rewrite the procedure for its own context.",
+        "vi": "Cho mỗi nhóm phụ trách quy trình tự viết lại quy trình theo bối cảnh của mình.",
+        "correct": false,
+        "why": "Mỗi đội tự viết lại theo cách của mình thì chắc chắn ba bản khác nhau, ngược thẳng với yêu cầu giống hệt."
+      },
+      {
+        "k": "E",
+        "text": "[[Reference the same Claude Skill]] from all three workflow integrations.",
+        "vi": "Tham chiếu cùng một Claude Skill từ cả ba tích hợp quy trình làm việc.",
+        "correct": true,
+        "why": "Cả ba bộ phận **cùng tham chiếu một Skill** đó, không ai giữ bản sao riêng. Sửa Skill một lần thì cả ba nơi dùng ngay bản mới, nên luôn giống hệt nhau."
+      }
+    ],
+    "answer": "A, E",
+    "tip": {
+      "trigger": "four to six times per year · must be applied identically",
+      "choice": "Skill owned directly by the compliance team · Reference the same Claude Skill",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra. Ở câu này, đề nói quy trình đổi **four to six times per year** nên đáp án A giao cho **Skill owned directly by the compliance team** để sửa ở một chỗ; đề nói **must be applied identically** nên đáp án E cho cả ba nơi **Reference the same Claude Skill**. Đáp án B, D tạo bản sao dễ lệch; C truy xuất có thể lấy thiếu.",
+      "rules": [
+        {
+          "trigger": "four to six times per year · must be applied identically",
+          "choice": "Skill owned directly by the compliance team · Reference the same Claude Skill"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Quy trình tuân thủ dùng chung cho ba bộ phận, đổi 4–6 lần mỗi năm: đóng gói thành một Skill",
+      "text": "Bộ phận tuân thủ viết một quy trình công bố thông tin theo quy định. Quy trình **phải áp dụng giống hệt nhau** ở chăm sóc khách hàng, bán hàng và onboarding, và **thay đổi 4–6 lần mỗi năm** theo cập nhật của cơ quan quản lý. Đề hỏi hai quyết định khi đóng gói quy trình cho Claude dùng ở cả ba nơi."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.5 · Agent Skills: quy trình dùng chung nhiều nơi"
+    ]
+  },
+  {
+    "n": 113,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": true,
+    "q": "You are compiling [[continuity practices]] that span the deployment lifecycle. Which two practices belong on the list? (Select two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang tổng hợp các cách làm giữ tính liên tục suốt vòng đời triển khai. Hai cách làm nào thuộc danh sách? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Maintain a stakeholder register and notify the listed parties at every phase transition event.",
+        "vi": "Duy trì một danh sách các bên liên quan và báo cho họ ở mọi sự kiện chuyển giai đoạn.",
+        "correct": false,
+        "why": "Giữ danh sách stakeholder và báo cho họ ở mỗi lần chuyển giai đoạn là việc giao tiếp, quản lý dự án, không giữ cho kiến thức hay công cụ được dùng tiếp."
+      },
+      {
+        "k": "B",
+        "text": "[[Carry the evaluation framework]] and reference set forward across iterations rather than rebuilding each time.",
+        "vi": "Mang khung đánh giá và tập tham chiếu qua các vòng lặp thay vì dựng lại mỗi lần.",
+        "correct": true,
+        "why": "Bộ đánh giá và tập câu hỏi tham chiếu tốn nhiều công dựng. **Mang chúng sang các vòng sau** thay vì dựng lại mỗi lần thì vừa đỡ công, vừa so được kết quả vòng này với vòng trước trên cùng một thước đo."
+      },
+      {
+        "k": "C",
+        "text": "Archive every phase deliverable in long-term storage to preserve a record of what was produced.",
+        "vi": "Lưu trữ lâu dài mọi sản phẩm của từng giai đoạn để giữ bản ghi những gì đã làm ra.",
+        "correct": false,
+        "why": "Cất mọi sản phẩm vào kho lưu trữ dài hạn chỉ là giữ hồ sơ. Lưu lại khác với mang ra dùng tiếp ở giai đoạn sau."
+      },
+      {
+        "k": "D",
+        "text": "[[Capture lessons learned]] at the end of each phase and surface them as inputs to the next phase.",
+        "vi": "Ghi lại bài học kinh nghiệm cuối mỗi giai đoạn và đưa chúng làm đầu vào cho giai đoạn sau.",
+        "correct": true,
+        "why": "Cuối mỗi giai đoạn, **ghi lại bài học** (cái gì chạy tốt, cái gì vấp) và đưa vào làm đầu vào cho giai đoạn sau. Kinh nghiệm không mất đi khi người hay đội thay đổi."
+      },
+      {
+        "k": "E",
+        "text": "Lock decisions made in early phases to prevent revisiting them as later phases begin.",
+        "vi": "Khoá các quyết định ở giai đoạn đầu để không xem lại khi các giai đoạn sau bắt đầu.",
+        "correct": false,
+        "why": "Khoá cứng các quyết định ban đầu, cấm xem lại, là cực đoan: điều kiện đổi thì quyết định cũ cần được xem lại."
+      }
+    ],
+    "answer": "B, D",
+    "tip": {
+      "trigger": "continuity practices",
+      "choice": "Carry the evaluation framework · Capture lessons learned",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, đáp án B **Carry the evaluation framework** sang vòng sau, đáp án D **Capture lessons learned** làm đầu vào cho giai đoạn sau. Đáp án A (báo stakeholder), C (cất vào kho khác với dùng lại) là Lạc; E là Cực (lock quyết định).",
+      "rules": [
+        {
+          "trigger": "continuity practices",
+          "choice": "Carry the evaluation framework · Capture lessons learned"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Giữ tính liên tục qua các giai đoạn: mang bộ đánh giá đi tiếp, ghi bài học cho giai đoạn sau",
+      "text": "Bạn liệt kê các thực hành giữ **tính liên tục xuyên suốt vòng đời triển khai**. Đề hỏi hai thực hành giúp những gì làm được ở giai đoạn trước tiếp tục được dùng ở giai đoạn sau."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.5 · Mỗi giai đoạn giao một thứ cho giai đoạn sau"
+    ]
+  },
+  {
+    "n": 114,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": false,
+    "q": "You are comparing two configurations for an internal compliance Q & A assistant. Configuration X reduces top-k retrieval and uses a lighter model, lowering p95 latency by 38 percent while producing a measured 2 percent reduction in the accuracy benchmark. Configuration Y retains the existing top-k retrieval setting and heavier model, with unchanged p95 latency and no measurable change in accuracy. The deployment's stated priorities are [[accuracy first and latency second]]. Which configuration is the better recommendation?",
+    "q_vi": "Bạn đang so sánh hai cấu hình cho một trợ lý Q&A nội bộ về compliance (tuân thủ quy định). Cấu hình X giảm top-k retrieval và dùng model nhẹ hơn, làm p95 latency giảm 38% nhưng độ chính xác trên benchmark giảm 2%, đo được hẳn hoi. Cấu hình Y giữ nguyên top-k và model nặng hơn: p95 latency không đổi, độ chính xác cũng không thay đổi đáng kể. Thứ tự ưu tiên đã nêu của deployment là chính xác trước, độ trễ sau. Nên khuyến nghị cấu hình nào?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Configuration X, because the 2 percent accuracy reduction falls within normal benchmark variance and is not a meaningful regression.",
+        "vi": "Cấu hình X, vì mức giảm 2% nằm trong dao động bình thường của benchmark và không phải là thụt lùi đáng kể.",
+        "correct": false,
+        "why": "Muốn coi 2% là dao động bình thường thì phải có bằng chứng, mà đề không đưa ra. Đề nói đây là mức giảm **đo được**, nên không thể tự cho qua."
+      },
+      {
+        "k": "B",
+        "text": "[[Configuration Y]], because the deployment's stated priority is accuracy first, and Configuration X produces a measured reduction in accuracy.",
+        "vi": "Cấu hình Y, vì ưu tiên đã nêu của deployment là chính xác trước, và cấu hình X làm độ chính xác giảm một mức đo được.",
+        "correct": true,
+        "why": "Thứ tự ưu tiên đã ghi rõ, chính xác đứng trước. X làm độ chính xác giảm một mức đo được, nên dù nhanh hơn nhiều vẫn thua ở tiêu chí quan trọng nhất. Y giữ nguyên độ chính xác; độ trễ không cải thiện nhưng đó chỉ là tiêu chí thứ hai."
+      },
+      {
+        "k": "C",
+        "text": "Configuration X, because lower latency generally matters more than accuracy, regardless of the deployment's stated priorities.",
+        "vi": "Cấu hình X, vì độ trễ thấp nói chung quan trọng hơn độ chính xác, bất kể ưu tiên đã nêu của deployment.",
+        "correct": false,
+        "why": "Đáp án này đặt một quy tắc chung (độ trễ quan trọng hơn) lên trên thứ tự ưu tiên mà chính deployment này đã ghi. Quyết định kiến trúc phải theo tiêu chí của từng hệ thống."
+      },
+      {
+        "k": "D",
+        "text": "Configuration X, because a 38 percent latency improvement outweighs a 2 percent accuracy reduction as a general rule across compliance deployments.",
+        "vi": "Cấu hình X, vì cải thiện 38% độ trễ bù được mức giảm 2% độ chính xác, như một quy tắc chung cho mọi deployment về compliance.",
+        "correct": false,
+        "why": "Đề không nêu quy tắc chung nào cho rằng nhanh hơn 38% thì bù được 2% độ chính xác. Deployment này đã đặt độ chính xác lên đầu, nên đánh đổi này đi ngược yêu cầu."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "accuracy first and latency second",
+      "choice": "Configuration Y",
+      "note": "Đề đã ghi thứ tự ưu tiên thì làm đúng thứ tự đó: tiêu chí số một bị giảm là loại, dù tiêu chí số hai tốt lên bao nhiêu. Đáp án B là cấu hình duy nhất **giữ nguyên độ chính xác**; ba đáp án còn lại đều tìm cách xem nhẹ mức giảm 2%.",
+      "rules": [
+        {
+          "trigger": "accuracy first and latency second",
+          "choice": "Configuration Y"
+        }
+      ]
+    },
+    "ask": {
+      "title": "So hai cấu hình: làm đúng thứ tự ưu tiên đề đã nêu",
+      "text": "Trợ lý Q&A về compliance (tuân thủ quy định) có hai cấu hình. X nhanh hơn 38% nhưng độ chính xác **giảm 2%, đo được hẳn hoi**; Y giữ nguyên cả hai. Đề nói rõ thứ tự ưu tiên: **chính xác trước, độ trễ sau**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.3 · Chứng minh cấu hình bằng số"
+    ]
+  },
+  {
+    "n": 115,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "You are designing the prompt for a ticket-triage classifier with thirty well-defined categories and [[clear category descriptions]] in the prompt. Which technique is most appropriate as the starting point?",
+    "q_vi": "Bạn đang thiết kế prompt cho một bộ phân loại ticket có 30 nhãn được định nghĩa rõ, mô tả từng nhãn có sẵn trong prompt. Kỹ thuật nào phù hợp nhất để làm điểm xuất phát?",
+    "options": [
+      {
+        "k": "A",
+        "text": "a prompt that demands the model invent new categories when the supplied ones do not fit",
+        "vi": "một prompt buộc model tự đặt nhãn mới khi các nhãn có sẵn không khớp",
+        "correct": false,
+        "why": "Bắt model tự đặt nhãn mới làm tập nhãn không còn cố định, kết quả không gom về được 30 nhãn đã định."
+      },
+      {
+        "k": "B",
+        "text": "a chain-of-thought prompt for a routing decision that does not require multi-step reasoning",
+        "vi": "một prompt chain-of-thought cho quyết định routing vốn không cần suy luận nhiều bước",
+        "correct": false,
+        "why": "Chain-of-thought hợp với việc cần suy luận nhiều bước. Đề nói đây là quyết định routing (chọn nơi chuyển ticket tới) không cần suy luận nhiều bước, nên thêm nó là thừa."
+      },
+      {
+        "k": "C",
+        "text": "a [[zero-shot]] prompt that specifies the categories with their descriptions and the required output format",
+        "vi": "một prompt zero-shot nêu các nhãn kèm mô tả và định dạng đầu ra bắt buộc",
+        "correct": true,
+        "why": "Khi nhãn đã cố định và có mô tả rõ, model đã có đủ thông tin để phân loại. Một prompt zero-shot liệt kê nhãn kèm mô tả và quy định định dạng đầu ra là điểm xuất phát gọn nhất. Đo thấy chưa đạt thì mới thêm ví dụ (few-shot) hay kỹ thuật khác."
+      },
+      {
+        "k": "D",
+        "text": "a prompt with no category descriptions, expecting the model to infer the category set",
+        "vi": "một prompt không có mô tả nhãn, để model tự suy ra tập nhãn",
+        "correct": false,
+        "why": "Bỏ mô tả nhãn là bỏ đi đúng thông tin giúp model biết mỗi nhãn nghĩa là gì, rồi bắt nó tự đoán ý người viết."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "clear category descriptions",
+      "choice": "zero-shot",
+      "note": "Nhãn đã rõ, mô tả đã có thì bắt đầu bằng cách đơn giản nhất: **zero-shot** kèm nhãn, mô tả và định dạng đầu ra (đáp án C). Thêm chain-of-thought cho việc không cần suy luận (đáp án B), tự đặt nhãn mới (đáp án A) hay bỏ mô tả nhãn (đáp án D) đều đi ngược hướng.",
+      "rules": [
+        {
+          "trigger": "clear category descriptions",
+          "choice": "zero-shot"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Bộ phân loại có nhãn rõ ràng: bắt đầu bằng zero-shot",
+      "text": "Bạn viết prompt cho bộ phân loại ticket với **30 nhãn đã định nghĩa rõ**, mô tả từng nhãn đã có trong prompt. Đề hỏi kỹ thuật nên dùng **làm điểm xuất phát**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.3 · Zero-shot: bắt đầu bằng chỉ dẫn rõ"
+    ]
+  },
+  {
+    "n": 116,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": true,
+    "q": "You are running a discovery engagement for a new Claude-based capability and must complete the requirements-gathering steps [[before validating]] with stakeholders. Which two steps must be completed BEFORE validating the captured requirements with stakeholders? (Select two.) Each correct answer presents part of the solution.",
+    "q_vi": "Bạn đang làm discovery (khảo sát yêu cầu) cho một tính năng mới dùng Claude và phải xong các bước thu thập yêu cầu trước khi xác nhận với stakeholder. Hai bước nào phải hoàn thành TRƯỚC KHI xác nhận các yêu cầu đã ghi lại với stakeholder? (Chọn hai.) Mỗi đáp án đúng là một phần của lời giải.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Produce architecture decision records that capture the rationale for major design choices.",
+        "vi": "Lập các architecture decision record (ADR) ghi lý do của các lựa chọn thiết kế lớn.",
+        "correct": false,
+        "why": "ADR ghi lý do của các quyết định thiết kế lớn. Lúc này chưa có thiết kế nào nên chưa có gì để ghi."
+      },
+      {
+        "k": "B",
+        "text": "[[Capture the business goals]], success criteria, and the in-scope user population for the engagement.",
+        "vi": "Ghi lại mục tiêu kinh doanh, tiêu chí thành công và nhóm người dùng trong phạm vi của đợt discovery.",
+        "correct": true,
+        "why": "Muốn có gì để xác nhận thì trước hết phải **ghi lại mục tiêu kinh doanh, tiêu chí thành công và nhóm người dùng** trong phạm vi. Phần này trả lời tính năng làm để làm gì, cho ai, thế nào là đạt."
+      },
+      {
+        "k": "C",
+        "text": "Document the consolidated requirements with traceability to the source stakeholder for each item.",
+        "vi": "Viết bản tổng hợp yêu cầu có traceability (truy vết) từng mục về stakeholder đã nêu nó.",
+        "correct": false,
+        "why": "Đề gọi các bước cần làm là **requirements-gathering steps**, tức các bước đi thu thập. Đáp án C là bước ghi lại và hoàn thiện tài liệu: bản tổng hợp có traceability (truy vết tới từng stakeholder) được chốt sau khi họ đã xác nhận nội dung. Đây là đáp án dễ nhầm nhất, vì muốn xác nhận thì cũng cần một bản nháp; nhưng hai việc phải có trước tiên vẫn là mục tiêu và ràng buộc."
+      },
+      {
+        "k": "D",
+        "text": "Schedule the rollout milestones and dependencies with engineering and product partners.",
+        "vi": "Lên lịch các mốc rollout và các phụ thuộc cùng đối tác kỹ thuật và sản phẩm.",
+        "correct": false,
+        "why": "Lên lịch các mốc rollout cần yêu cầu và kiến trúc đã được duyệt, nên còn ở rất xa phía sau."
+      },
+      {
+        "k": "E",
+        "text": "[[Identify the non-functional]] constraints covering latency, cost, audit, data sensitivity, and regulatory needs.",
+        "vi": "Xác định các non-functional constraint (ràng buộc phi chức năng) về độ trễ, chi phí, audit, độ nhạy dữ liệu và quy định.",
+        "correct": true,
+        "why": "Đi cùng mục tiêu là các **non-functional constraint** (ràng buộc phi chức năng): độ trễ, chi phí, audit, độ nhạy của dữ liệu, quy định pháp lý. Stakeholder phải thấy và xác nhận chúng cùng lúc với mục tiêu."
+      }
+    ],
+    "answer": "B, E",
+    "tip": {
+      "trigger": "BEFORE validating",
+      "choice": "Capture the business goals · Identify the non-functional",
+      "note": "**Dạng BEFORE** (đề hỏi must be completed BEFORE X): chọn hai bước làm được ngay khi X chưa diễn ra, chưa có kết quả gì. Nhìn **động từ đầu câu**. Làm trước X: **tìm hiểu** (Identify · Enumerate · Inventory), **đặt mục tiêu** (Define · Determine · Outline), **chuẩn bị** (Curate · Choose · Configure). Làm sau X: **đọc kết quả** (Analyze · Score · Review), **chỉnh sửa** (Tune · Iterate · Decide), **chốt lại** (Document · Sign off · Roll out). Ở câu này, đáp án B **Capture** mục tiêu, tiêu chí thành công, người dùng và đáp án E **Identify** non-functional constraint đều là tìm hiểu. Đáp án A viết ADR cần có thiết kế, đáp án C **Document** bản tổng hợp chỉ ghi lại cái đã thu thập, đáp án D **Schedule** rollout còn xa hơn nữa.",
+      "rules": [
+        {
+          "trigger": "BEFORE validating",
+          "choice": "Capture the business goals · Identify the non-functional"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Discovery: hai việc làm trước khi đem yêu cầu đi xác nhận",
+      "text": "Bạn đang làm discovery (khảo sát yêu cầu) cho một tính năng mới dùng Claude. Đề hỏi hai bước phải xong **trước khi** đem các yêu cầu đã ghi lại đi xác nhận với stakeholder."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.1 · Khảo sát trước, thiết kế sau"
+    ]
+  },
+  {
+    "n": 117,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "You are designing a [[human-in-the-loop validation workflow]]. Which two design elements belong in the workflow? (Choose two.) Each correct answer presents a complete solution.",
+    "q_vi": "Bạn đang thiết kế một quy trình xác nhận human-in-the-loop (có người duyệt). Hai thành phần thiết kế nào nên có trong quy trình? (Chọn hai.) Mỗi đáp án đúng là một lời giải hoàn chỉnh.",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[capture of reviewer decisions]] as labeled data that feeds the evaluation set over time",
+        "vi": "lưu quyết định của người duyệt thành labeled data (dữ liệu đã gắn nhãn), bổ sung dần vào evaluation set",
+        "correct": true,
+        "why": "Mỗi lần người duyệt sửa hay chấp nhận một kết quả là có thêm một mẫu đã gắn nhãn. **Lưu quyết định đó làm labeled data** và bổ sung vào evaluation set (bộ dữ liệu đánh giá) thì bộ đánh giá ngày càng sát thực tế."
+      },
+      {
+        "k": "B",
+        "text": "mandatory reviewer agreement with the model output to maintain consistent reviewer-model alignment",
+        "vi": "bắt người duyệt luôn đồng ý với kết quả của model để người duyệt và model nhất quán",
+        "correct": false,
+        "why": "Bắt người duyệt luôn đồng ý với model là bỏ luôn lý do có người duyệt. Người duyệt phải được quyền bác bỏ thì mới bắt được lỗi."
+      },
+      {
+        "k": "C",
+        "text": "aggregate reviewer throughput metrics published weekly to leadership for headcount planning",
+        "vi": "số liệu throughput tổng hợp của người duyệt, gửi lãnh đạo hằng tuần để lên kế hoạch nhân sự",
+        "correct": false,
+        "why": "Số lượt duyệt mỗi tuần dùng cho kế hoạch nhân sự, không giúp kiểm chất lượng đầu ra. Đây là chuyện quản trị, lạc khỏi câu hỏi."
+      },
+      {
+        "k": "D",
+        "text": "uniform sampling of all model outputs to give every request an equal chance of review",
+        "vi": "lấy mẫu đều trên mọi đầu ra để yêu cầu nào cũng có cơ hội được duyệt như nhau",
+        "correct": false,
+        "why": "Lấy mẫu đều thì ca rủi ro cao cũng chỉ có cơ hội được duyệt như ca thường, nên dễ lọt đúng những ca cần người xem nhất."
+      },
+      {
+        "k": "E",
+        "text": "[[risk-stratified sampling]] that concentrates reviewer attention on low-confidence and high-impact outputs",
+        "vi": "risk-stratified sampling (lấy mẫu theo mức rủi ro), dồn sự chú ý của người duyệt vào đầu ra độ tin cậy thấp và ảnh hưởng lớn",
+        "correct": true,
+        "why": "Người duyệt có hạn, nên dồn họ vào chỗ dễ sai và sai thì hậu quả lớn: **risk-stratified sampling** (lấy mẫu theo mức rủi ro), ưu tiên đầu ra có độ tin cậy thấp hoặc ảnh hưởng lớn. Công sức duyệt nhờ vậy đặt đúng chỗ."
+      }
+    ],
+    "answer": "A, E",
+    "tip": {
+      "trigger": "human-in-the-loop validation workflow",
+      "choice": "capture of reviewer decisions · risk-stratified sampling",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, đáp án A lưu **reviewer decisions as labeled data** và đáp án E **risk-stratified sampling** là hai việc làm cho người duyệt có giá trị. Đáp án B là Cực (mandatory đồng ý với model), đáp án C là Lạc (số liệu cho kế hoạch nhân sự), đáp án D là Thiếu (lấy mẫu đều, không ưu tiên ca rủi ro).",
+      "rules": [
+        {
+          "trigger": "human-in-the-loop validation workflow",
+          "choice": "capture of reviewer decisions · risk-stratified sampling"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Quy trình human-in-the-loop: risk-stratified sampling và biến quyết định người duyệt thành dữ liệu",
+      "text": "Bạn thiết kế quy trình **human-in-the-loop** (có người duyệt đầu ra của model). Đề hỏi hai thành phần nên có trong quy trình."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.3 · Lấy mẫu khi không duyệt hết"
+    ]
+  },
+  {
+    "n": 118,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "You are defining [[where human review must remain]] in a planned automated pipeline. Which placement reflects sound human-in-the-loop design?",
+    "q_vi": "Bạn đang xác định những chỗ phải giữ người duyệt trong một pipeline tự động sắp xây. Cách đặt nào thể hiện thiết kế human-in-the-loop hợp lý?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Place a human reviewer only after the irreversible action has already executed, making the review a post-hoc audit rather than a meaningful pre-action check or approval gate.",
+        "vi": "Đặt người duyệt chỉ sau khi hành động không đảo ngược được đã chạy xong, biến việc duyệt thành audit sau sự việc thay vì một bước kiểm hay approval gate (cổng duyệt) thật sự trước khi hành động.",
+        "correct": false,
+        "why": "Duyệt sau khi hành động đã chạy chỉ là audit lại, không ngăn được thiệt hại, vì hành động đó không đảo ngược được."
+      },
+      {
+        "k": "B",
+        "text": "Place a human reviewer [[between the model's output]] and any high-impact, irreversible action, with explicit criteria for what the reviewer must check before approval.",
+        "vi": "Đặt người duyệt giữa đầu ra của model và mọi hành động ảnh hưởng lớn, không đảo ngược được, kèm tiêu chí rõ ràng về những gì người duyệt phải kiểm trước khi duyệt.",
+        "correct": true,
+        "why": "Người duyệt chỉ có tác dụng khi còn kịp chặn. Vì vậy đặt người duyệt **giữa đầu ra của model và mọi hành động ảnh hưởng lớn, không đảo ngược được**, kèm tiêu chí rõ ràng về những gì phải kiểm trước khi duyệt. Thiếu tiêu chí thì bước duyệt chỉ là hình thức."
+      },
+      {
+        "k": "C",
+        "text": "Place a human reviewer in the loop for a randomly selected sample of requests, without defining criteria for what the reviewer should check or which output categories require mandatory review.",
+        "vi": "Đặt người duyệt cho một mẫu yêu cầu chọn ngẫu nhiên, không định nghĩa tiêu chí người duyệt cần kiểm hay loại đầu ra nào bắt buộc phải duyệt.",
+        "correct": false,
+        "why": "Lấy mẫu ngẫu nhiên giúp theo dõi chất lượng, nhưng không đảm bảo ca ảnh hưởng lớn nào cũng được duyệt. Không có tiêu chí thì người duyệt cũng không biết phải kiểm gì."
+      },
+      {
+        "k": "D",
+        "text": "Remove all human review steps from the pipeline to maximize throughput, accepting that high-impact and irreversible actions will be taken without any human approval or oversight.",
+        "vi": "Bỏ mọi bước duyệt của người khỏi pipeline để đạt throughput tối đa, chấp nhận các hành động ảnh hưởng lớn và không đảo ngược được sẽ chạy mà không ai duyệt hay giám sát.",
+        "correct": false,
+        "why": "Bỏ hết người duyệt để tăng tốc là chấp nhận cho hành động ảnh hưởng lớn chạy mà không ai chịu trách nhiệm hay can thiệp được."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "where human review must remain",
+      "choice": "between the model's output",
+      "note": "Người duyệt đứng **trước** hành động không đảo ngược được, kèm tiêu chí kiểm rõ ràng (đáp án B). Đứng sau thì quá trễ (đáp án A), duyệt ngẫu nhiên không tiêu chí thì không chắc chặn đúng ca (đáp án C), bỏ hẳn thì không còn ai chặn (đáp án D).",
+      "rules": [
+        {
+          "trigger": "where human review must remain",
+          "choice": "between the model's output"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Đặt người duyệt trước hành động không đảo ngược được",
+      "text": "Bạn quyết định chỗ nào trong một pipeline tự động **vẫn phải có người duyệt**. Đề hỏi cách đặt người duyệt hợp lý."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.3 · Đặt người ở đâu"
+    ]
+  },
+  {
+    "n": 119,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "A senior architect is preparing briefing materials on a new retrieval architecture. The [[executive sponsor]] has requested a summary of the architectural decision. Which framing is most appropriate for that audience?",
+    "q_vi": "Một kiến trúc sư chính đang chuẩn bị tài liệu báo cáo về một kiến trúc retrieval mới. Executive sponsor (lãnh đạo bảo trợ dự án) đã yêu cầu một bản tóm tắt quyết định kiến trúc. Cách trình bày nào phù hợp nhất với người nghe này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Technical alternatives evaluated, implementation implications, and component-level consequences.",
+        "vi": "Các phương án kỹ thuật đã đánh giá, hệ quả khi triển khai và hệ quả ở mức thành phần.",
+        "correct": false,
+        "why": "Các phương án kỹ thuật và hệ quả ở mức thành phần là thứ kiến trúc sư và đội kỹ thuật cần khi review, quá chi tiết cho executive sponsor."
+      },
+      {
+        "k": "B",
+        "text": "[[Business outcomes]] achieved, trade-offs accepted, and high-level risks acknowledged.",
+        "vi": "Kết quả kinh doanh đạt được, các đánh đổi đã chấp nhận và các rủi ro chính đã ghi nhận.",
+        "correct": true,
+        "why": "Executive sponsor cần biết quyết định mang lại gì cho doanh nghiệp, đã chấp nhận đánh đổi gì, và còn rủi ro lớn nào họ cần biết hoặc đứng ra bảo trợ. **Kết quả kinh doanh, đánh đổi đã chấp nhận, rủi ro ở mức tổng quát** giúp họ đánh giá giá trị đầu tư mà không phải đọc chi tiết từng thành phần."
+      },
+      {
+        "k": "C",
+        "text": "Capabilities delivered, scope implications, and feature-level dependencies on the roadmap.",
+        "vi": "Năng lực được bàn giao, ảnh hưởng tới phạm vi và các phụ thuộc theo tính năng trên roadmap.",
+        "correct": false,
+        "why": "Năng lực bàn giao và phụ thuộc trên roadmap là chi tiết về phạm vi và tính năng, không phải thứ executive sponsor cần để đánh giá một quyết định kiến trúc."
+      },
+      {
+        "k": "D",
+        "text": "Threat model, control mappings, residual-risk acceptance, and audit traceability.",
+        "vi": "Threat model, control mapping, residual-risk acceptance (chấp nhận rủi ro còn lại) và audit traceability (truy vết khi kiểm toán).",
+        "correct": false,
+        "why": "Threat model, control mapping và audit traceability là gói cho người duyệt security và compliance."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "executive sponsor",
+      "choice": "Business outcomes",
+      "note": "Mỗi người nghe một gói: **executive sponsor nhận kết quả kinh doanh, đánh đổi, rủi ro tổng quát** (đáp án B). Đội kỹ thuật nhận phương án và hệ quả ở mức thành phần (đáp án A), bảo mật nhận threat model (đáp án D); năng lực và roadmap (đáp án C) không phải thứ người tài trợ cần để quyết.",
+      "rules": [
+        {
+          "trigger": "executive sponsor",
+          "choice": "Business outcomes"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tóm tắt quyết định kiến trúc cho executive sponsor",
+      "text": "Executive sponsor (lãnh đạo bảo trợ dự án) muốn một bản tóm tắt về quyết định kiến trúc retrieval mới. Đề hỏi nên trình bày theo hướng nào cho **đúng người nghe này**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.2 · Quyết định trước, phần của từng người sau"
+    ]
+  },
+  {
+    "n": 120,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "An engineer inadvertently [[commits an API key]] to the repository by placing it in .claude/settings.json. Which configuration design principle was violated?",
+    "q_vi": "Một kỹ sư vô tình commit một API key vào repository vì đặt nó trong .claude/settings.json. Nguyên tắc thiết kế cấu hình nào đã bị vi phạm?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Project-scope configuration should always override user-scope configuration.",
+        "vi": "Cấu hình project scope luôn phải ghi đè cấu hình user scope.",
+        "correct": false,
+        "why": "Project scope hay user scope ghi đè nhau thế nào là chuyện thứ tự ưu tiên, không liên quan tới việc giữ bí mật."
+      },
+      {
+        "k": "B",
+        "text": "Managed configuration must be applied before project-scope configuration is read.",
+        "vi": "Managed configuration phải được áp trước khi đọc cấu hình project scope.",
+        "correct": false,
+        "why": "Managed configuration áp trước hay sau cũng là chuyện thứ tự ưu tiên, không nói gì về chỗ để credential."
+      },
+      {
+        "k": "C",
+        "text": "[[Credentials must be resolved at runtime]] from a secret store and never stored in version-controlled files.",
+        "vi": "Credential phải được lấy lúc chạy từ một secret store (kho lưu bí mật) và không bao giờ lưu trong file có version control.",
+        "correct": true,
+        "why": "Key không được nằm trong file cấu hình đã commit như .claude/settings.json: API key, token hay mật khẩu trong file đó đi theo repo tới mọi người. Nguyên tắc là **credential được lấy lúc chạy từ một secret store** (kho lưu bí mật), không bao giờ nằm trong file có version control."
+      },
+      {
+        "k": "D",
+        "text": "MCP server definitions must reside in environment variables to prevent scope conflicts.",
+        "vi": "Định nghĩa MCP server phải nằm trong biến môi trường để tránh xung đột scope.",
+        "correct": false,
+        "why": "Lỗi ở đây là key nằm trong file được commit, không phải chỗ khai báo MCP server. Đề không nói MCP server phải đặt trong biến môi trường."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "commits an API key",
+      "choice": "Credentials must be resolved at runtime",
+      "note": "Lỗi ở đây là **để bí mật trong file được commit**, nên nguyên tắc bị vi phạm là về chỗ để credential: **lấy từ secret store lúc chạy** (đáp án C). Đáp án A và đáp án B nói về thứ tự ưu tiên giữa các scope, đáp án D nói về MCP server, đều lạc đề.",
+      "rules": [
+        {
+          "trigger": "commits an API key",
+          "choice": "Credentials must be resolved at runtime"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Credential không bao giờ nằm trong file được commit",
+      "text": "Một kỹ sư lỡ commit API key vào repo vì đặt nó trong .claude/settings.json. Đề hỏi **nguyên tắc cấu hình nào** đã bị vi phạm."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Năm nơi đặt cấu hình, mỗi nơi chạm tới ai"
+    ]
+  },
+  {
+    "n": 121,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "You are configuring Claude Code for a team that needs every engineer to [[share the same MCP server set]], permission rules, and project context across the engineering monorepo. Which configuration scope best supports this requirement?",
+    "q_vi": "Bạn đang cấu hình Claude Code cho một team cần mọi kỹ sư dùng chung cùng bộ MCP server, permission rules (luật cấp quyền) và project context trong monorepo. Scope cấu hình nào đáp ứng yêu cầu này tốt nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "User scope, with the MCP server definitions and permission rules placed in each engineer's ~/.claude/settings.json and synchronized manually through a shared setup script outside version control.",
+        "vi": "User scope, đặt định nghĩa MCP server và permission rules trong ~/.claude/settings.json của từng kỹ sư, đồng bộ tay bằng một script cài đặt dùng chung nằm ngoài version control.",
+        "correct": false,
+        "why": "User scope dành cho thiết lập riêng của từng người. Chép tay qua một script nằm ngoài version control là phải đồng bộ tay, không có gì bảo đảm các máy giống nhau."
+      },
+      {
+        "k": "B",
+        "text": "Local scope configured only on the lead architect's machine, with no configuration present on other engineers' machines and no mechanism to distribute MCP servers or permission rules.",
+        "vi": "Local scope chỉ cấu hình trên máy của kiến trúc sư trưởng; máy kỹ sư khác không có cấu hình nào và không có cách phân phối MCP server hay permission rules.",
+        "correct": false,
+        "why": "Local scope chỉ có tác dụng với một người trong một project. Cấu hình trên máy kiến trúc sư không đến được máy người khác."
+      },
+      {
+        "k": "C",
+        "text": "[[Project scope]], with the configuration committed to the repository so every engineer working in the project receives the same MCP servers, permissions, and context.",
+        "vi": "Project scope, cấu hình được commit vào repository để mọi kỹ sư làm trong project nhận cùng MCP server, permissions và context.",
+        "correct": true,
+        "why": "Project scope sinh ra cho cấu hình mà cả team trong một repo dùng chung. **Commit cấu hình vào repository** thì ai làm trong project cũng nhận đúng một bộ MCP server, quyền và ngữ cảnh, không phải đồng bộ tay."
+      },
+      {
+        "k": "D",
+        "text": "User scope configured individually on each engineer's machine, with no shared configuration committed to the repository and no guarantee of consistency across the team.",
+        "vi": "User scope do từng kỹ sư tự cấu hình trên máy mình, không có cấu hình chung nào được commit vào repository và không có gì bảo đảm cả team nhất quán.",
+        "correct": false,
+        "why": "Mỗi người tự cấu hình user scope trên máy mình thì không có gì bảo đảm cả team giống nhau, đúng điều đề muốn tránh."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "share the same MCP server set",
+      "choice": "Project scope",
+      "note": "**Dạng scope Claude Code**: tự hỏi hai câu, ai dùng chung? và ai được sửa? **managed**: cả công ty, không ai tự đổi được. **project**: cả team trong một repo, commit vào git. **user**: riêng bạn, áp cho mọi repo. **local**: riêng bạn, chỉ trong một repo. Ở câu này, cả team trong một repo dùng chung nên chọn đáp án C **Project scope**. Đáp án A và đáp án D để ở user scope là riêng từng người, đáp án B để ở local scope thì chỉ có trên một máy.",
+      "rules": [
+        {
+          "trigger": "share the same MCP server set",
+          "choice": "Project scope"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Cả team dùng chung MCP, quyền và ngữ cảnh: project scope",
+      "text": "Mọi kỹ sư trong monorepo cần **cùng một bộ MCP server, cùng permission rules và cùng project context**. Đề hỏi scope cấu hình nào hợp nhất."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Năm nơi đặt cấu hình, mỗi nơi chạm tới ai"
+    ]
+  },
+  {
+    "n": 122,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": true,
+    "q": "An architect at Trenova Systems, Inc. is reviewing two draft communication packages for the same architectural decision. Package 1 contains a [[threat model]], residual-risk register, and control-mapping table. Package 2 contains a list of capabilities delivered and feature-level [[roadmap dependencies]]. Which two audiences are correctly matched to these packages? (Select two.)",
+    "q_vi": "Một kiến trúc sư ở Trenova Systems, Inc. đang xem hai gói tài liệu truyền đạt cho cùng một quyết định kiến trúc. Gói 1 gồm threat model, residual-risk register (sổ đăng ký rủi ro còn lại) và control-mapping table (bảng ánh xạ control). Gói 2 gồm danh sách capability đã bàn giao và các phụ thuộc theo tính năng trên roadmap. Hai người đọc nào được ghép đúng với các gói này? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Package 1 → engineering implementation team",
+        "vi": "Gói 1 → đội kỹ thuật triển khai",
+        "correct": false,
+        "why": "Đội triển khai cũng có lúc đọc threat model, nhưng residual-risk register và control-mapping table là tài liệu quản trị rủi ro để người duyệt bảo mật ra quyết định. Thứ đội triển khai cần là lý do kỹ thuật, phương án đã cân nhắc và việc phải làm khi triển khai."
+      },
+      {
+        "k": "B",
+        "text": "Package 2 → executive sponsor",
+        "vi": "Gói 2 → executive sponsor",
+        "correct": false,
+        "why": "Executive sponsor cần quyết định, kết quả kinh doanh, đánh đổi và rủi ro ở mức tóm tắt, không cần chi tiết phụ thuộc theo từng tính năng của gói 2."
+      },
+      {
+        "k": "C",
+        "text": "[[Package 1 → security]] and compliance reviewer",
+        "vi": "Gói 1 → security and compliance reviewer (người duyệt bảo mật và tuân thủ)",
+        "correct": true,
+        "why": "Threat model chỉ ra các mối đe doạ, residual-risk register ghi những rủi ro còn lại sau khi đã có control, và control-mapping table nối mỗi rủi ro với biện pháp kiểm soát xử lý nó. Đó là nội dung dành cho **security and compliance reviewer** (người duyệt bảo mật và tuân thủ)."
+      },
+      {
+        "k": "D",
+        "text": "Package 2 → [[product manager]] owning the roadmap",
+        "vi": "Gói 2 → product manager phụ trách roadmap",
+        "correct": true,
+        "why": "Năng lực đã bàn giao và các phụ thuộc theo tính năng trên roadmap là nội dung dành cho **product manager**, người sở hữu roadmap."
+      },
+      {
+        "k": "E",
+        "text": "Package 2 → security and compliance reviewer",
+        "vi": "Gói 2 → security and compliance reviewer",
+        "correct": false,
+        "why": "Gói 2 nói về tính năng và roadmap, không có gì về mối đe doạ hay control nên không giúp được người duyệt security."
+      }
+    ],
+    "answer": "C, D",
+    "tip": {
+      "trigger": "threat model · roadmap dependencies",
+      "choice": "Package 1 → security · product manager",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra. Ở câu này, mỗi gói tìm người dùng nó để ra quyết định: threat model, rủi ro, control thì chọn đáp án C **Package 1 với security**; năng lực và roadmap thì chọn đáp án D **product manager**. Đáp án A và đáp án E ghép nhầm gói, đáp án B executive sponsor cần bản tóm tắt kết quả và rủi ro.",
+      "rules": [
+        {
+          "trigger": "threat model · roadmap dependencies",
+          "choice": "Package 1 → security · product manager"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Ghép gói tài liệu với đúng người đọc",
+      "text": "Cùng một quyết định kiến trúc có hai gói tài liệu. Gói 1 có **threat model, residual-risk register (sổ rủi ro còn lại), control-mapping table**. Gói 2 có **danh sách capability đã bàn giao và các phụ thuộc trên roadmap**. Đề hỏi hai cặp gói và người đọc được ghép đúng."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.2 · Rủi ro còn lại: nói rõ và có giới hạn"
+    ]
+  },
+  {
+    "n": 123,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": true,
+    "q": "A Claude architect is configuring a shared Claude Code environment for a twelve-person development team. Which two configuration decisions most directly establish a [[consistent, secure team environment]]? (Select two.)",
+    "q_vi": "Một kiến trúc sư Claude đang cấu hình môi trường Claude Code dùng chung cho một team phát triển 12 người. Hai quyết định cấu hình nào trực tiếp tạo ra một môi trường team nhất quán và an toàn? (Chọn hai.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Set editor theme and display preferences at the project scope so they are uniform across workstations.",
+        "vi": "Đặt theme và tuỳ chọn hiển thị của editor ở project scope để mọi máy giống nhau.",
+        "correct": false,
+        "why": "Theme và cách hiển thị của editor là sở thích riêng, thuộc user scope. Ép nó lên cả team không làm môi trường an toàn hơn."
+      },
+      {
+        "k": "B",
+        "text": "[[Apply managed configuration]] to enforce non-overridable security and compliance policies across all team members.",
+        "vi": "Áp managed configuration để thực thi các chính sách security và compliance không ai ghi đè được cho mọi thành viên.",
+        "correct": true,
+        "why": "Phần **an toàn**: chính sách security và compliance phải đặt ở **managed configuration**, scope duy nhất mà không kỹ sư nào ghi đè được."
+      },
+      {
+        "k": "C",
+        "text": "[[Commit shared MCP server definitions]] and tool permissions in project-scope configuration files alongside the repository.",
+        "vi": "Commit định nghĩa MCP server và quyền dùng tool chung vào các file cấu hình project scope cùng repository.",
+        "correct": true,
+        "why": "Phần **nhất quán**: định nghĩa MCP server và quyền dùng tool mà cả team cần thì **commit vào cấu hình project scope** cùng repo, ai pull về cũng có cấu hình giống nhau."
+      },
+      {
+        "k": "D",
+        "text": "Store the team's shared API key in the project-scope settings.json so all engineers use the same credential.",
+        "vi": "Lưu API key dùng chung của team trong settings.json ở project scope để mọi kỹ sư dùng cùng một credential.",
+        "correct": false,
+        "why": "Project scope là cấu hình commit vào repo, nên để API key dùng chung trong settings.json là đưa bí mật vào repository, ngược hẳn với yêu cầu an toàn."
+      },
+      {
+        "k": "E",
+        "text": "Instruct each engineer to configure their preferred Claude model in personal user-scope settings.",
+        "vi": "Bảo từng kỹ sư cấu hình model Claude ưa thích trong thiết lập user scope cá nhân.",
+        "correct": false,
+        "why": "Model ưa thích của từng người là thiết lập cá nhân. Nó không làm môi trường nhất quán và cũng không liên quan tới bảo mật."
+      }
+    ],
+    "answer": "B, C",
+    "tip": {
+      "trigger": "consistent, secure team environment",
+      "choice": "Apply managed configuration · Commit shared MCP server definitions",
+      "note": "**Dạng scope Claude Code**: tự hỏi hai câu, ai dùng chung? và ai được sửa? **managed**: cả công ty, không ai tự đổi được. **project**: cả team trong một repo, commit vào git. **user**: riêng bạn, áp cho mọi repo. **local**: riêng bạn, chỉ trong một repo. Ở câu này, chính sách bảo mật không ai được đổi thì chọn đáp án B **managed configuration**; MCP server và quyền dùng chung thì chọn đáp án C commit vào **project-scope**. Đáp án A đặt sở thích riêng ở project scope, đáp án E chỉ là thiết lập cá nhân, đáp án D còn làm lộ API key.",
+      "rules": [
+        {
+          "trigger": "consistent, secure team environment",
+          "choice": "Apply managed configuration · Commit shared MCP server definitions"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Claude Code cho cả team: nhất quán nhờ project scope, an toàn nhờ managed",
+      "text": "Bạn cấu hình Claude Code dùng chung cho một team 12 người. Đề hỏi hai quyết định trực tiếp tạo ra môi trường **nhất quán và an toàn**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Thứ bắt buộc thì đưa vào managed settings",
+      "Bài 7.1 · Năm nơi đặt cấu hình, mỗi nơi chạm tới ai"
+    ]
+  },
+  {
+    "n": 124,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "You are selecting the [[documentation set]] that should accompany a Claude-based deployment [[at handoff]]. Which set is most complete?",
+    "q_vi": "Bạn đang chọn bộ tài liệu đi kèm một deployment dùng Claude khi bàn giao. Bộ nào đầy đủ nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Architecture overview, ADRs, [[component-level diagrams]], runbooks for common operations, an on-call playbook, and a list of known limitations.",
+        "vi": "Tổng quan kiến trúc, các ADR, component-level diagram (sơ đồ mức thành phần), runbook cho các thao tác thường gặp, một on-call playbook và danh sách known limitations (hạn chế đã biết).",
+        "correct": true,
+        "why": "Bàn giao xong, người nhận phải tự hiểu, vận hành, xử lý sự cố và phát triển tiếp hệ thống. **Tổng quan kiến trúc** cho biết cấu trúc, **ADR** cho biết vì sao chọn như vậy, **component-level diagram** cho biết các phần nối với nhau ra sao, **runbook và on-call playbook** giúp vận hành và xử lý sự cố, **known limitations** (hạn chế đã biết) báo trước chỗ hệ thống chưa làm tốt. Thiếu phần nào là có một lỗ hổng kiến thức ở phần đó."
+      },
+      {
+        "k": "B",
+        "text": "Code comments scattered across individual source files with no integrating architecture overview, no ADRs, no runbooks, and no on-call playbook to orient operators or new team members.",
+        "vi": "Comment rải rác trong từng file mã nguồn, không có tổng quan kiến trúc gắn kết, không ADR, không runbook, không on-call playbook để định hướng người vận hành hay thành viên mới.",
+        "correct": false,
+        "why": "Comment rải rác trong code không cho bức tranh tổng thể, không ghi lý do quyết định và không có hướng dẫn vận hành."
+      },
+      {
+        "k": "C",
+        "text": "A single one-page architecture diagram with no ADRs, no runbooks, no on-call playbook, and no list of known limitations to support operators or future maintainers.",
+        "vi": "Một sơ đồ kiến trúc một trang, không ADR, không runbook, không on-call playbook và không danh sách known limitations để hỗ trợ người vận hành hay người bảo trì sau này.",
+        "correct": false,
+        "why": "Một sơ đồ một trang chỉ cho thấy hình dạng hệ thống, thiếu ADR, runbook, playbook và hạn chế đã biết."
+      },
+      {
+        "k": "D",
+        "text": "A verbal handover walkthrough conducted on the day of transition, with no written architecture overview, ADRs, runbooks, playbook, or known limitations captured for future reference.",
+        "vi": "Một buổi bàn giao bằng lời vào ngày chuyển giao, không ghi lại tổng quan kiến trúc, ADR, runbook, playbook hay known limitations để tra cứu về sau.",
+        "correct": false,
+        "why": "Buổi bàn giao bằng lời không để lại gì viết ra; người vắng mặt hay người đến sau không có gì để tra."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "documentation set · at handoff",
+      "choice": "component-level diagrams",
+      "note": "Bàn giao đủ là có tài liệu cho mọi việc người nhận phải làm: hiểu hệ thống (tổng quan, sơ đồ), biết lý do (ADR), vận hành (runbook, playbook) và biết giới hạn (known limitations). Chỉ đáp án A có đủ; các đáp án còn lại đều tự ghi rõ là no ADRs, no runbooks.",
+      "rules": [
+        {
+          "trigger": "documentation set · at handoff",
+          "choice": "component-level diagrams"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Bộ tài liệu bàn giao đầy đủ",
+      "text": "Đến lúc bàn giao một deployment dùng Claude. Đề hỏi bộ tài liệu nào **đầy đủ nhất** để đi kèm."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.4 · Gói bàn giao để đội triển khai tự làm được"
+    ]
+  },
+  {
+    "n": 125,
+    "topic": "Integration",
+    "multi": false,
+    "q": "A software vendor wants to build a RAG assistant over its own internal support-ticket archive ([[not the public web]]) and needs the same quality of source attribution that citation-grounded answers provide, without sending queries to an external search index. Which feature fits this requirement?",
+    "q_vi": "Một hãng phần mềm muốn làm một trợ lý RAG trên kho ticket hỗ trợ nội bộ của chính họ (không phải web công khai) và cần source attribution (ghi rõ nguồn) chất lượng như câu trả lời có citation, mà không gửi truy vấn tới một search index bên ngoài. Tính năng nào đáp ứng yêu cầu này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Web fetch, because retrieving full page content from specified URLs works equally well for private ticket archives.",
+        "vi": "Web fetch, vì tải toàn bộ nội dung từ các URL được chỉ định cũng dùng tốt cho kho ticket riêng.",
+        "correct": false,
+        "why": "Web fetch tải nội dung từ URL trên web; nó không phải cơ chế ghi nguồn cho một kho dữ liệu nội bộ."
+      },
+      {
+        "k": "B",
+        "text": "Code execution, because running retrieval scripts in a sandbox lets the model fetch and cite ticket content directly.",
+        "vi": "Code execution, vì chạy script truy xuất trong sandbox giúp model lấy và trích dẫn nội dung ticket trực tiếp.",
+        "correct": false,
+        "why": "Code execution chạy mã trong sandbox để phân tích dữ liệu, không phải tính năng gắn nguồn cho câu trả lời."
+      },
+      {
+        "k": "C",
+        "text": "[[Search results]], because it provides citation-quality source attribution for custom knowledge bases outside the public web.",
+        "vi": "Search results, vì nó cho source attribution đạt chất lượng citation với các knowledge base riêng nằm ngoài web công khai.",
+        "correct": true,
+        "why": "Tính năng **search results** cho phép bạn trả kết quả truy xuất của chính mình dưới dạng các khối search_result, mỗi khối có nguồn và tiêu đề. Claude trích dẫn các khối này giống như trích dẫn kết quả web search, nên kho ticket nội bộ cũng có source attribution mà không cần đi qua search index bên ngoài."
+      },
+      {
+        "k": "D",
+        "text": "Web search tool, because it augments Claude's knowledge with current information regardless of where the documents are hosted.",
+        "vi": "Web search tool, vì nó bổ sung cho Claude thông tin mới nhất, bất kể tài liệu được lưu ở đâu.",
+        "correct": false,
+        "why": "Web search tìm trên web công khai, đúng thứ đề nói không dùng, và không biết gì về kho ticket nội bộ."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "not the public web",
+      "choice": "Search results",
+      "note": "Dữ liệu của mình mà cần source attribution như web search thì dùng **Search results** (đáp án C). Web search và web fetch (đáp án D, đáp án A) để lấy dữ liệu trên web công khai; code execution (đáp án B) để chạy mã.",
+      "rules": [
+        {
+          "trigger": "not the public web",
+          "choice": "Search results"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Source attribution cho kho dữ liệu riêng: search result",
+      "text": "Một hãng phần mềm làm trợ lý RAG trên **kho ticket nội bộ**, không phải web công khai, và cần **source attribution** (ghi rõ nguồn của câu trả lời) chất lượng như câu trả lời có citation, mà không gửi truy vấn ra một search index bên ngoài."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.5 · Các bước của pipeline"
+    ]
+  },
+  {
+    "n": 126,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": true,
+    "q": "A long-running autonomous coding agent needs two things in its architecture: automatically clearing stale tool results from context as a session approaches the token limit, and [[retaining key project facts]] across separate sessions run days apart. Select all components that correctly satisfy these two needs.",
+    "q_vi": "Một autonomous coding agent (agent lập trình tự hành) chạy dài cần hai thứ trong kiến trúc: tự động xoá các kết quả tool đã cũ khỏi context khi phiên làm việc gần chạm giới hạn token, và giữ các thông tin chính của project qua những phiên riêng chạy cách nhau vài ngày. Chọn tất cả các thành phần đáp ứng đúng hai nhu cầu này.",
+    "options": [
+      {
+        "k": "A",
+        "text": "Compaction, positioned as the sole mechanism that fully replaces context editing for long-running sessions",
+        "vi": "Compaction, được coi là cơ chế duy nhất thay hoàn toàn context editing cho các phiên chạy dài",
+        "correct": false,
+        "why": "Compaction tóm tắt lịch sử hội thoại và là một tính năng riêng. Nó không phải cơ chế duy nhất thay hẳn context editing, và cũng không mang thông tin sang một phiên khác."
+      },
+      {
+        "k": "B",
+        "text": "[[The memory tool]], which lets Claude store and retrieve information across separate conversations over time",
+        "vi": "Memory tool, cho Claude lưu và đọc lại thông tin qua các cuộc hội thoại riêng theo thời gian",
+        "correct": true,
+        "why": "Nhu cầu thứ hai là nhớ qua các phiên riêng. **Memory tool** cho Claude lưu và lấy lại thông tin qua các cuộc hội thoại riêng biệt theo thời gian, nên phiên sau vẫn biết những gì phiên trước đã ghi lại."
+      },
+      {
+        "k": "C",
+        "text": "[[Context editing, which supports]] clearing tool results automatically as a conversation approaches the token limit",
+        "vi": "Context editing, hỗ trợ tự động xoá kết quả tool khi hội thoại gần chạm giới hạn token",
+        "correct": true,
+        "why": "Nhu cầu thứ nhất là dọn kết quả tool cũ. **Context editing** tự xoá kết quả tool cũ khi vượt ngưỡng bạn đặt."
+      },
+      {
+        "k": "D",
+        "text": "Fine-grained tool streaming, which reduces latency by streaming tool parameters without JSON buffering",
+        "vi": "Fine-grained tool streaming, giảm độ trễ bằng cách stream tham số tool mà không đệm JSON",
+        "correct": false,
+        "why": "Fine-grained tool streaming chỉ stream tham số tool để giảm độ trễ, không dọn context và cũng không nhớ gì qua phiên."
+      },
+      {
+        "k": "E",
+        "text": "The Files API, which lets uploaded documents be referenced repeatedly without re-uploading their content",
+        "vi": "Files API, cho phép tham chiếu tài liệu đã tải lên nhiều lần mà không phải tải lại nội dung",
+        "correct": false,
+        "why": "Files API giúp khỏi tải lại tài liệu, nhưng không xoá kết quả tool cũ và không lưu thông tin project qua các phiên."
+      },
+      {
+        "k": "F",
+        "text": "Code execution, which runs code in a sandboxed container for data analysis and file processing tasks",
+        "vi": "Code execution, chạy mã trong container sandbox cho việc phân tích dữ liệu và xử lý file",
+        "correct": false,
+        "why": "Code execution chạy mã trong sandbox để phân tích dữ liệu, không liên quan tới việc quản lý context."
+      }
+    ],
+    "answer": "B, C",
+    "tip": {
+      "trigger": "retaining key project facts",
+      "choice": "The memory tool · Context editing, which supports",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra. Ở câu này có hai yêu cầu: dọn kết quả tool cũ thì chọn đáp án C **Context editing**, nhớ qua các phiên thì chọn đáp án B **The memory tool**. Đáp án A compaction nói quá (sole mechanism ... fully replaces); đáp án D, đáp án F, đáp án E là tính năng hay nhưng cho yêu cầu khác.",
+      "rules": [
+        {
+          "trigger": "retaining key project facts",
+          "choice": "The memory tool · Context editing, which supports"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Agent chạy dài: context editing dọn context, memory tool nhớ qua các phiên",
+      "text": "Agent lập trình chạy dài cần hai thứ: **tự xoá kết quả tool đã cũ** khi gần chạm giới hạn token, và **nhớ các thông tin chính của project qua những phiên cách nhau vài ngày**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.4 · Giảm token ở từng giai đoạn"
+    ]
+  },
+  {
+    "n": 127,
+    "topic": "Solution Design & Architecture",
+    "multi": true,
+    "q": "A team is choosing between orchestrator-workers and parallelization by sectioning for a document-analysis pipeline. Which statements [[correctly distinguish]] orchestrator-workers from parallelization by sectioning?",
+    "q_vi": "Một team đang chọn giữa orchestrator-workers và parallelization by sectioning cho một pipeline phân tích tài liệu. Những nhận định nào phân biệt đúng orchestrator-workers với parallelization by sectioning?",
+    "options": [
+      {
+        "k": "A",
+        "text": "In orchestrator-workers, [[a central LLM determines subtasks at runtime]], whereas sectioning requires subtasks predefined before execution",
+        "vi": "Ở orchestrator-workers, một LLM trung tâm quyết định các subtask (việc con) ngay lúc chạy, còn sectioning cần các subtask được định sẵn trước khi chạy",
+        "correct": true,
+        "why": "Khác biệt cốt lõi là lúc chia việc. Ở orchestrator-workers, **một LLM trung tâm quyết định các subtask (việc con) ngay lúc chạy**; ở sectioning, các phần việc đã được chia sẵn trước khi chạy."
+      },
+      {
+        "k": "B",
+        "text": "In orchestrator-workers, worker LLMs run in a fixed, predetermined order, whereas sectioning always runs its subtasks simultaneously",
+        "vi": "Ở orchestrator-workers, các worker LLM chạy theo một thứ tự cố định, định sẵn, còn sectioning luôn chạy các subtask cùng lúc",
+        "correct": false,
+        "why": "Orchestrator-workers không bắt các worker chạy theo thứ tự cố định; chính orchestrator quyết định giao việc gì cho worker nào. Câu này mô tả sai cả hai pattern."
+      },
+      {
+        "k": "C",
+        "text": "Orchestrator-workers [[suits subtasks that vary unpredictably]] case to case, while sectioning suits tasks that split cleanly into known subtasks",
+        "vi": "Orchestrator-workers hợp với subtask thay đổi khó đoán theo từng trường hợp, còn sectioning hợp với việc tách gọn thành các subtask đã biết",
+        "correct": true,
+        "why": "Từ đó ra chỗ dùng: orchestrator-workers hợp khi **subtask thay đổi khó đoán theo từng trường hợp**, còn sectioning hợp khi việc tách gọn thành những phần đã biết trước và độc lập với nhau."
+      },
+      {
+        "k": "D",
+        "text": "Parallelization by sectioning always requires a second LLM to evaluate the sectioned outputs before combining them into a final result",
+        "vi": "Parallelization by sectioning luôn cần thêm một LLM thứ hai chấm các phần trước khi gộp thành kết quả cuối",
+        "correct": false,
+        "why": "Thêm một LLM chấm đầu ra rồi mới gộp là pattern evaluator-optimizer. Sectioning chỉ gộp kết quả của các phần lại."
+      },
+      {
+        "k": "E",
+        "text": "Orchestrator-workers and parallelization by sectioning both aggregate multiple independent votes on one input to reach a majority-based answer",
+        "vi": "Orchestrator-workers và parallelization by sectioning đều gộp nhiều lượt voting (bỏ phiếu) độc lập trên cùng một đầu vào để lấy kết quả theo đa số",
+        "correct": false,
+        "why": "Chạy cùng một đầu vào nhiều lần rồi lấy theo đa số là parallelization by voting, không phải orchestrator-workers hay sectioning."
+      }
+    ],
+    "answer": "A, C",
+    "tip": {
+      "trigger": "correctly distinguish",
+      "choice": "a central LLM determines subtasks at runtime · suits subtasks that vary unpredictably",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 2 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, đáp án A **a central LLM determines subtasks at runtime** và đáp án C **vary unpredictably** cùng nói một khác biệt: orchestrator chia việc lúc chạy, sectioning chia sẵn. Đáp án B và đáp án D là Cực (fixed, predetermined, always), đáp án E là Lạc vì đang tả pattern voting.",
+      "rules": [
+        {
+          "trigger": "correctly distinguish",
+          "choice": "a central LLM determines subtasks at runtime · suits subtasks that vary unpredictably"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Orchestrator-workers và sectioning khác nhau ở chỗ việc con được chia lúc nào",
+      "text": "Team đang chọn giữa **orchestrator-workers** và **parallelization by sectioning** cho pipeline phân tích tài liệu. Đề hỏi hai nhận định phân biệt đúng hai pattern này."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.3 · Các mẫu workflow"
+    ]
+  },
+  {
+    "n": 128,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "q": "A team is building an agent that must audit a large codebase across three distinct dimensions: security vulnerabilities, code quality, and test coverage. Each dimension requires a [[different set of tools]] and a different area of focus. Which approach best decomposes this problem using the Agent SDK?",
+    "q_vi": "Một team đang xây một agent phải kiểm một codebase lớn theo ba mặt khác nhau: lỗ hổng bảo mật, chất lượng code và test coverage (độ phủ test). Mỗi mặt cần một bộ tool khác và một trọng tâm khác. Cách nào chia bài toán này tốt nhất khi dùng Agent SDK?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Define an [[orchestrator agent that invokes specialized subagents]] through the Agent tool, each configured with a scoped tool set and description matching its subtask domain",
+        "vi": "Định nghĩa một orchestrator agent (agent điều phối) gọi các subagent chuyên trách qua Agent tool, mỗi subagent có bộ tool giới hạn và mô tả khớp với mảng việc của nó",
+        "correct": true,
+        "why": "Mỗi mặt cần tool và trọng tâm riêng, nên tách thành **subagent chuyên trách**: một orchestrator agent (agent điều phối) gọi từng subagent qua Agent tool, mỗi subagent có bộ tool giới hạn và mô tả đúng mảng việc của nó. Mỗi subagent làm trong context riêng, không lẫn ngữ cảnh của mảng khác, rồi orchestrator gộp kết quả lại."
+      },
+      {
+        "k": "B",
+        "text": "Increase the primary agent's context window and rely on extended thinking so it can reason through all three review dimensions within one continuous session",
+        "vi": "Tăng context window của agent chính và dựa vào extended thinking để nó suy luận cả ba mặt trong một phiên liên tục",
+        "correct": false,
+        "why": "Context lớn hơn và extended thinking giúp nghĩ sâu hơn, nhưng không chia bài toán thành các phần độc lập có phạm vi riêng."
+      },
+      {
+        "k": "C",
+        "text": "Send one prompt to the main agent instructing it to sequentially perform code quality checks, then security scanning, then test coverage analysis without additional configuration",
+        "vi": "Gửi một prompt cho agent chính, bảo nó lần lượt kiểm chất lượng code, rồi quét bảo mật, rồi phân tích test coverage, không cấu hình gì thêm",
+        "correct": false,
+        "why": "Một prompt bảo agent chính làm lần lượt cả ba việc thì một agent phải ôm cả ba bộ tool và ba ngữ cảnh cùng lúc, mất hết lợi ích của việc chia nhỏ."
+      },
+      {
+        "k": "D",
+        "text": "Configure a single MCP server that exposes security, quality, and coverage checks as three separate tools, and let the primary agent call each tool directly instead of delegating",
+        "vi": "Cấu hình một MCP server duy nhất cung cấp ba tool kiểm bảo mật, chất lượng và coverage, để agent chính gọi trực tiếp từng tool thay vì giao việc",
+        "correct": false,
+        "why": "Gói ba kiểu kiểm tra thành ba tool trên một MCP server vẫn để một agent tự điều phối và tự hiểu cả ba mảng, không giao được phần suy luận cho agent chuyên trách."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "different set of tools",
+      "choice": "orchestrator agent that invokes specialized subagents",
+      "note": "Việc tách được thành nhiều mảng và **mỗi mảng cần tool riêng** thì dùng **orchestrator gọi subagent chuyên trách** (đáp án A). Một prompt dài (đáp án C), gom tool vào một server (đáp án D) hay tăng context (đáp án B) đều vẫn để một agent ôm hết.",
+      "rules": [
+        {
+          "trigger": "different set of tools",
+          "choice": "orchestrator agent that invokes specialized subagents"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Agent SDK: giao ba mặt kiểm tra cho ba subagent chuyên trách",
+      "text": "Agent phải kiểm một codebase lớn theo **ba mặt khác nhau** (lỗ hổng bảo mật, chất lượng code, test coverage), mỗi mặt cần **bộ tool riêng và trọng tâm riêng**. Đề hỏi cách chia bài toán khi dùng Agent SDK."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.4 · Orchestrator-worker và cách giao việc"
+    ]
+  },
+  {
+    "n": 129,
+    "topic": "Solution Design & Architecture",
+    "multi": true,
+    "q": "An enterprise customer's support desk has committed to a contractual [[99.9% uptime]] and sub-2-second p95 response SLA for its Claude-powered ticket triage assistant. During architecture review, the team must select which platform capabilities to prioritize primarily to protect this SLA commitment. Which two capabilities are the most directly relevant to protecting a latency and availability SLA? (Select 2)",
+    "q_vi": "Bộ phận hỗ trợ của một khách hàng doanh nghiệp đã cam kết theo hợp đồng uptime 99,9% và p95 thời gian phản hồi dưới 2 giây cho trợ lý phân loại ticket chạy trên Claude. Trong buổi review kiến trúc, team phải chọn các capability của nền tảng cần ưu tiên, chủ yếu để giữ cam kết SLA này. Hai capability nào liên quan trực tiếp nhất tới việc giữ SLA về latency và availability (tính sẵn sàng)? (Chọn 2)",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Choosing a model with faster comparative latency]], such as Claude Haiku 4.5, for the latency-sensitive triage path",
+        "vi": "Chọn model có độ trễ thấp hơn, như Claude Haiku 4.5, cho đường phân loại cần nhanh",
+        "correct": true,
+        "why": "Với độ trễ: chọn **model có độ trễ thấp hơn**, như Claude Haiku 4.5, cho đường phân loại cần nhanh là đòn bẩy thẳng nhất để giữ p95 dưới 2 giây."
+      },
+      {
+        "k": "B",
+        "text": "Batch processing, which processes large volumes of requests asynchronously at a discounted rate over an extended completion window",
+        "vi": "Batch processing, xử lý khối lượng lớn yêu cầu bất đồng bộ với giá rẻ hơn trong một khoảng thời gian hoàn thành dài",
+        "correct": false,
+        "why": "Batch processing xử lý khối lượng lớn bất đồng bộ trong một cửa sổ hoàn thành kéo dài, ngược hẳn với SLA phản hồi dưới 2 giây."
+      },
+      {
+        "k": "C",
+        "text": "[[Server-side fallback]], which retries a refused request against a backup model within the same API call for a timely response",
+        "vi": "Server-side fallback, tự thử lại một yêu cầu bị từ chối với model dự phòng ngay trong cùng lần gọi API để vẫn có phản hồi kịp thời",
+        "correct": true,
+        "why": "Với yêu cầu bị từ chối: **server-side fallback** tự gửi lại yêu cầu bị từ chối sang một model dự phòng ngay trong cùng lần gọi API, nên yêu cầu không hỏng hẳn mà vẫn có kết quả kịp thời."
+      },
+      {
+        "k": "D",
+        "text": "Agent Skills, which extend Claude's capabilities with pre-built instructions and scripts for document-format tasks",
+        "vi": "Agent Skills, mở rộng khả năng của Claude bằng chỉ dẫn và script dựng sẵn cho việc xử lý định dạng tài liệu",
+        "correct": false,
+        "why": "Agent Skills mở rộng khả năng của Claude bằng chỉ dẫn và script có sẵn cho các việc về định dạng tài liệu, không nhắm vào độ trễ hay uptime."
+      },
+      {
+        "k": "E",
+        "text": "The Files API, which lets documents be uploaded once and referenced across multiple requests without re-uploading content",
+        "vi": "Files API, cho phép tải tài liệu lên một lần và tham chiếu qua nhiều yêu cầu mà không phải tải lại",
+        "correct": false,
+        "why": "Files API cho tải tài liệu lên một lần rồi dùng lại qua nhiều yêu cầu, nhưng không phải đòn bẩy trực tiếp cho độ trễ hay uptime."
+      }
+    ],
+    "answer": "A, C",
+    "tip": {
+      "trigger": "99.9% uptime",
+      "choice": "Choosing a model with faster comparative latency · Server-side fallback",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra. Ở câu này có hai yêu cầu: uptime thì chọn đáp án C **Server-side fallback**, độ trễ thì chọn đáp án A model có **faster comparative latency**. Đáp án B batch phá ràng buộc phản hồi đồng bộ; đáp án D và đáp án E là tính năng cho yêu cầu khác.",
+      "rules": [
+        {
+          "trigger": "99.9% uptime",
+          "choice": "Choosing a model with faster comparative latency · Server-side fallback"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Giữ SLA uptime và độ trễ: fallback phía server và model nhanh",
+      "text": "Bộ phận hỗ trợ đã cam kết theo hợp đồng **uptime 99,9% và p95 dưới 2 giây** cho trợ lý phân loại ticket. Đề hỏi hai capability của nền tảng giúp giữ SLA này trực tiếp nhất."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.1 · Bốn model hiện nay",
+      "Bài 5.1 · Khi Claude từ chối"
+    ]
+  },
+  {
+    "n": 130,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "A manufacturing client wants a Claude-based quality-inspection assistant that repeatedly analyzes the same reference specification documents alongside new inspection reports throughout the day. The client's stated goal is to reduce redundant token spend on the [[unchanging reference material]] while keeping individual inspection turnaround fast. Which architectural choice best serves this efficiency and cost goal?",
+    "q_vi": "Một khách hàng sản xuất muốn có trợ lý kiểm định chất lượng chạy trên Claude, cả ngày liên tục phân tích cùng một bộ tài liệu đặc tả tham chiếu kèm các báo cáo kiểm định mới. Mục tiêu đã nêu của khách là giảm token chi lặp lại cho phần tài liệu tham chiếu không đổi, trong khi vẫn giữ thời gian trả kết quả của từng lượt kiểm nhanh. Lựa chọn kiến trúc nào phục vụ tốt nhất mục tiêu hiệu quả và chi phí này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Increase the effort parameter to xhigh on every inspection request so Claude reasons more thoroughly each time",
+        "vi": "Tăng tham số effort lên xhigh cho mọi yêu cầu kiểm định để Claude suy luận kỹ hơn mỗi lần",
+        "correct": false,
+        "why": "Tăng effort lên xhigh chỉ làm Claude suy luận kỹ hơn ở mỗi yêu cầu, không giảm token lặp lại cho tài liệu không đổi, nên không phục vụ mục tiêu bớt chi phí."
+      },
+      {
+        "k": "B",
+        "text": "Move the entire workload to the Message Batches API so all inspection reports are processed together once per day",
+        "vi": "Chuyển toàn bộ workload sang Message Batches API để mọi báo cáo kiểm định được xử lý chung một lần mỗi ngày",
+        "correct": false,
+        "why": "Message Batches API rẻ hơn nhưng chạy bất đồng bộ; gom báo cáo xử lý mỗi ngày một lần là phá yêu cầu trả kết quả nhanh cho từng lượt kiểm."
+      },
+      {
+        "k": "C",
+        "text": "Re-upload the full reference specification as plain text in every single request to guarantee the model always has the latest version",
+        "vi": "Tải lại toàn bộ đặc tả tham chiếu dạng văn bản thuần trong mọi yêu cầu để model luôn có bản mới nhất",
+        "correct": false,
+        "why": "Gửi lại toàn bộ đặc tả trong mỗi yêu cầu chính là kiểu tốn token lặp lại mà khách muốn bỏ."
+      },
+      {
+        "k": "D",
+        "text": "[[Use prompt caching]] so the unchanging reference specification is cached and reused across requests, cutting cost and latency",
+        "vi": "Dùng prompt caching để phần đặc tả tham chiếu không đổi được cache và dùng lại qua các yêu cầu, giảm cả chi phí lẫn độ trễ",
+        "correct": true,
+        "why": "Prompt caching sinh ra cho đúng kiểu này: phần nội dung lặp lại y nguyên ở đầu mỗi yêu cầu được cache, các lần sau đọc lại từ cache thay vì xử lý lại từ đầu. Đọc từ cache rẻ hơn nhiều so với token đầu vào thường và phản hồi cũng nhanh hơn, nên đáp ứng cả hai yêu cầu: bớt chi phí và giữ tốc độ."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "unchanging reference material",
+      "choice": "Use prompt caching",
+      "note": "Nội dung **không đổi, dùng lại nhiều lần** thì nghĩ ngay tới **prompt caching** (đáp án D): vừa rẻ vừa nhanh. Batch (đáp án B) rẻ nhưng chậm, còn effort cao (đáp án A) và gửi lại toàn bộ (đáp án C) đều tốn thêm.",
+      "rules": [
+        {
+          "trigger": "unchanging reference material",
+          "choice": "Use prompt caching"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tài liệu tham chiếu dùng lại cả ngày: prompt caching",
+      "text": "Trợ lý kiểm định chất lượng đọc **cùng một bộ tài liệu đặc tả** với mỗi báo cáo mới trong ngày. Khách muốn **bớt token lặp lại** cho phần tài liệu không đổi mà **từng lượt kiểm vẫn trả nhanh**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.5 · Prompt caching"
+    ]
+  },
+  {
+    "n": 131,
+    "topic": "Solution Design & Architecture",
+    "multi": false,
+    "q": "A coding assistant must modify an [[unknown number of files]] across a repository to implement a feature, where the exact files and scope of changes can only be determined once the assistant inspects the codebase. Which pattern is most appropriate?",
+    "q_vi": "Một trợ lý lập trình phải sửa một số lượng file chưa biết trước trong repository để làm một tính năng; chỉ khi đã xem codebase mới xác định được đúng những file nào và phạm vi thay đổi. Pattern nào phù hợp nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Routing, where the assistant classifies the feature request and sends it to one of several fixed file-editing prompts",
+        "vi": "Routing, trợ lý phân loại yêu cầu tính năng rồi gửi tới một trong vài prompt sửa file cố định",
+        "correct": false,
+        "why": "Routing phân loại yêu cầu rồi gửi tới một trong vài prompt cố định. Nó chọn đường đi, chứ không chia ra một số subtask thay đổi theo từng yêu cầu."
+      },
+      {
+        "k": "B",
+        "text": "[[Orchestrator-workers]], where a central LLM inspects the repository and dynamically delegates each file edit to a worker LLM",
+        "vi": "Orchestrator-workers, một LLM trung tâm xem repository rồi linh hoạt giao từng lần sửa file cho một worker LLM",
+        "correct": true,
+        "why": "Orchestrator-workers hợp với việc **không đoán trước được các subtask** (việc con): một LLM trung tâm đọc repo, tự quyết định cần sửa những file nào, giao từng phần cho worker rồi gộp kết quả. Đề nói đúng tình huống đó: số file và phạm vi sửa chỉ biết được sau khi đọc codebase."
+      },
+      {
+        "k": "C",
+        "text": "Prompt chaining, where the assistant edits files in a fixed sequence determined before inspecting the repository",
+        "vi": "Prompt chaining, trợ lý sửa file theo một trình tự cố định đã định trước khi xem repository",
+        "correct": false,
+        "why": "Prompt chaining đi theo một chuỗi bước định sẵn. Đề nói chỉ biết sửa file nào sau khi đọc repo, nên chuỗi định trước lúc chưa đọc sẽ sai hoặc thiếu."
+      },
+      {
+        "k": "D",
+        "text": "Parallelization by sectioning, where the assistant edits every file in the repository simultaneously using a predetermined split",
+        "vi": "Parallelization by sectioning, trợ lý sửa mọi file trong repository cùng lúc theo một cách chia định sẵn",
+        "correct": false,
+        "why": "Sectioning cần chia sẵn các phần việc độc lập trước khi chạy. Ở đây chưa biết có những phần nào, và sửa mọi file cùng lúc là thừa."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "unknown number of files",
+      "choice": "Orchestrator-workers",
+      "note": "Đề có unknown number hay only be determined once ... tức là subtask chỉ biết lúc chạy, nên chọn **Orchestrator-workers** (đáp án B). Chaining, sectioning, routing (đáp án C, đáp án D, đáp án A) đều cần định sẵn đường đi hoặc cách chia.",
+      "rules": [
+        {
+          "trigger": "unknown number of files",
+          "choice": "Orchestrator-workers"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Không biết trước phải sửa những file nào: orchestrator-workers",
+      "text": "Trợ lý lập trình phải sửa **một số file chưa biết trước**; chỉ khi đọc codebase mới biết sửa file nào và sửa đến đâu."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.3 · Các mẫu workflow"
+    ]
+  },
+  {
+    "n": 132,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "A developer is building an email-triage agent that reads inbound email bodies via a tool and drafts replies. To harden it against [[embedded instructions]] in email bodies, which combination of design choices should the developer apply? (Select all that apply)",
+    "q_vi": "Một lập trình viên đang xây agent email triage (phân loại email): agent đọc nội dung email đến qua một tool rồi soạn trả lời. Để chống lại embedded instructions (chỉ dẫn bị nhúng) trong thân email, lập trình viên nên áp dụng tổ hợp thiết kế nào? (Chọn tất cả đáp án đúng)",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Screen tool outputs]] with a lightweight classifier model before passing them to the main agent, and strip or flag content if an injection is suspected",
+        "vi": "Cho một classifier nhẹ quét đầu ra của tool trước khi chuyển cho agent chính, gỡ bỏ hoặc gắn cờ nội dung nếu nghi có injection",
+        "correct": true,
+        "why": "Lớp lọc: **cho một classifier nhẹ quét đầu ra của tool** trước khi tới agent chính; nghi có injection thì gỡ bỏ hoặc gắn cờ."
+      },
+      {
+        "k": "B",
+        "text": "Place the developer's own operating instructions inside the same tool_result block as the email body so both travel together in one message",
+        "vi": "Đặt chỉ dẫn vận hành của chính lập trình viên vào cùng khối tool_result với thân email để cả hai đi chung một message",
+        "correct": false,
+        "why": "Kết quả tool là chỗ chứa nội dung không tin cậy như thân email. Đặt chỉ dẫn của chính mình vào cùng tool_result là trộn chỉ dẫn thật với dữ liệu không tin cậy."
+      },
+      {
+        "k": "C",
+        "text": "Grant the agent broad, unscoped access to the user's full mailbox and account settings so it never needs to ask for additional permissions mid-task",
+        "vi": "Cấp cho agent quyền truy cập rộng, không giới hạn vào toàn bộ hộp thư và thiết lập tài khoản để nó không bao giờ phải xin thêm quyền giữa chừng",
+        "correct": false,
+        "why": "Cấp quyền rộng, không giới hạn trên cả hộp thư là đi ngược nguyên tắc quyền hẹp: nếu injection lọt qua thì thiệt hại càng lớn."
+      },
+      {
+        "k": "D",
+        "text": "[[State a system prompt policy]] that content returned by tools is untrusted data and must never override the system prompt or the user's original request",
+        "vi": "Ghi trong system prompt chính sách rằng nội dung tool trả về là untrusted data (dữ liệu không tin cậy) và không bao giờ được ghi đè system prompt hay yêu cầu ban đầu của người dùng",
+        "correct": true,
+        "why": "Lớp chính sách: system prompt nói rõ **nội dung tool trả về là untrusted data** (dữ liệu không tin cậy), không bao giờ được ghi đè system prompt hay yêu cầu gốc của người dùng."
+      },
+      {
+        "k": "E",
+        "text": "[[JSON-encode the email body]] when passing it as a tool result so quotes or tags in the content cannot break out of the surrounding structure",
+        "vi": "JSON-encode thân email khi đưa vào tool result để dấu nháy hay thẻ trong nội dung không thoát được khỏi cấu trúc bao quanh",
+        "correct": true,
+        "why": "Lớp cấu trúc: **JSON-encode thân email** khi đưa vào tool result, để dấu nháy hay thẻ trong email không phá được khung dữ liệu mà lên sang phần chỉ dẫn."
+      }
+    ],
+    "answer": "A, D, E",
+    "tip": {
+      "trigger": "embedded instructions",
+      "choice": "Screen tool outputs · State a system prompt policy · JSON-encode the email body",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** đề đặt ra. Ở câu này, yêu cầu là chặn embedded instructions trong dữ liệu, nên chọn ba lớp: đáp án D **State a system prompt policy** coi tool result là untrusted data, đáp án E **JSON-encode** thân email, đáp án A **Screen tool outputs** bằng classifier. Đáp án B trộn chỉ dẫn vào dữ liệu và đáp án C mở rộng quyền đều phá ràng buộc an toàn.",
+      "rules": [
+        {
+          "trigger": "embedded instructions",
+          "choice": "Screen tool outputs · State a system prompt policy · JSON-encode the email body"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chống embedded instructions trong email: ba lớp phòng thủ",
+      "text": "Agent đọc nội dung email đến qua một tool rồi soạn trả lời. Đề hỏi các thiết kế giúp agent **không làm theo embedded instructions** (lệnh bị nhúng trong thân email, tức indirect prompt injection)."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.1 · Bắt đầu từ việc ai là kẻ tấn công"
+    ]
+  },
+  {
+    "n": 133,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "A team is building an English-to-Spanish translation feature that will be called repeatedly with different user-submitted text. They want to keep the instructional wording consistent across calls while making it easy to swap in new text and [[track changes to the instructions separately]] from the text being translated. Which approach best fits this goal?",
+    "q_vi": "Một team đang làm tính năng dịch tiếng Anh sang tiếng Tây Ban Nha, sẽ được gọi nhiều lần với những đoạn văn bản khác nhau do người dùng gửi. Họ muốn giữ nguyên câu chữ của chỉ dẫn qua mọi lần gọi, dễ thay văn bản mới, và theo dõi thay đổi của chỉ dẫn tách riêng khỏi văn bản được dịch. Cách nào phù hợp nhất với mục tiêu này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Regenerate the complete translation prompt on every call by constructing the instruction string dynamically with the user's text, ensuring that each request carries an up-to-date version of the wording.",
+        "vi": "Dựng lại toàn bộ prompt dịch mỗi lần gọi bằng cách ghép chuỗi chỉ dẫn với văn bản của người dùng, để yêu cầu nào cũng mang bản chỉ dẫn mới nhất.",
+        "correct": false,
+        "why": "Dựng lại toàn bộ prompt mỗi lần thì chỉ dẫn và văn bản lẫn trong một chuỗi mới ở mỗi lần gọi, nên không có phần chỉ dẫn riêng để theo dõi thay đổi."
+      },
+      {
+        "k": "B",
+        "text": "Store the entire prompt containing the fixed instructions and the user's text as one static string, editing the string by hand for each new translation request so the prompt is always up to date.",
+        "vi": "Lưu cả prompt, gồm chỉ dẫn cố định và văn bản của người dùng, thành một chuỗi tĩnh, sửa tay chuỗi đó cho mỗi yêu cầu dịch mới để prompt luôn cập nhật.",
+        "correct": false,
+        "why": "Gộp chỉ dẫn và văn bản vào một chuỗi rồi sửa tay mỗi lần là trộn phần cố định với phần thay đổi, nên không theo dõi được riêng phần chỉ dẫn."
+      },
+      {
+        "k": "C",
+        "text": "Define a [[prompt template]] with the fixed instruction text and a placeholder such as {{text}}, substituting only the variable content on each call while the surrounding instructions stay constant.",
+        "vi": "Định nghĩa một prompt template chứa phần chỉ dẫn cố định và một placeholder như {{text}}, mỗi lần gọi chỉ thay phần nội dung biến đổi, còn chỉ dẫn xung quanh giữ nguyên.",
+        "correct": true,
+        "why": "**Prompt template** tách phần cố định (chỉ dẫn dịch) khỏi phần thay đổi (biến như {{text}}). Mỗi lần gọi chỉ thay biến, chỉ dẫn giữ nguyên từng chữ. Template là một phần riêng nên sửa chỉ dẫn ở một chỗ và so được các phiên bản của nó, tách khỏi văn bản của người dùng."
+      },
+      {
+        "k": "D",
+        "text": "Send the fixed instruction text and the user's text to the model in two separate API calls, then concatenate the responses, placing the translation after the instruction output to form the final result.",
+        "vi": "Gửi chỉ dẫn cố định và văn bản của người dùng trong hai lần gọi API riêng, rồi nối hai phản hồi, đặt bản dịch sau phần trả lời cho chỉ dẫn để thành kết quả cuối.",
+        "correct": false,
+        "why": "Gửi chỉ dẫn và văn bản thành hai lần gọi rồi nối kết quả là tách chỉ dẫn khỏi chính văn bản cần dịch, nên lần gọi dịch không có chỉ dẫn đi kèm."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "track changes to the instructions separately",
+      "choice": "prompt template",
+      "note": "Phần **cố định** và phần **thay đổi** tách riêng thì dùng **prompt template** có placeholder (đáp án C). Đáp án A và đáp án B trộn hai phần với nhau, đáp án D còn tách chỉ dẫn khỏi chính văn bản cần dịch.",
+      "rules": [
+        {
+          "trigger": "track changes to the instructions separately",
+          "choice": "prompt template"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Prompt template: tách chỉ dẫn cố định khỏi nội dung thay đổi",
+      "text": "Tính năng dịch Anh sang Tây Ban Nha được gọi nhiều lần với văn bản khác nhau. Team muốn **chỉ dẫn giữ nguyên qua mọi lần gọi**, dễ thay văn bản mới, và **theo dõi thay đổi của chỉ dẫn tách khỏi văn bản**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.2 · Biến prompt thành template"
+    ]
+  },
+  {
+    "n": 134,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "An agent runs long tool-use loops involving dozens of file reads per session. The team wants old tool results automatically cleared once input tokens exceed 30,000, while always preserving the 3 most recent tool exchanges and [[never clearing results from the web_search tool]]. Which context_management configuration achieves this?",
+    "q_vi": "Một agent chạy các vòng gọi tool dài, mỗi phiên đọc hàng chục file. Team muốn kết quả tool cũ được tự động xoá khi số token đầu vào vượt 30.000, đồng thời luôn giữ 3 lượt gọi tool gần nhất và không bao giờ xoá kết quả của tool web_search. Cấu hình context_management nào làm được điều này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Configure a clear_tool_uses_20250919]] edit with trigger set to 30000 input tokens, keep 3 tool uses, exclude_tools set to web_search.",
+        "vi": "Cấu hình một edit clear_tool_uses_20250919 với trigger là 30000 input tokens, keep 3 tool uses, exclude_tools là web_search.",
+        "correct": true,
+        "why": "Xoá kết quả tool là việc của chiến lược clear_tool_uses_20250919. Ba yêu cầu ứng với ba tham số: trigger kiểu input_tokens giá trị 30000 (vượt 30.000 token thì bắt đầu xoá), keep 3 tool_uses (giữ 3 cặp gọi tool và kết quả gần nhất), exclude_tools là web_search (kết quả của tool này không bao giờ bị xoá). Chỉ đáp án này khớp cả ba."
+      },
+      {
+        "k": "B",
+        "text": "A clear_tool_uses_20250919 edit with trigger set to tool_uses 30000, with no keep value explicitly set, and with no exclude_tools value explicitly set.",
+        "vi": "Một edit clear_tool_uses_20250919 với trigger là tool_uses 30000, không đặt keep và không đặt exclude_tools.",
+        "correct": false,
+        "why": "Trigger kiểu tool_uses 30000 là đếm 30.000 lượt gọi tool, không phải 30.000 token, và không có exclude_tools để bảo vệ web_search."
+      },
+      {
+        "k": "C",
+        "text": "A clear_tool_uses_20250919 edit with trigger set to 30000 input tokens, keep set to 3 tool uses, and exclude_tools set to file_read should be used.",
+        "vi": "Một edit clear_tool_uses_20250919 với trigger là 30000 input tokens, keep là 3 tool uses và exclude_tools là file_read.",
+        "correct": false,
+        "why": "Cấu hình đúng hết trừ exclude_tools: loại trừ file_read thay vì web_search, nên kết quả web_search vẫn bị xoá còn kết quả đọc file lại được giữ mãi, ngược hẳn yêu cầu."
+      },
+      {
+        "k": "D",
+        "text": "A clear_thinking_20251015 edit with trigger set to 30000 input tokens, keep set to 3 thinking turns, and exclude_tools set to web_search should be used.",
+        "vi": "Dùng một edit clear_thinking_20251015 với trigger là 30000 input tokens, keep là 3 thinking turns và exclude_tools là web_search.",
+        "correct": false,
+        "why": "clear_thinking_20251015 xoá các khối thinking chứ không xoá kết quả tool, và chiến lược này cũng không có tham số exclude_tools."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "never clearing results from the web_search tool",
+      "choice": "Configure a clear_tool_uses_20250919",
+      "note": "Ba yêu cầu ứng với ba tham số của clear_tool_uses: **khi nào xoá** là trigger (tính theo input tokens), **giữ bao nhiêu** là keep, **không đụng tool nào** là exclude_tools. Đáp án A khớp cả ba. Đáp án D sai chiến lược, đáp án B sai kiểu trigger, đáp án C loại trừ nhầm tool.",
+      "rules": [
+        {
+          "trigger": "never clearing results from the web_search tool",
+          "choice": "Configure a clear_tool_uses_20250919"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Cấu hình context editing: trigger, keep và exclude_tools",
+      "text": "Agent đọc hàng chục file mỗi phiên. Team muốn tự xoá kết quả tool cũ **khi token đầu vào vượt 30.000**, **luôn giữ 3 lượt tool gần nhất** và **không bao giờ xoá kết quả của web_search**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.4 · Giảm token ở từng giai đoạn"
+    ]
+  },
+  {
+    "n": 135,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "A code-review prompt needs Claude to generate a fix, verify the fix against a set of criteria, and then refine the fix if criteria are not met. The team wants to inspect the intermediate review step and [[log it separately]] before the final refinement is produced. Which approach best fits this requirement?",
+    "q_vi": "Một prompt review code cần Claude sinh một bản sửa, kiểm bản sửa theo một bộ tiêu chí, rồi chỉnh lại bản sửa nếu chưa đạt. Team muốn xem bước review giữa chừng và log riêng nó trước khi có bản chỉnh cuối. Cách nào phù hợp nhất với yêu cầu này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Add <thinking> tags around the review step so Claude places the review inside and the fix outside, and the review can be extracted and logged apart.",
+        "vi": "Thêm thẻ <thinking> quanh bước review để Claude đặt phần review bên trong và bản sửa bên ngoài, rồi tách phần review ra để log riêng.",
+        "correct": false,
+        "why": "Thẻ <thinking> chỉ tách phần review ra về hình thức; cả ba bước vẫn nằm trong một phản hồi, nên không xem hay log được bước review trước khi bản chỉnh cuối được tạo."
+      },
+      {
+        "k": "B",
+        "text": "Ask Claude to generate, verify, and refine the fix in one response using extended reasoning, but this keeps the review internal and unloggable.",
+        "vi": "Yêu cầu Claude sinh, kiểm và chỉnh bản sửa trong một phản hồi bằng extended reasoning, nhưng như vậy bước review nằm bên trong và không log được.",
+        "correct": false,
+        "why": "Làm cả ba bước trong một phản hồi với extended reasoning thì bước review nằm trong quá trình suy nghĩ của model, không tách ra để log riêng được."
+      },
+      {
+        "k": "C",
+        "text": "Provide five few-shot examples of correct fixes for Claude to mimic, bypassing the review step, removing the intermediate step and preventing logging.",
+        "vi": "Đưa năm ví dụ few-shot về bản sửa đúng cho Claude bắt chước, bỏ qua bước review, tức là bỏ luôn bước giữa và không log được.",
+        "correct": false,
+        "why": "Đưa ví dụ few-shot cho model bắt chước là bỏ hẳn bước review theo tiêu chí, nên chẳng còn bước giữa nào để log."
+      },
+      {
+        "k": "D",
+        "text": "Break the task into [[separate API calls]]: generate a fix, review it against the criteria, then refine the fix, so each step can be logged independently.",
+        "vi": "Tách việc thành các lời gọi API riêng: sinh bản sửa, review theo tiêu chí, rồi chỉnh bản sửa, để từng bước log được độc lập.",
+        "correct": true,
+        "why": "Muốn xem và log riêng một bước thì bước đó phải là một đầu ra riêng. **Tách thành các lời gọi API nối tiếp**: một lần sinh bản sửa, một lần review theo tiêu chí, một lần chỉnh lại. Đây là prompt chaining dạng tự sửa lỗi; kết quả review là một phản hồi riêng nên lưu, kiểm tra hay rẽ nhánh đều dễ."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "log it separately",
+      "choice": "separate API calls",
+      "note": "Cần **xem, log hay rẽ nhánh ở bước giữa** thì tách bước đó thành **lời gọi API riêng** (đáp án D). Gộp vào một phản hồi (đáp án B, đáp án A) thì không tách sạch được; bỏ bước review (đáp án C) thì không còn gì để log.",
+      "rules": [
+        {
+          "trigger": "log it separately",
+          "choice": "separate API calls"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Muốn log bước giữa thì tách thành chuỗi lời gọi (prompt chaining)",
+      "text": "Prompt review code phải sinh bản sửa, kiểm bản sửa theo tiêu chí, rồi chỉnh lại nếu chưa đạt. Team muốn **xem và log riêng bước kiểm giữa chừng** trước khi có bản chỉnh cuối."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.5 · Cách 2: nối chuỗi và đặt bước kiểm"
+    ]
+  },
+  {
+    "n": 136,
+    "topic": "Integration",
+    "multi": false,
+    "q": "A platform wants Claude to discover tools using an [[existing embeddings index]] rather than the built-in regex or BM25 matching, because tool descriptions are sparse but semantically related through the embedding space. Which implementation matches this requirement?",
+    "q_vi": "Một nền tảng muốn Claude tìm tool bằng một embeddings index có sẵn thay vì cách matching bằng regex hay BM25 dựng sẵn, vì mô tả tool rất ngắn nhưng liên quan về nghĩa với nhau trong không gian embedding. Cách triển khai nào đáp ứng yêu cầu này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Disable tool search and load every tool definition up front so the embeddings index becomes unnecessary.",
+        "vi": "Tắt tool search và nạp mọi định nghĩa tool ngay từ đầu để không cần đến embeddings index.",
+        "correct": false,
+        "why": "Nạp hết định nghĩa tool ngay từ đầu là bỏ luôn việc tìm, quay lại đúng vấn đề phình context mà tool search sinh ra để giải."
+      },
+      {
+        "k": "B",
+        "text": "[[Build a custom tool]] that runs the embeddings search and returns tool_reference blocks in its tool_result for Claude to expand.",
+        "vi": "Xây một tool riêng chạy truy vấn embeddings và trả về các khối tool_reference trong tool_result để Claude mở rộng.",
+        "correct": true,
+        "why": "Tool search cho phép tự viết cách tìm: tạo **một tool riêng chạy truy vấn embeddings**, rồi trả về tool_result chứa các khối tool_reference trỏ tới tên tool tìm được. API tự mở các tham chiếu đó thành định nghĩa tool đầy đủ, giống hệt kết quả của tool search dựng sẵn. Các tool được tìm vẫn phải khai báo trong tools, thường kèm defer_loading: true."
+      },
+      {
+        "k": "C",
+        "text": "Enable the built-in regex tool search variant and rely on broad wildcard patterns to approximate semantic matching.",
+        "vi": "Bật biến thể tool search regex dựng sẵn và dựa vào các mẫu wildcard rộng để mô phỏng so khớp ngữ nghĩa.",
+        "correct": false,
+        "why": "Regex so khớp mẫu chữ theo nghĩa đen trên tên và mô tả, không nắm được quan hệ ngữ nghĩa."
+      },
+      {
+        "k": "D",
+        "text": "Enable the built-in BM25 tool search variant, since BM25 ranking approximates embedding-based semantic similarity closely enough.",
+        "vi": "Bật biến thể tool search BM25 dựng sẵn, vì xếp hạng BM25 gần đủ giống độ tương đồng ngữ nghĩa theo embedding.",
+        "correct": false,
+        "why": "BM25 xếp hạng theo từ ngữ trùng nhau, không phải độ gần nghĩa của embedding, nên với mô tả ngắn và khác chữ sẽ dễ tìm trượt."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "existing embeddings index",
+      "choice": "Build a custom tool",
+      "note": "Muốn tìm tool bằng **cách của riêng mình** (embeddings) thì tự viết tool tìm kiếm và trả về tool_reference (đáp án B). BM25 và regex (đáp án D, đáp án C) là hai biến thể dựng sẵn so theo chữ; tắt tool search (đáp án A) là bỏ cuộc.",
+      "rules": [
+        {
+          "trigger": "existing embeddings index",
+          "choice": "Build a custom tool"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tool search bằng embeddings riêng: tool tự viết trả về tool_reference",
+      "text": "Nền tảng muốn Claude tìm tool bằng **embeddings index sẵn có** thay vì regex hay BM25 dựng sẵn, vì mô tả tool ngắn nhưng gần nghĩa nhau trong không gian embedding."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.8 · Tool search: nạp tool khi cần"
+    ]
+  },
+  {
+    "n": 137,
+    "topic": "Integration",
+    "multi": false,
+    "q": "A support-ticket assistant retrieves passages from a 500-document internal knowledge base for each incoming ticket and must cite the exact source passage in every reply, [[without re-sending the entire corpus]] on each request. Which approach best matches this data shape and query pattern?",
+    "q_vi": "Một trợ lý xử lý ticket hỗ trợ lấy các đoạn văn từ một knowledge base nội bộ 500 tài liệu cho mỗi ticket đến, và phải trích đúng đoạn nguồn trong mọi câu trả lời, không gửi lại toàn bộ corpus (cả kho tài liệu) trong mỗi yêu cầu. Cách nào khớp nhất với dạng dữ liệu và kiểu truy vấn này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Concatenate the full corpus into a single long-context user message with all 500 documents separated by titles, then prompt Claude to extract the relevant passage and cite its source.",
+        "vi": "Ghép toàn bộ kho vào một user message dài với 500 tài liệu phân cách bằng tiêu đề, rồi yêu cầu Claude tìm đoạn liên quan và ghi nguồn.",
+        "correct": false,
+        "why": "Ghép cả kho vào một message dài thì tốn token mỗi lần, và context càng dài thì độ chính xác càng giảm. Cách này bỏ qua bước truy xuất có chọn lọc."
+      },
+      {
+        "k": "B",
+        "text": "Store the corpus in the memory tool by saving each document as a separate entry, configure assistant to load all entries before answering, and prompt it to cite source document for any retrieved passage.",
+        "vi": "Lưu kho vào memory tool, mỗi tài liệu một mục, cấu hình trợ lý nạp hết các mục trước khi trả lời và yêu cầu nó ghi nguồn cho mọi đoạn dùng tới.",
+        "correct": false,
+        "why": "Memory tool để Claude ghi chú qua các lượt, không phải chỉ mục truy xuất. Nạp hết mọi mục trước khi trả lời cũng là gửi lại cả kho."
+      },
+      {
+        "k": "C",
+        "text": "Return the retrieved passages as [[search result content blocks]] from a retrieval tool, each carrying source and title metadata, so Claude generates natural citations per ticket.",
+        "vi": "Trả các đoạn lấy được về dưới dạng khối search result từ một tool truy xuất, mỗi khối mang nguồn và tiêu đề, để Claude trích dẫn tự nhiên cho từng ticket.",
+        "correct": true,
+        "why": "Mỗi lần chỉ cần vài đoạn liên quan, nên dùng một tool truy xuất trả về đúng những đoạn đó dưới dạng **khối search result**, mỗi khối mang nguồn và tiêu đề. Claude trích dẫn tự nhiên từ các khối này, còn kho 500 tài liệu không phải gửi đi lần nào."
+      },
+      {
+        "k": "D",
+        "text": "Upload all 500 documents as citable text documents in the system prompt so that Claude can reference any passage directly, and then instruct it to cite the source document and section for every reply.",
+        "vi": "Đưa cả 500 tài liệu vào system prompt dưới dạng tài liệu trích dẫn được để Claude tham chiếu trực tiếp mọi đoạn, rồi yêu cầu nó ghi nguồn tài liệu và mục trong mọi câu trả lời.",
+        "correct": false,
+        "why": "Đưa cả 500 tài liệu vào system prompt là gửi cả kho trong mọi yêu cầu, đúng điều đề muốn tránh, lại tốn context cho các đoạn không liên quan."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "without re-sending the entire corpus",
+      "choice": "search result content blocks",
+      "note": "**Mỗi lần lấy vài đoạn mà phải trích nguồn** thì cho tool truy xuất trả về **search result content blocks** (đáp án C). Các đáp án còn lại đều đưa cả kho vào context, chỉ khác chỗ để: system prompt (đáp án D), message (đáp án A), memory (đáp án B).",
+      "rules": [
+        {
+          "trigger": "without re-sending the entire corpus",
+          "choice": "search result content blocks"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Truy xuất từng phần mà vẫn trích nguồn: search result từ tool truy xuất",
+      "text": "Mỗi ticket, trợ lý lấy vài đoạn từ kho 500 tài liệu nội bộ và phải **trích đúng đoạn nguồn** trong mọi câu trả lời, **không gửi lại cả kho** trong mỗi yêu cầu."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.5 · Các bước của pipeline"
+    ]
+  },
+  {
+    "n": 138,
+    "topic": "Integration",
+    "multi": false,
+    "q": "A team originally split their onboarding manual into fixed 500-character chunks with no overlap. They now find that many chunks begin or end [[mid-sentence]], and answers near a chunk boundary are frequently missed because the relevant sentence is split across two separate embeddings. Which chunking adjustment most directly addresses this specific failure?",
+    "q_vi": "Ban đầu một team chia sổ tay onboarding thành các chunk cố định 500 ký tự, không overlap. Giờ họ thấy nhiều chunk bắt đầu hoặc kết thúc giữa câu, và câu trả lời nằm gần ranh giới chunk hay bị bỏ sót vì câu liên quan bị chia ra hai embedding khác nhau. Điều chỉnh cách chia chunk nào giải quyết trực tiếp nhất lỗi cụ thể này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Split chunks along natural boundaries]] such as paragraphs or sections, and add a small overlap between adjacent chunks so boundary sentences appear intact in at least one chunk.",
+        "vi": "Cắt chunk theo ranh giới tự nhiên như đoạn văn hay mục, và thêm một chút overlap giữa các chunk liền nhau để câu ở ranh giới nằm trọn trong ít nhất một chunk.",
+        "correct": true,
+        "why": "Lỗi nằm ở chỗ cắt: một câu bị chia đôi sang hai embedding nên không chunk nào chứa trọn ý. **Cắt theo ranh giới tự nhiên** như đoạn văn hay mục thì câu không bị chặt giữa chừng; **thêm một chút overlap** giữa các chunk liền nhau thì câu sát ranh giới vẫn nằm trọn trong ít nhất một chunk."
+      },
+      {
+        "k": "B",
+        "text": "Keep the fixed 500-character boundaries and increase the embedding model's context window so that each vector encodes more surrounding text, reducing missed answers near splits.",
+        "vi": "Giữ ranh giới cố định 500 ký tự và tăng context window của model embedding để mỗi vector mã hoá thêm văn bản xung quanh, bớt bỏ sót câu trả lời gần chỗ cắt.",
+        "correct": false,
+        "why": "Context window của model embedding lớn hơn không đổi được chỗ pipeline cắt văn bản; ranh giới vẫn cố định 500 ký tự nên câu ở chỗ cắt vẫn bị chia đôi."
+      },
+      {
+        "k": "C",
+        "text": "Remove overlap and set a smaller fixed chunk size, such as 250 characters, to lower the vector index count and accelerate semantic search without changing how sentences are split.",
+        "vi": "Bỏ overlap và đặt cỡ chunk cố định nhỏ hơn, như 250 ký tự, để giảm số vector trong chỉ mục và tăng tốc tìm kiếm ngữ nghĩa mà không đổi cách tách câu.",
+        "correct": false,
+        "why": "Bỏ overlap và cắt nhỏ hơn thì càng nhiều ranh giới, câu càng dễ bị chia đôi, làm lỗi nặng thêm."
+      },
+      {
+        "k": "D",
+        "text": "Reduce the chunk size so each chunk contains exactly one sentence, splitting on punctuation such as periods or exclamation points, and drop the fixed character limit to prevent mid-sentence breaks.",
+        "vi": "Giảm cỡ chunk để mỗi chunk chứa đúng một câu, cắt theo dấu chấm hay dấu chấm than, và bỏ giới hạn số ký tự cố định để tránh cắt giữa câu.",
+        "correct": false,
+        "why": "Mỗi chunk một câu thì hết cắt giữa câu, nhưng mất ngữ cảnh xung quanh; ý trải trên nhiều câu vẫn bị chia nhỏ nên truy xuất kém chính xác."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "mid-sentence",
+      "choice": "Split chunks along natural boundaries",
+      "note": "Lỗi do **chỗ cắt** thì sửa **cách cắt**: theo đoạn hay mục và **thêm overlap** (đáp án A). Cắt nhỏ hơn (đáp án D, đáp án C) hay đổi model embedding (đáp án B) đều không giải quyết chuyện câu bị chặt đôi.",
+      "rules": [
+        {
+          "trigger": "mid-sentence",
+          "choice": "Split chunks along natural boundaries"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Chunk cắt ngang câu: cắt theo ranh giới tự nhiên và thêm overlap",
+      "text": "Tài liệu bị cắt thành **chunk 500 ký tự cố định, không overlap**. Nhiều chunk **bắt đầu hoặc kết thúc giữa câu**, nên câu trả lời nằm ở chỗ cắt hay bị bỏ sót."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.5 · Chia chunk theo hình dạng dữ liệu"
+    ]
+  },
+  {
+    "n": 139,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "An agent's project has accumulated a dozen skills, several of which perform side-effecting actions such as sending Slack messages or deleting stale branches. Reviewers notice Claude occasionally [[auto-triggers]] these side-effecting skills based on vague description matches, and want to reduce the agent's effective capability surface so these skills only run when a person explicitly invokes them. What is the most direct fix?",
+    "q_vi": "Project của một agent đã có khoảng một chục skill, vài skill trong số đó gây side effect như gửi tin nhắn Slack hay xoá các branch cũ. Người review nhận thấy Claude đôi khi tự kích hoạt các skill có side effect này chỉ vì mô tả khớp một cách mơ hồ, và muốn thu hẹp khả năng thực tế của agent để các skill này chỉ chạy khi có người gọi rõ ràng. Cách sửa trực tiếp nhất là gì?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Delete the skill descriptions from the frontmatter of each side-effecting skill so Claude has no basis for automatic matching and only the user can invoke those skills by name.",
+        "vi": "Xoá phần mô tả skill khỏi frontmatter của từng skill có side effect để Claude không có gì để tự khớp, và chỉ người dùng gọi được các skill đó theo tên.",
+        "correct": false,
+        "why": "Xoá mô tả không tắt được việc tự gọi: nếu thiếu description, Claude Code lấy dòng đầu của nội dung làm mô tả. Chỉ đáp án D đặt đúng trường làm việc đó."
+      },
+      {
+        "k": "B",
+        "text": "Move the side-effecting skills into CLAUDE.md so they load as always-on context, which ensures Claude only uses them when the user explicitly invokes them by name in a request.",
+        "vi": "Chuyển các skill có side effect vào CLAUDE.md để chúng nạp sẵn trong context, nhờ vậy Claude chỉ dùng chúng khi người dùng gọi rõ tên trong yêu cầu.",
+        "correct": false,
+        "why": "Đưa skill vào CLAUDE.md thì nội dung của nó luôn nằm trong context ở mọi phiên, Claude càng dễ làm theo mà không cần ai gọi."
+      },
+      {
+        "k": "C",
+        "text": "Rewrite the instructions of each side-effecting skill to instruct Claude to ask for confirmation before performing the side effect, without modifying frontmatter fields.",
+        "vi": "Viết lại chỉ dẫn của từng skill có side effect để Claude xin xác nhận trước khi thực hiện side effect, không sửa trường nào trong frontmatter.",
+        "correct": false,
+        "why": "Thêm bước xin xác nhận vẫn để Claude tự kích hoạt skill, chỉ là kích hoạt xong mới hỏi. Yêu cầu là skill không được tự chạy."
+      },
+      {
+        "k": "D",
+        "text": "Set [[disable-model-invocation]]: true in the frontmatter of each side-effecting skill so Claude cannot select them automatically and only the user can invoke them with /name.",
+        "vi": "Đặt disable-model-invocation: true trong frontmatter của từng skill có side effect để Claude không tự chọn được, chỉ người dùng gọi được bằng /tên.",
+        "correct": true,
+        "why": "Frontmatter của skill có trường dành cho đúng việc này: disable-model-invocation: true. Bật lên thì Claude không tự nạp skill đó nữa, còn người dùng vẫn gọi được bằng /tên-skill."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "auto-triggers",
+      "choice": "disable-model-invocation",
+      "note": "Skill **chỉ người gọi mới chạy** thì đặt disable-model-invocation: true trong frontmatter (đáp án D). Xoá mô tả (đáp án A), dồn vào CLAUDE.md (đáp án B) hay xin xác nhận (đáp án C) đều không ngăn được Claude tự kích hoạt.",
+      "rules": [
+        {
+          "trigger": "auto-triggers",
+          "choice": "disable-model-invocation"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Skill có side effect chỉ chạy khi người gọi: disable-model-invocation",
+      "text": "Project có chục skill, vài skill gây **side effect** như gửi Slack hay xoá branch. Claude đôi khi **tự kích hoạt** chúng vì mô tả khớp mơ hồ. Team muốn các skill này **chỉ chạy khi có người gọi rõ ràng**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.5 · Agent Skills: quy trình dùng chung nhiều nơi"
+    ]
+  },
+  {
+    "n": 140,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": false,
+    "q": "A team is defining the success criteria for a new claims-summarization feature before building the evaluation dataset. The current draft criterion reads: \"the summaries should be concise and helpful.\" Which revised criterion best follows the [[SMART framework]] for evaluation design?",
+    "q_vi": "Một team đang định nghĩa tiêu chí thành công cho tính năng tóm tắt hồ sơ bồi thường mới, trước khi xây bộ dữ liệu đánh giá. Tiêu chí nháp hiện ghi: \"bản tóm tắt phải ngắn gọn và hữu ích.\" Bản sửa nào theo đúng nhất khung SMART cho thiết kế đánh giá?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Require every summary to be signed off by a senior adjuster before it counts as acceptable",
+        "vi": "Yêu cầu mọi bản tóm tắt được một adjuster cấp cao ký duyệt thì mới tính là đạt",
+        "correct": false,
+        "why": "Bắt một adjuster cấp cao ký mọi bản tóm tắt là mô tả một quy trình, không phải tiêu chí đo chất lượng đầu ra của model."
+      },
+      {
+        "k": "B",
+        "text": "Require summaries to [[average at least 4 out of 5]] on a completeness rubric across a 500-claim sample",
+        "vi": "Yêu cầu bản tóm tắt đạt trung bình ít nhất 4/5 trên rubric về độ đầy đủ, đo trên mẫu 500 hồ sơ",
+        "correct": true,
+        "why": "Bản này **cụ thể** (rubric về độ đầy đủ), **đo được** (điểm trung bình ít nhất 4/5 trên mẫu 500 hồ sơ), **khả thi** (không đòi tuyệt đối) và **liên quan** (gắn thẳng vào chất lượng tóm tắt): đủ bốn tính chất của một tiêu chí thành công tốt."
+      },
+      {
+        "k": "C",
+        "text": "Require summaries to sound less robotic and read more naturally to the adjusters who review them",
+        "vi": "Yêu cầu bản tóm tắt nghe bớt máy móc và đọc tự nhiên hơn với các adjuster",
+        "correct": false,
+        "why": "\"Bớt máy móc\" hay \"đọc tự nhiên hơn\" không có thang đo hay con số nào, nên không đo được."
+      },
+      {
+        "k": "D",
+        "text": "Require summaries to earn a perfect 5 out of 5 completeness score from every adjuster in the sample",
+        "vi": "Yêu cầu bản tóm tắt đạt điểm tuyệt đối 5/5 về độ đầy đủ từ mọi adjuster (người thẩm định bồi thường) trong mẫu",
+        "correct": false,
+        "why": "Đòi 5/5 từ mọi adjuster là mục tiêu tuyệt đối, khó làm được; tiêu chí cần làm được."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "SMART framework",
+      "choice": "average at least 4 out of 5",
+      "note": "Tiêu chí SMART phải **có con số, đo được và đạt được**, như điểm trung bình **at least 4 out of 5** trên mẫu 500 hồ sơ (đáp án B). Đòi tuyệt đối 5/5 (đáp án D) là không khả thi, cảm nhận chung chung (đáp án C) là không đo được, quy trình ký duyệt (đáp án A) không phải tiêu chí.",
+      "rules": [
+        {
+          "trigger": "SMART framework",
+          "choice": "average at least 4 out of 5"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Viết lại tiêu chí thành công theo SMART",
+      "text": "Tiêu chí nháp cho tính năng tóm tắt hồ sơ bồi thường là \"tóm tắt phải ngắn gọn và hữu ích\". Đề hỏi bản sửa nào theo đúng **SMART**: cụ thể, đo được, khả thi, liên quan, có phạm vi đo rõ."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.1 · Tiêu chí thành công phải đo được"
+    ]
+  },
+  {
+    "n": 141,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "A platform engineer sets CLAUDE_CODE_ENABLE_TELEMETRY=1 on every CI runner but the team's OTLP collector never receives any spans, metrics, or logs from Claude Code jobs. [[No other telemetry variables]] were configured. What is the most likely cause of the missing data?",
+    "q_vi": "Một kỹ sư nền tảng đặt CLAUDE_CODE_ENABLE_TELEMETRY=1 trên mọi CI runner, nhưng collector OTLP của team không bao giờ nhận được span, metric hay log nào từ các job Claude Code. Không có biến telemetry nào khác được cấu hình. Nguyên nhân có khả năng nhất khiến thiếu dữ liệu là gì?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The CLI only emits telemetry once the console exporter has been configured first as a required local fallback",
+        "vi": "CLI chỉ phát telemetry sau khi đã cấu hình console exporter trước làm phương án dự phòng cục bộ bắt buộc",
+        "correct": false,
+        "why": "Đề không đòi phải cấu hình console exporter trước. Điều cần là chọn exporter cho từng loại tín hiệu, và console không phải bước bắt buộc."
+      },
+      {
+        "k": "B",
+        "text": "The organization's Admin API key must be exported through OTEL_EXPORTER_OTLP_HEADERS before the CLI will emit any signal",
+        "vi": "Phải xuất Admin API key của tổ chức qua OTEL_EXPORTER_OTLP_HEADERS thì CLI mới phát tín hiệu nào",
+        "correct": false,
+        "why": "Admin API key không phải điều kiện để Claude Code xuất telemetry. Việc xuất phụ thuộc vào exporter đã chọn cho từng tín hiệu."
+      },
+      {
+        "k": "C",
+        "text": "Telemetry is enabled but [[no exporter was selected]], so OTEL_METRICS_EXPORTER and OTEL_LOGS_EXPORTER default to producing no export at all",
+        "vi": "Telemetry đã bật nhưng chưa chọn exporter nào, nên OTEL_METRICS_EXPORTER và OTEL_LOGS_EXPORTER mặc định là không xuất gì cả",
+        "correct": true,
+        "why": "CLAUDE_CODE_ENABLE_TELEMETRY=1 chỉ bật việc thu thập. Muốn dữ liệu đi đâu thì phải **chọn exporter** cho từng loại tín hiệu: OTEL_METRICS_EXPORTER, OTEL_LOGS_EXPORTER (và OTEL_TRACES_EXPORTER cho trace), kèm endpoint và protocol. Không chọn exporter nào thì không có gì được gửi đi."
+      },
+      {
+        "k": "D",
+        "text": "The collector rejects every signal until CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1 is also set, regardless of which exporters are chosen",
+        "vi": "Collector từ chối mọi tín hiệu cho tới khi đặt thêm CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1, bất kể chọn exporter nào",
+        "correct": false,
+        "why": "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1 chỉ đi kèm với trace (đang beta). Metrics và logs chỉ cần chọn exporter, nên thiếu biến này không giải thích được việc collector không nhận gì."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "No other telemetry variables",
+      "choice": "no exporter was selected",
+      "note": "Bật telemetry chưa đủ, phải **chọn exporter** (đáp án C): ENABLE_TELEMETRY là công tắc, OTEL_*_EXPORTER mới là chỗ gửi tới. Cờ beta (đáp án D) chỉ dành cho trace; console exporter (đáp án A) và Admin API key (đáp án B) không phải điều kiện bắt buộc.",
+      "rules": [
+        {
+          "trigger": "No other telemetry variables",
+          "choice": "no exporter was selected"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Bật telemetry mà collector không nhận gì: chưa chọn exporter",
+      "text": "CI chỉ đặt CLAUDE_CODE_ENABLE_TELEMETRY=1, **không đặt biến telemetry nào khác**, và collector OTLP không nhận được gì từ Claude Code."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.6 · Bật đúng tín hiệu"
+    ]
+  },
+  {
+    "n": 142,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": true,
+    "q": "An agentic coding assistant runs long sessions that accumulate hundreds of tool calls, and the conversation regularly approaches the model's context window limit before the task is finished. Engineers want strategies that let the session continue productively [[without losing critical state]]. Which approaches address this goal?",
+    "q_vi": "Một trợ lý lập trình dạng agent chạy các phiên dài, tích luỹ hàng trăm lần gọi tool, và hội thoại thường gần chạm giới hạn context window trước khi xong việc. Các kỹ sư muốn có cách để phiên làm tiếp hiệu quả mà không mất trạng thái quan trọng. Những cách nào đáp ứng mục tiêu này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Enable server-side compaction]] so earlier turns are automatically summarized once the conversation nears the context window limit",
+        "vi": "Bật server-side compaction để các lượt cũ được tự động tóm tắt khi hội thoại gần chạm giới hạn context window",
+        "correct": true,
+        "why": "**Server-side compaction** tự tóm tắt các lượt cũ khi hội thoại gần chạm giới hạn, nên phiên làm tiếp được quá giới hạn context."
+      },
+      {
+        "k": "B",
+        "text": "Increase the effort parameter to max so Claude reasons more thoroughly and needs fewer total turns to finish the task",
+        "vi": "Tăng tham số effort lên max để Claude suy luận kỹ hơn và cần ít lượt hơn để xong việc",
+        "correct": false,
+        "why": "Tăng effort lên max chỉ chỉnh mức suy nghĩ; effort không tóm tắt, không xoá và không lưu lại gì, nên không giải quyết được chuyện context đầy."
+      },
+      {
+        "k": "C",
+        "text": "Lower the effort parameter to low so Claude generates shorter replies, preventing the context window from ever filling up",
+        "vi": "Hạ tham số effort xuống low để Claude trả lời ngắn hơn, nhờ vậy context window không bao giờ bị đầy",
+        "correct": false,
+        "why": "Hạ effort xuống low làm mỗi lượt ngắn hơn, nhưng lịch sử vẫn dài thêm và sớm muộn vẫn chạm giới hạn. Effort cũng không giữ lại trạng thái quan trọng cho phiên."
+      },
+      {
+        "k": "D",
+        "text": "[[Use the memory tool]] to persist critical state to durable storage before old context is cleared, so a session recovers quickly",
+        "vi": "Dùng memory tool để lưu trạng thái quan trọng ra nơi lưu bền trước khi context cũ bị dọn, để phiên khôi phục nhanh",
+        "correct": true,
+        "why": "**Memory tool** ghi trạng thái quan trọng ra nơi lưu bền trước khi context bị dọn, nên dù lượt cũ bị tóm tắt hay xoá, thông tin cần thiết vẫn còn để đọc lại."
+      },
+      {
+        "k": "E",
+        "text": "Switch the session to the Message Batches API so each turn runs as an independent asynchronous request with fresh context",
+        "vi": "Chuyển phiên sang Message Batches API để mỗi lượt chạy thành một yêu cầu bất đồng bộ độc lập với context mới",
+        "correct": false,
+        "why": "Message Batches API dành cho các yêu cầu độc lập, bất đồng bộ; tách một phiên tương tác thành các yêu cầu context mới là mất luôn trạng thái."
+      },
+      {
+        "k": "F",
+        "text": "[[Configure context editing]] to clear old tool results once a token threshold is reached, keeping only recent tool use/result pairs",
+        "vi": "Cấu hình context editing để xoá các kết quả tool cũ khi đạt ngưỡng token, chỉ giữ các cặp gọi tool và kết quả gần nhất",
+        "correct": true,
+        "why": "**Context editing** xoá các kết quả tool cũ khi vượt ngưỡng token, chỉ giữ vài cặp gọi tool gần nhất, giải phóng chỗ trong phiên nặng về tool."
+      }
+    ],
+    "answer": "A, D, F",
+    "tip": {
+      "trigger": "without losing critical state",
+      "choice": "Enable server-side compaction · Use the memory tool · Configure context editing",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** để đặt ra. Ở câu này, yêu cầu là phiên làm tiếp được mà không mất trạng thái, nên chọn ba cách quản lý context: đáp án A **server-side compaction** tóm tắt, đáp án F **context editing** dọn kết quả tool cũ, đáp án D **memory tool** giữ trạng thái ra ngoài. Đáp án C và đáp án B chỉnh effort, đáp án E đổi sang batch, đều là giải pháp cho yêu cầu khác.",
+      "rules": [
+        {
+          "trigger": "without losing critical state",
+          "choice": "Enable server-side compaction · Use the memory tool · Configure context editing"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Phiên dài sắp đầy context: compaction, context editing và memory tool",
+      "text": "Trợ lý lập trình chạy phiên dài với hàng trăm lần gọi tool, context thường gần đầy trước khi xong việc. Đề hỏi những cách giúp phiên **làm tiếp được mà không mất trạng thái quan trọng**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.4 · Giảm token ở từng giai đoạn"
+    ]
+  },
+  {
+    "n": 143,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "A team wants to lower per-request cost and latency for a chat feature [[without switching models]] or losing response quality on genuinely hard questions. They want the model itself to spend fewer tokens on easy turns while still reasoning thoroughly on complex ones. Which lever should they reach for first?",
+    "q_vi": "Một team muốn giảm chi phí và độ trễ mỗi yêu cầu của tính năng chat mà không đổi model và không giảm chất lượng ở những câu hỏi thật sự khó. Họ muốn chính model tiêu ít token hơn ở các lượt dễ mà vẫn suy luận kỹ ở các lượt phức tạp. Họ nên dùng đòn bẩy nào trước tiên?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Lower the effort parameter]] for routine turns, since it reduces token spend while letting Claude think harder when warranted",
+        "vi": "Hạ tham số effort cho các lượt thông thường, vì nó giảm token tiêu tốn mà vẫn để Claude nghĩ kỹ hơn khi cần",
+        "correct": true,
+        "why": "**Effort** là tham số đánh đổi độ kỹ lấy số token trong cùng một model, áp lên cả phần trả lời, lời gọi tool lẫn phần suy nghĩ. Hạ effort thì Claude tiêu ít token hơn ở việc đơn giản, còn gặp bài thật sự khó vẫn nghĩ khi cần. Đúng thứ team muốn: không đổi model mà rẻ và nhanh hơn ở lượt dễ."
+      },
+      {
+        "k": "B",
+        "text": "Disable prompt caching entirely, since removing all cached writes always guarantees the very lowest possible token count of all",
+        "vi": "Tắt hẳn prompt caching, vì bỏ mọi lần ghi cache luôn bảo đảm số token thấp nhất có thể",
+        "correct": false,
+        "why": "Tắt prompt caching là mất luôn phần đọc cache giá rẻ cho nội dung lặp lại, chi phí thường tăng chứ không giảm."
+      },
+      {
+        "k": "C",
+        "text": "Force every request through the Message Batches API, since batch requests are billed at a flat discounted rate",
+        "vi": "Ép mọi yêu cầu đi qua Message Batches API, vì yêu cầu batch được tính giá chiết khấu cố định",
+        "correct": false,
+        "why": "Batch API chỉ nói tới mức giá chiết khấu, không điều chỉnh số token theo độ khó của từng lượt, nên không giúp model tiêu ít token ở lượt dễ."
+      },
+      {
+        "k": "D",
+        "text": "Set max_tokens to a small fixed value on all requests so Claude cannot generate long responses on hard questions",
+        "vi": "Đặt max_tokens ở một giá trị nhỏ cố định cho mọi yêu cầu để Claude không thể trả lời dài ở các câu khó",
+        "correct": false,
+        "why": "Đặt max_tokens nhỏ cố định sẽ cắt cụt câu trả lời ở đúng những câu khó cần trả lời dài, phá yêu cầu giữ chất lượng."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "without switching models",
+      "choice": "Lower the effort parameter",
+      "note": "**Cùng model, tự tiêu ít cho việc dễ, nghĩ kỹ cho việc khó** là đúng mô tả của **effort** (đáp án A). Max_tokens nhỏ (đáp án D) cắt cụt câu khó, batch (đáp án C) không chỉnh được token theo độ khó, tắt caching (đáp án B) còn làm đắt thêm.",
+      "rules": [
+        {
+          "trigger": "without switching models",
+          "choice": "Lower the effort parameter"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Bớt token ở lượt dễ, vẫn nghĩ kỹ ở lượt khó: tham số effort",
+      "text": "Team muốn giảm chi phí và độ trễ của tính năng chat **mà không đổi model**, và muốn chính model **tiêu ít token cho lượt dễ, vẫn suy luận kỹ cho lượt khó**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.3 · Đòn bẩy và cái giá"
+    ]
+  },
+  {
+    "n": 144,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": false,
+    "q": "Ahead of launch, a product manager sets a success criterion requiring the model to achieve 100% accuracy on an open-ended reasoning task, with [[zero tolerance]] for any incorrect or incomplete answer, matching or exceeding what a domain expert could produce. What is the main problem with this success criterion, and how should it be revised?",
+    "q_vi": "Trước khi ra mắt, một product manager đặt tiêu chí thành công yêu cầu model đúng 100% trên một open-ended reasoning task (bài suy luận mở), không chấp nhận bất kỳ câu trả lời sai hay thiếu nào, ngang bằng hoặc hơn mức một chuyên gia trong ngành làm được. Vấn đề chính của tiêu chí này là gì, và nên sửa thế nào?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The target is not measurable because open-ended tasks cannot be scored automatically under any circumstances, so the criterion should rely on subjective human ratings with no automated evaluation.",
+        "vi": "Mục tiêu không đo được vì bài mở không bao giờ chấm tự động được, nên tiêu chí phải dựa vào chấm điểm chủ quan của người, không có đánh giá tự động.",
+        "correct": false,
+        "why": "Đề không nói bài mở không chấm tự động được. Vấn đề của tiêu chí là mức 100% không làm được, không phải không đo được."
+      },
+      {
+        "k": "B",
+        "text": "The target is not relevant because reasoning tasks should never have accuracy targets; instead, the criterion should specify maximum latency and cost, which are the only meaningful production metrics.",
+        "vi": "Mục tiêu không liên quan vì bài suy luận không bao giờ nên có mục tiêu độ chính xác; tiêu chí nên chỉ nêu độ trễ và chi phí tối đa, hai thước đo production duy nhất có ý nghĩa.",
+        "correct": false,
+        "why": "Bài suy luận vẫn cần mục tiêu về độ chính xác; độ trễ và chi phí không phải thước đo duy nhất có ý nghĩa."
+      },
+      {
+        "k": "C",
+        "text": "The target is not specific enough because it does not name a single numeric metric, so it should be replaced with a quantifiable percentage like a 95% accuracy score, regardless of feasibility.",
+        "vi": "Mục tiêu chưa đủ cụ thể vì không nêu một thước đo bằng số, nên thay bằng một tỉ lệ đo được như độ chính xác 95%, bất kể có khả thi hay không.",
+        "correct": false,
+        "why": "100% đã là một con số cụ thể, nên vấn đề không phải thiếu cụ thể. Đổi sang 95% \"bất kể có khả thi không\" vẫn chưa sửa đúng chỗ."
+      },
+      {
+        "k": "D",
+        "text": "The target is [[unachievable]] because it exceeds realistic frontier-model capability. It should instead be grounded in benchmark results, prior experiments, or comparable industry performance.",
+        "vi": "Mục tiêu không đạt được vì vượt quá năng lực thực tế của frontier model (model hàng đầu). Nên đặt mục tiêu dựa trên kết quả benchmark, các thử nghiệm trước hoặc mức hiệu năng tương đương trong ngành.",
+        "correct": true,
+        "why": "Tiêu chí này đã cụ thể và có con số, nhưng **không làm được** (achievable): đòi đúng 100%, không chấp nhận câu sai hay thiếu nào, ngang hoặc hơn chuyên gia, là vượt khả năng thực tế của model. Tiêu chí tốt phải dựa vào số liệu hiện tại hay kinh nghiệm, nên đặt mục tiêu dựa trên **kết quả benchmark, các thử nghiệm trước hay mức của các hệ thống tương tự** trong ngành."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "zero tolerance",
+      "choice": "unachievable",
+      "note": "Gặp 100% và zero tolerance thì lỗi là **không khả thi** (tiêu chí phải làm được, achievable), sửa bằng cách **dựa trên benchmark và thử nghiệm trước** (đáp án D). Các đáp án còn lại gán sai lỗi: thiếu cụ thể (đáp án C), không liên quan (đáp án B), không đo được (đáp án A).",
+      "rules": [
+        {
+          "trigger": "zero tolerance",
+          "choice": "unachievable"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tiêu chí 100%, không sai lần nào: lỗi ở chỗ không khả thi",
+      "text": "PM đặt tiêu chí model phải **đúng 100% trên một bài suy luận mở, không chấp nhận câu sai hay thiếu nào**, ngang hoặc hơn chuyên gia. Đề hỏi tiêu chí sai ở đâu và sửa thế nào."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 1.1 · Tiêu chí thành công phải đo được"
+    ]
+  },
+  {
+    "n": 145,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": false,
+    "q": "A team has been iterating on a claims-processing prompt using the [[same 200-example development set]] for every round of refinement. They now want to declare a final winning version before shipping. What should they do before making that final decision?",
+    "q_vi": "Một team đã chỉnh prompt xử lý hồ sơ bồi thường qua nhiều vòng, vòng nào cũng dùng cùng một development set (tập phát triển) 200 ví dụ. Giờ họ muốn chốt bản thắng cuối cùng trước khi đưa ra production. Họ nên làm gì trước khi ra quyết định cuối cùng đó?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Ship the candidate that achieves the highest score on the 200-example development set right away, as iteratively refining on that same set already demonstrates its production readiness.",
+        "vi": "Đưa ngay bản đạt điểm cao nhất trên development set 200 ví dụ ra production, vì việc chỉnh nhiều vòng trên chính tập đó đã cho thấy nó sẵn sàng.",
+        "correct": false,
+        "why": "Điểm cao nhất trên tập đã dùng để chỉnh rất có thể là do overfit; sẵn sàng cho production phải được xác nhận trên dữ liệu chưa thấy."
+      },
+      {
+        "k": "B",
+        "text": "[[Evaluate the leading prompt candidate]] on a separate [[held-out test set]] not used during iteration to confirm that improvements generalize beyond the development set.",
+        "vi": "Đánh giá prompt dẫn đầu trên một held-out test set riêng, chưa dùng trong lúc chỉnh, để xác nhận phần cải thiện có giữ được ngoài development set.",
+        "correct": true,
+        "why": "Chỉnh đi chỉnh lại trên cùng một tập thì prompt dễ **overfit** (khớp quá mức) với chính tập đó: điểm cao nhưng chưa chắc làm tốt trên dữ liệu mới. Trước khi chốt phải chạy bản tốt nhất trên **một held-out test set riêng, chưa dùng lúc chỉnh**, để xác nhận phần cải thiện vẫn giữ được ngoài development set."
+      },
+      {
+        "k": "C",
+        "text": "Run one more round of refinement on the same 200-example development set, perhaps switching to a different model or adding few-shot examples, to maximize the score before finalizing the prompt.",
+        "vi": "Chạy thêm một vòng chỉnh trên cùng development set 200 ví dụ, có thể đổi sang model khác hoặc thêm ví dụ few-shot, để đẩy điểm lên cao nhất trước khi chốt prompt.",
+        "correct": false,
+        "why": "Thêm một vòng chỉnh trên cùng tập chỉ khớp sâu hơn với tập đó; điểm development set cao hơn không bảo đảm làm tốt ngoài thực tế."
+      },
+      {
+        "k": "D",
+        "text": "Reduce the development set to only the examples that the current prompt candidate already passes, then present the accuracy on that subset as the final metric to make the score appear higher.",
+        "vi": "Rút development set xuống chỉ còn những ví dụ mà prompt hiện tại đã làm đúng, rồi báo độ chính xác trên tập con đó làm thước đo cuối để điểm trông cao hơn.",
+        "correct": false,
+        "why": "Bỏ các ví dụ đang sai để điểm đẹp hơn là tự lừa mình, giấu đúng những chỗ prompt còn yếu."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "same 200-example development set",
+      "choice": "Evaluate the leading prompt candidate · held-out test set",
+      "note": "Đã chỉnh nhiều vòng trên **cùng một tập** thì trước khi chốt phải đo trên **held-out test set** (đáp án B). Chỉnh thêm (đáp án C), cắt bớt tập (đáp án D) hay chốt ngay theo điểm development set (đáp án A) đều tin vào một con số đã bị overfit.",
+      "rules": [
+        {
+          "trigger": "same 200-example development set",
+          "choice": "Evaluate the leading prompt candidate · held-out test set"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Trước khi chốt prompt: kiểm trên tập held-out",
+      "text": "Team đã chỉnh prompt nhiều vòng trên **cùng một development set 200 ví dụ**. Giờ muốn chốt bản thắng để đưa lên production."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.3 · Offline trước, thử thật sau"
+    ]
+  },
+  {
+    "n": 146,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": true,
+    "q": "A team currently runs a moderately complex data-extraction workflow on Claude Haiku 4.5. Which of the following observations would be valid evidence that the workflow has a [[model-capability mismatch]] and should be evaluated on a more capable model like Claude Opus 4.8? (Select all that apply.)",
+    "q_vi": "Một team đang chạy một workflow trích xuất dữ liệu khá phức tạp trên Claude Haiku 4.5. Những quan sát nào là bằng chứng hợp lệ cho thấy workflow gặp model-capability mismatch (năng lực model không theo kịp yêu cầu), nên được đánh giá trên một model mạnh hơn như Claude Opus 4.8? (Chọn tất cả đáp án đúng.)",
+    "options": [
+      {
+        "k": "A",
+        "text": "The workflow's prompt was designed for an older model and has not been adapted to the current model's capabilities.",
+        "vi": "Prompt của workflow được viết cho một model cũ và chưa được chỉnh lại theo năng lực của model hiện tại.",
+        "correct": false,
+        "why": "Prompt viết cho model cũ, chưa chỉnh cho model hiện tại, thì việc đầu tiên là sửa prompt. Chưa sửa prompt thì chưa thể kết luận là model yếu."
+      },
+      {
+        "k": "B",
+        "text": "The workflow [[needs nuanced understanding]] across long chains of interdependent steps where partial errors compound.",
+        "vi": "Workflow cần hiểu sâu qua những chuỗi dài các bước phụ thuộc nhau, nơi lỗi nhỏ ở từng bước dồn lại.",
+        "correct": true,
+        "why": "Việc cần **hiểu sâu qua một chuỗi dài các bước phụ thuộc nhau**, nơi lỗi từng phần cộng dồn lại. Đây là đòi hỏi về năng lực suy luận chứ không phải chuyện cấu hình hay hạ tầng."
+      },
+      {
+        "k": "C",
+        "text": "[[On a use-case benchmark]], accuracy on multi-step reasoning subtasks stays below threshold [[even after prompt revisions]].",
+        "vi": "Trên benchmark của use case, độ chính xác ở các bước suy luận nhiều bước vẫn dưới ngưỡng dù đã sửa prompt.",
+        "correct": true,
+        "why": "Đo trên benchmark của chính use case, độ chính xác ở các bước suy luận nhiều bước vẫn dưới ngưỡng **dù đã sửa prompt**. Đã loại trừ prompt mà vẫn hụt thì nhiều khả năng là giới hạn năng lực của model."
+      },
+      {
+        "k": "D",
+        "text": "The workflow occasionally times out because of ordinary network latency between the client and the API.",
+        "vi": "Workflow thỉnh thoảng bị timeout vì độ trễ mạng thông thường giữa client và API.",
+        "correct": false,
+        "why": "Timeout do độ trễ mạng giữa client và API là chuyện hạ tầng, đổi model không sửa được."
+      },
+      {
+        "k": "E",
+        "text": "The team's monthly API spend for the workflow is higher than they originally budgeted for the project.",
+        "vi": "Chi phí API hằng tháng của workflow cao hơn ngân sách dự tính ban đầu của project.",
+        "correct": false,
+        "why": "Chi phí vượt ngân sách là chuyện tiền, không cho biết model có đủ năng lực hay không; chuyển sang model mạnh hơn còn đắt hơn."
+      },
+      {
+        "k": "F",
+        "text": "[[Manual review shows]] the extraction errors resemble [[genuine reasoning mistakes]] rather than missing or truncated input.",
+        "vi": "Xem tay cho thấy lỗi trích xuất là lỗi suy luận thật, không phải do đầu vào thiếu hay bị cắt.",
+        "correct": true,
+        "why": "Xem tay thấy lỗi là **lỗi suy luận thật**, không phải do đầu vào thiếu hay bị cắt. Đầu vào đã đủ mà model vẫn suy luận sai thì nguyên nhân nằm ở năng lực của model."
+      }
+    ],
+    "answer": "B, C, F",
+    "tip": {
+      "trigger": "model-capability mismatch",
+      "choice": "needs nuanced understanding · On a use-case benchmark · even after prompt revisions · Manual review shows · genuine reasoning mistakes",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 3 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, bằng chứng thật phải cho thấy **lỗi nằm ở suy luận của model** sau khi đã loại các nguyên nhân khác: đáp án C **even after prompt revisions**, đáp án B **needs nuanced understanding** qua chuỗi bước phụ thuộc, đáp án F **genuine reasoning mistakes**. Đáp án E chỉ phí và đáp án D mạng là Lạc, đáp án A là Thiếu vì chưa thử sửa prompt.",
+      "rules": [
+        {
+          "trigger": "model-capability mismatch",
+          "choice": "needs nuanced understanding · On a use-case benchmark · even after prompt revisions · Manual review shows · genuine reasoning mistakes"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Dấu hiệu thật sự cần thử model mạnh hơn",
+      "text": "Workflow trích xuất dữ liệu khá phức tạp đang chạy trên Claude Haiku 4.5. Đề hỏi những quan sát nào là **bằng chứng hợp lệ** của model-capability mismatch (năng lực model không theo kịp yêu cầu), nên thử trên model mạnh hơn như Claude Opus 4.8."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.4 · Lệch model và ước lượng quy mô"
+    ]
+  },
+  {
+    "n": 147,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "A compliance analyst asks Claude to review a 40-page vendor contract and flag every clause that conflicts with the company's data-retention policy. In early testing, Claude cites clause numbers and language that [[do not actually appear in the contract]]. Which prompting change is most effective at grounding the review in the actual document text for this kind of long-document task?",
+    "q_vi": "Một compliance analyst (chuyên viên tuân thủ) nhờ Claude review một hợp đồng nhà cung cấp dài 40 trang và đánh dấu mọi điều khoản xung đột với chính sách lưu trữ dữ liệu của công ty. Khi thử nghiệm ban đầu, Claude dẫn số điều khoản và câu chữ không hề có trong hợp đồng. Thay đổi prompt nào hiệu quả nhất để bài review bám vào đúng văn bản thật, với loại việc trên tài liệu dài như thế này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Reduce the max_tokens parameter for the response so Claude produces a shorter, more focused answer that is less likely to drift from the source contract",
+        "vi": "Giảm tham số max_tokens của câu trả lời để Claude trả lời ngắn và tập trung hơn, ít trôi khỏi hợp đồng gốc",
+        "correct": false,
+        "why": "Độ dài câu trả lời không quyết định điều khoản được dẫn có thật trong văn bản hay không."
+      },
+      {
+        "k": "B",
+        "text": "Ask Claude to answer using its general knowledge of standard contract clauses instead of the specific text, since standard clauses are usually representative",
+        "vi": "Bảo Claude trả lời bằng kiến thức chung về các điều khoản hợp đồng tiêu chuẩn thay vì văn bản cụ thể, vì điều khoản tiêu chuẩn thường đại diện được",
+        "correct": false,
+        "why": "Dựa vào kiến thức chung về điều khoản hợp đồng thay cho chính văn bản là đúng nguồn gốc của lỗi bịa, không phải cách sửa."
+      },
+      {
+        "k": "C",
+        "text": "Instruct Claude to first extract exact, [[word-for-word quotes]] relevant to data retention, and only then analyze compliance by referencing those extracted quotes",
+        "vi": "Bảo Claude trước hết trích ra các đoạn nguyên văn, đúng từng chữ liên quan tới lưu trữ dữ liệu, rồi mới đối chiếu với chính sách dựa trên các đoạn trích đó",
+        "correct": true,
+        "why": "Với tài liệu dài, cách chống bịa hiệu quả là **bắt Claude trích nguyên văn trước**: lấy ra các đoạn đúng từng chữ liên quan tới lưu trữ dữ liệu, rồi chỉ phân tích dựa trên các đoạn đó. Phân tích nhờ vậy bám vào chữ có thật trong văn bản, và người duyệt đối chiếu được từng đoạn trích."
+      },
+      {
+        "k": "D",
+        "text": "Instruct Claude to summarize the entire contract into three paragraphs first, then perform the compliance analysis using only that summary as its source",
+        "vi": "Bảo Claude tóm tắt cả hợp đồng thành ba đoạn trước, rồi phân tích tuân thủ chỉ dựa trên bản tóm tắt đó",
+        "correct": false,
+        "why": "Tóm tắt cả hợp đồng thành ba đoạn trước là bỏ bớt chi tiết, và bản tóm tắt cũng có thể sai, nên phân tích càng xa văn bản gốc."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "do not actually appear in the contract",
+      "choice": "word-for-word quotes",
+      "note": "Tài liệu dài mà model dẫn sai thì **trích nguyên văn trước, phân tích sau** (đáp án C). Dựa vào kiến thức chung (đáp án B) hay tóm tắt trước (đáp án D) đều xa văn bản hơn; bớt max_tokens (đáp án A) không liên quan.",
+      "rules": [
+        {
+          "trigger": "do not actually appear in the contract",
+          "choice": "word-for-word quotes"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tài liệu dài mà model dẫn bịa: trích nguyên văn trước, phân tích sau",
+      "text": "Claude review một hợp đồng 40 trang để tìm điều khoản xung đột với chính sách lưu trữ dữ liệu, nhưng lại **dẫn số điều khoản và câu chữ không hề có trong hợp đồng**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.4 · Xác nhận bịa thông tin"
+    ]
+  },
+  {
+    "n": 148,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": false,
+    "q": "A fintech company's Claude-powered agent can initiate wire transfers through a custom MCP tool. Even though the operations team has configured allowedTools to auto-approve most read and reporting tools, they want every wire-transfer tool call to require a human's explicit approval no matter what permission mode the session is later switched to, [[including bypassPermissions]]. Which approach best satisfies this requirement?",
+    "q_vi": "Agent chạy trên Claude của một công ty fintech có thể khởi tạo lệnh chuyển tiền qua một MCP tool tự viết. Dù team vận hành đã cấu hình allowedTools để tự duyệt hầu hết các tool đọc và báo cáo, họ muốn mọi lần gọi tool chuyển tiền đều phải có người duyệt rõ ràng, dù sau này phiên được chuyển sang permission mode nào, kể cả bypassPermissions. Cách nào đáp ứng yêu cầu này tốt nhất?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Register a PreToolUse hook]] scoped to the wire-transfer tool that returns permissionDecision \"ask\" for every call, since hooks execute before deny rules, ask rules, the permission mode check, and allow rules, and their decision holds even under bypassPermissions.",
+        "vi": "Đăng ký một PreToolUse hook chỉ cho tool chuyển tiền, trả về permissionDecision \"ask\" ở mọi lần gọi, vì hook chạy trước deny rule, ask rule, bước kiểm permission mode và allow rule, và quyết định của nó vẫn giữ kể cả khi bypassPermissions.",
+        "correct": true,
+        "why": "PreToolUse hook chạy trước bước hỏi quyền ở mỗi lần gọi tool, và quyết định \"ask\" của nó buộc Claude Code hỏi người dùng xác nhận. Gắn hook riêng cho tool chuyển tiền thì lần gọi nào của tool đó cũng phải qua người duyệt, không phụ thuộc allowedTools đang tự duyệt các tool khác. Trong bốn cách, đây là cách duy nhất đặt cổng duyệt ngay trên tool cần bảo vệ; ba cách kia tự nói rõ chỗ hỏng của mình."
+      },
+      {
+        "k": "B",
+        "text": "Switch the session's permission mode to acceptEdits, expecting the wire-transfer tool to fall outside its file-edit scope and always route to canUseTool, though other tools under acceptEdits still fall through to any allow rules that already approve them.",
+        "vi": "Chuyển permission mode của phiên sang acceptEdits, mong rằng tool chuyển tiền nằm ngoài phạm vi sửa file nên luôn đi tới canUseTool, trong khi các tool khác dưới acceptEdits vẫn rơi về các allow rule đã duyệt sẵn.",
+        "correct": false,
+        "why": "acceptEdits chủ yếu tự duyệt việc sửa file; tool khác vẫn đi theo luồng quyền thường và có thể được một allow rule sẵn có duyệt luôn. Không bảo đảm lần nào cũng hỏi người."
+      },
+      {
+        "k": "C",
+        "text": "Add a bare allowedTools entry for the wire-transfer tool so it auto-approves, then depend on the canUseTool callback to intercept it, since bare allow rules approve every matching call before canUseTool is ever consulted, so the callback never runs for that tool.",
+        "vi": "Thêm một mục allowedTools trần cho tool chuyển tiền để nó tự được duyệt, rồi trông vào callback canUseTool để chặn lại, trong khi allow rule trần duyệt mọi lần gọi khớp trước khi canUseTool được hỏi, nên callback không bao giờ chạy cho tool đó.",
+        "correct": false,
+        "why": "Allow rule không kèm điều kiện tự duyệt mọi lần gọi khớp, và lời gọi đó không bao giờ tới canUseTool. Chính đáp án đã nói callback không bao giờ chạy, tức là mất luôn bước duyệt."
+      },
+      {
+        "k": "D",
+        "text": "Add the wire-transfer tool to disallowed_tools with a wildcard pattern so it is blocked by default, then have the canUseTool callback lift the deny rule per call, though deny rules are evaluated before canUseTool runs and cannot be reversed from inside that callback.",
+        "vi": "Thêm tool chuyển tiền vào disallowed_tools bằng một mẫu wildcard để mặc định bị chặn, rồi để callback canUseTool gỡ deny rule cho từng lần gọi, trong khi deny rule được xét trước khi canUseTool chạy và không gỡ được từ bên trong callback đó.",
+        "correct": false,
+        "why": "Deny rule được xét trước canUseTool và callback không gỡ được deny. Tool sẽ bị chặn hẳn chứ không phải được duyệt từng lần."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "including bypassPermissions",
+      "choice": "Register a PreToolUse hook",
+      "note": "Muốn **một tool cụ thể luôn phải có người duyệt** thì đặt cổng ngay trên tool đó: **PreToolUse hook trả \"ask\"** (đáp án A). Ba đáp án còn lại tự khai lỗi trong chính câu chữ: allow rule làm callback không chạy (đáp án C), acceptEdits vẫn rơi về allow rule (đáp án B), deny rule không gỡ được (đáp án D).",
+      "rules": [
+        {
+          "trigger": "including bypassPermissions",
+          "choice": "Register a PreToolUse hook"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tool chuyển tiền luôn cần người duyệt: hook PreToolUse trả \"ask\"",
+      "text": "Agent fintech gọi được tool chuyển tiền qua MCP. Team muốn **mọi lần gọi tool chuyển tiền đều phải có người duyệt rõ ràng**, dù sau này phiên chuyển sang permission mode nào, **kể cả bypassPermissions**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.3 · Điểm duyệt trong agent"
+    ]
+  },
+  {
+    "n": 149,
+    "topic": "Governance, Safety & Risk Management",
+    "multi": true,
+    "q": "A solutions architect is scoping the ethical-risk controls for a Claude-based assistant that will draft internal performance-review summaries from manager notes across a multinational workforce. The compliance team wants a set of concrete measures that address [[bias, fairness, and transparency]] before launch. Which of the following measures should be included? (Select 3)",
+    "q_vi": "Một kiến trúc sư giải pháp đang khoanh phạm vi các biện pháp kiểm soát rủi ro đạo đức cho một trợ lý chạy trên Claude, sẽ soạn bản tóm tắt đánh giá hiệu suất nội bộ từ ghi chú của quản lý, áp dụng cho lực lượng lao động ở nhiều quốc gia. Team compliance muốn một bộ biện pháp cụ thể giải quyết bias, fairness và transparency (thiên lệch, công bằng, minh bạch) trước khi ra mắt. Những biện pháp nào nên có? (Chọn 3)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Skip bias testing across the initial launch region and only extend testing later if formal complaints get filed after go-live.",
+        "vi": "Bỏ qua việc kiểm bias ở khu vực ra mắt đầu tiên, chỉ mở rộng kiểm tra về sau nếu có khiếu nại chính thức sau khi đi vào hoạt động.",
+        "correct": false,
+        "why": "Bỏ kiểm bias ở khu vực ra mắt đầu tiên, đợi có khiếu nại mới kiểm, là đảo ngược yêu cầu kiểm soát trước khi ra mắt."
+      },
+      {
+        "k": "B",
+        "text": "Restrict summary review access to a single manager with no secondary sign-off, to keep the rollout process deliberately lightweight.",
+        "vi": "Chỉ cho một quản lý xem bản tóm tắt, không có người ký duyệt thứ hai, để quy trình rollout cố ý gọn nhẹ.",
+        "correct": false,
+        "why": "Chỉ một quản lý xem mà không ai khác kiểm lại là bớt đi một lớp kiểm tra cho rollout nhẹ hơn. Biện pháp này không đo bias, cũng không thêm gì cho fairness hay transparency."
+      },
+      {
+        "k": "C",
+        "text": "[[Document, in a form reviewers can inspect]], which specific decision factors the assistant is instructed to weigh whenever it drafts a summary.",
+        "vi": "Ghi lại, ở dạng người duyệt xem được, những yếu tố quyết định cụ thể mà trợ lý được dặn cân nhắc mỗi khi soạn một bản tóm tắt.",
+        "correct": true,
+        "why": "Về **transparency với người duyệt**: **ghi lại, ở dạng người duyệt xem được**, những yếu tố quyết định mà trợ lý được dặn cân nhắc khi soạn tóm tắt. Người duyệt nhờ đó có căn cứ để kiểm từng bản."
+      },
+      {
+        "k": "D",
+        "text": "[[Give every employee]], regardless of role or seniority, a mechanism to request the specific factors that shaped their own summary.",
+        "vi": "Cho mọi nhân viên, bất kể vai trò hay cấp bậc, một cách để yêu cầu xem các yếu tố cụ thể đã tạo nên bản tóm tắt của chính mình.",
+        "correct": true,
+        "why": "Về **fairness và transparency với người bị ảnh hưởng**: cho **mọi nhân viên, bất kể vai trò hay cấp bậc**, một cách để hỏi những yếu tố nào đã tạo nên bản tóm tắt của chính mình."
+      },
+      {
+        "k": "E",
+        "text": "Let each manager's personal phrasing preferences silently override the standardized summary template with absolutely no logging kept.",
+        "vi": "Để sở thích câu chữ riêng của từng quản lý âm thầm ghi đè mẫu tóm tắt chuẩn, hoàn toàn không lưu vết.",
+        "correct": false,
+        "why": "Cho từng quản lý âm thầm ghi đè mẫu chuẩn mà không lưu vết là tạo ra đúng kiểu bất nhất không ai truy được, hại cả fairness lẫn transparency."
+      },
+      {
+        "k": "F",
+        "text": "[[Run paired-scenario evaluations]] comparing summary tone and detail across employee groups given identical underlying performance notes.",
+        "vi": "Chạy paired-scenario evaluation (đánh giá theo cặp kịch bản), so giọng văn và mức chi tiết của bản tóm tắt giữa các nhóm nhân viên khi ghi chú hiệu suất gốc giống hệt nhau.",
+        "correct": true,
+        "why": "Về **bias**: chạy **paired-scenario evaluation** (đánh giá theo cặp kịch bản), đưa ghi chú hiệu suất y hệt nhau cho các nhóm nhân viên khác nhau rồi so giọng văn và mức chi tiết. Có chênh lệch là có bằng chứng bias, đo được ngay trước khi ra mắt."
+      }
+    ],
+    "answer": "C, D, F",
+    "tip": {
+      "trigger": "bias, fairness, and transparency",
+      "choice": "Document, in a form reviewers can inspect · Give every employee · Run paired-scenario evaluations",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** để đặt ra. Ở câu này có ba yêu cầu: bias thì chọn đáp án F **Run paired-scenario evaluations**, transparency với người duyệt thì chọn đáp án C **Document** các yếu tố, fairness và transparency với nhân viên thì chọn đáp án D **Give every employee** quyền hỏi. Đáp án A, đáp án E, đáp án B đều phá ràng buộc: hoãn kiểm, ghi đè không lưu vết, bớt người duyệt.",
+      "rules": [
+        {
+          "trigger": "bias, fairness, and transparency",
+          "choice": "Document, in a form reviewers can inspect · Give every employee · Run paired-scenario evaluations"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Kiểm soát rủi ro đạo đức trước khi ra mắt: đo bias, công khai yếu tố, cho người bị ảnh hưởng hỏi",
+      "text": "Trợ lý soạn tóm tắt đánh giá hiệu suất nhân viên từ ghi chú của quản lý, áp cho lực lượng lao động ở nhiều nước. Team compliance muốn các biện pháp cụ thể về **bias, fairness và transparency** (thiên lệch, công bằng, minh bạch) **trước khi ra mắt**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.5 · Đo công bằng"
+    ]
+  },
+  {
+    "n": 150,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": true,
+    "q": "A solutions architect is running the first discovery session with a new prospect before recommending any specific Claude model. According to Anthropic's [[model-selection guidance]], which factors should the architect establish as key criteria during this session?",
+    "q_vi": "Một kiến trúc sư giải pháp đang chạy buổi discovery đầu tiên với một khách hàng tiềm năng mới, trước khi đề xuất bất kỳ model Claude cụ thể nào. Theo hướng dẫn chọn model của Anthropic, kiến trúc sư nên chốt những yếu tố nào làm tiêu chí chính trong buổi này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The prospect's [[available budget]] for development and production usage",
+        "vi": "Ngân sách khách có cho việc phát triển và chạy production",
+        "correct": true,
+        "why": "**Chi phí**: ngân sách cho cả giai đoạn phát triển lẫn khi chạy production. Chi phí là một trong các tiêu chí hướng dẫn chọn model nêu ra, cùng với năng lực và tốc độ."
+      },
+      {
+        "k": "B",
+        "text": "The exact number of employees currently working in the prospect's IT department",
+        "vi": "Số nhân viên chính xác hiện đang làm ở phòng IT của khách",
+        "correct": false,
+        "why": "Số nhân viên phòng IT không nói gì về năng lực, tốc độ hay chi phí cần cho model."
+      },
+      {
+        "k": "C",
+        "text": "[[How quickly the model must respond]] within the prospect's application",
+        "vi": "Model phải phản hồi nhanh đến mức nào trong ứng dụng của khách",
+        "correct": true,
+        "why": "**Tốc độ**: ứng dụng của khách cần model phản hồi nhanh đến mức nào."
+      },
+      {
+        "k": "D",
+        "text": "The version number of the prospect's internal ticketing software",
+        "vi": "Số phiên bản phần mềm quản lý ticket nội bộ của khách",
+        "correct": false,
+        "why": "Phiên bản phần mềm quản lý ticket nội bộ là chi tiết tích hợp, không phải tiêu chí chọn model."
+      },
+      {
+        "k": "E",
+        "text": "Which social media platforms the prospect uses for customer marketing",
+        "vi": "Khách dùng những nền tảng mạng xã hội nào để marketing tới khách hàng",
+        "correct": false,
+        "why": "Khách dùng mạng xã hội nào để marketing không liên quan tới việc chọn model."
+      },
+      {
+        "k": "F",
+        "text": "The [[specific capabilities]] the model must have to meet the prospect's needs",
+        "vi": "Những năng lực cụ thể model phải có để đáp ứng nhu cầu của khách",
+        "correct": true,
+        "why": "**Năng lực**: model cần làm được những gì để đáp ứng nhu cầu của khách."
+      }
+    ],
+    "answer": "A, C, F",
+    "tip": {
+      "trigger": "model-selection guidance",
+      "choice": "available budget · How quickly the model must respond · specific capabilities",
+      "note": "**Dạng đúng khái niệm** (đề hỏi belong on the list, characteristic of, most directly address ...): tìm 3 đáp án sai để loại, 3 đáp án còn lại là đáp án đúng. Ba kiểu sai, nhớ là **Lạc – Cực – Thiếu**. **Lạc**: đúng nhưng nói chuyện khác (thủ tục, pháp lý, tốc độ, hình thức, chỉnh tham số). **Cực**: nói tuyệt đối, như only · single · every · mandatory · lock · immediately · without evaluation. **Thiếu**: làm bớt, né tránh, để sau (review theo quý, đưa vào backlog). Ở câu này, các tiêu chí đề nêu đúng: năng lực là đáp án F **specific capabilities**, tốc độ là đáp án C **How quickly**, chi phí là đáp án A **available budget**. Đáp án B, đáp án E, đáp án D đều là Lạc: thông tin về công ty khách, không phải yêu cầu đối với model.",
+      "rules": [
+        {
+          "trigger": "model-selection guidance",
+          "choice": "available budget · How quickly the model must respond · specific capabilities"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tiêu chí cần chốt khi chọn model: năng lực, tốc độ, chi phí",
+      "text": "Buổi discovery đầu tiên với khách hàng mới, **trước khi đề xuất model Claude cụ thể nào**. Đề hỏi những yếu tố cần chốt làm tiêu chí theo hướng dẫn chọn model của Anthropic."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.1 · Bắt đầu từ đâu"
+    ]
+  },
+  {
+    "n": 151,
+    "topic": "Integration",
+    "multi": false,
+    "q": "A financial services customer's compliance team says every AI-generated answer referencing internal policy documents must point to the [[exact sentence]] it was drawn from, so auditors can verify the source without re-reading the whole document. Which capability addresses this discovery finding?",
+    "q_vi": "Team compliance của một khách hàng dịch vụ tài chính nói rằng mọi câu trả lời do AI tạo ra có dẫn tài liệu chính sách nội bộ đều phải chỉ ra đúng câu mà nó được lấy từ đó, để auditor (kiểm toán viên) kiểm nguồn mà không phải đọc lại cả tài liệu. Capability nào đáp ứng phát hiện này từ buổi discovery?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Search results, which enable natural citations for RAG applications by attaching proper source attribution to search results",
+        "vi": "Search results, cho phép trích dẫn tự nhiên trong ứng dụng RAG bằng cách gắn nguồn cho kết quả tìm kiếm",
+        "correct": false,
+        "why": "Search results gắn nguồn cho kết quả tìm kiếm trong ứng dụng RAG, còn đề cần trỏ tới đúng câu trong tài liệu, việc mà Citations làm."
+      },
+      {
+        "k": "B",
+        "text": "The Files API, which uploads and manages documents so they do not need to be re-sent with every request",
+        "vi": "Files API, tải lên và quản lý tài liệu để không phải gửi lại ở mọi yêu cầu",
+        "correct": false,
+        "why": "Files API giúp khỏi gửi lại tài liệu ở mỗi yêu cầu, nhưng bản thân nó không tạo trích dẫn tới từng câu."
+      },
+      {
+        "k": "C",
+        "text": "Token counting, which determines the number of tokens in a message before it is sent to Claude",
+        "vi": "Token counting, xác định số token trong một message trước khi gửi cho Claude",
+        "correct": false,
+        "why": "Token counting chỉ đếm token của message trước khi gửi, không tạo ra trích dẫn nào."
+      },
+      {
+        "k": "D",
+        "text": "Citations, which let Claude [[reference the exact sentences]] and passages in source documents used to generate a response",
+        "vi": "Citations, cho Claude dẫn đúng các câu và đoạn trong tài liệu nguồn đã dùng để tạo câu trả lời",
+        "correct": true,
+        "why": "**Citations** cho Claude dẫn đúng câu và đoạn trong tài liệu nguồn đã dùng để trả lời, nên auditor kiểm được nguồn mà không phải đọc lại cả tài liệu."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "exact sentence",
+      "choice": "reference the exact sentences",
+      "note": "Cần **trỏ đúng câu trong tài liệu đã đưa vào** thì dùng **Citations**, tính năng cho Claude **reference the exact sentences** (đáp án D). Search results (đáp án A) dành cho kết quả của bước tìm kiếm trong RAG; token counting (đáp án C) và Files API (đáp án B) không tạo trích dẫn.",
+      "rules": [
+        {
+          "trigger": "exact sentence",
+          "choice": "reference the exact sentences"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Trỏ đúng câu nguồn trong tài liệu: Citations",
+      "text": "Team compliance yêu cầu mọi câu trả lời dựa trên tài liệu chính sách nội bộ phải **chỉ ra đúng câu nó lấy từ đâu**, để auditor (kiểm toán viên) kiểm mà không phải đọc lại cả tài liệu."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 3.5 · Trích dẫn đúng câu nguồn: Citations"
+    ]
+  },
+  {
+    "n": 152,
+    "topic": "Stakeholder Communication & Lifecycle Management",
+    "multi": false,
+    "q": "A customer support tooling vendor still runs Claude Haiku 3.5 in a legacy component and receives Anthropic's notice that the model is retired [[outside of Bedrock and Google Cloud]]. Their engineering stakeholders want to know how this affects their committed timeline. What is the accurate expectation to set?",
+    "q_vi": "Một nhà cung cấp công cụ hỗ trợ khách hàng vẫn chạy Claude Haiku 3.5 trong một thành phần cũ và nhận được thông báo của Anthropic rằng model này đã retire ở mọi nơi ngoài Bedrock và Google Cloud. Các stakeholder kỹ thuật muốn biết điều này ảnh hưởng thế nào tới lịch trình đã cam kết. Kỳ vọng đúng cần nêu là gì?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Model retirement only restricts access to the Console UI for prompting Haiku 3.5, while direct Messages API traffic on any platform continues indefinitely unaffected",
+        "vi": "Retire model chỉ chặn việc dùng giao diện Console để prompt Haiku 3.5, còn traffic Messages API trực tiếp trên mọi nền tảng vẫn chạy bình thường mãi mãi",
+        "correct": false,
+        "why": "Retire nghĩa là model không còn dùng được để chạy suy luận; yêu cầu gửi tới model đã retire sẽ lỗi, không chỉ là mất giao diện Console."
+      },
+      {
+        "k": "B",
+        "text": "[[Direct API and other non-Bedrock]]/Vertex-hosted traffic on Haiku 3.5 must migrate to a supported model before retirement, while deployments specifically on Bedrock or Google Cloud can keep running it under those platforms' own timelines",
+        "vi": "Traffic Haiku 3.5 qua API trực tiếp và các nơi không chạy trên Bedrock/Vertex phải chuyển sang một model còn hỗ trợ trước ngày retire, còn các deployment chạy riêng trên Bedrock hay Google Cloud có thể tiếp tục theo lịch riêng của các nền tảng đó",
+        "correct": true,
+        "why": "Ngày retire Anthropic công bố áp cho các nền tảng theo lịch của Anthropic, như Claude API. Amazon Bedrock và bản Claude trên Google Cloud do Google quản lý (Google managed) **tự đặt lịch retire riêng**. Vì vậy phần traffic đi qua Claude API **phải chuyển sang model còn hỗ trợ trước ngày retire**, còn phần chạy trên Bedrock hay Google Cloud theo lịch của nền tảng đó."
+      },
+      {
+        "k": "C",
+        "text": "The retirement notice only affects new customers who sign up after the announcement date, so the vendor's existing production traffic is permanently exempt regardless of hosting platform",
+        "vi": "Thông báo retire chỉ ảnh hưởng tới khách hàng mới đăng ký sau ngày công bố, nên traffic production hiện có của nhà cung cấp được miễn vĩnh viễn, bất kể chạy trên nền tảng nào",
+        "correct": false,
+        "why": "Retire tác động lên chính traffic production đang chạy, không chỉ khách mới; không có miễn trừ theo tuổi tài khoản."
+      },
+      {
+        "k": "D",
+        "text": "Retirement notices apply uniformly across every hosting platform including Bedrock and Google Cloud, so all deployments of Haiku 3.5 everywhere must migrate by the same date",
+        "vi": "Thông báo retire áp dụng như nhau trên mọi nền tảng, kể cả Bedrock và Google Cloud, nên mọi deployment Haiku 3.5 ở mọi nơi phải chuyển đi cùng một ngày",
+        "correct": false,
+        "why": "Bedrock và bản Claude trên Google Cloud do Google quản lý tự đặt lịch riêng, nên không phải mọi nền tảng đều chung một ngày."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "outside of Bedrock and Google Cloud",
+      "choice": "Direct API and other non-Bedrock",
+      "note": "Lịch retire của Anthropic áp cho nền tảng **Anthropic vận hành**; Bedrock và Google Cloud (bản Google quản lý) **có lịch riêng**. Nên phần chạy trên Claude API phải chuyển đi, phần trên Bedrock hay Google Cloud theo lịch của nền tảng đó (đáp án B). Miễn trừ khách cũ (đáp án C), chung một ngày cho mọi nơi (đáp án D) hay chỉ mất Console (đáp án A) đều sai.",
+      "rules": [
+        {
+          "trigger": "outside of Bedrock and Google Cloud",
+          "choice": "Direct API and other non-Bedrock"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Model bị retire: lịch của Anthropic khác lịch của Bedrock và Google Cloud",
+      "text": "Một thành phần cũ vẫn chạy Claude Haiku 3.5, và Anthropic thông báo model này **đã retire, trừ trên Bedrock và Google Cloud**. Stakeholder kỹ thuật muốn biết điều này ảnh hưởng thế nào tới lịch đã cam kết."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 6.5 · Khi model bên dưới thay đổi"
+    ]
+  },
+  {
+    "n": 153,
+    "topic": "Evaluation, Testing & Optimization",
+    "multi": false,
+    "q": "Two months after a customer support assistant goes live, the operations team notices their monthly Claude spend has grown faster than ticket volume and wants to identify which [[workspace and model combination]] is driving the increase. Which monitoring approach addresses this?",
+    "q_vi": "Hai tháng sau khi một trợ lý hỗ trợ khách hàng đi vào hoạt động, team vận hành nhận thấy chi phí Claude hằng tháng tăng nhanh hơn số lượng ticket, và muốn xác định cặp workspace và model nào đang kéo chi phí tăng. Cách theo dõi nào giải quyết được việc này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Increase the agent's allowed_tools scope so it can investigate its own billing records directly",
+        "vi": "Mở rộng phạm vi allowed_tools của agent để nó tự điều tra hồ sơ thanh toán của chính mình",
+        "correct": false,
+        "why": "Mở rộng quyền tool cho agent để nó tự xem hoá đơn là thừa, không liên quan tới cách lấy báo cáo sử dụng và chi phí."
+      },
+      {
+        "k": "B",
+        "text": "Ask the support team to manually count tickets handled per day and compare that figure to the invoice total",
+        "vi": "Bảo team hỗ trợ đếm tay số ticket xử lý mỗi ngày rồi so với tổng tiền trên hoá đơn",
+        "correct": false,
+        "why": "Đếm ticket bằng tay rồi so với hoá đơn kém chính xác hơn nhiều so với số liệu theo từng workspace và model mà API đã có sẵn."
+      },
+      {
+        "k": "C",
+        "text": "Query the [[Usage and Cost Admin API]] grouped by workspace and model to reconcile spend against token consumption",
+        "vi": "Truy vấn Usage and Cost Admin API, nhóm theo workspace và model, để đối chiếu chi phí với lượng token đã dùng",
+        "correct": true,
+        "why": "Usage and Cost Admin API trả số liệu sử dụng và chi phí của tổ chức, **nhóm được theo workspace và theo model**. Nhóm theo hai chiều này là thấy ngay cặp workspace và model nào làm chi phí tăng, và đối chiếu được với lượng token đã dùng."
+      },
+      {
+        "k": "D",
+        "text": "Re-run the original evaluation set from the design phase to check whether output quality has regressed",
+        "vi": "Chạy lại bộ đánh giá ban đầu từ giai đoạn thiết kế để xem chất lượng đầu ra có giảm không",
+        "correct": false,
+        "why": "Chạy lại bộ đánh giá là đo chất lượng đầu ra, không cho biết workspace hay model nào gây ra chi phí."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "workspace and model combination",
+      "choice": "Usage and Cost Admin API",
+      "note": "Cần **chi phí theo workspace và model** thì truy vấn **Usage and Cost Admin API**, nhóm theo hai chiều đó (đáp án C). Chạy lại eval (đáp án D) là đo chất lượng; mở quyền tool (đáp án A) và đếm tay (đáp án B) không trả lời được câu hỏi.",
+      "rules": [
+        {
+          "trigger": "workspace and model combination",
+          "choice": "Usage and Cost Admin API"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Tìm workspace và model làm chi phí tăng: Usage and Cost Admin API",
+      "text": "Hai tháng sau khi ra mắt, chi phí Claude hằng tháng tăng nhanh hơn số ticket. Team vận hành muốn biết **workspace và model nào** đang kéo chi phí lên."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 4.6 · Chi phí và mức sử dụng"
+    ]
+  },
+  {
+    "n": 154,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "A team is documenting the caching architecture for a service where the same large system prompt and tool definitions are [[sent with nearly every request]]. The implementation guidance needs to explain how to cut repeated processing cost and latency for that static content. What should the guidance recommend?",
+    "q_vi": "Một team đang viết tài liệu kiến trúc cache cho một dịch vụ mà gần như mọi yêu cầu đều gửi cùng một system prompt lớn và cùng bộ tool definitions. Hướng dẫn triển khai cần giải thích cách cắt chi phí và độ trễ do xử lý lặp lại phần nội dung tĩnh đó. Hướng dẫn nên khuyến nghị gì?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Mark the reusable system prompt]] and tool definitions as cached blocks so repeated requests reuse the prefix instead of reprocessing it.",
+        "vi": "Đánh dấu system prompt và tool definitions dùng lại là các khối được cache, để các yêu cầu lặp lại dùng lại prefix thay vì xử lý lại.",
+        "correct": true,
+        "why": "Phần tĩnh nằm ở đầu yêu cầu (tool, rồi system prompt) đúng là chỗ prompt caching phát huy tác dụng. **Đánh dấu cache** cho phần đó thì các yêu cầu sau dùng lại prefix đã xử lý thay vì xử lý lại, nên rẻ và nhanh hơn. Cần giữ phần này ổn định từng byte, vì chỉ một thay đổi nhỏ trong prefix cũng làm mất cache của mọi thứ phía sau."
+      },
+      {
+        "k": "B",
+        "text": "Move the system prompt into the Files API so it uploads once and Claude re-reads it fresh from storage on every single request.",
+        "vi": "Chuyển system prompt vào Files API để nó chỉ tải lên một lần và Claude đọc lại bản mới từ kho lưu ở mọi yêu cầu.",
+        "correct": false,
+        "why": "Files API giúp khỏi tải lại file, nhưng file vẫn được đọc và xử lý lại ở mỗi yêu cầu, nên không cắt được chi phí xử lý lặp lại."
+      },
+      {
+        "k": "C",
+        "text": "Enable batch processing so every request carrying the large system prompt is queued and billed at half price automatically.",
+        "vi": "Bật batch processing để mọi yêu cầu mang system prompt lớn được xếp hàng và tự động tính nửa giá.",
+        "correct": false,
+        "why": "Batch processing giảm giá cho việc chạy bất đồng bộ số lượng lớn, không phải cơ chế bỏ qua phần prefix chung trong các lời gọi đồng bộ."
+      },
+      {
+        "k": "D",
+        "text": "Increase the context window to 1M tokens so the large system prompt fits entirely without ever needing to be truncated across requests.",
+        "vi": "Tăng context window lên 1M token để system prompt lớn vừa trọn mà không bao giờ phải cắt bớt giữa các yêu cầu.",
+        "correct": false,
+        "why": "Context window lớn hơn chỉ cho chứa được nhiều hơn; nội dung tĩnh vẫn bị xử lý lại ở mỗi yêu cầu."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "sent with nearly every request",
+      "choice": "Mark the reusable system prompt",
+      "note": "Nội dung **tĩnh, lặp lại ở đầu mọi yêu cầu** thì **đánh dấu cache** để dùng lại prefix (đáp án A). Context lớn hơn (đáp án D) và Files API (đáp án B) vẫn xử lý lại mỗi lần; batch (đáp án C) là chuyện khác.",
+      "rules": [
+        {
+          "trigger": "sent with nearly every request",
+          "choice": "Mark the reusable system prompt"
+        }
+      ]
+    },
+    "ask": {
+      "title": "System prompt và tool definitions lặp lại: đánh dấu cache cho phần prefix",
+      "text": "Gần như mọi yêu cầu đều gửi **cùng một system prompt lớn và cùng bộ tool definitions**. Tài liệu hướng dẫn phải chỉ cách **cắt chi phí và độ trễ** do xử lý lặp lại phần nội dung tĩnh này."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.5 · Prompt caching"
+    ]
+  },
+  {
+    "n": 155,
+    "topic": "Claude Models, Prompting & Context Engineering",
+    "multi": false,
+    "q": "Your coding-agent product is exceeding its latency budget on Claude Opus 4.8. Before proposing a switch to a smaller model, a colleague suggests [[first tuning the effort parameter]]. How should you frame this trade-off to the team?",
+    "q_vi": "Sản phẩm coding agent của bạn đang vượt latency budget (ngân sách độ trễ) khi chạy trên Claude Opus 4.8. Trước khi đề xuất đổi sang một model nhỏ hơn, một đồng nghiệp gợi ý chỉnh tham số effort trước. Bạn nên trình bày đánh đổi này với team thế nào?",
+    "options": [
+      {
+        "k": "A",
+        "text": "The effort parameter governs only tool-call count per turn, not the model's raw inference latency, so the team should focus on switching to a smaller model that fits the latency budget for the coding-agent product.",
+        "vi": "Tham số effort chỉ điều khiển số lần gọi tool mỗi lượt, không ảnh hưởng độ trễ suy luận thuần của model, nên team nên tập trung đổi sang một model nhỏ hơn vừa latency budget của sản phẩm.",
+        "correct": false,
+        "why": "Effort điều chỉnh độ sâu suy luận và lượng token cho cả câu trả lời, lời gọi tool lẫn phần suy nghĩ, nên ảnh hưởng thẳng tới độ trễ chứ không chỉ số lần gọi tool."
+      },
+      {
+        "k": "B",
+        "text": "Effort on Claude Opus 4.8 can only be increased, never decreased, which prevents the team from lowering latency through this parameter; therefore, the migration to a model family that offers a tunable effort floor is the correct path to meet the latency budget.",
+        "vi": "Effort trên Claude Opus 4.8 chỉ tăng được, không bao giờ giảm được, nên team không thể hạ độ trễ bằng tham số này; vì vậy chuyển sang một dòng model có mức effort thấp hơn chỉnh được mới là đường đúng để đạt latency budget.",
+        "correct": false,
+        "why": "Effort trên Opus 4.8 hạ được xuống dưới mức mặc định; không có giới hạn chỉ được tăng."
+      },
+      {
+        "k": "C",
+        "text": "Effort tuning is only available via the Claude API, not in Claude Code, so the coding-agent product cannot lower latency this way; the team should switch to a model family with native effort controls in Claude Code.",
+        "vi": "Chỉnh effort chỉ có qua Claude API, không có trong Claude Code, nên sản phẩm coding agent không thể hạ độ trễ theo cách này; team nên đổi sang một dòng model có sẵn điều khiển effort trong Claude Code.",
+        "correct": false,
+        "why": "Đáp án này cho rằng effort chỉ có trên API, nhưng đó không phải lý do để bỏ bước chỉnh effort. Đây là cách đánh đổi trong cùng một model, nên thử trước khi nghĩ tới việc đổi sang model khác."
+      },
+      {
+        "k": "D",
+        "text": "[[Adjusting effort trades intelligence]] for latency and cost within the same model; lowering it from the default may recover budget without the accuracy loss that comes from switching to a different, less capable model.",
+        "vi": "Chỉnh effort là đánh đổi độ thông minh lấy độ trễ và chi phí ngay trong cùng một model; hạ nó xuống dưới mức mặc định có thể lấy lại latency budget mà không bị sụt độ chính xác như khi đổi sang một model khác kém hơn.",
+        "correct": true,
+        "why": "Effort đánh đổi độ kỹ lấy độ trễ và chi phí **ngay trong cùng một model**. Hạ effort từ mức mặc định có thể kéo độ trễ về trong latency budget mà vẫn giữ năng lực của Opus 4.8, không phải chịu mức sụt chính xác khi đổi sang một model kém hơn. Nên thử và đo bước này trước; đổi model là bước sau."
+      }
+    ],
+    "answer": "D",
+    "tip": {
+      "trigger": "first tuning the effort parameter",
+      "choice": "Adjusting effort trades intelligence",
+      "note": "Chậm quá mà muốn giữ model thì **hạ effort trước** (đáp án D): effort đổi độ kỹ lấy tốc độ và chi phí **within the same model**. Ba đáp án còn lại đều coi effort là thứ bị giới hạn: chỉ đếm tool (đáp án A), chỉ tăng được (đáp án B), chỉ có trên API (đáp án C).",
+      "rules": [
+        {
+          "trigger": "first tuning the effort parameter",
+          "choice": "Adjusting effort trades intelligence"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Vượt latency budget: chỉnh effort trước khi đổi sang model nhỏ",
+      "text": "Agent lập trình chạy trên Claude Opus 4.8 đang **vượt latency budget** (ngân sách độ trễ cho phép). Trước khi đề xuất đổi sang model nhỏ hơn, đồng nghiệp gợi ý **chỉnh tham số effort trước**. Đề hỏi nên trình bày đánh đổi này với team thế nào."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 2.1 · Bắt đầu từ đâu"
+    ]
+  },
+  {
+    "n": 156,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": true,
+    "q": "A solutions architect is designing the initial rollout of Claude Code for a mid-size company with [[no existing device management]]. The company has developers on unmanaged laptops, wants centralized visibility into token spend, and needs org-wide policy to reach both local sessions and Claude Code on the web. Which set of decisions correctly matches each requirement to the right mechanism? (Select 3)",
+    "q_vi": "Một kiến trúc sư giải pháp đang thiết kế đợt rollout Claude Code đầu tiên cho một công ty cỡ vừa chưa có device management (quản lý thiết bị) nào. Lập trình viên của công ty dùng laptop không được quản lý, công ty muốn xem tập trung chi phí token, và cần chính sách cho cả tổ chức tới được cả phiên local lẫn Claude Code on the web. Những quyết định nào ghép đúng từng yêu cầu với cơ chế phù hợp? (Chọn 3)",
+    "options": [
+      {
+        "k": "A",
+        "text": "Deploy a plist-based managed-settings policy through macOS MDM as the primary policy channel, since it is the strongest enforcement mechanism available",
+        "vi": "Triển khai chính sách managed-settings dạng plist qua MDM của macOS làm kênh chính sách chính, vì đây là cơ chế thực thi mạnh nhất hiện có",
+        "correct": false,
+        "why": "Đề nói công ty chưa có quản lý thiết bị, nên lấy MDM làm kênh chính sách chính là đi ngược ràng buộc đó. MDM chỉ đúng ở chỗ thực thi mạnh, không khớp với tình huống này."
+      },
+      {
+        "k": "B",
+        "text": "[[Choose Claude for Teams or Enterprise]] as the API provider so Claude Code and claude.ai share one per-seat subscription with no infrastructure to run",
+        "vi": "Chọn Claude for Teams hoặc Enterprise làm nhà cung cấp để Claude Code và claude.ai dùng chung một gói theo người dùng, không phải vận hành hạ tầng nào",
+        "correct": true,
+        "why": "Nền tảng chung: chọn **Claude for Teams hoặc Enterprise** làm nhà cung cấp thì Claude Code và claude.ai dùng chung một gói theo người dùng, không phải tự vận hành hạ tầng nào, hợp với công ty chưa có quản lý thiết bị."
+      },
+      {
+        "k": "C",
+        "text": "[[Use the usage analytics]] at claude.ai/analytics/claude-code, with the spend report in analytics settings, for centralized usage and spend visibility, available on Claude for Teams and Enterprise plans",
+        "vi": "Dùng trang usage analytics tại claude.ai/analytics/claude-code, kèm spend report trong cài đặt analytics, để xem tập trung mức sử dụng và chi phí, có trên gói Claude for Teams và Enterprise",
+        "correct": true,
+        "why": "Yêu cầu xem chi phí: **trang analytics tại claude.ai/analytics/claude-code**, có trên gói Teams và Enterprise, cho cái nhìn tập trung về mức sử dụng; số chi tiêu theo người lấy từ spend report trong phần cài đặt analytics."
+      },
+      {
+        "k": "D",
+        "text": "Use [[server-managed settings delivered from the claude.ai admin console]], since it reaches both local and web sessions without requiring MDM",
+        "vi": "Dùng server-managed settings cấu hình từ admin console của claude.ai, vì nó tới được cả phiên local lẫn phiên web mà không cần MDM",
+        "correct": true,
+        "why": "Yêu cầu chính sách: **server-managed settings** phát từ admin console của claude.ai, **không cần MDM** và tới được cả phiên local lẫn phiên Claude Code on the web, đúng điều đề yêu cầu."
+      },
+      {
+        "k": "E",
+        "text": "Rely exclusively on project-level .claude/settings.json files committed to each repository to establish organization-wide policy",
+        "vi": "Chỉ dựa vào các file .claude/settings.json ở mức project được commit vào từng repository để lập chính sách cho cả tổ chức",
+        "correct": false,
+        "why": "File settings của project là cấu hình của từng repo, ai có quyền sửa repo đều sửa được, không phải chính sách cho cả tổ chức."
+      },
+      {
+        "k": "F",
+        "text": "Configure Amazon Bedrock as the API provider so the company can use server-managed settings for centralized policy delivery",
+        "vi": "Cấu hình Amazon Bedrock làm nhà cung cấp API để công ty dùng được server-managed settings cho việc phân phối chính sách tập trung",
+        "correct": false,
+        "why": "Server-managed settings phát từ admin console của claude.ai bị bỏ qua khi dùng Bedrock, nên chọn Bedrock không đem lại kênh chính sách tập trung này."
+      }
+    ],
+    "answer": "B, C, D",
+    "tip": {
+      "trigger": "no existing device management",
+      "choice": "Choose Claude for Teams or Enterprise · Use the usage analytics · server-managed settings delivered from the claude.ai admin console",
+      "note": "**Dạng khớp yêu cầu** (đề nêu rõ yêu cầu hoặc ràng buộc): gạch chân từng yêu cầu, rồi với mỗi yêu cầu chọn đáp án giải quyết **thẳng** nó. Bẫy: giải pháp hay nhưng cho **yêu cầu khác** (chất lượng, latency, throughput, bảo mật nói chung), hoặc **phá ràng buộc** để đặt ra. Ở câu này, mỗi yêu cầu một cơ chế: nền tảng không phải vận hành gì thì chọn đáp án B **Claude for Teams or Enterprise**, chính sách tới cả local lẫn web mà không cần MDM thì chọn đáp án D **server-managed settings**, xem chi phí tập trung thì chọn đáp án C **usage analytics**. Đáp án A cần MDM, đáp án E chỉ là cấu hình từng repo, đáp án F chọn Bedrock thì không phải nơi phát server-managed settings.",
+      "rules": [
+        {
+          "trigger": "no existing device management",
+          "choice": "Choose Claude for Teams or Enterprise · Use the usage analytics · server-managed settings delivered from the claude.ai admin console"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Rollout Claude Code không có MDM: gói Teams/Enterprise, server-managed settings, trang analytics",
+      "text": "Công ty cỡ vừa **chưa có device management** (hệ thống quản lý thiết bị như MDM), lập trình viên dùng laptop không được quản lý. Họ muốn **xem tập trung chi phí token**, và cần chính sách chung **tới được cả phiên local lẫn Claude Code on the web**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.1 · Triển khai cho cả đội từng bước"
+    ]
+  },
+  {
+    "n": 157,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "A platform team is wiring Claude Code into a locked-down CI pipeline where [[no human is available]] to approve prompts, and only a pre-approved set of tools defined in permission rules should ever run. Which permission mode fits this pipeline?",
+    "q_vi": "Một team nền tảng đang đưa Claude Code vào một pipeline CI khoá chặt, nơi không có người để duyệt các permission prompt (lời hỏi quyền), và chỉ một tập tool đã được duyệt trước trong permission rules mới được phép chạy. Permission mode nào hợp với pipeline này?",
+    "options": [
+      {
+        "k": "A",
+        "text": "plan mode, which restricts Claude to reads and a proposed plan with no execution",
+        "vi": "Chế độ plan, chỉ cho Claude đọc và đề xuất kế hoạch, không thực thi gì",
+        "correct": false,
+        "why": "Plan mode chỉ cho đọc và đề xuất kế hoạch, không thực thi gì, nên pipeline không làm được việc."
+      },
+      {
+        "k": "B",
+        "text": "[[dontAsk]] mode, which auto-denies anything not covered by an explicit allow rule",
+        "vi": "Chế độ dontAsk, tự từ chối mọi thứ không nằm trong một allow rule đã khai báo",
+        "correct": true,
+        "why": "**dontAsk** tự từ chối mọi lời gọi lẽ ra phải hỏi người, thay vì dừng lại chờ. Những gì đã được cho phép bằng permissions.allow vẫn chạy. Kết quả là phiên chạy hoàn toàn không cần tương tác và chỉ làm đúng những gì đã duyệt trước, khớp cả hai yêu cầu."
+      },
+      {
+        "k": "C",
+        "text": "auto mode, which relies on a classifier to approve most actions in real time",
+        "vi": "Chế độ auto, dựa vào một classifier để duyệt hầu hết hành động theo thời gian thực",
+        "correct": false,
+        "why": "Auto mode dùng classifier để tự quyết duyệt hành động, không giới hạn vào danh sách đã duyệt trước như đề yêu cầu."
+      },
+      {
+        "k": "D",
+        "text": "acceptEdits mode, which auto-approves file edits and common filesystem commands",
+        "vi": "Chế độ acceptEdits, tự duyệt việc sửa file và các lệnh filesystem thông dụng",
+        "correct": false,
+        "why": "acceptEdits chỉ tự duyệt việc sửa file và vài lệnh thao tác file thông dụng; việc khác vẫn phải hỏi người, mà CI không có ai để duyệt."
+      }
+    ],
+    "answer": "B",
+    "tip": {
+      "trigger": "no human is available",
+      "choice": "dontAsk",
+      "note": "Không có người để hỏi và **chỉ chạy những gì đã allow** thì dùng **dontAsk**: cái gì lẽ ra phải hỏi thì tự từ chối (đáp án B). acceptEdits (đáp án D) vẫn hỏi, plan (đáp án A) không chạy gì, auto (đáp án C) để classifier tự quyết.",
+      "rules": [
+        {
+          "trigger": "no human is available",
+          "choice": "dontAsk"
+        }
+      ]
+    },
+    "ask": {
+      "title": "CI không có người duyệt, chỉ chạy tool đã cho phép: dontAsk",
+      "text": "Claude Code chạy trong một CI khoá chặt: **không có ai để duyệt**, và **chỉ những tool đã cho phép trong permission rules mới được chạy**."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 5.3 · Điểm duyệt trong agent"
+    ]
+  },
+  {
+    "n": 158,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "During a long debugging session, Claude Code raises \"[[Autocompact is thrashing]]: the context refilled to the limit...\" immediately after automatic compaction completes, and it stops retrying. The team was asking Claude to read an entire 40,000-line production log file to find the root cause of an outage. What is the most effective way to recover and continue the investigation?",
+    "q_vi": "Trong một phiên debug dài, Claude Code báo \"Autocompact is thrashing: the context refilled to the limit...\" ngay sau khi tự động compact xong, rồi ngừng thử lại. Team đang bảo Claude đọc trọn một file log production 40.000 dòng để tìm nguyên nhân gốc của một sự cố. Cách hiệu quả nhất để gỡ lỗi này và điều tra tiếp là gì?",
+    "options": [
+      {
+        "k": "A",
+        "text": "Run /clear to discard the conversation, then paste only the final error line from the log file into a fresh session.",
+        "vi": "Chạy /clear để xoá hội thoại, rồi chỉ dán dòng lỗi cuối cùng của file log vào một phiên mới.",
+        "correct": false,
+        "why": "Xoá hội thoại rồi chỉ dán dòng lỗi cuối là bỏ mất ngữ cảnh điều tra đã có, và một dòng lỗi thường không đủ để tìm nguyên nhân gốc."
+      },
+      {
+        "k": "B",
+        "text": "Set DISABLE_AUTO_COMPACT so Claude Code stops summarizing history and keeps the entire log output available for reference.",
+        "vi": "Đặt DISABLE_AUTO_COMPACT để Claude Code thôi tóm tắt lịch sử và giữ toàn bộ nội dung log để tham chiếu.",
+        "correct": false,
+        "why": "Tắt auto-compact là bỏ luôn cơ chế giữ context khỏi tràn; log vẫn quá lớn so với context nên chỉ tệ hơn."
+      },
+      {
+        "k": "C",
+        "text": "Ask Claude to [[read the log file in smaller chunks]], such as a specific line range, or delegate the analysis to a subagent instead.",
+        "vi": "Bảo Claude đọc file log theo từng đoạn nhỏ, như một khoảng dòng cụ thể, hoặc giao phần phân tích cho một subagent.",
+        "correct": true,
+        "why": "Lỗi này nghĩa là compact đã thành công nhưng một file hay kết quả tool quá lớn lập tức làm đầy lại context, nên Claude Code ngừng thử lại. Cách gỡ là bớt lượng đổ vào context: **đọc file theo từng đoạn nhỏ**, ví dụ một khoảng dòng, hoặc **giao phần phân tích cho subagent** để nó làm trong context riêng."
+      },
+      {
+        "k": "D",
+        "text": "Raise CLAUDE_CODE_MAX_RETRIES so Claude Code keeps retrying compaction until the log file finishes loading successfully.",
+        "vi": "Tăng CLAUDE_CODE_MAX_RETRIES để Claude Code cứ thử compact lại cho tới khi đọc xong file log.",
+        "correct": false,
+        "why": "CLAUDE_CODE_MAX_RETRIES là số lần thử lại khi yêu cầu API lỗi, không liên quan tới vòng compact. File vẫn làm đầy context sau mỗi lần compact nên thử thêm bao nhiêu cũng vậy."
+      }
+    ],
+    "answer": "C",
+    "tip": {
+      "trigger": "Autocompact is thrashing",
+      "choice": "read the log file in smaller chunks",
+      "note": "Context bị **một file quá lớn làm đầy lại** thì **bớt lượng đổ vào**: đọc từng đoạn hoặc giao subagent (đáp án C). Thử lại nhiều hơn (đáp án D) hay tắt compact (đáp án B) không giảm được lượng đó; xoá sạch hội thoại (đáp án A) là bỏ cả manh mối.",
+      "rules": [
+        {
+          "trigger": "Autocompact is thrashing",
+          "choice": "read the log file in smaller chunks"
+        }
+      ]
+    },
+    "ask": {
+      "title": "Autocompact is thrashing: đọc file theo từng đoạn hoặc giao cho subagent",
+      "text": "Claude Code báo **\"Autocompact is thrashing\"** ngay sau khi tự compact xong rồi ngừng thử lại. Team đang bảo Claude **đọc trọn một file log 40.000 dòng** để tìm nguyên nhân sự cố."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.3 · Lỗi khi đang chạy: cái gì tự thử lại, cái gì không"
+    ]
+  },
+  {
+    "n": 159,
+    "topic": "Developer Productivity & Operational Enablement",
+    "multi": false,
+    "q": "A team's project relies on an internal MCP server for ticket lookups. Running /mcp shows the server [[status as connected]], but Claude reports it has [[no tools available]] from that server and cannot look up tickets. What is the correct next step to diagnose the failure?",
+    "q_vi": "Project của một team dựa vào một MCP server nội bộ để tra ticket. Chạy /mcp thấy server ở trạng thái connected, nhưng Claude báo không có tool nào từ server đó và không tra được ticket. Bước tiếp theo đúng để chẩn đoán lỗi là gì?",
+    "options": [
+      {
+        "k": "A",
+        "text": "[[Select Reconnect]] for the server from /mcp, and if the tool count stays at zero, run claude --debug mcp to see the server's stderr output.",
+        "vi": "Chọn Reconnect cho server trong /mcp, và nếu số tool vẫn bằng 0 thì chạy claude --debug mcp để xem stderr của server.",
+        "correct": true,
+        "why": "Connected mà không có tool nghĩa là server đã khởi động nhưng không trả về danh sách tool. Bước đầu là chọn **Reconnect** cho server trong /mcp; nếu số tool vẫn bằng 0 thì chạy Claude Code với debug cho MCP (claude --debug=mcp) để đọc stderr của server trong log debug và thấy nó hỏng ở đâu."
+      },
+      {
+        "k": "B",
+        "text": "Approve the server from /mcp again, since project-scoped MCP servers silently stop returning tools after the one-time approval expires.",
+        "vi": "Duyệt lại server trong /mcp, vì các MCP server của project âm thầm ngừng trả tool sau khi lần duyệt một lần hết hạn.",
+        "correct": false,
+        "why": "Server của project chưa được duyệt thì ở trạng thái chờ duyệt, không phải connected."
+      },
+      {
+        "k": "C",
+        "text": "Edit .mcp.json to change the server's command from a relative path to an absolute path, since a relative path always prevents any tools from loading.",
+        "vi": "Sửa .mcp.json để đổi lệnh của server từ đường dẫn tương đối sang tuyệt đối, vì đường dẫn tương đối luôn làm không tool nào nạp được.",
+        "correct": false,
+        "why": "Đường dẫn tương đối làm server không khởi động được, không phải server đã connected mà không có tool."
+      },
+      {
+        "k": "D",
+        "text": "Restart Claude Code with claude --safe-mode, since a server that reports zero tools while connected is always disabled under safe mode.",
+        "vi": "Khởi động lại Claude Code bằng claude --safe-mode, vì server báo 0 tool trong khi connected thì luôn bị tắt ở safe mode.",
+        "correct": false,
+        "why": "Safe mode không phải bước chẩn đoán cho triệu chứng đã connected mà 0 tool; bước đúng là Reconnect rồi đọc log debug."
+      }
+    ],
+    "answer": "A",
+    "tip": {
+      "trigger": "status as connected · no tools available",
+      "choice": "Select Reconnect",
+      "note": "**Connected mà 0 tool**: server đã chạy nhưng không trả tool, nên **Reconnect** rồi đọc **stderr trong log debug** (đáp án A). Đường dẫn sai (đáp án C) thì server failed, chưa duyệt (đáp án B) thì đang chờ duyệt, còn safe mode (đáp án D) không phải bước chẩn đoán cho triệu chứng này.",
+      "rules": [
+        {
+          "trigger": "status as connected · no tools available",
+          "choice": "Select Reconnect"
+        }
+      ]
+    },
+    "ask": {
+      "title": "MCP connected mà không có tool: Reconnect rồi đọc log debug",
+      "text": "/mcp báo server MCP **đã connected**, nhưng Claude nói **không có tool nào** từ server đó nên không tra được ticket."
+    },
+    "type": "choice",
+    "lessons": [
+      "Bài 7.3 · Ba trạng thái hỏng của MCP server"
+    ]
+  }
+];

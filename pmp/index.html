@@ -1246,6 +1246,8 @@ const noteSyncTimers = new Map();
 const ansSyncTimers = new Map();
 const qaSyncChains = new Map();
 const sheetSyncedDichKeys = new Set();
+const sheetRowIdByKey = new Map();
+const sheetRowIdsByKey = new Map();
 
 function getAuthToken() {
     let token = '';
@@ -1355,10 +1357,12 @@ function formatDichString(translation) {
 function parseNoteRowKey(row, colMap) {
     if (!Array.isArray(row) || row.length === 0) return null;
     const cols = colMap || { id: 0, set: 1, qid: 2, ans: 3, level: 4, note: 5, dich: 6, updateTime: 7 };
-    const rowId = cols.id >= 0 ? String(row[cols.id] || '').trim() : '';
+    const rawRowId = cols.id >= 0 && row[cols.id] != null ? String(row[cols.id]) : '';
+    const rowId = rawRowId.trim();
     if (!rowId || rowId.toUpperCase() === 'ID') return null;
 
-    const rowSet = cols.set >= 0 ? String(row[cols.set] || '').trim() : '';
+    const rowSetRaw = cols.set >= 0 ? String(row[cols.set] || '').trim() : '';
+    const rowSet = normalizeExamSetParam(rowSetRaw) || rowSetRaw.toUpperCase();
     const rowQid = cols.qid >= 0 ? String(row[cols.qid] || '').trim() : '';
     const ansRaw = cols.ans >= 0 && row[cols.ans] != null ? String(row[cols.ans]) : '';
     const ansList = parseAnsList(ansRaw);
@@ -1374,16 +1378,16 @@ function parseNoteRowKey(row, colMap) {
     if (rowSet && rowQid) {
         progressKey = rowSet + rowQid;
     } else {
-        const match = rowId.match(/^(DATA_SET_\d+)[_:](.+)$/);
+        const match = rowId.match(/^(DATA_SET_\d+)[_:](.+)$/i);
         if (match) {
-            examSet = match[1];
-            qid = match[2];
+            examSet = normalizeExamSetParam(match[1]) || match[1].toUpperCase();
+            qid = match[2].trim();
             progressKey = examSet + qid;
         } else {
             progressKey = rowId;
         }
     }
-    return { progressKey, rowId, noteText, ansList, level, translation, examSet, qid };
+    return { progressKey, rowId, rawRowId, noteText, ansList, level, translation, examSet, qid };
 }
 
 function loadNotesCache() {
@@ -1473,10 +1477,25 @@ async function loadQaFromSheet() {
         noteSheetHasExactHeader = false;
     }
 
+    sheetRowIdByKey.clear();
+    sheetRowIdsByKey.clear();
+
     rows.forEach(row => {
         const parsed = parseNoteRowKey(row, colMap);
         if (parsed && parsed.progressKey) {
+            const exactId = parsed.rawRowId || parsed.rowId;
+            if (exactId) {
+                if (!sheetRowIdByKey.has(parsed.progressKey)) {
+                    sheetRowIdByKey.set(parsed.progressKey, exactId);
+                }
+                if (!sheetRowIdsByKey.has(parsed.progressKey)) {
+                    sheetRowIdsByKey.set(parsed.progressKey, []);
+                }
+                sheetRowIdsByKey.get(parsed.progressKey).push(exactId);
+            }
             qaMap[parsed.progressKey] = {
+                examSet: parsed.examSet,
+                qid: parsed.qid,
                 note: parsed.noteText,
                 ans: parsed.ansList,
                 level: parsed.level,
@@ -1500,33 +1519,50 @@ function enqueueQaSync(progressKey, taskFn) {
     return next;
 }
 
-function syncQaRowToSheet(examSet, qid) {
+function syncQaRowToSheet(examSet, qid, clearForReset = false) {
     const progressKey = examSet + qid;
     return enqueueQaSync(progressKey, async () => {
         const p = (state.progress && state.progress[progressKey]) || {};
         const noteVal = p.note == null ? '' : String(p.note);
         const ansStr = formatAnsString(p.ans);
-        const levelVal = normalizeLevel(p.diff);
+        const levelVal = clearForReset ? '' : normalizeLevel(p.diff);
         const dichStr = formatDichString(p.translation);
         const hasNote = noteVal.trim() !== '';
         const hasAns = ansStr !== '';
-        const hasLevel = levelVal !== '';
         const hasDich = dichStr !== '';
-        const noteId = getNoteRowId(examSet, qid);
+        const noteId = sheetRowIdByKey.get(progressKey) || getNoteRowId(examSet, qid);
+        const shouldDeleteRow = !hasNote && !hasAns && (Boolean(clearForReset) || !hasDich);
 
-        if (!hasNote && !hasAns && !hasLevel && !hasDich) {
-            const res = await callGSheetApi({
-                act: 'deleteByPosVal',
-                pos: 0,
-                val: noteId,
-                spread: SHEET_ID,
-                sheet: NOTE_SHEET_NAME
-            });
-            if (res.ok || res.status === 404) {
+        if (shouldDeleteRow) {
+            const rawIds = sheetRowIdsByKey.get(progressKey) || [];
+            const deleteTargets = rawIds.length > 0 ? [...rawIds] : [noteId];
+            let lastRes = { ok: true, status: 200 };
+            let allCleared = true;
+
+            for (const targetId of deleteTargets) {
+                const res = await callGSheetApi({
+                    act: 'deleteByPosVal',
+                    pos: 0,
+                    val: targetId,
+                    spread: SHEET_ID,
+                    sheet: NOTE_SHEET_NAME
+                });
+                lastRes = res;
+                if (!res.ok && res.status !== 404) {
+                    allCleared = false;
+                }
+            }
+
+            if (allCleared) {
+                sheetRowIdByKey.delete(progressKey);
+                sheetRowIdsByKey.delete(progressKey);
                 sheetSyncedDichKeys.delete(progressKey);
+                if (state.progress && state.progress[progressKey]) {
+                    state.progress[progressKey].diff = null;
+                }
                 setQaCacheEntry(progressKey, '', '', '', false, examSet, qid, '');
             }
-            return res;
+            return lastRes;
         }
 
         if (!noteSheetHasHeader) {
@@ -1577,6 +1613,10 @@ function syncQaRowToSheet(examSet, qid) {
         if (res.ok) {
             noteSheetHasHeader = true;
             noteSheetHasExactHeader = true;
+            sheetRowIdByKey.set(progressKey, noteId);
+            if (!sheetRowIdsByKey.has(progressKey)) {
+                sheetRowIdsByKey.set(progressKey, [noteId]);
+            }
             if (hasDich) sheetSyncedDichKeys.add(progressKey);
             else sheetSyncedDichKeys.delete(progressKey);
             setQaCacheEntry(progressKey, noteVal, ansStr, levelVal, false, examSet, qid, dichStr);
@@ -2194,12 +2234,13 @@ async function resetAll() {
         if (p && parseAnsList(p.ans).length > 0) {
             targetQids.add(String(q.id));
             p.ans = null;
+            p.diff = null;
         }
     });
 
     const cachedBefore = loadNotesCache();
     Object.entries(cachedBefore).forEach(([, entry]) => {
-        if (entry && entry.examSet === examSet && entry.qid && formatAnsString(entry.ans) !== '') {
+        if (entry && (normalizeExamSetParam(entry.examSet) || entry.examSet) === examSet && entry.qid && formatAnsString(entry.ans) !== '') {
             targetQids.add(String(entry.qid));
         }
     });
@@ -2211,15 +2252,17 @@ async function resetAll() {
             ansSyncTimers.delete(pKey);
         }
         const p = state.progress[pKey] || {};
+        p.diff = null;
+        const hasNote = String(p.note || '').trim() !== '';
         setQaCacheEntry(
             pKey,
             p.note || '',
             '',
-            p.diff || '',
+            '',
             true,
             examSet,
             qid,
-            formatDichString(p.translation)
+            hasNote ? formatDichString(p.translation) : ''
         );
     });
 
@@ -2236,15 +2279,25 @@ async function resetAll() {
         const freshSheet = await loadQaFromSheet();
         if (freshSheet.ok) {
             Object.entries(freshSheet.qaMap).forEach(([pKey, qa]) => {
-                if (pKey.startsWith(examSet) && qa.ans && qa.ans.length > 0) {
-                    const qid = pKey.slice(examSet.length);
-                    if (qid && !targetQids.has(qid)) {
+                const rowExamSet = qa.examSet || (pKey.startsWith(examSet) ? examSet : '');
+                if (rowExamSet !== examSet) return;
+                const qid = qa.qid ? String(qa.qid) : pKey.slice(examSet.length);
+                if (!qid) return;
+                const hasSheetAns = qa.ans && qa.ans.length > 0;
+                const hasSheetNote = String(qa.note || '').trim() !== '';
+                if (hasSheetAns || !hasSheetNote) {
+                    if (!targetQids.has(qid)) {
                         targetQids.add(qid);
-                        if (!state.progress[pKey]) state.progress[pKey] = {};
-                        state.progress[pKey].ans = null;
-                        const p = state.progress[pKey];
-                        setQaCacheEntry(pKey, p.note || '', '', p.diff || '', true, examSet, qid, formatDichString(p.translation));
                     }
+                    if (!state.progress[pKey]) state.progress[pKey] = {};
+                    if (!state.progress[pKey].note && qa.note) {
+                        state.progress[pKey].note = qa.note;
+                    }
+                    state.progress[pKey].ans = null;
+                    state.progress[pKey].diff = null;
+                    const p = state.progress[pKey];
+                    const hasNote = String(p.note || '').trim() !== '';
+                    setQaCacheEntry(pKey, p.note || '', '', '', true, examSet, qid, hasNote ? formatDichString(p.translation) : '');
                 }
             });
         }
@@ -2255,7 +2308,7 @@ async function resetAll() {
             if (resetBtn) {
                 resetBtn.textContent = `Đang xóa (${i + 1}/${qidsList.length})...`;
             }
-            await syncQaRowToSheet(examSet, qid);
+            await syncQaRowToSheet(examSet, qid, true);
         }
     } finally {
         if (resetBtn) {

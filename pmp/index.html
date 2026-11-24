@@ -5,40 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PMP Master Pro - V1.9.3 Final</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="../com/assistive.js"></script>    
+    <script src="../com/assistive.js"></script>
     <script src="https://hsk-gilt.vercel.app/pmp/data1.js"></script>
-	<script src="https://hsk-gilt.vercel.app/pmp/data2.js"></script>
+    <script src="https://hsk-gilt.vercel.app/pmp/data2.js"></script>
     <script src="https://hsk-gilt.vercel.app/pmp/data3.js"></script>
-	<script src="https://hsk-gilt.vercel.app/pmp/data4.js"></script>
+    <script src="https://hsk-gilt.vercel.app/pmp/data4.js"></script>
     <script src="https://hsk-gilt.vercel.app/pmp/data5.js"></script>
-	
     <style>
-        :root { 
-            --primary: #2563EB; /* Elegant royal blue */
-            --easy: #10B981;    /* Vibrant emerald */
-            --medium: #F59E0B;  /* Amber */
-            --hard: #EF4444;    /* Alert red */
-            --bg: #F8FAFC;      /* Extremely clean premium light gray */
-            --card: #FFFFFF; 
-            --text-main: #0F172A; /* Slate-900 */
+        :root {
+            --primary: #2563EB;
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --surface-2: #F8FAFC;
+            --border: rgba(15, 23, 42, 0.08);
+            --border-strong: #CBD5E1;
+            --text-main: #0F172A;
+            --muted: #64748B;
+            --faint: #94A3B8;
+            --accent: #C4623F;
+            --accent-soft: #FFF7ED;
+            --accent-ink: #9A3412;
+            --ok: #059669;
+            --ok-soft: #F0FDF4;
+            --ok-border: #10B981;
+            --bad: #DC2626;
+            --bad-soft: #FEF2F2;
+            --bad-border: #EF4444;
+            --tip: #FEFCE8;
+            --tip-border: #FDE047;
+            --tip-ink: #854D0E;
+            --vi: #2563EB;
+            --vi-soft: #EFF6FF;
+            --sticky-q-bg: rgba(255, 237, 213, 0.98);
+            --sticky-q-border: #FED7AA;
         }
-        
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100vw; 
-            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; 
-            background-color: var(--bg); display: flex; flex-direction: column; 
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100vw;
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
             color: var(--text-main);
         }
 
-        .system-header { 
-            background: rgba(255, 255, 255, 0.96); 
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(15, 23, 42, 0.07); 
-            flex-shrink: 0; 
+        /* Prominent always-on-top header */
+        .system-header {
+            background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+            color: #F8FAFC;
+            border-bottom: 2px solid #EA580C;
+            flex-shrink: 0;
             padding-top: env(safe-area-inset-top);
-            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
             z-index: 100;
         }
         .header-inner {
@@ -47,152 +71,205 @@
             margin: 0 auto;
             box-sizing: border-box;
         }
-        .nav-row { 
-            padding: 10px 14px 10px 48px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
+        .nav-row {
+            padding: 7px 14px 4px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             gap: 8px;
             flex-wrap: nowrap;
         }
         @media (min-width: 860px) {
-            .nav-row {
-                padding-left: 14px;
-            }
+            .nav-row { padding-left: 14px; }
         }
-        .brand { 
-            font-size: 15px; 
-            font-weight: 800; 
-            color: var(--text-main); 
+        .brand {
+            font-size: 14px;
+            font-weight: 800;
+            color: #FFFFFF;
             letter-spacing: -0.02em;
-            cursor: pointer;
-            transition: transform 0.2s ease, color 0.2s ease;
             white-space: nowrap;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             flex-shrink: 0;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
         }
         .brand:hover {
-            transform: translateY(-0.5px);
-            color: var(--primary);
+            opacity: 0.9;
+        }
+        .brand-badge {
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #F97316, #EA580C);
+            color: #FFFFFF;
+            letter-spacing: 0.04em;
+        }
+        .header-selects-row {
+            padding: 0 14px 5px;
         }
         .header-selects {
             display: flex;
             align-items: center;
             gap: 6px;
-            flex-shrink: 0;
+            width: 100%;
+            min-width: 0;
             flex-wrap: nowrap;
         }
-
         #set-select,
-        .page-select-ctrl {
-            height: 34px;
-            padding: 0 11px;
-            border-radius: 10px;
-            border: 1px solid rgba(15, 23, 42, 0.1);
-            background-color: #FFFFFF;
-            font-size: 12.5px;
+        #list-filter-select {
+            flex: 1 1 0;
+            width: 0;
+            min-width: 0;
+            height: 31px;
+            padding: 0 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            background-color: rgba(255, 255, 255, 0.12);
+            font-size: 12px;
             font-weight: 700;
-            color: #1E293B;
+            color: #FFFFFF;
             cursor: pointer;
-            transition: all 0.18s ease;
             outline: none;
             font-family: inherit;
-            flex-shrink: 0;
-            max-width: 100%;
-            box-sizing: border-box;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            text-overflow: ellipsis;
         }
-        #set-select {
-            background-color: #EFF6FF;
-            border-color: rgba(37, 99, 235, 0.22);
-            color: var(--primary);
-            font-weight: 800;
-        }
-        #set-select:hover {
-            background-color: #DBEAFE;
-            border-color: rgba(37, 99, 235, 0.35);
-        }
-        .page-select-ctrl:hover {
-            background-color: #F1F5F9;
-            border-color: rgba(15, 23, 42, 0.18);
+        #set-select option,
+        #list-filter-select option {
+            color: #0F172A;
+            background: #FFFFFF;
         }
 
-        .page-range-badge {
-            height: 44px;
-            display: inline-flex;
+        .header-tools-row {
+            padding: 0 14px 6px;
+            display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 800;
-            color: var(--primary);
-            background: #EFF6FF;
-            border: 1px solid rgba(37, 99, 235, 0.18);
-            padding: 0 10px;
-            border-radius: 12px;
-            white-space: nowrap;
-            flex: 0.9;
-            min-width: 0;
-            box-sizing: border-box;
+            gap: 6px;
         }
-        .page-nav-btn {
-            height: 44px;
-            padding: 0 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(15, 23, 42, 0.1);
-            background: #FFFFFF;
-            color: #1E293B;
-            font-weight: 800;
-            font-size: 13.5px;
-            line-height: 1;
-            display: inline-flex;
+        .search-box {
+            flex: 1 1 120px;
+            min-width: 0;
+            height: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0 6px 0 9px;
+            display: flex;
             align-items: center;
-            justify-content: center;
             gap: 5px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            flex: 1.15;
-            min-width: 0;
             box-sizing: border-box;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-            font-family: inherit;
+            transition: border-color 0.15s ease, background 0.15s ease;
         }
-        .page-nav-btn svg {
-            width: 17px;
-            height: 17px;
-            display: block;
-            flex-shrink: 0;
+        .search-box:focus-within {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: #FB923C;
         }
-        .page-nav-btn:hover:not(:disabled) {
-            background: #F1F5F9;
-            border-color: rgba(15, 23, 42, 0.18);
-        }
-        .page-nav-btn.page-nav-next {
-            background: linear-gradient(135deg, #2563EB, #1D4ED8);
-            color: #FFFFFF;
+        .search {
+            flex: 1 1 0;
+            width: 0;
+            min-width: 0;
+            height: 100%;
             border: none;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
+            background: transparent;
+            color: #FFFFFF;
+            padding: 0;
+            font-family: inherit;
+            font-size: 12.5px;
+            outline: none;
         }
-        .page-nav-btn.page-nav-next:hover:not(:disabled) {
-            background: linear-gradient(135deg, #1D4ED8, #1E40AF);
-            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.32);
+        .search::placeholder {
+            color: rgba(226, 232, 240, 0.65);
         }
-        .page-nav-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            box-shadow: none;
+        .search-count {
+            flex-shrink: 0;
+            font-size: 10.5px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.14);
+            color: rgba(226, 232, 240, 0.9);
+            white-space: nowrap;
+            line-height: 1.2;
         }
-        @media (max-width: 340px) {
-            .nav-short-text {
-                display: none;
-            }
+        .search-count.searching {
+            background: rgba(249, 115, 22, 0.25);
+            color: #FED7AA;
+            border: 1px solid rgba(251, 146, 60, 0.45);
         }
+        .search-count.zero {
+            background: rgba(239, 68, 68, 0.28);
+            color: #FECACA;
+            border: 1px solid rgba(248, 113, 113, 0.45);
+        }
+        .hdr-action-btn {
+            height: 32px;
+            padding: 0 11px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            touch-action: manipulation;
+            transition: all 0.15s ease;
+        }
+        .hdr-action-btn:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+        .hdr-action-btn.check {
+            background: linear-gradient(135deg, #F97316, #EA580C);
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);
+        }
+        .hdr-action-btn.check:hover:not(:disabled) {
+            filter: brightness(1.06);
+        }
+        .hdr-action-btn.check.active {
+            background: linear-gradient(135deg, #10B981, #059669);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+        }
+        .hdr-action-btn.reset {
+            background: rgba(239, 68, 68, 0.16);
+            color: #FECACA;
+            border-color: rgba(248, 113, 113, 0.35);
+        }
+        .hdr-action-btn.reset:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.28);
+            color: #FFFFFF;
+        }
+        .score-badge {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 8px;
+            border-radius: 99px;
+            background: rgba(16, 185, 129, 0.18);
+            border: 1px solid rgba(52, 211, 153, 0.45);
+            color: #34D399;
+            font-size: 11px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .score-badge.show {
+            display: inline-flex;
+        }
+
         .study-progress-wrap {
             padding: 0 14px 9px;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
             box-sizing: border-box;
         }
         .study-progress-meta {
@@ -210,78 +287,58 @@
             gap: 5px;
             white-space: nowrap;
         }
-        .study-stat-item.done {
-            color: #047857;
-        }
-        .study-stat-item.todo {
-            color: #64748B;
-        }
+        .study-stat-item.done { color: #34D399; }
         .study-dot {
             width: 8px;
             height: 8px;
             border-radius: 99px;
             flex-shrink: 0;
         }
-        .study-dot.done {
-            background: #10B981;
-        }
-        .study-dot.todo {
-            background: #CBD5E1;
+        .study-dot.done { background: #10B981; }
+        .kw-hit {
+            background: #FEE2E2;
+            color: #DC2626;
+            font-weight: 800;
+            padding: 0 3px;
+            border-radius: 4px;
+            box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.28);
         }
         .study-progress-track {
             width: 100%;
-            height: 8px;
+            height: 7px;
             border-radius: 99px;
-            background: #E2E8F0;
+            background: rgba(255, 255, 255, 0.16);
             overflow: hidden;
             display: flex;
-            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
         }
         .study-progress-fill-done {
             height: 100%;
             width: 0%;
             border-radius: 99px;
-            background: linear-gradient(90deg, #10B981, #059669);
+            background: linear-gradient(90deg, #10B981, #34D399);
             transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
             flex-shrink: 0;
         }
 
-        @media (max-width: 430px) {
-            .nav-row {
-                padding: 9px 10px 8px 46px;
-                gap: 6px;
-            }
-            .brand {
-                font-size: 13px;
-            }
-            .header-selects {
-                gap: 4px;
-            }
+        @media (max-width: 480px) {
+            .nav-row { padding: 6px 10px 4px 46px; gap: 6px; }
+            .brand { font-size: 13px; }
+            .header-selects-row { padding: 0 10px 5px; }
             #set-select,
-            .page-select-ctrl {
-                height: 31px;
-                padding: 0 7px;
-                font-size: 11.5px;
-                border-radius: 9px;
-            }
-            #list-filter-select {
-                max-width: 112px;
-            }
-            .study-progress-wrap {
-                padding: 0 10px 8px;
-                gap: 4px;
-            }
-            .study-progress-meta {
-                font-size: 11px;
-            }
-            .study-progress-track {
-                height: 7px;
-            }
+            #list-filter-select { height: 29px; font-size: 11.5px; padding: 0 6px; }
+            .header-tools-row { padding: 0 10px 5px; gap: 5px; }
+            .search-box { height: 30px; padding: 0 5px 0 8px; }
+            .search { font-size: 12px; }
+            .search-count { font-size: 10px; padding: 1.5px 5px; }
+            .hdr-action-btn { height: 30px; padding: 0 8px; font-size: 11px; }
+            .study-progress-wrap { padding: 0 10px 7px; }
+            .study-progress-meta { font-size: 10.5px; gap: 4px; }
         }
 
-        .content-viewport { 
-            flex-grow: 1; 
-            position: relative; 
+        /* Main scrolling viewport */
+        .content-viewport {
+            flex-grow: 1;
+            position: relative;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             width: 100%;
@@ -290,168 +347,58 @@
             padding: 0 14px 88px;
             box-sizing: border-box;
         }
-        
-        .main-card { 
+        @media (max-width: 480px) {
+            .content-viewport { padding: 0 10px 82px; }
+        }
+
+        .main-card {
             width: 100%;
-            display: flex; 
-            flex-direction: column; 
+            display: flex;
+            flex-direction: column;
             gap: 14px;
             box-sizing: border-box;
-            background: transparent;
         }
         .multi-card {
             background: var(--card);
             border-radius: 0 0 16px 16px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 8px 24px -8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.02);
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
             overflow: visible;
         }
-        .multi-card .q-sticky-header {
-            border-radius: 0;
-            padding: 10px 12px;
-            flex-wrap: nowrap;
-            align-items: stretch;
-            gap: 8px;
-        }
-        .multi-card-body {
-            padding: 14px;
-        }
-        .multi-footer-pager {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 10px 14px;
-            background: #FFFFFF;
-            border-radius: 16px;
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 4px 14px rgba(0,0,0,0.03);
-        }
-        .multi-footer-btn {
-            border: 1px solid #E2E8F0;
-            background: #F8FAFC;
-            color: #1E293B;
-            font-weight: 800;
-            font-size: 12.5px;
-            padding: 8px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-        .multi-footer-btn.primary {
-            background: var(--primary);
-            color: #FFFFFF;
+        .multi-card.active {
             border-color: var(--primary);
         }
-        .multi-footer-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
 
-        @keyframes spinTranslation {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* High-fidelity, smooth 3D turning-axis keyframe animations from source sample */
-        .page-flip-next-out {
-            animation: flipNextOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
-            transition: none !important;
-        }
-        .page-flip-next-in {
-            animation: flipNextIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
-            transition: none !important;
-        }
-        .page-flip-prev-out {
-            animation: flipPrevOut 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
-            transition: none !important;
-        }
-        .page-flip-prev-in {
-            animation: flipPrevIn 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
-            transition: none !important;
-        }
-
-        @keyframes flipNextOut {
-            0% {
-                transform: rotateY(0deg);
-                transform-origin: center center;
-                opacity: 1;
-            }
-            100% {
-                transform: rotateY(-90deg);
-                transform-origin: center center;
-                opacity: 0;
-            }
-        }
-        @keyframes flipNextIn {
-            0% {
-                transform: rotateY(90deg);
-                transform-origin: center center;
-                opacity: 0;
-            }
-            100% {
-                transform: rotateY(0deg);
-                transform-origin: center center;
-                opacity: 1;
-            }
-        }
-        @keyframes flipPrevOut {
-            0% {
-                transform: rotateY(0deg);
-                transform-origin: center center;
-                opacity: 1;
-            }
-            100% {
-                transform: rotateY(90deg);
-                transform-origin: center center;
-                opacity: 0;
-            }
-        }
-        @keyframes flipPrevIn {
-            0% {
-                transform: rotateY(-90deg);
-                transform-origin: center center;
-                opacity: 0;
-            }
-            100% {
-                transform: rotateY(0deg);
-                transform-origin: center center;
-                opacity: 1;
-            }
-        }
-
-        .q-sticky-header { 
+        /* Sticky question header */
+        .q-sticky-header {
             position: -webkit-sticky;
             position: sticky;
             top: -1px;
-            padding: 12px 18px; 
-            background: rgba(255, 237, 213, 0.98); 
+            padding: 9px 12px;
+            background: var(--sticky-q-bg);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            border-bottom: 1px solid #FED7AA; 
-            box-shadow: 0 4px 12px -6px rgba(234, 88, 12, 0.14);
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            z-index: 20; 
-            border-radius: 0; 
+            border-bottom: 1px solid var(--sticky-q-border);
+            box-shadow: 0 3px 10px -6px rgba(234, 88, 12, 0.14);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+            z-index: 20;
+            border-radius: 0;
         }
-        .q-scroll-body { 
-            flex-grow: 1; 
-            overflow-y: auto; 
-            padding: 14px 18px; 
-            padding-bottom: 35px; 
-        }
-        .q-counter { 
+        .q-counter {
             font-family: inherit;
-            font-size: 13.5px; 
-            font-weight: 800; 
-            color: #1E293B; 
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-main);
             display: flex;
             align-items: center;
             gap: 7px;
             white-space: nowrap;
-            flex-shrink: 0;
+            flex: 1 1 0;
+            min-width: 0;
             cursor: pointer;
             border: none;
             background: transparent;
@@ -464,23 +411,23 @@
             touch-action: manipulation;
             padding: 3px 8px 3px 4px;
             margin: -3px 0 -3px -4px;
-            border-radius: 10px;
+            border-radius: 8px;
             transition: background 0.18s ease;
         }
         .q-counter:hover {
-            background: rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.45);
         }
-        .q-counter.translated {
-            background: rgba(37, 99, 235, 0.12);
+        .multi-card.show-vi .q-counter {
+            background: rgba(37, 99, 235, 0.14);
         }
-        .q-counter.translated .q-counter-main,
-        .q-counter.translated .q-counter-id {
+        .multi-card.show-vi .q-counter .q-counter-main,
+        .multi-card.show-vi .q-counter .q-counter-id {
             color: var(--primary);
         }
         .q-counter::before {
             content: '';
-            width: 4px;
-            height: 28px;
+            width: 3.5px;
+            height: 20px;
             background: var(--primary);
             border-radius: 99px;
             display: inline-block;
@@ -488,139 +435,181 @@
         }
         .q-counter-lines {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            flex-direction: row;
+            align-items: center;
             line-height: 1.25;
-            gap: 2px;
+            gap: 6px;
+            min-width: 0;
+            flex: 1 1 0;
+        }
+        .q-counter-top {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
         }
         .q-counter-main {
-            font-size: 13.5px;
+            font-size: 13px;
             font-weight: 800;
-            color: #1E293B;
+            color: var(--text-main);
         }
         .q-counter-id {
             font-size: 11px;
             font-weight: 600;
-            color: #64748B;
+            color: var(--muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+            flex: 1 1 auto;
         }
 
-        .diff-status-box { 
-            display: flex; 
-            align-items: stretch;
-            align-self: stretch;
-            flex-wrap: nowrap;
-            gap: 3px; 
-            background: rgba(255, 255, 255, 0.8);
-            padding: 3px;
-            border-radius: 14px;
-            border: 1px solid rgba(249, 115, 22, 0.22);
-            min-width: 0;
-            overflow-x: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .diff-status-box::-webkit-scrollbar {
+        .result {
             display: none;
+            font-size: 9.5px;
+            font-weight: 800;
+            border-radius: 99px;
+            padding: 1px 5px;
+            line-height: 1.25;
         }
-        .q-diff-tag { 
-            display: inline-flex;
+        .result.on { display: inline-block; }
+        .result.good { background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok-border); }
+        .result.miss { background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad-border); }
+        .result.skip { background: rgba(148, 163, 184, 0.16); color: var(--muted); border: 1px solid var(--border-strong); }
+
+        .q-ans-row {
+            margin-top: 8px;
+            display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 11px; 
-            font-weight: 800; 
-            padding: 8px 11px; 
-            min-height: 34px;
-            box-sizing: border-box;
-            border-radius: 11px; 
-            color: #64748B; 
-            cursor: pointer; 
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .q-ans-link {
+            padding: 3px 0;
+            background: transparent;
+            border: none;
+            font-family: inherit;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            text-decoration-color: rgba(37, 99, 235, 0.35);
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
-            background: transparent;
-            white-space: nowrap;
-            flex-shrink: 0;
         }
-        .q-diff-tag:hover {
-            color: #0F172A;
-            background: rgba(255, 255, 255, 0.5);
+        .q-ans-link:hover {
+            opacity: 0.85;
         }
-        .q-diff-tag.active[data-type="Ans"] { background: #7C3AED; color: white; box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3); }
-        .q-diff-tag.active[data-type="Easy"] { background: var(--easy); color: white; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
-        .q-diff-tag.active[data-type="Medium"] { background: var(--medium); color: white; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
-        .q-diff-tag.active[data-type="Hard"] { background: var(--hard); color: white; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
-        @media (max-width: 480px) {
-            .multi-card .q-sticky-header {
-                padding: 8px 10px;
-                gap: 6px;
-            }
-            .q-counter {
-                gap: 5px;
-            }
-            .q-counter::before {
-                width: 4px;
-                height: 26px;
-            }
-            .q-counter-main {
-                font-size: 12px;
-            }
-            .q-counter-id {
-                font-size: 10px;
-            }
-            .q-diff-tag {
-                font-size: 10.5px;
-                padding: 7px 8px;
-                min-height: 32px;
-            }
+        .q-ans-link.active {
+            color: #7C3AED;
+            text-decoration-color: rgba(124, 58, 237, 0.35);
         }
 
-        .q-text { 
-            font-size: 15.5px; 
-            font-weight: 600; 
-            line-height: 1.5; 
-            margin: 0 0 14px; 
-            white-space: pre-wrap; 
-            color: #0F172A;
-            letter-spacing: -0.01em;
+        .note-area {
+            width: 100%;
+            height: 30px;
+            margin-top: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border-strong);
+            padding: 5px 10px;
+            font-family: inherit;
+            font-size: 12px;
+            line-height: 18px;
+            color: var(--text-main);
+            background: var(--surface-2);
+            resize: none;
+            box-sizing: border-box;
+            outline: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: height 0.2s cubic-bezier(0.16, 1, 0.3, 1), padding 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
-        .multi-card.bilingual .q-text {
-            font-size: 15px;
+        .note-area:focus {
+            height: 92px;
+            padding: 8px 11px;
+            font-size: 12.5px;
             line-height: 1.45;
-            margin-bottom: 6px;
+            white-space: normal;
+            overflow-y: auto;
+            background: var(--card);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
-        .q-vi-sub {
-            font-size: 13px;
-            font-weight: 500;
-            line-height: 1.45;
-            color: #334155;
-            background: #F8FAFC;
-            border-left: 3px solid #93C5FD;
-            padding: 6px 10px;
-            border-radius: 0 8px 8px 0;
-            margin: 0 0 13px;
+
+        @media (max-width: 480px) {
+            .q-sticky-header { padding: 8px 10px; gap: 6px; }
+            .q-counter { gap: 6px; }
+            .q-counter::before { height: 18px; }
+            .q-counter-lines { gap: 5px; }
+            .q-counter-main { font-size: 12.5px; }
+            .q-counter-id { font-size: 10px; }
+        }
+
+        .multi-card-body {
+            padding: 14px;
+            overflow-wrap: anywhere;
+        }
+
+        .q {
+            font-size: 15.5px;
+            font-weight: 600;
+            line-height: 1.5;
+            margin: 0;
+            color: var(--text-main);
+            overflow-wrap: anywhere;
             white-space: pre-wrap;
         }
+        .show-vi .q {
+            font-size: 15px;
+            line-height: 1.45;
+        }
+        .vi {
+            display: none;
+            margin-top: 6px;
+            padding: 6px 10px;
+            border-left: 3px solid var(--vi);
+            background: var(--vi-soft);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-main);
+            font-size: 13px;
+            line-height: 1.44;
+            font-weight: 500;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+        .vi::before {
+            content: "VI";
+            font-size: 9.5px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--vi);
+            margin-right: 6px;
+            vertical-align: 1px;
+        }
+        .show-vi .vi { display: block; }
+
         .q-vi-status {
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 12px;
             font-weight: 600;
-            color: #64748B;
-            background: #F8FAFC;
-            border-left: 3px solid #CBD5E1;
+            color: var(--muted);
+            background: var(--surface-2);
+            border-left: 3px solid var(--border-strong);
             padding: 6px 10px;
             border-radius: 0 8px 8px 0;
-            margin: 0 0 13px;
+            margin-top: 6px;
         }
         .q-vi-status.error {
-            color: #DC2626;
-            background: #FEF2F2;
-            border-left-color: #FCA5A5;
+            color: var(--bad);
+            background: var(--bad-soft);
+            border-left-color: var(--bad-border);
             cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
         .q-vi-spinner {
@@ -632,250 +621,194 @@
             animation: spinTranslation 0.85s linear infinite;
             flex-shrink: 0;
         }
-        
-        .option-item { 
-            display: flex;
-            align-items: flex-start;
-            font-size: 14px; 
-            padding: 8px 12px; 
-            background: #F8FAFC; 
-            border-radius: 10px; 
-            margin-bottom: 6px; 
-            border: 2px solid rgba(0, 0, 0, 0.01); 
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); 
-            white-space: normal; 
+        @keyframes spinTranslation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .opts {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0 0;
+            display: grid;
+            gap: 7px;
+        }
+        .opt {
+            border: 2px solid rgba(15, 23, 42, 0.06);
+            background: var(--surface-2);
+            border-radius: 10px;
+            padding: 9px 12px;
+            display: grid;
+            grid-template-columns: 22px 1fr;
+            gap: 3px 9px;
+            font-size: 14px;
+            line-height: 1.42;
             cursor: pointer;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.01);
-            line-height: 1.4;
+            transition: all 0.18s ease;
+            touch-action: manipulation;
         }
-        .option-item:hover {
-            transform: translateY(-1px);
-            background: #F1F5F9;
-            border-color: rgba(0,0,0,0.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        .opt:hover {
+            border-color: var(--border-strong);
         }
-        .option-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            min-width: 20px;
-            border-radius: 5px;
-            background: #E2E8F0;
-            color: #475569;
-            font-weight: 800;
-            margin-right: 8px;
+        .key {
+            width: 21px;
+            height: 21px;
+            border-radius: 6px;
+            background: rgba(148, 163, 184, 0.22);
+            color: var(--muted);
+            display: grid;
+            place-items: center;
             font-size: 11.5px;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
+            font-weight: 800;
             margin-top: 1px;
-            position: relative;
         }
-        .option-content {
-            flex-grow: 1;
+        .opt-text {
             min-width: 0;
-            line-height: 1.4;
-            color: #334155;
+            overflow-wrap: anywhere;
             font-weight: 500;
         }
-        .option-main-text {
-            display: block;
-            white-space: pre-wrap;
-        }
-        .multi-card.bilingual .option-main-text {
+        .show-vi .opt-text > div:first-child {
             font-size: 13.5px;
-            line-height: 1.38;
             font-weight: 600;
-            color: #1E293B;
         }
-        .option-vi-sub {
-            display: block;
-            margin-top: 3px;
+        .opt .vi {
             font-size: 12px;
-            font-weight: 500;
-            line-height: 1.36;
-            color: #475569;
-            white-space: pre-wrap;
+            line-height: 1.38;
+            margin-top: 4px;
+            padding: 4px 8px;
         }
-
-        .option-item.selected { 
-            border-color: var(--primary); 
-            background: #EFF6FF; 
-            box-shadow: 0 3px 10px rgba(37, 99, 235, 0.06);
+        .opt.picked {
+            border-color: var(--primary);
+            background: var(--vi-soft);
         }
-        .option-item.selected .option-badge {
+        .opt.picked .key {
             background: var(--primary);
-            color: white;
+            color: #FFFFFF;
         }
-        .option-item.correct { 
-            background: #F0FDF4 !important; 
-            border-color: var(--easy) !important; 
-            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.06); 
+        .badge-ok {
+            display: none;
+            margin-top: 5px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--ok);
+            border: 1px solid var(--ok-border);
+            border-radius: 99px;
+            padding: 1px 8px;
+            width: max-content;
         }
-        .option-item.correct .option-badge {
-            background: var(--easy) !important;
-            color: white !important;
-        }
-        .option-item.correct .option-content,
-        .option-item.correct .option-main-text {
-            color: #15803D;
-            font-weight: 700;
-        }
-        .option-item.correct .option-vi-sub {
-            color: #166534;
-        }
-        .option-item.wrong { 
-            background: #FEF2F2 !important; 
-            border-color: var(--hard) !important; 
-            box-shadow: 0 3px 10px rgba(239, 68, 68, 0.06); 
-        }
-        .option-item.wrong .option-badge {
-            background: var(--hard) !important;
-            color: white !important;
-        }
-        .option-item.wrong .option-content,
-        .option-item.wrong .option-main-text {
-            color: #B91C1C;
-        }
-        .option-item.wrong .option-vi-sub {
-            color: #991B1B;
+        .explain {
+            display: none;
+            margin-top: 12px;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
         }
 
-        #exp-box,
-        .exp-box { 
-            margin-top: 12px; 
-            padding: 12px 14px; 
-            background: #F8FAFC; 
-            border-radius: 12px; 
-            font-size: 13px; 
-            line-height: 1.48;
-            border-left: 4px solid var(--primary); 
-            white-space: pre-wrap; 
-            color: #334155;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-            animation: slideFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        /* Revealed / Show-ans states */
+        .revealed .explain, .show-ans .explain { display: block; }
+        .revealed .opt, .show-ans .opt { cursor: default; }
+        .revealed .opt.picked, .show-ans .opt.picked { cursor: pointer; }
+        .revealed .opt.correct, .show-ans .opt.correct {
+            border-color: var(--ok-border);
+            background: var(--ok-soft);
         }
-        .multi-card.bilingual .exp-box {
-            font-size: 12.5px;
-            line-height: 1.44;
+        .revealed .opt.correct .key, .show-ans .opt.correct .key {
+            background: var(--ok);
+            color: #FFFFFF;
+        }
+        .revealed .opt.correct .badge-ok, .show-ans .opt.correct .badge-ok {
+            display: block;
+        }
+        .revealed .opt.picked:not(.correct) {
+            border-color: var(--bad-border);
+            background: var(--bad-soft);
+        }
+        .revealed .opt.picked:not(.correct) .key {
+            background: var(--bad);
+            color: #FFFFFF;
+        }
+
+        .ex-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 9px;
+        }
+        .ex-head h3 { margin: 0; font-size: 14px; font-weight: 800; }
+        .ans-pill {
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 99px;
+            padding: 2px 9px;
+            border: 1px solid var(--border-strong);
+            color: var(--text-main);
+            background: var(--surface-2);
+        }
+        .exp-body {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-left: 3.5px solid var(--primary);
+            border-radius: 0 10px 10px 0;
+            padding: 10px 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-main);
+            white-space: pre-wrap;
         }
         .exp-vi-sub {
-            margin-top: 9px;
-            padding-top: 9px;
+            margin-top: 8px;
+            padding-top: 8px;
             border-top: 1px dashed rgba(37, 99, 235, 0.25);
-            font-size: 12px;
-            line-height: 1.44;
-            color: #334155;
+            font-size: 12.5px;
+            line-height: 1.48;
+            color: var(--text-main);
             white-space: pre-wrap;
         }
+
         @media (max-width: 480px) {
-            .q-text { font-size: 15px; }
-            .multi-card.bilingual .q-text { font-size: 14.5px; }
-            .q-vi-sub { font-size: 12.5px; }
-            .option-item { font-size: 13.5px; }
-            .multi-card.bilingual .option-main-text { font-size: 13px; }
-            .option-vi-sub { font-size: 11.5px; }
-            .multi-card.bilingual .exp-box { font-size: 12px; }
-            .exp-vi-sub { font-size: 11.5px; }
-        }
-        @keyframes slideFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            .q { font-size: 14.5px; }
+            .show-vi .q { font-size: 14px; }
+            .vi { font-size: 12px; }
+            .opt { font-size: 13px; padding: 8px 10px; }
+            .show-vi .opt-text > div:first-child { font-size: 13px; }
+            .opt .vi { font-size: 11.5px; }
+            .exp-body { font-size: 12.5px; }
         }
 
-        .note-area { 
-            width: 100%; 
-            height: 52px; 
-            margin-top: 14px; 
-            border-radius: 10px; 
-            border: 1px solid #E2E8F0; 
-            padding: 8px 12px; 
-            font-family: inherit; 
-            font-size: 13px; 
-            color: #1E293B;
-            background: #F8FAFC; 
-            resize: none; 
-            box-sizing: border-box; 
-            transition: all 0.2s ease;
-            outline: none;
+        .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 60px 16px;
+            display: none;
+            font-size: 14px;
+            font-weight: 600;
         }
-        .note-area:focus {
-            background: #FFFFFF;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        .card-footer-note {
+            color: var(--faint);
+            font-size: 11.5px;
+            text-align: center;
+            padding: 14px 0 8px;
         }
 
-        #trans-display { 
-            display: none; 
-            position: fixed; 
-            bottom: 85px; 
-            left: 16px; 
-            right: 16px; 
-            max-width: 600px;
-            margin: 0 auto;
-            background: rgba(15, 23, 42, 0.95); 
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            color: #F8FAFC; 
-            border-radius: 20px; 
-            font-size: 14px; 
-            z-index: 2000; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3); 
-            line-height: 1.6; 
-            max-height: 45vh; 
-            flex-direction: column; 
-            overflow: hidden; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            animation: popUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes popUp {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .trans-header { 
-            padding: 12px 18px; 
-            background: rgba(255, 255, 255, 0.05); 
-            border-bottom: 1px solid rgba(255,255,255,0.08); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            font-size: 11px; 
-            font-weight: 800; 
-            color: #94A3B8; 
-            letter-spacing: 1.5px; 
-        }
-        .trans-content { 
-            padding: 16px 18px; 
-            overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; 
-            color: #F1F5F9;
-        }
-        .trans-close { 
-            color: #3B82F6; 
-            padding-left: 10px; 
-            cursor: pointer; 
-            font-weight: 800;
-        }
-
-        .bottom-nav { 
-            background: rgba(255, 255, 255, 0.95); 
+        /* Bottom floating pagination bar */
+        .bottom-nav {
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(15, 23, 42, 0.08); 
+            border: 1px solid rgba(15, 23, 42, 0.08);
             display: flex;
             align-items: stretch;
             justify-content: center;
-            padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); 
-            position: fixed; 
-            bottom: 8px; 
+            padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+            position: fixed;
+            bottom: 8px;
             left: 10px;
             right: 10px;
             width: calc(100% - 20px);
             max-width: 736px;
             margin: 0 auto;
             border-radius: 16px;
-            box-sizing: border-box; 
+            box-sizing: border-box;
             z-index: 100;
             box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.16), 0 1px 3px rgba(15, 23, 42, 0.05);
             flex-wrap: nowrap;
@@ -889,15 +822,76 @@
             min-width: 0;
             flex-wrap: nowrap;
         }
+        .page-nav-btn {
+            height: 44px;
+            padding: 0 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border-strong);
+            background: var(--card);
+            color: var(--text-main);
+            font-weight: 800;
+            font-size: 13.5px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex: 1.15;
+            min-width: 0;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .page-nav-btn svg {
+            width: 17px;
+            height: 17px;
+            display: block;
+            flex-shrink: 0;
+        }
+        .page-nav-btn.page-nav-next {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            color: #FFFFFF;
+            border: none;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
+        }
+        .page-nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
         .bottom-nav #page-select {
             height: 44px;
             border-radius: 12px;
+            border: 1px solid var(--border-strong);
+            background-color: var(--card);
+            color: var(--text-main);
+            font-family: inherit;
+            font-weight: 700;
             flex: 1.1;
             min-width: 0;
             padding: 0 8px;
             font-size: 13.5px;
             text-align: center;
             text-align-last: center;
+            cursor: pointer;
+        }
+        .page-range-badge {
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--primary);
+            background: var(--vi-soft);
+            border: 1px solid rgba(37, 99, 235, 0.22);
+            padding: 0 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+            flex: 0.9;
+            min-width: 0;
+            box-sizing: border-box;
         }
         @media (max-width: 430px) {
             .bottom-nav {
@@ -908,9 +902,7 @@
                 padding: 5px 5px calc(5px + env(safe-area-inset-bottom));
                 border-radius: 14px;
             }
-            .bottom-pagination {
-                gap: 5px;
-            }
+            .bottom-pagination { gap: 5px; }
             .bottom-nav #page-select,
             .page-nav-btn,
             .page-range-badge {
@@ -920,116 +912,219 @@
                 padding: 0 6px;
             }
         }
-
-        #vocab-page { 
-            display:none; 
-            position:fixed; 
-            inset:0; 
-            background:var(--bg); 
-            z-index:3000; 
-            flex-direction:column; 
-            padding-top:env(safe-area-inset-top); 
-            animation: slideInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        @media (max-width: 340px) {
+            .nav-short-text { display: none; }
         }
-        @keyframes slideInDown {
+
+        /* Confirm modal */
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.52);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 300;
+        }
+        .confirm-overlay.open {
+            display: flex;
+        }
+        .confirm-dialog {
+            width: 100%;
+            max-width: 360px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 20px 44px rgba(15, 23, 42, 0.25);
+        }
+        .confirm-title {
+            margin: 0 0 6px;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+        .confirm-desc {
+            margin: 0 0 16px;
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+        .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .confirm-btn {
+            height: 36px;
+            padding: 0 14px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .confirm-btn.cancel {
+            background: var(--surface-2);
+            border-color: var(--border-strong);
+            color: var(--text-main);
+        }
+        .confirm-btn.danger {
+            background: #DC2626;
+            color: #FFFFFF;
+        }
+
+        /* Floating selection translation & vocab modal */
+        #trans-display {
+            display: none;
+            position: fixed;
+            bottom: 85px;
+            left: 16px;
+            right: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #F8FAFC;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 2000;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            line-height: 1.6;
+            max-height: 45vh;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: popUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes popUp {
+            from { opacity: 0; transform: translateY(16px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .trans-header {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 800;
+            color: #94A3B8;
+            letter-spacing: 1.2px;
+        }
+        .trans-content {
+            padding: 14px 16px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            color: #F1F5F9;
+        }
+        .trans-close {
+            color: #FB923C;
+            padding-left: 10px;
+            cursor: pointer;
+            font-weight: 800;
+        }
+
+        #vocab-page {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 3000;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top);
+            animation: slideInUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideInUp {
             from { transform: translateY(100%); }
             to { transform: translateY(0); }
         }
-        .vocab-list { 
-            flex-grow:1; 
-            overflow-y:auto; 
-            padding:20px 16px; 
+        .vocab-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 16px 14px;
+            box-sizing: border-box;
         }
-        .vocab-item { 
-            background:white; 
-            padding:20px; 
-            border-radius:20px; 
-            margin-bottom:14px; 
-            position:relative; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.012); 
-            border: 1px solid rgba(0,0,0,0.03);
-            transition: all 0.2s ease;
+        .vocab-item {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            position: relative;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
-        .vocab-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
-        }
-        .v-meta { 
-            font-size:11px; 
-            color:#64748B; 
-            font-weight:700; 
-            margin-bottom:8px; 
-            background: #EDF2F7;
+        .v-meta {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 6px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
             display: inline-block;
             padding: 2px 8px;
             border-radius: 99px;
         }
-        .v-en { 
-            font-size:16px; 
-            font-weight:800; 
-            color:var(--primary); 
-            margin-bottom:6px; 
+        .v-en {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 4px;
             line-height: 1.4;
+            padding-right: 54px;
         }
-        .v-vi { 
-            font-size:15px; 
-            color:var(--text-main); 
-            line-height: 1.5;
+        .v-vi {
+            font-size: 14px;
+            color: var(--text-main);
+            line-height: 1.48;
         }
-        .v-del { 
-            position:absolute; 
-            right:20px; 
-            top:20px; 
-            color:var(--hard); 
-            font-weight:800; 
-            padding: 4px 10px; 
+        .v-del {
+            position: absolute;
+            right: 14px;
+            top: 14px;
+            color: var(--bad);
+            font-weight: 800;
+            padding: 4px 9px;
             border-radius: 8px;
-            background: #FEF2F2;
+            background: var(--bad-soft);
             cursor: pointer;
             font-size: 11px;
-            border: 1px solid rgba(239, 68, 68, 0.1);
-            transition: all 0.2s ease;
+            border: 1px solid var(--bad-border);
         }
-        .v-del:hover {
-            background: var(--hard);
-            color: white;
+        .v-ctrl {
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            box-sizing: border-box;
         }
-        .v-ctrl { 
-            padding:20px 16px calc(20px + env(safe-area-inset-bottom)); 
-            display:grid; 
-            grid-template-columns:repeat(3, 1fr); 
-            gap:12px; 
-            background:white; 
-            border-top:1px solid #E2E8F0; 
-            box-shadow: 0 -8px 30px rgba(0,0,0,0.03);
-        }
-        .btn-v { 
-            padding:14px; 
-            border-radius:12px; 
-            border:none; 
-            font-weight:800; 
-            font-size:13px; 
-            cursor:pointer; 
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        .btn-v {
+            height: 40px;
+            border-radius: 10px;
+            border: none;
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 12.5px;
+            cursor: pointer;
             text-align: center;
         }
-        .btn-v:active {
-            transform: scale(0.96);
-        }
-        .btn-close { background:#0F172A; color:white; }
-        .btn-close:hover { background: #1E293B; }
-        .btn-exp { 
-            background:var(--easy); 
-            color:white; 
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-        }
-        .btn-exp:hover { background: #059669; }
-        .btn-imp { 
-            background:var(--medium); 
-            color:white; 
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
-        }
-        .btn-imp:hover { background: #D97706; }
+        .btn-close { background: #0F172A; color: #FFFFFF; }
+        .btn-exp { background: #059669; color: #FFFFFF; }
+        .btn-imp { background: #D97706; color: #FFFFFF; }
     </style>
 </head>
 <body>
@@ -1038,15 +1133,20 @@
 
 <div id="vocab-page">
     <div class="system-header">
-        <div class="nav-row">
-            <div class="brand">DANH SÁCH TỪ VỰNG 📖</div>
+        <div class="header-inner">
+            <div class="nav-row" style="padding-bottom: 8px;">
+                <div class="brand" onclick="toggleVocabPage(false)">
+                    <span>DANH SÁCH TỪ VỰNG</span>
+                    <span class="brand-badge">VOCAB</span>
+                </div>
+            </div>
         </div>
     </div>
     <div class="vocab-list" id="vocab-list-container"></div>
     <div class="v-ctrl">
-        <button class="btn-v btn-exp" onclick="exportVocab()">EXPORT CSV</button>
-        <button class="btn-v btn-imp" onclick="document.getElementById('imp-file').click()">IMPORT</button>
-        <button class="btn-v btn-close" onclick="toggleVocabPage(false)">ĐÓNG</button>
+        <button type="button" class="btn-v btn-exp" onclick="exportVocab()">EXPORT CSV</button>
+        <button type="button" class="btn-v btn-imp" onclick="document.getElementById('imp-file').click()">IMPORT</button>
+        <button type="button" class="btn-v btn-close" onclick="toggleVocabPage(false)">ĐÓNG</button>
     </div>
     <input type="file" id="imp-file" hidden onchange="importVocab(this)">
 </div>
@@ -1054,8 +1154,18 @@
 <header class="system-header">
     <div class="header-inner">
         <div class="nav-row">
-            <div class="brand" onclick="toggleVocabPage(true)">PMP MASTER PRO ✨</div>
+            <div class="brand" onclick="toggleVocabPage(true)" title="Nhấn để mở danh sách từ vựng">
+                <span>PMP MASTER</span>
+                <span class="brand-badge">PRO</span>
+            </div>
+        </div>
+        <div class="header-selects-row">
             <div class="header-selects">
+                <select id="list-filter-select" onchange="changeListFilter(this.value)" title="Lọc theo trạng thái">
+                    <option value="all">Tất cả (0)</option>
+                    <option value="todo">Mới (0)</option>
+                    <option value="done">Đã làm (0)</option>
+                </select>
                 <select id="set-select" onchange="changeExamSet(this.value)" title="Chọn bộ đề">
                     <option value="DATA_SET_1">ĐỀ 01</option>
                     <option value="DATA_SET_2">ĐỀ 02</option>
@@ -1063,26 +1173,23 @@
                     <option value="DATA_SET_4">ĐỀ 04</option>
                     <option value="DATA_SET_5">ĐỀ 05</option>
                 </select>
-                <select id="list-filter-select" class="page-select-ctrl" onchange="changeListFilter(this.value)" title="Chọn danh sách câu hỏi">
-                    <option value="all">Tất cả (0)</option>
-                    <option value="todo">Mới (0)</option>
-                    <option value="Easy">Dễ (0)</option>
-                    <option value="Medium">Vừa (0)</option>
-                    <option value="Hard">Khó (0)</option>
-                    <option value="done">Đã học (0)</option>
-                </select>
             </div>
         </div>
-        <div class="study-progress-wrap" id="study-progress-wrap" title="Tiến trình học tập">
+        <div class="header-tools-row">
+            <div class="search-box">
+                <input class="search" id="q" type="search" placeholder="Tìm câu hỏi, số câu…">
+                <span class="search-count" id="search-count">0 câu</span>
+            </div>
+            <button type="button" class="hdr-action-btn check" id="btn-check-all" onclick="toggleCheckAll()" title="Chấm điểm toàn bộ danh sách">✓ Kiểm tra</button>
+            <button type="button" class="hdr-action-btn reset" id="btn-reset-all" onclick="resetAll()" title="Xóa toàn bộ đáp án đã làm trên máy và Google Sheet">↺ Làm lại</button>
+        </div>
+        <div class="study-progress-wrap" id="study-progress-wrap" title="Tiến trình làm bài">
             <div class="study-progress-meta">
                 <span class="study-stat-item done">
                     <span class="study-dot done"></span>
-                    <span>Đã học <strong id="progress-done-label">0/0 (0%)</strong></span>
+                    <span>Đã làm <strong id="progress-done-label">0/0 (0%)</strong></span>
                 </span>
-                <span class="study-stat-item todo">
-                    <span class="study-dot todo"></span>
-                    <span>Chưa học <strong id="progress-todo-label">0 (0%)</strong></span>
-                </span>
+                <span class="score-badge" id="score-badge">Đúng: <strong id="score-badge-text">0/0 (0%)</strong></span>
             </div>
             <div class="study-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="study-progress-track">
                 <div class="study-progress-fill-done" id="progress-bar-done"></div>
@@ -1093,6 +1200,8 @@
 
 <main class="content-viewport" id="swipe-area">
     <div id="book-page" class="main-card"></div>
+    <div class="empty" id="empty">Không có câu hỏi nào khớp bộ lọc.</div>
+    <div class="card-footer-note">Nhấn tiêu đề câu để dịch tiếng Việt, Xem đáp án dưới mỗi câu để mở giải thích, Kiểm tra ở đầu trang để chấm điểm các câu đã làm.</div>
 </main>
 
 <nav class="bottom-nav" aria-label="Thanh phân trang và điều khiển">
@@ -1101,7 +1210,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             <span class="nav-short-text">Trước</span>
         </button>
-        <select id="page-select" class="page-select-ctrl" onchange="goToPage(this.value)" title="Chọn trang"></select>
+        <select id="page-select" onchange="goToPage(this.value)" title="Chọn trang"></select>
         <span id="page-range-info" class="page-range-badge" title="Thứ tự câu hỏi đang hiển thị">0</span>
         <button type="button" class="page-nav-btn page-nav-next" id="btn-page-next" onclick="move('next')" title="Trang sau">
             <span class="nav-short-text">Sau</span>
@@ -1109,6 +1218,17 @@
         </button>
     </div>
 </nav>
+
+<div class="confirm-overlay" id="confirm-reset-modal" aria-hidden="true">
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-reset-title">
+        <h3 class="confirm-title" id="confirm-reset-title">Làm lại từ đầu?</h3>
+        <p class="confirm-desc">Xóa toàn bộ đáp án đã trả lời của bộ đề hiện tại trên danh sách và trên Google Sheet. Ghi chú cá nhân vẫn được giữ lại.</p>
+        <div class="confirm-actions">
+            <button type="button" class="confirm-btn cancel" id="confirm-reset-cancel">Hủy</button>
+            <button type="button" class="confirm-btn danger" id="confirm-reset-ok">Xóa hết</button>
+        </div>
+    </div>
+</div>
 
 <script>
 const SHEET_ID = '1VrTQvaJlLOwZwyKfuIxueRCCz4lCdve0Vk6_-EbQASE';
@@ -1119,12 +1239,11 @@ const TRANSLATIONS_CACHE_KEY = 'pmp_translations_cache_v1';
 const VOCAB_CACHE_KEY = 'pmp_vocab_cache_v1';
 const NOTE_SHEET_HEADERS = ['ID', 'SET', 'QID', 'ANS', 'LEVEL', 'NOTE', 'DỊCH', 'UPDATE_TIME'];
 
-let isLoaded = false; // CỜ AN TOÀN
+let isLoaded = false;
 let noteSheetHasHeader = false;
 let noteSheetHasExactHeader = false;
 const noteSyncTimers = new Map();
 const ansSyncTimers = new Map();
-const levelSyncTimers = new Map();
 const qaSyncChains = new Map();
 const sheetSyncedDichKeys = new Set();
 
@@ -1137,9 +1256,7 @@ function getAuthToken() {
         if (!token && typeof window !== 'undefined' && window.location) {
             const urlParams = new URLSearchParams(window.location.search);
             token = urlParams.get('token') || urlParams.get('access_token') || '';
-            if (token) {
-                sessionStorage.setItem('token', token);
-            }
+            if (token) sessionStorage.setItem('token', token);
         }
     } catch (e) {}
     return token;
@@ -1148,9 +1265,7 @@ function getAuthToken() {
 async function callGSheetApi(body) {
     const headers = { 'Content-Type': 'application/json' };
     const authToken = getAuthToken();
-    if (authToken) {
-        headers['Authorization'] = `${authToken}`;
-    }
+    if (authToken) headers['Authorization'] = `${authToken}`;
     try {
         const response = await fetch(API_GSHEET_URL, {
             method: 'POST',
@@ -1158,12 +1273,10 @@ async function callGSheetApi(body) {
             body: JSON.stringify(body)
         });
         let data = null;
-        try {
-            data = await response.json();
-        } catch (parseErr) {}
+        try { data = await response.json(); } catch (parseErr) {}
         return { ok: response.ok, status: response.status, data };
     } catch (e) {
-        console.error("[LOG] Lỗi gọi API Google Sheet:", e);
+        console.error('[LOG] Lỗi gọi API Google Sheet:', e);
         return { ok: false, status: 0, data: null, error: e };
     }
 }
@@ -1227,9 +1340,7 @@ function parseDichObject(val) {
 function formatDichString(translation) {
     if (!translation || typeof translation !== 'object') return '';
     const hasOptions = translation.optionsVi && Object.keys(translation.optionsVi).length > 0;
-    if (!translation.questionVi && !translation.explanationVi && !hasOptions) {
-        return '';
-    }
+    if (!translation.questionVi && !translation.explanationVi && !hasOptions) return '';
     try {
         return JSON.stringify({
             questionVi: String(translation.questionVi || ''),
@@ -1249,12 +1360,12 @@ function parseNoteRowKey(row, colMap) {
 
     const rowSet = cols.set >= 0 ? String(row[cols.set] || '').trim() : '';
     const rowQid = cols.qid >= 0 ? String(row[cols.qid] || '').trim() : '';
-    const ansRaw = cols.ans >= 0 && row[cols.ans] !== undefined && row[cols.ans] !== null ? String(row[cols.ans]) : '';
+    const ansRaw = cols.ans >= 0 && row[cols.ans] != null ? String(row[cols.ans]) : '';
     const ansList = parseAnsList(ansRaw);
-    const levelRaw = cols.level >= 0 && row[cols.level] !== undefined && row[cols.level] !== null ? String(row[cols.level]) : '';
+    const levelRaw = cols.level >= 0 && row[cols.level] != null ? String(row[cols.level]) : '';
     const level = normalizeLevel(levelRaw);
-    const noteText = cols.note >= 0 && row[cols.note] !== undefined && row[cols.note] !== null ? String(row[cols.note]) : '';
-    const dichRaw = cols.dich >= 0 && row[cols.dich] !== undefined && row[cols.dich] !== null ? String(row[cols.dich]) : '';
+    const noteText = cols.note >= 0 && row[cols.note] != null ? String(row[cols.note]) : '';
+    const dichRaw = cols.dich >= 0 && row[cols.dich] != null ? String(row[cols.dich]) : '';
     const translation = parseDichObject(dichRaw);
 
     let progressKey = '';
@@ -1311,11 +1422,26 @@ function escapeHtmlText(str) {
     return String(str ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function escRegExp(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function fmtKw(rawText, rawTerm) {
+    const escaped = escapeHtmlText(rawText);
+    const term = String(rawTerm || '').trim();
+    if (!term || /^\d+$/.test(term)) return escaped;
+    const re = new RegExp(escRegExp(escapeHtmlText(term)), 'gi');
+    return escaped.replace(/(<[^>]+>)|([^<]+)/g, (m, tag, text) => {
+        if (tag) return tag;
+        return text.replace(re, match => `<mark class="kw-hit">${match}</mark>`);
+    });
 }
 
 async function loadQaFromSheet() {
-    console.log(`[LOG] Đang tải ghi chú, độ khó & đáp án từ sheet ${NOTE_SHEET_NAME}...`);
     const res = await callGSheetApi({
         act: 'read',
         spread: SHEET_ID,
@@ -1324,7 +1450,6 @@ async function loadQaFromSheet() {
 
     const qaMap = {};
     if (!res.ok || !res.data || !Array.isArray(res.data.values)) {
-        console.warn(`[LOG] Không tải được sheet ${NOTE_SHEET_NAME} (status: ${res.status}). Dùng cache cục bộ nếu có.`);
         return { ok: false, qaMap };
     }
 
@@ -1360,7 +1485,6 @@ async function loadQaFromSheet() {
         }
     });
 
-    console.log(`[LOG] Đã tải ${Object.keys(qaMap).length} bản ghi từ sheet ${NOTE_SHEET_NAME}.`);
     return { ok: true, qaMap };
 }
 
@@ -1401,7 +1525,6 @@ function syncQaRowToSheet(examSet, qid) {
             if (res.ok || res.status === 404) {
                 sheetSyncedDichKeys.delete(progressKey);
                 setQaCacheEntry(progressKey, '', '', '', false, examSet, qid, '');
-                console.log(`[LOG] Đã xóa bản ghi ${noteId} trên sheet ${NOTE_SHEET_NAME}.`);
             }
             return res;
         }
@@ -1431,7 +1554,6 @@ function syncQaRowToSheet(examSet, qid) {
             }
         }
 
-        // Thứ tự cột chuẩn: ID - SET - QID - ANS - LEVEL - NOTE - DỊCH - UPDATE_TIME
         const rowData = [
             noteId,
             examSet,
@@ -1458,7 +1580,6 @@ function syncQaRowToSheet(examSet, qid) {
             if (hasDich) sheetSyncedDichKeys.add(progressKey);
             else sheetSyncedDichKeys.delete(progressKey);
             setQaCacheEntry(progressKey, noteVal, ansStr, levelVal, false, examSet, qid, dichStr);
-            console.log(`[LOG] Đã lưu ${noteId} (ANS=${ansStr}, LEVEL=${levelVal}, DỊCH=${hasDich ? 'có' : 'không'}) lên sheet ${NOTE_SHEET_NAME}.`);
         }
         return res;
     });
@@ -1508,12 +1629,17 @@ function saveVocabCache(vocabList) {
 
 const pageSize = 10;
 const UI_PREFS_STORAGE_KEY = 'pmp_ui_prefs_v1';
-const ALLOWED_LIST_FILTERS = ['all', 'todo', 'Easy', 'Medium', 'Hard', 'done'];
+const ALLOWED_LIST_FILTERS = ['all', 'todo', 'done'];
 
 let state = {};
-let currentData = []; let filteredData = []; let idx = 0; let isFirstLoad = true;
+let currentData = [];
+let filteredData = [];
+let idx = 0;
+let isFirstLoad = true;
 let currentPage = 1;
 let initialUrlPage = null;
+let isCheckedMode = false;
+let activeQid = null;
 const flippedIds = new Set();
 const shownAnsIds = new Set();
 
@@ -1528,10 +1654,13 @@ function loadLocalPrefs() {
 
 function saveLocalPrefs() {
     try {
+        const searchEl = document.getElementById('q');
         const prefs = {
             set: state.set || 'DATA_SET_1',
             listFilter: normalizeListFilter(state.listFilter),
             page: currentPage,
+            q: searchEl ? searchEl.value : '',
+            checkedMode: isCheckedMode,
             flippedIds: Array.from(flippedIds),
             shownAnsIds: Array.from(shownAnsIds)
         };
@@ -1540,7 +1669,7 @@ function saveLocalPrefs() {
 }
 
 function normalizeListFilter(val) {
-    return ALLOWED_LIST_FILTERS.includes(val) ? val : 'todo';
+    return ALLOWED_LIST_FILTERS.includes(val) ? val : 'all';
 }
 
 function normalizeExamSetParam(val) {
@@ -1658,7 +1787,6 @@ async function translateTextsViaProxy(texts, sl = 'en') {
     const endpoints = getTranslateProxyEndpoints();
     if (endpoints.length === 0) return null;
 
-    let lastErr = null;
     for (const endpoint of endpoints) {
         try {
             const res = await fetchWithTimeout(endpoint, {
@@ -1671,21 +1799,15 @@ async function translateTextsViaProxy(texts, sl = 'en') {
                 unavailableTranslateProxies.add(endpoint);
                 continue;
             }
-            if (!res.ok) {
-                throw new Error(`Proxy HTTP ${res.status}`);
-            }
+            if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
             const data = await res.json();
             if (!data || !data.ok || !Array.isArray(data.translations)) {
                 throw new Error(data?.error || 'Invalid proxy translate response');
             }
             return data.translations.map(v => String(v || '').trim());
         } catch (err) {
-            lastErr = err;
             console.warn(`[LOG] Proxy dịch ${endpoint} lỗi:`, err);
         }
-    }
-    if (lastErr) {
-        console.warn('[LOG] Chuyển sang fallback dịch trực tiếp:', lastErr.message || lastErr);
     }
     return null;
 }
@@ -1693,9 +1815,7 @@ async function translateTextsViaProxy(texts, sl = 'en') {
 async function fetchGoogleChunkDirect(chunk, sl = 'en') {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(sl)}&tl=vi&dt=t&q=${encodeURIComponent(chunk)}`;
     const res = await fetchWithTimeout(url, { method: 'GET' }, 10000);
-    if (!res.ok) {
-        throw new Error(`Google HTTP ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`Google HTTP ${res.status}`);
     const data = await res.json();
     if (!Array.isArray(data) || !Array.isArray(data[0])) {
         throw new Error('Invalid Google translate response');
@@ -1707,15 +1827,11 @@ async function fetchMyMemoryChunkDirect(chunk, sl = 'en') {
     const srcLang = (!sl || sl === 'auto') ? 'en' : sl;
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${encodeURIComponent(srcLang + '|vi')}`;
     const res = await fetchWithTimeout(url, { method: 'GET' }, 10000);
-    if (!res.ok) {
-        throw new Error(`MyMemory HTTP ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`MyMemory HTTP ${res.status}`);
     const data = await res.json();
     const status = Number(data?.responseStatus || 0);
     const translated = String(data?.responseData?.translatedText || '').trim();
-    if (status && status !== 200) {
-        throw new Error(`MyMemory status ${status}`);
-    }
+    if (status && status !== 200) throw new Error(`MyMemory status ${status}`);
     if (!translated || /^MYMEMORY WARNING:/i.test(translated)) {
         throw new Error('MyMemory empty or limited');
     }
@@ -1751,7 +1867,6 @@ async function translatePlainTextDirectSequential(plain, sl = 'en') {
         if (mergedGoogle) return mergedGoogle;
     } catch (e) {
         googleErr = e;
-        console.warn('[LOG] Google Translate trực tiếp lỗi, thử MyMemory:', e.message || e);
     }
 
     const mmChunks = splitTextForTranslate(clean, 440);
@@ -1762,9 +1877,7 @@ async function translatePlainTextDirectSequential(plain, sl = 'en') {
         if (i < mmChunks.length - 1) await sleepMs(160);
     }
     const mergedMm = mmParts.join(' ').replace(/\s+\n/g, '\n').trim();
-    if (!mergedMm) {
-        throw googleErr || new Error('Empty direct translation');
-    }
+    if (!mergedMm) throw googleErr || new Error('Empty direct translation');
     return mergedMm;
 }
 
@@ -1790,18 +1903,95 @@ function translateTextSequential(rawText, sl = 'en') {
     });
 }
 
+function evaluateQuestion(q) {
+    const p = state.progress[state.set + q.id] || {};
+    const selectedList = parseAnsList(p.ans);
+    if (selectedList.length === 0) return { hasSelection: false, ok: false };
+    const correctList = parseAnsList(q.answer);
+    const ok = correctList.length > 0 &&
+               selectedList.length === correctList.length &&
+               selectedList.every(k => correctList.includes(k));
+    return { hasSelection: true, ok };
+}
+
+function setActiveCard(qid) {
+    activeQid = qid ? String(qid) : null;
+    document.querySelectorAll('#book-page .multi-card.active').forEach(el => el.classList.remove('active'));
+    if (activeQid) {
+        const card = document.querySelector(`#book-page .multi-card[data-qid="${activeQid}"]`);
+        if (card) card.classList.add('active');
+    }
+}
+
+function applyCheckedCardState(q) {
+    if (!q) return;
+    const card = document.querySelector(`#book-page .multi-card[data-qid="${q.id}"]`);
+    if (!card) return;
+    const resultBadge = card.querySelector('.result');
+    const isAnsShown = isQuestionAnsShown(q.id);
+
+    if (!isCheckedMode) {
+        card.classList.remove('revealed');
+        card.classList.toggle('show-ans', isAnsShown);
+        if (resultBadge) {
+            resultBadge.className = 'result';
+            resultBadge.textContent = '';
+        }
+        applyAnswerHighlightForQuestion(q);
+        return;
+    }
+
+    const ev = evaluateQuestion(q);
+    card.classList.toggle('revealed', ev.hasSelection);
+    card.classList.toggle('show-ans', isAnsShown);
+    if (resultBadge) {
+        if (!ev.hasSelection) {
+            resultBadge.className = 'result on skip';
+            resultBadge.textContent = 'Chưa làm';
+        } else {
+            resultBadge.className = 'result on ' + (ev.ok ? 'good' : 'miss');
+            resultBadge.textContent = ev.ok ? '✓ Đúng' : '✗ Sai';
+        }
+    }
+    applyAnswerHighlightForQuestion(q);
+}
+
+function applyAnswerHighlightForQuestion(q) {
+    if (!q) return;
+    const isAnsActive = isQuestionAnsShown(q.id);
+    const ev = evaluateQuestion(q);
+    const revealCorrect = isAnsActive || (isCheckedMode && ev.hasSelection);
+    const correctList = parseAnsList(q.answer);
+
+    document.querySelectorAll(`.opt[data-qid="${q.id}"]`).forEach(el => {
+        el.classList.remove('correct');
+        if (revealCorrect) {
+            const optKey = String(el.getAttribute('data-opt') || '').trim().toUpperCase();
+            if (correctList.includes(optKey)) {
+                el.classList.add('correct');
+            }
+        }
+    });
+}
+
 function toggleCardAns(qid) {
     if (qid === undefined) return;
     const key = String(qid);
-    if (shownAnsIds.has(key)) shownAnsIds.delete(key);
-    else shownAnsIds.add(key);
+    setActiveCard(key);
+    const on = !shownAnsIds.has(key);
+    if (on) shownAnsIds.add(key);
+    else shownAnsIds.delete(key);
     saveLocalPrefs();
 
-    const show = isQuestionAnsShown(qid);
-    const box = document.getElementById(`exp-box-${qid}`);
-    if (box) box.style.display = show ? 'block' : 'none';
-    const cardBtn = document.getElementById(`btn-card-ans-${qid}`);
-    if (cardBtn) cardBtn.classList.toggle('active', show);
+    const card = document.querySelector(`#book-page .multi-card[data-qid="${key}"]`);
+    if (card) {
+        card.classList.toggle('show-ans', on);
+        const btn = card.querySelector('.q-ans-link');
+        if (btn) {
+            btn.classList.toggle('active', on);
+            btn.textContent = on ? 'Ẩn đáp án' : 'Xem đáp án';
+        }
+    }
     const q = currentData.find(item => String(item.id) === key);
     if (q) applyAnswerHighlightForQuestion(q);
 }
@@ -1809,6 +1999,7 @@ function toggleCardAns(qid) {
 function flipCard(qid) {
     if (qid === undefined) return;
     const key = String(qid);
+    setActiveCard(key);
     const wasFlipped = flippedIds.has(key);
     if (wasFlipped) flippedIds.delete(key);
     else flippedIds.add(key);
@@ -1860,8 +2051,6 @@ async function translateQuestion(q) {
     q.translateErrorMsg = '';
 
     try {
-        console.log(`[LOG] Đang dịch tuần tự câu ${q.id} sang tiếng Việt...`);
-
         const optionEntries = Object.entries(q.options || {});
         const questionPlain = htmlToPlainText(q.question);
         const optionPlains = optionEntries.map(([, optVal]) => htmlToPlainText(optVal));
@@ -1886,9 +2075,7 @@ async function translateQuestion(q) {
             }
 
             const questionVi = await translatePlainTextDirectSequential(questionPlain, 'en');
-            if (!questionVi) {
-                throw new Error('Empty question translation');
-            }
+            if (!questionVi) throw new Error('Empty question translation');
 
             const optionsVi = {};
             for (let i = 0; i < optionEntries.length; i++) {
@@ -1897,7 +2084,6 @@ async function translateQuestion(q) {
                     await sleepMs(100);
                     optionsVi[optKey] = await translatePlainTextDirectSequential(optionPlains[i], 'en');
                 } catch (optErr) {
-                    console.warn(`[LOG] Lỗi dịch đáp án ${optKey} câu ${q.id}:`, optErr);
                     optionsVi[optKey] = '';
                 }
             }
@@ -1908,7 +2094,6 @@ async function translateQuestion(q) {
                     await sleepMs(100);
                     explanationVi = await translatePlainTextDirectSequential(expPlain, 'en');
                 } catch (expErr) {
-                    console.warn(`[LOG] Lỗi dịch giải thích câu ${q.id}:`, expErr);
                     explanationVi = '';
                 }
             }
@@ -1928,8 +2113,6 @@ async function translateQuestion(q) {
 
         if (!state.progress[key]) state.progress[key] = {};
         state.progress[key].translation = translation;
-
-        console.log(`[LOG] Dịch thành công câu ${q.id}`);
         saveTranslationCacheEntry(key, translation);
 
         const noteVal = state.progress[key].note || '';
@@ -1948,9 +2131,147 @@ async function translateQuestion(q) {
     }
 }
 
-function changeExamSet(v) { 
-    console.log("[LOG] Đổi bộ đề sang:", v);
-    state.set = v; idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear();
+function toggleCheckAll() {
+    isCheckedMode = !isCheckedMode;
+    saveLocalPrefs();
+    updateCountsOnly();
+    render(true);
+}
+
+function askResetConfirm() {
+    return new Promise(resolve => {
+        const modal = document.getElementById('confirm-reset-modal');
+        const cancelBtn = document.getElementById('confirm-reset-cancel');
+        const okBtn = document.getElementById('confirm-reset-ok');
+        if (!modal || !cancelBtn || !okBtn) {
+            resolve(true);
+            return;
+        }
+
+        const cleanup = result => {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            cancelBtn.removeEventListener('click', onCancel);
+            okBtn.removeEventListener('click', onOk);
+            modal.removeEventListener('click', onBackdrop);
+            document.removeEventListener('keydown', onKey);
+            resolve(result);
+        };
+        const onCancel = () => cleanup(false);
+        const onOk = () => cleanup(true);
+        const onBackdrop = e => { if (e.target === modal) cleanup(false); };
+        const onKey = e => {
+            if (e.key === 'Escape') cleanup(false);
+            else if (e.key === 'Enter') cleanup(true);
+        };
+
+        cancelBtn.addEventListener('click', onCancel);
+        okBtn.addEventListener('click', onOk);
+        modal.addEventListener('click', onBackdrop);
+        document.addEventListener('keydown', onKey);
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        okBtn.focus();
+    });
+}
+
+async function resetAll() {
+    const confirmed = await askResetConfirm();
+    if (!confirmed) return;
+
+    const resetBtn = document.getElementById('btn-reset-all');
+    if (resetBtn) {
+        resetBtn.disabled = true;
+        resetBtn.textContent = 'Đang xóa...';
+    }
+
+    const examSet = state.set;
+    const targetQids = new Set();
+
+    currentData.forEach(q => {
+        const pKey = examSet + q.id;
+        const p = state.progress[pKey];
+        if (p && parseAnsList(p.ans).length > 0) {
+            targetQids.add(String(q.id));
+            p.ans = null;
+        }
+    });
+
+    const cachedBefore = loadNotesCache();
+    Object.entries(cachedBefore).forEach(([, entry]) => {
+        if (entry && entry.examSet === examSet && entry.qid && formatAnsString(entry.ans) !== '') {
+            targetQids.add(String(entry.qid));
+        }
+    });
+
+    targetQids.forEach(qid => {
+        const pKey = examSet + qid;
+        if (ansSyncTimers.has(pKey)) {
+            clearTimeout(ansSyncTimers.get(pKey));
+            ansSyncTimers.delete(pKey);
+        }
+        const p = state.progress[pKey] || {};
+        setQaCacheEntry(
+            pKey,
+            p.note || '',
+            '',
+            p.diff || '',
+            true,
+            examSet,
+            qid,
+            formatDichString(p.translation)
+        );
+    });
+
+    isCheckedMode = false;
+    shownAnsIds.clear();
+    if (state.listFilter === 'done') {
+        state.listFilter = 'all';
+    }
+    setActiveCard(null);
+    saveLocalPrefs();
+    update();
+
+    try {
+        const freshSheet = await loadQaFromSheet();
+        if (freshSheet.ok) {
+            Object.entries(freshSheet.qaMap).forEach(([pKey, qa]) => {
+                if (pKey.startsWith(examSet) && qa.ans && qa.ans.length > 0) {
+                    const qid = pKey.slice(examSet.length);
+                    if (qid && !targetQids.has(qid)) {
+                        targetQids.add(qid);
+                        if (!state.progress[pKey]) state.progress[pKey] = {};
+                        state.progress[pKey].ans = null;
+                        const p = state.progress[pKey];
+                        setQaCacheEntry(pKey, p.note || '', '', p.diff || '', true, examSet, qid, formatDichString(p.translation));
+                    }
+                }
+            });
+        }
+
+        const qidsList = Array.from(targetQids);
+        for (let i = 0; i < qidsList.length; i++) {
+            const qid = qidsList[i];
+            if (resetBtn) {
+                resetBtn.textContent = `Đang xóa (${i + 1}/${qidsList.length})...`;
+            }
+            await syncQaRowToSheet(examSet, qid);
+        }
+    } finally {
+        if (resetBtn) {
+            resetBtn.disabled = false;
+            resetBtn.textContent = '↺ Làm lại';
+        }
+    }
+}
+
+function changeExamSet(v) {
+    state.set = v;
+    idx = 0;
+    currentPage = 1;
+    flippedIds.clear();
+    shownAnsIds.clear();
+    setActiveCard(null);
     update();
     saveLocalPrefs();
 }
@@ -1958,9 +2279,19 @@ function changeExamSet(v) {
 function changeListFilter(val) {
     state.listFilter = normalizeListFilter(val);
     state.tab = (state.listFilter === 'done') ? 'done' : 'todo';
-    state.diffFilter = ['Easy', 'Medium', 'Hard'].includes(state.listFilter) ? state.listFilter : null;
-    console.log("[LOG] Lọc danh sách:", state.listFilter);
-    idx = 0; currentPage = 1; flippedIds.clear(); shownAnsIds.clear();
+    idx = 0;
+    currentPage = 1;
+    flippedIds.clear();
+    shownAnsIds.clear();
+    setActiveCard(null);
+    update();
+    saveLocalPrefs();
+}
+
+function onSearchInput() {
+    idx = 0;
+    currentPage = 1;
+    setActiveCard(null);
     update();
     saveLocalPrefs();
 }
@@ -1970,7 +2301,9 @@ function goToPage(pageNum) {
     const target = Math.min(Math.max(1, Number(pageNum) || 1), totalPages);
     currentPage = target;
     idx = (currentPage - 1) * pageSize;
-    flippedIds.clear(); shownAnsIds.clear();
+    flippedIds.clear();
+    shownAnsIds.clear();
+    setActiveCard(null);
     render();
     const viewport = document.getElementById('swipe-area');
     if (viewport) viewport.scrollTop = 0;
@@ -1993,17 +2326,15 @@ document.addEventListener('selectionchange', () => {
     if (text.length > 2) {
         clearTimeout(window.transTimer);
         window.transTimer = setTimeout(async () => {
-            const activeQid = getSelectedQuestionId();
-            console.log("[LOG] Yêu cầu dịch thuật văn bản:", text);
+            const activeQidLocal = getSelectedQuestionId();
             display.innerHTML = '<div class="trans-header">BẢN DỊCH <span class="trans-close" onclick="document.getElementById(\'trans-display\').style.display=\'none\'">ĐÓNG [X]</span></div><div class="trans-content" id="trans-text">Đang dịch...</div>';
             display.style.display = 'flex';
             try {
                 const result = await translateTextSequential(text, 'auto');
-                document.getElementById('trans-text').innerText = result || "Không có kết quả.";
-                if (result) saveToVocab(text, result, activeQid);
-            } catch (e) { 
-                console.error("[LOG] Lỗi dịch API:", e);
-                document.getElementById('trans-text').innerText = "Lỗi kết nối."; 
+                document.getElementById('trans-text').innerText = result || 'Không có kết quả.';
+                if (result) saveToVocab(text, result, activeQidLocal);
+            } catch (e) {
+                document.getElementById('trans-text').innerText = 'Lỗi kết nối.';
             }
         }, 600);
     }
@@ -2012,44 +2343,46 @@ document.addEventListener('selectionchange', () => {
 function saveToVocab(en, vi, qidOverride) {
     const q = filteredData[idx];
     const qid = qidOverride || (q ? q.id : 'N/A');
-    const item = { set: state.set, qid: qid, en: en, vi: vi, time: new Date().toLocaleString('vi-VN') };
+    const item = { set: state.set, qid, en, vi, time: new Date().toLocaleString('vi-VN') };
     state.vocab.unshift(item);
-    console.log("[LOG] Đã thêm từ vựng mới.");
     saveVocabCache(state.vocab);
 }
 
 function toggleVocabPage(show) {
     const p = document.getElementById('vocab-page');
     p.style.display = show ? 'flex' : 'none';
-    if(show) renderVocabList();
+    if (show) renderVocabList();
 }
 
 function renderVocabList() {
     const container = document.getElementById('vocab-list-container');
+    if (!state.vocab || state.vocab.length === 0) {
+        container.innerHTML = '<div class="empty" style="display:block;">Chưa có từ vựng nào được lưu.</div>';
+        return;
+    }
     container.innerHTML = state.vocab.map((v, i) => `
         <div class="vocab-item">
-            <div class="v-del" onclick="deleteVocab(${i})">XÓA</div>
-            <div class="v-meta">${v.set} | Câu: ${v.qid} | ${v.time}</div>
-            <div class="v-en">${v.en}</div>
-            <div class="v-vi">${v.vi}</div>
+            <button type="button" class="v-del" onclick="deleteVocab(${i})">XÓA</button>
+            <div class="v-meta">${escapeHtmlText(v.set)} | Câu: ${escapeHtmlText(v.qid)} | ${escapeHtmlText(v.time)}</div>
+            <div class="v-en">${escapeHtmlText(v.en)}</div>
+            <div class="v-vi">${escapeHtmlText(v.vi)}</div>
         </div>
     `).join('');
 }
 
 function deleteVocab(i) {
-    if (confirm("Xóa từ vựng này?")) {
-        state.vocab.splice(i, 1);
-        saveVocabCache(state.vocab); renderVocabList();
-    }
+    state.vocab.splice(i, 1);
+    saveVocabCache(state.vocab);
+    renderVocabList();
 }
 
 function exportVocab() {
-    let csv = "ExamSet,QuestionID,English,Vietnamese,Time\n";
+    let csv = 'ExamSet,QuestionID,English,Vietnamese,Time\n';
     state.vocab.forEach(v => {
-        csv += `"${v.set}","${v.qid}","${v.en.replace(/"/g, '""')}","${v.vi.replace(/"/g, '""')}","${v.time}"\n`;
+        csv += `"${v.set}","${v.qid}","${String(v.en || '').replace(/"/g, '""')}","${String(v.vi || '').replace(/"/g, '""')}","${v.time}"\n`;
     });
-    const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `PMP_Vocab_${new Date().getTime()}.csv`;
     link.click();
@@ -2064,11 +2397,11 @@ function importVocab(input) {
             const rows = e.target.result.split('\n').slice(1);
             rows.forEach(row => {
                 const cols = row.split('","').map(c => c.replace(/"/g, ''));
-                if(cols.length >= 4) state.vocab.push({ set: cols[0], qid: cols[1], en: cols[2], vi: cols[3], time: cols[4] || '' });
+                if (cols.length >= 4) state.vocab.push({ set: cols[0], qid: cols[1], en: cols[2], vi: cols[3], time: cols[4] || '' });
             });
-            saveVocabCache(state.vocab); renderVocabList();
-            alert("Đã nhập thành công!");
-        } catch(err) { alert("Lỗi định dạng file!"); }
+            saveVocabCache(state.vocab);
+            renderVocabList();
+        } catch (err) {}
     };
     reader.readAsText(file);
 }
@@ -2092,7 +2425,7 @@ function syncPaginationControls() {
             pageSelect.disabled = false;
             let opts = '';
             for (let p = 1; p <= totalPages; p++) {
-                opts += `<option value="${p}" ${p === currentPage ? 'selected' : ''}>Trang ${p}</option>`;
+                opts += `<option value="${p}" ${p === currentPage ? 'selected' : ''}>Trang ${p}/${totalPages}</option>`;
             }
             pageSelect.innerHTML = opts;
         }
@@ -2104,7 +2437,7 @@ function syncPaginationControls() {
         } else {
             const start = (currentPage - 1) * pageSize + 1;
             const end = Math.min(currentPage * pageSize, total);
-            rangeInfo.innerText = `${start}~${end}`;
+            rangeInfo.innerText = `${start}~${end}/${total}`;
         }
     }
 
@@ -2121,23 +2454,26 @@ function update() {
     state.listFilter = normalizeListFilter(state.listFilter);
     currentData = window[state.set] || [];
     updateCountsOnly();
-    
+
+    const searchEl = document.getElementById('q');
+    const term = searchEl ? searchEl.value.trim().toLowerCase() : '';
+
     filteredData = currentData.filter(q => {
         const p = state.progress[state.set + q.id];
         const hasAns = parseAnsList(p?.ans).length > 0;
-        switch (state.listFilter) {
-            case 'all': return true;
-            case 'done': return hasAns;
-            case 'Easy':
-            case 'Medium':
-            case 'Hard':
-                return p?.diff === state.listFilter;
-            case 'todo':
-            default:
-                return !hasAns;
-        }
+        if (state.listFilter === 'done' && !hasAns) return false;
+        if (state.listFilter === 'todo' && hasAns) return false;
+
+        if (!term) return true;
+        if (/^\d+$/.test(term)) return String(q.id) === term;
+
+        const trans = parseDichObject(p?.translation);
+        const optTexts = Object.values(q.options || {}).join(' ');
+        const optViTexts = trans && trans.optionsVi ? Object.values(trans.optionsVi).join(' ') : '';
+        const hay = `${q.id} ${q.question || ''} ${optTexts} ${trans?.questionVi || ''} ${optViTexts}`.toLowerCase();
+        return hay.includes(term);
     });
-    
+
     if (isFirstLoad) {
         if (initialUrlPage !== null) {
             const totalPagesInit = Math.max(1, Math.ceil(filteredData.length / pageSize));
@@ -2152,7 +2488,7 @@ function update() {
     if (idx >= filteredData.length && filteredData.length > 0) idx = 0;
     currentPage = filteredData.length > 0 ? Math.floor(idx / pageSize) + 1 : 1;
     if (filteredData.length > 0) idx = (currentPage - 1) * pageSize;
-    
+
     const filterSelect = document.getElementById('list-filter-select');
     if (filterSelect) filterSelect.value = state.listFilter;
     render();
@@ -2161,16 +2497,31 @@ function update() {
 function render(preserveScroll = false) {
     const viewport = document.getElementById('swipe-area');
     const container = document.getElementById('book-page');
+    const emptyEl = document.getElementById('empty');
     const prevScrollTop = (preserveScroll && viewport) ? viewport.scrollTop : 0;
 
     syncPaginationControls();
 
-    if (filteredData.length === 0) {
-        container.innerHTML = "<center style='padding-top:100px; color:#999'>Trống</center>";
-        return;
+    const searchEl = document.getElementById('q');
+    const searchTerm = searchEl ? searchEl.value.trim() : '';
+    const kwLower = searchTerm && !/^\d+$/.test(searchTerm) ? searchTerm.toLowerCase() : '';
+    const total = filteredData.length;
+
+    const searchCountEl = document.getElementById('search-count');
+    if (searchCountEl) {
+        searchCountEl.textContent = searchTerm ? `${total} KQ` : `${total} câu`;
+        searchCountEl.classList.toggle('searching', Boolean(searchTerm) && total > 0);
+        searchCountEl.classList.toggle('zero', Boolean(searchTerm) && total === 0);
     }
 
-    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+    if (total === 0) {
+        container.innerHTML = '';
+        if (emptyEl) emptyEl.style.display = 'block';
+        return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
     if (currentPage > totalPages) currentPage = totalPages;
     const startIdx = (currentPage - 1) * pageSize;
     const pageItems = filteredData.slice(startIdx, startIdx + pageSize);
@@ -2179,19 +2530,25 @@ function render(preserveScroll = false) {
         const globalIdx = startIdx + localIdx;
         const p = state.progress[state.set + q.id] || {};
         const selectedList = parseAnsList(p.ans);
+        const correctList = parseAnsList(q.answer);
         const isCardVi = flippedIds.has(String(q.id));
         const isCardAns = isQuestionAnsShown(q.id);
         const trans = parseDichObject(p.translation);
         const hasTranslation = Boolean(trans && trans.questionVi);
+        const hasViMatch = Boolean(kwLower && hasTranslation && (
+            String(trans.questionVi || '').toLowerCase().includes(kwLower) ||
+            Object.values(trans.optionsVi || {}).some(v => String(v || '').toLowerCase().includes(kwLower))
+        ));
+        const showVi = isCardVi || hasViMatch;
 
         if (isCardVi && !hasTranslation && !q.isTranslating && !q.translateFailed) {
             translateQuestion(q);
         }
 
         let questionSubHtml = '';
-        if (isCardVi) {
+        if (showVi) {
             if (hasTranslation) {
-                questionSubHtml = `<div class="q-vi-sub">${escapeHtmlText(trans.questionVi)}</div>`;
+                questionSubHtml = `<div class="vi">${fmtKw(trans.questionVi, searchTerm)}</div>`;
             } else if (q.translateFailed) {
                 const errHint = q.translateErrorMsg ? ` (${escapeHtmlText(q.translateErrorMsg)})` : '';
                 questionSubHtml = `<div class="q-vi-status error" onclick="retryTranslateQuestion(event, '${q.id}')">Không thể dịch sang tiếng Việt${errHint}. Nhấn vào đây để thử lại.</div>`;
@@ -2200,60 +2557,67 @@ function render(preserveScroll = false) {
             }
         }
 
-        const expViHtml = (isCardVi && hasTranslation && trans.explanationVi)
-            ? `<div class="exp-vi-sub"><div style="font-weight: 800; margin-bottom: 4px; color: #1D4ED8;">🇻🇳 DỊCH GIẢI THÍCH:</div>${escapeHtmlText(trans.explanationVi)}</div>`
+        const subParts = [`ID:${q.id}/${currentData.length}`];
+        if (correctList.length > 1) subParts.push(`Chọn ${correctList.length}`);
+
+        const optsHtml = Object.entries(q.options || {}).map(([k, v]) => {
+            const optUpper = String(k).trim().toUpperCase();
+            const isSel = selectedList.includes(optUpper);
+            const optTransText = (showVi && hasTranslation && trans.optionsVi) ? String(trans.optionsVi[k] || '').trim() : '';
+            const optViHtml = optTransText ? `<div class="vi">${fmtKw(optTransText, searchTerm)}</div>` : '';
+            return `
+                <li class="opt${isSel ? ' picked' : ''}" id="opt-${q.id}-${k}" data-qid="${q.id}" data-opt="${k}" tabindex="0" onclick="setAns('${q.id}','${k}')">
+                    <span class="key">${escapeHtmlText(k)}</span>
+                    <div class="opt-text">
+                        <div>${fmtKw(v, searchTerm)}</div>
+                        <div class="badge-ok">✓ Đáp án đúng</div>
+                        ${optViHtml}
+                    </div>
+                </li>
+            `;
+        }).join('');
+
+        const expViHtml = (showVi && hasTranslation && trans.explanationVi)
+            ? `<div class="exp-vi-sub"><b>🇻🇳 Dịch giải thích:</b><br>${fmtKw(trans.explanationVi, searchTerm)}</div>`
             : '';
 
-        const bodyHtml = `
-            <div class="q-text">${q.question}</div>
-            ${questionSubHtml}
-            <div class="options">
-                ${Object.entries(q.options).map(([k, v]) => {
-                    const isSel = selectedList.includes(String(k).trim().toUpperCase());
-                    const optTransText = (isCardVi && hasTranslation && trans.optionsVi) ? String(trans.optionsVi[k] || '').trim() : '';
-                    const optViHtml = optTransText ? `<span class="option-vi-sub">${escapeHtmlText(optTransText)}</span>` : '';
-                    return `
-                        <div class="option-item ${isSel ? 'selected' : ''}" id="opt-${q.id}-${k}" data-qid="${q.id}" data-opt="${k}" onclick="setAns('${q.id}','${k}')">
-                            <span class="option-badge">${k}</span><span class="option-content"><span class="option-main-text">${v}</span>${optViHtml}</span>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-            <div class="exp-box" id="exp-box-${q.id}" style="${isCardAns ? 'display:block;' : 'display:none;'} border-left:4px solid var(--primary);">
-                <div style="font-weight: 800; margin-bottom: 6px; color: var(--primary);">📖 GIẢI THÍCH CHI TIẾT:</div>
-                ${q.explanation || 'Câu này chưa có giải thích chi tiết.'}
-                ${expViHtml}
-            </div>
-            <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." oninput="onNoteInput('${q.id}', this.value)" onchange="saveNote('${q.id}', this.value)">${escapeHtmlText(p.note || '')}</textarea>
-        `;
+        const ansPillText = correctList.length > 0 ? `Đáp án đúng: ${escapeHtmlText(correctList.join(', '))}` : '';
 
         return `
-            <section class="multi-card ${isCardVi ? 'bilingual' : ''}" data-qid="${q.id}">
+            <article class="multi-card${showVi ? ' show-vi' : ''}${isCardAns ? ' show-ans' : ''}${activeQid === String(q.id) ? ' active' : ''}" data-qid="${q.id}">
                 <div class="q-sticky-header">
-                    <button type="button" class="q-counter ${isCardVi?'translated':''}" onclick="flipCard('${q.id}')" title="Nhấn để dịch / bỏ dịch tiếng Việt">
+                    <button type="button" class="q-counter${isCardVi ? ' translated' : ''}" onclick="flipCard('${q.id}')" title="Nhấn để bật/tắt bản dịch tiếng Việt">
                         <span class="q-counter-lines">
-                            <span class="q-counter-main">${globalIdx+1}/${filteredData.length}</span>
-                            <span class="q-counter-id">(ID:${q.id} of ${currentData.length})</span>
+                            <span class="q-counter-top">
+                                <span class="q-counter-main">Câu ${globalIdx + 1}/${total}</span>
+                                <span class="result"></span>
+                            </span>
+                            <span class="q-counter-id">${escapeHtmlText(subParts.join(' · '))}</span>
                         </span>
                     </button>
-                    <div class="diff-status-box">
-                        <div class="q-diff-tag ${p.diff==='Easy'?'active':''}" data-type="Easy" onclick="setStatus('${q.id}','Easy')">DỄ</div>
-                        <div class="q-diff-tag ${p.diff==='Medium'?'active':''}" data-type="Medium" onclick="setStatus('${q.id}','Medium')">VỪA</div>
-                        <div class="q-diff-tag ${p.diff==='Hard'?'active':''}" data-type="Hard" onclick="setStatus('${q.id}','Hard')">KHÓ</div>
-                        <div class="q-diff-tag ${isCardAns?'active':''}" id="btn-card-ans-${q.id}" data-type="Ans" onclick="toggleCardAns('${q.id}')" title="Bật/tắt đáp án">ANS</div>
-                    </div>
                 </div>
                 <div class="multi-card-body">
-                    ${bodyHtml}
+                    <p class="q">${fmtKw(q.question, searchTerm)}</p>
+                    ${questionSubHtml}
+                    <ul class="opts">${optsHtml}</ul>
+                    <div class="q-ans-row">
+                        <button type="button" class="q-ans-link${isCardAns ? ' active' : ''}" id="btn-card-ans-${q.id}" onclick="toggleCardAns('${q.id}')">${isCardAns ? 'Ẩn đáp án' : 'Xem đáp án'}</button>
+                    </div>
+                    <section class="explain">
+                        <div class="ex-head">
+                            <h3>Giải thích</h3>
+                            ${ansPillText ? `<span class="ans-pill">${ansPillText}</span>` : ''}
+                        </div>
+                        <div class="exp-body">${q.explanation ? fmtKw(q.explanation, searchTerm) : 'Câu này chưa có giải thích chi tiết.'}${expViHtml}</div>
+                    </section>
+                    <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." oninput="onNoteInput('${q.id}', this.value)" onchange="saveNote('${q.id}', this.value)">${escapeHtmlText(p.note || '')}</textarea>
                 </div>
-            </section>
+            </article>
         `;
     }).join('');
 
     pageItems.forEach(q => {
-        if (isQuestionAnsShown(q.id)) {
-            applyAnswerHighlightForQuestion(q);
-        }
+        applyCheckedCardState(q);
     });
 
     if (preserveScroll && viewport) {
@@ -2261,59 +2625,34 @@ function render(preserveScroll = false) {
     }
 }
 
-function applyAnswerHighlightForQuestion(q) {
-    if (!q) return;
-    const isAnsActive = isQuestionAnsShown(q.id);
-    const correctList = parseAnsList(q.answer);
-    document.querySelectorAll(`.option-item[data-qid="${q.id}"]`).forEach(el => {
-        el.classList.remove('correct', 'wrong');
-        if (isAnsActive) {
-            const optKey = String(el.getAttribute('data-opt') || el.id.split('-').pop()).trim().toUpperCase();
-            const isCorrect = correctList.includes(optKey);
-            if (isCorrect) {
-                el.classList.add('correct');
-            } else if (el.classList.contains('selected')) {
-                el.classList.add('wrong');
-            }
-        }
-    });
-}
-
-function setStatus(qid, level) {
-    const examSet = state.set;
-    const key = examSet + qid;
-    if(!state.progress[key]) state.progress[key] = {};
-    state.progress[key].diff = (state.progress[key].diff === level) ? null : level;
-    console.log(`[LOG] Đã đánh dấu độ khó cho câu ${qid}: ${state.progress[key].diff || '(bỏ đánh dấu)'}`);
-    updateCountsOnly(); render(true);
-
-    const noteVal = state.progress[key].note || '';
-    const ansStr = formatAnsString(state.progress[key].ans);
-    const levelVal = normalizeLevel(state.progress[key].diff);
-    setQaCacheEntry(key, noteVal, ansStr, levelVal, true, examSet, qid);
-
-    if (levelSyncTimers.has(key)) {
-        clearTimeout(levelSyncTimers.get(key));
-    }
-    const timerId = setTimeout(() => {
-        levelSyncTimers.delete(key);
-        syncQaRowToSheet(examSet, qid);
-    }, 300);
-    levelSyncTimers.set(key, timerId);
-}
-
 function setAns(qid, k) {
     const examSet = state.set;
     const key = examSet + qid;
+    setActiveCard(qid);
     if (!state.progress[key]) state.progress[key] = {};
 
+    const q = currentData.find(item => String(item.id) === String(qid));
     const currentList = parseAnsList(state.progress[key].ans);
     const optNorm = String(k).trim().toUpperCase();
-    const nextList = currentList.includes(optNorm)
-        ? currentList.filter(item => item !== optNorm)
-        : [...currentList, optNorm];
+    const isAlreadyPicked = currentList.includes(optNorm);
+    const evBefore = q ? evaluateQuestion(q) : { hasSelection: false };
+    const isCardLocked = isQuestionAnsShown(qid) || (isCheckedMode && evBefore.hasSelection);
 
-    const q = currentData.find(item => String(item.id) === String(qid));
+    if (isCardLocked && !isAlreadyPicked) return;
+
+    const correctList = q ? parseAnsList(q.answer) : [];
+    const limit = Math.max(1, correctList.length);
+    let nextList;
+
+    if (isAlreadyPicked) {
+        nextList = currentList.filter(item => item !== optNorm);
+    } else if (limit <= 1) {
+        nextList = [optNorm];
+    } else {
+        if (currentList.length >= limit) return;
+        nextList = [...currentList, optNorm];
+    }
+
     const optOrder = q && q.options ? Object.keys(q.options).map(o => String(o).trim().toUpperCase()) : [];
     nextList.sort((a, b) => {
         const ia = optOrder.indexOf(a);
@@ -2323,25 +2662,21 @@ function setAns(qid, k) {
     });
 
     state.progress[key].ans = nextList.length > 0 ? nextList : null;
-    console.log(`[LOG] Người dùng chọn đáp án cho câu ${qid}: ${nextList.join(',') || '(bỏ chọn hết)'}`);
-    updateCountsOnly();
 
-    const scopedItems = document.querySelectorAll(`.option-item[data-qid="${qid}"]`);
-    scopedItems.forEach(el => {
+    document.querySelectorAll(`.opt[data-qid="${qid}"]`).forEach(el => {
         const opt = String(el.getAttribute('data-opt') || '').trim().toUpperCase();
-        el.classList.toggle('selected', nextList.includes(opt));
+        el.classList.toggle('picked', nextList.includes(opt));
     });
 
-    if (q) applyAnswerHighlightForQuestion(q);
+    if (q) applyCheckedCardState(q);
+    updateCountsOnly();
 
     const noteVal = state.progress[key].note || '';
     const ansStr = nextList.join(',');
     const levelVal = normalizeLevel(state.progress[key].diff);
     setQaCacheEntry(key, noteVal, ansStr, levelVal, true, examSet, qid);
 
-    if (ansSyncTimers.has(key)) {
-        clearTimeout(ansSyncTimers.get(key));
-    }
+    if (ansSyncTimers.has(key)) clearTimeout(ansSyncTimers.get(key));
     const timerId = setTimeout(() => {
         ansSyncTimers.delete(key);
         syncQaRowToSheet(examSet, qid);
@@ -2352,13 +2687,12 @@ function setAns(qid, k) {
 function onNoteInput(qid, val) {
     const examSet = state.set;
     const key = examSet + qid;
+    setActiveCard(qid);
     if (!state.progress[key]) state.progress[key] = {};
     state.progress[key].note = val;
     setQaCacheEntry(key, val, state.progress[key].ans || '', state.progress[key].diff || '', true, examSet, qid);
 
-    if (noteSyncTimers.has(key)) {
-        clearTimeout(noteSyncTimers.get(key));
-    }
+    if (noteSyncTimers.has(key)) clearTimeout(noteSyncTimers.get(key));
     const timerId = setTimeout(() => {
         noteSyncTimers.delete(key);
         syncQaRowToSheet(examSet, qid);
@@ -2366,70 +2700,77 @@ function onNoteInput(qid, val) {
     noteSyncTimers.set(key, timerId);
 }
 
-function saveNote(qid, val) { 
+function saveNote(qid, val) {
     const examSet = state.set;
-    const key = examSet + qid; 
-    if(!state.progress[key]) state.progress[key] = {}; 
-    state.progress[key].note = val; 
+    const key = examSet + qid;
+    if (!state.progress[key]) state.progress[key] = {};
+    state.progress[key].note = val;
     setQaCacheEntry(key, val, state.progress[key].ans || '', state.progress[key].diff || '', true, examSet, qid);
 
     if (noteSyncTimers.has(key)) {
         clearTimeout(noteSyncTimers.get(key));
         noteSyncTimers.delete(key);
     }
-    console.log(`[LOG] Đồng bộ ghi chú câu ${qid} lên sheet ${NOTE_SHEET_NAME}.`);
     syncQaRowToSheet(examSet, qid);
 }
 
 function updateCountsOnly() {
-    let c = { todo: 0, done: 0, Easy: 0, Medium: 0, Hard: 0 };
+    let done = 0;
+    let todo = 0;
+    let right = 0;
     currentData.forEach(q => {
-        const p = state.progress[state.set + q.id];
-        if (parseAnsList(p?.ans).length > 0) c.done++; else c.todo++;
-        if (p?.diff) c[p.diff]++;
+        const ev = evaluateQuestion(q);
+        if (ev.hasSelection) done++; else todo++;
+        if (ev.ok) right++;
     });
+
     const filterSelect = document.getElementById('list-filter-select');
     if (filterSelect) {
         const labels = {
-            todo: `Mới (${c.todo})`,
-            done: `Đã học (${c.done})`,
-            Easy: `Dễ (${c.Easy})`,
-            Medium: `Vừa (${c.Medium})`,
-            Hard: `Khó (${c.Hard})`,
-            all: `Tất cả (${currentData.length})`
+            all: `Tất cả (${currentData.length})`,
+            todo: `Mới (${todo})`,
+            done: `Đã làm (${done})`
         };
         Array.from(filterSelect.options).forEach(opt => {
             if (labels[opt.value]) opt.text = labels[opt.value];
         });
         filterSelect.value = normalizeListFilter(state.listFilter);
     }
-    updateStudyProgressBar(c.done, c.todo, currentData.length);
+    updateStudyProgressBar(done, right, currentData.length);
 }
 
-function updateStudyProgressBar(done, todo, total) {
+function updateStudyProgressBar(done, right, total) {
     const doneLabel = document.getElementById('progress-done-label');
-    const todoLabel = document.getElementById('progress-todo-label');
     const barDone = document.getElementById('progress-bar-done');
     const track = document.getElementById('study-progress-track');
     const wrap = document.getElementById('study-progress-wrap');
+    const scoreBadge = document.getElementById('score-badge');
+    const scoreText = document.getElementById('score-badge-text');
+    const checkBtn = document.getElementById('btn-check-all');
 
     const safeTotal = Math.max(0, Number(total) || 0);
     const safeDone = Math.min(Math.max(0, Number(done) || 0), safeTotal);
-    const safeTodo = Math.max(0, safeTotal - safeDone);
+    const safeRight = Math.min(Math.max(0, Number(right) || 0), safeDone);
 
     const donePctRaw = safeTotal > 0 ? (safeDone / safeTotal) * 100 : 0;
     const donePctRounded = safeTotal > 0 ? Math.round(donePctRaw * 10) / 10 : 0;
-    const todoPctRounded = safeTotal > 0 ? Math.round((100 - donePctRounded) * 10) / 10 : 0;
+    const scorePctRounded = safeDone > 0 ? Math.round((safeRight / safeDone) * 1000) / 10 : 0;
 
-    const formatPct = (val) => `${Number(val).toFixed(1).replace(/\.0$/, '')}%`;
-    const donePctText = formatPct(donePctRounded);
-    const todoPctText = formatPct(todoPctRounded);
+    const formatPct = val => `${Number(val).toFixed(1).replace(/\.0$/, '')}%`;
 
-    if (doneLabel) doneLabel.textContent = `${safeDone}/${safeTotal} (${donePctText})`;
-    if (todoLabel) todoLabel.textContent = `${safeTodo} (${todoPctText})`;
+    if (doneLabel) doneLabel.textContent = `${safeDone}/${safeTotal} (${formatPct(donePctRounded)})`;
     if (barDone) barDone.style.width = safeTotal > 0 ? `${donePctRaw}%` : '0%';
     if (track) track.setAttribute('aria-valuenow', String(Math.round(donePctRaw)));
-    if (wrap) wrap.title = `Đã học ${safeDone}/${safeTotal} (${donePctText}) • Chưa học ${safeTodo}/${safeTotal} (${todoPctText})`;
+    if (wrap) wrap.title = `Đã làm ${safeDone}/${safeTotal} (${formatPct(donePctRounded)})`;
+
+    if (scoreBadge && scoreText) {
+        scoreBadge.classList.toggle('show', isCheckedMode);
+        scoreText.textContent = `${safeRight}/${safeDone} (${formatPct(scorePctRounded)})`;
+    }
+    if (checkBtn) {
+        checkBtn.classList.toggle('active', isCheckedMode);
+        checkBtn.textContent = isCheckedMode ? `✓ ${safeRight}/${safeDone} · Sửa tiếp` : '✓ Kiểm tra';
+    }
 }
 
 function move(dir) {
@@ -2441,7 +2782,9 @@ function move(dir) {
         currentPage = (currentPage <= 1) ? totalPages : currentPage - 1;
     }
     idx = (currentPage - 1) * pageSize;
-    flippedIds.clear(); shownAnsIds.clear();
+    flippedIds.clear();
+    shownAnsIds.clear();
+    setActiveCard(null);
     render();
     const viewport = document.getElementById('swipe-area');
     if (viewport) viewport.scrollTop = 0;
@@ -2459,8 +2802,17 @@ document.addEventListener('keydown', e => {
     }
 });
 
+document.getElementById('q').addEventListener('input', onSearchInput);
+
+document.getElementById('book-page').addEventListener('keydown', e => {
+    const li = e.target.closest('.opt[data-qid]');
+    if (li && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        setAns(li.getAttribute('data-qid'), li.getAttribute('data-opt'));
+    }
+});
+
 async function startApp() {
-    console.log("[LOG] Khởi chạy ứng dụng...");
     const localPrefs = loadLocalPrefs();
     let initialUrlSet = null;
     try {
@@ -2476,17 +2828,35 @@ async function startApp() {
         }
     } catch (e) {}
 
-    const sheetQaResult = await loadQaFromSheet();
+    const searchInput = document.getElementById('q');
+    if (searchInput && typeof localPrefs.q === 'string') {
+        searchInput.value = localPrefs.q;
+    }
+    isCheckedMode = Boolean(localPrefs.checkedMode);
 
     state = {
         set: 'DATA_SET_1',
-        tab: 'todo',
-        diffFilter: null,
-        listFilter: 'todo',
+        tab: 'all',
+        listFilter: 'all',
         progress: {},
         lastIdx: 0,
         vocab: loadVocabCache()
     };
+
+    const allowedSets = ['DATA_SET_1', 'DATA_SET_2', 'DATA_SET_3', 'DATA_SET_4', 'DATA_SET_5'];
+    if (initialUrlSet && allowedSets.includes(initialUrlSet)) {
+        state.set = initialUrlSet;
+    } else if (allowedSets.includes(localPrefs.set)) {
+        state.set = localPrefs.set;
+    }
+    state.listFilter = normalizeListFilter(localPrefs.listFilter || 'all');
+
+    if (Array.isArray(localPrefs.flippedIds)) {
+        localPrefs.flippedIds.forEach(id => flippedIds.add(String(id)));
+    }
+    if (Array.isArray(localPrefs.shownAnsIds)) {
+        localPrefs.shownAnsIds.forEach(id => shownAnsIds.add(String(id)));
+    }
 
     const translationsCache = loadTranslationsCache();
     Object.entries(translationsCache).forEach(([key, translation]) => {
@@ -2496,18 +2866,39 @@ async function startApp() {
         }
     });
 
-    // Hợp nhất ghi chú, độ khó, đáp án & bản dịch từ sheet "NOTE" và cache cục bộ (ưu tiên bản chưa đồng bộ khi vừa F5)
     const qaCache = loadNotesCache();
+    Object.entries(qaCache).forEach(([key, entry]) => {
+        if (!entry || typeof entry !== 'object') return;
+        if (!state.progress[key]) state.progress[key] = {};
+        if (entry.note !== undefined || entry.val !== undefined) {
+            state.progress[key].note = String((entry.note !== undefined ? entry.note : entry.val) ?? '');
+        }
+        if (entry.ans !== undefined) {
+            const list = parseAnsList(entry.ans);
+            state.progress[key].ans = list.length > 0 ? list : null;
+        }
+        if (entry.level !== undefined) {
+            state.progress[key].diff = normalizeLevel(entry.level) || null;
+        }
+        if (entry.dich) {
+            const cachedTrans = parseDichObject(entry.dich);
+            if (cachedTrans) state.progress[key].translation = cachedTrans;
+        }
+    });
+
+    update();
+
+    const sheetQaResult = await loadQaFromSheet();
+    const dirtyToSync = [];
+
     if (sheetQaResult.ok) {
         Object.entries(sheetQaResult.qaMap).forEach(([key, qa]) => {
+            const cached = qaCache[key];
+            if (cached && cached.dirty) return;
             if (!state.progress[key]) state.progress[key] = {};
             state.progress[key].note = qa.note;
-            if (qa.ans && qa.ans.length > 0) {
-                state.progress[key].ans = qa.ans;
-            }
-            if (qa.level) {
-                state.progress[key].diff = qa.level;
-            }
+            state.progress[key].ans = (qa.ans && qa.ans.length > 0) ? qa.ans : null;
+            state.progress[key].diff = qa.level || null;
             if (qa.translation) {
                 state.progress[key].translation = qa.translation;
                 saveTranslationCacheEntry(key, qa.translation);
@@ -2516,64 +2907,19 @@ async function startApp() {
         });
     }
 
-    const dirtyQaToSync = [];
-    Object.entries(qaCache).forEach(([key, entry]) => {
-        const isObj = entry && typeof entry === 'object';
-        const cachedNote = isObj ? String((entry.note !== undefined ? entry.note : entry.val) ?? '') : String(entry ?? '');
-        const hasCachedAnsProp = isObj && entry.ans !== undefined;
-        const cachedAnsList = hasCachedAnsProp ? parseAnsList(entry.ans) : null;
-        const hasCachedLevelProp = isObj && entry.level !== undefined;
-        const cachedLevel = hasCachedLevelProp ? normalizeLevel(entry.level) : null;
-        const cachedTranslation = isObj && entry.dich ? parseDichObject(entry.dich) : null;
-        const isDirty = isObj ? Boolean(entry.dirty) : false;
-
-        if (isDirty || (!sheetQaResult.ok && (cachedNote || (cachedAnsList && cachedAnsList.length > 0) || cachedLevel || cachedTranslation))) {
-            if (!state.progress[key]) state.progress[key] = {};
-            state.progress[key].note = cachedNote;
-            if (hasCachedAnsProp) {
-                state.progress[key].ans = cachedAnsList.length > 0 ? cachedAnsList : null;
-            }
-            if (hasCachedLevelProp) {
-                state.progress[key].diff = cachedLevel || null;
-            }
-            if (cachedTranslation) {
-                state.progress[key].translation = cachedTranslation;
-                saveTranslationCacheEntry(key, cachedTranslation);
-            }
-            if (isDirty && isObj && entry.examSet && entry.qid) {
-                dirtyQaToSync.push({ examSet: entry.examSet, qid: entry.qid });
-            }
+    Object.entries(qaCache).forEach(([, entry]) => {
+        if (entry && entry.dirty && entry.examSet && entry.qid) {
+            dirtyToSync.push({ examSet: entry.examSet, qid: entry.qid });
         }
     });
 
-    const allowedSets = ['DATA_SET_1', 'DATA_SET_2', 'DATA_SET_3', 'DATA_SET_4', 'DATA_SET_5'];
-    if (initialUrlSet && allowedSets.includes(initialUrlSet)) {
-        state.set = initialUrlSet;
-    } else if (allowedSets.includes(localPrefs.set)) {
-        state.set = localPrefs.set;
-    } else if (!state.set) {
-        state.set = 'DATA_SET_1';
-    }
-
-    const legacyFilter = ['Easy', 'Medium', 'Hard'].includes(state.diffFilter)
-        ? state.diffFilter
-        : (state.tab === 'done' ? 'done' : 'todo');
-    state.listFilter = normalizeListFilter(localPrefs.listFilter || state.listFilter || legacyFilter);
-
-    if (Array.isArray(localPrefs.flippedIds)) {
-        localPrefs.flippedIds.forEach(id => flippedIds.add(String(id)));
-    }
-    if (Array.isArray(localPrefs.shownAnsIds)) {
-        localPrefs.shownAnsIds.forEach(id => shownAnsIds.add(String(id)));
-    }
-
-    isLoaded = true; // MỞ KHÓA LƯU SAU KHI TẢI XONG
+    isLoaded = true;
     update();
 
-    if (dirtyQaToSync.length > 0) {
-        dirtyQaToSync.forEach(item => {
-            syncQaRowToSheet(item.examSet, item.qid);
-        });
+    if (dirtyToSync.length > 0) {
+        for (const item of dirtyToSync) {
+            await syncQaRowToSheet(item.examSet, item.qid);
+        }
     }
 }
 

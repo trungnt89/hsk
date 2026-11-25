@@ -255,6 +255,51 @@
         .score-badge.show {
             display: inline-flex;
         }
+        .study-meta-right {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
+        }
+        .wrong-filter-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 2px 9px;
+            border-radius: 99px;
+            background: rgba(239, 68, 68, 0.18);
+            border: 1px solid rgba(248, 113, 113, 0.45);
+            color: #FCA5A5;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            line-height: 1.35;
+            white-space: nowrap;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: all 0.15s ease;
+        }
+        .wrong-filter-btn.show {
+            display: inline-flex;
+        }
+        .wrong-filter-btn:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.3);
+            color: #FFFFFF;
+        }
+        .wrong-filter-btn.active {
+            background: #EF4444;
+            border-color: #FCA5A5;
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.38);
+        }
+        .wrong-filter-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         .study-progress-wrap {
             padding: 0 14px 9px;
@@ -267,16 +312,18 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
+            gap: 6px;
             font-size: 11.5px;
             font-weight: 700;
             line-height: 1.25;
+            flex-wrap: nowrap;
         }
         .study-stat-item {
             display: inline-flex;
             align-items: center;
             gap: 5px;
             white-space: nowrap;
+            min-width: 0;
         }
         .study-stat-item.done { color: #34D399; }
         .study-dot {
@@ -323,7 +370,12 @@
             .search-count { font-size: 10px; padding: 1.5px 5px; }
             .hdr-action-btn { height: 30px; padding: 0 8px; font-size: 11px; }
             .study-progress-wrap { padding: 0 10px 7px; }
-            .study-progress-meta { font-size: 10.5px; gap: 4px; }
+            .study-progress-meta { font-size: 10px; gap: 4px; }
+            .study-stat-item { gap: 4px; }
+            .study-dot { width: 6px; height: 6px; }
+            .study-meta-right { gap: 4px; }
+            .score-badge,
+            .wrong-filter-btn { font-size: 10px; padding: 1.5px 6px; gap: 3px; }
         }
 
         /* Main scrolling viewport */
@@ -335,26 +387,31 @@
             width: 100%;
             max-width: 760px;
             margin: 0 auto;
-            padding: 0 14px 88px;
+            padding: 10px 14px 88px;
             box-sizing: border-box;
         }
         @media (max-width: 480px) {
-            .content-viewport { padding: 0 10px 82px; }
+            .content-viewport { padding: 8px 10px 82px; }
         }
 
         .main-card {
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 10px;
             box-sizing: border-box;
         }
         .multi-card {
             background: var(--card);
-            border-radius: 0 0 16px 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
+            border-radius: 10px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+            transition: border-color 120ms ease, box-shadow 120ms ease;
             overflow: visible;
+        }
+        .multi-card:hover {
+            border-color: #CBD5E1;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
         }
         .multi-card.active {
             border-color: var(--primary);
@@ -377,7 +434,7 @@
             gap: 8px;
             flex-wrap: nowrap;
             z-index: 20;
-            border-radius: 0;
+            border-radius: 9px 9px 0 0;
         }
         .q-counter {
             font-family: inherit;
@@ -470,33 +527,44 @@
         .result.skip { background: rgba(148, 163, 184, 0.16); color: var(--muted); border: 1px solid var(--border-strong); }
 
         .q-ans-row {
-            margin-top: 8px;
+            margin-top: 0;
+            border-top: 1px solid #E2E8F0;
+            border-radius: 0 0 9px 9px;
+            overflow: hidden;
             display: flex;
-            align-items: center;
+            align-items: stretch;
         }
         .q-ans-link {
-            padding: 3px 0;
-            background: transparent;
+            width: 100%;
+            min-height: 28px;
+            padding: 5px 12px;
+            background: #F1F5F9;
             border: none;
+            border-radius: 0;
             font-family: inherit;
-            font-size: 12.5px;
+            font-size: 12px;
             font-weight: 700;
-            color: var(--primary);
+            color: #475569;
+            text-align: center;
+            text-decoration: none;
             cursor: pointer;
-            text-decoration: underline;
-            text-underline-offset: 3px;
-            text-decoration-color: rgba(37, 99, 235, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            transition: background 0.15s ease, color 0.15s ease;
         }
         .q-ans-link:hover {
-            opacity: 0.85;
+            background: #E2E8F0;
+            color: #1E293B;
         }
         .q-ans-link.active {
-            color: #7C3AED;
-            text-decoration-color: rgba(124, 58, 237, 0.35);
+            background: #EDE9FE;
+            color: #6D28D9;
         }
 
         .note-area {
@@ -647,6 +715,17 @@
         .opt.picked .key {
             background: var(--primary);
             color: #FFFFFF;
+        }
+        .locked-check .opt:not(.row),
+        .locked-check .yn,
+        .locked-check .dd {
+            cursor: not-allowed;
+        }
+        .locked-check .opt:not(.row):hover {
+            border-color: rgba(15, 23, 42, 0.06);
+        }
+        .locked-check .opt.picked:hover {
+            border-color: var(--primary);
         }
 
         .why {
@@ -1107,7 +1186,10 @@
                     <span class="study-dot done"></span>
                     <span>Đã làm <strong id="progress-done-label">0/0 (0%)</strong></span>
                 </span>
-                <span class="score-badge" id="score-badge">Đúng: <strong id="score-badge-text">0/0 (0%)</strong></span>
+                <div class="study-meta-right">
+                    <span class="score-badge" id="score-badge">Đúng: <strong id="score-badge-text">0/0 (0%)</strong></span>
+                    <button type="button" class="wrong-filter-btn" id="btn-view-wrong" title="Liệt kê tất cả các câu đã làm sai">Xem câu sai (0)</button>
+                </div>
             </div>
             <div class="study-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="study-progress-track">
                 <div class="study-progress-fill-done" id="progress-bar-done"></div>
@@ -1198,6 +1280,7 @@ let listFilter = ALLOWED_LIST_FILTERS.includes(store.get("cca.listFilter", "all"
 let page = Math.max(1, Number(store.get("cca.page", 1)) || 1);
 let activeQ = store.get("cca.activeQ", null);
 let isCheckedMode = Boolean(store.get("cca.checkedMode", false));
+let wrongOnly = isCheckedMode && Boolean(store.get("cca.wrongOnly", false));
 
 const legacyAnswers = store.get("cca.answers", {});
 const picks = store.get("cca.picks", {}); // n -> [...] (choice) or {k: v} (matrix/dropdown)
@@ -1564,6 +1647,10 @@ function getFiltered(){
     const hasAns = hasQuestionPick(picks[q.n]);
     if (listFilter === "todo" && hasAns) return false;
     if (listFilter === "done" && !hasAns) return false;
+    if (isCheckedMode && wrongOnly) {
+      const ev = evaluateQuestion(q);
+      if (!ev.hasSelection || ev.ok) return false;
+    }
     if (!term) return true;
     if (/^\d+$/.test(term)) return String(q.n) === term;
     const hay = (q.n + " " + q.q + " " + q.q_vi + " " + q.options.map(o => o.text + " " + o.vi).join(" ")).toLowerCase();
@@ -1723,9 +1810,6 @@ function render(scrollToTop = false){
         <p class="q">${fmtKw(q.q, "hl", searchTerm)}</p>
         ${q.q_vi ? `<div class="vi">${fmtKw(q.q_vi, "hl", searchTerm)}</div>` : ""}
         <ul class="opts">${opts}</ul>
-        <div class="q-ans-row">
-          <button type="button" class="q-ans-link${isAns ? " active" : ""}" data-action="toggle-ans">${isAns ? "Ẩn đáp án" : "Xem đáp án"}</button>
-        </div>
         <section class="explain">
           <div class="ex-head"><h3>Giải thích</h3>${special ? "" : `<span class="ans-pill">Đáp án đúng: ${esc(q.answer)}</span>`}</div>
           ${tip}${ask}
@@ -1734,11 +1818,20 @@ function render(scrollToTop = false){
         </section>
         <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." data-note-n="${q.n}">${esc(noteVal)}</textarea>
       </div>
+      <div class="q-ans-row">
+        <button type="button" class="q-ans-link${isAns ? " active" : ""}" data-action="toggle-ans">${isAns ? "Ẩn đáp án" : "Xem đáp án"}</button>
+      </div>
     </article>`;
   }).join("");
 
   $("#list").innerHTML = html;
-  $("#empty").style.display = total ? "none" : "block";
+  const emptyEl = $("#empty");
+  if (emptyEl) {
+    emptyEl.textContent = (isCheckedMode && wrongOnly && !searchTerm)
+      ? "Không có câu nào làm sai."
+      : "Không có câu hỏi nào khớp bộ lọc.";
+    emptyEl.style.display = total ? "none" : "block";
+  }
   for (const q of slice){
     if (picks[q.n]) restorePicks(q.n, picks[q.n]);
     if (isCheckedMode) applyCheckedCardState(document.getElementById("c" + q.n), q);
@@ -1838,8 +1931,8 @@ function applyCheckedCardState(card, q){
   if (!card || !q) return;
   const r = card.querySelector(".result");
   if (!isCheckedMode){
-    card.classList.remove("revealed");
-    card.querySelectorAll(".dd").forEach(d => d.disabled = false);
+    card.classList.remove("revealed", "locked-check");
+    card.querySelectorAll(".dd, .yn").forEach(d => d.disabled = false);
     if (r){
       r.className = "result";
       r.textContent = "";
@@ -1848,8 +1941,9 @@ function applyCheckedCardState(card, q){
   }
   const ev = evaluateQuestion(q);
   const shouldReveal = ev.hasSelection;
+  card.classList.add("locked-check");
   card.classList.toggle("revealed", shouldReveal);
-  card.querySelectorAll(".dd").forEach(d => d.disabled = shouldReveal);
+  card.querySelectorAll(".dd, .yn").forEach(d => d.disabled = true);
   if (!r) return;
   if (!ev.hasSelection){
     r.className = "result on skip";
@@ -1863,6 +1957,7 @@ function applyCheckedCardState(card, q){
 function pick(li){
   const card = li.closest(".card");
   setActiveQ(+card.dataset.n);
+  if (isCheckedMode) return;
   const isAlreadyPicked = li.classList.contains("picked");
   if ((card.classList.contains("revealed") || card.classList.contains("show-ans")) && !isAlreadyPicked) return;
   const q = DATA_BY_N.get(+card.dataset.n);
@@ -1886,10 +1981,14 @@ function stats(){
   const total = DATA.length;
   let done = 0;
   let right = 0;
+  let wrong = 0;
   DATA.forEach(q => {
     const ev = evaluateQuestion(q);
-    if (ev.hasSelection) done++;
-    if (ev.ok) right++;
+    if (ev.hasSelection) {
+      done++;
+      if (ev.ok) right++;
+      else wrong++;
+    }
   });
 
   const donePctRaw = total > 0 ? (done / total) * 100 : 0;
@@ -1907,21 +2006,61 @@ function stats(){
   const scoreBadge = $("#score-badge");
   const scoreText = $("#score-badge-text");
   const checkBtn = $("#btn-check-all");
+  const wrongBtn = $("#btn-view-wrong");
   if (scoreBadge && scoreText) {
     scoreBadge.classList.toggle("show", isCheckedMode);
     scoreText.textContent = `${right}/${done} (${fmtPct(scorePctRounded)})`;
   }
   if (checkBtn) {
     checkBtn.classList.toggle("active", isCheckedMode);
-    checkBtn.textContent = isCheckedMode ? `✓ ${right}/${done} · Sửa tiếp` : "✓ Kiểm tra";
+    checkBtn.textContent = isCheckedMode ? "✓ Sửa tiếp" : "✓ Kiểm tra";
+  }
+  if (wrongBtn) {
+    wrongBtn.classList.toggle("show", isCheckedMode);
+    wrongBtn.classList.toggle("active", isCheckedMode && wrongOnly);
+    wrongBtn.disabled = !isCheckedMode || (!wrongOnly && wrong === 0);
+    wrongBtn.textContent = (isCheckedMode && wrongOnly)
+      ? `✓ Xem câu sai (${wrong})`
+      : `Xem câu sai (${wrong})`;
+    wrongBtn.title = (isCheckedMode && wrongOnly)
+      ? "Nhấn lại để xem toàn bộ danh sách"
+      : "Liệt kê tất cả các câu đã làm sai";
   }
 }
 
 function toggleCheckAll(){
   isCheckedMode = !isCheckedMode;
+  if (!isCheckedMode) {
+    wrongOnly = false;
+    store.set("cca.wrongOnly", false);
+  }
   store.set("cca.checkedMode", isCheckedMode);
   stats();
   render(false);
+}
+
+function toggleWrongOnly(){
+  if (!isCheckedMode) return;
+  wrongOnly = !wrongOnly;
+  store.set("cca.wrongOnly", wrongOnly);
+  if (wrongOnly) {
+    if (topic !== "all") {
+      topic = "all";
+      store.set("cca.topic", "all");
+      const topicSel = $("#topic-select");
+      if (topicSel) topicSel.value = "all";
+    }
+    if (listFilter !== "all") {
+      listFilter = "all";
+      store.set("cca.listFilter", "all");
+      const filterSel = $("#list-filter-select");
+      if (filterSel) filterSel.value = "all";
+    }
+  }
+  page = 1;
+  setActiveQ(null);
+  stats();
+  render(true);
 }
 
 function askResetConfirm(){
@@ -1988,12 +2127,14 @@ async function resetAll(){
   ansSyncTimers.clear();
 
   isCheckedMode = false;
+  wrongOnly = false;
   ansIds.clear();
   if (listFilter === "done") {
     listFilter = "all";
     store.set("cca.listFilter", "all");
   }
   store.set("cca.checkedMode", false);
+  store.set("cca.wrongOnly", false);
   store.set("cca.picks", {});
   store.set("cca.answers", {});
   store.set("cca.ansIds", []);
@@ -2059,7 +2200,7 @@ function movePage(dir){
 
 const locked = el => {
   const card = el.closest(".card");
-  return card.classList.contains("revealed") || card.classList.contains("show-ans");
+  return isCheckedMode || card.classList.contains("revealed") || card.classList.contains("show-ans");
 };
 
 $("#list").addEventListener("click", e => {
@@ -2076,12 +2217,12 @@ $("#list").addEventListener("click", e => {
 
   const yn = e.target.closest(".yn");
   if (yn){
+    if (isCheckedMode) return;
     const li = yn.closest(".row");
     const isSamePicked = li.dataset.sel === yn.dataset.v;
     if (!locked(li) || isSamePicked){
       setSel(li, isSamePicked ? "" : yn.dataset.v);
       savePick(card);
-      if (isCheckedMode) applyCheckedCardState(card, DATA_BY_N.get(+card.dataset.n));
     }
     return;
   }
@@ -2130,6 +2271,10 @@ $("#list").addEventListener("change", e => {
   const card = dd.closest(".card");
   setActiveQ(+card.dataset.n);
   const li = dd.closest(".row");
+  if (isCheckedMode) {
+    dd.value = li.dataset.sel || "";
+    return;
+  }
   setSel(li, locked(li) ? li.dataset.sel || "" : dd.value);
   savePick(card);
 });
@@ -2154,6 +2299,7 @@ $("#list-filter-select").addEventListener("change", e => {
 
 $("#q").addEventListener("input", () => filter(true));
 $("#btn-check-all").addEventListener("click", toggleCheckAll);
+$("#btn-view-wrong").addEventListener("click", toggleWrongOnly);
 $("#btn-reset-all").addEventListener("click", resetAll);
 
 $("#btn-page-prev").addEventListener("click", () => movePage("prev"));

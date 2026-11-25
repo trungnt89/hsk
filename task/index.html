@@ -300,6 +300,51 @@
             border-color: #CBD5E1;
         }
 
+        .month-nav-group {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn-month-nav {
+            appearance: none;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-hairline);
+            color: var(--text-secondary);
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background-color 150ms var(--ease-settle), color 150ms var(--ease-settle), border-color 150ms var(--ease-settle), transform 150ms var(--ease-settle);
+        }
+
+        .btn-month-nav:hover {
+            background: var(--bg-subtle);
+            border-color: #CBD5E1;
+            color: var(--text-primary);
+        }
+
+        .btn-month-nav:active {
+            transform: translateY(1px);
+        }
+
+        .btn-month-nav:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        .btn-month-nav svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+
         .text-done {
             color: var(--color-done);
         }
@@ -882,6 +927,15 @@
             .toolbar-surface {
                 padding: 8px 10px;
             }
+            .btn-month-nav {
+                width: 32px;
+                height: 32px;
+            }
+            .month-nav-group .control-input {
+                height: 32px;
+                font-size: 12.5px;
+                padding: 4px 8px;
+            }
             .toolbar-toggles {
                 gap: 8px 14px;
             }
@@ -1033,7 +1087,15 @@
                     <button type="button" class="ios-toggle-label" id="lblTimeMonth" onclick="setTimeMode('month')">Theo tháng</button>
                 </div>
 
-                <input type="month" id="targetMonthInput" class="control-input font-mono-num" aria-label="Chọn tháng trên lịch" onchange="onMonthChange()" style="display: none;">
+                <div id="monthNavGroup" class="month-nav-group" style="display: none;">
+                    <button type="button" id="btnPrevMonth" class="btn-month-nav" onclick="stepMonth(-1)" title="Tháng trước" aria-label="Tháng trước">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    <input type="month" id="targetMonthInput" class="control-input font-mono-num" aria-label="Chọn tháng trên lịch" onchange="onMonthChange()">
+                    <button type="button" id="btnNextMonth" class="btn-month-nav" onclick="stepMonth(1)" title="Tháng sau" aria-label="Tháng sau">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -1189,8 +1251,10 @@
             if (parsed.timeMode === 'all' || parsed.timeMode === 'month') {
                 state.timeMode = parsed.timeMode;
             }
-            if (typeof parsed.selectedMonth === 'string' && /^\d{4}-\d{2}$/.test(parsed.selectedMonth)) {
+            if (state.timeMode === 'month' && typeof parsed.selectedMonth === 'string' && /^\d{4}-\d{2}$/.test(parsed.selectedMonth)) {
                 state.selectedMonth = parsed.selectedMonth;
+            } else {
+                state.selectedMonth = getCurrentMonthISO();
             }
             if (parsed.penaltyMode === 'done_only' || parsed.penaltyMode === 'with_penalty') {
                 state.penaltyMode = parsed.penaltyMode;
@@ -1398,11 +1462,8 @@
                 allDetailDates.map(d => d.slice(0, 7))
             )).sort();
 
-            if (allDetailMonths.length > 0) {
-                const currentSlashMonth = isoMonthToSlash(state.selectedMonth);
-                if (!allDetailMonths.includes(currentSlashMonth)) {
-                    state.selectedMonth = slashMonthToIso(allDetailMonths[allDetailMonths.length - 1]);
-                }
+            if (!/^\d{4}-\d{2}$/.test(state.selectedMonth || '')) {
+                state.selectedMonth = getCurrentMonthISO();
             }
             syncMonthInputs();
 
@@ -2254,7 +2315,8 @@
         if (toggleTime) toggleTime.checked = isMonth;
         document.getElementById('lblTimeAll').classList.toggle('active', !isMonth);
         document.getElementById('lblTimeMonth').classList.toggle('active', isMonth);
-        document.getElementById('targetMonthInput').style.display = isMonth ? 'inline-block' : 'none';
+        const monthNavGroup = document.getElementById('monthNavGroup');
+        if (monthNavGroup) monthNavGroup.style.display = isMonth ? 'inline-flex' : 'none';
     }
 
     function toggleStatusSwitch() {
@@ -2280,9 +2342,36 @@
     }
 
     function setTimeMode(timeMode) {
+        const wasMonth = state.timeMode === 'month';
         state.timeMode = timeMode;
+        if (timeMode === 'month' && (!wasMonth || !/^\d{4}-\d{2}$/.test(state.selectedMonth || ''))) {
+            state.selectedMonth = getCurrentMonthISO();
+        }
         saveSettings();
         syncToggleSwitchesUI();
+        syncMonthInputs();
+        recomputeAndRender();
+    }
+
+    function shiftIsoMonth(isoMonth, delta) {
+        const match = String(isoMonth || '').match(/^(\d{4})-(\d{2})$/);
+        const base = match
+            ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1))
+            : new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), 1));
+        base.setUTCMonth(base.getUTCMonth() + delta);
+        const y = base.getUTCFullYear();
+        const m = String(base.getUTCMonth() + 1).padStart(2, '0');
+        return `${y}-${m}`;
+    }
+
+    function stepMonth(delta) {
+        state.selectedMonth = shiftIsoMonth(state.selectedMonth, delta);
+        if (state.timeMode !== 'month') {
+            state.timeMode = 'month';
+        }
+        saveSettings();
+        syncToggleSwitchesUI();
+        syncMonthInputs();
         recomputeAndRender();
     }
 
@@ -2299,9 +2388,7 @@
         state.statusFilter = 'all';
         state.penaltyMode = 'done_only';
         state.timeMode = 'all';
-        state.selectedMonth = allDetailMonths.length > 0
-            ? slashMonthToIso(allDetailMonths[allDetailMonths.length - 1])
-            : getCurrentMonthISO();
+        state.selectedMonth = getCurrentMonthISO();
 
         saveSettings();
         syncToggleSwitchesUI();

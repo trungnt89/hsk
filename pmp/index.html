@@ -264,6 +264,51 @@
         .score-badge.show {
             display: inline-flex;
         }
+        .study-meta-right {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
+        }
+        .wrong-filter-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 2px 9px;
+            border-radius: 99px;
+            background: rgba(239, 68, 68, 0.18);
+            border: 1px solid rgba(248, 113, 113, 0.45);
+            color: #FCA5A5;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            line-height: 1.35;
+            white-space: nowrap;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: all 0.15s ease;
+        }
+        .wrong-filter-btn.show {
+            display: inline-flex;
+        }
+        .wrong-filter-btn:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.3);
+            color: #FFFFFF;
+        }
+        .wrong-filter-btn.active {
+            background: #EF4444;
+            border-color: #FCA5A5;
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.38);
+        }
+        .wrong-filter-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         .study-progress-wrap {
             padding: 0 14px 9px;
@@ -276,16 +321,18 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
+            gap: 6px;
             font-size: 11.5px;
             font-weight: 700;
             line-height: 1.25;
+            flex-wrap: nowrap;
         }
         .study-stat-item {
             display: inline-flex;
             align-items: center;
             gap: 5px;
             white-space: nowrap;
+            min-width: 0;
         }
         .study-stat-item.done { color: #34D399; }
         .study-dot {
@@ -332,7 +379,12 @@
             .search-count { font-size: 10px; padding: 1.5px 5px; }
             .hdr-action-btn { height: 30px; padding: 0 8px; font-size: 11px; }
             .study-progress-wrap { padding: 0 10px 7px; }
-            .study-progress-meta { font-size: 10.5px; gap: 4px; }
+            .study-progress-meta { font-size: 10px; gap: 4px; }
+            .study-stat-item { gap: 4px; }
+            .study-dot { width: 6px; height: 6px; }
+            .study-meta-right { gap: 4px; }
+            .score-badge,
+            .wrong-filter-btn { font-size: 10px; padding: 1.5px 6px; gap: 3px; }
         }
 
         /* Main scrolling viewport */
@@ -344,26 +396,31 @@
             width: 100%;
             max-width: 760px;
             margin: 0 auto;
-            padding: 0 14px 88px;
+            padding: 10px 14px 88px;
             box-sizing: border-box;
         }
         @media (max-width: 480px) {
-            .content-viewport { padding: 0 10px 82px; }
+            .content-viewport { padding: 8px 10px 82px; }
         }
 
         .main-card {
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 10px;
             box-sizing: border-box;
         }
         .multi-card {
             background: var(--card);
-            border-radius: 0 0 16px 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
+            border-radius: 10px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+            transition: border-color 120ms ease, box-shadow 120ms ease;
             overflow: visible;
+        }
+        .multi-card:hover {
+            border-color: #CBD5E1;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
         }
         .multi-card.active {
             border-color: var(--primary);
@@ -386,7 +443,7 @@
             gap: 8px;
             flex-wrap: nowrap;
             z-index: 20;
-            border-radius: 0;
+            border-radius: 9px 9px 0 0;
         }
         .q-counter {
             font-family: inherit;
@@ -479,33 +536,44 @@
         .result.skip { background: rgba(148, 163, 184, 0.16); color: var(--muted); border: 1px solid var(--border-strong); }
 
         .q-ans-row {
-            margin-top: 8px;
+            margin-top: 0;
+            border-top: 1px solid #E2E8F0;
+            border-radius: 0 0 9px 9px;
+            overflow: hidden;
             display: flex;
-            align-items: center;
+            align-items: stretch;
         }
         .q-ans-link {
-            padding: 3px 0;
-            background: transparent;
+            width: 100%;
+            min-height: 28px;
+            padding: 5px 12px;
+            background: #F1F5F9;
             border: none;
+            border-radius: 0;
             font-family: inherit;
-            font-size: 12.5px;
+            font-size: 12px;
             font-weight: 700;
-            color: var(--primary);
+            color: #475569;
+            text-align: center;
+            text-decoration: none;
             cursor: pointer;
-            text-decoration: underline;
-            text-underline-offset: 3px;
-            text-decoration-color: rgba(37, 99, 235, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            transition: background 0.15s ease, color 0.15s ease;
         }
         .q-ans-link:hover {
-            opacity: 0.85;
+            background: #E2E8F0;
+            color: #1E293B;
         }
         .q-ans-link.active {
-            color: #7C3AED;
-            text-decoration-color: rgba(124, 58, 237, 0.35);
+            background: #EDE9FE;
+            color: #6D28D9;
         }
 
         .note-area {
@@ -684,6 +752,21 @@
         .opt.picked .key {
             background: var(--primary);
             color: #FFFFFF;
+        }
+        .locked-check .opt {
+            cursor: not-allowed !important;
+        }
+        .locked-check .opt:hover {
+            border-color: rgba(15, 23, 42, 0.06);
+        }
+        .locked-check .opt.picked:hover {
+            border-color: var(--primary);
+        }
+        .locked-check .opt.correct:hover {
+            border-color: var(--ok-border);
+        }
+        .locked-check .opt.picked:not(.correct):hover {
+            border-color: var(--bad-border);
         }
         .badge-ok {
             display: none;
@@ -1189,7 +1272,10 @@
                     <span class="study-dot done"></span>
                     <span>Đã làm <strong id="progress-done-label">0/0 (0%)</strong></span>
                 </span>
-                <span class="score-badge" id="score-badge">Đúng: <strong id="score-badge-text">0/0 (0%)</strong></span>
+                <div class="study-meta-right">
+                    <span class="score-badge" id="score-badge">Đúng: <strong id="score-badge-text">0/0 (0%)</strong></span>
+                    <button type="button" class="wrong-filter-btn" id="btn-view-wrong" onclick="toggleWrongOnly()" title="Liệt kê tất cả các câu đã làm sai">Xem câu sai (0)</button>
+                </div>
             </div>
             <div class="study-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="study-progress-track">
                 <div class="study-progress-fill-done" id="progress-bar-done"></div>
@@ -1240,6 +1326,7 @@ const VOCAB_CACHE_KEY = 'pmp_vocab_cache_v1';
 const NOTE_SHEET_HEADERS = ['ID', 'SET', 'QID', 'ANS', 'LEVEL', 'NOTE', 'DỊCH', 'UPDATE_TIME'];
 
 let isLoaded = false;
+let hasSheetSnapshot = false;
 let noteSheetHasHeader = false;
 let noteSheetHasExactHeader = false;
 const noteSyncTimers = new Map();
@@ -1406,7 +1493,7 @@ function writeNotesCache(cacheObj) {
     } catch (e) {}
 }
 
-function setQaCacheEntry(progressKey, noteVal, ansVal, levelVal, dirty, examSet, qid, dichVal) {
+function setQaCacheEntry(progressKey, noteVal, ansVal, levelVal, dirty, examSet, qid, dichVal, resetAns = false) {
     const cache = loadNotesCache();
     const existing = cache[progressKey] && typeof cache[progressKey] === 'object' ? cache[progressKey] : {};
     cache[progressKey] = {
@@ -1417,6 +1504,7 @@ function setQaCacheEntry(progressKey, noteVal, ansVal, levelVal, dirty, examSet,
         level: levelVal !== undefined ? normalizeLevel(levelVal) : normalizeLevel(existing.level ?? ''),
         dich: dichVal !== undefined ? String(dichVal ?? '') : String(existing.dich ?? ''),
         dirty: Boolean(dirty),
+        resetAns: Boolean(dirty && resetAns),
         updatedAt: Date.now()
     };
     writeNotesCache(cache);
@@ -1504,6 +1592,7 @@ async function loadQaFromSheet() {
         }
     });
 
+    hasSheetSnapshot = true;
     return { ok: true, qaMap };
 }
 
@@ -1519,19 +1608,26 @@ function enqueueQaSync(progressKey, taskFn) {
     return next;
 }
 
-function syncQaRowToSheet(examSet, qid, clearForReset = false) {
+function syncQaRowToSheet(examSet, qid, keepRowOnEmpty = false) {
     const progressKey = examSet + qid;
     return enqueueQaSync(progressKey, async () => {
         const p = (state.progress && state.progress[progressKey]) || {};
         const noteVal = p.note == null ? '' : String(p.note);
         const ansStr = formatAnsString(p.ans);
-        const levelVal = clearForReset ? '' : normalizeLevel(p.diff);
+        const levelVal = normalizeLevel(p.diff);
         const dichStr = formatDichString(p.translation);
         const hasNote = noteVal.trim() !== '';
         const hasAns = ansStr !== '';
+        const hasLevel = levelVal !== '';
         const hasDich = dichStr !== '';
         const noteId = sheetRowIdByKey.get(progressKey) || getNoteRowId(examSet, qid);
-        const shouldDeleteRow = !hasNote && !hasAns && (Boolean(clearForReset) || !hasDich);
+        const hasExistingSheetRow = sheetRowIdByKey.has(progressKey);
+        const shouldDeleteRow = !keepRowOnEmpty && !hasNote && !hasAns && !hasLevel && !hasDich;
+
+        if (keepRowOnEmpty && !hasNote && !hasAns && !hasLevel && !hasDich && hasSheetSnapshot && !hasExistingSheetRow) {
+            setQaCacheEntry(progressKey, '', '', '', false, examSet, qid, '', false);
+            return { ok: true, skipped: true };
+        }
 
         if (shouldDeleteRow) {
             const rawIds = sheetRowIdsByKey.get(progressKey) || [];
@@ -1679,6 +1775,7 @@ let isFirstLoad = true;
 let currentPage = 1;
 let initialUrlPage = null;
 let isCheckedMode = false;
+let wrongOnly = false;
 let activeQid = null;
 const flippedIds = new Set();
 const shownAnsIds = new Set();
@@ -1701,6 +1798,7 @@ function saveLocalPrefs() {
             page: currentPage,
             q: searchEl ? searchEl.value : '',
             checkedMode: isCheckedMode,
+            wrongOnly: isCheckedMode && wrongOnly,
             flippedIds: Array.from(flippedIds),
             shownAnsIds: Array.from(shownAnsIds)
         };
@@ -1971,7 +2069,7 @@ function applyCheckedCardState(q) {
     const isAnsShown = isQuestionAnsShown(q.id);
 
     if (!isCheckedMode) {
-        card.classList.remove('revealed');
+        card.classList.remove('revealed', 'locked-check');
         card.classList.toggle('show-ans', isAnsShown);
         if (resultBadge) {
             resultBadge.className = 'result';
@@ -1982,6 +2080,7 @@ function applyCheckedCardState(q) {
     }
 
     const ev = evaluateQuestion(q);
+    card.classList.add('locked-check');
     card.classList.toggle('revealed', ev.hasSelection);
     card.classList.toggle('show-ans', isAnsShown);
     if (resultBadge) {
@@ -2173,9 +2272,30 @@ async function translateQuestion(q) {
 
 function toggleCheckAll() {
     isCheckedMode = !isCheckedMode;
+    if (!isCheckedMode) {
+        wrongOnly = false;
+    }
     saveLocalPrefs();
     updateCountsOnly();
     render(true);
+}
+
+function toggleWrongOnly() {
+    if (!isCheckedMode) return;
+    wrongOnly = !wrongOnly;
+    if (wrongOnly && state.listFilter !== 'all') {
+        state.listFilter = 'all';
+        state.tab = 'all';
+        const filterSelect = document.getElementById('list-filter-select');
+        if (filterSelect) filterSelect.value = 'all';
+    }
+    idx = 0;
+    currentPage = 1;
+    setActiveCard(null);
+    saveLocalPrefs();
+    update();
+    const viewport = document.getElementById('swipe-area');
+    if (viewport) viewport.scrollTop = 0;
 }
 
 function askResetConfirm() {
@@ -2234,7 +2354,6 @@ async function resetAll() {
         if (p && parseAnsList(p.ans).length > 0) {
             targetQids.add(String(q.id));
             p.ans = null;
-            p.diff = null;
         }
     });
 
@@ -2252,21 +2371,21 @@ async function resetAll() {
             ansSyncTimers.delete(pKey);
         }
         const p = state.progress[pKey] || {};
-        p.diff = null;
-        const hasNote = String(p.note || '').trim() !== '';
         setQaCacheEntry(
             pKey,
             p.note || '',
             '',
-            '',
+            p.diff || '',
             true,
             examSet,
             qid,
-            hasNote ? formatDichString(p.translation) : ''
+            formatDichString(p.translation),
+            true
         );
     });
 
     isCheckedMode = false;
+    wrongOnly = false;
     shownAnsIds.clear();
     if (state.listFilter === 'done') {
         state.listFilter = 'all';
@@ -2284,20 +2403,33 @@ async function resetAll() {
                 const qid = qa.qid ? String(qa.qid) : pKey.slice(examSet.length);
                 if (!qid) return;
                 const hasSheetAns = qa.ans && qa.ans.length > 0;
-                const hasSheetNote = String(qa.note || '').trim() !== '';
-                if (hasSheetAns || !hasSheetNote) {
-                    if (!targetQids.has(qid)) {
-                        targetQids.add(qid);
-                    }
+                if (hasSheetAns || targetQids.has(qid)) {
+                    targetQids.add(qid);
                     if (!state.progress[pKey]) state.progress[pKey] = {};
-                    if (!state.progress[pKey].note && qa.note) {
-                        state.progress[pKey].note = qa.note;
-                    }
-                    state.progress[pKey].ans = null;
-                    state.progress[pKey].diff = null;
                     const p = state.progress[pKey];
-                    const hasNote = String(p.note || '').trim() !== '';
-                    setQaCacheEntry(pKey, p.note || '', '', '', true, examSet, qid, hasNote ? formatDichString(p.translation) : '');
+                    const cachedEntry = cachedBefore[pKey];
+                    const hasDirtyLocalNote = Boolean(cachedEntry && cachedEntry.dirty);
+                    if (!hasDirtyLocalNote && !p.note && qa.note) {
+                        p.note = qa.note;
+                    }
+                    if (!p.diff && qa.level) {
+                        p.diff = qa.level;
+                    }
+                    if (!p.translation && qa.translation) {
+                        p.translation = qa.translation;
+                    }
+                    p.ans = null;
+                    setQaCacheEntry(
+                        pKey,
+                        p.note || '',
+                        '',
+                        p.diff || '',
+                        true,
+                        examSet,
+                        qid,
+                        formatDichString(p.translation),
+                        true
+                    );
                 }
             });
         }
@@ -2516,6 +2648,10 @@ function update() {
         const hasAns = parseAnsList(p?.ans).length > 0;
         if (state.listFilter === 'done' && !hasAns) return false;
         if (state.listFilter === 'todo' && hasAns) return false;
+        if (isCheckedMode && wrongOnly) {
+            const ev = evaluateQuestion(q);
+            if (!ev.hasSelection || ev.ok) return false;
+        }
 
         if (!term) return true;
         if (/^\d+$/.test(term)) return String(q.id) === term;
@@ -2569,7 +2705,12 @@ function render(preserveScroll = false) {
 
     if (total === 0) {
         container.innerHTML = '';
-        if (emptyEl) emptyEl.style.display = 'block';
+        if (emptyEl) {
+            emptyEl.textContent = (isCheckedMode && wrongOnly && !searchTerm)
+                ? 'Không có câu nào làm sai.'
+                : 'Không có câu hỏi nào khớp bộ lọc.';
+            emptyEl.style.display = 'block';
+        }
         return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
@@ -2653,9 +2794,6 @@ function render(preserveScroll = false) {
                     <p class="q">${fmtKw(q.question, searchTerm)}</p>
                     ${questionSubHtml}
                     <ul class="opts">${optsHtml}</ul>
-                    <div class="q-ans-row">
-                        <button type="button" class="q-ans-link${isCardAns ? ' active' : ''}" id="btn-card-ans-${q.id}" onclick="toggleCardAns('${q.id}')">${isCardAns ? 'Ẩn đáp án' : 'Xem đáp án'}</button>
-                    </div>
                     <section class="explain">
                         <div class="ex-head">
                             <h3>Giải thích</h3>
@@ -2664,6 +2802,9 @@ function render(preserveScroll = false) {
                         <div class="exp-body">${q.explanation ? fmtKw(q.explanation, searchTerm) : 'Câu này chưa có giải thích chi tiết.'}${expViHtml}</div>
                     </section>
                     <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." oninput="onNoteInput('${q.id}', this.value)" onchange="saveNote('${q.id}', this.value)">${escapeHtmlText(p.note || '')}</textarea>
+                </div>
+                <div class="q-ans-row">
+                    <button type="button" class="q-ans-link${isCardAns ? ' active' : ''}" id="btn-card-ans-${q.id}" onclick="toggleCardAns('${q.id}')">${isCardAns ? 'Ẩn đáp án' : 'Xem đáp án'}</button>
                 </div>
             </article>
         `;
@@ -2682,14 +2823,14 @@ function setAns(qid, k) {
     const examSet = state.set;
     const key = examSet + qid;
     setActiveCard(qid);
+    if (isCheckedMode) return;
     if (!state.progress[key]) state.progress[key] = {};
 
     const q = currentData.find(item => String(item.id) === String(qid));
     const currentList = parseAnsList(state.progress[key].ans);
     const optNorm = String(k).trim().toUpperCase();
     const isAlreadyPicked = currentList.includes(optNorm);
-    const evBefore = q ? evaluateQuestion(q) : { hasSelection: false };
-    const isCardLocked = isQuestionAnsShown(qid) || (isCheckedMode && evBefore.hasSelection);
+    const isCardLocked = isQuestionAnsShown(qid);
 
     if (isCardLocked && !isAlreadyPicked) return;
 
@@ -2771,10 +2912,16 @@ function updateCountsOnly() {
     let done = 0;
     let todo = 0;
     let right = 0;
+    let wrong = 0;
     currentData.forEach(q => {
         const ev = evaluateQuestion(q);
-        if (ev.hasSelection) done++; else todo++;
-        if (ev.ok) right++;
+        if (ev.hasSelection) {
+            done++;
+            if (ev.ok) right++;
+            else wrong++;
+        } else {
+            todo++;
+        }
     });
 
     const filterSelect = document.getElementById('list-filter-select');
@@ -2789,10 +2936,10 @@ function updateCountsOnly() {
         });
         filterSelect.value = normalizeListFilter(state.listFilter);
     }
-    updateStudyProgressBar(done, right, currentData.length);
+    updateStudyProgressBar(done, right, wrong, currentData.length);
 }
 
-function updateStudyProgressBar(done, right, total) {
+function updateStudyProgressBar(done, right, wrong, total) {
     const doneLabel = document.getElementById('progress-done-label');
     const barDone = document.getElementById('progress-bar-done');
     const track = document.getElementById('study-progress-track');
@@ -2800,10 +2947,12 @@ function updateStudyProgressBar(done, right, total) {
     const scoreBadge = document.getElementById('score-badge');
     const scoreText = document.getElementById('score-badge-text');
     const checkBtn = document.getElementById('btn-check-all');
+    const wrongBtn = document.getElementById('btn-view-wrong');
 
     const safeTotal = Math.max(0, Number(total) || 0);
     const safeDone = Math.min(Math.max(0, Number(done) || 0), safeTotal);
     const safeRight = Math.min(Math.max(0, Number(right) || 0), safeDone);
+    const safeWrong = Math.min(Math.max(0, Number(wrong) || 0), safeDone);
 
     const donePctRaw = safeTotal > 0 ? (safeDone / safeTotal) * 100 : 0;
     const donePctRounded = safeTotal > 0 ? Math.round(donePctRaw * 10) / 10 : 0;
@@ -2822,7 +2971,18 @@ function updateStudyProgressBar(done, right, total) {
     }
     if (checkBtn) {
         checkBtn.classList.toggle('active', isCheckedMode);
-        checkBtn.textContent = isCheckedMode ? `✓ ${safeRight}/${safeDone} · Sửa tiếp` : '✓ Kiểm tra';
+        checkBtn.textContent = isCheckedMode ? '✓ Sửa tiếp' : '✓ Kiểm tra';
+    }
+    if (wrongBtn) {
+        wrongBtn.classList.toggle('show', isCheckedMode);
+        wrongBtn.classList.toggle('active', isCheckedMode && wrongOnly);
+        wrongBtn.disabled = !isCheckedMode || (!wrongOnly && safeWrong === 0);
+        wrongBtn.textContent = (isCheckedMode && wrongOnly)
+            ? `✓ Xem câu sai (${safeWrong})`
+            : `Xem câu sai (${safeWrong})`;
+        wrongBtn.title = (isCheckedMode && wrongOnly)
+            ? 'Nhấn lại để xem toàn bộ danh sách'
+            : 'Liệt kê tất cả các câu đã làm sai';
     }
 }
 
@@ -2886,6 +3046,7 @@ async function startApp() {
         searchInput.value = localPrefs.q;
     }
     isCheckedMode = Boolean(localPrefs.checkedMode);
+    wrongOnly = isCheckedMode && Boolean(localPrefs.wrongOnly);
 
     state = {
         set: 'DATA_SET_1',
@@ -2962,7 +3123,7 @@ async function startApp() {
 
     Object.entries(qaCache).forEach(([, entry]) => {
         if (entry && entry.dirty && entry.examSet && entry.qid) {
-            dirtyToSync.push({ examSet: entry.examSet, qid: entry.qid });
+            dirtyToSync.push({ examSet: entry.examSet, qid: entry.qid, resetAns: Boolean(entry.resetAns) });
         }
     });
 
@@ -2971,7 +3132,7 @@ async function startApp() {
 
     if (dirtyToSync.length > 0) {
         for (const item of dirtyToSync) {
-            await syncQaRowToSheet(item.examSet, item.qid);
+            await syncQaRowToSheet(item.examSet, item.qid, item.resetAns);
         }
     }
 }

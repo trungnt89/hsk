@@ -1263,6 +1263,7 @@ const CCA_QA_CACHE_KEY = "cca_qa_cache_v1";
 const ALLOWED_LIST_FILTERS = ["all", "todo", "done"];
 
 let isSheetLoaded = false;
+let hasSheetSnapshot = false;
 let noteSheetHasHeader = false;
 let noteSheetHasExactHeader = false;
 const noteSyncTimers = new Map();
@@ -1271,6 +1272,7 @@ const qaSyncChains = new Map();
 const sheetRowIds = new Set();
 const sheetAnsIds = new Set();
 const sheetRowIdByQid = new Map();
+const sheetLevelByQid = new Map();
 const sheetDichByQid = new Map();
 
 const PAGE_SIZE = 10;
@@ -1420,7 +1422,7 @@ function writeQaCache(cacheObj){
   } catch (e) {}
 }
 
-function setQaCacheEntry(qid, noteVal, ansStr, dirty){
+function setQaCacheEntry(qid, noteVal, ansStr, dirty, resetAns = false){
   const key = String(qid);
   const cache = loadQaCache();
   const existing = cache[key] && typeof cache[key] === "object" ? cache[key] : {};
@@ -1429,6 +1431,7 @@ function setQaCacheEntry(qid, noteVal, ansStr, dirty){
     note: noteVal !== undefined ? String(noteVal ?? "") : String(existing.note ?? ""),
     ans: ansStr !== undefined ? String(ansStr ?? "") : String(existing.ans ?? ""),
     dirty: Boolean(dirty),
+    resetAns: Boolean(dirty && resetAns),
     updatedAt: Date.now()
   };
   writeQaCache(cache);
@@ -1457,6 +1460,7 @@ function parseNoteRow(row, colMap){
   if (!Number.isFinite(qidNum) || qidNum <= 0) return null;
 
   const ansRaw = cols.ans >= 0 && row[cols.ans] != null ? String(row[cols.ans]) : "";
+  const levelRaw = cols.level >= 0 && row[cols.level] != null ? String(row[cols.level]) : "";
   const noteRaw = cols.note >= 0 && row[cols.note] != null ? String(row[cols.note]) : "";
   const dichRaw = cols.dich >= 0 && row[cols.dich] != null ? String(row[cols.dich]) : "";
 
@@ -1467,6 +1471,7 @@ function parseNoteRow(row, colMap){
     qid: qidNum,
     ans: parsedAns,
     ansRaw: ansRaw.trim(),
+    level: levelRaw.trim(),
     note: noteRaw,
     dich: dichRaw
   };
@@ -1506,6 +1511,7 @@ async function loadQaFromSheet(){
   sheetRowIds.clear();
   sheetAnsIds.clear();
   sheetRowIdByQid.clear();
+  sheetLevelByQid.clear();
   sheetDichByQid.clear();
 
   rows.forEach(row => {
@@ -1513,11 +1519,13 @@ async function loadQaFromSheet(){
     if (parsed) {
       sheetRowIds.add(parsed.rowId);
       sheetRowIdByQid.set(parsed.qid, parsed.rowId);
+      if (parsed.level) sheetLevelByQid.set(parsed.qid, parsed.level);
       if (parsed.dich) sheetDichByQid.set(parsed.qid, parsed.dich);
       if (parsed.ansRaw) sheetAnsIds.add(parsed.qid);
       qaMap[parsed.qid] = parsed;
     }
   });
+  hasSheetSnapshot = true;
   return { ok: true, qaMap };
 }
 
@@ -1534,38 +1542,49 @@ function enqueueQaSync(qid, taskFn){
   return next;
 }
 
-function syncQaRowToSheet(qid, forceDelete = false){
+function syncQaRowToSheet(qid, keepRowOnEmpty = false){
   const n = Number(qid);
   return enqueueQaSync(n, async () => {
     const q = DATA_BY_N.get(n);
     const meta = qaState[n] || {};
     const noteVal = meta.note == null ? "" : String(meta.note);
     const ansStr = serializeAnsForSheet(q, picks[n]);
+    const levelVal = sheetLevelByQid.get(n) || "";
     const dichStr = sheetDichByQid.get(n) || "";
     const hasNote = noteVal.trim() !== "";
     const hasAns = ansStr !== "";
+    const hasLevel = levelVal.trim() !== "";
     const hasDich = dichStr.trim() !== "";
     const noteId = sheetRowIdByQid.get(n) || getNoteRowId(n);
+    const hasExistingSheetRow = sheetRowIds.has(noteId) || sheetRowIdByQid.has(n);
 
-    if (!hasNote && !hasAns && !hasDich) {
-      if (!forceDelete && isSheetLoaded && !sheetRowIds.has(noteId)) {
-        setQaCacheEntry(n, "", "", false);
-        return { ok: true, skipped: true };
+    if (!hasNote && !hasAns && !hasLevel && !hasDich) {
+      if (keepRowOnEmpty) {
+        if (hasSheetSnapshot && !hasExistingSheetRow) {
+          setQaCacheEntry(n, "", "", false, false);
+          return { ok: true, skipped: true };
+        }
+      } else {
+        if (isSheetLoaded && !hasExistingSheetRow) {
+          setQaCacheEntry(n, "", "", false, false);
+          return { ok: true, skipped: true };
+        }
+        const delRes = await callGSheetApi({
+          act: "deleteByPosVal",
+          pos: 0,
+          val: noteId,
+          spread: SHEET_ID,
+          sheet: NOTE_SHEET_NAME
+        });
+        if (delRes.ok || delRes.status === 404) {
+          sheetRowIds.delete(noteId);
+          sheetRowIdByQid.delete(n);
+          sheetAnsIds.delete(n);
+          sheetLevelByQid.delete(n);
+          setQaCacheEntry(n, "", "", false, false);
+        }
+        return delRes;
       }
-      const delRes = await callGSheetApi({
-        act: "deleteByPosVal",
-        pos: 0,
-        val: noteId,
-        spread: SHEET_ID,
-        sheet: NOTE_SHEET_NAME
-      });
-      if (delRes.ok || delRes.status === 404) {
-        sheetRowIds.delete(noteId);
-        sheetRowIdByQid.delete(n);
-        sheetAnsIds.delete(n);
-        setQaCacheEntry(n, "", "", false);
-      }
-      return delRes;
     }
 
     if (!noteSheetHasHeader) {
@@ -1598,7 +1617,7 @@ function syncQaRowToSheet(qid, forceDelete = false){
       EXAM_SET,
       String(n),
       ansStr,
-      "",
+      levelVal,
       noteVal,
       dichStr,
       new Date().toLocaleString("vi-VN")
@@ -1620,7 +1639,7 @@ function syncQaRowToSheet(qid, forceDelete = false){
       sheetRowIdByQid.set(n, noteId);
       if (hasAns) sheetAnsIds.add(n);
       else sheetAnsIds.delete(n);
-      setQaCacheEntry(n, noteVal, ansStr, false);
+      setQaCacheEntry(n, noteVal, ansStr, false, false);
     }
     return res;
   });
@@ -2141,7 +2160,7 @@ async function resetAll(){
 
   targetIds.forEach(n => {
     const meta = qaState[n] || { note: "" };
-    setQaCacheEntry(n, meta.note, "", true);
+    setQaCacheEntry(n, meta.note, "", true, true);
   });
 
   setActiveQ(null);
@@ -2154,11 +2173,15 @@ async function resetAll(){
     if (freshSheet.ok) {
       isSheetLoaded = true;
       sheetAnsIds.forEach(n => {
-        if (!targetIds.has(n)) {
-          targetIds.add(n);
-          const meta = qaState[n] || { note: "" };
-          setQaCacheEntry(n, meta.note, "", true);
+        targetIds.add(n);
+        const sheetItem = freshSheet.qaMap[n];
+        const cachedEntry = cachedBefore[String(n)];
+        const hasDirtyLocalNote = Boolean(cachedEntry && cachedEntry.dirty);
+        if (!hasDirtyLocalNote && (!qaState[n] || !qaState[n].note) && sheetItem && sheetItem.note) {
+          qaState[n] = { note: String(sheetItem.note) };
         }
+        const meta = qaState[n] || { note: "" };
+        setQaCacheEntry(n, meta.note, "", true, true);
       });
     }
 
@@ -2373,7 +2396,7 @@ async function startApp(){
   Object.entries(qaCache).forEach(([k, entry]) => {
     const n = Number(k);
     if (entry && entry.dirty && Number.isFinite(n)) {
-      dirtyToSync.push(n);
+      dirtyToSync.push({ n, resetAns: Boolean(entry.resetAns) });
     }
   });
 
@@ -2393,8 +2416,8 @@ async function startApp(){
     }
   }
 
-  for (const n of dirtyToSync) {
-    await syncQaRowToSheet(n);
+  for (const item of dirtyToSync) {
+    await syncQaRowToSheet(item.n, item.resetAns);
   }
 }
 

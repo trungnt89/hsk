@@ -512,6 +512,19 @@
             min-width: 0;
             flex: 1 1 auto;
         }
+        .q-order-num {
+            flex-shrink: 0;
+            font-size: 11.5px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            color: var(--accent-ink);
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(234, 88, 12, 0.22);
+            border-radius: 6px;
+            padding: 2px 7px;
+            line-height: 1.25;
+            white-space: nowrap;
+        }
 
         .result {
             display: none;
@@ -606,6 +619,7 @@
             .q-counter-lines { gap: 5px; }
             .q-counter-main { font-size: 12.5px; }
             .q-counter-id { font-size: 10px; }
+            .q-order-num { font-size: 11px; padding: 2px 6px; }
         }
 
         .multi-card-body {
@@ -1756,7 +1770,8 @@ function render(scrollToTop = false){
     searchCountEl.classList.toggle("zero", Boolean(searchTerm) && total === 0);
   }
 
-  const html = slice.map(q => {
+  const html = slice.map((q, localIdx) => {
+    const listOrder = startIdx + localIdx + 1;
     const corr = correctSet(q);
     const special = q.type !== "choice";
     const isVi = viIds.has(q.n);
@@ -1824,6 +1839,7 @@ function render(scrollToTop = false){
             <span class="q-counter-id" title="${esc(q.topic)}">${esc(subParts.join(" · "))}</span>
           </span>
         </button>
+        <span class="q-order-num">#${listOrder}</span>
       </div>
       <div class="multi-card-body">
         <p class="q">${fmtKw(q.q, "hl", searchTerm)}</p>

@@ -247,31 +247,6 @@
             background: rgba(239, 68, 68, 0.28);
             color: #FFFFFF;
         }
-        .score-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            height: 20px;
-            padding: 0 8px;
-            border-radius: 99px;
-            background: rgba(16, 185, 129, 0.18);
-            border: 1px solid rgba(52, 211, 153, 0.45);
-            color: #34D399;
-            font-size: 11px;
-            font-weight: 800;
-            font-variant-numeric: tabular-nums;
-            line-height: 1;
-            white-space: nowrap;
-            box-sizing: border-box;
-            visibility: hidden;
-            opacity: 0;
-            pointer-events: none;
-        }
-        .score-badge.show {
-            visibility: visible;
-            opacity: 1;
-            pointer-events: auto;
-        }
         .study-meta-left {
             display: inline-flex;
             align-items: center;
@@ -344,14 +319,30 @@
             line-height: 1.25;
             flex-wrap: nowrap;
         }
+        .study-meta-right {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
+        }
         .study-stat-item {
             display: inline-flex;
             align-items: center;
             gap: 5px;
             white-space: nowrap;
             min-width: 0;
+            font-variant-numeric: tabular-nums;
         }
         .study-stat-item.done { color: #34D399; }
+        .study-stat-item.score {
+            display: none;
+            color: #38BDF8;
+        }
+        .study-stat-item.score.show {
+            display: inline-flex;
+        }
         .study-dot {
             width: 8px;
             height: 8px;
@@ -359,6 +350,7 @@
             flex-shrink: 0;
         }
         .study-dot.done { background: #10B981; }
+        .study-dot.score { background: #38BDF8; }
         .kw-hit {
             background: #FEE2E2;
             color: #DC2626;
@@ -401,8 +393,8 @@
             .study-stat-item { gap: 4px; flex-shrink: 0; }
             .study-dot { width: 6px; height: 6px; }
             .study-meta-left { gap: 4px; }
+            .study-meta-right { gap: 7px; }
             .wrong-filter-btn { height: 18px; padding: 0 6px; font-size: 9.5px; gap: 3px; }
-            .score-badge { height: 18px; font-size: 9.5px; padding: 0 6px; gap: 3px; }
         }
 
         /* Main scrolling viewport */
@@ -1228,12 +1220,17 @@
             <div class="study-progress-meta">
                 <div class="study-meta-left">
                     <button type="button" class="wrong-filter-btn" id="btn-view-wrong" title="Liệt kê tất cả các câu đã làm sai">Xem câu sai (0)</button>
-                    <span class="score-badge" id="score-badge">Đúng: <strong id="score-badge-text">0/0 (0%)</strong></span>
                 </div>
-                <span class="study-stat-item done">
-                    <span class="study-dot done"></span>
-                    <span>Đã làm <strong id="progress-done-label">0/0 (0%)</strong></span>
-                </span>
+                <div class="study-meta-right">
+                    <span class="study-stat-item score" id="score-badge">
+                        <span class="study-dot score"></span>
+                        <span>Đúng:<strong id="score-badge-text">0/0</strong></span>
+                    </span>
+                    <span class="study-stat-item done">
+                        <span class="study-dot done"></span>
+                        <span>Đã làm <strong id="progress-done-label">0/0</strong></span>
+                    </span>
+                </div>
             </div>
             <div class="study-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="study-progress-track">
                 <div class="study-progress-fill-done" id="progress-bar-done"></div>
@@ -2068,7 +2065,7 @@ function stats(){
   const doneLabel = $("#progress-done-label");
   const barDone = $("#progress-bar-done");
   const track = $("#study-progress-track");
-  if (doneLabel) doneLabel.textContent = `${done}/${total} (${fmtPct(donePctRounded)})`;
+  if (doneLabel) doneLabel.textContent = `${done}/${total}`;
   if (barDone) barDone.style.width = `${donePctRaw}%`;
   if (track) track.setAttribute("aria-valuenow", String(Math.round(donePctRaw)));
 
@@ -2078,7 +2075,7 @@ function stats(){
   const wrongBtn = $("#btn-view-wrong");
   if (scoreBadge && scoreText) {
     scoreBadge.classList.toggle("show", isCheckedMode);
-    scoreText.textContent = `${right}/${done} (${fmtPct(scorePctRounded)})`;
+    scoreText.textContent = `${right}/${done}`;
   }
   if (checkBtn) {
     checkBtn.classList.toggle("active", isCheckedMode);

@@ -146,11 +146,20 @@
             padding: 0 14px 6px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 6px;
+            flex-wrap: nowrap;
+        }
+        .header-actions-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
         }
         .search-box {
-            flex: 1 1 120px;
-            min-width: 0;
+            flex: 1 1 110px;
+            min-width: 72px;
             height: 32px;
             border: 1px solid rgba(255, 255, 255, 0.18);
             background: rgba(255, 255, 255, 0.1);
@@ -248,10 +257,11 @@
             color: #FFFFFF;
         }
         .score-badge {
-            display: none;
+            display: inline-flex;
             align-items: center;
-            gap: 5px;
-            padding: 2px 8px;
+            gap: 4px;
+            height: 20px;
+            padding: 0 8px;
             border-radius: 99px;
             background: rgba(16, 185, 129, 0.18);
             border: 1px solid rgba(52, 211, 153, 0.45);
@@ -259,25 +269,33 @@
             font-size: 11px;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
+            line-height: 1;
             white-space: nowrap;
+            box-sizing: border-box;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
         }
         .score-badge.show {
-            display: inline-flex;
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
         }
-        .study-meta-right {
+        .study-meta-left {
             display: inline-flex;
             align-items: center;
-            justify-content: flex-end;
-            gap: 5px;
+            justify-content: flex-start;
+            gap: 6px;
             flex-wrap: nowrap;
-            flex-shrink: 0;
+            min-width: 0;
         }
         .wrong-filter-btn {
-            display: none;
+            display: inline-flex;
+            height: 20px;
             align-items: center;
             justify-content: center;
             gap: 4px;
-            padding: 2px 9px;
+            padding: 0 8px;
             border-radius: 99px;
             background: rgba(239, 68, 68, 0.18);
             border: 1px solid rgba(248, 113, 113, 0.45);
@@ -286,14 +304,21 @@
             font-size: 11px;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
-            line-height: 1.35;
+            line-height: 1;
             white-space: nowrap;
+            flex-shrink: 0;
+            box-sizing: border-box;
             cursor: pointer;
             touch-action: manipulation;
             transition: all 0.15s ease;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
         }
         .wrong-filter-btn.show {
-            display: inline-flex;
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
         }
         .wrong-filter-btn:hover:not(:disabled) {
             background: rgba(239, 68, 68, 0.3);
@@ -322,6 +347,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 6px;
+            height: 20px;
             font-size: 11.5px;
             font-weight: 700;
             line-height: 1.25;
@@ -374,17 +400,18 @@
             #set-select,
             #list-filter-select { height: 29px; font-size: 11.5px; padding: 0 6px; }
             .header-tools-row { padding: 0 10px 5px; gap: 5px; }
-            .search-box { height: 30px; padding: 0 5px 0 8px; }
-            .search { font-size: 12px; }
-            .search-count { font-size: 10px; padding: 1.5px 5px; }
-            .hdr-action-btn { height: 30px; padding: 0 8px; font-size: 11px; }
+            .header-actions-left { gap: 4px; }
+            .search-box { flex: 1 1 70px; min-width: 70px; height: 30px; padding: 0 5px 0 7px; }
+            .search { font-size: 11.5px; }
+            .search-count { font-size: 9.5px; padding: 1.5px 4px; }
+            .hdr-action-btn { height: 30px; padding: 0 7px; font-size: 11px; gap: 3px; }
             .study-progress-wrap { padding: 0 10px 7px; }
-            .study-progress-meta { font-size: 10px; gap: 4px; }
-            .study-stat-item { gap: 4px; }
+            .study-progress-meta { font-size: 10px; gap: 4px; height: 18px; }
+            .study-stat-item { gap: 4px; flex-shrink: 0; }
             .study-dot { width: 6px; height: 6px; }
-            .study-meta-right { gap: 4px; }
-            .score-badge,
-            .wrong-filter-btn { font-size: 10px; padding: 1.5px 6px; gap: 3px; }
+            .study-meta-left { gap: 4px; }
+            .wrong-filter-btn { height: 18px; padding: 0 6px; font-size: 9.5px; gap: 3px; }
+            .score-badge { height: 18px; font-size: 9.5px; padding: 0 6px; gap: 3px; }
         }
 
         /* Main scrolling viewport */
@@ -1262,6 +1289,7 @@
                     <option value="all">Tất cả (0)</option>
                     <option value="todo">Mới (0)</option>
                     <option value="done">Đã làm (0)</option>
+                    <option value="note">Câu có note (0)</option>
                 </select>
                 <select id="set-select" onchange="changeExamSet(this.value)" title="Chọn bộ đề">
                     <option value="DATA_SET_1">ĐỀ 01</option>
@@ -1273,23 +1301,25 @@
             </div>
         </div>
         <div class="header-tools-row">
+            <div class="header-actions-left">
+                <button type="button" class="hdr-action-btn check" id="btn-check-all" onclick="toggleCheckAll()" title="Chấm điểm toàn bộ danh sách">✓ Kiểm tra</button>
+                <button type="button" class="hdr-action-btn reset" id="btn-reset-all" onclick="resetAll()" title="Xóa toàn bộ đáp án đã làm trên máy và Google Sheet">↺ Làm lại</button>
+            </div>
             <div class="search-box">
                 <input class="search" id="q" type="search" placeholder="Tìm câu hỏi, số câu…">
                 <span class="search-count" id="search-count">0 câu</span>
             </div>
-            <button type="button" class="hdr-action-btn check" id="btn-check-all" onclick="toggleCheckAll()" title="Chấm điểm toàn bộ danh sách">✓ Kiểm tra</button>
-            <button type="button" class="hdr-action-btn reset" id="btn-reset-all" onclick="resetAll()" title="Xóa toàn bộ đáp án đã làm trên máy và Google Sheet">↺ Làm lại</button>
         </div>
         <div class="study-progress-wrap" id="study-progress-wrap" title="Tiến trình làm bài">
             <div class="study-progress-meta">
+                <div class="study-meta-left">
+                    <button type="button" class="wrong-filter-btn" id="btn-view-wrong" onclick="toggleWrongOnly()" title="Liệt kê tất cả các câu đã làm sai">Xem câu sai (0)</button>
+                    <span class="score-badge" id="score-badge">Đúng: <strong id="score-badge-text">0/0 (0%)</strong></span>
+                </div>
                 <span class="study-stat-item done">
                     <span class="study-dot done"></span>
                     <span>Đã làm <strong id="progress-done-label">0/0 (0%)</strong></span>
                 </span>
-                <div class="study-meta-right">
-                    <span class="score-badge" id="score-badge">Đúng: <strong id="score-badge-text">0/0 (0%)</strong></span>
-                    <button type="button" class="wrong-filter-btn" id="btn-view-wrong" onclick="toggleWrongOnly()" title="Liệt kê tất cả các câu đã làm sai">Xem câu sai (0)</button>
-                </div>
             </div>
             <div class="study-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="study-progress-track">
                 <div class="study-progress-fill-done" id="progress-bar-done"></div>
@@ -1779,7 +1809,7 @@ function saveVocabCache(vocabList) {
 
 const pageSize = 10;
 const UI_PREFS_STORAGE_KEY = 'pmp_ui_prefs_v1';
-const ALLOWED_LIST_FILTERS = ['all', 'todo', 'done'];
+const ALLOWED_LIST_FILTERS = ['all', 'todo', 'done', 'note'];
 
 let state = {};
 let currentData = [];
@@ -2297,12 +2327,6 @@ function toggleCheckAll() {
 function toggleWrongOnly() {
     if (!isCheckedMode) return;
     wrongOnly = !wrongOnly;
-    if (wrongOnly && state.listFilter !== 'all') {
-        state.listFilter = 'all';
-        state.tab = 'all';
-        const filterSelect = document.getElementById('list-filter-select');
-        if (filterSelect) filterSelect.value = 'all';
-    }
     idx = 0;
     currentPage = 1;
     setActiveCard(null);
@@ -2640,8 +2664,8 @@ function syncPaginationControls() {
         }
     }
 
-    if (prevBtn) prevBtn.disabled = totalPages <= 1;
-    if (nextBtn) nextBtn.disabled = totalPages <= 1;
+    if (prevBtn) prevBtn.disabled = total === 0 || currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = total === 0 || currentPage >= totalPages;
     if (isLoaded) {
         syncUrlParams(state.set, currentPage);
         saveLocalPrefs();
@@ -2660,8 +2684,10 @@ function update() {
     filteredData = currentData.filter(q => {
         const p = state.progress[state.set + q.id];
         const hasAns = parseAnsList(p?.ans).length > 0;
+        const hasNote = Boolean(p && String(p.note || '').trim() !== '');
         if (state.listFilter === 'done' && !hasAns) return false;
         if (state.listFilter === 'todo' && hasAns) return false;
+        if (state.listFilter === 'note' && !hasNote) return false;
         if (isCheckedMode && wrongOnly) {
             const ev = evaluateQuestion(q);
             if (!ev.hasSelection || ev.ok) return false;
@@ -2900,6 +2926,7 @@ function onNoteInput(qid, val) {
     if (!state.progress[key]) state.progress[key] = {};
     state.progress[key].note = val;
     setQaCacheEntry(key, val, state.progress[key].ans || '', state.progress[key].diff || '', true, examSet, qid);
+    updateCountsOnly();
 
     if (noteSyncTimers.has(key)) clearTimeout(noteSyncTimers.get(key));
     const timerId = setTimeout(() => {
@@ -2915,6 +2942,7 @@ function saveNote(qid, val) {
     if (!state.progress[key]) state.progress[key] = {};
     state.progress[key].note = val;
     setQaCacheEntry(key, val, state.progress[key].ans || '', state.progress[key].diff || '', true, examSet, qid);
+    updateCountsOnly();
 
     if (noteSyncTimers.has(key)) {
         clearTimeout(noteSyncTimers.get(key));
@@ -2928,6 +2956,7 @@ function updateCountsOnly() {
     let todo = 0;
     let right = 0;
     let wrong = 0;
+    let noteCount = 0;
     currentData.forEach(q => {
         const ev = evaluateQuestion(q);
         if (ev.hasSelection) {
@@ -2937,6 +2966,10 @@ function updateCountsOnly() {
         } else {
             todo++;
         }
+        const p = state.progress[state.set + q.id];
+        if (p && String(p.note || '').trim() !== '') {
+            noteCount++;
+        }
     });
 
     const filterSelect = document.getElementById('list-filter-select');
@@ -2944,7 +2977,8 @@ function updateCountsOnly() {
         const labels = {
             all: `Tất cả (${currentData.length})`,
             todo: `Mới (${todo})`,
-            done: `Đã làm (${done})`
+            done: `Đã làm (${done})`,
+            note: `Câu có note (${noteCount})`
         };
         Array.from(filterSelect.options).forEach(opt => {
             if (labels[opt.value]) opt.text = labels[opt.value];
@@ -2992,9 +3026,7 @@ function updateStudyProgressBar(done, right, wrong, total) {
         wrongBtn.classList.toggle('show', isCheckedMode);
         wrongBtn.classList.toggle('active', isCheckedMode && wrongOnly);
         wrongBtn.disabled = !isCheckedMode || (!wrongOnly && safeWrong === 0);
-        wrongBtn.textContent = (isCheckedMode && wrongOnly)
-            ? `✓ Xem câu sai (${safeWrong})`
-            : `Xem câu sai (${safeWrong})`;
+        wrongBtn.textContent = `Xem câu sai (${safeWrong})`;
         wrongBtn.title = (isCheckedMode && wrongOnly)
             ? 'Nhấn lại để xem toàn bộ danh sách'
             : 'Liệt kê tất cả các câu đã làm sai';
@@ -3003,11 +3035,12 @@ function updateStudyProgressBar(done, right, wrong, total) {
 
 function move(dir) {
     const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
-    if (totalPages <= 1) return;
     if (dir === 'next') {
-        currentPage = (currentPage >= totalPages) ? 1 : currentPage + 1;
+        if (currentPage >= totalPages) return;
+        currentPage += 1;
     } else {
-        currentPage = (currentPage <= 1) ? totalPages : currentPage - 1;
+        if (currentPage <= 1) return;
+        currentPage -= 1;
     }
     idx = (currentPage - 1) * pageSize;
     flippedIds.clear();

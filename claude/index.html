@@ -533,6 +533,15 @@
         }
         .q-order-num {
             flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 66px;
+            height: 24px;
+            padding: 0 6px;
+            box-sizing: border-box;
+            font-family: inherit;
             font-size: 11.5px;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
@@ -540,9 +549,37 @@
             background: rgba(255, 255, 255, 0.75);
             border: 1px solid rgba(234, 88, 12, 0.22);
             border-radius: 6px;
-            padding: 2px 7px;
-            line-height: 1.25;
+            line-height: 1;
             white-space: nowrap;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .q-order-num .pin-ico {
+            width: 12px;
+            height: 12px;
+            flex-shrink: 0;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.6;
+            transition: opacity 0.15s ease, fill 0.15s ease;
+        }
+        .q-order-num:hover {
+            background: #FFF7ED;
+            border-color: rgba(234, 88, 12, 0.45);
+        }
+        .q-order-num.pinned {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            color: #FFFFFF;
+            border-color: #1E40AF;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.32);
+        }
+        .q-order-num.pinned .pin-ico {
+            fill: currentColor;
+            opacity: 1;
         }
 
         .result {
@@ -638,7 +675,8 @@
             .q-counter-lines { gap: 5px; }
             .q-counter-main { font-size: 12.5px; }
             .q-counter-id { font-size: 10px; }
-            .q-order-num { font-size: 11px; padding: 2px 6px; }
+            .q-order-num { width: 60px; height: 22px; font-size: 11px; padding: 0 5px; gap: 3px; }
+            .q-order-num .pin-ico { width: 11px; height: 11px; }
         }
 
         .multi-card-body {
@@ -1201,7 +1239,7 @@
                     <option value="all">Tất cả (0)</option>
                     <option value="todo">Mới (0)</option>
                     <option value="done">Đã làm (0)</option>
-                    <option value="note">Câu có note (0)</option>
+                    <option value="pinned">Đã ghim (0)</option>
                 </select>
                 <select id="topic-select" title="Chọn chủ đề"></select>
             </div>
@@ -1301,7 +1339,7 @@ const NOTE_SHEET_NAME = "NOTE";
 const EXAM_SET = "CLAUDE";
 const NOTE_SHEET_HEADERS = ["ID", "SET", "QID", "ANS", "LEVEL", "NOTE", "DỊCH", "UPDATE_TIME"];
 const CCA_QA_CACHE_KEY = "cca_qa_cache_v1";
-const ALLOWED_LIST_FILTERS = ["all", "todo", "done", "note"];
+const ALLOWED_LIST_FILTERS = ["all", "todo", "done", "pinned"];
 
 let isSheetLoaded = false;
 let hasSheetSnapshot = false;
@@ -1463,7 +1501,22 @@ function writeQaCache(cacheObj){
   } catch (e) {}
 }
 
-function setQaCacheEntry(qid, noteVal, ansStr, dirty, resetAns = false){
+function normalizePinLevel(val){
+  const s = String(val ?? "").trim().toLowerCase();
+  if (s === "1" || s === "true") return "1";
+  if (s === "0" || s === "false") return "0";
+  return String(val ?? "").trim();
+}
+
+function isQuestionPinned(qid){
+  const n = Number(qid);
+  const lvl = (qaState[n] && qaState[n].level !== undefined)
+    ? qaState[n].level
+    : (sheetLevelByQid.get(n) || "");
+  return normalizePinLevel(lvl) === "1";
+}
+
+function setQaCacheEntry(qid, noteVal, ansStr, dirty, resetAns = false, levelVal){
   const key = String(qid);
   const cache = loadQaCache();
   const existing = cache[key] && typeof cache[key] === "object" ? cache[key] : {};
@@ -1471,6 +1524,7 @@ function setQaCacheEntry(qid, noteVal, ansStr, dirty, resetAns = false){
     qid: key,
     note: noteVal !== undefined ? String(noteVal ?? "") : String(existing.note ?? ""),
     ans: ansStr !== undefined ? String(ansStr ?? "") : String(existing.ans ?? ""),
+    level: levelVal !== undefined ? normalizePinLevel(levelVal) : normalizePinLevel(existing.level ?? ""),
     dirty: Boolean(dirty),
     resetAns: Boolean(dirty && resetAns),
     updatedAt: Date.now()
@@ -1590,24 +1644,26 @@ function syncQaRowToSheet(qid, keepRowOnEmpty = false){
     const meta = qaState[n] || {};
     const noteVal = meta.note == null ? "" : String(meta.note);
     const ansStr = serializeAnsForSheet(q, picks[n]);
-    const levelVal = sheetLevelByQid.get(n) || "";
+    const levelVal = meta.level !== undefined
+      ? normalizePinLevel(meta.level)
+      : normalizePinLevel(sheetLevelByQid.get(n) || "");
     const dichStr = sheetDichByQid.get(n) || "";
-    const hasNote = noteVal.trim() !== "";
-    const hasAns = ansStr !== "";
-    const hasLevel = levelVal.trim() !== "";
-    const hasDich = dichStr.trim() !== "";
     const noteId = sheetRowIdByQid.get(n) || getNoteRowId(n);
     const hasExistingSheetRow = sheetRowIds.has(noteId) || sheetRowIdByQid.has(n);
+    const hasNote = noteVal.trim() !== "";
+    const hasAns = ansStr !== "";
+    const hasDich = dichStr.trim() !== "";
+    const hasLevel = levelVal === "1" || (levelVal !== "" && (hasExistingSheetRow || hasNote || hasAns || hasDich || !hasSheetSnapshot));
 
     if (!hasNote && !hasAns && !hasLevel && !hasDich) {
       if (keepRowOnEmpty) {
         if (hasSheetSnapshot && !hasExistingSheetRow) {
-          setQaCacheEntry(n, "", "", false, false);
+          setQaCacheEntry(n, "", "", false, false, levelVal);
           return { ok: true, skipped: true };
         }
       } else {
         if (isSheetLoaded && !hasExistingSheetRow) {
-          setQaCacheEntry(n, "", "", false, false);
+          setQaCacheEntry(n, "", "", false, false, levelVal);
           return { ok: true, skipped: true };
         }
         const delRes = await callGSheetApi({
@@ -1622,7 +1678,7 @@ function syncQaRowToSheet(qid, keepRowOnEmpty = false){
           sheetRowIdByQid.delete(n);
           sheetAnsIds.delete(n);
           sheetLevelByQid.delete(n);
-          setQaCacheEntry(n, "", "", false, false);
+          setQaCacheEntry(n, "", "", false, false, "");
         }
         return delRes;
       }
@@ -1678,9 +1734,11 @@ function syncQaRowToSheet(qid, keepRowOnEmpty = false){
       noteSheetHasExactHeader = true;
       sheetRowIds.add(noteId);
       sheetRowIdByQid.set(n, noteId);
+      if (levelVal !== "") sheetLevelByQid.set(n, levelVal);
+      else sheetLevelByQid.delete(n);
       if (hasAns) sheetAnsIds.add(n);
       else sheetAnsIds.delete(n);
-      setQaCacheEntry(n, noteVal, ansStr, false, false);
+      setQaCacheEntry(n, noteVal, ansStr, false, false, levelVal);
     }
     return res;
   });
@@ -1705,10 +1763,10 @@ function getFiltered(){
     const okTopic = topic === "all" || q.topic === topic;
     if (!okTopic) return false;
     const hasAns = hasQuestionPick(picks[q.n]);
-    const hasNote = Boolean(qaState[q.n] && String(qaState[q.n].note || "").trim() !== "");
+    const isPinned = isQuestionPinned(q.n);
     if (listFilter === "todo" && hasAns) return false;
     if (listFilter === "done" && !hasAns) return false;
-    if (listFilter === "note" && !hasNote) return false;
+    if (listFilter === "pinned" && !isPinned) return false;
     if (isCheckedMode && wrongOnly) {
       const ev = evaluateQuestion(q);
       if (!ev.hasSelection || ev.ok) return false;
@@ -1734,11 +1792,11 @@ function renderTopicSelect(){
 }
 
 function updateFilterCounts(){
-  const c = { todo: 0, done: 0, note: 0 };
+  const c = { todo: 0, done: 0, pinned: 0 };
   DATA.forEach(q => {
     const hasAns = hasQuestionPick(picks[q.n]);
     if (hasAns) c.done++; else c.todo++;
-    if (qaState[q.n] && String(qaState[q.n].note || "").trim() !== "") c.note++;
+    if (isQuestionPinned(q.n)) c.pinned++;
   });
   const sel = $("#list-filter-select");
   if (sel) {
@@ -1746,7 +1804,7 @@ function updateFilterCounts(){
       all: `Tất cả (${DATA.length})`,
       todo: `Mới (${c.todo})`,
       done: `Đã làm (${c.done})`,
-      note: `Câu có note (${c.note})`
+      pinned: `Đã ghim (${c.pinned})`
     };
     Array.from(sel.options).forEach(opt => {
       if (labels[opt.value]) opt.text = labels[opt.value];
@@ -1870,7 +1928,7 @@ function render(scrollToTop = false){
             <span class="q-counter-id" title="${esc(q.topic)}">${esc(subParts.join(" · "))}</span>
           </span>
         </button>
-        <span class="q-order-num">#${listOrder}</span>
+        <button type="button" class="q-order-num${isQuestionPinned(q.n) ? " pinned" : ""}" data-action="toggle-pin" data-order="${listOrder}" title="${isQuestionPinned(q.n) ? "Bỏ ghim câu này" : "Ghim câu này"}"><svg class="pin-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>${listOrder}</span></button>
       </div>
       <div class="multi-card-body">
         <p class="q">${fmtKw(q.q, "hl", searchTerm)}</p>
@@ -1944,6 +2002,27 @@ function toggleCardAns(card){
     btn.classList.toggle("active", on);
     btn.textContent = on ? "Ẩn đáp án" : "Xem đáp án";
   }
+}
+
+function toggleCardPin(card, btn){
+  const n = +card.dataset.n;
+  const q = DATA_BY_N.get(n);
+  const nextPinned = !isQuestionPinned(n);
+  const nextLevel = nextPinned ? "1" : "0";
+  if (!qaState[n]) qaState[n] = { note: "", level: nextLevel };
+  else qaState[n].level = nextLevel;
+  sheetLevelByQid.set(n, nextLevel);
+
+  const pinBtn = btn || card.querySelector('.q-order-num[data-action="toggle-pin"]');
+  if (pinBtn) {
+    pinBtn.classList.toggle("pinned", nextPinned);
+    pinBtn.title = nextPinned ? "Bỏ ghim câu này" : "Ghim câu này";
+  }
+
+  const meta = qaState[n] || { note: "", level: nextLevel };
+  setQaCacheEntry(n, meta.note, serializeAnsForSheet(q, picks[n]), true, false, nextLevel);
+  updateFilterCounts();
+  syncQaRowToSheet(n);
 }
 
 function savePick(card){
@@ -2190,8 +2269,8 @@ async function resetAll(){
   store.set("cca.ansIds", []);
 
   targetIds.forEach(n => {
-    const meta = qaState[n] || { note: "" };
-    setQaCacheEntry(n, meta.note, "", true, true);
+    const meta = qaState[n] || { note: "", level: sheetLevelByQid.get(n) || "" };
+    setQaCacheEntry(n, meta.note, "", true, true, meta.level);
   });
 
   setActiveQ(null);
@@ -2208,11 +2287,16 @@ async function resetAll(){
         const sheetItem = freshSheet.qaMap[n];
         const cachedEntry = cachedBefore[String(n)];
         const hasDirtyLocalNote = Boolean(cachedEntry && cachedEntry.dirty);
-        if (!hasDirtyLocalNote && (!qaState[n] || !qaState[n].note) && sheetItem && sheetItem.note) {
-          qaState[n] = { note: String(sheetItem.note) };
+        if (!qaState[n]) qaState[n] = { note: "", level: "" };
+        if (!hasDirtyLocalNote && !qaState[n].note && sheetItem && sheetItem.note) {
+          qaState[n].note = String(sheetItem.note);
         }
-        const meta = qaState[n] || { note: "" };
-        setQaCacheEntry(n, meta.note, "", true, true);
+        if (!hasDirtyLocalNote && !qaState[n].level && sheetItem && sheetItem.level) {
+          qaState[n].level = normalizePinLevel(sheetItem.level);
+          sheetLevelByQid.set(n, qaState[n].level);
+        }
+        const meta = qaState[n] || { note: "", level: "" };
+        setQaCacheEntry(n, meta.note, "", true, true, meta.level);
       });
     }
 
@@ -2270,6 +2354,7 @@ $("#list").addEventListener("click", e => {
   if (actEl){
     const act = actEl.dataset.action;
     if (act === "toggle-vi") return toggleCardVi(card);
+    if (act === "toggle-pin") return toggleCardPin(card, actEl);
     if (act === "toggle-ans") return toggleCardAns(card);
   }
 
@@ -2387,9 +2472,12 @@ async function startApp(){
   Object.entries(qaCache).forEach(([k, entry]) => {
     const n = Number(k);
     if (!Number.isFinite(n) || !entry || typeof entry !== "object") return;
+    const cachedLevel = normalizePinLevel(entry.level ?? "");
     qaState[n] = {
-      note: String(entry.note ?? "")
+      note: String(entry.note ?? ""),
+      level: cachedLevel
     };
+    if (cachedLevel) sheetLevelByQid.set(n, cachedLevel);
     if (entry.ans !== undefined) {
       const parsed = parseAnsFromSheet(DATA_BY_N.get(n), entry.ans);
       if (parsed) picks[n] = parsed;
@@ -2411,12 +2499,16 @@ async function startApp(){
       const n = Number(k);
       const cached = qaCache[String(n)];
       if (cached && cached.dirty) return;
+      const sheetLevel = normalizePinLevel(item.level ?? "");
       qaState[n] = {
-        note: String(item.note ?? "")
+        note: String(item.note ?? ""),
+        level: sheetLevel
       };
+      if (sheetLevel) sheetLevelByQid.set(n, sheetLevel);
+      else sheetLevelByQid.delete(n);
       if (item.ans) picks[n] = item.ans;
       else delete picks[n];
-      setQaCacheEntry(n, qaState[n].note, item.ansRaw || "", false);
+      setQaCacheEntry(n, qaState[n].note, item.ansRaw || "", false, false, sheetLevel);
     });
     // Nếu local không dirty và sheet không còn dòng đó, giữ nguyên nếu chưa từng sync hoặc dọn sạch nếu cache đã từng clean
     Object.keys(qaCache).forEach(k => {

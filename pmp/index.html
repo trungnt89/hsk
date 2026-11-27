@@ -542,6 +542,15 @@
         }
         .q-order-num {
             flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 66px;
+            height: 24px;
+            padding: 0 6px;
+            box-sizing: border-box;
+            font-family: inherit;
             font-size: 11.5px;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
@@ -549,9 +558,37 @@
             background: rgba(255, 255, 255, 0.75);
             border: 1px solid rgba(234, 88, 12, 0.22);
             border-radius: 6px;
-            padding: 2px 7px;
-            line-height: 1.25;
+            line-height: 1;
             white-space: nowrap;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .q-order-num .pin-ico {
+            width: 12px;
+            height: 12px;
+            flex-shrink: 0;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.6;
+            transition: opacity 0.15s ease, fill 0.15s ease;
+        }
+        .q-order-num:hover {
+            background: #FFF7ED;
+            border-color: rgba(234, 88, 12, 0.45);
+        }
+        .q-order-num.pinned {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            color: #FFFFFF;
+            border-color: #1E40AF;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.32);
+        }
+        .q-order-num.pinned .pin-ico {
+            fill: currentColor;
+            opacity: 1;
         }
 
         .result {
@@ -647,7 +684,8 @@
             .q-counter-lines { gap: 5px; }
             .q-counter-main { font-size: 12.5px; }
             .q-counter-id { font-size: 10px; }
-            .q-order-num { font-size: 11px; padding: 2px 6px; }
+            .q-order-num { width: 60px; height: 22px; font-size: 11px; padding: 0 5px; gap: 3px; }
+            .q-order-num .pin-ico { width: 11px; height: 11px; }
         }
 
         .multi-card-body {
@@ -1281,7 +1319,7 @@
                     <option value="all">Tất cả (0)</option>
                     <option value="todo">Mới (0)</option>
                     <option value="done">Đã làm (0)</option>
-                    <option value="note">Câu có note (0)</option>
+                    <option value="pinned">Đã ghim (0)</option>
                 </select>
                 <select id="set-select" onchange="changeExamSet(this.value)" title="Chọn bộ đề">
                     <option value="DATA_SET_1">ĐỀ 01</option>
@@ -1433,10 +1471,17 @@ function formatAnsString(val) {
 
 function normalizeLevel(val) {
     const s = String(val ?? '').trim().toLowerCase();
+    if (s === '1' || s === 'true') return '1';
+    if (s === '0' || s === 'false') return '0';
     if (s === 'easy') return 'Easy';
     if (s === 'medium') return 'Medium';
     if (s === 'hard') return 'Hard';
     return '';
+}
+
+function isQuestionPinned(examSet, qid) {
+    const p = state.progress && state.progress[examSet + qid];
+    return normalizeLevel(p && p.diff) === '1';
 }
 
 function parseDichObject(val) {
@@ -1657,12 +1702,12 @@ function syncQaRowToSheet(examSet, qid, keepRowOnEmpty = false) {
         const ansStr = formatAnsString(p.ans);
         const levelVal = normalizeLevel(p.diff);
         const dichStr = formatDichString(p.translation);
-        const hasNote = noteVal.trim() !== '';
-        const hasAns = ansStr !== '';
-        const hasLevel = levelVal !== '';
-        const hasDich = dichStr !== '';
         const noteId = sheetRowIdByKey.get(progressKey) || getNoteRowId(examSet, qid);
         const hasExistingSheetRow = sheetRowIdByKey.has(progressKey);
+        const hasNote = noteVal.trim() !== '';
+        const hasAns = ansStr !== '';
+        const hasDich = dichStr !== '';
+        const hasLevel = levelVal === '1' || (levelVal !== '' && (hasExistingSheetRow || hasNote || hasAns || hasDich || !hasSheetSnapshot));
         const shouldDeleteRow = !keepRowOnEmpty && !hasNote && !hasAns && !hasLevel && !hasDich;
 
         if (keepRowOnEmpty && !hasNote && !hasAns && !hasLevel && !hasDich && hasSheetSnapshot && !hasExistingSheetRow) {
@@ -1806,7 +1851,7 @@ function saveVocabCache(vocabList) {
 
 const pageSize = 10;
 const UI_PREFS_STORAGE_KEY = 'pmp_ui_prefs_v1';
-const ALLOWED_LIST_FILTERS = ['all', 'todo', 'done', 'note'];
+const ALLOWED_LIST_FILTERS = ['all', 'todo', 'done', 'pinned'];
 
 let state = {};
 let currentData = [];
@@ -2681,10 +2726,10 @@ function update() {
     filteredData = currentData.filter(q => {
         const p = state.progress[state.set + q.id];
         const hasAns = parseAnsList(p?.ans).length > 0;
-        const hasNote = Boolean(p && String(p.note || '').trim() !== '');
+        const isPinned = isQuestionPinned(state.set, q.id);
         if (state.listFilter === 'done' && !hasAns) return false;
         if (state.listFilter === 'todo' && hasAns) return false;
-        if (state.listFilter === 'note' && !hasNote) return false;
+        if (state.listFilter === 'pinned' && !isPinned) return false;
         if (isCheckedMode && wrongOnly) {
             const ev = evaluateQuestion(q);
             if (!ev.hasSelection || ev.ok) return false;
@@ -2826,7 +2871,7 @@ function render(preserveScroll = false) {
                             <span class="q-counter-id">${escapeHtmlText(subParts.join(' · '))}</span>
                         </span>
                     </button>
-                    <span class="q-order-num">#${globalIdx + 1}</span>
+                    <button type="button" class="q-order-num${isQuestionPinned(state.set, q.id) ? ' pinned' : ''}" id="btn-pin-${q.id}" data-order="${globalIdx + 1}" onclick="togglePin('${q.id}')" title="${isQuestionPinned(state.set, q.id) ? 'Bỏ ghim câu này' : 'Ghim câu này'}"><svg class="pin-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>${globalIdx + 1}</span></button>
                 </div>
                 <div class="multi-card-body">
                     <p class="q">${fmtKw(q.question, searchTerm)}</p>
@@ -2855,6 +2900,27 @@ function render(preserveScroll = false) {
     if (preserveScroll && viewport) {
         viewport.scrollTop = prevScrollTop;
     }
+}
+
+function togglePin(qid) {
+    const examSet = state.set;
+    const key = examSet + qid;
+    setActiveCard(qid);
+    if (!state.progress[key]) state.progress[key] = {};
+    const nextPinned = !isQuestionPinned(examSet, qid);
+    const nextLevel = nextPinned ? '1' : '0';
+    state.progress[key].diff = nextLevel;
+
+    const pinBtn = document.getElementById(`btn-pin-${qid}`);
+    if (pinBtn) {
+        pinBtn.classList.toggle('pinned', nextPinned);
+        pinBtn.title = nextPinned ? 'Bỏ ghim câu này' : 'Ghim câu này';
+    }
+
+    const p = state.progress[key];
+    setQaCacheEntry(key, p.note || '', formatAnsString(p.ans), nextLevel, true, examSet, qid);
+    updateCountsOnly();
+    syncQaRowToSheet(examSet, qid);
 }
 
 function setAns(qid, k) {
@@ -2953,7 +3019,7 @@ function updateCountsOnly() {
     let todo = 0;
     let right = 0;
     let wrong = 0;
-    let noteCount = 0;
+    let pinnedCount = 0;
     currentData.forEach(q => {
         const ev = evaluateQuestion(q);
         if (ev.hasSelection) {
@@ -2963,9 +3029,8 @@ function updateCountsOnly() {
         } else {
             todo++;
         }
-        const p = state.progress[state.set + q.id];
-        if (p && String(p.note || '').trim() !== '') {
-            noteCount++;
+        if (isQuestionPinned(state.set, q.id)) {
+            pinnedCount++;
         }
     });
 
@@ -2975,7 +3040,7 @@ function updateCountsOnly() {
             all: `Tất cả (${currentData.length})`,
             todo: `Mới (${todo})`,
             done: `Đã làm (${done})`,
-            note: `Câu có note (${noteCount})`
+            pinned: `Đã ghim (${pinnedCount})`
         };
         Array.from(filterSelect.options).forEach(opt => {
             if (labels[opt.value]) opt.text = labels[opt.value];

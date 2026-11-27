@@ -604,44 +604,45 @@
         .result.miss { background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad-border); }
         .result.skip { background: rgba(148, 163, 184, 0.16); color: var(--muted); border: 1px solid var(--border-strong); }
 
-        .q-ans-row {
-            margin-top: 0;
-            border-top: 1px solid #E2E8F0;
-            border-radius: 0 0 9px 9px;
-            overflow: hidden;
-            display: flex;
-            align-items: stretch;
+        .q-header-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
         }
         .q-ans-link {
-            width: 100%;
-            min-height: 28px;
-            padding: 5px 12px;
-            background: #F1F5F9;
-            border: none;
-            border-radius: 0;
-            font-family: inherit;
-            font-size: 12px;
-            font-weight: 700;
-            color: #475569;
-            text-align: center;
-            text-decoration: none;
-            cursor: pointer;
-            display: flex;
+            flex-shrink: 0;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            height: 24px;
+            min-width: 86px;
+            padding: 0 9px;
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(100, 116, 139, 0.25);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
-            transition: background 0.15s ease, color 0.15s ease;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
         }
         .q-ans-link:hover {
-            background: #E2E8F0;
+            background: #F1F5F9;
+            border-color: rgba(71, 85, 105, 0.38);
             color: #1E293B;
         }
         .q-ans-link.active {
             background: #EDE9FE;
+            border-color: #C4B5FD;
             color: #6D28D9;
         }
 
@@ -684,7 +685,9 @@
             .q-counter-lines { gap: 5px; }
             .q-counter-main { font-size: 12.5px; }
             .q-counter-id { font-size: 10px; }
-            .q-order-num { width: 60px; height: 22px; font-size: 11px; padding: 0 5px; gap: 3px; }
+            .q-header-actions { gap: 4px; }
+            .q-ans-link { height: 22px; min-width: 76px; padding: 0 7px; font-size: 10.5px; }
+            .q-order-num { width: 56px; height: 22px; font-size: 11px; padding: 0 4px; gap: 3px; }
             .q-order-num .pin-ico { width: 11px; height: 11px; }
         }
 
@@ -2871,7 +2874,10 @@ function render(preserveScroll = false) {
                             <span class="q-counter-id">${escapeHtmlText(subParts.join(' · '))}</span>
                         </span>
                     </button>
-                    <button type="button" class="q-order-num${isQuestionPinned(state.set, q.id) ? ' pinned' : ''}" id="btn-pin-${q.id}" data-order="${globalIdx + 1}" onclick="togglePin('${q.id}')" title="${isQuestionPinned(state.set, q.id) ? 'Bỏ ghim câu này' : 'Ghim câu này'}"><svg class="pin-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>${globalIdx + 1}</span></button>
+                    <div class="q-header-actions">
+                        <button type="button" class="q-ans-link${isCardAns ? ' active' : ''}" id="btn-card-ans-${q.id}" onclick="toggleCardAns('${q.id}')">${isCardAns ? 'Ẩn đáp án' : 'Xem đáp án'}</button>
+                        <button type="button" class="q-order-num${isQuestionPinned(state.set, q.id) ? ' pinned' : ''}" id="btn-pin-${q.id}" data-order="${globalIdx + 1}" onclick="togglePin('${q.id}')" title="${isQuestionPinned(state.set, q.id) ? 'Bỏ ghim câu này' : 'Ghim câu này'}"><svg class="pin-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>${globalIdx + 1}</span></button>
+                    </div>
                 </div>
                 <div class="multi-card-body">
                     <p class="q">${fmtKw(q.question, searchTerm)}</p>
@@ -2885,9 +2891,6 @@ function render(preserveScroll = false) {
                         <div class="exp-body">${q.explanation ? fmtKw(q.explanation, searchTerm) : 'Câu này chưa có giải thích chi tiết.'}${expViHtml}</div>
                     </section>
                     <textarea class="note-area" placeholder="💡 Thêm ghi chú cá nhân của bạn..." oninput="onNoteInput('${q.id}', this.value)" onchange="saveNote('${q.id}', this.value)">${escapeHtmlText(p.note || '')}</textarea>
-                </div>
-                <div class="q-ans-row">
-                    <button type="button" class="q-ans-link${isCardAns ? ' active' : ''}" id="btn-card-ans-${q.id}" onclick="toggleCardAns('${q.id}')">${isCardAns ? 'Ẩn đáp án' : 'Xem đáp án'}</button>
                 </div>
             </article>
         `;
